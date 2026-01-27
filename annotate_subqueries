@@ -1,0 +1,16 @@
+    def get_queryset(self, request):
+        '''annotate subqueries for all columns with counts'''
+        return super(ApplicationAdmin, self).get_queryset(request).annotate(
+            _hosts    = Coalesce(Subquery(Host.objects.filter(application_id=OuterRef('id')).order_by().values('application_id').annotate(count=Count('pk', distinct=True)).values('count')), 0),
+            _services = Coalesce(Subquery(Service.objects.filter(served_by_id=OuterRef('id')).order_by().values('served_by_id').annotate(count=Count('pk', distinct=True)).values('count')), 0),
+            _used_by  = Coalesce(Subquery(Client.objects.filter(service__served_by_id=OuterRef('id')).order_by().values('service__served_by_id').annotate(count=Count('pk', distinct=True)).values('count')), 0),
+            _uses     = Coalesce(Subquery(Client.objects.filter(client_name_id=OuterRef('id')).order_by().values('client_name_id').annotate(count=Count('pk', distinct=True)).values('count')), 0),
+            _versions = Coalesce(Subquery(ApplicationVersion.objects.filter(application_id=OuterRef('id')).order_by().values('application_id').annotate(count=Count('pk', distinct=True)).values('count')), 0),
+            _unknownS = Coalesce(Subquery(UnknownConnection.objects.filter(server_host__application_id=OuterRef('id')).order_by().values('server_host__application_id').annotate(count=Count('pk')).values('count')), 0),
+            _unknownC = Coalesce(Subquery(UnknownConnection.objects.filter(client_host__application_id=OuterRef('id')).order_by().values('client_host__application_id').annotate(count=Count('pk')).values('count')), 0),
+            _findings = Coalesce(Subquery(Finding.objects.filter(service__served_by_id=OuterRef('id')).order_by().values('service__served_by_id').annotate(count=Count('pk', distinct=True)).values('count')), 0),
+            _svgroups = Coalesce(Subquery(ServiceGroup.objects.filter(service__served_by__id=OuterRef('id')).order_by().values('service__served_by__id').annotate(count=Count('pk', distinct=True)).values('count')), 0),
+            _customers= Coalesce(Subquery(Customer.objects.filter(servicegroup__service__served_by_id=OuterRef('id')).order_by().values('servicegroup__service__served_by_id').annotate(count=Count('pk', distinct=True)).values('count')), 0),
+            CHDs      = Coalesce(Subquery(Service.objects.filter(served_by_id=OuterRef('id'), CHD=True).values('served_by_id').annotate(count=Count('pk', distinct=True)).values('count')),0),
+            CHDc      = Coalesce(Subquery(Client.objects.filter(service__served_by_id=OuterRef('id'), service__CHD=True).values('service__served_by_id').annotate(count=Count('pk', distinct=True)).values('count')),0),
+        )

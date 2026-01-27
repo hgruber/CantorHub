@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+env/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Logs and database files
+*.log
+*.sql
+*.sqlite3
+db.sqlite3
+instance/
+
+# Media and static files
+media/
+static/
+
+# Uploaded files
+**/__pycache__/*
+*~
+*.swp
+
+# Editor/IDE-specific files
+.idea/
+.vscode/
+*.sublime-project
+*.tmproj
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Local settings
+local_settings.py
+
+# Test coverage
+coverage.xml
+.coverage
+
+# Other
+*.orig
