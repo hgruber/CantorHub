@@ -143,3 +143,18 @@ class Lied(models.Model):
 
     def __str__(self):
         return self.titel
+
+
+class Konzert(models.Model):
+    termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
+    lied = models.ForeignKey("Lied", on_delete=models.CASCADE)
+    position = models.IntegerField(default=1)
+
+    class Meta:
+        ordering = ["position"]
+
+    def __str__(self):
+        return f"{self.position} - {self.termin.kurz}"
+
+
+Lied.konzert = models.ManyToManyField("Lied", through="Konzert", related_name="konzert")

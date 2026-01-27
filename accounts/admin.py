@@ -66,6 +66,12 @@ class OrtAdmin(admin.ModelAdmin):
     ]
 
 
+class TerminLiedInline(admin.TabularInline):
+    model = Konzert
+    extra = 0
+    fields = ("lied", "position")
+
+
 @admin.register(Termin)
 class TerminAdmin(admin.ModelAdmin):
     list_display = (
@@ -76,6 +82,7 @@ class TerminAdmin(admin.ModelAdmin):
         "repertoire",
         "anwesenheit",
     )
+    inlines = [TerminLiedInline]
 
 
 @admin.register(Lied)
