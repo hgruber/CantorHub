@@ -1,8 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import Count, F, Max, Min, OuterRef, Subquery
-from django.db.models import Value as V
-from django.db.models.functions import Concat
+from django.db.models import Count, Max
 
 
 class User(AbstractUser):
@@ -51,8 +49,24 @@ class User(AbstractUser):
         return f"{self.first_name} {self.last_name}"
 
 
+class Artikel(models.Model):
+    name = models.CharField(max_length=256)
+    version = models.IntegerField()
+    datum = models.DateTimeField()
+    autor = models.ForeignKey("User", null=True, on_delete=models.SET_NULL)
+    kommentar = models.CharField(max_length=256, blank=True, null=True)
+    text = models.TextField()
+
+    class Meta:
+        unique_together = ("name", "version")
+        verbose_name_plural = "Artikel"
+
+    def __str__(self):
+        return self.name
+
+
 class ForumQuerySet(models.QuerySet):
-    def extra(self):
+    def extra_data(self):
         return self.annotate(
             anzahl_mitteilungen=Count("mitteilung"), zugriff=Max("mitteilung__datum")
         )
@@ -158,3 +172,12 @@ class Konzert(models.Model):
 
 
 Lied.konzert = models.ManyToManyField("Lied", through="Konzert", related_name="konzert")
+
+
+class Zusage(models.Model):
+    person = models.ForeignKey("User", on_delete=models.CASCADE)
+    termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
+    option = models.CharField(default=1)
+
+
+Termin.zusage = models.ManyToManyField("User", through="Zusage", related_name="zusage")

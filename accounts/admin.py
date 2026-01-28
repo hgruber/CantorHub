@@ -4,6 +4,24 @@ from django.contrib.auth.admin import UserAdmin
 from .models import *
 
 
+class TerminLiedInline(admin.TabularInline):
+    model = Konzert
+    extra = 0
+    fields = ("lied", "position")
+
+
+class TerminUserInline(admin.TabularInline):
+    model = Zusage
+    extra = 0
+    fields = ("person", "option")
+
+
+class UserTerminInline(admin.TabularInline):
+    model = Zusage
+    extra = 0
+    fields = ("termin", "option")
+
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = [
@@ -23,6 +41,17 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ["text"]
     # ordering_fields = ['first_name']
 
+    inlines = [UserTerminInline]
+
+
+@admin.register(Artikel)
+class ArtikelAdmin(admin.ModelAdmin):
+    list_display = [
+        "name",
+        "autor",
+        "datum",
+    ]
+
 
 @admin.register(Forum)
 class ForumAdmin(admin.ModelAdmin):
@@ -34,7 +63,7 @@ class ForumAdmin(admin.ModelAdmin):
     ]
 
     def get_queryset(self, request):
-        return Forum.objects.extra().order_by("-zugriff")
+        return Forum.objects.extra_data().order_by("-zugriff")
 
     def anzahl_mitteilungen(self, obj):
         return obj.anzahl_mitteilungen
@@ -66,12 +95,6 @@ class OrtAdmin(admin.ModelAdmin):
     ]
 
 
-class TerminLiedInline(admin.TabularInline):
-    model = Konzert
-    extra = 0
-    fields = ("lied", "position")
-
-
 @admin.register(Termin)
 class TerminAdmin(admin.ModelAdmin):
     list_display = (
@@ -82,7 +105,7 @@ class TerminAdmin(admin.ModelAdmin):
         "repertoire",
         "anwesenheit",
     )
-    inlines = [TerminLiedInline]
+    inlines = [TerminLiedInline, TerminUserInline]
 
 
 @admin.register(Lied)
