@@ -1,0 +1,9 @@
+Django
+django-djconfig
+django-filer
+django-leaflet
+pymysql
+easy-thumbnails
+pillow
+tzdata
+pytz

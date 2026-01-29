@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count, Max
+from filer.fields.file import FilerFileField
 
 
 class User(AbstractUser):
@@ -12,7 +13,7 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=32)
 
     # --- Personendaten ---
-    STIMME_CHOICES = [
+    STIMMEN = [
         ("N", "None"),
         ("S", "Sopran"),
         ("A", "Alt"),
@@ -20,7 +21,7 @@ class User(AbstractUser):
         ("B", "Bass"),
         ("M", "Mixed"),
     ]
-    stimme = models.CharField(max_length=1, choices=STIMME_CHOICES, default="N")
+    stimme = models.CharField(max_length=1, choices=STIMMEN, default="N")
 
     geburtstag = models.DateField(null=True, blank=True)
 
@@ -44,6 +45,10 @@ class User(AbstractUser):
     text = models.TextField(null=True, blank=True)
 
     REQUIRED_FIELDS = []
+
+    class Meta:
+        verbose_name = "Mitglied"
+        verbose_name_plural = "Mitglieder"
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -140,6 +145,18 @@ class Termin(models.Model):
 class Lied(models.Model):
     titel = models.CharField(max_length=48)
     aktiv = models.BooleanField(default=False)
+    original = FilerFileField(
+        null=True, blank=True, on_delete=models.SET_NULL, related_name="original"
+    )
+    aufnahme = FilerFileField(
+        null=True, blank=True, on_delete=models.SET_NULL, related_name="aufnahme"
+    )
+    pdf = FilerFileField(
+        null=True, blank=True, on_delete=models.SET_NULL, related_name="pdf"
+    )
+    noten = FilerFileField(
+        null=True, blank=True, on_delete=models.SET_NULL, related_name="noten"
+    )
     solist = models.ManyToManyField("User", related_name="solist")
     dirigent = models.ManyToManyField("User", related_name="dirigent")
     tempo = models.CharField(
@@ -165,6 +182,7 @@ class Konzert(models.Model):
     position = models.IntegerField(default=1)
 
     class Meta:
+        verbose_name_plural = "Konzerte"
         ordering = ["position"]
 
     def __str__(self):
@@ -178,6 +196,9 @@ class Zusage(models.Model):
     person = models.ForeignKey("User", on_delete=models.CASCADE)
     termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
     option = models.CharField(default=1)
+
+    class Meta:
+        verbose_name_plural = "Zusagen"
 
 
 Termin.zusage = models.ManyToManyField("User", through="Zusage", related_name="zusage")

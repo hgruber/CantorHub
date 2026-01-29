@@ -38,9 +38,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "accounts",
     "easy_thumbnails",
     "filer",
+    #    "leaflet",
+    "accounts",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
