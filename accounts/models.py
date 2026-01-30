@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count, Max
+from django.utils.html import format_html
 from filer.fields.file import FilerFileField
 
 
@@ -12,6 +13,9 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=32)
     last_name = models.CharField(max_length=32)
 
+    avatar = FilerFileField(
+        null=True, blank=True, on_delete=models.SET_NULL, related_name="avatar"
+    )
     # --- Personendaten ---
     STIMMEN = [
         ("N", "None"),
@@ -52,6 +56,13 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def bild(self):
+        if self.avatar:
+            return format_html(
+                '<img src="{}"></img>',
+                self.avatar.thumbnails.get("admin_clipboard_icon"),
+            )
 
 
 class Artikel(models.Model):
@@ -102,6 +113,7 @@ class Mitteilung(models.Model):
 
     class Meta:
         verbose_name_plural = "Mitteilungen"
+        ordering = ["-datum"]
 
     def __str__(self):
         return f"Message from {self.sender} in forum {self.forum}"

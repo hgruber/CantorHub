@@ -30,6 +30,7 @@ class UserAdmin(admin.ModelAdmin):
         "stimme",
         "email",
         "is_active",
+        "bild",
     ]
     # fields = []
     # fieldsets = ()
@@ -41,7 +42,8 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ["text"]
     # ordering_fields = ['first_name']
 
-    inlines = [UserTerminInline]
+
+#    inlines = [UserTerminInline]
 
 
 @admin.register(Artikel)

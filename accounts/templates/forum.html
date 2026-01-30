@@ -1,0 +1,24 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<div id="forum-container">
+    <h1>Forum: Proben</h1>
+    <form
+        id="send-form"
+        hx-post="{% url 'send' %}"
+        hx-target="#messages"
+        hx-swap="afterend"
+        hx-indicator="#send-loader"
+    >
+        {% csrf_token %}
+        <input
+            type="text"
+            name="mitteilung"
+            placeholder="Schreib etwas..."
+            autocomplete="off"
+        />
+        <button type="submit">Senden</button>
+    </form>
+    <div id="messages" class="messages">
+        {% include '_messages.html' with messages=messages %}
+    </div>
+</div>
+{% endblock %}

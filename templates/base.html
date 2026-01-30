@@ -1,0 +1,13 @@
+{% load static %}
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>{% block title %}JG: Interner Bereich{% endblock %}</title>
+        <link rel="stylesheet" href='{% static "css/style.css" %}' />
+    </head>
+    <body>
+        {% block content %}{% endblock %}
+        <script src="/static/js/htmx.min.js"></script>
+    </body>
+</html>
