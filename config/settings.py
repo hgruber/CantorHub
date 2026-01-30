@@ -41,10 +41,10 @@ INSTALLED_APPS = [
     "easy_thumbnails",
     "filer",
     #    "leaflet",
-    "accounts",
+    "intern",
 ]
 
-AUTH_USER_MODEL = "accounts.User"
+AUTH_USER_MODEL = "intern.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
