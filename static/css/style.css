@@ -1,0 +1,126 @@
+/* ==============================================================
+   Grund‑Layout
+   ============================================================== */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden; /* keine Seiten‑Scrollbars */
+    font-family: Arial, sans-serif;
+}
+
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #0a74da; /* blau */
+    color: white;
+    display: flex;
+    align-items: center;
+    z-index: 1000;
+    padding: 0 15px;
+}
+
+.top-bar .title {
+    margin: 0 0 0 15px;
+    font-size: 1.4rem;
+}
+
+.hamburger {
+    width: 35px;
+    height: 25px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.hamburger span {
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+}
+
+/* ==============================================================
+   Layout (Sidebar + Content)
+   ============================================================== */
+.layout {
+    display: flex;
+    height: calc(100% - 60px); /* Restliche Höhe ab Top‑Bar */
+    margin-top: 60px; /* Platz für Top‑Bar */
+    overflow: hidden;
+}
+
+.sidebar {
+    background: #aa4444;
+    color: white;
+    width: 250px;
+    padding: 15px;
+    box-sizing: border-box;
+    transition:
+        transform 0.3s ease,
+        width 0.3s ease;
+    overflow: auto;
+}
+
+.content {
+    background: #eeeeee;
+    flex: 1;
+    padding: 0px;
+    overflow-y: auto; /* Inhalt scrollbar, aber keine Seiten‑Scrollbars */
+    box-sizing: border-box;
+    position: relative;
+
+    display: flex;
+    flex-direction: column; /* Header, Forum‑Entry, Nachrichten */
+}
+
+/* ==============================================================
+   Desktop‑Verhalten
+   ============================================================== */
+@media (min-width: 769px) {
+    /* Sidebar immer sichtbar (collapsed‑Klasse kontrolliert Breite) */
+    .sidebar.collapsed {
+        width: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+    /* Sidebar soll das Content‑Element nicht überdecken */
+    .sidebar,
+    .content {
+        position: relative;
+    }
+}
+
+/* ==============================================================
+   Mobile‑Verhalten (max-width 768px)
+   ============================================================== */
+/* Hamburger nur auf Mobilgeräten sichtbar */
+@media (min-width: 769px) {
+    .hamburger {
+        display: none;
+    }
+}
+@media (max-width: 768px) {
+    /* Sidebar wird über die Seite gelegt */
+    .sidebar {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        height: calc(100% - 60px);
+        width: 250px;
+        transform: translateX(-100%);
+        z-index: 999;
+        padding: 15px;
+    }
+    /* Sidebar aktiv (über Content legen) */
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    /* Content bleibt hinter der Sidebar */
+    .content {
+        z-index: 1;
+    }
+}

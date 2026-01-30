@@ -1,0 +1,186 @@
+/* -------------------------------------------------------------
+   Basis‑Stile für Chat‑Nachrichten
+   ------------------------------------------------------------- */
+.message,
+.message_me {
+    display: flex; /* Avatar / Text nebeneinander */
+    align-items: flex-start; /* Oberkante aneinander ausrichten */
+    margin: 8px 0; /* Abstand zwischen den Zeilen */
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+/* -------------------------------------------------------------
+   Avatar (nur bei fremden Nachrichten)
+   ------------------------------------------------------------- */
+.message .avatar {
+    width: 80px; /* Breite des Fotos */
+    margin-right: 12px; /* Abstand zur Textblase */
+    text-align: center;
+}
+
+.message .avatar img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%; /* gerundete Ecken */
+    border: solid #eee 1px;
+    object-fit: cover;
+    display: block;
+}
+
+.message .avatar div {
+    margin-top: 4px;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+/* -------------------------------------------------------------
+   Textblase für fremde Nachrichten
+   ------------------------------------------------------------- */
+.message .content {
+    background: #fff; /* weißer Hintergrund */
+    border-radius: 15px; /* abgerundete Blasenränder */
+    padding: 10px 12px;
+    max-width: 85%; /* verhindert zu große Blasen */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* -------------------------------------------------------------
+   Textblase für eigene Nachrichten
+   ------------------------------------------------------------- */
+.message_me .content_me {
+    background: #d4f8d4; /* leichtes Grün */
+    border-radius: 15px;
+    padding: 10px 12px;
+    max-width: 80%; /* gleiche maximale Breite */
+}
+
+/* -------------------------------------------------------------
+   Text und Zeit
+   ------------------------------------------------------------- */
+.message .content p,
+.message_me .content_me p {
+    margin: 0;
+}
+
+.message .content time,
+.message_me .content_me time {
+    display: block;
+    font-size: 0.75rem;
+    color: #777;
+    margin-top: 4px;
+    text-align: right; /* rechtsbündig unter dem Text */
+}
+
+/* -------------------------------------------------------------
+   Überschrift (h1)
+   ------------------------------------------------------------- */
+.content h1 {
+    margin: 0; /* kein zusätzlicher Abstand */
+    padding: 8px 12px; /* Innenabstand für ein bisschen Luft */
+    font-size: 1.4rem;
+    background: #fff; /* damit sie immer sichtbar bleibt */
+    z-index: 5; /* über der Nachrichtenliste */
+}
+
+/* -------------------------------------------------------------
+   Forum‑Eingabe (div.forum-entry) – "schweben" oben
+   ------------------------------------------------------------- */
+.forum-entry {
+    position: sticky; /* bleibt oben, aber nicht überhängt die Nachrichten */
+    top: 0;
+    background: #fff;
+    z-index: 10; /* über dem Header, damit sie immer im Blick ist */
+    display: flex;
+    align-items: flex-end; /* textarea und Button am unteren Rand ausrichten */
+    gap: 8px; /* Abstand zwischen textarea und Button */
+    padding: 8px 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* -------------------------------------------------------------
+   Textarea – füllt den verfügbaren Raum innerhalb .forum-entry
+   ------------------------------------------------------------- */
+.forum-entry textarea {
+    flex: 1; /* nimmt den restlichen Platz ein */
+    min-height: 80px; /* minimale Höhe, damit der Text gut lesbar ist */
+    resize: none; /* keine Größenänderung per Mausklick */
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    box-sizing: border-box;
+}
+
+/* -------------------------------------------------------------
+   Nachrichtenbereich (div.messages)
+   ------------------------------------------------------------- */
+.messages {
+    flex: 1; /* füllt den restlichen Platz unter forum-entry */
+    overflow-y: auto; /* Scrollen, falls der Inhalt zu groß wird */
+    padding: 12px;
+    box-sizing: border-box;
+    background: #f5f5f5;
+}
+
+/* -------------------------------------------------------------
+   Zusätzliche Sicherheit – nichts soll über den Rand hinausragen
+   ------------------------------------------------------------- */
+.messages > * {
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
+
+/* -------------------------------------------------------------
+   Submit‑Button – grüner Pfeil
+   ------------------------------------------------------------- */
+.forum-entry {
+    top: 0;
+    background: #eee;
+    padding: 12px 12px;
+    display: grid;
+    flex-direction: row;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    flex: 0 0 auto;
+}
+
+.forum-entry button[type="submit"] {
+    width: 36px;
+    height: 36px;
+    border: solid #218838 1px;
+    background: #28a745;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 0px;
+}
+.forum-entry button[type="submit"]:hover {
+    background: #218838;
+}
+
+.forum-entry button[type="submit"]::before {
+    content: "";
+    border: solid #fff;
+    border-width: 0 5px 5px 0;
+    display: inline-block;
+    padding: 5px;
+    transform: translate(-2px, 1px) rotate(-45deg);
+}
+
+/* Textarea: nimmt den restlichen Platz ein */
+.forum-entry textarea {
+    flex: 1 1 auto; /* wächst, schrumpft */
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    width: 83%;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+    min-height: 80px;
+    margin-bottom: -9px;
+}

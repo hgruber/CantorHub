@@ -1,13 +1,45 @@
 {% load static %}
 <!doctype html>
-<html>
+<html lang="de">
     <head>
         <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{% block title %}JG: Interner Bereich{% endblock %}</title>
-        <link rel="stylesheet" href='{% static "css/style.css" %}' />
+        <link rel="stylesheet" href="/static/css/style.css" />
+        <link rel="stylesheet" href="/static/css/forum.css" />
     </head>
     <body>
-        {% block content %}{% endblock %}
-        <script src="/static/js/htmx.min.js"></script>
+        <!-- Top‑Bar -->
+        <header class="top-bar">
+            <div class="hamburger" id="hamburger">
+                <span></span><span></span><span></span>
+            </div>
+            <h1 class="title">Topbar</h1>
+        </header>
+
+        <!-- Container mit Sidebar und Content -->
+        <div class="layout">
+            <!-- Sidebar (rot) -->
+            <aside class="sidebar" id="sidebar">
+                <h2>Sidebar</h2>
+                <p>
+                    Demo‑Text: Lorem ipsum dolor sit amet, consectetur
+                    adipiscing elit. Vestibulum ut...
+                </p>
+            </aside>
+
+            <!-- Content (grün) -->
+            <main class="content">{% block content %}{% endblock %}</main>
+        </div>
+
+        <script>
+            // Hamburger‑Toggle
+            const hamburger = document.getElementById("hamburger");
+            const sidebar = document.getElementById("sidebar");
+
+            hamburger.addEventListener("click", () => {
+                sidebar.classList.toggle("active");
+            });
+        </script>
     </body>
 </html>

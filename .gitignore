@@ -20,7 +20,7 @@ instance/
 
 # Media and static files
 media/
-static/
+portrait/
 
 # Uploaded files
 **/__pycache__/*

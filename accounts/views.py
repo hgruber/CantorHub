@@ -10,14 +10,14 @@ from django.views.decorators.http import require_POST
 from .models import Forum, Mitteilung
 
 
-# @login_required
+@login_required
 def view(request, forum):
     """Render das Haupt‑Template mit den ersten 20 Nachrichten."""
-    messages = Mitteilung.objects.filter(forum_id=forum)[:100]
+    messages = Mitteilung.objects.filter(forum_id=forum)[:15]
     return render(request, "forum.html", {"messages": messages})
 
 
-# @login_required
+@login_required
 def more(request):
     """Return älterer Nachrichten (30 Stück) als HTML‑Snippet."""
     # Wir brauchen die ID der ältesten geladenen Nachricht (Client‑seitig sendet `last_id`).
@@ -31,7 +31,7 @@ def more(request):
     return JsonResponse({"html": html})
 
 
-# @login_required
+@login_required
 # @require_POST
 def send(request):
     mitteilung = request.POST.get("mitteilung", "").strip()

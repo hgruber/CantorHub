@@ -1,6 +1,5 @@
 {% extends 'base.html' %} {% load static %} {% block content %}
-<div id="forum-container">
-    <h1>Forum: Proben</h1>
+<div class="forum-entry">
     <form
         id="send-form"
         hx-post="{% url 'send' %}"
@@ -9,16 +8,14 @@
         hx-indicator="#send-loader"
     >
         {% csrf_token %}
-        <input
-            type="text"
+        <textarea
             name="mitteilung"
-            placeholder="Schreib etwas..."
-            autocomplete="off"
-        />
-        <button type="submit">Senden</button>
+            placeholder="Schreibe Deine Nachricht.."
+        ></textarea>
+        <button type="submit"></button>
     </form>
-    <div id="messages" class="messages">
-        {% include '_messages.html' with messages=messages %}
-    </div>
+</div>
+<div id="messages" class="messages">
+    {% include '_messages.html' with messages=messages %}
 </div>
 {% endblock %}
