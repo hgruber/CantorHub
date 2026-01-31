@@ -15,7 +15,7 @@ body {
     left: 0;
     right: 0;
     height: 60px;
-    background: #0a74da; /* blau */
+    background: #bccbda; /* blau */
     color: white;
     display: flex;
     align-items: center;
@@ -54,7 +54,7 @@ body {
 }
 
 .sidebar {
-    background: #aa4444;
+    background: #bf8faf;
     color: white;
     width: 250px;
     padding: 15px;

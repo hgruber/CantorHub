@@ -4,9 +4,10 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{% block title %}JG: Interner Bereich{% endblock %}</title>
+        <title>Just Gospel Intern - {{ seitentitel }}</title>
         <link rel="stylesheet" href="/static/css/style.css" />
         <link rel="stylesheet" href="/static/css/forum.css" />
+        <script src="{% static 'js/htmx.min.js' %}"></script>
     </head>
     <body>
         <!-- Top‑Bar -->
@@ -14,21 +15,14 @@
             <div class="hamburger" id="hamburger">
                 <span></span><span></span><span></span>
             </div>
-            <h1 class="title">Topbar</h1>
+            <h1 class="title">{{ seitentitel }}</h1>
         </header>
 
-        <!-- Container mit Sidebar und Content -->
         <div class="layout">
-            <!-- Sidebar (rot) -->
             <aside class="sidebar" id="sidebar">
-                <h2>Sidebar</h2>
-                <p>
-                    Demo‑Text: Lorem ipsum dolor sit amet, consectetur
-                    adipiscing elit. Vestibulum ut...
-                </p>
+                {% include "sidebar.html" %}
             </aside>
 
-            <!-- Content (grün) -->
             <main class="content">{% block content %}{% endblock %}</main>
         </div>
 
