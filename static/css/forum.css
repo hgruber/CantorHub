@@ -152,8 +152,8 @@
 .forum-entry button[type="submit"] {
     width: 36px;
     height: 36px;
-    border: solid #218838 1px;
-    background: #28a745;
+    border: solid #c14468; 1px;
+    background: ;
     border-radius: 50%;
     color: #fff;
     cursor: pointer;
@@ -161,7 +161,7 @@
     margin-bottom: 0px;
 }
 .forum-entry button[type="submit"]:hover {
-    background: #218838;
+    background: #a53a5a;
 }
 
 .forum-entry button[type="submit"]::before {
@@ -170,7 +170,7 @@
     border-width: 0 5px 5px 0;
     display: inline-block;
     padding: 5px;
-    transform: translate(-2px, 1px) rotate(-45deg);
+    transform: translate(-9px, -2px) rotate(-45deg);
 }
 
 /* Textarea: nimmt den restlichen Platz ein */
