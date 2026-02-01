@@ -16,7 +16,7 @@ urlpatterns = [
         auth_views.LogoutView.as_view(next_page="login"),
         name="logout",
     ),
-    path("foren/", views.foren, name="foren"),
+    path("forum/", views.foren, name="foren"),
     path("forum/<int:forum>/", views.view, name="view"),
     path("forum/<int:forum>/poll", views.poll, name="poll"),
     path("forum/<int:forum>/more", views.more, name="more"),

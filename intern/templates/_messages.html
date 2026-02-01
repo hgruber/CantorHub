@@ -1,2 +1,9 @@
+<input
+    type="hidden"
+    id="last_id_input"
+    name="last_id"
+    value="{{ last_id }}"
+    hx-swap-oob="true"
+/>
 {% for message in messages %} {% include '_message.html' with message=message %}
 {% endfor %}

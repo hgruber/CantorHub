@@ -1,6 +1,7 @@
 from datetime import date, datetime, datetime_CAPI
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Max
 from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import render
@@ -21,8 +22,9 @@ def foren(request):
 
 @login_required
 def view(request, forum):
-    messages = Mitteilung.objects.filter(forum_id=forum)[:15]
+    messages = Mitteilung.objects.filter(forum_id=forum)[:25]
     last_id = max(msg.id for msg in messages)
+    oldest_id = min(msg.id for msg in messages)
     return render(
         request,
         "forum.html",
@@ -30,14 +32,16 @@ def view(request, forum):
             "seitentitel": f"Forum: {Forum.objects.get(id=forum).thema}",
             "forum": forum,
             "last_id": last_id,
+            "oldest_id": oldest_id,
             "messages": messages,
         },
     )
 
 
 @login_required
-def poll(request, forum):
-    last_id = request.GET.get("last_id", 0)
+def poll(request, forum, last_id=0):
+    if last_id == 0:
+        last_id = request.GET.get("last_id", 0)
     messages = Mitteilung.objects.filter(forum_id=forum, id__gt=last_id)
     if messages:
         last_id = max(msg.id for msg in messages)
@@ -52,31 +56,32 @@ def poll(request, forum):
 def more(request, forum):
     """Return älterer Nachrichten (30 Stück) als HTML‑Snippet."""
     # Wir brauchen die ID der ältesten geladenen Nachricht (Client‑seitig sendet `last_id`).
-    last_id = request.GET.get("last_id")
-    if last_id:
-        queryset = Mitteilung.objects.filter(forum_id=forum, id__lt=last_id)[:30]
-    else:
-        queryset = Mitteilung.objects.filter(forum_id=forum)[:30]
-    return render(request, "_messages.html", {"forum": forum, "messages": queryset})
+    oldest_id = request.GET.get("oldest_id", 0)
+    last_id = request.GET.get("last_id", 0)
+    print(f"more: {last_id} - {oldest_id}")
+    messages = Mitteilung.objects.filter(forum_id=forum, id__lt=oldest_id)
+    return render(
+        request,
+        "_messages.html",
+        {
+            "forum": forum,
+            "last_id": last_id,
+            "oldest_id": oldest_id,
+            "messages": messages,
+        },
+    )
 
 
 @login_required
 @require_POST
 def send(request, forum):
     mitteilung = request.POST.get("mitteilung", "").strip()
+    last_id = request.POST.get("last_id", 0)
     if mitteilung:
-        msg = Mitteilung(
+        Mitteilung.objects.create(
             sender_id=request.user.id,
             forum_id=forum,
             mitteilung=mitteilung,
             datum=datetime.now(),
         )
-        msg.save()
-        return render(
-            request,
-            "_message.html",
-            {
-                "message": msg,
-            },
-        )
-    return HttpResponse(status=404)
+    return poll(request, forum, last_id)
