@@ -1,5 +1,10 @@
 <h2>Sidebar</h2>
-<p>
-    Demo‑Text: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-    Vestibulum ut...
-</p>
+<div><a href="/intern/forum/146/">Forum: Proben</a></div>
+<div><a href="/intern/forum/32/">Forum: Repertoire</a></div>
+<div><a href="/admin">Admin</a></div>
+<div>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+    </form>
+</div>

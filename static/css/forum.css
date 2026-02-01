@@ -54,6 +54,7 @@
     border-radius: 15px;
     padding: 10px 12px;
     max-width: 80%; /* gleiche maximale Breite */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* -------------------------------------------------------------
