@@ -1,23 +1,139 @@
 <!doctype html>
-<html>
+<html lang="de">
     <head>
-        <title>Main Page</title>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Just Gospel Frankfurt</title>
+        <link rel="stylesheet" href="/static/css/main.css" />
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>"
+        />
     </head>
     <body>
-        <!-- Header -->
-        <header id="header">
-            <div class="inner">
-                <nav id="nav">
-                    <a href="/">Home</a>
-                    <a href="/intern/login">Login</a>
-                </nav>
-                <a href="#navPanel" class="navPanelToggle"
-                    ><span class="fa fa-bars"></span
-                ></a>
-            </div>
+        <header>
+            <nav>
+                <a href="#home">Home</a>
+                <a href="#contact">Kontakt</a>
+                <a href="/intern/login">Login</a>
+            </nav>
+            <a href="#home" class="logo">
+                <img
+                    src="/static/images/JG-Frankfurt-test.svg"
+                    style="width: 120px"
+                />
+            </a>
         </header>
-        <main>{% block content %}{% endblock %}</main>
+
+        <section id="home">
+            <div class="content">
+                <div class="intro">
+                    <h1>Just Gospel Frankfurt</h1>
+                    <p>Ein Chor mit Seele, Groove und Tiefgang</p>
+                </div>
+
+                <div class="about">
+                    <div class="card">
+                        <h2>Über uns</h2>
+                        <p>
+                            JustGospel! Frankfurt - das sind rund 20
+                            Sänger/innen die eines verbindet: Die langjährige
+                            Liebe zu Musik mit Seele, Groove, Gefühl und
+                            Tiefgang. Zum Gospel.
+                        </p>
+                        <p>
+                            Begeistert singen die Chormitglieder schon seit
+                            vielen Jahren miteinander und haben sich 2015 als
+                            JustGospel! Frankfurt unter der Leitung von
+                            Christoph Kuhn, einem erfahrenen Pianisten und
+                            Chorleiter, neu formiert.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h2>Wir suchen Sängerinnen und Sänger</h2>
+                        <p>
+                            Du bist dem modernen Gospel zugewandt und bist ein
+                            Sopran oder Bass? Dann melde Dich bei
+                            <a href="mailto:webmaster@example.org"
+                                >webmaster@example.org</a
+                            >.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="concerts">
+            <div class="content">
+                <h2>Konzerte</h2>
+                <div class="concert-list">
+                    <div class="concert-item">
+                        <span class="date">So, 26.04.2026 18:00</span>
+                        <h3>Konzert in Fechenheim</h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="gallery">
+            <div class="content">
+                <h2>Galerie</h2>
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <div class="image-placeholder"></div>
+                    </div>
+                    <div class="gallery-item">
+                        <div class="image-placeholder"></div>
+                    </div>
+                    <div class="gallery-item">
+                        <div class="image-placeholder"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact">
+            <div class="content">
+                <h2>Kontakt</h2>
+                <div class="contact-info">
+                    <div class="contact-card">
+                        <h3>Kontakt</h3>
+                        <p>
+                            <a href="mailto:webmaster@example.org"
+                                >webmaster@example.org</a
+                            >
+                        </p>
+                    </div>
+                    <div class="contact-card">
+                        <h3>Impressum</h3>
+                        <p>
+                            Verantwortlich für den Webauftritt:<br />
+                            Holger Gruber<br />
+                            Zum Schäferköppel 28<br />
+                            60437 Frankfurt<br />
+                            webmaster@example.org
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img
+                        src="/static/images/JG-Frankfurt-test.svg"
+                        style="width: 50px"
+                    />
+                </div>
+                <div class="copyright">
+                    <p>
+                        &copy; 2026 Just Gospel Frankfurt. Alle Rechte
+                        vorbehalten.
+                    </p>
+                </div>
+            </div>
+        </footer>
     </body>
 </html>

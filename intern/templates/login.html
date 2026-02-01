@@ -1,15 +1,71 @@
-{% extends "index.html" %} {% block content %}
-<h2>Login</h2>
+<!doctype html>
+<html lang="de">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Login - Just Gospel Frankfurt</title>
+        <link rel="stylesheet" href="/static/css/login-style.css" />
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>"
+        />
+    </head>
+    <body>
+        <div class="login-container">
+            <div class="login-card">
+                <div class="logo">
+                    <a href="/"
+                        ><img
+                            src="/static/images/JG-Frankfurt-test.svg"
+                            style="width: 120px"
+                    /></a>
+                </div>
 
-{% if form.errors %}
-<p class="error">Ungültiger Benutzername oder Passwort.</p>
-{% endif %}
+                <h1>Willkommen bei Just Gospel Frankfurt</h1>
 
-<form method="post" action="{% url 'login' %}">
-    {% csrf_token %} {{ form.as_p }} {# username & password Felder #}
+                <div class="welcome-message">
+                    <p>
+                        Hallo, schön dass du da bist! Melde dich an, um auf
+                        deine persönlichen Bereiche zuzugreifen.
+                    </p>
+                </div>
 
-    <button type="submit">Anmelden</button>
-</form>
+                <form
+                    class="login-form"
+                    method="post"
+                    action="{% url 'login' %}"
+                >
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="username">Benutzername</label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            required
+                        />
+                    </div>
 
-<p>Neuer Benutzer? <a href="{% url 'login' %}">Registrieren</a></p>
-{% endblock %}
+                    <div class="form-group">
+                        <label for="password">Passwort</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            required
+                        />
+                    </div>
+
+                    <button type="submit" class="login-button">Anmelden</button>
+                </form>
+
+                <div class="register-link">
+                    <p>
+                        Noch keinen Account?
+                        <a href="#register">Hier registrieren</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
