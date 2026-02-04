@@ -14,6 +14,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow-y: hidden;
     padding: 1rem;
 }
 
@@ -57,6 +58,32 @@ h1 {
     line-height: 1.6;
 }
 
+.login-error,
+.errorlist.nonfield {
+    background-color: #fff5f5;
+    color: #c53030;
+    border: 1px solid #fed7d7;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 20px 0;
+    list-style: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.errorlist.nonfield li {
+    margin: 0;
+    padding: 8px 0;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.errorlist.nonfield li::before {
+    content: "⚠️ ";
+    margin-right: 8px;
+    font-size: 1.2em;
+}
+
 .login-form {
     margin-bottom: 2rem;
 }
@@ -74,7 +101,8 @@ label {
 }
 
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+input[type="email"] {
     width: 100%;
     padding: 0.9rem;
     border: 1px solid #ddd;
@@ -84,7 +112,8 @@ input[type="password"] {
 }
 
 input[type="text"]:focus,
-input[type="password"]:focus {
+input[type="password"]:focus,
+input[type="email"]:focus {
     outline: none;
     border-color: #c14468;
     box-shadow: 0 0 0 2px rgba(193, 68, 104, 0.2);

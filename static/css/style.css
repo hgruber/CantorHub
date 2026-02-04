@@ -27,11 +27,12 @@ body {
     padding: 0 15px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-
 .top-bar .title {
     margin: 0 0 0 15px;
     font-size: 1.4rem;
     font-weight: 600;
+    flex: 1;
+    text-align: center;
 }
 
 .hamburger {
@@ -214,5 +215,9 @@ button:hover {
 
     .content {
         background: #f8f9fa;
+    }
+
+    .top-bar .title {
+        text-align: left;
     }
 }

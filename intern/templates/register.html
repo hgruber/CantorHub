@@ -1,0 +1,18 @@
+{% extends "dialog.html" %} {% block title %}Passwort zurücksetzen{% endblock %}
+### {% block content %}
+<h1>Passwort zurücksetzten</h1>
+<div class="welcome-message">
+    <p>
+        Bei der ersten Anmeldung müssen alle Felder ausgefüllt werden. Ansonsten
+        genügt es, nur den Benutzernamen einzugeben.
+    </p>
+</div>
+<form method="POST" class="form-group">
+    {% csrf_token %} {{ form.as_div }}
+    <br />
+    <div class="form-group">
+        <button type="submit" class="login-button">zurücksetzen</button>
+    </div>
+</form>
+
+{% endblock %}
