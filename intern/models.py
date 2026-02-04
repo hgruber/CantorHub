@@ -4,6 +4,8 @@ from django.db.models import Count, Max
 from django.utils.html import format_html
 from filer.fields.file import FilerFileField
 
+from .replacements import apply_replacements
+
 
 class User(AbstractUser):
     # --- Legacy Identity ---
@@ -117,6 +119,9 @@ class Mitteilung(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender} in forum {self.forum}"
+
+    def formatiert(self):
+        return apply_replacements(self.mitteilung)
 
 
 class Ort(models.Model):

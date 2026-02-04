@@ -1,68 +1,32 @@
-<!doctype html>
-<html lang="de">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Login - Just Gospel Frankfurt</title>
-        <link rel="stylesheet" href="/static/css/login-style.css" />
-        <link rel="icon" href="/static/images/JG-Frankfurt-G-color.svg" />
-    </head>
-    <body>
-        <div class="login-container">
-            <div class="login-card">
-                <div class="logo">
-                    <a href="/"
-                        ><img
-                            src="/static/images/JG-Frankfurt-test.svg"
-                            style="width: 120px"
-                    /></a>
-                </div>
+{% extends "dialog.html" %} {% block title %}Willkommen bei Just Gospel
+Frankfurt{% endblock %} {% block content %}
+<h1>Willkommen bei Just Gospel Frankfurt</h1>
 
-                <h1>Willkommen bei Just Gospel Frankfurt</h1>
+<div class="welcome-message"><p></p></div>
 
-                <div class="welcome-message">
-                    <p>
-                        Hallo, schön dass du da bist! Melde dich an, um auf
-                        deine persönlichen Bereiche zuzugreifen.
-                    </p>
-                </div>
+{% if form.errors %}
+<div class="login-error">
+    <p>Dein Benutzername oder Passwort sind nicht richtig.</p>
+</div>
+{% endif %}
 
-                <form
-                    class="login-form"
-                    method="post"
-                    action="{% url 'login' %}"
-                >
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="username">Benutzername</label>
-                        <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            required
-                        />
-                    </div>
+<form class="login-form" method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    <div class="form-group">
+        {{ form.username.label_tag }} {{ form.username }}
+    </div>
 
-                    <div class="form-group">
-                        <label for="password">Passwort</label>
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            required
-                        />
-                    </div>
+    <div class="form-group">
+        {{ form.password.label_tag }} {{ form.password }}
+    </div>
 
-                    <button type="submit" class="login-button">Anmelden</button>
-                </form>
+    <button type="submit" class="login-button">Anmelden</button>
+</form>
 
-                <div class="register-link">
-                    <p>
-                        Noch keinen Account?
-                        <a href="#register">Hier registrieren</a>
-                    </p>
-                </div>
-            </div>
-        </div>
-    </body>
-</html>
+<div class="register-link">
+    <p>
+        Du hast Dein Passwort vergessen oder noch keines bekommen?
+        <a href="{% url 'register' %}">Hier anfordern.</a>
+    </p>
+</div>
+{% endblock %}
