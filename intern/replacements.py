@@ -8,7 +8,7 @@ REPLACEMENTS = [
         r'<img src="\1"></img>',
     ),
     (
-        r"(?<![\"])(https?://[^\s\"]+\.(mp3|wav|ogg|aac|flac|mp4|webm|m4a))(?![\"])",
+        r"(?<![\"])(https?://[^\s\"]+\.(mp3|wav|ogg|aac|flac|m4a))(?![\"])",
         r'<audio controls src="\1"></audio>',
     ),
     (
