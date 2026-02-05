@@ -1,3 +1,7 @@
 {% for forum in foren %}
-<li class="forum"><a href="/intern/forum/{{forum.id}}/">{{forum.thema}}</a></li>
+<tr>
+    <td><a href="/intern/forum/{{forum.id}}/">{{forum.thema}}</a></td>
+    <td>{{forum.letzte}}</td>
+    <td class="posts">{{forum.anzahl_mitteilungen}}</td>
+</tr>
 {% endfor %}

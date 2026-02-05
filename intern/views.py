@@ -46,7 +46,7 @@ def register_success(request):
 
 @login_required
 def foren(request):
-    foren = Forum.objects.all()
+    foren = Forum.objects.extra_data().order_by("-zugriff")
     return render(request, "foren.html", {"seitentitel": "Foren", "foren": foren})
 
 

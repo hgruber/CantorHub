@@ -1,5 +1,7 @@
 {% extends 'base.html' %} {% load static %} {% block content %}
-<ul id="foren" class="foren">
-    {% include '_forum.html' with forum=forum %}
-</ul>
+<div class="container">
+    <table id="foren" class="foren">
+        {% include '_forum.html' with forum=forum %}
+    </table>
+</div>
 {% endblock %}

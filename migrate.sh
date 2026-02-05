@@ -10,4 +10,4 @@ mv /tmp/0003_import.py intern/migrations
 python manage.py import_files --path portrait
 python manage.py migrate
 
-python manage.py runserver
+python manage.py runserver 0.0.0.0:8000

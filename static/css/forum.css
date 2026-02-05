@@ -206,3 +206,73 @@
     border: solid #000 1px;
     border-radius: 12px;
 }
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.foren {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.foren th {
+    background-color: #c14468;
+    color: white;
+    padding: 15px 20px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.foren td {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0e6f0;
+    font-size: 15px;
+}
+
+.foren tr:last-child td {
+    border-bottom: none;
+}
+
+.foren tr:hover {
+    background-color: #fdf5fa;
+    transition: background-color 0.3s ease;
+}
+
+.foren a {
+    color: #a53a5a;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.foren a:hover {
+    color: #c14468;
+    text-decoration: underline;
+}
+
+.date {
+    color: #666;
+    font-size: 14px;
+}
+
+.posts {
+    color: #a53a5a;
+    font-weight: 600;
+    text-align: right;
+}
+
+.foren tr:nth-child(even) {
+    background-color: #fdf8fc;
+}
+
+.foren tr:nth-child(even):hover {
+    background-color: #fdf5fa;
+}

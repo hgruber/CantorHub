@@ -4,7 +4,7 @@ from django.db.models import Count, Max
 from django.utils.html import format_html
 from filer.fields.file import FilerFileField
 
-from .replacements import apply_replacements
+from .replacements import apply_replacements, format_datetime
 
 
 class User(AbstractUser):
@@ -105,6 +105,9 @@ class Forum(models.Model):
         if mitteilung:
             return mitteilung.sender
         return None
+
+    def letzte(self):
+        return format_datetime(self.zugriff)
 
 
 class Mitteilung(models.Model):
