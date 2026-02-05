@@ -42,8 +42,7 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ["text"]
     # ordering_fields = ['first_name']
 
-
-#    inlines = [UserTerminInline]
+    inlines = [UserTerminInline]
 
 
 @admin.register(Artikel)
@@ -114,3 +113,16 @@ class TerminAdmin(admin.ModelAdmin):
 class LiedAdmin(admin.ModelAdmin):
     list_display = ("titel", "original", "aktiv", "tempo", "beats", "hymne", "acapella")
     list_filter = ("aktiv", "tempo", "hymne", "acapella")
+    filter_horizontal = (
+        "solist",
+        "dirigent",
+    )
+
+
+@admin.register(Abstimmung)
+class AbstimmungAdmin(admin.ModelAdmin):
+    list_display = (
+        "person",
+        "abstimmung",
+        "option",
+    )

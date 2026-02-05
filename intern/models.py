@@ -151,6 +151,7 @@ class Termin(models.Model):
     ctag = models.IntegerField(default=0)
     repertoire = models.BooleanField(default=False)
     anwesenheit = models.BooleanField(default=False)
+    mitglied = models.ManyToManyField("User", through="Zusage", related_name="termin")
 
     class Meta:
         verbose_name_plural = "Termine"
@@ -185,6 +186,7 @@ class Lied(models.Model):
     weihnacht = models.BooleanField(default=False)
     komponist = models.TextField(blank=True, null=True)
     bearbeiter = models.TextField(blank=True, null=True)
+    termin = models.ManyToManyField("Termin", through="Konzert", related_name="termin")
 
     class Meta:
         verbose_name_plural = "Lieder"
@@ -206,9 +208,6 @@ class Konzert(models.Model):
         return f"{self.position} - {self.termin.kurz}"
 
 
-Lied.konzert = models.ManyToManyField("Lied", through="Konzert", related_name="konzert")
-
-
 class Zusage(models.Model):
     person = models.ForeignKey("User", on_delete=models.CASCADE)
     termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
@@ -218,4 +217,10 @@ class Zusage(models.Model):
         verbose_name_plural = "Zusagen"
 
 
-Termin.zusage = models.ManyToManyField("User", through="Zusage", related_name="zusage")
+class Abstimmung(models.Model):
+    person = models.ForeignKey("User", on_delete=models.CASCADE)
+    abstimmung = models.CharField(max_length=256)
+    option = models.CharField(max_length=256)
+
+    class Meta:
+        verbose_name_plural = "Abstimmungen"
