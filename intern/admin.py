@@ -30,19 +30,16 @@ class UserAdmin(admin.ModelAdmin):
         "stimme",
         "email",
         "is_active",
+        "is_staff",
+        "is_superuser",
         "bild",
     ]
     # fields = []
     # fieldsets = ()
     # readonly_fields = []
-    list_filter = [
-        "stimme",
-        "is_active",
-    ]
-    search_fields = ["text"]
+    list_filter = ["stimme", "is_active", "is_staff", "is_superuser"]
+    search_fields = ["first_name", "last_name", "ort"]
     # ordering_fields = ['first_name']
-
-    inlines = [UserTerminInline]
 
 
 @admin.register(Artikel)
