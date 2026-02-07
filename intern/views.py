@@ -1,18 +1,26 @@
 from datetime import date, datetime, datetime_CAPI
+from sys import orig_argv
 
+import django_tables2 as tables
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.db.models import Max
+from django.db.models import Count, Max, OuterRef
 from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils.crypto import get_random_string
+from django.utils.html import format_html
 from django.views.decorators.http import require_POST
+from django_tables2.utils import Sequence
+from filer.models import File
+
+from intern.replacements import apply_replacements
 
 from .forms import RegisterForm
-from .models import Forum, Mitteilung, User
+from .models import Artikel, Forum, Mitteilung, TabellenPreferenzen, User
 
 
 def home(request):
@@ -115,3 +123,94 @@ def send(request, forum):
             datum=datetime.now(),
         )
     return poll(request, forum, last_id)
+
+
+def get_model_queryset(model_class, annotations=None, filters=None):
+    qs = model_class.objects.all()
+    if filters:
+        qs = qs.filter(**filters)
+    if annotations:
+        qs = qs.annotate(**annotations)
+    return qs
+
+
+class MitgliederTabelle(tables.Table):
+    first_name = tables.Column()
+    last_name = tables.Column()
+    avatar = tables.FileColumn()
+    stimme = tables.Column()
+    email = tables.EmailColumn()
+    geburtstag = tables.DateColumn()
+    last_login = tables.DateTimeColumn()
+    mitteilungen = tables.Column(
+        attrs={
+            "td": {"class": "right"},
+        }
+    )
+
+    def render_avatar(self, value, record):
+        if record.avatar:
+            return format_html(
+                '<a href="{}/"><img src="{}" width="50" height="50"></a>',
+                record.id,
+                record.avatar.url,
+            )
+        return format_html(
+            '<img src="{}" width="50" height="50">',
+            File.objects.get(original_filename="kein_photo.png"),
+        )
+
+
+@login_required
+def mitglieder_liste(request):
+    annotations = {
+        "mitteilungen": Mitteilung.objects.filter(sender=OuterRef("pk"))
+        .values("sender")
+        .annotate(cnt=Count("*"))
+        .values("cnt"),
+    }
+    qs = get_model_queryset(
+        User, annotations=annotations, filters=({"is_active": True})
+    )
+
+    try:
+        pref = TabellenPreferenzen.objects.get(
+            person=request.user, tabelle="mitglieder"
+        )
+        visible_fields = pref.sichtbare_spalten
+    except:
+        visible_fields = ["first_name", "last_name", "email", "stimme", "mitteilungen"]
+
+    table = MitgliederTabelle(qs)
+
+    tables.RequestConfig(request, paginate=False).configure(table)
+    return render(
+        request, "table.html", {"table": table, "seitentitel": "Mitgliederliste"}
+    )
+
+
+@login_required
+def mitglied(request, id):
+    user = get_object_or_404(User, id=id)
+    context = {
+        "user": user,
+        "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
+    }
+    return render(request, "mitglied.html", context)
+
+
+@login_required
+def artikel_liste(request):
+    artikel = Artikel.objects.values_list("name", flat=True).distinct()
+    return render(request, "artikel.html")
+
+
+@login_required
+def artikel(request, name):
+    artikel = Artikel.objects.filter(name=name).order_by("-id").first()
+    context = {
+        "artikel": artikel,
+        "text": apply_replacements(artikel.text, request),
+        "seitentitel": artikel.name,
+    }
+    return render(request, "artikel.html", context)

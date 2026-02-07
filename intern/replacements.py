@@ -3,34 +3,70 @@ import re
 from datetime import date, datetime, timedelta
 from typing import Union
 
-# Definiere deine regulären Ausdrücke und Ersetzungen
-REPLACEMENTS = [
-    (r"\[(https?://[^\s\]]+)\s+([^\]]+)\]", r'<a href="\1">\2</a>'),  # [URL Name]
-    (
-        r"(?<![\"])(https?://[^\s\"]+\.(?:png|jpg|jpeg|gif|bmp|webp))(?![\"])",
-        r'<img src="\1"></img>',
-    ),
-    (
-        r"(?<![\"])(https?://[^\s\"]+\.(mp3|wav|ogg|aac|flac|m4a))(?![\"])",
-        r'<audio controls src="\1"></audio>',
-    ),
-    (
-        r"(?<![\"])(https?://[^\s\"]+\.(?:mp4|webm|ogg|avi|mov|wmv|flv|mkv))(?![\"])",
-        r'<video controls src="\1"></video>',
-    ),
-    (r"(?<![\"])(https?://[^\s\"]+)(?![\"])", r'<a href="\1">\1</a>'),  # URL
-    (r"(^|\s)(@\w+)", r'<span class="mention">\2</span>'),  # Erwähnungen
-]
+from filer.models import File
 
 
-def apply_replacements(text):
+def internal_links(match, request):
+    print(
+        f"{match.group(1)}\n{match.group(2)}\n{match.group(3)}\n|{match.group(4)}|\n{match.group(5)}\n"
+    )
+    if match.group(2) == "Datei:":
+        try:
+            f = File.objects.get(original_filename=match.group(4))
+            return f'<a href="{f.url}">Datei: {match.group(4)}</a>'
+        except Exception as e:
+            return f'<span title="{e}">Datei: {match.group(4)}</span>'
+
+    elif match.group(2) == "Aktion:":
+        return f"<div>Aktion: {match.group(4)}</div>"
+    elif match.group(2) == "Geo:":
+        return f"<div>Karte: {match.group(4)}</div>"
+    else:
+        return f'<a href="/intern/artikel/{match.group(4)}/">{match.group(4)}</a>'
+
+
+def apply_replacements(text, request=None):
     """Wendet alle Ersetzungen auf den Text an"""
+
+    def _internal_links(match):
+        return internal_links(match, request)
+
+    # Definiere deine regulären Ausdrücke und Ersetzungen
+    REPLACEMENTS = [
+        (r"^======(.*)======$", r"<h5>\1</h5>"),
+        (r"^=====(.*)=====$", r"<h4>\1</h4>"),
+        (r"^====(.*)====$", r"<h3>\1</h3>"),
+        (r"^===(.*)===$", r"<h2>\1</h2>"),
+        (r"^==(.*)==$", r"<h1>\1</h1>"),
+        (
+            r"(\[\[(([^\]]*?)\:)?\s*([^\[\]]*?)(\|([^\[\]]+?))?\]\]([a-z]+)?)",
+            _internal_links,
+        ),
+        (r"\[(https?://[^\s\]]+)\s+([^\]]+)\]", r'<a href="\1">\2</a>'),  # [URL Name]
+        (
+            r"(?<![\"])(https?://[^\s\"]+\.(?:png|jpg|jpeg|gif|bmp|webp))(?![\"])",
+            r'<img src="\1"></img>',
+        ),
+        (
+            r"(?<![\"])(https?://[^\s\"]+\.(mp3|wav|ogg|aac|flac|m4a))(?![\"])",
+            r'<audio controls src="\1"></audio>',
+        ),
+        (
+            r"(?<![\"])(https?://[^\s\"]+\.(?:mp4|webm|ogg|avi|mov|wmv|flv|mkv))(?![\"])",
+            r'<video controls src="\1"></video>',
+        ),
+        (r"(?<![\"])(https?://[^\s\"]+)(?![\"])", r'<a href="\1">\1</a>'),  # URL
+        (r"(^|\s)(@\w+)", r'<span class="mention">\2</span>'),  # Erwähnungen
+    ]
+
     if not text:
         return text
 
     result = text
     for pattern, replacement in REPLACEMENTS:
-        result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
+        result = re.sub(
+            pattern, replacement, result, flags=re.IGNORECASE | re.MULTILINE
+        )
 
     return result
 

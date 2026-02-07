@@ -23,4 +23,8 @@ urlpatterns = [
     path("forum/<int:forum>/poll", views.poll, name="poll"),
     path("forum/<int:forum>/more", views.more, name="more"),
     path("forum/<int:forum>/send", views.send, name="send"),
+    path("mitglied/", views.mitglieder_liste, name="mitglieder_liste"),
+    path("mitglied/<int:id>/", views.mitglied, name="mitglied"),
+    path("artikel/", views.artikel_liste, name="artikel_liste"),
+    path("artikel/<str:name>/", views.artikel, name="artikel"),
 ]

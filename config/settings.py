@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "easy_thumbnails",
     "filer",
+    "django_tables2",
     #    "leaflet",
     "intern",
 ]

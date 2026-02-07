@@ -1,0 +1,99 @@
+/* Allgemeine Tabelle-Styling */
+.table-container {
+    overflow-x: auto;
+    margin: 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background: #fff;
+    padding: 0px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #fff;
+}
+
+th,
+td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+td.right {
+    text-align: right;
+}
+
+th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+th.orderable:hover {
+    background-color: #e9ecef;
+}
+
+th.orderable a {
+    text-decoration: none;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Sortierpfeile */
+th.asc::after {
+    content: " ↑";
+    color: #c14468;
+    font-weight: bold;
+}
+
+th.desc::after {
+    content: " ↓";
+    color: #a53a5a;
+    font-weight: bold;
+}
+
+/* Zeilen-Styling */
+tr.even {
+    background-color: #fafafa;
+}
+
+tr.odd {
+    background-color: #fff;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Optional: Abwechselnde Zeilenfarben mit den gewünschten Farben */
+tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+tr:nth-child(odd) {
+    background-color: #fff;
+}
+
+/* Hover-Farbe für Spaltenüberschriften */
+th.orderable:hover {
+    background-color: #e9ecef;
+}
+
+/* Abstand zwischen Tabellenzeilen */
+tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+/* Optional: Abstand nach der Tabelle */
+.table-container table {
+    margin-bottom: 0;
+}

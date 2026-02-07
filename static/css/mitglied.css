@@ -1,0 +1,123 @@
+/* Mitglied-Profil - CSS */
+
+/* Allgemeine Formatierung */
+.member-profile {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background-color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+/* Header-Bereich */
+.profile-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.profile-image img {
+    width: 170px;
+    height: 226px;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile-info h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.8rem;
+    color: #333;
+}
+
+.member-title {
+    font-weight: 600;
+    color: #a53a5a;
+    margin: 0.2rem 0;
+}
+
+.member-id {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+/* Inhaltsbereiche */
+.profile-section {
+    margin-bottom: 2rem;
+}
+
+.profile-section h2 {
+    font-size: 1.4rem;
+    color: #a53a5a;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #c14468;
+}
+
+.contact-info,
+.address-info,
+.personal-info {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.contact-item,
+.address-item,
+.personal-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.label {
+    font-weight: 600;
+    min-width: 150px;
+    color: #555;
+}
+
+.value {
+    flex: 1;
+    min-width: 200px;
+    color: #444;
+}
+
+/* Akzente */
+.member-profile .member-title,
+.member-profile .profile-section h2 {
+    color: #a53a5a;
+}
+
+.member-profile .profile-section h2::after {
+    background-color: #c14468;
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .profile-image img {
+        width: 130px;
+        height: 173px;
+    }
+
+    .contact-item,
+    .address-item,
+    .personal-item {
+        flex-direction: column;
+    }
+
+    .label {
+        min-width: auto;
+    }
+}
