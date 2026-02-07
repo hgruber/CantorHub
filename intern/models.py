@@ -12,8 +12,8 @@ class User(AbstractUser):
     legacy_id = models.PositiveSmallIntegerField(unique=True, null=True)
 
     # --- Namen ---
-    first_name = models.CharField(max_length=32)
-    last_name = models.CharField(max_length=32)
+    first_name = models.CharField(max_length=32, verbose_name="Vorname")
+    last_name = models.CharField(max_length=32, verbose_name="Nachname")
 
     avatar = FilerFileField(
         null=True, blank=True, on_delete=models.SET_NULL, related_name="avatar"
@@ -25,7 +25,8 @@ class User(AbstractUser):
         ("A", "Alt"),
         ("T", "Tenor"),
         ("B", "Bass"),
-        ("M", "Mixed"),
+        ("C", "Chorleiter"),
+        ("M", "Musiker"),
     ]
     stimme = models.CharField(max_length=1, choices=STIMMEN, default="N")
 
@@ -58,6 +59,9 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def mitteilungen(self):
+        return self(mitteilung.count())
 
     def bild(self):
         if self.avatar:
@@ -227,3 +231,15 @@ class Abstimmung(models.Model):
 
     class Meta:
         verbose_name_plural = "Abstimmungen"
+
+
+class TabellenPreferenzen(models.Model):
+    person = models.ForeignKey("User", on_delete=models.CASCADE)
+    tabelle = models.CharField(max_length=100)
+    sichtbare_spalten = models.JSONField(default=list)
+
+    class Meta:
+        unique_together = (
+            "person",
+            "tabelle",
+        )
