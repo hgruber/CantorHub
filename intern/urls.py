@@ -7,7 +7,7 @@ urlpatterns = [
     path(
         "login/",
         auth_views.LoginView.as_view(
-            template_name="login.html", next_page="/intern/forum/"
+            template_name="login.html", next_page="/intern/artikel/Aktuell/"
         ),
         name="login",
     ),
