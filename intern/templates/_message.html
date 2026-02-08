@@ -2,7 +2,10 @@
     class="{% if message.sender == user %}message_me{% else %}message{% endif %}"
     data-id="{{ message.id }}"
 >
-    <div class="avatar">
+    <div
+        class="avatar"
+        onclick="window.location.href='/intern/mitglied/{{ message.sender.id }}/'"
+    >
         {% if message.sender != user %}
         <img
             src="{{ message.sender.avatar.url }}"
