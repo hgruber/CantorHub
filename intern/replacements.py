@@ -15,7 +15,7 @@ def internal_links(match, request):
             f = File.objects.get(original_filename=match.group(4))
             return f'<a href="{f.url}">Datei: {match.group(4)}</a>'
         except Exception as e:
-            return f'<span title="{e}">Datei: {match.group(4)}</span>'
+            return f'<span title="{e}" class="not_found">Datei: {match.group(4)}</span>'
 
     elif match.group(2) == "Aktion:":
         return f"<div>Aktion: {match.group(4)}</div>"
@@ -56,19 +56,22 @@ def apply_replacements(text, request=None):
             r'<video controls src="\1"></video>',
         ),
         (r"(?<![\"])(https?://[^\s\"]+)(?![\"])", r'<a href="\1">\1</a>'),  # URL
+        (r"^\s*([^<].*)$", r"<p>\1</p>"),
         (r"(^|\s)(@\w+)", r'<span class="mention">\2</span>'),  # Erwähnungen
     ]
 
     if not text:
         return text
 
-    result = text
-    for pattern, replacement in REPLACEMENTS:
-        result = re.sub(
-            pattern, replacement, result, flags=re.IGNORECASE | re.MULTILINE
-        )
-
-    return result
+    result = []
+    for line in text.splitlines():
+        if line == None or line == "":
+            continue
+        repl = line
+        for pattern, replacement in REPLACEMENTS:
+            repl = re.sub(pattern, replacement, repl, flags=re.IGNORECASE)
+        result.append(f"\t\t\t\t{repl}")
+    return "\n".join(result)
 
 
 def format_datetime(dt: Union[datetime, date]) -> str:

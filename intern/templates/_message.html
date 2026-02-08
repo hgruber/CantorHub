@@ -17,7 +17,7 @@
     <div
         class="{% if message.sender == user %}content_me{% else %}content{% endif %}"
     >
-        <p>{{ message.formatiert|safe|linebreaksbr }}</p>
+        {{ message.formatiert|safe }}
         <time>{{ message.datum|date:"d.M Y H:i" }}</time>
     </div>
 </div>
