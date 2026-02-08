@@ -1,20 +1,13 @@
-from datetime import date, datetime, datetime_CAPI
-from sys import orig_argv
+from datetime import datetime
 
 import django_tables2 as tables
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.db.models import Count, Max, OuterRef
-from django.http import HttpResponse, JsonResponse
-from django.middleware.csrf import get_token
+from django.db.models import Count, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
 from django.views.decorators.http import require_POST
-from django_tables2.utils import Sequence
 from filer.models import File
 
 from intern.replacements import apply_replacements
