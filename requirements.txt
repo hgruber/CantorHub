@@ -2,6 +2,7 @@ Django
 django-djconfig
 django-filer
 django-leaflet
+django-tables2
 pymysql
 easy-thumbnails
 pillow
