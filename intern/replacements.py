@@ -145,16 +145,17 @@ def apply_replacements(text, request=None):
 
     result = []
     for line in text.splitlines():
-        if line == None or line == "":
+        if line == None or line == "" or re.match(r"^\s+$", line):
             continue
         repl = list_processor.process_line(line)
-        repl, skip_block = code_processor.process_line(repl)
-        if skip_block:
-            result.append(repl)
-            continue
-        if repl.startswith("</code></pre>"):
-            result.append("</code></pre>\n")
-            repl = repl[13:]
+        if request != None:  # Skip codeblock for forum
+            repl, skip_block = code_processor.process_line(repl)
+            if skip_block:
+                result.append(repl)
+                continue
+            if repl.startswith("</code></pre>"):
+                result.append("</code></pre>\n")
+                repl = repl[13:]
         for pattern, replacement in REPLACEMENTS:
             repl = re.sub(pattern, replacement, repl, flags=re.IGNORECASE)
         result.append(f"{repl}")
