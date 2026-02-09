@@ -1,3 +1,4 @@
+import html
 import locale
 import re
 from datetime import date, datetime, timedelta
@@ -6,10 +7,86 @@ from typing import Union
 from filer.models import File
 
 
+class ListProcessor:
+    def __init__(self):
+        self.stack = []  # Speichert die aktiven Listenarten ('ul' oder 'ol') auf den Ebenen
+
+    def process_line(self, line):
+        if line.startswith("*"):
+            level = line.count("*")
+            return self._handle_level(level, line[level:].strip(), "ul")
+        elif line.startswith("#"):
+            level = line.count("#")
+            return self._handle_level(level, line[level:].strip(), "ol")
+        else:
+            # Normale Zeile - schließe alle offenen Ebenen
+            tags = ""
+            while self.stack:
+                tags += "</ul>" if self.stack.pop() == "ul" else "</ol>"
+            if tags == "":
+                return line
+            return tags
+
+    def _handle_level(self, level, content, tag_type):
+        # Schließe überflüssige Ebenen
+        while self.stack and len(self.stack) > level:
+            # Schließe die äußerste Ebene
+            current_type = self.stack.pop()
+            tags = f"</{current_type}>"
+            return tags + f"<li>{content}</li>"
+
+        # Öffne neue Ebenen
+        tags = ""
+        while len(self.stack) < level:
+            tags += f"<{tag_type}>"
+            self.stack.append(tag_type)
+
+        # Prüfe, ob wir eine neue Liste des gleichen Typs öffnen müssen
+        if len(self.stack) == level and self.stack[-1] != tag_type:
+            # Wechsel von ul zu ol oder umgekehrt
+            tags = f"</{self.stack.pop()}><{tag_type}>"
+            self.stack.append(tag_type)
+
+        return tags + f"<li>{content}</li>"
+
+
+class CodeBlockProcessor:
+    def __init__(self):
+        self.in_code_block = False
+        self.code_lines = []
+
+    def process_line(self, line):
+        if line.startswith(" "):
+            # Eingezogene Zeile - Codeblock
+            if not self.in_code_block:
+                # Erste eingezogene Zeile - öffne Codeblock
+                self.in_code_block = True
+                self.code_lines = []
+                return "<pre><code>" + html.escape(line), True
+            else:
+                # Weitere eingezogene Zeile
+                return html.escape(line), True
+        else:
+            # Normale Zeile - schließe Codeblock wenn nötig
+            if self.in_code_block:
+                self.in_code_block = False
+                result = "</code></pre>" + line
+                # Füge alle gesammelten Codezeilen hinzu
+                if self.code_lines:
+                    result = (
+                        "<pre><code>"
+                        + "".join(self.code_lines)
+                        + "</code></pre>"
+                        + line
+                    )
+                return result, False
+            else:
+                # Normale Zeile, keine aktiven Codeblock
+                return line, False
+
+
 def internal_links(match, request):
-    print(
-        f"{match.group(1)}\n{match.group(2)}\n{match.group(3)}\n|{match.group(4)}|\n{match.group(5)}\n"
-    )
+    #    print( f"{match.group(1)}\n{match.group(2)}\n{match.group(3)}\n|{match.group(4)}|\n{match.group(5)}\n" )
     if match.group(2) == "Datei:":
         try:
             f = File.objects.get(original_filename=match.group(4))
@@ -30,6 +107,9 @@ def apply_replacements(text, request=None):
 
     def _internal_links(match):
         return internal_links(match, request)
+
+    list_processor = ListProcessor()
+    code_processor = CodeBlockProcessor()
 
     # Definiere deine regulären Ausdrücke und Ersetzungen
     REPLACEMENTS = [
@@ -67,10 +147,17 @@ def apply_replacements(text, request=None):
     for line in text.splitlines():
         if line == None or line == "":
             continue
-        repl = line
+        repl = list_processor.process_line(line)
+        repl, skip_block = code_processor.process_line(repl)
+        if skip_block:
+            result.append(repl)
+            continue
+        if repl.startswith("</code></pre>"):
+            result.append("</code></pre>\n")
+            repl = repl[13:]
         for pattern, replacement in REPLACEMENTS:
             repl = re.sub(pattern, replacement, repl, flags=re.IGNORECASE)
-        result.append(f"\t\t\t\t{repl}")
+        result.append(f"{repl}")
     return "\n".join(result)
 
 

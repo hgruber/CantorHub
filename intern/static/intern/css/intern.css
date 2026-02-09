@@ -712,3 +712,29 @@ tbody tr {
 span.not_found {
     background-color: #c8aa0a;
 }
+
+.wiki pre {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 16px;
+    overflow: auto;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    margin: 1em 0;
+}
+
+.wiki code {
+    font-family: "Courier New", Courier, monospace;
+    background-color: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.wiki pre code {
+    background-color: transparent;
+    padding: 0;
+    border: none;
+}
