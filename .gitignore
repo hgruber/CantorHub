@@ -21,9 +21,7 @@ instance/
 # Media and static files
 media/
 portrait/
-static/admin
-static/filer
-static/django_tables2
+/static/
 # Uploaded files
 **/__pycache__/*
 *~
