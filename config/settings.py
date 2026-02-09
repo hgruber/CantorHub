@@ -130,9 +130,8 @@ LOGIN_URL = "/intern/login/"
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+STATICFILES_DIRS = [] 
+STATIC_ROOT = "static"
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 

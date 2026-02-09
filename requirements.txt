@@ -8,3 +8,4 @@ easy-thumbnails
 pillow
 tzdata
 pytz
+gunicorn
