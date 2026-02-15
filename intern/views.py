@@ -195,7 +195,11 @@ def mitglied(request, id):
 @login_required
 def artikel_liste(request):
     artikel = Artikel.objects.values_list("name", flat=True).distinct()
-    return render(request, "artikel.html")
+    context = {
+        "seitentitel": "Alle Artikel",
+        "artikel": artikel,
+    }
+    return render(request, "wiki.html", context)
 
 
 @login_required

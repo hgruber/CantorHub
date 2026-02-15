@@ -85,14 +85,24 @@ class CodeBlockProcessor:
                 return line, False
 
 
+def insert_file_object(f):
+    return f'<a href="{f.url}">Datei: {f.original_filename}</a>'
+
+
+def noformat(match):
+    return html.escape(match.group(1))
+
+
 def internal_links(match, request):
     #    print( f"{match.group(1)}\n{match.group(2)}\n{match.group(3)}\n|{match.group(4)}|\n{match.group(5)}\n" )
     if match.group(2) == "Datei:":
         try:
             f = File.objects.get(original_filename=match.group(4))
-            return f'<a href="{f.url}">Datei: {match.group(4)}</a>'
+            return insert_file_object(f)
         except Exception as e:
-            return f'<span title="{e}" class="not_found">Datei: {match.group(4)}</span>'
+            return (
+                f'<span title="{e}" class="not_found">⚠️ Datei: {match.group(4)}</span>'
+            )
 
     elif match.group(2) == "Aktion:":
         return f"<div>Aktion: {match.group(4)}</div>"
@@ -137,6 +147,11 @@ def apply_replacements(text, request=None):
         ),
         (r"(?<![\"])(https?://[^\s\"]+)(?![\"])", r'<a href="\1">\1</a>'),  # URL
         (r"^\s*([^<].*)$", r"<p>\1</p>"),
+        (r"''''([\s\S]*)''''", r"<em><strong>\1</strong></em>"),
+        (r"'''([\s\S]*)'''", r"<strong>\1</strong>"),
+        (r"''([\s\S]*)''", r"<em>\1</em>"),
+        (r'""([\s\S]*)""', r"&quot;\1&quot;"),
+        (r"\$([\s\S]*)\$", noformat),
         (r"(^|\s)(@\w+)", r'<span class="mention">\2</span>'),  # Erwähnungen
     ]
 
