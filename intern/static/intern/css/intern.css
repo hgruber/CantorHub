@@ -202,28 +202,8 @@ button:hover {
 }
 
 /* =================================================== */
-/* Responsive Design */
+/* Chat-Nachrichten */
 /* =================================================== */
-@media (max-width: 768px) {
-    .top-bar .title {
-        font-size: 1.2rem;
-    }
-
-    .sidebar {
-        background: #2c3e50;
-    }
-
-    .content {
-        background: #f8f9fa;
-    }
-
-    .top-bar .title {
-        text-align: left;
-    }
-}
-/* -------------------------------------------------------------
-   Basis‑Stile für Chat‑Nachrichten
-   ------------------------------------------------------------- */
 .message,
 .message_me {
     display: flex; /* Avatar / Text nebeneinander */
@@ -234,9 +214,7 @@ button:hover {
     line-height: 1.4;
 }
 
-/* -------------------------------------------------------------
-   Avatar (nur bei fremden Nachrichten)
-   ------------------------------------------------------------- */
+/* Avatar (nur bei fremden Nachrichten) */
 .message .avatar {
     width: 80px; /* Breite des Fotos */
     margin-right: 12px; /* Abstand zur Textblase */
@@ -262,9 +240,7 @@ div.avatar {
     cursor: pointer;
 }
 
-/* -------------------------------------------------------------
-   Textblase für fremde Nachrichten
-   ------------------------------------------------------------- */
+/* Textblase für fremde Nachrichten */
 .message .content {
     background: #fff; /* weißer Hintergrund */
     border-radius: 15px; /* abgerundete Blasenränder */
@@ -273,9 +249,7 @@ div.avatar {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* -------------------------------------------------------------
-   Textblase für eigene Nachrichten
-   ------------------------------------------------------------- */
+/* Textblase für eigene Nachrichten */
 .message_me .content_me {
     background: #d4f8d4; /* leichtes Grün */
     border-radius: 15px;
@@ -284,9 +258,7 @@ div.avatar {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* -------------------------------------------------------------
-   Text und Zeit
-   ------------------------------------------------------------- */
+/* Text und Zeit */
 .message .content p,
 .message_me .content_me p {
     margin: 0;
@@ -301,19 +273,9 @@ div.avatar {
     text-align: right; /* rechtsbündig unter dem Text */
 }
 
-/* -------------------------------------------------------------
-   Überschrift (h1)
-   ------------------------------------------------------------- */
-.content h1 {
-    margin: 0; /* kein zusätzlicher Abstand */
-    padding: 8px 12px; /* Innenabstand für ein bisschen Luft */
-    font-size: 1.4rem;
-    z-index: 5; /* über der Nachrichtenliste */
-}
-
-/* -------------------------------------------------------------
-   Forum‑Eingabe (div.forum-entry) – "schweben" oben
-   ------------------------------------------------------------- */
+/* =================================================== */
+/* Forum-Eingabe */
+/* =================================================== */
 .forum-entry {
     position: sticky; /* bleibt oben, aber nicht überhängt die Nachrichten */
     top: 0;
@@ -326,9 +288,6 @@ div.avatar {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* -------------------------------------------------------------
-   Textarea – füllt den verfügbaren Raum innerhalb .forum-entry
-   ------------------------------------------------------------- */
 .forum-entry textarea {
     flex: 1; /* nimmt den restlichen Platz ein */
     min-height: 80px; /* minimale Höhe, damit der Text gut lesbar ist */
@@ -340,39 +299,6 @@ div.avatar {
     font-size: 0.95rem;
     line-height: 1.4;
     box-sizing: border-box;
-}
-
-/* -------------------------------------------------------------
-   Nachrichtenbereich (div.messages)
-   ------------------------------------------------------------- */
-.messages {
-    flex: 1; /* füllt den restlichen Platz unter forum-entry */
-    overflow-y: auto; /* Scrollen, falls der Inhalt zu groß wird */
-    padding: 12px;
-    box-sizing: border-box;
-    background: #f5f5f5;
-}
-
-/* -------------------------------------------------------------
-   Zusätzliche Sicherheit – nichts soll über den Rand hinausragen
-   ------------------------------------------------------------- */
-.messages > * {
-    max-width: 100%;
-    overflow-wrap: break-word;
-}
-
-/* -------------------------------------------------------------
-   Submit‑Button – grüner Pfeil
-   ------------------------------------------------------------- */
-.forum-entry {
-    top: 0;
-    background: #eee;
-    padding: 12px 12px;
-    display: grid;
-    flex-direction: row;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 10;
-    flex: 0 0 auto;
 }
 
 .forum-entry button[type="submit"] {
@@ -398,46 +324,25 @@ div.avatar {
     transform: translate(-9px, -2px) rotate(-45deg);
 }
 
-/* Textarea: nimmt den restlichen Platz ein */
-.forum-entry textarea {
-    flex: 1 1 auto; /* wächst, schrumpft */
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    width: 83%;
-    border-radius: 4px;
-    font-size: 1rem;
-    font-family: inherit;
-    min-height: 80px;
-    margin-bottom: -9px;
+/* =================================================== */
+/* Nachrichtenbereich */
+/* =================================================== */
+.messages {
+    flex: 1; /* füllt den restlichen Platz unter forum-entry */
+    overflow-y: auto; /* Scrollen, falls der Inhalt zu groß wird */
+    padding: 12px;
+    box-sizing: border-box;
+    background: #f5f5f5;
 }
 
-.mention {
-    background-color: #e8f5e9;
-    border: 1px solid #a5d6a7;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-weight: 600;
-    color: #2e7d32;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.content_me img,
-.content img,
-.content_me video,
-.content video {
+.messages > * {
     max-width: 100%;
-    max-height: 50%;
-    height: auto;
-    display: block;
-    border: solid #000 1px;
-    border-radius: 12px;
+    overflow-wrap: break-word;
 }
 
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-}
-/* Allgemeine Tabelle-Styling */
+/* =================================================== */
+/* Allgemeine Tabellen-Styling */
+/* =================================================== */
 .table-container {
     overflow-x: auto;
     margin: 0;
@@ -537,9 +442,10 @@ tbody tr {
 .table-container table {
     margin-bottom: 0;
 }
-/* Mitglied-Profil - CSS */
 
-/* Allgemeine Formatierung */
+/* =================================================== */
+/* Mitglied-Profil */
+/* =================================================== */
 .member-profile {
     max-width: 800px;
     margin: 2rem auto;
@@ -661,6 +567,9 @@ tbody tr {
     }
 }
 
+/* =================================================== */
+/* Wiki-Styling */
+/* =================================================== */
 .wiki {
     font-family: sans-serif;
     line-height: 1.6;
@@ -737,4 +646,34 @@ span.not_found {
     background-color: transparent;
     padding: 0;
     border: none;
+}
+
+/* =================================================== */
+/* Sonstige Stile */
+/* =================================================== */
+.mention {
+    background-color: #e8f5e9;
+    border: 1px solid #a5d6a7;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    color: #2e7d32;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.content_me img,
+.content img,
+.content_me video,
+.content video {
+    max-width: 100%;
+    max-height: 50%;
+    height: auto;
+    display: block;
+    border: solid #000 1px;
+    border-radius: 12px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
 }

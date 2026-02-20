@@ -18,6 +18,7 @@ urlpatterns = [
         auth_views.LogoutView.as_view(next_page="login"),
         name="logout",
     ),
+    path("upload/", views.upload, name="upload"),
     path("forum/", views.foren, name="foren"),
     path("forum/<int:forum>/", views.view, name="view"),
     path("forum/<int:forum>/poll", views.poll, name="poll"),
@@ -27,4 +28,9 @@ urlpatterns = [
     path("mitglied/<int:id>/", views.mitglied, name="mitglied"),
     path("artikel/", views.artikel_liste, name="artikel_liste"),
     path("artikel/<str:name>/", views.artikel, name="artikel"),
+    path(
+        "artikel/<str:name>/bearbeiten/",
+        views.artikel_bearbeiten,
+        name="artikel_bearbeiten",
+    ),
 ]

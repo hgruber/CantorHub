@@ -1,12 +1,15 @@
+import json
 from datetime import datetime
 
 import django_tables2 as tables
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.db.models import Count, OuterRef
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from filer.models import File
 
@@ -118,42 +121,6 @@ def send(request, forum):
     return poll(request, forum, last_id)
 
 
-def get_model_queryset(model_class, annotations=None, filters=None):
-    qs = model_class.objects.all()
-    if filters:
-        qs = qs.filter(**filters)
-    if annotations:
-        qs = qs.annotate(**annotations)
-    return qs
-
-
-class MitgliederTabelle(tables.Table):
-    first_name = tables.Column()
-    last_name = tables.Column()
-    avatar = tables.FileColumn()
-    stimme = tables.Column()
-    email = tables.EmailColumn()
-    geburtstag = tables.DateColumn()
-    last_login = tables.DateTimeColumn()
-    mitteilungen = tables.Column(
-        attrs={
-            "td": {"class": "right"},
-        }
-    )
-
-    def render_avatar(self, value, record):
-        if record.avatar:
-            return format_html(
-                '<a href="{}/"><img src="{}" width="50" height="50"></a>',
-                record.id,
-                record.avatar.url,
-            )
-        return format_html(
-            '<img src="{}" width="50" height="50">',
-            File.objects.get(original_filename="kein_photo.png"),
-        )
-
-
 @login_required
 def mitglieder_liste(request):
     annotations = {
@@ -203,11 +170,69 @@ def artikel_liste(request):
 
 
 @login_required
+def artikel_bearbeiten(request, name):
+    artikel = Artikel.objects.filter(name=name).order_by("-id").first()
+    context = {
+        "artikel": artikel,
+        "text": "<pre><code>" + artikel.text + "</code></pre>" if artikel else "",
+        "seitentitel": f"bearbeiten: {name}",
+    }
+    return render(request, "artikel.html", context)
+
+
+@login_required
 def artikel(request, name):
     artikel = Artikel.objects.filter(name=name).order_by("-id").first()
+    if not artikel:
+        return redirect(f"/intern/artikel/{name}/bearbeiten/")
     context = {
         "artikel": artikel,
         "text": apply_replacements(artikel.text, request),
         "seitentitel": artikel.name,
     }
     return render(request, "artikel.html", context)
+
+
+@login_required
+@require_POST
+def upload(request):
+    if request.FILES:
+        file = request.FILES["file"]
+        filer_file = File.objects.create(file=file, original_filename=file.name)
+        return JsonResponse({"status": "success", "id": filer_file.id})
+
+
+def get_model_queryset(model_class, annotations=None, filters=None):
+    qs = model_class.objects.all()
+    if filters:
+        qs = qs.filter(**filters)
+    if annotations:
+        qs = qs.annotate(**annotations)
+    return qs
+
+
+class MitgliederTabelle(tables.Table):
+    first_name = tables.Column()
+    last_name = tables.Column()
+    avatar = tables.FileColumn()
+    stimme = tables.Column()
+    email = tables.EmailColumn()
+    geburtstag = tables.DateColumn()
+    last_login = tables.DateTimeColumn()
+    mitteilungen = tables.Column(
+        attrs={
+            "td": {"class": "right"},
+        }
+    )
+
+    def render_avatar(self, value, record):
+        if record.avatar:
+            return format_html(
+                '<a href="{}/"><img src="{}" width="50" height="50"></a>',
+                record.id,
+                record.avatar.url,
+            )
+        return format_html(
+            '<img src="{}" width="50" height="50">',
+            File.objects.get(original_filename="kein_photo.png"),
+        )

@@ -1,29 +1,41 @@
 {% extends 'base.html' %} {% load static %} {% block content %}
 <div class="forum-entry">
-    <form
-        id="send-form"
-        method="post"
-        hx-post="{% url 'send' forum=forum %}"
-        hx-target="#messages"
-        hx-swap="afterbegin"
-        hx-on::after-request="this.reset(); return true;"
-    >
-        {% csrf_token %}
-        <textarea
-            id="mitteilung-textarea"
-            name="mitteilung"
-            placeholder="Schreibe Deine Nachricht.."
-            required
-        ></textarea>
-        <input
-            type="hidden"
-            id="last_id_input"
-            name="last_id"
-            value="{{ last_id|default:0 }}"
-            hx-swap-oob="true"
-        />
-        <button type="submit"></button>
-    </form>
+    <div class="text-container">
+        <form
+            id="send-form"
+            method="post"
+            hx-post="{% url 'send' forum=forum %}"
+            hx-target="#messages"
+            hx-swap="afterbegin"
+            hx-on::after-request="this.reset(); return true;"
+        >
+            {% csrf_token %}
+            <textarea
+                id="mitteilung-textarea"
+                name="mitteilung"
+                placeholder="Schreibe Deine Nachricht.."
+                required
+            ></textarea>
+            <input
+                type="hidden"
+                id="last_id_input"
+                name="last_id"
+                value="{{ last_id|default:0 }}"
+                hx-swap-oob="true"
+            />
+            <button type="submit"></button>
+        </form>
+    </div>
+    <div class="file-container">
+        <form
+            action="/intern/upload/"
+            method="post"
+            class="dropzone"
+            id="intern-dropzone"
+        >
+            {% csrf_token %}
+        </form>
+    </div>
 </div>
 <div
     id="messages"
