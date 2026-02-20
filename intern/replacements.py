@@ -89,10 +89,6 @@ def insert_file_object(f):
     return f'<a href="{f.url}">Datei: {f.original_filename}</a>'
 
 
-def noformat(match):
-    return html.escape(match.group(1))
-
-
 def internal_links(match, request):
     #    print( f"{match.group(1)}\n{match.group(2)}\n{match.group(3)}\n|{match.group(4)}|\n{match.group(5)}\n" )
     if match.group(2) == "Datei:":
@@ -128,6 +124,9 @@ def apply_replacements(text, request=None):
         (r"^====(.*)====$", r"<h3>\1</h3>"),
         (r"^===(.*)===$", r"<h2>\1</h2>"),
         (r"^==(.*)==$", r"<h1>\1</h1>"),
+        (r"^:(.*)$", r'<div class="indent">\1</div>'),
+        (r"^%(.*)$", r'<div class="citation">\1</div>'),
+        (r"^@(.*)$", r'<div class="boxed">\1</div>'),
         (
             r"(\[\[(([^\]]*?)\:)?\s*([^\[\]]*?)(\|([^\[\]]+?))?\]\]([a-z]+)?)",
             _internal_links,
@@ -151,7 +150,7 @@ def apply_replacements(text, request=None):
         (r"'''([\s\S]*)'''", r"<strong>\1</strong>"),
         (r"''([\s\S]*)''", r"<em>\1</em>"),
         (r'""([\s\S]*)""', r"&quot;\1&quot;"),
-        (r"\$([\s\S]*)\$", noformat),
+        (r"\$([\s\S]*)\$", lambda match: html.escape(match.group(1))),  # no format
         (r"(^|\s)(@\w+)", r'<span class="mention">\2</span>'),  # Erwähnungen
     ]
 

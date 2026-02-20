@@ -61,7 +61,7 @@ class User(AbstractUser):
         return f"{self.first_name} {self.last_name}"
 
     def mitteilungen(self):
-        return self(mitteilung.count())
+        return self.mitteilung_set.count()
 
     def bild(self):
         if self.avatar:
@@ -218,7 +218,7 @@ class Konzert(models.Model):
 class Zusage(models.Model):
     person = models.ForeignKey("User", on_delete=models.CASCADE)
     termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
-    option = models.CharField(default=1)
+    option = models.CharField(max_length=255, default="1")
 
     class Meta:
         verbose_name_plural = "Zusagen"
