@@ -8,3 +8,13 @@
         <button type="submit">Logout</button>
     </form>
 </div>
+<div class="file-container">
+    <form
+        action="/intern/upload/"
+        method="post"
+        class="dropzone"
+        id="intern-dropzone"
+    >
+        {% csrf_token %}
+    </form>
+</div>

@@ -4,6 +4,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Authentication URLs
     path(
         "login/",
         auth_views.LoginView.as_view(
@@ -18,19 +19,24 @@ urlpatterns = [
         auth_views.LogoutView.as_view(next_page="login"),
         name="logout",
     ),
+    # Upload and Forum URLs
     path("upload/", views.upload, name="upload"),
-    path("forum/", views.foren, name="foren"),
-    path("forum/<int:forum>/", views.view, name="view"),
-    path("forum/<int:forum>/poll", views.poll, name="poll"),
-    path("forum/<int:forum>/more", views.more, name="more"),
-    path("forum/<int:forum>/send", views.send, name="send"),
-    path("mitglied/", views.mitglieder_liste, name="mitglieder_liste"),
-    path("mitglied/<int:id>/", views.mitglied, name="mitglied"),
-    path("artikel/", views.artikel_liste, name="artikel_liste"),
-    path("artikel/<str:name>/", views.artikel, name="artikel"),
+    path("forum/", views.foren, name="forum_list"),
+    path("forum/<int:forum>/", views.forum_view, name="forum_view"),
+    path("forum/<int:forum>/get/", views.forum_get, name="forum_get"),
+    path("forum/<int:forum>/more/", views.forum_more, name="forum_more"),
+    path("forum/<int:forum>/send/", views.forum_send, name="forum_send"),
+    # Mitglieder URLs
+    path("mitglied/", views.mitglieder_liste, name="member_list"),
+    path("mitglied/<int:id>/", views.mitglied_view, name="member_view"),
+    path("mitglied/<int:id>/edit/", views.dummy, name="member_edit"),
+    # Artikel URLs
+    path("artikel/", views.artikel_liste, name="article_list"),
+    path("artikel/<str:name>/", views.artikel, name="article_view"),
+    path("artikel/<str:name>/edit/", views.dummy, name="article_edit"),
     path(
         "artikel/<str:name>/bearbeiten/",
         views.artikel_bearbeiten,
-        name="artikel_bearbeiten",
+        name="article_edit_form",
     ),
 ]

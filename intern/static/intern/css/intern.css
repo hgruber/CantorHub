@@ -52,6 +52,10 @@ body {
     transition: all 0.3s ease;
 }
 
+.bearbeiten a {
+    color: #fff;
+}
+
 /* =================================================== */
 /* Layout (Sidebar + Content) */
 /* =================================================== */
@@ -73,6 +77,8 @@ body {
         width 0.3s ease;
     overflow: auto;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
 }
 
 .content {
@@ -146,6 +152,28 @@ body {
     border-radius: 4px;
     margin-bottom: 5px;
     transition: all 0.2s ease;
+}
+
+/* =================================================== */
+/* Dropzone im Sidebar */
+/* =================================================== */
+.file-container {
+    margin-top: auto;
+    margin-bottom: 0;
+    padding-top: 15px;
+    padding-bottom: 0;
+}
+
+/* Halbe Höhe der Dropzone */
+.dropzone {
+    min-height: 100px !important;
+    height: 100px !important;
+    max-height: 100px !important;
+}
+
+/* Farbe des Dropzone-Textes */
+.dropzone .dz-message {
+    color: #888888 !important;
 }
 
 .sidebar a:hover {
@@ -286,12 +314,24 @@ div.avatar {
     gap: 8px; /* Abstand zwischen textarea und Button */
     padding: 8px 12px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    width: 100%-12px;
+}
+
+.text-container {
+    display: flex;
+    flex: 1;
+    gap: 8px;
+}
+
+.forum-entry form {
+    display: flex;
+    flex: 1;
+    width: 100%;
 }
 
 .forum-entry textarea {
     flex: 1; /* nimmt den restlichen Platz ein */
     min-height: 80px; /* minimale Höhe, damit der Text gut lesbar ist */
-    resize: none; /* keine Größenänderung per Mausklick */
     padding: 6px 8px;
     border: 1px solid #ccc;
     border-radius: 4px;

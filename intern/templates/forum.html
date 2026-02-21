@@ -4,7 +4,7 @@
         <form
             id="send-form"
             method="post"
-            hx-post="{% url 'send' forum=forum %}"
+            hx-post="{% url 'forum_send' forum=forum %}"
             hx-target="#messages"
             hx-swap="afterbegin"
             hx-on::after-request="this.reset(); return true;"
@@ -26,21 +26,11 @@
             <button type="submit"></button>
         </form>
     </div>
-    <div class="file-container">
-        <form
-            action="/intern/upload/"
-            method="post"
-            class="dropzone"
-            id="intern-dropzone"
-        >
-            {% csrf_token %}
-        </form>
-    </div>
 </div>
 <div
     id="messages"
     class="messages"
-    hx-get="{% url 'poll' forum=forum %}"
+    hx-get="{% url 'forum_get' forum=forum %}"
     hx-include="#last_id_input"
     hx-trigger="every 5s"
     hx-swap="afterbegin"
@@ -50,7 +40,7 @@
         id="load-more"
         class="sentinel"
         style="height: 1px; background: transparent"
-        hx-get="{% url 'more' forum=forum %}?oldest_id={{ oldest_id }}"
+        hx-get="{% url 'forum_more' forum=forum %}?oldest_id={{ oldest_id }}"
         hx-target="#messages"
         hx-swap="beforeend"
         hx-trigger="intersect once"

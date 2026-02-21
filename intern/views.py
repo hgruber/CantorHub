@@ -55,7 +55,7 @@ def foren(request):
 
 
 @login_required
-def view(request, forum):
+def forum_view(request, forum):
     messages = Mitteilung.objects.filter(forum_id=forum)[:25]
     last_id = max(msg.id for msg in messages)
     oldest_id = min(msg.id for msg in messages)
@@ -73,7 +73,7 @@ def view(request, forum):
 
 
 @login_required
-def poll(request, forum, last_id=0):
+def forum_get(request, forum, last_id=0):
     if last_id == 0:
         last_id = request.GET.get("last_id", 0)
     messages = Mitteilung.objects.filter(forum_id=forum, id__gt=last_id)
@@ -87,7 +87,7 @@ def poll(request, forum, last_id=0):
 
 
 @login_required
-def more(request, forum):
+def forum_more(request, forum):
     """Return älterer Nachrichten (30 Stück) als HTML‑Snippet."""
     # Wir brauchen die ID der ältesten geladenen Nachricht (Client‑seitig sendet `last_id`).
     oldest_id = request.GET.get("oldest_id", 0)
@@ -108,7 +108,7 @@ def more(request, forum):
 
 @login_required
 @require_POST
-def send(request, forum):
+def forum_send(request, forum):
     mitteilung = request.POST.get("mitteilung", "").strip()
     last_id = request.POST.get("last_id", 0)
     if mitteilung:
@@ -118,7 +118,7 @@ def send(request, forum):
             mitteilung=mitteilung,
             datum=datetime.now(),
         )
-    return poll(request, forum, last_id)
+    return forum_get(request, forum, last_id)
 
 
 @login_required
@@ -150,7 +150,7 @@ def mitglieder_liste(request):
 
 
 @login_required
-def mitglied(request, id):
+def mitglied_view(request, id):
     user = get_object_or_404(User, id=id)
     context = {
         "user": user,
@@ -191,6 +191,15 @@ def artikel(request, name):
         "seitentitel": artikel.name,
     }
     return render(request, "artikel.html", context)
+
+
+def dummy(request, *args, **kwargs):
+    context = {
+        "seitentitel": "Nicht implementiert",
+        "args": args,
+        "kwargs": kwargs,
+    }
+    return render(request, "dummy.html", context)
 
 
 @login_required
