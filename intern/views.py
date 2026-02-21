@@ -207,8 +207,11 @@ def dummy(request, *args, **kwargs):
 def upload(request):
     if request.FILES:
         file = request.FILES["file"]
-        filer_file = File.objects.create(file=file, original_filename=file.name)
-        return JsonResponse({"status": "success", "id": filer_file.id})
+        filer_file = File.objects.create(
+            file=file, original_filename=file.name, owner=request.user
+        )
+        url = request.META.get("HTTP_ORIGIN") + filer_file.url
+        return JsonResponse({"status": "success", "id": filer_file.id, "url": url})
 
 
 def get_model_queryset(model_class, annotations=None, filters=None):

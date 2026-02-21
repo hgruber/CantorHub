@@ -133,7 +133,7 @@ def apply_replacements(text, request=None):
         ),
         (r"\[(https?://[^\s\]]+)\s+([^\]]+)\]", r'<a href="\1">\2</a>'),  # [URL Name]
         (
-            r"(?<![\"])(https?://[^\s\"]+\.(?:png|jpg|jpeg|gif|bmp|webp))(?![\"])",
+            r"(?<![\"])(https?://[^\s\"]+\.(?:png|jpg|jpeg|gif|bmp|svg|webp))(?![\"])",
             r'<img src="\1"></img>',
         ),
         (
