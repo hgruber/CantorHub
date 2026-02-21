@@ -81,6 +81,48 @@
         </div>
 
         <div class="profile-section">
+            <h2>Kartenansicht</h2>
+            <div id="map" style="height: 400px; width: 100%"></div>
+            <script>
+                // Initialisiere die Karte mit den Benutzerkoordinaten
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Prüfe, ob Koordinaten vorhanden sind
+                    var breite = "{{ user.breite|default:"50.1109" }}";
+                    var laenge = "{{ user.laenge|default:"8.6821" }}";
+
+                    // Sicherstellen, dass Koordinaten gültig sind
+                    if (breite && laenge) {
+                        // Konvertiere Kommazahlen in Dezimalzahlen für JavaScript
+                        var lat = parseFloat(breite.toString().replace(',', '.'));
+                        var lng = parseFloat(laenge.toString().replace(',', '.'));
+
+                        // Überprüfe, ob die Konvertierung erfolgreich war
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            // Erstelle die Karte
+                            var map = L.map('map').setView([lat, lng], 13);
+
+                            // Füge Kartenlayer hinzu
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            }).addTo(map);
+
+                            // Füge einen Marker hinzu
+                            L.marker([lat, lng]).addTo(map)
+                                .bindPopup('{{ user.first_name }} {{ user.last_name }}')
+                                .openPopup();
+                        } else {
+                            // Zeige eine Meldung an, wenn die Koordinaten nicht konvertiert werden konnten
+                            document.getElementById('map').innerHTML = '<p>Ungültige Koordinaten für diesen Benutzer.</p>';
+                        }
+                    } else {
+                        // Zeige eine Meldung an, wenn keine Koordinaten vorhanden sind
+                        document.getElementById('map').innerHTML = '<p>Keine Koordinaten für diesen Benutzer verfügbar.</p>';
+                    }
+                });
+            </script>
+        </div>
+
+        <div class="profile-section">
             <h2>Personalien</h2>
             <div class="personal-info">
                 <div class="personal-item">

@@ -19,8 +19,12 @@ urlpatterns = [
         auth_views.LogoutView.as_view(next_page="login"),
         name="logout",
     ),
-    # Upload and Forum URLs
+    # Upload and File URLs
     path("upload/", views.upload, name="upload"),
+    path("file/", views.dummy, name="file_list"),
+    path("file/<str:name>/", views.dummy, name="file_view"),
+    path("file/<str:name>/edit/", views.dummy, name="file_edit"),
+    # Forum URLs
     path("forum/", views.foren, name="forum_list"),
     path("forum/<int:forum>/", views.forum_view, name="forum_view"),
     path("forum/<int:forum>/get/", views.forum_get, name="forum_get"),
