@@ -144,7 +144,10 @@ def apply_replacements(text, request=None):
             r"(?<![\"])(https?://[^\s\"]+\.(?:mp4|webm|ogg|avi|mov|wmv|flv|mkv))(?![\"])",
             r'<video controls src="\1"></video>',
         ),
-        (r"(?<![\"])(https?://[^\s\"]+)(?![\"])", r'<a href="\1">\1</a>'),  # URL
+        (
+            r"(?<![\"])(https?://[^\s\"<>]+)(?![\"])",
+            r'<a href="\1">\1</a>',
+        ),  # URL
         (r"^\s*([^<].*)$", r"<p>\1</p>"),
         (r"''''([\s\S]*)''''", r"<em><strong>\1</strong></em>"),
         (r"'''([\s\S]*)'''", r"<strong>\1</strong>"),
