@@ -1,6 +1,17 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import Count, Max
+from django.db.models import (
+    Case,
+    CharField,
+    Count,
+    F,
+    Max,
+    OuterRef,
+    Subquery,
+    Value,
+    When,
+)
+from django.db.models.functions import Concat
 from django.utils.html import format_html
 from filer.fields.file import FilerFileField
 
@@ -89,8 +100,19 @@ class Artikel(models.Model):
 
 class ForumQuerySet(models.QuerySet):
     def extra_data(self):
+        # Get the full name of the sender of the most recent message
+        last_sender_subquery = (
+            Mitteilung.objects.filter(forum=OuterRef("pk"))
+            .order_by("-datum")
+            .values(
+                full_name=Concat("sender__first_name", Value(" "), "sender__last_name")
+            )[:1]
+        )
+
         return self.annotate(
-            anzahl_mitteilungen=Count("mitteilung"), zugriff=Max("mitteilung__datum")
+            anzahl_mitteilungen=Count("mitteilung"),
+            zugriff=Max("mitteilung__datum"),
+            letzter_absender=Subquery(last_sender_subquery),
         )
 
 
