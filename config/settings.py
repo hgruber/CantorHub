@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-96c((62k0dknm__v%zrw3#3=7pc^$tc)&#w1m50#5ly)o71#la"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["test.example.org", "narsil", "localhost", "127.0.0.1"]
 CSRF_TRUSTED_ORIGINS = [
@@ -139,7 +139,7 @@ LOGIN_URL = "/intern/login/"
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = []
-STATIC_ROOT = "static"
+STATIC_ROOT = BASE_DIR / "static"
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 
