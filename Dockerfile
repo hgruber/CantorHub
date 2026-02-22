@@ -30,7 +30,7 @@ RUN useradd -m -r appuser && \
 # Copy the Python dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
-COPY django.conf /etc/nginx/conf.d/django.conf
+COPY nginx.conf /etc/nginx/conf.d/django.conf
 RUN apt update -y && apt install -y nginx && rm -f /etc/nginx/sites-enabled/default
 # Set the working directory
 WORKDIR /app
