@@ -1,7 +1,10 @@
 {% for forum in foren %}
 <tr>
     <td><a href="/intern/forum/{{forum.id}}/">{{forum.thema}}</a></td>
-    <td>{{forum.letzte}}</td>
+    <td>
+        <nobr>{{forum.letzter_absender}}</nobr><br />
+        <time>{{forum.letzte}}</time>
+    </td>
     <td class="right">{{forum.anzahl_mitteilungen}}</td>
 </tr>
 {% endfor %}

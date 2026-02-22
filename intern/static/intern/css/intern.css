@@ -433,6 +433,11 @@ th.orderable a {
     justify-content: space-between;
 }
 
+time {
+    font-size: 0.75rem;
+    color: #777;
+    margin-top: 4px;
+}
 /* Sortierpfeile */
 th.asc::after {
     content: " ↑";
