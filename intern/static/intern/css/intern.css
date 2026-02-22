@@ -67,8 +67,8 @@ body {
 }
 
 .sidebar {
-    background: #2c3e50; /* Dunkelblau */
-    color: white;
+    background: #eee;
+    color: #222;
     width: 250px;
     padding: 15px;
     box-sizing: border-box;
@@ -76,7 +76,6 @@ body {
         transform 0.3s ease,
         width 0.3s ease;
     overflow: auto;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
 }
@@ -145,40 +144,44 @@ body {
 /* Sidebar-Items */
 /* =================================================== */
 .sidebar a {
-    color: #ecf0f1;
+    color: #222;
     text-decoration: none;
-    padding: 10px 15px;
+    padding: 10px;
     display: block;
     border-radius: 4px;
     margin-bottom: 5px;
     transition: all 0.2s ease;
 }
 
+div.sidemenu {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #fff;
+    border: 2px solid #aaa;
+}
 /* =================================================== */
 /* Dropzone im Sidebar */
 /* =================================================== */
 .file-container {
-    margin-top: auto;
+    margin-top: 15px;
     margin-bottom: 0;
-    padding-top: 15px;
-    padding-bottom: 0;
+    padding: 0;
+    height: 100%;
 }
 
 /* Halbe Höhe der Dropzone */
 .dropzone {
-    min-height: 100px !important;
-    height: 100px !important;
-    max-height: 100px !important;
+    min-height: 100px;
+    height: 100%;
 }
 
 /* Farbe des Dropzone-Textes */
 .dropzone .dz-message {
-    color: #888888 !important;
+    color: #bbb;
 }
 
 .sidebar a:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    color: #c14468;
 }
 
 .sidebar a.active {
@@ -706,16 +709,17 @@ span.not_found {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.content_me img,
-.content img,
-.content_me video,
-.content video {
+.table-container img,
+.message_me img,
+.message img,
+.message_me video,
+.message video {
     max-width: 100%;
     max-height: 50%;
     height: auto;
     display: block;
-    border: solid #000 1px;
-    border-radius: 12px;
+    border: solid #888 1px;
+    border-radius: 8px;
 }
 
 .container {
