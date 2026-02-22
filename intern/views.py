@@ -194,13 +194,15 @@ def artikel_liste(request):
 
 
 @login_required
-def artikel_bearbeiten(request, name):
+def article_edit(request, name):
     artikel = Artikel.objects.filter(name=name).order_by("-id").first()
     context = {
         "artikel": artikel,
         "text": "<pre><code>" + artikel.text + "</code></pre>" if artikel else "",
         "seitentitel": f"bearbeiten: {name}",
         "up": "article_list",
+        "view": "article_view",
+        "id": artikel,
         "back": "",
     }
     return render(request, "artikel.html", context)

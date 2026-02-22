@@ -89,6 +89,29 @@ def insert_file_object(f):
     return f'<a href="{f.url}">Datei: {f.original_filename}</a>'
 
 
+def abstimmung(match, request):
+    from intern.models import Abstimmung
+
+    seite = request.resolver_match.kwargs["name"]
+    titel = match.group(1)
+    abstimmung = seite + ":" + titel
+    max_stimmen = match.group(2)
+    options = match.group(3).split(";")
+    res = Abstimmung.objects.values(
+        "person_id", "person__first_name", "person__last_name", "option"
+    ).filter(abstimmung=abstimmung)
+    context = {
+        "titel": titel,
+        "max_stimmen": max_stimmen,
+        "options": options,
+        "result": str(list(res)),
+    }
+    return str(context)
+    return (
+        "Abstimmung:" + match.group(1) + " (" + match.group(2) + ") " + match.group(3)
+    )
+
+
 def internal_links(match, request):
     #    print( f"{match.group(1)}\n{match.group(2)}\n{match.group(3)}\n|{match.group(4)}|\n{match.group(5)}\n" )
     if match.group(2) == "Datei:":
@@ -111,9 +134,6 @@ def internal_links(match, request):
 def apply_replacements(text, request=None):
     """Wendet alle Ersetzungen auf den Text an"""
 
-    def _internal_links(match):
-        return internal_links(match, request)
-
     list_processor = ListProcessor()
     code_processor = CodeBlockProcessor()
 
@@ -129,7 +149,7 @@ def apply_replacements(text, request=None):
         (r"^@(.*)$", r'<div class="boxed">\1</div>'),
         (
             r"(\[\[(([^\]]*?)\:)?\s*([^\[\]]*?)(\|([^\[\]]+?))?\]\]([a-z]+)?)",
-            _internal_links,
+            lambda match: internal_links(match, request),
         ),
         (r"\[(https?://[^\s\]]+)\s+([^\]]+)\]", r'<a href="\1">\2</a>'),  # [URL Name]
         (
@@ -157,8 +177,18 @@ def apply_replacements(text, request=None):
         (r"(^|\s)(@\w+)", r'<span class="mention">\2</span>'),  # Erwähnungen
     ]
 
+    FULLTEXT_REPLACEMENTS = [
+        (
+            r"^{abstimmung:([^:]+):(\d+):([^\}]+)\}",
+            lambda match: abstimmung(match, request),
+        ),
+    ]
+
     if not text:
         return text
+
+    for pattern, replacement in FULLTEXT_REPLACEMENTS:
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE | re.MULTILINE)
 
     result = []
     for line in text.splitlines():

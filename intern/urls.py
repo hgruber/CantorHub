@@ -39,10 +39,5 @@ urlpatterns = [
     # Artikel URLs
     path("artikel/", views.artikel_liste, name="article_list"),
     path("artikel/<str:name>/", views.artikel, name="article_view"),
-    path("artikel/<str:name>/edit/", views.dummy, name="article_edit"),
-    path(
-        "artikel/<str:name>/bearbeiten/",
-        views.artikel_bearbeiten,
-        name="article_edit_form",
-    ),
+    path("artikel/<str:name>/edit/", views.article_edit, name="article_edit"),
 ]

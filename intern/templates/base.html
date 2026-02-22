@@ -31,18 +31,18 @@
             <div class="hamburger" id="hamburger">☰</div>
             <h1 class="title">
                 {{ seitentitel }} {% if edit %}
-                <a href="{% url edit id %}">📝</a>
+                <a href="{% url edit id %}" title="bearbeiten">📝</a>
                 {% endif %} {% if delete %}
-                <a href="{% url delete id %}">❌</a>
+                <a href="{% url delete id %}" title="löschen">❌</a>
                 {% endif %} {% if view %}
-                <a href="{% url view id %}">👁</a>
+                <a href="{% url view id %}" title="ansehen">👀</a>
                 {% endif %} {% if history %}
-                <a href="{% url history id %}">🕑</a>
+                <a href="{% url history id %}" title="Bearbeitungs-Historie ansehen">🕑</a>
                 {% endif %}
             </h1>
             {% if up %}
             <div class="bearbeiten">
-                <h1><a href="{% url up %}">▲</a></h1>
+                <h1><a href="{% url up %}" title="Eine Ebene zurück">▲</a></h1>
             </div>
             {% endif %}
         </header>
