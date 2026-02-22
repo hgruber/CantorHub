@@ -21,13 +21,15 @@ urlpatterns = [
     ),
     # Upload and File URLs
     path("upload/", views.upload, name="upload"),
+    path("ordner/", views.dummy, name="folder_list"),
     path("file/", views.dummy, name="file_list"),
     path("file/<str:name>/", views.dummy, name="file_view"),
     path("file/<str:name>/edit/", views.dummy, name="file_edit"),
     # Forum URLs
-    path("forum/", views.foren, name="forum_list"),
+    path("forum/", views.forum_list, name="forum_list"),
     path("forum/<int:forum>/", views.forum_view, name="forum_view"),
     path("forum/<int:forum>/get/", views.forum_get, name="forum_get"),
+    path("forum/<int:forum>/edit/", views.dummy, name="forum_edit"),
     path("forum/<int:forum>/more/", views.forum_more, name="forum_more"),
     path("forum/<int:forum>/send/", views.forum_send, name="forum_send"),
     # Mitglieder URLs

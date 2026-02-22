@@ -37,18 +37,12 @@ body {
 
 .hamburger {
     width: 35px;
-    height: 25px;
+    height: 35px;
+    font-size: 2em;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    transition: all 0.3s ease;
-}
-
-.hamburger span {
-    height: 3px;
-    background: white;
-    border-radius: 2px;
     transition: all 0.3s ease;
 }
 
@@ -70,7 +64,7 @@ body {
     background: #eee;
     color: #222;
     width: 250px;
-    padding: 15px;
+    padding: 0px 15px 15px 15px;
     box-sizing: border-box;
     transition:
         transform 0.3s ease,
@@ -157,7 +151,8 @@ div.sidemenu {
     margin-top: 15px;
     padding: 10px;
     background-color: #fff;
-    border: 2px solid #aaa;
+    #border: 2px solid #aaa;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 /* =================================================== */
 /* Dropzone im Sidebar */
@@ -167,6 +162,7 @@ div.sidemenu {
     margin-bottom: 0;
     padding: 0;
     height: 100%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 /* Halbe Höhe der Dropzone */

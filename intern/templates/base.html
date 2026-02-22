@@ -28,13 +28,23 @@
     <body>
         <!-- Top‑Bar -->
         <header class="top-bar">
-            <div class="hamburger" id="hamburger">
-                <span></span><span></span><span></span>
-            </div>
-            <h1 class="title">{{ seitentitel }}</h1>
+            <div class="hamburger" id="hamburger">☰</div>
+            <h1 class="title">
+                {{ seitentitel }} {% if edit %}
+                <a href="{% url edit id %}">📝</a>
+                {% endif %} {% if delete %}
+                <a href="{% url delete id %}">❌</a>
+                {% endif %} {% if view %}
+                <a href="{% url view id %}">👁</a>
+                {% endif %} {% if history %}
+                <a href="{% url history id %}">🕑</a>
+                {% endif %}
+            </h1>
+            {% if up %}
             <div class="bearbeiten">
-                <a href="edit">bearbeiten</a>
+                <h1><a href="{% url up %}">▲</a></h1>
             </div>
+            {% endif %}
         </header>
 
         <div class="layout">

@@ -49,7 +49,25 @@ def register_success(request):
 
 
 @login_required
-def foren(request):
+@require_POST
+def upload(request):
+    if request.FILES:
+        file = request.FILES["file"]
+        filer_file = File.objects.create(
+            file=file, original_filename=file.name, owner=request.user
+        )
+        url = request.META.get("HTTP_ORIGIN") + filer_file.url
+        return JsonResponse({"status": "success", "id": filer_file.id, "url": url})
+
+
+@login_required
+def folder_list(request):
+    foren = Folder.objects.all()
+    return render(request, "ordner.html", {"seitentitel": "Ordner"})
+
+
+@login_required
+def forum_list(request):
     foren = Forum.objects.extra_data().order_by("-zugriff")
     return render(request, "foren.html", {"seitentitel": "Foren", "foren": foren})
 
@@ -68,6 +86,9 @@ def forum_view(request, forum):
             "last_id": last_id,
             "oldest_id": oldest_id,
             "messages": messages,
+            "up": "forum_list",
+            "edit": "forum_edit",
+            "id": forum,
         },
     )
 
@@ -155,6 +176,9 @@ def mitglied_view(request, id):
     context = {
         "user": user,
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
+        "up": "member_list",
+        "edit": "member_edit",
+        "id": id,
     }
     return render(request, "mitglied.html", context)
 
@@ -176,6 +200,8 @@ def artikel_bearbeiten(request, name):
         "artikel": artikel,
         "text": "<pre><code>" + artikel.text + "</code></pre>" if artikel else "",
         "seitentitel": f"bearbeiten: {name}",
+        "up": "article_list",
+        "back": "",
     }
     return render(request, "artikel.html", context)
 
@@ -189,6 +215,9 @@ def artikel(request, name):
         "artikel": artikel,
         "text": apply_replacements(artikel.text, request),
         "seitentitel": artikel.name,
+        "up": "article_list",
+        "edit": "article_edit",
+        "id": artikel.name,
     }
     return render(request, "artikel.html", context)
 
@@ -200,18 +229,6 @@ def dummy(request, *args, **kwargs):
         "kwargs": kwargs,
     }
     return render(request, "dummy.html", context)
-
-
-@login_required
-@require_POST
-def upload(request):
-    if request.FILES:
-        file = request.FILES["file"]
-        filer_file = File.objects.create(
-            file=file, original_filename=file.name, owner=request.user
-        )
-        url = request.META.get("HTTP_ORIGIN") + filer_file.url
-        return JsonResponse({"status": "success", "id": filer_file.id, "url": url})
 
 
 def get_model_queryset(model_class, annotations=None, filters=None):
