@@ -1,22 +1,22 @@
-import json
 from datetime import datetime
 
 import django_tables2 as tables
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from django.db.models import Count, OuterRef
+from django.db.models import Count, F, OuterRef, Value
+from django.db.models.functions import Coalesce, Concat
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.crypto import get_random_string
-from django.utils.html import format_html
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from filer.models import File
+from django_tables2 import RequestConfig
+from filer.models import File, Folder
 
 from intern.replacements import apply_replacements
 
 from .forms import RegisterForm
 from .models import Artikel, Forum, Mitteilung, TabellenPreferenzen, User
+from .tables import FolderFilesTable, MitgliederTabelle
 
 
 def home(request):
@@ -53,17 +53,60 @@ def register_success(request):
 def upload(request):
     if request.FILES:
         file = request.FILES["file"]
+        folder_id = request.POST.get("folder_id")
         filer_file = File.objects.create(
-            file=file, original_filename=file.name, owner=request.user
+            file=file,
+            original_filename=file.name,
+            name=file.name,
+            owner=request.user,
+            folder_id=folder_id,
         )
         url = request.META.get("HTTP_ORIGIN") + filer_file.url
         return JsonResponse({"status": "success", "id": filer_file.id, "url": url})
 
 
 @login_required
-def folder_list(request):
-    foren = Folder.objects.all()
-    return render(request, "ordner.html", {"seitentitel": "Ordner"})
+def folder_view(request, pk):
+    if pk == 0:
+        pk = None
+    folders = Folder.objects.filter(parent_id=pk).values(
+        "id",
+        "name",
+        "owner_id",
+        full_name=Concat(
+            Coalesce("owner__first_name", Value("")),
+            Value(" "),
+            Coalesce("owner__last_name", Value("")),
+        ),
+        type=Value("Folder"),
+        created=F("created_at"),
+        modified=F("modified_at"),
+    )
+    files = File.objects.filter(folder_id=pk).values(
+        "id",
+        "name",
+        "original_filename",
+        "owner_id",
+        link=F("file"),
+        full_name=Concat(
+            Coalesce("owner__first_name", Value("")),
+            Value(" "),
+            Coalesce("owner__last_name", Value("")),
+        ),
+        type=Value("File"),
+        mime=F("mime_type"),
+        size=F("_file_size"),
+        created=F("uploaded_at"),
+        modified=F("modified_at"),
+    )
+    table = FolderFilesTable(list(folders) + list(files))
+    RequestConfig(request, paginate=False).configure(table)
+
+    return render(
+        request,
+        "table.html",
+        {"seitentitel": "Ordner", "folder_id": pk, "table": table},
+    )
 
 
 @login_required
@@ -113,7 +156,6 @@ def forum_more(request, forum):
     # Wir brauchen die ID der ältesten geladenen Nachricht (Client‑seitig sendet `last_id`).
     oldest_id = request.GET.get("oldest_id", 0)
     last_id = request.GET.get("last_id", 0)
-    print(f"more: {last_id} - {oldest_id}")
     messages = Mitteilung.objects.filter(forum_id=forum, id__lt=oldest_id)
     return render(
         request,
@@ -240,30 +282,3 @@ def get_model_queryset(model_class, annotations=None, filters=None):
     if annotations:
         qs = qs.annotate(**annotations)
     return qs
-
-
-class MitgliederTabelle(tables.Table):
-    first_name = tables.Column()
-    last_name = tables.Column()
-    avatar = tables.FileColumn()
-    stimme = tables.Column()
-    email = tables.EmailColumn()
-    geburtstag = tables.DateColumn()
-    last_login = tables.DateTimeColumn()
-    mitteilungen = tables.Column(
-        attrs={
-            "td": {"class": "right"},
-        }
-    )
-
-    def render_avatar(self, value, record):
-        if record.avatar:
-            return format_html(
-                '<a href="{}/"><img src="{}" width="50" height="50"></a>',
-                record.id,
-                record.avatar.url,
-            )
-        return format_html(
-            '<img src="{}" width="50" height="50">',
-            File.objects.get(original_filename="kein_photo.png"),
-        )

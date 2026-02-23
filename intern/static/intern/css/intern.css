@@ -402,7 +402,7 @@ table,
 
 th,
 td {
-    padding: 12px 15px;
+    padding: 3px 15px 3px 15px;
     text-align: left;
     border-bottom: 1px solid #eee;
 }
@@ -435,7 +435,6 @@ th.orderable a {
 time {
     font-size: 0.75rem;
     color: #777;
-    margin-top: 4px;
 }
 /* Sortierpfeile */
 th.asc::after {
@@ -705,7 +704,6 @@ span.not_found {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.table-container img,
 .message_me img,
 .message img,
 .message_me video,
@@ -718,6 +716,8 @@ span.not_found {
     border-radius: 8px;
 }
 
+.table-container img {
+}
 .container {
     max-width: 800px;
     margin: 0 auto;

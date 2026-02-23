@@ -18,7 +18,9 @@
         class="dropzone"
         id="InternDropzone"
     >
-        {% csrf_token %}
+        {% csrf_token %} {% if folder_id %}
+        <input type="hidden" name="folder_id" value="{{ folder_id }}" />
+        {% endif %}
         <div class="dz-message" data-dz-message>
             <span>Hier Dateien ablegen</span>
         </div>

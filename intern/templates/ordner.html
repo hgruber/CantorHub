@@ -1,0 +1,9 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<div class="ordner">
+    {% for f in folders %}
+    <div><a href="{% url 'folder_view' 1 %}">{{ f }}</a></div>
+    {% endfor %} {% for f in files %}
+    <div><a href="{% url 'folder_view' 1 %}">{{ f }}</a></div>
+    {% endfor %}
+</div>
+{% endblock %}

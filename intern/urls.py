@@ -21,7 +21,7 @@ urlpatterns = [
     ),
     # Upload and File URLs
     path("upload/", views.upload, name="upload"),
-    path("ordner/", views.dummy, name="folder_list"),
+    path("ordner/<int:pk>/", views.folder_view, name="folder_view"),
     path("file/", views.dummy, name="file_list"),
     path("file/<str:name>/", views.dummy, name="file_view"),
     path("file/<str:name>/edit/", views.dummy, name="file_edit"),
