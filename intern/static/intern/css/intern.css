@@ -18,7 +18,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 40px;
+    height: 50px;
     background: #c14468; /* Rosa */
     color: white;
     display: flex;
@@ -55,8 +55,8 @@ body {
 /* =================================================== */
 .layout {
     display: flex;
-    height: calc(100% - 40px); /* Restliche Höhe ab Top‑Bar */
-    margin-top: 40px; /* Platz für Top‑Bar */
+    height: calc(100% - 50px); /* Restliche Höhe ab Top‑Bar */
+    margin-top: 50px; /* Platz für Top‑Bar */
     overflow: hidden;
 }
 
@@ -116,13 +116,13 @@ body {
     /* Sidebar wird über die Seite gelegt */
     .sidebar {
         position: fixed;
-        top: 40px;
+        top: 50px;
         left: 0;
-        height: calc(100% - 40px);
+        height: calc(100% - 50px);
         width: 250px;
         transform: translateX(-100%);
         z-index: 999;
-        padding: 15px;
+        padding: 0px 15px 15px 15px;
     }
     /* Sidebar aktiv (über Content legen) */
     .sidebar.active {
