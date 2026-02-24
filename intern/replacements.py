@@ -209,11 +209,11 @@ def apply_replacements(text, request=None):
     return "\n".join(result)
 
 
-def get_references(artikel_liste):
+def get_references(article_list):
     pattern = r"\[\[Datei:([^|\]]+)"
     matches = set()
 
-    for artikel in artikel_liste:
+    for artikel in article_list:
         for name in re.findall(pattern, artikel):
             cleaned = name.strip()  # entfernt leading & trailing whitespace
             cleaned = cleaned.strip("\"'")  # entfernt umschließende Quotes

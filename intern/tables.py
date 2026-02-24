@@ -3,6 +3,24 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
 
+from .replacements import format_datetime
+
+
+class ForumTabelle(tables.Table):
+    thema = tables.Column(linkify=("forum_view", {"forum": tables.A("id")}))
+    zugriff = tables.Column()
+    anzahl_mitteilungen = tables.Column(
+        verbose_name="Anzahl",
+        attrs={"th": {"class": "right"}, "td": {"class": "right"}},
+    )
+
+    def render_zugriff(self, record):
+        return format_html(
+            "<nobr>{}</nobr><br /><time>{}</time>",
+            record.letzter_absender,
+            format_datetime(record.zugriff),
+        )
+
 
 class OrdnerTabelle(tables.Table):
     select = tables.CheckBoxColumn(
@@ -45,12 +63,15 @@ class OrdnerTabelle(tables.Table):
 
 class TerminTabelle(tables.Table):
     datum = tables.DateTimeColumn()
-    kurz = tables.Column(orderable=False)
+    kurz = tables.Column(
+        orderable=False,
+        linkify=("forum_view", {"forum": tables.A("id")}),  # TODO
+    )
     lang = tables.Column(orderable=False)
 
 
 class RepertoireTabelle(tables.Table):
-    titel = tables.Column()
+    titel = tables.Column(linkify=("forum_view", {"forum": tables.A("id")}))  # TODO
 
 
 class MitgliederTabelle(tables.Table):

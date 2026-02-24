@@ -33,15 +33,15 @@ urlpatterns = [
     path("forum/<int:forum>/more/", views.forum_more, name="forum_more"),
     path("forum/<int:forum>/send/", views.forum_send, name="forum_send"),
     # Repertoire URLs
-    path("titel/", views.titel_liste, name="titel_list"),
+    path("titel/", views.titel_list, name="titel_list"),
     # Termin URLs
-    path("termin/", views.termin_liste, name="termin_list"),
+    path("termin/", views.termin_list, name="termin_list"),
     # Mitglieder URLs
-    path("mitglied/", views.mitglieder_liste, name="member_list"),
+    path("mitglied/", views.member_list, name="member_list"),
     path("mitglied/<int:id>/", views.mitglied_view, name="member_view"),
     path("mitglied/<int:id>/edit/", views.dummy, name="member_edit"),
     # Artikel URLs
-    path("artikel/", views.artikel_liste, name="article_list"),
+    path("artikel/", views.article_list, name="article_list"),
     path("artikel/<str:name>/", views.artikel, name="article_view"),
     path("artikel/<str:name>/edit/", views.article_edit, name="article_edit"),
 ]

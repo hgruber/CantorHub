@@ -4,6 +4,7 @@ import django_tables2 as tables
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.db.models import Count, F, OuterRef, Value
+from django.db.models.fields import return_None
 from django.db.models.functions import Coalesce, Concat
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -16,7 +17,13 @@ from intern.replacements import apply_replacements
 
 from .forms import RegisterForm
 from .models import Artikel, Forum, Lied, Mitteilung, TabellenPreferenzen, Termin, User
-from .tables import MitgliederTabelle, OrdnerTabelle, RepertoireTabelle, TerminTabelle
+from .tables import (
+    ForumTabelle,
+    MitgliederTabelle,
+    OrdnerTabelle,
+    RepertoireTabelle,
+    TerminTabelle,
+)
 
 
 def home(request):
@@ -117,7 +124,9 @@ def folder_view(request, pk):
 @login_required
 def forum_list(request):
     foren = Forum.objects.extra_data().order_by("-zugriff")
-    return render(request, "foren.html", {"seitentitel": "Foren", "foren": foren})
+    table = ForumTabelle(foren)
+    RequestConfig(request, paginate=False).configure(table)
+    return render(request, "table.html", {"table": table, "seitentitel": "Foren"})
 
 
 @login_required
@@ -190,29 +199,26 @@ def forum_send(request, forum):
 
 
 @login_required
-def titel_liste(request):
+def titel_list(request):
     table = RepertoireTabelle(Lied.objects.all())
     RequestConfig(request, paginate=False).configure(table)
     return render(request, "table.html", {"table": table, "seitentitel": "Repertoire"})
 
 
 @login_required
-def termin_liste(request):
+def termin_list(request):
     table = TerminTabelle(Termin.objects.all().order_by("-datum"))
     RequestConfig(request, paginate=False).configure(table)
     return render(request, "table.html", {"table": table, "seitentitel": "Termine"})
 
 
 @login_required
-def mitglieder_liste(request):
-    annotations = {
-        "mitteilungen": Mitteilung.objects.filter(sender=OuterRef("pk"))
+def member_list(request):
+    mitglieder = User.objects.filter(is_active=True).annotate(
+        mitteilungen=Mitteilung.objects.filter(sender=OuterRef("pk"))
         .values("sender")
         .annotate(cnt=Count("*"))
-        .values("cnt"),
-    }
-    qs = get_model_queryset(
-        User, annotations=annotations, filters=({"is_active": True})
+        .values("cnt")
     )
 
     try:
@@ -223,7 +229,7 @@ def mitglieder_liste(request):
     except:
         visible_fields = ["first_name", "last_name", "email", "stimme", "mitteilungen"]
 
-    table = MitgliederTabelle(qs)
+    table = MitgliederTabelle(mitglieder)
 
     tables.RequestConfig(request, paginate=False).configure(table)
     return render(
@@ -245,7 +251,7 @@ def mitglied_view(request, id):
 
 
 @login_required
-def artikel_liste(request):
+def article_list(request):
     artikel = Artikel.objects.values_list("name", flat=True).distinct()
     context = {
         "seitentitel": "Alle Artikel",
