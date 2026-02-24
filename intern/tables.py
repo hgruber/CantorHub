@@ -90,12 +90,19 @@ class MitgliederTabelle(tables.Table):
 
     def render_avatar(self, value, record):
         if record.avatar:
+            # Try to get the thumbnail, fall back to original if needed
+            try:
+                thumbnail_url = record.avatar.thumbnails.get("admin_clipboard_icon")
+            except Exception:
+                # If thumbnail is not available, use the original image
+                thumbnail_url = record.avatar.url
             return format_html(
-                '<a href="{}/"><img src="{}" width="50" height="50"></a>',
+                '<a href="{}/"><img src="{}" width="40" height="40"></a>',
                 record.id,
-                record.avatar.url,
+                thumbnail_url,
             )
+        # Fallback to default avatar image
         return format_html(
-            '<img src="{}" width="50" height="50">',
-            File.objects.get(original_filename="kein_photo.png"),
+            '<img src="{}" width="40" height="40">',
+            static("filer/icons/file-unknown.svg"),
         )
