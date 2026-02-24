@@ -101,6 +101,74 @@
                     rowCheckboxes.forEach((cb) => (cb.checked = this.checked));
                 });
             });
+
+            // Audio play/pause functionality
+            document.addEventListener("DOMContentLoaded", function () {
+                let currentAudio = null;
+                let currentAudioElement = null;
+
+                document.addEventListener("click", function (e) {
+                    if (e.target.classList.contains("audio-button")) {
+                        const button = e.target;
+                        const audioUrl = button.getAttribute("data-audio-url");
+                        const songId = button.getAttribute("data-song-id");
+
+                        // If there's a currently playing audio and it's not the same song, stop it
+                        if (currentAudio && currentAudio !== button) {
+                            if (currentAudioElement) {
+                                currentAudioElement.pause();
+                                currentAudioElement = null;
+                            }
+                            currentAudio.classList.remove("playing");
+                            currentAudio.textContent = "▶";
+                            currentAudio = null;
+                        }
+
+                        // Create audio element if it doesn't exist or if it's a different song
+                        if (!currentAudio || currentAudio !== button) {
+                            // If there's an existing audio element, pause it
+                            if (currentAudioElement) {
+                                currentAudioElement.pause();
+                            }
+
+                            const audio = new Audio(audioUrl);
+                            audio.play();
+                            currentAudio = button;
+                            currentAudioElement = audio;
+                            button.classList.add("playing");
+                            button.textContent = "⏸";
+
+                            audio.addEventListener("ended", function () {
+                                button.classList.remove("playing");
+                                button.textContent = "▶";
+                                currentAudio = null;
+                                currentAudioElement = null;
+                            });
+
+                            audio.addEventListener("error", function () {
+                                console.error("Error playing audio:", audioUrl);
+                                button.classList.remove("playing");
+                                button.textContent = "▶";
+                                currentAudio = null;
+                                currentAudioElement = null;
+                            });
+                        } else {
+                            // Toggle play/pause for the same song
+                            if (currentAudioElement.paused) {
+                                currentAudioElement.play();
+                                button.classList.add("playing");
+                                button.textContent = "⏸";
+                            } else {
+                                currentAudioElement.pause();
+                                button.classList.remove("playing");
+                                button.textContent = "▶";
+                                currentAudio = null;
+                                currentAudioElement = null;
+                            }
+                        }
+                    }
+                });
+            });
         </script>
     </body>
 </html>

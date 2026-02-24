@@ -731,3 +731,8 @@ span.not_found {
     max-width: 800px;
     margin: 0 auto;
 }
+.audio-button {
+    padding: 3px 7px;
+    font-size: 0.8rem;
+    line-height: 1;
+}

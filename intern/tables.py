@@ -71,7 +71,23 @@ class TerminTabelle(tables.Table):
 
 
 class RepertoireTabelle(tables.Table):
-    titel = tables.Column(linkify=("forum_view", {"forum": tables.A("id")}))  # TODO
+    audio = tables.Column(
+        verbose_name="",
+        empty_values=(),
+        orderable=False,
+        attrs={"td": {"class": "audio-button"}},
+    )
+    titel = tables.Column()
+
+    def render_audio(self, record):
+        if hasattr(record, "original") and record.original:
+            # Create a button that will toggle between play and pause
+            return format_html(
+                '<button class="audio-button" data-audio-url="{}" data-song-id="{}">▶</button>',
+                record.original.url,
+                record.id,
+            )
+        return ""
 
 
 class MitgliederTabelle(tables.Table):
