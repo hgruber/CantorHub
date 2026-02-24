@@ -105,7 +105,7 @@ class ForumQuerySet(models.QuerySet):
             Mitteilung.objects.filter(forum=OuterRef("pk"))
             .order_by("-datum")
             .values(
-                full_name=Concat("sender__first_name", Value(" "), "sender__last_name")
+                besitzer=Concat("sender__first_name", Value(" "), "sender__last_name")
             )[:1]
         )
 

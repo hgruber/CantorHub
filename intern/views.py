@@ -15,8 +15,8 @@ from filer.models import File, Folder
 from intern.replacements import apply_replacements
 
 from .forms import RegisterForm
-from .models import Artikel, Forum, Mitteilung, TabellenPreferenzen, User
-from .tables import FolderFilesTable, MitgliederTabelle
+from .models import Artikel, Forum, Lied, Mitteilung, TabellenPreferenzen, Termin, User
+from .tables import MitgliederTabelle, OrdnerTabelle, RepertoireTabelle, TerminTabelle
 
 
 def home(request):
@@ -69,11 +69,16 @@ def upload(request):
 def folder_view(request, pk):
     if pk == 0:
         pk = None
+        current = None
+        name = "/"
+    else:
+        current = Folder.objects.get(pk=pk)
+        name = current.name
     folders = Folder.objects.filter(parent_id=pk).values(
         "id",
         "name",
         "owner_id",
-        full_name=Concat(
+        besitzer=Concat(
             Coalesce("owner__first_name", Value("")),
             Value(" "),
             Coalesce("owner__last_name", Value("")),
@@ -88,7 +93,7 @@ def folder_view(request, pk):
         "original_filename",
         "owner_id",
         link=F("file"),
-        full_name=Concat(
+        besitzer=Concat(
             Coalesce("owner__first_name", Value("")),
             Value(" "),
             Coalesce("owner__last_name", Value("")),
@@ -99,13 +104,13 @@ def folder_view(request, pk):
         created=F("uploaded_at"),
         modified=F("modified_at"),
     )
-    table = FolderFilesTable(list(folders) + list(files))
+    table = OrdnerTabelle(list(folders) + list(files))
     RequestConfig(request, paginate=False).configure(table)
 
     return render(
         request,
         "table.html",
-        {"seitentitel": "Ordner", "folder_id": pk, "table": table},
+        {"seitentitel": f"Ordner: {name}", "folder_id": pk, "table": table},
     )
 
 
@@ -182,6 +187,20 @@ def forum_send(request, forum):
             datum=datetime.now(),
         )
     return forum_get(request, forum, last_id)
+
+
+@login_required
+def titel_liste(request):
+    table = RepertoireTabelle(Lied.objects.all())
+    RequestConfig(request, paginate=False).configure(table)
+    return render(request, "table.html", {"table": table, "seitentitel": "Repertoire"})
+
+
+@login_required
+def termin_liste(request):
+    table = TerminTabelle(Termin.objects.all().order_by("-datum"))
+    RequestConfig(request, paginate=False).configure(table)
+    return render(request, "table.html", {"table": table, "seitentitel": "Termine"})
 
 
 @login_required

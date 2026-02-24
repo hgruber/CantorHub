@@ -4,13 +4,18 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 
-class FolderFilesTable(tables.Table):
+class OrdnerTabelle(tables.Table):
+    select = tables.CheckBoxColumn(
+        accessor="id",
+        orderable=False,
+        attrs={"th__input": {"class": "select-all"}, "td": {"style": "width: 0px;"}},
+    )
     type = tables.Column(
         attrs={"th": {"style": "width: 15px;"}, "td": {"style": "width: 15px;"}}
     )
     name = tables.Column()
     size = tables.Column(attrs={"td": {"class": "right"}})
-    full_name = tables.Column()
+    besitzer = tables.Column()
     created = tables.DateTimeColumn()
     modified = tables.DateTimeColumn()
 
@@ -18,27 +23,40 @@ class FolderFilesTable(tables.Table):
         if "original_filename" in record:
             name = record["original_filename"]
         name = record["name"]
-        url = reverse("folder_view", args=[record["id"]])
+        if record["type"] == "Folder":
+            url = reverse("folder_view", args=[record["id"]])
+        else:
+            url = "/media/" + record["link"]
         return format_html('<a href="{}">{}</a>', url, name)
 
     def render_type(self, record):
+        media = static("filer/icons/file-unknown.svg")
         if record["type"] == "Folder":
-            return format_html('<img src="{}" />', static("filer/icons/folder.svg"))
-        if record["mime"].startswith("image"):
-            return format_html(
-                '<img src="/media/{}" />',
-                record["link"],
-            )
-        return format_html('<img src="{}" />', static("filer/icons/file-unknown.svg"))
+            media = static("filer/icons/folder.svg")
+        elif record["mime"].startswith("image"):
+            media = f"/media/{record['link']}"
+        elif record["mime"].endswith("pdf"):
+            media = static("filer/icons/file-pdf.svg")
+        return format_html('<img src="{}" />', media)
 
     class Meta:
         attrs = {"class": "table"}
 
 
+class TerminTabelle(tables.Table):
+    datum = tables.DateTimeColumn()
+    kurz = tables.Column(orderable=False)
+    lang = tables.Column(orderable=False)
+
+
+class RepertoireTabelle(tables.Table):
+    titel = tables.Column()
+
+
 class MitgliederTabelle(tables.Table):
     first_name = tables.Column()
     last_name = tables.Column()
-    avatar = tables.FileColumn()
+    avatar = tables.Column()
     stimme = tables.Column()
     email = tables.EmailColumn()
     geburtstag = tables.DateColumn()

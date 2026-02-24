@@ -37,7 +37,11 @@
                 {% endif %} {% if view %}
                 <a href="{% url view id %}" title="ansehen">👀</a>
                 {% endif %} {% if history %}
-                <a href="{% url history id %}" title="Bearbeitungs-Historie ansehen">🕑</a>
+                <a
+                    href="{% url history id %}"
+                    title="Bearbeitungs-Historie ansehen"
+                    >🕑</a
+                >
                 {% endif %}
             </h1>
             {% if up %}
@@ -85,6 +89,16 @@
                             }
                         });
                     },
+                });
+            });
+            document.addEventListener("DOMContentLoaded", function () {
+                const headerCheckbox = document.querySelector(".select-all");
+                const rowCheckboxes = document.querySelectorAll(
+                    "tbody input[type=checkbox]",
+                );
+
+                headerCheckbox?.addEventListener("change", function () {
+                    rowCheckboxes.forEach((cb) => (cb.checked = this.checked));
                 });
             });
         </script>
