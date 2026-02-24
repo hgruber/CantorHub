@@ -223,6 +223,50 @@ class Lied(models.Model):
     def __str__(self):
         return self.titel
 
+    @classmethod
+    def find_similar_titles(cls, search_string, limit=5):
+        """
+        Find similar song titles using fuzzy matching.
+
+        Args:
+            search_string (str): The string to search for
+            limit (int): Number of results to return (default: 5)
+
+        Returns:
+            list: List of tuples (song, similarity_score) sorted by similarity
+        """
+        try:
+            from .fuzzy import find_similar_titles
+
+            # Get all song objects from the database
+            songs = cls.objects.all()
+            return find_similar_titles(search_string, songs, limit)
+        except ImportError:
+            # If rapidfuzz is not available, return empty list
+            return []
+
+    @classmethod
+    def get_similar_titles(cls, search_string, limit=5):
+        """
+        Get similar song titles in a user-friendly format.
+
+        Args:
+            search_string (str): The string to search for
+            limit (int): Number of results to return (default: 5)
+
+        Returns:
+            list: List of dictionaries with song information and similarity score
+        """
+        try:
+            from .fuzzy import get_similar_titles
+
+            # Get all song objects from the database
+            songs = cls.objects.all()
+            return get_similar_titles(search_string, songs, limit)
+        except ImportError:
+            # If rapidfuzz is not available, return empty list
+            return []
+
 
 class Konzert(models.Model):
     termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
