@@ -88,6 +88,10 @@
                                 textarea.value += response.url;
                             }
                         });
+                        this.on("queuecomplete", function () {
+                            console.log("Alle Uploads abgeschlossen!");
+                            // window.location.reload(); nur wenn es Sinn macht ...
+                        });
                     },
                 });
             });
