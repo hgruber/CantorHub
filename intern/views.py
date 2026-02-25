@@ -3,7 +3,7 @@ from datetime import datetime
 import django_tables2 as tables
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from django.db.models import Count, F, OuterRef, Value
+from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, Concat
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -102,18 +102,40 @@ def folder_view(request, pk):
             ]
         name = current.name
         print(folder_up)
-    folders = Folder.objects.filter(parent_id=pk).values(
-        "id",
-        "name",
-        "owner_id",
-        besitzer=Concat(
-            Coalesce("owner__first_name", Value("")),
-            Value(" "),
-            Coalesce("owner__last_name", Value("")),
-        ),
-        type=Value("Folder"),
-        created=F("created_at"),
-        modified=F("modified_at"),
+
+    folderfiles = (
+        File.objects.filter(folder=OuterRef("pk"))
+        .values("folder")
+        .annotate(
+            total_size=Sum("_file_size"),
+            file_count=Count("id"),
+        )
+    )
+    folders = (
+        Folder.objects.filter(parent_id=pk)
+        .values(
+            "id",
+            "name",
+            "owner_id",
+            besitzer=Concat(
+                Coalesce("owner__first_name", Value("")),
+                Value(" "),
+                Coalesce("owner__last_name", Value("")),
+            ),
+            type=Value("Folder"),
+            created=F("created_at"),
+            modified=F("modified_at"),
+        )
+        .annotate(
+            size=Coalesce(
+                Subquery(folderfiles.values("total_size"), output_field=IntegerField()),
+                0,
+            ),
+            count=Coalesce(
+                Subquery(folderfiles.values("file_count"), output_field=IntegerField()),
+                0,
+            ),
+        )
     )
     files = File.objects.filter(folder_id=pk).values(
         "id",

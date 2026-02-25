@@ -53,16 +53,23 @@ class OrdnerTabelle(tables.Table):
         if record["type"] == "Folder":
             if record["name"] == "..":
                 media = static("intern/images/folder-up.svg")
+                url = reverse("folder_view", args=[record["id"]])
             else:
                 media = static("filer/icons/folder.svg")
+                url = reverse("folder_view", args=[record["id"]])
+            return format_html('<a href="{}"><img src="{}" /></a>', url, media)
         elif record["mime"].startswith("image"):
             media = f"/media/filer_public_thumbnails/{record['link']}__32x32_q85_crop_subsampling-2_upscale.jpg"
         elif record["mime"].endswith("pdf"):
             media = static("filer/icons/file-pdf.svg")
-        return format_html('<img src="{}" />', media)
+        url = f"/media/{record['link']}"
+        return format_html('<a href="{}"><img src="{}" /></a>', url, media)
 
     def render_size(self, record):
-        return format_bytes(record["size"])
+        if record["type"] == "File":
+            return format_bytes(record["size"])
+        else:
+            return record["count"]
 
     class Meta:
         attrs = {"class": "table"}
