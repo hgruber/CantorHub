@@ -1,12 +1,13 @@
 Django
 django-djconfig
 django-filer
+django-filter
 django-leaflet
 django-tables2
-pymysql
 easy-thumbnails
+gunicorn
 pillow
-tzdata
+pymysql
 pytz
 slixmpp
-gunicorn
+tzdata

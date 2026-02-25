@@ -20,6 +20,7 @@ from .tables import (
     ForumTabelle,
     MitgliederTabelle,
     OrdnerTabelle,
+    RepertoireFilter,
     RepertoireTabelle,
     TerminTabelle,
 )
@@ -251,12 +252,20 @@ def forum_send(request, forum):
 
 @login_required
 def titel_list(request):
-    table = RepertoireTabelle(Lied.objects.all())
+    queryset = Lied.objects.all()
+    repertoire_filter = RepertoireFilter(request.GET, queryset=queryset)
+    table = RepertoireTabelle(repertoire_filter.qs)
     RequestConfig(request, paginate=False).configure(table)
     return render(
         request,
         "table.html",
-        {"table": table, "seitentitel": "Repertoire", "folder_id": 5, "reload": True},
+        {
+            "table": table,
+            "filter": repertoire_filter,
+            "seitentitel": "Repertoire",
+            "folder_id": 5,
+            "reload": True,
+        },
     )
 
 
@@ -357,12 +366,3 @@ def dummy(request, *args, **kwargs):
         "kwargs": kwargs,
     }
     return render(request, "dummy.html", context)
-
-
-def get_model_queryset(model_class, annotations=None, filters=None):
-    qs = model_class.objects.all()
-    if filters:
-        qs = qs.filter(**filters)
-    if annotations:
-        qs = qs.annotate(**annotations)
-    return qs

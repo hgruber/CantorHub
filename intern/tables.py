@@ -1,8 +1,13 @@
+from turtle import title
+from warnings import filters
+
+import django_filters as filters
 import django_tables2 as tables
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
 
+from .models import Lied
 from .replacements import format_bytes, format_datetime
 
 
@@ -84,22 +89,93 @@ class TerminTabelle(tables.Table):
     lang = tables.Column(orderable=False)
 
 
+class RepertoireFilter(filters.FilterSet):
+    titel = filters.CharFilter(field_name="titel", lookup_expr="icontains")
+    tempo = filters.ChoiceFilter(field_name="tempo", choices=Lied.CHOICES)
+    original_vorhanden = filters.BooleanFilter(
+        field_name="original",
+        lookup_expr="isnull",
+        exclude=True,
+        label="Original vorhanden",
+    )
+    aufnahme_vorhanden = filters.BooleanFilter(
+        field_name="aufnahme",
+        lookup_expr="isnull",
+        exclude=True,
+        label="Aufnahme vorhanden",
+    )
+    sheet_vorhanden = filters.BooleanFilter(
+        field_name="pdf",
+        lookup_expr="isnull",
+        exclude=True,
+        label="Notenblatt vorhanden",
+    )
+    notensatz_vorhanden = filters.BooleanFilter(
+        field_name="noten",
+        lookup_expr="isnull",
+        exclude=True,
+        label="Notensatz vorhanden",
+    )
+
+    class Meta:
+        model = Lied
+        fields = [
+            "aktiv",
+            "hymne",
+            "acapella",
+            "weihnacht",
+            "solist",
+            "dirigent",
+        ]
+
+
 class RepertoireTabelle(tables.Table):
-    audio = tables.Column(
+    original = tables.Column(
         verbose_name="",
         empty_values=(),
         orderable=False,
         attrs={"td": {"class": "audio-button"}},
     )
-    titel = tables.Column()
+    aufnahme = tables.Column(
+        verbose_name="",
+        empty_values=(),
+        orderable=False,
+        attrs={"td": {"class": "audio-button"}},
+    )
+    titel = tables.Column(linkify=("forum_view", {"forum": tables.A("id")}))  # TODO
+    aktiv = tables.BooleanColumn()
+    tempo = tables.Column()
+    beats = tables.Column(attrs={"td": {"class": "right"}})
+    hymne = tables.BooleanColumn()
+    acapella = tables.BooleanColumn()
+    weihnacht = tables.BooleanColumn()
 
-    def render_audio(self, record):
+    pdf = tables.FileColumn()
+    noten = tables.FileColumn()
+
+    solist = tables.ManyToManyColumn()
+    dirigent = tables.ManyToManyColumn()
+
+    komponist = tables.Column()
+    bearbeiter = tables.Column()
+
+    def render_original(self, record):
         if hasattr(record, "original") and record.original:
             # Create a button that will toggle between play and pause
             return format_html(
                 '<button class="audio-button" data-audio-url="{}" data-song-id="{}">▶</button>',
                 record.original.url,
                 record.id,
+            )
+        return ""
+
+    def render_aufnahme(self, record):
+        if hasattr(record, "aufnahme") and record.aufnahme:
+            # Create a button that will toggle between play and pause
+            return format_html(
+                '<button class="audio-button" data-audio-url="{}" data-song-id="{}">▶</button>',
+                record.aufnahme.url,
+                f"r{record.id}",
             )
         return ""
 

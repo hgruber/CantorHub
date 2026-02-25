@@ -206,9 +206,8 @@ class Lied(models.Model):
     )
     solist = models.ManyToManyField("User", related_name="solist")
     dirigent = models.ManyToManyField("User", related_name="dirigent")
-    tempo = models.CharField(
-        max_length=1, choices=[("l", "l"), ("m", "m"), ("s", "s")], default="m"
-    )
+    CHOICES = [("l", "l"), ("m", "m"), ("s", "s")]
+    tempo = models.CharField(max_length=1, choices=CHOICES, default="m")
     beats = models.SmallIntegerField(blank=True, null=True)
     hymne = models.BooleanField(default=False)
     acapella = models.BooleanField(default=False)

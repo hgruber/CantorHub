@@ -1,5 +1,12 @@
 {% extends 'base.html' %}
 {% load django_tables2 %}
 {% block content %}
+{% if filter %}
+<form method="get">
+    {{ filter.form.as_p }}
+    <button type="submit" class="btn btn-primary">Filtern</button>
+    <a href="?" class="btn btn-secondary"> Zurücksetzen </a>
+</form>
+{% endif %}
 {% render_table table %}
 {% endblock %}
