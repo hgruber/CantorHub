@@ -9,7 +9,7 @@ python manage.py makemigrations intern --name add_filer
 python manage.py migrate
 
 mv /tmp/0003_import.py intern/migrations
-python manage.py import_files --path portrait
+python manage.py import_files --path Avatare
 python manage.py migrate
 
 python manage.py runserver 0.0.0.0:8000

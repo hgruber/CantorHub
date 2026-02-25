@@ -3,7 +3,7 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .replacements import format_datetime
+from .replacements import format_bytes, format_datetime
 
 
 class ForumTabelle(tables.Table):
@@ -53,10 +53,13 @@ class OrdnerTabelle(tables.Table):
         if record["type"] == "Folder":
             media = static("filer/icons/folder.svg")
         elif record["mime"].startswith("image"):
-            media = f"/media/{record['link']}"
+            media = f"/media/filer_public_thumbnails/{record['link']}__32x32_q85_crop_subsampling-2_upscale.jpg"
         elif record["mime"].endswith("pdf"):
             media = static("filer/icons/file-pdf.svg")
         return format_html('<img src="{}" />', media)
+
+    def render_size(self, record):
+        return format_bytes(record["size"])
 
     class Meta:
         attrs = {"class": "table"}

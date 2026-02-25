@@ -259,3 +259,36 @@ def format_datetime(dt: Union[datetime, date]) -> str:
 
     # Datum mit Jahr
     return dt.strftime("%d.%m.%Y")
+
+
+def format_bytes(size_bytes: int) -> str:
+    """
+    Konvertiert Byte-Größe in eine formatierte Zeichenkette mit korrekten Metrik-Präfixen.
+    Verwendet multiples von 1000 (decimal prefixes).
+
+    Args:
+        size_bytes (int): Größe in Bytes
+
+    Returns:
+        str: Formatierter String mit Byte-Größe und Präfix (B, k, M, G, T)
+    """
+    if size_bytes == 0:
+        return "0 B"
+
+    # Präfixe in multiples von 1000
+    units = ["B", "kB", "MB", "GB", "TB"]
+    unit_index = 0
+    size = float(size_bytes)
+
+    # Teile durch 1000 solange, bis die Zahl kleiner als 1000 ist
+    while size >= 1000 and unit_index < len(units) - 1:
+        size /= 1000
+        unit_index += 1
+
+    # Runde auf 2 Dezimalstellen, aber entferne führende Nullen
+    if size == int(size):
+        return f"{int(size)}{units[unit_index]}"
+    else:
+        # Formatiere mit 2 Dezimalstellen, aber entferne führende Nullen
+        formatted_size = f"{size:.2f}".rstrip("0").rstrip(".")
+        return f"{formatted_size}{units[unit_index]}"

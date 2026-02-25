@@ -18,7 +18,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 VERSION = (
-    "v0."
+    "CantorHub v0."
     + subprocess.check_output(["git", "rev-list", "--count", "HEAD"]).decode().strip()
 )
 print("Version: " + VERSION)

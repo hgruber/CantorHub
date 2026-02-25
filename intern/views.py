@@ -4,7 +4,6 @@ import django_tables2 as tables
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.db.models import Count, F, OuterRef, Value
-from django.db.models.fields import return_None
 from django.db.models.functions import Coalesce, Concat
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -61,6 +60,8 @@ def upload(request):
     if request.FILES:
         file = request.FILES["file"]
         folder_id = request.POST.get("folder_id")
+        if folder_id == None:
+            folder_id = 2
         filer_file = File.objects.create(
             file=file,
             original_filename=file.name,
@@ -126,7 +127,9 @@ def forum_list(request):
     foren = Forum.objects.extra_data().order_by("-zugriff")
     table = ForumTabelle(foren)
     RequestConfig(request, paginate=False).configure(table)
-    return render(request, "table.html", {"table": table, "seitentitel": "Foren"})
+    return render(
+        request, "table.html", {"table": table, "seitentitel": "Foren", "folder_id": 3}
+    )
 
 
 @login_required
@@ -143,6 +146,7 @@ def forum_view(request, forum):
             "last_id": last_id,
             "oldest_id": oldest_id,
             "messages": messages,
+            "folder_id": 3,
             "up": "forum_list",
             "edit": "forum_edit",
             "id": forum,

@@ -7,7 +7,7 @@ set -e
 ./manage.py migrate
 
 mv 0003_import.py intern/migrations
-./manage.py import_files --path portrait
+./manage.py import_files --path Avatare
 ./manage.py migrate
 ./manage.py collectstatic --noinput
 
