@@ -75,13 +75,33 @@ def upload(request):
 
 @login_required
 def folder_view(request, pk):
+    folder_up = []
     if pk == 0:
         pk = None
         current = None
+        parent = None
         name = "/"
     else:
         current = Folder.objects.get(pk=pk)
+        parent = current.parent
+        if current != None:
+            folder_up = [
+                {
+                    "id": parent.id if parent else 0,
+                    "original_name": parent.name if parent else "/",
+                    "name": "..",
+                    "type": "Folder",
+                    "besitzer": (
+                        (parent.owner.first_name + " " + parent.owner.last_name)
+                        if parent
+                        else ""
+                    ),
+                    "created": parent.created_at if parent else None,
+                    "modified": parent.modified_at if parent else None,
+                }
+            ]
         name = current.name
+        print(folder_up)
     folders = Folder.objects.filter(parent_id=pk).values(
         "id",
         "name",
@@ -112,7 +132,7 @@ def folder_view(request, pk):
         created=F("uploaded_at"),
         modified=F("modified_at"),
     )
-    table = OrdnerTabelle(list(folders) + list(files))
+    table = OrdnerTabelle(folder_up + list(folders) + list(files))
     RequestConfig(request, paginate=False).configure(table)
 
     return render(

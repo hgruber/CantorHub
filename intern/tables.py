@@ -51,7 +51,10 @@ class OrdnerTabelle(tables.Table):
     def render_type(self, record):
         media = static("filer/icons/file-unknown.svg")
         if record["type"] == "Folder":
-            media = static("filer/icons/folder.svg")
+            if record["name"] == "..":
+                media = static("intern/images/folder-up.svg")
+            else:
+                media = static("filer/icons/folder.svg")
         elif record["mime"].startswith("image"):
             media = f"/media/filer_public_thumbnails/{record['link']}__32x32_q85_crop_subsampling-2_upscale.jpg"
         elif record["mime"].endswith("pdf"):
