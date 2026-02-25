@@ -90,7 +90,9 @@
                         });
                         this.on("queuecomplete", function () {
                             console.log("Alle Uploads abgeschlossen!");
-                            // window.location.reload(); nur wenn es Sinn macht ...
+                            {% if reload %}
+                            window.location.reload();
+                            {% endif %}
                         });
                     },
                 });

@@ -118,7 +118,12 @@ def folder_view(request, pk):
     return render(
         request,
         "table.html",
-        {"seitentitel": f"Ordner: {name}", "folder_id": pk, "table": table},
+        {
+            "seitentitel": f"Ordner: {name}",
+            "folder_id": pk,
+            "reload": True,
+            "table": table,
+        },
     )
 
 
@@ -206,7 +211,11 @@ def forum_send(request, forum):
 def titel_list(request):
     table = RepertoireTabelle(Lied.objects.all())
     RequestConfig(request, paginate=False).configure(table)
-    return render(request, "table.html", {"table": table, "seitentitel": "Repertoire"})
+    return render(
+        request,
+        "table.html",
+        {"table": table, "seitentitel": "Repertoire", "folder_id": 5, "reload": True},
+    )
 
 
 @login_required
@@ -249,6 +258,8 @@ def mitglied_view(request, id):
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
         "up": "member_list",
         "edit": "member_edit",
+        "folder_id": 4,
+        "reload": True,
         "id": id,
     }
     return render(request, "mitglied.html", context)
