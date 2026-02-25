@@ -40,7 +40,8 @@ class OrdnerTabelle(tables.Table):
     def render_name(self, record):
         if "original_filename" in record:
             name = record["original_filename"]
-        name = record["name"]
+        else:
+            name = record["name"]
         if record["type"] == "Folder":
             url = reverse("folder_view", args=[record["id"]])
         else:
