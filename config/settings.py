@@ -11,11 +11,17 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import subprocess
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+VERSION = (
+    "v0."
+    + subprocess.check_output(["git", "rev-list", "--count", "HEAD"]).decode().strip()
+)
+print("Version: " + VERSION)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -75,6 +81,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "config.context_processors.project_meta",
             ],
         },
     },

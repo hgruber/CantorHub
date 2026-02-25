@@ -72,6 +72,7 @@ body {
     overflow: auto;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .content {
@@ -153,6 +154,18 @@ div.sidemenu {
     background-color: #fff;
     #border: 2px solid #aaa;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.version-string {
+    position: absolute;
+    bottom: 5px;
+    left: 10px;
+    font-size: 0.65rem;
+    color: #888;
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 2px 4px;
+    border-radius: 3px;
 }
 /* =================================================== */
 /* Dropzone im Sidebar */
