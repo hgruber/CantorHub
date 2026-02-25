@@ -287,8 +287,8 @@ def format_bytes(size_bytes: int) -> str:
 
     # Runde auf 2 Dezimalstellen, aber entferne führende Nullen
     if size == int(size):
-        return f"{int(size)}{units[unit_index]}"
+        return f"{int(size)}\u00a0{units[unit_index]}"
     else:
         # Formatiere mit 2 Dezimalstellen, aber entferne führende Nullen
         formatted_size = f"{size:.2f}".rstrip("0").rstrip(".")
-        return f"{formatted_size}{units[unit_index]}"
+        return f"{formatted_size}\u00a0{units[unit_index]}"
