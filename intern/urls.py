@@ -38,10 +38,10 @@ urlpatterns = [
     path("termin/", views.termin_list, name="termin_list"),
     # Mitglieder URLs
     path("mitglied/", views.member_list, name="member_list"),
-    path("mitglied/<int:id>/", views.mitglied_view, name="member_view"),
+    path("mitglied/<int:id>/", views.member_view, name="member_view"),
     path("mitglied/<int:id>/edit/", views.dummy, name="member_edit"),
     # Artikel URLs
     path("artikel/", views.article_list, name="article_list"),
-    path("artikel/<str:name>/", views.artikel, name="article_view"),
+    path("artikel/<str:name>/", views.article_view, name="article_view"),
     path("artikel/<str:name>/edit/", views.article_edit, name="article_edit"),
 ]

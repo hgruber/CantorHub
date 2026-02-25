@@ -293,7 +293,7 @@ def member_list(request):
 
 
 @login_required
-def mitglied_view(request, id):
+def member_view(request, id):
     user = get_object_or_404(User, id=id)
     context = {
         "user": user,
@@ -333,7 +333,7 @@ def article_edit(request, name):
 
 
 @login_required
-def artikel(request, name):
+def article_view(request, name):
     artikel = Artikel.objects.filter(name=name).order_by("-id").first()
     if not artikel:
         return redirect(f"/intern/artikel/{name}/bearbeiten/")
@@ -341,6 +341,8 @@ def artikel(request, name):
         "artikel": artikel,
         "text": apply_replacements(artikel.text, request),
         "seitentitel": artikel.name,
+        "folder_id": 4,
+        "reload": True,
         "up": "article_list",
         "edit": "article_edit",
         "id": artikel.name,
