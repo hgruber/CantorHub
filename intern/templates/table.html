@@ -1,6 +1,6 @@
 {% extends 'base.html' %} {% load django_tables2 %} {% block content %}
 {% if filter %}
-<div class="filter" id="Filter">
+<div class="filter offcanvas" id="Filter">
     <form method="get">
         {{ filter.form.as_div }}
         <div>
