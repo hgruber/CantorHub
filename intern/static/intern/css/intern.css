@@ -413,6 +413,13 @@ table,
     background: #fff;
 }
 
+table thead th {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 2;
+}
+
 th,
 td {
     padding: 5px;
