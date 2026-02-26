@@ -152,7 +152,6 @@ div.sidemenu {
     margin-top: 15px;
     padding: 10px;
     background-color: #fff;
-    #border: 2px solid #aaa;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
@@ -746,6 +745,8 @@ span.not_found {
 }
 
 .table-container img {
+    max-width: 100%;
+    height: auto;
 }
 .container {
     max-width: 800px;
@@ -759,10 +760,6 @@ span.not_found {
 
 .filter {
     width: 100%;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 1rem;
-    align-items: start;
     margin-bottom: 1rem;
 }
 
@@ -773,6 +770,8 @@ span.not_found {
 .filter > div {
     display: flex;
     flex-direction: column;
+    width: 100%;
+    margin-bottom: 0.5rem;
 }
 
 .filter label {
@@ -794,8 +793,9 @@ span.not_found {
 
 .filter button {
     align-self: flex-start;
-    padding: 10px 15px;
+    padding: 8px 12px;
     margin-top: 0.5em;
+    font-size: 0.85em;
 }
 
 /* Offcanvas Filter Styles */

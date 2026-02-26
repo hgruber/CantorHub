@@ -138,6 +138,7 @@ class RepertoireFilter(filters.FilterSet):
         model = Lied
         fields = [
             "titel",
+            "konzert",
             "aktiv",
             "hymne",
             "acapella",
@@ -149,7 +150,6 @@ class RepertoireFilter(filters.FilterSet):
             "sheet",
             "solist",
             "dirigent",
-            "konzert",
         ]
 
 
@@ -177,8 +177,8 @@ class RepertoireTabelle(tables.Table):
     pdf = tables.FileColumn()
     noten = tables.FileColumn()
 
-    solist = tables.ManyToManyColumn()
-    dirigent = tables.ManyToManyColumn()
+    solist = tables.ManyToManyColumn(attrs={"td": {"style": "font-size: 0.8em;"}})
+    dirigent = tables.ManyToManyColumn(attrs={"td": {"style": "font-size: 0.8em;"}})
 
     komponist = tables.Column()
     bearbeiter = tables.Column()

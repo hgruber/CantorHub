@@ -2,10 +2,12 @@
 {% if filter %}
 <div class="filter offcanvas" id="Filter">
     <form method="get">
-        {{ filter.form.as_div }}
         <div>
             <button type="submit" class="btn btn-primary">Filtern</button>
             <a href="?" class="btn btn-secondary"> Zurücksetzen </a>
+        </div>
+        {{ filter.form.as_div }}
+        <div style="height: 30px;">
         </div>
     </form>
 </div>
