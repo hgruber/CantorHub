@@ -96,25 +96,25 @@ class RepertoireFilter(filters.FilterSet):
         field_name="original",
         lookup_expr="isnull",
         exclude=True,
-        label="Original vorhanden",
+        label="Original",
     )
     aufnahme_vorhanden = filters.BooleanFilter(
         field_name="aufnahme",
         lookup_expr="isnull",
         exclude=True,
-        label="Aufnahme vorhanden",
+        label="Aufnahme",
     )
     sheet_vorhanden = filters.BooleanFilter(
         field_name="pdf",
         lookup_expr="isnull",
         exclude=True,
-        label="Notenblatt vorhanden",
+        label="Notenblatt",
     )
     notensatz_vorhanden = filters.BooleanFilter(
         field_name="noten",
         lookup_expr="isnull",
         exclude=True,
-        label="Notensatz vorhanden",
+        label="Notensatz",
     )
 
     class Meta:
