@@ -1,16 +1,12 @@
-{% extends 'base.html' %}
-{% load django_tables2 %}
-{% block content %}
+{% extends 'base.html' %} {% load django_tables2 %} {% block content %}
 {% if filter %}
-<div class="filter">
-  <form method="get">
-    {{ filter.form.as_div }}
-    <div>
-        <button type="submit" class="btn btn-primary">Filtern</button>
-        <a href="?" class="btn btn-secondary"> Zurücksetzen </a>
-    </div>
-  </form>
+<div class="filter" id="Filter">
+    <form method="get">
+        {{ filter.form.as_div }}
+        <div>
+            <button type="submit" class="btn btn-primary">Filtern</button>
+            <a href="?" class="btn btn-secondary"> Zurücksetzen </a>
+        </div>
+    </form>
 </div>
-{% endif %}
-{% render_table table %}
-{% endblock %}
+{% endif %} {% render_table table %} {% endblock %}

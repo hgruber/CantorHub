@@ -265,6 +265,7 @@ def titel_list(request):
             "seitentitel": "Repertoire",
             "folder_id": 5,
             "reload": True,
+            "search": True,
         },
     )
 
