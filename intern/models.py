@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import (
@@ -186,7 +188,7 @@ class Termin(models.Model):
         verbose_name_plural = "Termine"
 
     def __str__(self):
-        return self.kurz
+        return self.kurz + " am " + self.datum.strftime("%d.%m.%y")
 
 
 class Lied(models.Model):

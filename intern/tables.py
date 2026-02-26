@@ -1,13 +1,10 @@
-from turtle import title
-from warnings import filters
-
 import django_filters as filters
 import django_tables2 as tables
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import Lied
+from .models import Lied, Termin, User
 from .replacements import format_bytes, format_datetime
 
 
@@ -92,40 +89,67 @@ class TerminTabelle(tables.Table):
 class RepertoireFilter(filters.FilterSet):
     titel = filters.CharFilter(field_name="titel", lookup_expr="icontains")
     tempo = filters.ChoiceFilter(field_name="tempo", choices=Lied.CHOICES)
-    original_vorhanden = filters.BooleanFilter(
+    original = filters.BooleanFilter(
         field_name="original",
         lookup_expr="isnull",
         exclude=True,
         label="Original",
     )
-    aufnahme_vorhanden = filters.BooleanFilter(
+    aufnahme = filters.BooleanFilter(
         field_name="aufnahme",
         lookup_expr="isnull",
         exclude=True,
         label="Aufnahme",
     )
-    sheet_vorhanden = filters.BooleanFilter(
+    sheet = filters.BooleanFilter(
         field_name="pdf",
         lookup_expr="isnull",
         exclude=True,
         label="Notenblatt",
     )
-    notensatz_vorhanden = filters.BooleanFilter(
+    notensatz = filters.BooleanFilter(
         field_name="noten",
         lookup_expr="isnull",
         exclude=True,
         label="Notensatz",
     )
+    dirigent_qs = (
+        User.objects.filter(dirigent__isnull=False, is_active=True)
+        .distinct()
+        .order_by("last_name", "first_name")
+    )
+    dirigent = filters.ModelMultipleChoiceFilter(
+        field_name="dirigent", queryset=dirigent_qs
+    )
+    solist_qs = (
+        User.objects.filter(solist__isnull=False, is_active=True)
+        .distinct()
+        .order_by("last_name", "first_name")
+    )
+    solist = filters.ModelMultipleChoiceFilter(field_name="solist", queryset=solist_qs)
+    konzert_qs = (
+        Termin.objects.filter(konzert__isnull=False).distinct().order_by("-datum")
+    )
+    konzert = filters.ModelMultipleChoiceFilter(
+        field_name="termin", queryset=konzert_qs
+    )
 
     class Meta:
         model = Lied
         fields = [
+            "titel",
             "aktiv",
             "hymne",
             "acapella",
             "weihnacht",
+            "tempo",
+            "original",
+            "aufnahme",
+            "notensatz",
+            "sheet",
             "solist",
             "dirigent",
+            "konzert",
         ]
 
 
