@@ -21,7 +21,6 @@ VERSION = (
     "CantorHub v0."
     + subprocess.check_output(["git", "rev-list", "--count", "HEAD"]).decode().strip()
 )
-print("Version: " + VERSION)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -151,3 +150,14 @@ MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+ORDNER_ID_AVATARE = 1
+ORDNER_ID_UNSORTIERT = 2
+ORDNER_ID_FORUM = 3
+ORDNER_ID_ARTIKEL = 4
+ORDNER_ID_MUSIK = 5
+ORDNER_ID_TERMINE = 6
+ORDNER_ID_EXTERN = 7
+ORDNER_ID_REPERTOIRE = 8
+ORDNER_ID_PDF = 9
+ORDNER_ID_NOTENSATZ = 10

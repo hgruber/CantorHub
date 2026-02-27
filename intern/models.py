@@ -1,4 +1,6 @@
+import re
 from datetime import datetime
+from types import ClassMethodDescriptorType
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -98,6 +100,37 @@ class Artikel(models.Model):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def datei_referenzen(cls):
+        """
+        Gibt alle Dateien zurück, die mindestens einen Dateireferenz‑Link
+        haben (z. B. [[Datei:Bild.jpg|Beschreibung]]).
+        """
+        qs = cls.objects.filter(text__contains="[[Datei:")
+        pattern = re.compile(r"\[\[Datei:([^|\]]+)(?:\|[^\]]+)?\]\]")
+        dateien = set()
+        for artikel in qs:
+            dateien.update(pattern.findall(artikel.text))
+        return sorted(dateien)
+
+    @classmethod
+    def aktuelle_datei_referenzen(cls):
+        """
+        Gibt alle Dateien zurück, die mindestens einen Dateireferenz‑Link
+        in einem aktuellen Artikel haben (z. B. [[Datei:Bild.jpg|Beschreibung]]).
+        """
+        max_id_sub = (
+            Artikel.objects.filter(name=OuterRef("name"))
+            .order_by("-version")
+            .values("id")[:1]
+        )
+        qs = cls.objects.filter(id=Subquery(max_id_sub), text__contains="[[Datei:")
+        pattern = re.compile(r"\[\[Datei:([^|\]]+)(?:\|[^\]]+)?\]\]")
+        dateien = set()
+        for artikel in qs:
+            dateien.update(pattern.findall(artikel.text))
+        return sorted(dateien)
 
 
 class ForumQuerySet(models.QuerySet):
@@ -267,6 +300,27 @@ class Lied(models.Model):
         except ImportError:
             # If rapidfuzz is not available, return empty list
             return []
+
+    @classmethod
+    def datei_referenzen(cls):
+        """
+        Return all needed filenames for all songs
+        """
+        titel = list(Lied.objects.values_list("titel", flat=True))
+        return [x for t in titel for x in (t, f"JG-{t}")]
+
+    @classmethod
+    def get_id(cls, titel):
+        q = titel
+        if titel.startswith == "JG-":
+            q = titel[3:]
+        return (
+            cls.objects.filter(
+                titel=q,
+            )
+            .values_list("id", flat=True)
+            .first()
+        )
 
 
 class Konzert(models.Model):

@@ -31,32 +31,30 @@
             <div class="hamburger" id="hamburger">☰</div>
             <h1 class="title">{{ seitentitel }}</h1>
             <div class="bearbeiten">
-                <h1>
-                    {% if edit %}<a href="{% url edit id %}" title="bearbeiten"
-                        >📝</a
-                    >{% endif %} {% if delete %}<a
-                        href="{% url delete id %}"
-                        title="löschen"
-                        >❌</a
-                    >{% endif %} {% if view %}<a
-                        href="{% url view id %}"
-                        title="ansehen"
-                        >👀</a
-                    >{% endif %} {% if search %}<a
-                        href="#"
-                        onclick="toggleFilter()"
-                        title="suchen"
-                        >🔍</a
-                    >{% endif %} {% if history %}<a
-                        href="{% url history id %}"
-                        title="Bearbeitungs-Historie ansehen"
-                        >🕑</a
-                    >{% endif %} {% if up %}<a
-                        href="{% url up %}"
-                        title="Eine Ebene zurück"
-                        >▲</a
-                    >{% endif %}
-                </h1>
+                {% if edit %}<a href="{% url edit id %}" title="bearbeiten"
+                    >📝</a
+                >{% endif %} {% if delete %}<a
+                    href="{% url delete id %}"
+                    title="löschen"
+                    >❌</a
+                >{% endif %} {% if view %}<a
+                    href="{% url view id %}"
+                    title="ansehen"
+                    >👀</a
+                >{% endif %} {% if search %}<a
+                    href="#"
+                    onclick="toggleFilter()"
+                    title="suchen"
+                    >🔍</a
+                >{% endif %} {% if history %}<a
+                    href="{% url history id %}"
+                    title="Bearbeitungs-Historie ansehen"
+                    >🕑</a
+                >{% endif %} {% if up %}<a
+                    href="{% url up %}"
+                    title="Eine Ebene zurück"
+                    >▲</a
+                >{% endif %}
             </div>
         </header>
 

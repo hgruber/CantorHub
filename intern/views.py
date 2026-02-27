@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import django_tables2 as tables
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
@@ -59,10 +60,21 @@ def register_success(request):
 @require_POST
 def upload(request):
     if request.FILES:
+        import os
+
         file = request.FILES["file"]
         folder_id = request.POST.get("folder_id")
-        if folder_id == None:
-            folder_id = 2
+        if folder_id is None:
+            folder_id = settings.ORDNER_ID_UNSORTIERT
+        name, endung = os.path.splitext(file.name)
+        if endung in [".mp3", ".m4a", ".cap", ".msc", ".mscz", ".pdf"]:
+            if song_id := Lied.get_id(name):
+                if endung in [".mp3", ".m4a"]:
+                    folder_id = settings.ORDNER_ID_REPERTOIRE
+                elif endung in [".cap", ".msc", ".mscz"]:
+                    folder_id = settings.ORDNER_ID_NOTENSATZ
+                else:
+                    folder_id = settings.ORDNER_ID_PDF
         filer_file = File.objects.create(
             file=file,
             original_filename=file.name,
@@ -102,7 +114,6 @@ def folder_view(request, pk):
                 }
             ]
         name = current.name
-        print(folder_up)
 
     folderfiles = (
         File.objects.filter(folder=OuterRef("pk"))
