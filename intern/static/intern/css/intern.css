@@ -101,17 +101,14 @@ body {
     .content {
         position: relative;
     }
+    .hamburger {
+        display: none;
+    }
 }
 
 /* =================================================== */
 /* Mobile-Verhalten (max-width 768px) */
 /* =================================================== */
-/* Hamburger nur auf Mobilgeräten sichtbar */
-@media (min-width: 769px) {
-    .hamburger {
-        display: none;
-    }
-}
 
 @media (max-width: 768px) {
     /* Sidebar wird über die Seite gelegt */
@@ -132,6 +129,15 @@ body {
     /* Content bleibt hinter der Sidebar */
     .content {
         z-index: 1;
+    }
+    #ColumnSelector {
+        width: 50px;
+    }
+    #Filter {
+        width: 50px;
+    }
+    #Action {
+        width: 50px;
     }
 }
 
@@ -614,30 +620,6 @@ tbody tr {
     background-color: #c14468;
 }
 
-/* Responsive */
-@media (max-width: 400px) {
-    .profile-header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .profile-image img {
-        width: 130px;
-        height: 173px;
-    }
-
-    .contact-item,
-    .address-item,
-    .personal-item {
-        flex-direction: column;
-    }
-
-    .label {
-        min-width: auto;
-    }
-}
-
 /* =================================================== */
 /* Wiki-Styling */
 /* =================================================== */
@@ -815,11 +797,4 @@ span.not_found {
 
 .offcanvas.open {
     right: 0;
-}
-
-#ColumnSelector {
-    width: 15em;
-}
-#Filter {
-    width: 15em;
 }

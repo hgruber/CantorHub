@@ -100,6 +100,42 @@
                 }
             }
 
+            document.addEventListener("DOMContentLoaded", function () {
+                const action = document.getElementById("Action");
+                const headerCheckbox = document.querySelector(".select-all");
+                const rowCheckboxes = document.querySelectorAll(
+                    ".table-container tbody input[type=checkbox]"
+                );
+                let anyPreviouslyChecked = false;
+                function checkSelectionState() {
+                    const checkedCount = document.querySelectorAll(
+                        ".table-container tbody input[type=checkbox]:checked"
+                    ).length;
+                    const anyChecked = checkedCount > 0;
+                    // Reagiere nur bei Zustandswechsel
+                    if (anyChecked !== anyPreviouslyChecked) {
+                      if (anyChecked) {
+                            action.classList.add('open')
+                        } else {
+                            action.classList.remove('open')
+                        }
+                    }
+                    anyPreviouslyChecked = anyChecked;
+                }
+                // Einzelne Checkboxen
+                rowCheckboxes.forEach((checkbox) => {
+                    checkbox.addEventListener("change", checkSelectionState);
+                });
+                // Select-All
+                headerCheckbox?.addEventListener("change", function () {
+                    rowCheckboxes.forEach((cb) => {
+                        cb.checked = this.checked;
+                    });
+                    // EINMAL final prüfen
+                    checkSelectionState();
+                });
+            });
+
             Dropzone.autoDiscover = false;
             document.addEventListener("DOMContentLoaded", function () {
                 var myDropzone = new Dropzone("#InternDropzone", {
@@ -127,16 +163,6 @@
                             {% endif %}
                         });
                     },
-                });
-            });
-            document.addEventListener("DOMContentLoaded", function () {
-                const headerCheckbox = document.querySelector(".select-all");
-                const rowCheckboxes = document.querySelectorAll(
-                    "tbody input[type=checkbox]",
-                );
-
-                headerCheckbox?.addEventListener("change", function () {
-                    rowCheckboxes.forEach((cb) => (cb.checked = this.checked));
                 });
             });
 

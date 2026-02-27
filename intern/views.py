@@ -19,6 +19,7 @@ from .forms import RegisterForm
 from .models import Artikel, Forum, Lied, Mitteilung, TabellenPreferenzen, Termin, User
 from .tables import (
     ForumTabelle,
+    MitgliederFilter,
     MitgliederTabelle,
     OrdnerTabelle,
     RepertoireFilter,
@@ -290,12 +291,17 @@ def termin_list(request):
 
 @login_required
 def member_list(request):
-    mitglieder = User.objects.filter(is_active=True).annotate(
-        mitteilungen=Mitteilung.objects.filter(sender=OuterRef("pk"))
-        .values("sender")
-        .annotate(cnt=Count("*"))
-        .values("cnt")
+    queryset = (
+        User.objects.filter(is_active=True)
+        .annotate(
+            mitteilungen=Mitteilung.objects.filter(sender=OuterRef("pk"))
+            .values("sender")
+            .annotate(cnt=Count("*"))
+            .values("cnt")
+        )
+        .order_by("last_name", "first_name")
     )
+    mitglieder_filter = MitgliederFilter(request.GET, queryset=queryset)
 
     try:
         pref = TabellenPreferenzen.objects.get(
@@ -305,11 +311,18 @@ def member_list(request):
     except:
         visible_fields = ["first_name", "last_name", "email", "stimme", "mitteilungen"]
 
-    table = MitgliederTabelle(mitglieder)
+    table = MitgliederTabelle(mitglieder_filter.qs)
 
     tables.RequestConfig(request, paginate=False).configure(table)
     return render(
-        request, "table.html", {"table": table, "seitentitel": "Mitgliederliste"}
+        request,
+        "table.html",
+        {
+            "table": table,
+            "filter": mitglieder_filter,
+            "search": True,
+            "seitentitel": "Mitgliederliste",
+        },
     )
 
 

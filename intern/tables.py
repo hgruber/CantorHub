@@ -1,3 +1,5 @@
+from pyexpat import model
+
 import django_filters as filters
 import django_tables2 as tables
 from django.templatetags.static import static
@@ -202,6 +204,16 @@ class RepertoireTabelle(tables.Table):
                 f"r{record.id}",
             )
         return ""
+
+
+class MitgliederFilter(filters.FilterSet):
+    stimme = filters.MultipleChoiceFilter(field_name="stimme", choices=User.STIMMEN)
+
+    class Meta:
+        model = User
+        fields = [
+            "stimme",
+        ]
 
 
 class MitgliederTabelle(tables.Table):
