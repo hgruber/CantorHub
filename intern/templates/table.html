@@ -1,5 +1,8 @@
 {% extends 'base.html' %} {% load django_tables2 %} {% block content %}
 {% if filter %}
+<div class="selector offcanvas" id="ColumnSelector">
+Hier kommen die Spalten-Filter rein
+</div>
 <div class="filter offcanvas" id="Filter">
     <form method="get">
         <div>
@@ -7,8 +10,7 @@
             <a href="?" class="btn btn-secondary"> Zurücksetzen </a>
         </div>
         {{ filter.form.as_div }}
-        <div style="height: 30px;">
-        </div>
+        <div style="height: 30px"></div>
     </form>
 </div>
 {% endif %} {% render_table table %} {% endblock %}

@@ -813,6 +813,13 @@ span.not_found {
     padding: 15px;
 }
 
-.offcanvas.offcanvas-open {
+.offcanvas.open {
     right: 0;
+}
+
+#ColumnSelector {
+    width: 15em;
+}
+#Filter {
+    width: 15em;
 }

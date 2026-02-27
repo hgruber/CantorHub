@@ -46,6 +46,11 @@
                     onclick="toggleFilter()"
                     title="suchen"
                     >🔍</a
+                ><a
+                    href="#"
+                    onclick="toggleSelector()"
+                    title="Spalten festlegen"
+                    >▦</a
                 >{% endif %} {% if history %}<a
                     href="{% url history id %}"
                     title="Bearbeitungs-Historie ansehen"
@@ -78,10 +83,20 @@
             // Filter offcanvas functionality
             function toggleFilter() {
                 const filter = document.getElementById('Filter');
-                if (filter.classList.contains('offcanvas-open')) {
-                    filter.classList.remove('offcanvas-open');
+                if (filter.classList.contains('open')) {
+                    filter.classList.remove('open');
                 } else {
-                    filter.classList.add('offcanvas-open');
+                    filter.classList.add('open');
+                }
+            }
+
+            // Column selector functionality
+            function toggleSelector() {
+                const selector = document.getElementById('ColumnSelector');
+                if (selector.classList.contains('open')) {
+                    selector.classList.remove('open');
+                } else {
+                    selector.classList.add('open');
                 }
             }
 
