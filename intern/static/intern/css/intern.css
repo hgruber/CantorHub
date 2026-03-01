@@ -130,15 +130,6 @@ body {
     .content {
         z-index: 1;
     }
-    #ColumnSelector {
-        width: 50px;
-    }
-    #Filter {
-        width: 50px;
-    }
-    #Action {
-        width: 50px;
-    }
 }
 
 /* =================================================== */
@@ -789,7 +780,6 @@ span.not_found {
     height: calc(100% - 50px);
     background: #fff;
     box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-    z-index: 1001;
     transition: right 0.3s ease;
     overflow-y: auto;
     padding: 15px;
@@ -797,4 +787,17 @@ span.not_found {
 
 .offcanvas.open {
     right: 0;
+}
+
+#ColumnSelector {
+    z-index: 103;
+    width: 200px;
+}
+#Filter {
+    z-index: 101;
+    width: 300px;
+}
+#Action {
+    z-index: 102;
+    width: 250px;
 }

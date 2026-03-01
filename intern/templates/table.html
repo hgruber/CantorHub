@@ -1,10 +1,23 @@
 {% extends 'base.html' %} {% load django_tables2 %} {% block content %}
 <div class="action offcanvas" id="Action">
-Kopieren<br />Verschieben<br />Löschen
+    Kopieren<br />Verschieben<br />Löschen
 </div>
 {% if filter %}
 <div class="selector offcanvas" id="ColumnSelector">
-Hier kommen die Spalten-Filter rein
+    <form method="post">
+        <button type="submit" class="btn btn-primary">Spalten auswählen</button
+        ><br />
+        {% csrf_token %} {% for column in table.columns %}
+        <label>
+            <input
+                type="checkbox"
+                name="columns"
+                value="{{ column.name }}"
+                {% if column.visible %}checked{% endif %}
+            />{{ column.verbose_name|default:column.name }}</label
+        ><br />
+        {% endfor %}
+    </form>
 </div>
 <div class="filter offcanvas" id="Filter">
     <form method="get">
