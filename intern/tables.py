@@ -222,6 +222,7 @@ class MitgliederTabelle(tables.Table):
     avatar = tables.Column()
     stimme = tables.Column()
     email = tables.EmailColumn()
+    xmpp = tables.EmailColumn()
     geburtstag = tables.DateColumn()
     last_login = tables.DateTimeColumn()
     mitteilungen = tables.Column(
@@ -229,6 +230,14 @@ class MitgliederTabelle(tables.Table):
             "td": {"class": "right"},
         }
     )
+    strasse = tables.Column()
+    plz = tables.Column()
+    ort = tables.Column()
+    telefon = tables.Column()
+    telefon_job = tables.Column()
+    telefon_mobil = tables.Column()
+    telefon_job_mobil = tables.Column()
+    fax = tables.Column()
 
     def render_avatar(self, value, record):
         if record.avatar:
