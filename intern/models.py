@@ -309,19 +309,6 @@ class Lied(models.Model):
         titel = list(Lied.objects.values_list("titel", flat=True))
         return [x for t in titel for x in (t, f"JG-{t}")]
 
-    @classmethod
-    def get_id(cls, titel):
-        q = titel
-        if titel.startswith == "JG-":
-            q = titel[3:]
-        return (
-            cls.objects.filter(
-                titel=q,
-            )
-            .values_list("id", flat=True)
-            .first()
-        )
-
 
 class Konzert(models.Model):
     termin = models.ForeignKey("Termin", on_delete=models.CASCADE)

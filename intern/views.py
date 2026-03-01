@@ -68,14 +68,23 @@ def upload(request):
         if folder_id is None:
             folder_id = settings.ORDNER_ID_UNSORTIERT
         name, endung = os.path.splitext(file.name)
+        song = None
         if endung in [".mp3", ".m4a", ".cap", ".msc", ".mscz", ".pdf"]:
-            if song_id := Lied.get_id(name):
-                if endung in [".mp3", ".m4a"]:
-                    folder_id = settings.ORDNER_ID_REPERTOIRE
-                elif endung in [".cap", ".msc", ".mscz"]:
-                    folder_id = settings.ORDNER_ID_NOTENSATZ
+            try:
+                print(name)
+                if name.startswith("JG-"):
+                    song = Lied.objects.get(titel=name[3:])
                 else:
-                    folder_id = settings.ORDNER_ID_PDF
+                    song = Lied.objects.get(titel=name)
+                if song is not None:
+                    if endung in [".mp3", ".m4a"]:
+                        folder_id = settings.ORDNER_ID_REPERTOIRE
+                    elif endung in [".cap", ".msc", ".mscz"]:
+                        folder_id = settings.ORDNER_ID_NOTENSATZ
+                    else:
+                        folder_id = settings.ORDNER_ID_PDF
+            except:
+                pass
         filer_file = File.objects.create(
             file=file,
             original_filename=file.name,
@@ -83,6 +92,18 @@ def upload(request):
             owner=request.user,
             folder_id=folder_id,
         )
+        if song is not None:
+            if name.startswith("JG-") and endung in [".mp3", ".m4a"]:
+                song.aufnahme_id = filer_file.id
+            elif endung == ".pdf":
+                song.pdf_id = filer_file.id
+            elif endung in [".cap", ".msc", ".mscz"]:
+                song.noten_id = filer_file.id
+            elif endung in [".mp3", ".m4a"]:
+                song.original_id = filer_file.id
+            else:
+                print("kaputte Endung")
+            song.save()
         url = request.META.get("HTTP_ORIGIN") + filer_file.url
         return JsonResponse({"status": "success", "id": filer_file.id, "url": url})
 
