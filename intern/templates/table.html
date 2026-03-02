@@ -5,7 +5,7 @@
 {% if filter %}
 <div class="selector offcanvas" id="ColumnSelector">
     <form method="post">
-        <button type="submit" class="btn btn-primary">Spalten auswählen</button
+        <button type="submit" class="btn btn-primary">Spalten</button
         ><br />
         {% csrf_token %} {% for col in column_choices %}
         <label>

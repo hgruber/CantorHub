@@ -71,7 +71,6 @@ def upload(request):
         song = None
         if endung in [".mp3", ".m4a", ".cap", ".msc", ".mscz", ".pdf"]:
             try:
-                print(name)
                 if name.startswith("JG-"):
                     song = Lied.objects.get(titel=name[3:])
                 else:
@@ -305,17 +304,22 @@ def forum_send(request, forum):
 
 @login_required
 def titel_list(request):
-    queryset = Lied.objects.all()
+    queryset = Lied.objects.order_by("titel")
+    konzerte = request.GET.getlist("konzert")
     repertoire_filter = RepertoireFilter(request.GET, queryset=queryset)
     fields = visible_fields(request, "RepertoireTabelle")
+    if len(konzerte) == 1:
+        qs = (
+            repertoire_filter.qs.annotate(position=F("konzert__position"))
+            .distinct()
+            .order_by("position")
+        )
+        fields.append("position")
+    else:
+        qs = repertoire_filter.qs
     table = RepertoireTabelle(
-        repertoire_filter.qs,
+        qs,
         visible_fields=fields,
-        # Fix this:
-        tooltips={
-            "original": "Original Aufnahme",
-            "Aufnahme": "Just Gospel! Frankfurt Aufnhame",
-        },
     )
     column_choices = [
         {
@@ -324,8 +328,13 @@ def titel_list(request):
             "checked": name in fields,
         }
         for name in table.base_columns
+        if name != "position"
     ]
     RequestConfig(request, paginate=False).configure(table)
+    if len(konzerte) == 1:
+        seitentitel = f"Ablauf {konzerte[0]}"
+    else:
+        seitentitel = "Repertoire"
 
     return render(
         request,
@@ -335,7 +344,7 @@ def titel_list(request):
             "column_choices": column_choices,
             "visible_fields": fields,
             "filter": repertoire_filter,
-            "seitentitel": "Repertoire",
+            "seitentitel": seitentitel,
             "folder_id": 5,
             "reload": True,
             "search": True,

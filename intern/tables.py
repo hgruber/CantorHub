@@ -156,17 +156,24 @@ class RepertoireFilter(filters.FilterSet):
 
 
 class RepertoireTabelle(tables.Table):
+    position = tables.Column(verbose_name="#", attrs={"td": {"class": "right"}})
     original = tables.Column(
         verbose_name="O",
         empty_values=(),
         orderable=False,
-        attrs={"td": {"class": "audio-button"}},
+        attrs={
+            "td": {"class": "audio-button"},
+            "th": {"title": "Original Soundtrack"},
+        },
     )
     aufnahme = tables.Column(
         verbose_name="A",
         empty_values=(),
         orderable=False,
-        attrs={"td": {"class": "audio-button"}},
+        attrs={
+            "td": {"class": "audio-button"},
+            "th": {"title": "Aufnahme Just Gospel! Frankfurt"},
+        },
     )
     titel = tables.Column(linkify=("forum_view", {"forum": tables.A("id")}))  # TODO
     aktiv = tables.BooleanColumn()
@@ -182,21 +189,16 @@ class RepertoireTabelle(tables.Table):
     solist = tables.ManyToManyColumn(attrs={"td": {"style": "font-size: 0.8em;"}})
     dirigent = tables.ManyToManyColumn(attrs={"td": {"style": "font-size: 0.8em;"}})
 
-    komponist = tables.Column()
-    bearbeiter = tables.Column()
+    komponist = tables.Column(attrs={"td": {"style": "font-size: 0.8em;"}})
+    bearbeiter = tables.Column(attrs={"td": {"style": "font-size: 0.8em;"}})
 
-    def __init__(self, *args, visible_fields=None, tooltips=None, **kwargs):
+    def __init__(self, *args, visible_fields=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.visible_fields = visible_fields
         if visible_fields is not None:
             for name in list(self.columns.names()):
                 if name not in visible_fields:
                     self.columns.hide(name)
-        tooltips = tooltips or {}
-        for name, tooltip in tooltips.items():
-            if name in self.columns:
-                self.columns[name].attrs.setdefault("th", {}).update({"title": tooltip})
-                print(self.columns[name].attrs, tooltip)
 
     def render_original(self, record):
         if hasattr(record, "original") and record.original:
@@ -252,17 +254,13 @@ class MitgliederTabelle(tables.Table):
     telefon_job_mobil = tables.Column()
     fax = tables.Column()
 
-    def __init__(self, *args, visible_fields=None, tooltips=None, **kwargs):
+    def __init__(self, *args, visible_fields=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.visible_fields = visible_fields
         if visible_fields is not None:
             for name in list(self.columns.names()):
                 if name not in visible_fields:
                     self.columns.hide(name)
-        tooltips = tooltips or {}
-        for name, tooltip in tooltips.items():
-            if name in self.columns:
-                self.columns[name].attrs["th"] = {"title": tooltip}
 
     def render_avatar(self, value, record):
         if record.avatar:
