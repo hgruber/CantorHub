@@ -108,6 +108,26 @@ def upload(request):
         return JsonResponse({"status": "success", "id": filer_file.id, "url": url})
 
 
+def visible_fields(request, tabelle):
+    visible_fields = request.POST.getlist("columns")
+    if len(visible_fields) == 0:
+        try:
+            pref = TabellenPreferenzen.objects.get(person=request.user, tabelle=tabelle)
+            return pref.sichtbare_spalten
+        except:
+            pref = TabellenPreferenzen.objects.get(person=None, tabelle=tabelle)
+            return pref.sichtbare_spalten
+    else:
+        TabellenPreferenzen.objects.update_or_create(
+            person=request.user,
+            tabelle=tabelle,
+            defaults={
+                "sichtbare_spalten": visible_fields,
+            },
+        )
+    return visible_fields
+
+
 @login_required
 def folder_view(request, pk):
     folder_up = []
@@ -287,13 +307,33 @@ def forum_send(request, forum):
 def titel_list(request):
     queryset = Lied.objects.all()
     repertoire_filter = RepertoireFilter(request.GET, queryset=queryset)
-    table = RepertoireTabelle(repertoire_filter.qs)
+    fields = visible_fields(request, "RepertoireTabelle")
+    table = RepertoireTabelle(
+        repertoire_filter.qs,
+        visible_fields=fields,
+        # Fix this:
+        tooltips={
+            "original": "Original Aufnahme",
+            "Aufnahme": "Just Gospel! Frankfurt Aufnhame",
+        },
+    )
+    column_choices = [
+        {
+            "name": name,
+            "label": table.columns[name].header,
+            "checked": name in fields,
+        }
+        for name in table.base_columns
+    ]
     RequestConfig(request, paginate=False).configure(table)
+
     return render(
         request,
         "table.html",
         {
             "table": table,
+            "column_choices": column_choices,
+            "visible_fields": fields,
             "filter": repertoire_filter,
             "seitentitel": "Repertoire",
             "folder_id": 5,
@@ -323,23 +363,24 @@ def member_list(request):
         .order_by("last_name", "first_name")
     )
     mitglieder_filter = MitgliederFilter(request.GET, queryset=queryset)
+    fields = visible_fields(request, "MitgliederTabelle")
+    table = MitgliederTabelle(mitglieder_filter.qs, visible_fields=fields)
+    column_choices = [
+        {
+            "name": name,
+            "label": table.columns[name].header,
+            "checked": name in fields,
+        }
+        for name in table.base_columns
+    ]
 
-    try:
-        pref = TabellenPreferenzen.objects.get(
-            person=request.user, tabelle="mitglieder"
-        )
-        visible_fields = pref.sichtbare_spalten
-    except:
-        visible_fields = ["first_name", "last_name", "email", "stimme", "mitteilungen"]
-
-    table = MitgliederTabelle(mitglieder_filter.qs)
-
-    tables.RequestConfig(request, paginate=False).configure(table)
+    RequestConfig(request, paginate=False).configure(table)
     return render(
         request,
         "table.html",
         {
             "table": table,
+            "column_choices": column_choices,
             "filter": mitglieder_filter,
             "search": True,
             "seitentitel": "Mitgliederliste",

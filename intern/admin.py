@@ -123,3 +123,12 @@ class AbstimmungAdmin(admin.ModelAdmin):
         "abstimmung",
         "option",
     )
+
+
+@admin.register(TabellenPreferenzen)
+class TabellenPreferenzenAdmin(admin.ModelAdmin):
+    list_display = (
+        "person",
+        "tabelle",
+        "sichtbare_spalten",
+    )

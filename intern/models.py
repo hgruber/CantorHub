@@ -342,7 +342,7 @@ class Abstimmung(models.Model):
 
 
 class TabellenPreferenzen(models.Model):
-    person = models.ForeignKey("User", on_delete=models.CASCADE)
+    person = models.ForeignKey("User", on_delete=models.CASCADE, null=True)
     tabelle = models.CharField(max_length=100)
     sichtbare_spalten = models.JSONField(default=list)
 

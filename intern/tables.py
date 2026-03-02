@@ -157,13 +157,13 @@ class RepertoireFilter(filters.FilterSet):
 
 class RepertoireTabelle(tables.Table):
     original = tables.Column(
-        verbose_name="",
+        verbose_name="O",
         empty_values=(),
         orderable=False,
         attrs={"td": {"class": "audio-button"}},
     )
     aufnahme = tables.Column(
-        verbose_name="",
+        verbose_name="A",
         empty_values=(),
         orderable=False,
         attrs={"td": {"class": "audio-button"}},
@@ -184,6 +184,19 @@ class RepertoireTabelle(tables.Table):
 
     komponist = tables.Column()
     bearbeiter = tables.Column()
+
+    def __init__(self, *args, visible_fields=None, tooltips=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.visible_fields = visible_fields
+        if visible_fields is not None:
+            for name in list(self.columns.names()):
+                if name not in visible_fields:
+                    self.columns.hide(name)
+        tooltips = tooltips or {}
+        for name, tooltip in tooltips.items():
+            if name in self.columns:
+                self.columns[name].attrs.setdefault("th", {}).update({"title": tooltip})
+                print(self.columns[name].attrs, tooltip)
 
     def render_original(self, record):
         if hasattr(record, "original") and record.original:
@@ -238,6 +251,18 @@ class MitgliederTabelle(tables.Table):
     telefon_mobil = tables.Column()
     telefon_job_mobil = tables.Column()
     fax = tables.Column()
+
+    def __init__(self, *args, visible_fields=None, tooltips=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.visible_fields = visible_fields
+        if visible_fields is not None:
+            for name in list(self.columns.names()):
+                if name not in visible_fields:
+                    self.columns.hide(name)
+        tooltips = tooltips or {}
+        for name, tooltip in tooltips.items():
+            if name in self.columns:
+                self.columns[name].attrs["th"] = {"title": tooltip}
 
     def render_avatar(self, value, record):
         if record.avatar:
