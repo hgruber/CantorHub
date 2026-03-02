@@ -7,15 +7,15 @@
     <form method="post">
         <button type="submit" class="btn btn-primary">Spalten auswählen</button
         ><br />
-        {% csrf_token %} {% for name, column in table.base_columns.items %}
+        {% csrf_token %} {% for col in column_choices %}
         <label>
             <input
                 type="checkbox"
                 name="columns"
-                value="{{ name }}"
-                {% if name in table.columns.names %}checked{% endif %}
+                value="{{ col.name }}"
+                {% if col.checked %}checked{% endif %}
             />
-            {{ column.verbose_name|default:name }} </label
+            {{ col.label }} </label
         ><br />
         {% endfor %}
     </form>
