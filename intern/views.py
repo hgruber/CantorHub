@@ -332,7 +332,7 @@ def titel_list(request):
     ]
     RequestConfig(request, paginate=False).configure(table)
     if len(konzerte) == 1:
-        seitentitel = f"Ablauf {konzerte[0]}"
+        seitentitel = f"Ablauf {Termin.objects.get(id=konzerte[0])}"
     else:
         seitentitel = "Repertoire"
 
