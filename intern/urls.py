@@ -34,6 +34,8 @@ urlpatterns = [
     path("forum/<int:forum>/send/", views.forum_send, name="forum_send"),
     # Repertoire URLs
     path("titel/", views.titel_list, name="titel_list"),
+    path("titel/<int:titel>/", views.dummy, name="titel_view"),
+    path("titel/<int:titel>/edit", views.dummy, name="titel_edit"),
     # Termin URLs
     path("termin/", views.termin_list, name="termin_list"),
     # Mitglieder URLs

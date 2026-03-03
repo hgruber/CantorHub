@@ -83,7 +83,7 @@ class TerminTabelle(tables.Table):
     datum = tables.DateTimeColumn()
     kurz = tables.Column(
         orderable=False,
-        linkify=("forum_view", {"forum": tables.A("id")}),  # TODO
+        linkify=("admin:intern_termin_change", {"object_id": tables.A("id")}),
     )
     lang = tables.Column(orderable=False)
 
@@ -175,7 +175,9 @@ class RepertoireTabelle(tables.Table):
             "th": {"title": "Aufnahme Just Gospel! Frankfurt"},
         },
     )
-    titel = tables.Column(linkify=("forum_view", {"forum": tables.A("id")}))  # TODO
+    titel = tables.Column(
+        linkify=("admin:intern_lied_change", {"object_id": tables.A("id")})
+    )
     aktiv = tables.BooleanColumn()
     tempo = tables.Column()
     beats = tables.Column(attrs={"td": {"class": "right"}})
@@ -232,9 +234,11 @@ class MitgliederFilter(filters.FilterSet):
 
 
 class MitgliederTabelle(tables.Table):
-    first_name = tables.Column()
-    last_name = tables.Column()
     avatar = tables.Column()
+    first_name = tables.Column()
+    last_name = tables.Column(
+        linkify=("admin:intern_user_change", {"object_id": tables.A("id")})
+    )
     stimme = tables.Column()
     email = tables.EmailColumn()
     xmpp = tables.EmailColumn()
