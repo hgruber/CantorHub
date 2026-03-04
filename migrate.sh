@@ -12,4 +12,5 @@ mv /tmp/0003_import.py intern/migrations
 python manage.py import_files --path Avatare
 python manage.py migrate
 
+export DEBUG=1
 python manage.py runserver 0.0.0.0:8000

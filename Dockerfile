@@ -30,9 +30,9 @@ RUN useradd -m -r appuser && \
 # Copy the Python dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
-COPY nginx.conf /etc/nginx/conf.d/django.conf
 RUN apt update -y && apt install -y nginx locales git && locale-gen de_DE.UTF-8 && rm -f /etc/nginx/sites-enabled/default
 # Set the working directory
+COPY nginx.conf /etc/nginx/
 WORKDIR /app
 
 # Copy application code
