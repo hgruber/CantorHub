@@ -192,10 +192,10 @@ def apply_replacements(text, request=None):
 
     result = []
     for line in text.splitlines():
-        if line == None or line == "" or re.match(r"^\s+$", line):
+        if line is None or line == "" or re.match(r"^\s+$", line):
             continue
         repl = list_processor.process_line(line)
-        if request != None:  # Skip codeblock for forum
+        if request is not None:  # Skip codeblock for forum
             repl, skip_block = code_processor.process_line(repl)
             if skip_block:
                 result.append(repl)

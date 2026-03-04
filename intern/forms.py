@@ -23,3 +23,10 @@ class RegisterForm(forms.Form):
                 "Entweder muss ein Benutzername oder eine E-Mail-Adresse oder sowohl Vorname als auch Nachname angegeben werden."
             )
         return cleaned_data
+
+
+class TerminForm(forms.Form):
+    kurz = forms.CharField(max_length=64, required=True)
+    datum = forms.DateTimeField()
+    datum_bis = forms.DateTimeInput()
+    lang = forms.TextInput()

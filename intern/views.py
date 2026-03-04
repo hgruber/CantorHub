@@ -138,7 +138,7 @@ def folder_view(request, pk):
     else:
         current = Folder.objects.get(pk=pk)
         parent = current.parent
-        if current != None:
+        if current is not None:
             folder_up = [
                 {
                     "id": parent.id if parent else 0,
@@ -216,7 +216,6 @@ def folder_view(request, pk):
         {
             "seitentitel": f"Ordner: {name}",
             "folder_id": pk,
-            "reload": True,
             "table": table,
         },
     )
@@ -346,8 +345,8 @@ def titel_list(request):
             "filter": repertoire_filter,
             "seitentitel": seitentitel,
             "folder_id": 5,
-            "reload": True,
             "search": True,
+            "order": len(konzerte) == 1,
         },
     )
 
@@ -406,7 +405,6 @@ def member_view(request, id):
         "up": "member_list",
         "edit": "member_edit",
         "folder_id": 4,
-        "reload": True,
         "id": id,
     }
     return render(request, "mitglied.html", context)
@@ -447,7 +445,6 @@ def article_view(request, name):
         "text": apply_replacements(artikel.text, request),
         "seitentitel": artikel.name,
         "folder_id": 4,
-        "reload": True,
         "up": "article_list",
         "edit": "article_edit",
         "id": artikel.name,
