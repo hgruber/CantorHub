@@ -9,8 +9,8 @@ if (hamburger && sidebar) {
 }
 
 // Filter offcanvas functionality
-function toggleFilter() {
-  const filter = document.getElementById("Filter");
+function toggle(offcanvas) {
+  const filter = document.getElementById(offcanvas);
   if (filter && filter.classList.contains("open")) {
     filter.classList.remove("open");
   } else if (filter) {
@@ -18,17 +18,11 @@ function toggleFilter() {
   }
 }
 
-// Column selector functionality
-function toggleSelector() {
-  const selector = document.getElementById("ColumnSelector");
-  if (selector && selector.classList.contains("open")) {
-    selector.classList.remove("open");
-  } else if (selector) {
-    selector.classList.add("open");
-  }
-}
+// Dropzone configuration - set autoDiscover to false at the beginning
+Dropzone.autoDiscover = false;
 
 document.addEventListener("DOMContentLoaded", function () {
+  // Table selection functionality
   const action = document.getElementById("Action");
   const headerCheckbox = document.querySelector(".select-all");
   const rowCheckboxes = document.querySelectorAll(
@@ -71,11 +65,8 @@ document.addEventListener("DOMContentLoaded", function () {
       checkSelectionState();
     });
   }
-});
 
-// Dropzone configuration
-Dropzone.autoDiscover = false;
-document.addEventListener("DOMContentLoaded", function () {
+  // Dropzone initialization
   var myDropzone = new Dropzone("#InternDropzone", {
     url: "/intern/upload/",
     paramName: "file",
@@ -100,10 +91,38 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     },
   });
-});
 
-// Audio play/pause functionality
-document.addEventListener("DOMContentLoaded", function () {
+  // Sortable functionality
+  const tbody = document.querySelector(".table-container table tbody");
+  if (tbody) {
+    const sortable = new Sortable(tbody, {
+      animation: 150,
+      ghostClass: "blue-background-class",
+      disabled: true, // startet deaktiviert
+      onEnd: function (evt) {
+        const order = [...evt.to.children].map((row) => row.dataset.id);
+
+        fetch("{% url 'update-order' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: JSON.stringify({ order: order }),
+        });
+      },
+    });
+
+    function toggleSort() {
+      const isDisabled = sortable.option("disabled");
+      sortable.option("disabled", !isDisabled);
+    }
+
+    // Make toggleSort globally accessible
+    window.toggleSort = toggleSort;
+  }
+
+  // Audio play/pause functionality
   let currentAudio = null;
   let currentAudioElement = null;
 

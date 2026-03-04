@@ -801,3 +801,7 @@ span.not_found {
     z-index: 102;
     width: 250px;
 }
+#PoolSelector {
+    z-index: 103;
+    width: 150px;
+}

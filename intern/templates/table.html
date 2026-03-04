@@ -2,6 +2,11 @@
 <div class="action offcanvas" id="Action">
     Kopieren<br />Verschieben<br />Löschen
 </div>
+{% if order %}
+    <div class="pool offcanvas" id="PoolSelector">
+        Remaining Songs to move
+    </div>
+{% endif %}
 {% if filter %}
 <div class="selector offcanvas" id="ColumnSelector">
     <form method="post">

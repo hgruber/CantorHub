@@ -5,26 +5,26 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Just Gospel Intern - {{ seitentitel }}</title>
-        <link rel="stylesheet" href="/static/intern/css/intern.css" />
         <link
             rel="icon"
             href="/static/intern/images/JG-Frankfurt-wG-color.svg"
         />
+        <script src="{% static 'intern/js/intern.js' %}" defer></script>
+        <link rel="stylesheet" href="/static/intern/css/intern.css" />
+        <script src="{% static 'intern/js/htmx.min.js' %}"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
         <link
             rel="stylesheet"
             href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css"
             type="text/css"
         />
-        <!-- Leaflet CSS -->
+        {% block extra_js %}{% endblock %}
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <link
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         />
-        <script src="{% static 'intern/js/intern.js' %}" defer></script>
-        <script src="{% static 'intern/js/htmx.min.js' %}"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
-        <!-- Leaflet JS -->
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     </head>
     <body>
         <!-- Top‑Bar -->
@@ -42,14 +42,22 @@
                     href="{% url view id %}"
                     title="ansehen"
                     >👀</a
+                >{% endif %} {% if order %}<a
+                    href="#"
+                    onclick="
+                        toggle('PoolSelector');
+                        toggleSort();
+                    "
+                    title="ordnen"
+                    >⇅</a
                 >{% endif %} {% if search %}<a
                     href="#"
-                    onclick="toggleFilter()"
+                    onclick="toggle('Filter')"
                     title="suchen"
                     >🔍</a
                 ><a
                     href="#"
-                    onclick="toggleSelector()"
+                    onclick="toggle('ColumnSelector')"
                     title="Spalten festlegen"
                     >▦</a
                 >{% endif %} {% if history %}<a
