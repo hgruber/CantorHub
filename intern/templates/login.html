@@ -1,32 +1,28 @@
-{% extends "dialog.html" %} {% block title %}Willkommen bei Just Gospel
-Frankfurt{% endblock %} {% block content %}
-<h1>Willkommen bei Just Gospel Frankfurt</h1>
-
-<div class="welcome-message"><p></p></div>
-
-{% if form.errors %}
-<div class="login-error">
-    <p>Dein Benutzername oder Passwort sind nicht richtig.</p>
-</div>
-{% endif %}
-
-<form class="login-form" method="post" action="{% url 'login' %}">
-    {% csrf_token %}
-    <div class="form-group">
-        {{ form.username.label_tag }} {{ form.username }}
+{% extends "dialog.html" %}
+{% block title %}
+    Willkommen bei Just Gospel
+    Frankfurt
+{% endblock %}
+{% block content %}
+    <h1>Willkommen bei Just Gospel Frankfurt</h1>
+    <div class="welcome-message">
+        <p></p>
     </div>
-
-    <div class="form-group">
-        {{ form.password.label_tag }} {{ form.password }}
+    {% if form.errors %}
+        <div class="login-error">
+            <p>Dein Benutzername oder Passwort sind nicht richtig.</p>
+        </div>
+    {% endif %}
+    <form class="login-form" method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        <div class="form-group">{{ form.username.label_tag }} {{ form.username }}</div>
+        <div class="form-group">{{ form.password.label_tag }} {{ form.password }}</div>
+        <button type="submit" class="login-button">Anmelden</button>
+    </form>
+    <div class="register-link">
+        <p>
+            Du hast Dein Passwort vergessen oder noch keines bekommen?
+            <a href="{% url 'register' %}">Hier anfordern.</a>
+        </p>
     </div>
-
-    <button type="submit" class="login-button">Anmelden</button>
-</form>
-
-<div class="register-link">
-    <p>
-        Du hast Dein Passwort vergessen oder noch keines bekommen?
-        <a href="{% url 'register' %}">Hier anfordern.</a>
-    </p>
-</div>
 {% endblock %}

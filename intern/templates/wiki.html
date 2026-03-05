@@ -1,7 +1,11 @@
-{% extends 'base.html' %} {% load static %} {% block content %}
-<div class="wiki">
-    {% for a in artikel %}
-    <div><a href="{% url 'article_view' a %}">{{ a }}</a></div>
-    {% endfor %}
-</div>
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <div class="wiki">
+        {% for a in artikel %}
+            <div>
+                <a href="{% url 'article_view' a %}">{{ a }}</a>
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}

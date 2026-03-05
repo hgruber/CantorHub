@@ -1,89 +1,84 @@
-{% extends 'base.html' %} {% load static %} {% block content %}
-<div class="member-profile">
-    <div class="profile-header">
-        <div class="profile-image">
-            <img
-                src="{{ user.avatar.url }}"
-                alt="{{ user.first_name }} {{ user.last_name }}"
-                width="170"
-                height="226"
-            />
-        </div>
-        <div class="profile-info">
-            <div class="contact-item">
-                <span class="label">Vorname:</span>
-                <span class="value">{{ user.first_name }}</span>
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <div class="member-profile">
+        <div class="profile-header">
+            <div class="profile-image">
+                <img src="{{ user.avatar.url }}"
+                     alt="{{ user.first_name }} {{ user.last_name }}"
+                     width="170"
+                     height="226" />
             </div>
-            <div class="contact-item">
-                <span class="label">Nachname:</span>
-                <span class="value">{{ user.last_name }}</span>
-            </div>
-            <div class="contact-item">
-                <span class="label">Stimme:</span>
-                <span class="value">{{ user.get_stimme_display }}</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="profile-content">
-        <div class="profile-section">
-            <h2>Kontaktdaten</h2>
-            <div class="contact-info">
+            <div class="profile-info">
                 <div class="contact-item">
-                    <span class="label">E-Mail:</span>
-                    <span class="value">{{ user.email }}</span>
+                    <span class="label">Vorname:</span>
+                    <span class="value">{{ user.first_name }}</span>
                 </div>
                 <div class="contact-item">
-                    <span class="label">XMPP:</span>
-                    <span class="value">{{ user.xmpp }}</span>
+                    <span class="label">Nachname:</span>
+                    <span class="value">{{ user.last_name }}</span>
                 </div>
                 <div class="contact-item">
-                    <span class="label">Telefon (Privat):</span>
-                    <span class="value">{{ user.telefon }}</span>
-                </div>
-                <div class="contact-item">
-                    <span class="label">Telefon (Beruf):</span>
-                    <span class="value">{{ user.telefon_job }}</span>
-                </div>
-                <div class="contact-item">
-                    <span class="label">Mobil (Privat):</span>
-                    <span class="value">{{ user.telefon_mobil }}</span>
-                </div>
-                <div class="contact-item">
-                    <span class="label">Mobil (Beruf):</span>
-                    <span class="value">{{ user.telefon_job_mobil }} </span>
-                </div>
-                <div class="contact-item">
-                    <span class="label">Fax:</span>
-                    <span class="value">{{ user.fax }}</span>
+                    <span class="label">Stimme:</span>
+                    <span class="value">{{ user.get_stimme_display }}</span>
                 </div>
             </div>
         </div>
-
-        <div class="profile-section">
-            <h2>Adresse</h2>
-            <div class="address-info">
-                <div class="address-item">
-                    <span class="label">Straße:</span>
-                    <span class="value">{{ user.strasse }}</span>
-                </div>
-                <div class="address-item">
-                    <span class="label">PLZ / Ort:</span>
-                    <span class="value">{{ user.plz }} {{ user.ort }}</span>
-                </div>
-                <div class="address-item">
-                    <span class="label">Koordinaten:</span>
-                    <span class="value">
-                        Breite: {{ user.breite }}, Länge: {{ user.laenge }}
-                    </span>
+        <div class="profile-content">
+            <div class="profile-section">
+                <h2>Kontaktdaten</h2>
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <span class="label">E-Mail:</span>
+                        <span class="value">{{ user.email }}</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="label">XMPP:</span>
+                        <span class="value">{{ user.xmpp }}</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="label">Telefon (Privat):</span>
+                        <span class="value">{{ user.telefon }}</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="label">Telefon (Beruf):</span>
+                        <span class="value">{{ user.telefon_job }}</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="label">Mobil (Privat):</span>
+                        <span class="value">{{ user.telefon_mobil }}</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="label">Mobil (Beruf):</span>
+                        <span class="value">{{ user.telefon_job_mobil }}</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="label">Fax:</span>
+                        <span class="value">{{ user.fax }}</span>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div class="profile-section">
-            <h2>Kartenansicht</h2>
-            <div id="map" style="height: 400px; width: 100%"></div>
-            <script>
+            <div class="profile-section">
+                <h2>Adresse</h2>
+                <div class="address-info">
+                    <div class="address-item">
+                        <span class="label">Straße:</span>
+                        <span class="value">{{ user.strasse }}</span>
+                    </div>
+                    <div class="address-item">
+                        <span class="label">PLZ / Ort:</span>
+                        <span class="value">{{ user.plz }} {{ user.ort }}</span>
+                    </div>
+                    <div class="address-item">
+                        <span class="label">Koordinaten:</span>
+                        <span class="value">Breite: {{ user.breite }}, Länge: {{ user.laenge }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-section">
+                <h2>Kartenansicht</h2>
+                <div id="map" style="height: 400px; width: 100%"></div>
+                <script>
                 // Initialisiere die Karte mit den Benutzerkoordinaten
                 document.addEventListener('DOMContentLoaded', function() {
                     // Prüfe, ob Koordinaten vorhanden sind
@@ -119,43 +114,37 @@
                         document.getElementById('map').innerHTML = '<p>Keine Koordinaten für diesen Benutzer verfügbar.</p>';
                     }
                 });
-            </script>
-        </div>
-
-        <div class="profile-section">
-            <h2>Personalien</h2>
-            <div class="personal-info">
-                <div class="personal-item">
-                    <span class="label">Geburtstag:</span>
-                    <span class="value"
-                        >{{ user.geburtstag|date:"d.m.Y" }}</span
-                    >
-                </div>
-                <div class="personal-item">
-                    <span class="label">Mitglied seit:</span>
-                    <span class="value"
-                        >{{ user.date_joined|date:"d.m.Y" }}</span
-                    >
-                </div>
-                <div class="personal-item">
-                    <span class="label">Benutzername:</span>
-                    <span class="value">{{ user.username }}</span>
-                </div>
-                <div class="personal-item">
-                    <span class="label">Legacy ID:</span>
-                    <span class="value">{{ user.legacy_id }}</span>
+                </script>
+            </div>
+            <div class="profile-section">
+                <h2>Personalien</h2>
+                <div class="personal-info">
+                    <div class="personal-item">
+                        <span class="label">Geburtstag:</span>
+                        <span class="value">{{ user.geburtstag|date:"d.m.Y" }}</span>
+                    </div>
+                    <div class="personal-item">
+                        <span class="label">Mitglied seit:</span>
+                        <span class="value">{{ user.date_joined|date:"d.m.Y" }}</span>
+                    </div>
+                    <div class="personal-item">
+                        <span class="label">Benutzername:</span>
+                        <span class="value">{{ user.username }}</span>
+                    </div>
+                    <div class="personal-item">
+                        <span class="label">Legacy ID:</span>
+                        <span class="value">{{ user.legacy_id }}</span>
+                    </div>
                 </div>
             </div>
+            {% if user.text %}
+                <div class="profile-section">
+                    <h2>Bemerkungen</h2>
+                    <div class="notes">
+                        <p>{{ user.text|linebreaks }}</p>
+                    </div>
+                </div>
+            {% endif %}
         </div>
-
-        {% if user.text %}
-        <div class="profile-section">
-            <h2>Bemerkungen</h2>
-            <div class="notes">
-                <p>{{ user.text|linebreaks }}</p>
-            </div>
-        </div>
-        {% endif %}
     </div>
-</div>
 {% endblock %}

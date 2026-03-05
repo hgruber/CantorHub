@@ -1,24 +1,22 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{% block title %}{% endblock %}</title>
+        <title>
+            {% block title %}{% endblock %}
+        </title>
         <link rel="stylesheet" href="/static/intern/css/login-style.css" />
-        <link
-            rel="icon"
-            href="/static/intern/images/JG-Frankfurt-wG-color.svg"
-        />
+        <link rel="icon" href="/static/intern/images/JG-Frankfurt-wG-color.svg" />
     </head>
     <body>
         <div class="login-container">
             <div class="login-card">
                 <div class="logo">
-                    <a href="/"
-                        ><img
-                            src="/static/intern/images/JG-Frankfurt-test.svg"
-                            style="width: 120px"
-                    /></a>
+                    <a href="/">
+                        <img src="/static/intern/images/JG-Frankfurt-test.svg"
+                             style="width: 120px" />
+                    </a>
                 </div>
                 {% block content %}{% endblock %}
             </div>

@@ -12,19 +12,14 @@
     </form>
     <div class="version-string">{{ VERSION }}</div>
 </div>
-<div class="sidemenu">
-    Hier werden alle ausstehenden Zusagen/Absagen eingefordert!
-</div>
+<div class="sidemenu">Hier werden alle ausstehenden Zusagen/Absagen eingefordert!</div>
 <div class="file-container">
-    <form
-        action="/intern/upload/"
-        method="post"
-        class="dropzone"
-        id="InternDropzone"
-    >
-        {% csrf_token %} {% if folder_id %}
-        <input type="hidden" name="folder_id" value="{{ folder_id }}" />
-        {% endif %}
+    <form action="/intern/upload/"
+          method="post"
+          class="dropzone"
+          id="InternDropzone">
+        {% csrf_token %}
+        {% if folder_id %}<input type="hidden" name="folder_id" value="{{ folder_id }}" />{% endif %}
         <div class="dz-message" data-dz-message>
             <span>Hier Dateien ablegen</span>
         </div>

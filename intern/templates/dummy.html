@@ -1,21 +1,21 @@
-{% extends 'base.html' %} {% load static %} {% block content %}
-<h1>Dummy View</h1>
-
-<h2>Args</h2>
-<ul>
-    {% for arg in args %}
-    <li>{{ arg }}</li>
-    {% empty %}
-    <li>Keine args</li>
-    {% endfor %}
-</ul>
-
-<h2>Kwargs</h2>
-<ul>
-    {% for key, value in kwargs.items %}
-    <li>{{ key }}: {{ value }}</li>
-    {% empty %}
-    <li>Keine kwargs</li>
-    {% endfor %}
-</ul>
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <h1>Dummy View</h1>
+    <h2>Args</h2>
+    <ul>
+        {% for arg in args %}
+            <li>{{ arg }}</li>
+        {% empty %}
+            <li>Keine args</li>
+        {% endfor %}
+    </ul>
+    <h2>Kwargs</h2>
+    <ul>
+        {% for key, value in kwargs.items %}
+            <li>{{ key }}: {{ value }}</li>
+        {% empty %}
+            <li>Keine kwargs</li>
+        {% endfor %}
+    </ul>
 {% endblock %}

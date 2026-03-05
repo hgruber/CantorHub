@@ -1,30 +1,23 @@
 {% load static %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Just Gospel Intern - {{ seitentitel }}</title>
-        <link
-            rel="icon"
-            href="/static/intern/images/JG-Frankfurt-wG-color.svg"
-        />
+        <link rel="icon" href="/static/intern/images/JG-Frankfurt-wG-color.svg" />
         <script src="{% static 'intern/js/intern.js' %}" defer></script>
         <link rel="stylesheet" href="/static/intern/css/intern.css" />
         <script src="{% static 'intern/js/htmx.min.js' %}"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
-        <link
-            rel="stylesheet"
-            href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css"
-            type="text/css"
-        />
+        <link rel="stylesheet"
+              href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css"
+              type="text/css" />
         {% block extra_js %}{% endblock %}
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <link
-            rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        />
+        <link rel="stylesheet"
+              href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     </head>
     <body>
         <!-- Top‑Bar -->
@@ -32,52 +25,38 @@
             <div class="hamburger" id="hamburger">☰</div>
             <h1 class="title">{{ seitentitel }}</h1>
             <div class="bearbeiten">
-                {% if edit %}<a href="{% url edit id %}" title="bearbeiten"
-                    >📝</a
-                >{% endif %} {% if delete %}<a
-                    href="{% url delete id %}"
-                    title="löschen"
-                    >❌</a
-                >{% endif %} {% if view %}<a
-                    href="{% url view id %}"
-                    title="ansehen"
-                    >👀</a
-                >{% endif %} {% if order %}<a
-                    href="#"
-                    onclick="
-                        toggle('PoolSelector');
-                        toggleSort();
-                    "
-                    title="ordnen"
-                    >⇅</a
-                >{% endif %} {% if search %}<a
-                    href="#"
-                    onclick="toggle('Filter')"
-                    title="suchen"
-                    >🔍</a
-                ><a
-                    href="#"
-                    onclick="toggle('ColumnSelector')"
-                    title="Spalten festlegen"
-                    >▦</a
-                >{% endif %} {% if history %}<a
-                    href="{% url history id %}"
-                    title="Bearbeitungs-Historie ansehen"
-                    >🕑</a
-                >{% endif %} {% if up %}<a
-                    href="{% url up %}"
-                    title="Eine Ebene zurück"
-                    >▲</a
-                >{% endif %}
+                {% if edit %}
+                    <a href="{% url edit id %}" title="bearbeiten">📝</a>
+                {% endif %}
+                {% if delete %}
+                    <a href="{% url delete id %}" title="löschen">❌</a>
+                {% endif %}
+                {% if view %}
+                    <a href="{% url view id %}" title="ansehen">👀</a>
+                {% endif %}
+                {% if order %}
+                    <a href="#"
+                       onclick=" toggle('PoolSelector'); toggleSort(); "
+                       title="ordnen">⇅</a>
+                {% endif %}
+                {% if search %}
+                    <a href="#" onclick="toggle('Filter')" title="suchen">🔍</a><a href="#" onclick="toggle('ColumnSelector')" title="Spalten festlegen">▦</a>
+                {% endif %}
+                {% if history %}
+                    <a href="{% url history id %}" title="Bearbeitungs-Historie ansehen">🕑</a>
+                {% endif %}
+                {% if up %}
+                    <a href="{% url up %}" title="Eine Ebene zurück">▲</a>
+                {% endif %}
             </div>
         </header>
-
         <div class="layout">
             <aside class="sidebar" id="sidebar">
                 {% include "sidebar.html" %}
             </aside>
-
-            <main class="content">{% block content %}{% endblock %}</main>
+            <main class="content">
+                {% block content %}{% endblock %}
+            </main>
         </div>
     </body>
 </html>

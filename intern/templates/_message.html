@@ -1,22 +1,14 @@
-<div
-    class="{% if message.sender == user %}message_me{% else %}message{% endif %}"
-    data-id="{{ message.id }}"
->
-    <div
-        class="avatar"
-        onclick="window.location.href='/intern/mitglied/{{ message.sender.id }}/'"
-    >
+<div class="{% if message.sender == user %}message_me{% else %}message{% endif %}"
+     data-id="{{ message.id }}">
+    <div class="avatar"
+         onclick="window.location.href='/intern/mitglied/{{ message.sender.id }}/'">
         {% if message.sender != user %}
-        <img
-            src="{{ message.sender.avatar.url }}"
-            alt="{{ message.sender.first_name }} {{ message.sender.last_name }} "
-        />
-        <div>{{ message.sender.first_name }}</div>
+            <img src="{{ message.sender.avatar.url }}"
+                 alt="{{ message.sender.first_name }} {{ message.sender.last_name }} " />
+            <div>{{ message.sender.first_name }}</div>
         {% endif %}
     </div>
-    <div
-        class="{% if message.sender == user %}content_me{% else %}content{% endif %}"
-    >
+    <div class="{% if message.sender == user %}content_me{% else %}content{% endif %}">
         {{ message.formatiert|safe }}
         <time>{{ message.datum|date:"d.M Y H:i" }}</time>
     </div>
