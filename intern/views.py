@@ -396,6 +396,11 @@ def termin_list(request):
                 filter=Q(zusage__person__stimme="B", zusage__option="1"),
                 distinct=True,
             ),
+            anzahl_vielleicht=Count(
+                "zusage",
+                filter=Q(zusage__option="2"),
+                distinct=True,
+            ),
         )
     )
 

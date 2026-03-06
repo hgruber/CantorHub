@@ -115,6 +115,11 @@ class TerminTabelle(tables.Table):
         orderable=False,
         attrs={"td": {"class": "right"}},
     )
+    anzahl_vielleicht = tables.Column(
+        verbose_name="🤔",
+        orderable=False,
+        attrs={"td": {"class": "right"}},
+    )
     lang = tables.Column(orderable=False)
 
     def render_datum(self, value):
