@@ -240,10 +240,16 @@ def format_datetime(dt: Union[datetime, date]) -> str:
 
     today = datetime.now().date()
     dt_date = dt.date()
+    same_year = dt.strftime("%Y") == today.strftime("%Y")
+    with_time = dt.strftime("%H:%M") != "00:00"
 
     if dt_date > today:
-        if dt.strftime("%H:%M") != "00:00":
-            return dt.strftime("%d.\u00a0%B\u00a0%Y\u00a0%H:%M")
+        if with_time and same_year:
+            return dt.strftime("%d.\u00a0%B\u00a0 %H:%M")
+        elif with_time:
+            return dt.strftime("%d.\u00a0%B\u00a0%Y %H:%M")
+        elif same_year:
+            return dt.strftime("%d.\u00a0%B")
         else:
             return dt.strftime("%d.\u00a0%B\u00a0%Y")
 
