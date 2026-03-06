@@ -362,12 +362,11 @@ def titel_list(request):
 
 @login_required
 def termin_list(request):
-    # Erweitere das QuerySet um die Anwesenheitsinformationen für den eingeloggten Benutzer
-    termin_queryset = Termin.objects.filter(datum__gt=datetime.now()).order_by("datum")
-
-    # Füge die Anwesenheitsinformationen für den aktuellen Benutzer hinzu
-    if request.user.is_authenticated:
-        termin_queryset = termin_queryset.annotate(
+    # Erweite das QuerySet um die Anwesenheitsinformationen für den eingeloggten Benutzer
+    termin_queryset = (
+        Termin.objects.filter(datum__gt=datetime.now())
+        .order_by("datum")
+        .annotate(
             anwesenheit_option=Coalesce(
                 Subquery(
                     Zusage.objects.filter(
@@ -375,8 +374,10 @@ def termin_list(request):
                     ).values("option")[:1]
                 ),
                 Value(""),
-            )
+            ),
+            anzahl_songs=Count("konzert", distinct=True),
         )
+    )
 
     table = TerminTabelle(termin_queryset)
     RequestConfig(request, paginate=False).configure(table)

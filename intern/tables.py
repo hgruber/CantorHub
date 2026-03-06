@@ -90,16 +90,15 @@ class TerminTabelle(tables.Table):
         orderable=False,
         empty_values=(),
     )
+    anzahl_songs = tables.Column(
+        verbose_name="Songs",
+        orderable=False,
+        attrs={"td": {"class": "right"}},
+    )
     lang = tables.Column(orderable=False)
 
     def render_datum(self, value):
-        """Zeige Uhrzeit nur an, wenn sie nicht 0:00 ist"""
-        from datetime import time
-
-        if value and value.time() != time(0, 0):
-            return value
-        else:
-            return format_datetime(value)
+        return format_datetime(value)
 
     def render_anwesenheit_option(self, value):
         """Rendert die Anwesenheitsoption für den Benutzer"""
@@ -113,6 +112,12 @@ class TerminTabelle(tables.Table):
             return "🤔"
         else:
             return value
+
+    def render_anzahl_songs(self, value):
+        if value > 0:
+            return value
+        else:
+            return ""
 
 
 class RepertoireFilter(filters.FilterSet):
