@@ -120,7 +120,16 @@ class TerminTabelle(tables.Table):
         orderable=False,
         attrs={"td": {"class": "right"}},
     )
-    lang = tables.Column(orderable=False)
+    anzahl_absagen = tables.Column(
+        verbose_name="❌",
+        orderable=False,
+        attrs={"td": {"class": "right"}},
+    )
+    lang = tables.Column(
+        verbose_name="Info",
+        orderable=False,
+        attrs={"td": {"style": "min-width: 372px;"}},
+    )
 
     def render_datum(self, value):
         return format_datetime(value)

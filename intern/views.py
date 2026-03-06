@@ -398,6 +398,11 @@ def termin_list(request):
             ),
             anzahl_vielleicht=Count(
                 "zusage",
+                filter=Q(zusage__option="3"),
+                distinct=True,
+            ),
+            anzahl_absagen=Count(
+                "zusage",
                 filter=Q(zusage__option="2"),
                 distinct=True,
             ),
