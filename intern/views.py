@@ -481,7 +481,9 @@ def article_edit(request, name):
     artikel = Artikel.objects.filter(name=name).order_by("-id").first()
     context = {
         "artikel": artikel,
-        "text": "<pre><code>" + artikel.text + "</code></pre>" if artikel else "",
+        "text": '<textarea wrap="soft">' + artikel.text + "</textarea>"
+        if artikel
+        else "",
         "seitentitel": f"bearbeiten: {name}",
         "up": "article_list",
         "view": "article_view",
