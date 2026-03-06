@@ -16,7 +16,16 @@ from filer.models import File, Folder
 from intern.replacements import apply_replacements
 
 from .forms import RegisterForm
-from .models import Artikel, Forum, Lied, Mitteilung, TabellenPreferenzen, Termin, User
+from .models import (
+    Artikel,
+    Forum,
+    Lied,
+    Mitteilung,
+    TabellenPreferenzen,
+    Termin,
+    User,
+    Zusage,
+)
 from .tables import (
     ForumTabelle,
     MitgliederFilter,
@@ -353,7 +362,23 @@ def titel_list(request):
 
 @login_required
 def termin_list(request):
-    table = TerminTabelle(Termin.objects.all().order_by("-datum"))
+    # Erweitere das QuerySet um die Anwesenheitsinformationen für den eingeloggten Benutzer
+    termin_queryset = Termin.objects.filter(datum__gt=datetime.now()).order_by("datum")
+
+    # Füge die Anwesenheitsinformationen für den aktuellen Benutzer hinzu
+    if request.user.is_authenticated:
+        termin_queryset = termin_queryset.annotate(
+            anwesenheit_option=Coalesce(
+                Subquery(
+                    Zusage.objects.filter(
+                        termin=OuterRef("pk"), person=request.user
+                    ).values("option")[:1]
+                ),
+                Value(""),
+            )
+        )
+
+    table = TerminTabelle(termin_queryset)
     RequestConfig(request, paginate=False).configure(table)
     return render(request, "table.html", {"table": table, "seitentitel": "Termine"})
 

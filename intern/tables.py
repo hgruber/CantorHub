@@ -85,7 +85,34 @@ class TerminTabelle(tables.Table):
         orderable=False,
         linkify=("admin:intern_termin_change", {"object_id": tables.A("id")}),
     )
+    anwesenheit_option = tables.Column(
+        verbose_name="Zusage",
+        orderable=False,
+        empty_values=(),
+    )
     lang = tables.Column(orderable=False)
+
+    def render_datum(self, value):
+        """Zeige Uhrzeit nur an, wenn sie nicht 0:00 ist"""
+        from datetime import time
+
+        if value and value.time() != time(0, 0):
+            return value
+        else:
+            return format_datetime(value)
+
+    def render_anwesenheit_option(self, value):
+        """Rendert die Anwesenheitsoption für den Benutzer"""
+        if value == "":
+            return "❗"
+        elif value == "1":
+            return "✅"
+        elif value == "0":
+            return "❌"
+        elif value == "2":
+            return "🤔"
+        else:
+            return value
 
 
 class RepertoireFilter(filters.FilterSet):

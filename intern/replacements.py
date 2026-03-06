@@ -241,6 +241,12 @@ def format_datetime(dt: Union[datetime, date]) -> str:
     today = datetime.now().date()
     dt_date = dt.date()
 
+    if dt_date > today:
+        if dt.strftime("%H:%M") != "00:00":
+            return dt.strftime("%d.\u00a0%B\u00a0%Y\u00a0%H:%M")
+        else:
+            return dt.strftime("%d.\u00a0%B\u00a0%Y")
+
     # Heute
     if dt_date == today:
         return dt.strftime("%H:%M")
@@ -251,11 +257,11 @@ def format_datetime(dt: Union[datetime, date]) -> str:
 
     # Wochentag
     if dt_date > today - timedelta(days=7):
-        return dt.strftime("%A %H:%M")
+        return dt.strftime("%A\u00a0%H:%M")
 
     # Datum mit Monat
     if dt_date.year == today.year:
-        return dt.strftime("%d. %B")
+        return dt.strftime("%d.\u00a0%B")
 
     # Datum mit Jahr
     return dt.strftime("%d.%m.%Y")
