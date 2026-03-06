@@ -4,7 +4,7 @@ import django_tables2 as tables
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from django.db.models import Count, F, IntegerField, OuterRef, Subquery, Sum, Value
+from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, Concat
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -376,6 +376,26 @@ def termin_list(request):
                 Value(""),
             ),
             anzahl_songs=Count("konzert", distinct=True),
+            anzahl_zusagen_sopran=Count(
+                "zusage",
+                filter=Q(zusage__person__stimme="S", zusage__option="1"),
+                distinct=True,
+            ),
+            anzahl_zusagen_alt=Count(
+                "zusage",
+                filter=Q(zusage__person__stimme="A", zusage__option="1"),
+                distinct=True,
+            ),
+            anzahl_zusagen_tenor=Count(
+                "zusage",
+                filter=Q(zusage__person__stimme="T", zusage__option="1"),
+                distinct=True,
+            ),
+            anzahl_zusagen_bass=Count(
+                "zusage",
+                filter=Q(zusage__person__stimme="B", zusage__option="1"),
+                distinct=True,
+            ),
         )
     )
 

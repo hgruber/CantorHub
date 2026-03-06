@@ -95,6 +95,26 @@ class TerminTabelle(tables.Table):
         orderable=False,
         attrs={"td": {"class": "right"}},
     )
+    anzahl_zusagen_sopran = tables.Column(
+        verbose_name="S",
+        orderable=False,
+        attrs={"td": {"class": "right"}},
+    )
+    anzahl_zusagen_alt = tables.Column(
+        verbose_name="A",
+        orderable=False,
+        attrs={"td": {"class": "right"}},
+    )
+    anzahl_zusagen_tenor = tables.Column(
+        verbose_name="T",
+        orderable=False,
+        attrs={"td": {"class": "right"}},
+    )
+    anzahl_zusagen_bass = tables.Column(
+        verbose_name="B",
+        orderable=False,
+        attrs={"td": {"class": "right"}},
+    )
     lang = tables.Column(orderable=False)
 
     def render_datum(self, value):
