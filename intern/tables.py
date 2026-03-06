@@ -302,9 +302,7 @@ class MitgliederFilter(filters.FilterSet):
 class MitgliederTabelle(tables.Table):
     avatar = tables.Column()
     first_name = tables.Column()
-    last_name = tables.Column(
-        linkify=("admin:intern_user_change", {"object_id": tables.A("id")})
-    )
+    last_name = tables.Column(linkify=("member_edit", {"id": tables.A("id")}))
     stimme = tables.Column()
     email = tables.EmailColumn()
     xmpp = tables.EmailColumn()

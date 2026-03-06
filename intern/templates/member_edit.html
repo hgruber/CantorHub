@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ seitentitel }}{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <h2>{{ seitentitel }}</h2>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="{{ form.first_name.id_for_label }}">Vorname</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.last_name.id_for_label }}">Nachname</label>
+                        {{ form.last_name }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.avatar.id_for_label }}">Avatar</label>
+                        {{ form.avatar }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.username.id_for_label }}">Benutzername</label>
+                        {{ form.username }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}">E-Mail</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.stimme.id_for_label }}">Stimme</label>
+                        {{ form.stimme }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.geburtstag.id_for_label }}">Geburtsdatum</label>
+                        {{ form.geburtstag }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.strasse.id_for_label }}">Straße</label>
+                        {{ form.strasse }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.plz.id_for_label }}">PLZ</label>
+                        {{ form.plz }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.ort.id_for_label }}">Ort</label>
+                        {{ form.ort }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.telefon.id_for_label }}">Telefon</label>
+                        {{ form.telefon }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.telefon_job.id_for_label }}">Telefon (Arbeit)</label>
+                        {{ form.telefon_job }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.telefon_mobil.id_for_label }}">Mobiltelefon</label>
+                        {{ form.telefon_mobil }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.telefon_job_mobil.id_for_label }}">Mobiltelefon (Arbeit)</label>
+                        {{ form.telefon_job_mobil }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.fax.id_for_label }}">Fax</label>
+                        {{ form.fax }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.xmpp.id_for_label }}">XMPP/Jabber</label>
+                        {{ form.xmpp }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.text.id_for_label }}">Beschreibung</label>
+                        {{ form.text }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                    <a href="{% url 'member_view' id %}" class="btn btn-secondary">Abbrechen</a>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

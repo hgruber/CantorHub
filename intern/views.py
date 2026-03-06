@@ -15,7 +15,7 @@ from filer.models import File, Folder
 
 from intern.replacements import apply_replacements
 
-from .forms import RegisterForm
+from .forms import RegisterForm, UserEditForm
 from .models import (
     Artikel,
     Forum,
@@ -464,6 +464,28 @@ def member_view(request, id):
         "id": id,
     }
     return render(request, "mitglied.html", context)
+
+
+@login_required
+def member_edit(request, id):
+    user = get_object_or_404(User, id=id)
+
+    if request.method == "POST":
+        form = UserEditForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect("member_view", id=id)
+    else:
+        form = UserEditForm(instance=user)
+
+    context = {
+        "form": form,
+        "user": user,
+        "seitentitel": f"Mitglied bearbeiten: {user.first_name} {user.last_name}",
+        "folder_id": 4,
+        "id": id,
+    }
+    return render(request, "member_edit.html", context)
 
 
 @login_required

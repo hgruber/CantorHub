@@ -42,7 +42,7 @@ urlpatterns = [
     # Mitglieder URLs
     path("mitglied/", views.member_list, name="member_list"),
     path("mitglied/<int:id>/", views.member_view, name="member_view"),
-    path("mitglied/<int:id>/edit/", views.dummy, name="member_edit"),
+    path("mitglied/<int:id>/edit/", views.member_edit, name="member_edit"),
     # Artikel URLs
     path("artikel/", views.article_list, name="article_list"),
     path("artikel/<str:name>/", views.article_view, name="article_view"),
