@@ -354,7 +354,7 @@ def titel_list(request):
             "filter": repertoire_filter,
             "seitentitel": seitentitel,
             "folder_id": 5,
-            "search": True,
+            "showfilter": True,
             "order": len(konzerte) == 1,
         },
     )
@@ -446,7 +446,7 @@ def member_list(request):
             "table": table,
             "column_choices": column_choices,
             "filter": mitglieder_filter,
-            "search": True,
+            "showfilter": True,
             "seitentitel": "Mitgliederliste",
         },
     )
