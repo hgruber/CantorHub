@@ -2,7 +2,7 @@
   "name": "Just Gospel! Frankfurt",
   "short_name": "Intern",
   "start_url": "/intern/login/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#ffffff",
   "theme_color": "#c14468",
   "icons": [
