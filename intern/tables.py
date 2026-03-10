@@ -82,11 +82,12 @@ class OrdnerTabelle(tables.Table):
 class TerminTabelle(tables.Table):
     datum = tables.DateTimeColumn()
     kurz = tables.Column(
+        verbose_name="Termin",
         orderable=False,
         linkify=("admin:intern_termin_change", {"object_id": tables.A("id")}),
     )
     anwesenheit_option = tables.Column(
-        verbose_name="Zusage",
+        verbose_name="Du",
         orderable=False,
         empty_values=(),
     )

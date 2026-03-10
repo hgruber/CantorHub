@@ -38,7 +38,7 @@
                          class="toolicon"
                          viewBox="0 0 100 100"
                          stroke="white"
-                         stroke-width="10"
+                         stroke-width="7"
                          stroke-linecap="round"
                          stroke-linejoin="round"
                          fill="none">
@@ -52,7 +52,7 @@
                          class="toolicon"
                          viewBox="0 0 100 100"
                          stroke="white"
-                         stroke-width="10"
+                         stroke-width="7"
                          stroke-linecap="round"
                          stroke-linejoin="round"
                          fill="none">
@@ -66,7 +66,7 @@
                          class="toolicon"
                          viewBox="0 0 100 100"
                          stroke="white"
-                         stroke-width="10"
+                         stroke-width="7"
                          stroke-linecap="round"
                          stroke-linejoin="round"
                          fill="none">
@@ -83,11 +83,16 @@
                          class="toolicon"
                          viewBox="0 0 100 100"
                          stroke="white"
-                         stroke-width="10"
+                         stroke-width="7"
                          stroke-linecap="round"
                          stroke-linejoin="round"
                          fill="none">
-                        <path d="M30 25h40M30 50h25M30 75h10M70 65l10 10 10-10M90 75V35" />
+                        <rect x="10" y="20" width="50" height="60" rx="4" />
+                        <path d="M10 40h50M10 60h50" />
+                        <path d="M35 20v60" />
+                        <path d="M75 25v40" />
+                        <path d="M65 35l10-10 10 10" />
+                        <path d="M65 55l10 10 10-10" />
                     </svg>
                 </a>
             {% endif %}
@@ -97,7 +102,7 @@
                          class="toolicon"
                          viewBox="0 0 100 100"
                          stroke="white"
-                         stroke-width="10"
+                         stroke-width="7"
                          stroke-linecap="round"
                          stroke-linejoin="round"
                          fill="none">
@@ -109,7 +114,7 @@
                          class="toolicon"
                          viewBox="0 0 100 100"
                          stroke="white"
-                         stroke-width="10"
+                         stroke-width="7"
                          stroke-linecap="round"
                          fill="none">
                         <path d="M20 25h60M20 50h60M20 75h60M35 20v60M65 20v60" />
@@ -117,15 +122,28 @@
                 </a>
             {% endif %}
             {% if history %}
-                <a href="{% url history id %}" title="Bearbeitungs-Historie ansehen">🕑</a>
-            {% endif %}
-            {% if up %}
-                <a href="{% url up %}" title="Eine Ebene zurück">
+                <a href="#" title="Bearbeitungs-Historie ansehen">
                     <svg xmlns="http://www.w3.org/2000/svg"
                          class="toolicon"
                          viewBox="0 0 100 100"
                          stroke="white"
-                         stroke-width="10"
+                         stroke-width="7"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         fill="none">
+                        <circle cx="50" cy="55" r="28" />
+                        <path d="M50 55V38" />
+                        <path d="M50 55L65 65" />
+                    </svg>
+                </a>
+            {% endif %}
+            {% if up %}
+                <a href="{% url up %}" title="Artikelliste">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="toolicon"
+                         viewBox="0 0 100 100"
+                         stroke="white"
+                         stroke-width="7"
                          stroke-linecap="round"
                          stroke-linejoin="round"
                          fill="none">
