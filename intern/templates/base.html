@@ -151,6 +151,22 @@
                     </svg>
                 </a>
             {% endif %}
+            {% if changepass %}
+                <a href="/intern/mitglied/{{ id }}/passwd/" title="Passwort ändern">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="toolicon"
+                         viewBox="0 0 100 100"
+                         stroke="white"
+                         stroke-width="7"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         fill="none">
+                        <circle cx="30" cy="50" r="12" />
+                        <path d="M42 50 L80 50" />
+                        <path d="M65 50 L65 60 L72 60 L72 50" />
+                    </svg>
+                </a>
+            {% endif %}
         </header>
         <div class="layout">
             <aside class="sidebar" id="sidebar">

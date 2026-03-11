@@ -2,6 +2,7 @@ from datetime import datetime
 
 import django_tables2 as tables
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
@@ -460,6 +461,7 @@ def member_view(request, id):
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
         "up": "member_list",
         "edit": "member_edit",
+        "changepass": "member_passwd",
         "folder_id": 4,
         "id": id,
     }
@@ -482,10 +484,63 @@ def member_edit(request, id):
         "form": form,
         "user": user,
         "seitentitel": f"bearbeiten: {user.first_name} {user.last_name}",
+        "view": "member_view",
+        "changepass": "member_passwd",
         "folder_id": 4,
         "id": id,
     }
     return render(request, "member_edit.html", context)
+
+
+@login_required
+def member_passwd(request, id):
+    target_user = get_object_or_404(User, id=id)
+
+    # Prüfe, ob der aktuelle Benutzer der Zielbenutzer ist oder Admin
+    if request.user.id != target_user.id and not request.user.is_superuser:
+        return redirect("member_view", id=id)
+
+    if request.method == "POST":
+        new_password1 = request.POST.get("new_password1")
+        new_password2 = request.POST.get("new_password2")
+
+        # Überprüfe, ob die neuen Passwörter übereinstimmen
+        if new_password1 != new_password2:
+            messages.error(request, "Die neuen Passwörter stimmen nicht überein.")
+            return render(request, "member_passwd.html", {"user": target_user})
+
+        # Überprüfe Passwortlänge
+        if len(new_password1) < 5:
+            messages.error(
+                request, "Das neue Passwort muss mindestens 5 Zeichen lang sein."
+            )
+            return render(request, "member_passwd.html", {"user": target_user})
+
+        # Setze neues Passwort
+        target_user.set_password(new_password1)
+        target_user.save()
+
+        messages.success(request, "Das Passwort wurde erfolgreich geändert.")
+
+        # Wenn der aktuelle Benutzer das Passwort geändert hat, automatisch erneut einloggen
+        if request.user.id == target_user.id:
+            from django.contrib.auth import authenticate, login
+
+            # Erneutes Einloggen des Benutzers mit dem neuen Passwort
+            user = authenticate(username=target_user.username, password=new_password1)
+            if user is not None:
+                login(request, user)
+
+        return redirect("member_passwd", id=id)
+    else:
+        context = {
+            "user": target_user,
+            "seitentitel": f"Passwort ändern: {target_user.first_name} {target_user.last_name}",
+            "view": "member_view",
+            "edit": "member_edit",
+            "id": id,
+        }
+        return render(request, "member_passwd.html", context)
 
 
 @login_required
