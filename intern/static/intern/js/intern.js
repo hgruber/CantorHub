@@ -187,4 +187,14 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   });
+  const input = document.getElementById("new_password1");
+  const colors = ["#d9534f", "#f0ad4e", "#ffd500", "#9bc53d", "#28a745"];
+  function evaluatePassword() {
+    if (!input.value) return;
+    const score = zxcvbn(input.value).score;
+    const percent = (score + 1) * 20;
+    input.style.setProperty("--strength-width", percent + "%");
+    input.style.setProperty("--strength-color", colors[score]);
+  }
+  input.addEventListener("input", evaluatePassword);
 });

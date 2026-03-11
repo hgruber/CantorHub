@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}{{ seitentitel }}{% endblock %}
+{% block extra_js %}
+    <script src="{% static '/intern/js/zxcvbn.js' %}"></script>
+{% endblock %}
 {% block content %}
     <div class="wiki">
         {% if messages %}
@@ -12,7 +15,7 @@
                 <div class="form-group">
                     <label for="new_password1" class="form-label">Neues Passwort</label>
                     <input type="password"
-                           class="form-control"
+                           class="form-control password-field"
                            id="new_password1"
                            name="new_password1"
                            required>

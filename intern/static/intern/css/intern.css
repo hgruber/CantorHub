@@ -632,6 +632,20 @@ tbody tr {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.password-field {
+    --strength-width: 0%;
+    --strength-color: red;
+
+    width: 100%;
+    padding-bottom: 10px;
+
+    background: linear-gradient(var(--strength-color), var(--strength-color))
+        left bottom / var(--strength-width) 4px no-repeat;
+
+    border: 1px solid #ccc;
+    transition: background-size 0.25s ease;
+}
+
 /* =================================================== */
 /* Wiki-Styling */
 /* =================================================== */
