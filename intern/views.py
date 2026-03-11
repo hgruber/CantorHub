@@ -481,7 +481,7 @@ def member_edit(request, id):
     context = {
         "form": form,
         "user": user,
-        "seitentitel": f"Mitglied bearbeiten: {user.first_name} {user.last_name}",
+        "seitentitel": f"bearbeiten: {user.first_name} {user.last_name}",
         "folder_id": 4,
         "id": id,
     }
