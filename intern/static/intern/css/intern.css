@@ -635,6 +635,7 @@ tbody tr {
 }
 
 .wiki h1 {
+    font-size: 1.4em;
     color: #a83a5a;
     border-bottom: 2px solid #c14468;
     padding-bottom: 0.2em;
@@ -642,6 +643,13 @@ tbody tr {
 }
 
 .wiki h2 {
+    font-size: 1.2em;
+    color: #a83a5a;
+    margin-top: 1.5em;
+}
+
+.wiki h3 {
+    font-size: 1.1em;
     color: #a83a5a;
     margin-top: 1.5em;
 }
