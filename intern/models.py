@@ -30,6 +30,15 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=32, verbose_name="Vorname")
     last_name = models.CharField(max_length=32, verbose_name="Nachname")
 
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[],  # <--- Leerzeichen erlaubt
+        error_messages={
+            "unique": "Ein Benutzer mit diesem Namen existiert bereits.",
+        },
+    )
+
     avatar = FilerFileField(
         null=True, blank=True, on_delete=models.SET_NULL, related_name="avatar"
     )
