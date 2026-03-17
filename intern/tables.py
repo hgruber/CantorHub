@@ -2,6 +2,7 @@ from pyexpat import model
 
 import django_filters as filters
 import django_tables2 as tables
+from django.db.models import FilteredRelation, Q
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
@@ -292,6 +293,36 @@ class RepertoireTabelle(tables.Table):
 
 class MitgliederFilter(filters.FilterSet):
     stimme = filters.MultipleChoiceFilter(field_name="stimme", choices=User.STIMMEN)
+    konzert_qs = Termin.objects.filter(anwesenheit=True).distinct().order_by("-datum")
+
+    status = filters.ChoiceFilter(
+        label="Status",
+        choices=[
+            ("1", "Zusage"),
+            ("2", "Absage"),
+            ("3", "Eventuell"),
+            ("0", "keine Auswahl"),
+        ],
+        method="filter_status",
+    )
+    konzert = filters.ModelChoiceFilter(
+        label="Termin",
+        queryset=konzert_qs,
+        method=lambda qs, name, value: qs,
+    )
+
+    def filter_status(self, queryset, name, value):
+        termin = self.form.cleaned_data.get("konzert")
+
+        if not termin or not value:
+            return queryset
+        if value == "0":
+            return queryset.exclude(zusage__termin=termin)
+
+        return queryset.filter(
+            zusage__termin=termin,
+            zusage__option=value,
+        ).distinct()
 
     class Meta:
         model = User
