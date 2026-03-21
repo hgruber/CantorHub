@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 import django_tables2 as tables
 from django.conf import settings
@@ -340,8 +340,23 @@ def titel_list(request):
         if name != "position"
     ]
     RequestConfig(request, paginate=False).configure(table)
+    remaining_table = []
     if len(konzerte) == 1:
         seitentitel = f"Ablauf {Termin.objects.get(id=konzerte[0])}"
+        remaining_qs = (
+            Lied.objects.exclude(konzert__termin__id=konzerte[0])
+            .annotate(
+                position=Value("-"),
+                cnt=Count(
+                    1,
+                    filter=Q(konzert__termin__datum__gt=date(2015, 12, 23)),
+                ),
+            )
+            .order_by("-cnt", "titel")
+        )
+        remaining_table = RepertoireTabelle(
+            remaining_qs, visible_fields=["position", "titel"]
+        )
     else:
         seitentitel = "Repertoire"
 
@@ -353,6 +368,7 @@ def titel_list(request):
             "column_choices": column_choices,
             "visible_fields": fields,
             "filter": repertoire_filter,
+            "pool": remaining_table,
             "seitentitel": seitentitel,
             "folder_id": 5,
             "showfilter": True,

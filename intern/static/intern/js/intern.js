@@ -93,9 +93,11 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Sortable functionality
-  const tbody = document.querySelector(".table-container table tbody");
+  const tbody = document.querySelectorAll(".table-container table tbody");
+  const moderation = document.querySelector("#PoolSelector table tbody");
   if (tbody) {
-    const sortable = new Sortable(tbody, {
+    const sortable = new Sortable(tbody[1], {
+      group: { name: "shared" },
       animation: 150,
       ghostClass: "blue-background-class",
       disabled: true, // startet deaktiviert
@@ -111,6 +113,18 @@ document.addEventListener("DOMContentLoaded", function () {
           body: JSON.stringify({ order: order }),
         });
       },
+    });
+    const pool = new Sortable(tbody[0], {
+      group: { name: "shared" },
+      sortable: false,
+      animation: 150,
+      ghostClass: "blue-background-class",
+    });
+    const moderate = new Sortable(moderation, {
+      group: { name: "shared", pull: "clone", put: false },
+      sortable: false,
+      animation: 150,
+      ghostClass: "blue-background-class",
     });
 
     function toggleSort() {
