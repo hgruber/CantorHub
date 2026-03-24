@@ -717,7 +717,6 @@ span.not_found {
     border: 1px solid #ddd;
     border-radius: 4px;
     padding: 16px;
-    overflow: auto;
     font-family: "Courier New", Courier, monospace;
     font-size: 14px;
     line-height: 1.4;
@@ -730,6 +729,14 @@ span.not_found {
     box-sizing: border-box;
     flex: 1;
     min-height: 100px;
+}
+
+#footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 0.8em;
+    font-weight: bold;
 }
 
 /* =================================================== */

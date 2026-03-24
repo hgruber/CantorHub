@@ -14,18 +14,18 @@ class ListProcessor:
     def process_line(self, line):
         if line.startswith("*"):
             level = line.count("*")
-            return self._handle_level(level, line[level:].strip(), "ul")
+            return False, self._handle_level(level, line[level:].strip(), "ul")
         elif line.startswith("#"):
             level = line.count("#")
-            return self._handle_level(level, line[level:].strip(), "ol")
+            return False, self._handle_level(level, line[level:].strip(), "ol")
         else:
             # Normale Zeile - schließe alle offenen Ebenen
             tags = ""
             while self.stack:
                 tags += "</ul>" if self.stack.pop() == "ul" else "</ol>"
             if tags == "":
-                return line
-            return tags
+                return False, line
+            return tags, line
 
     def _handle_level(self, level, content, tag_type):
         # Schließe überflüssige Ebenen
@@ -83,6 +83,11 @@ class CodeBlockProcessor:
             else:
                 # Normale Zeile, keine aktiven Codeblock
                 return line, False
+
+    def close(self):
+        if self.in_code_block:
+            return "</code></pre>"
+        return ""
 
 
 def insert_file_object(f):
@@ -194,7 +199,9 @@ def apply_replacements(text, request=None):
     for line in text.splitlines():
         if line is None or line == "" or re.match(r"^\s+$", line):
             continue
-        repl = list_processor.process_line(line)
+        line, repl = list_processor.process_line(line)
+        if line:
+            result.append(f"{line}")
         if request is not None:  # Skip codeblock for forum
             repl, skip_block = code_processor.process_line(repl)
             if skip_block:
@@ -206,6 +213,11 @@ def apply_replacements(text, request=None):
         for pattern, replacement in REPLACEMENTS:
             repl = re.sub(pattern, replacement, repl, flags=re.IGNORECASE)
         result.append(f"{repl}")
+    result.append(code_processor.close())
+    if request is not None:
+        result.append(
+            '<p id="footer"><img src="/static/intern/images/JG-Frankfurt-wG-color.svg" style="width: 14px;">&nbsp;Just Gospel!</p>'
+        )
     return "\n".join(result)
 
 
