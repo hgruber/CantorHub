@@ -321,7 +321,7 @@ class Lied(models.Model):
 
 class Konzert(models.Model):
     termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
-    lied = models.ForeignKey("Lied", on_delete=models.CASCADE)
+    lied = models.ForeignKey("Lied", null=True, on_delete=models.CASCADE)
     position = models.IntegerField(default=1)
 
     class Meta:
@@ -329,7 +329,7 @@ class Konzert(models.Model):
         ordering = ["position"]
 
     def __str__(self):
-        return f"{self.position} - {self.termin.kurz}"
+        return f"{self.position} - {self.termin.kurz} - {self.lied}"
 
 
 class Zusage(models.Model):

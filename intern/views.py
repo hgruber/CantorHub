@@ -1,6 +1,6 @@
+import json
 from datetime import date, datetime
 
-import django_tables2 as tables
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -20,6 +20,7 @@ from .forms import RegisterForm, UserEditForm
 from .models import (
     Artikel,
     Forum,
+    Konzert,
     Lied,
     Mitteilung,
     TabellenPreferenzen,
@@ -375,6 +376,28 @@ def titel_list(request):
             "order": len(konzerte) == 1,
         },
     )
+
+
+@login_required
+@require_POST
+def update_order(request):
+    try:
+        data = json.loads(request.body)
+        konzert_id = data.get("konzert_id")
+        order = data.get("order", [])
+        print(konzert_id, order)
+
+        Konzert.objects.filter(termin__id=konzert_id).delete()
+        k = [
+            Konzert(position=position, lied_id=lied_id, termin_id=konzert_id)
+            for position, lied_id in enumerate(order)
+        ]
+        print(k)
+        Konzert.objects.bulk_create(k)
+        return JsonResponse({"status": "success"})
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
 
 @login_required

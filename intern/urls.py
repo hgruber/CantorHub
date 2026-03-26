@@ -36,6 +36,7 @@ urlpatterns = [
     path("titel/", views.titel_list, name="titel_list"),
     path("titel/<int:titel>/", views.dummy, name="titel_view"),
     path("titel/<int:titel>/edit", views.dummy, name="titel_edit"),
+    path("update-order/", views.update_order, name="update-order"),
     # Termin URLs
     path("termin/", views.termin_list, name="termin_list"),
     path("termin/<int:id>/edit", views.dummy, name="termin_edit"),

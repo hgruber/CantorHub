@@ -224,7 +224,6 @@ class RepertoireFilter(filters.FilterSet):
 
 
 class RepertoireTabelle(tables.Table):
-    position = tables.Column(verbose_name="#", attrs={"td": {"class": "right"}})
     original = tables.Column(
         verbose_name="O",
         empty_values=(),
@@ -244,7 +243,8 @@ class RepertoireTabelle(tables.Table):
         },
     )
     titel = tables.Column(
-        linkify=("admin:intern_lied_change", {"object_id": tables.A("id")})
+        linkify=("admin:intern_lied_change", {"object_id": tables.A("id")}),
+        attrs={"td": {"data-id": lambda record: record.id}},
     )
     aktiv = tables.BooleanColumn()
     tempo = tables.Column()
