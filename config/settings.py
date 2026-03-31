@@ -161,3 +161,26 @@ ORDNER_ID_EXTERN = 7
 ORDNER_ID_REPERTOIRE = 8
 ORDNER_ID_PDF = 9
 ORDNER_ID_NOTENSATZ = 10
+
+# File type to folder ID mappings for special handling
+FILE_TYPE_CONFIG = {
+    'audio': {
+        'extensions': ['.mp3', '.m4a'],
+        'folder_id': ORDNER_ID_REPERTOIRE,
+    },
+    'music': {
+        'extensions': ['.cap', '.msc', '.mscz'],
+        'folder_id': ORDNER_ID_NOTENSATZ,
+    },
+    'pdf': {
+        'extensions': ['.pdf'],
+        'folder_id': ORDNER_ID_PDF,
+    },
+}
+
+# File type to Lied model field mapping
+FILE_TYPE_LIED_MAP = {
+    'audio': 'original_id',
+    'music': 'noten_id',
+    'pdf': 'pdf_id',
+}

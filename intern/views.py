@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import date, datetime
 
 from django.conf import settings
@@ -68,33 +69,58 @@ def register_success(request):
     return render(request, "register_success.html")
 
 
+def _get_file_extension(filename):
+    """Extract file extension from filename"""
+    return os.path.splitext(filename)[1].lower()
+
+
+def _get_file_type_config(extension):
+    """Get file type config for given extension"""
+    for file_type, config in settings.FILE_TYPE_CONFIG.items():
+        if extension in config["extensions"]:
+            return file_type, config
+    return None, None
+
+
+def _get_lied_by_filename(filename):
+    """Look up Lied object by filename (with JG- prefix support)"""
+    name, _ = os.path.splitext(filename)
+    try:
+        if name.startswith("JG-"):
+            return Lied.objects.get(titel=name[3:])
+        return Lied.objects.get(titel=name)
+    except Lied.DoesNotExist:
+        return None
+
+
 @login_required
 @require_POST
 def upload(request):
     if request.FILES:
-        import os
-
         file = request.FILES["file"]
-        folder_id = request.POST.get("folder_id")
-        if folder_id is None:
-            folder_id = settings.ORDNER_ID_UNSORTIERT
-        name, endung = os.path.splitext(file.name)
-        song = None
-        if endung in [".mp3", ".m4a", ".cap", ".msc", ".mscz", ".pdf"]:
-            try:
-                if name.startswith("JG-"):
-                    song = Lied.objects.get(titel=name[3:])
-                else:
-                    song = Lied.objects.get(titel=name)
-                if song is not None:
-                    if endung in [".mp3", ".m4a"]:
-                        folder_id = settings.ORDNER_ID_REPERTOIRE
-                    elif endung in [".cap", ".msc", ".mscz"]:
-                        folder_id = settings.ORDNER_ID_NOTENSATZ
-                    else:
-                        folder_id = settings.ORDNER_ID_PDF
-            except:
-                pass
+        preferred_folder_id = request.POST.get("folder_id")
+
+        # Extract extension
+        extension = _get_file_extension(file.name)
+
+        # Get file type config if extension is special
+        file_type, file_type_config = _get_file_type_config(extension)
+
+        # Look up song if filename matches
+        song = _get_lied_by_filename(file.name)
+
+        # Determine folder_id
+        # If file is found in Lied table, use the folder_id from the appropriate field
+        if song and file_type and file_type_config:
+            folder_id = file_type_config["folder_id"]
+        elif song and hasattr(song, f'{file_type}_id'):
+            # Use the folder_id from the song's specific field
+            field_name = f'{file_type}_id'
+            folder_id = getattr(song, field_name)
+        else:
+            folder_id = preferred_folder_id or settings.ORDNER_ID_UNSORTIERT
+
+        # Create file record
         filer_file = File.objects.create(
             file=file,
             original_filename=file.name,
@@ -102,18 +128,16 @@ def upload(request):
             owner=request.user,
             folder_id=folder_id,
         )
-        if song is not None:
-            if name.startswith("JG-") and endung in [".mp3", ".m4a"]:
-                song.aufnahme_id = filer_file.id
-            elif endung == ".pdf":
-                song.pdf_id = filer_file.id
-            elif endung in [".cap", ".msc", ".mscz"]:
-                song.noten_id = filer_file.id
-            elif endung in [".mp3", ".m4a"]:
-                song.original_id = filer_file.id
-            else:
-                print("kaputte Endung")
-            song.save()
+
+        # Update song if applicable
+        if song and file_type:
+            # Update song with appropriate file field
+            field_name = settings.FILE_TYPE_LIED_MAP.get(file_type)
+            if field_name:
+                setattr(song, field_name, filer_file)
+                song.save()
+
+        # Return response
         url = request.META.get("HTTP_ORIGIN") + filer_file.url
         return JsonResponse({"status": "success", "id": filer_file.id, "url": url})
 
