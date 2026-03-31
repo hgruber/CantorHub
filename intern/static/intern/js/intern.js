@@ -122,7 +122,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Sortable functionality
   const tbody = document.querySelectorAll(".table-container table tbody");
   const moderation = document.querySelector("#PoolSelector table tbody");
-  if (tbody) {
+  if (tbody && tbody.length >= 2) {
     const sortable = new Sortable(tbody[1], {
       group: { name: "shared" },
       disabled: true,
