@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load django_tables2 %}
 {% block content %}
+<div class="table-view">
     <div class="action offcanvas" id="Action">
         Kopieren
         <br />
@@ -51,4 +52,5 @@
         </div>
     {% endif %}
     {% render_table table %}
+</div>
 {% endblock %}

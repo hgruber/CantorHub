@@ -1,12 +1,34 @@
-// Hamburger-Toggle
+// Hamburger + mobile overlay
 const hamburger = document.getElementById("hamburger");
 const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("sidebar-overlay");
 
 if (hamburger && sidebar) {
   hamburger.addEventListener("click", () => {
     sidebar.classList.toggle("active");
+    overlay.classList.toggle("active");
   });
 }
+
+if (overlay) {
+  overlay.addEventListener("click", () => {
+    sidebar.classList.remove("active");
+    overlay.classList.remove("active");
+  });
+}
+
+// Active navigation state
+document.querySelectorAll(".sidebar-nav .nav-item[href]").forEach((link) => {
+  try {
+    const linkPath = new URL(link.href).pathname;
+    const current = window.location.pathname;
+    const dataPath = link.dataset.path;
+    const matchPath = dataPath || linkPath;
+    if (matchPath.length > 1 && current.startsWith(matchPath)) {
+      link.classList.add("active");
+    }
+  } catch (e) {}
+});
 
 // Filter offcanvas functionality - ensure only one offcanvas is open at a time
 function toggle(offcanvas) {

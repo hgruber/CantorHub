@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+<div class="forum-layout">
     <div class="forum-entry">
         <div class="text-container">
             <form id="send-form"
@@ -32,12 +33,11 @@
         {% include '_messages.html' with messages=messages %}
         <div id="load-more"
              class="sentinel"
-             style="height: 1px;
-                    background: transparent"
+             style="height:1px;background:transparent"
              hx-get="{% url 'forum_more' forum=forum %}?oldest_id={{ oldest_id }}"
              hx-target="#messages"
              hx-swap="beforeend"
-             hx-trigger="intersect once"
-             hx-swap-oob="false"></div>
-    {% endblock %}
+             hx-trigger="intersect once root:#messages"></div>
+    </div>
 </div>
+{% endblock %}
