@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="history-view">
+    <form method="get" action="{% url 'article_diff' name=name %}" id="history-form">
+        <div class="history-toolbar">
+            <button type="submit" class="btn btn-primary">Versionen vergleichen</button>
+        </div>
+        <div class="history-table-wrap">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th title="Neuere Version">neu</th>
+                    <th title="Ältere Version">alt</th>
+                    <th>Version</th>
+                    <th>Datum</th>
+                    <th>Autor</th>
+                    <th>Kommentar</th>
+                    <th>Änderungen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td class="radio-cell">
+                        <input type="radio" name="v2" value="{{ row.version.version }}"
+                               {% if forloop.first %}checked{% endif %}>
+                    </td>
+                    <td class="radio-cell">
+                        <input type="radio" name="v1" value="{{ row.version.version }}"
+                               {% if forloop.counter == 2 %}checked{% endif %}
+                               {% if rows|length == 1 %}disabled{% endif %}>
+                    </td>
+                    <td>
+                        <a href="{% url 'article_view' name=name %}?version={{ row.version.version }}">
+                            {{ row.version.version }}
+                        </a>
+                    </td>
+                    <td class="nowrap">{{ row.version.datum|date:"d.m.Y H:i" }}</td>
+                    <td>{{ row.version.autor }}</td>
+                    <td class="comment">{{ row.version.kommentar|default:"" }}</td>
+                    <td class="diff-size">
+                        {% if row.lines_added %}<span class="added">+{{ row.lines_added }}</span>{% endif %}
+                        {% if row.lines_removed %}<span class="removed">−{{ row.lines_removed }}</span>{% endif %}
+                        {% if not row.lines_added and not row.lines_removed %}<span class="muted">–</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <div class="history-toolbar">
+            <button type="submit" class="btn btn-primary">Versionen vergleichen</button>
+        </div>
+    </form>
+</div>
+
+<script>
+(function () {
+    // Keep v1 (older) always below v2 (newer) — enforce MediaWiki-style radio logic
+    const form = document.getElementById("history-form");
+    const rows = form.querySelectorAll("tbody tr");
+
+    function indexOfChecked(name) {
+        let i = 0;
+        for (const row of rows) {
+            if (row.querySelector(`input[name="${name}"]`)?.checked) return i;
+            i++;
+        }
+        return -1;
+    }
+
+    form.addEventListener("change", function (e) {
+        const radio = e.target;
+        if (radio.type !== "radio") return;
+        const changedIdx = [...rows].indexOf(radio.closest("tr"));
+        if (radio.name === "v2") {
+            // v2 = newer (top rows = higher version), v1 must be below it
+            const v1idx = indexOfChecked("v1");
+            if (v1idx <= changedIdx) {
+                // push v1 one row below v2
+                const nextRow = rows[changedIdx + 1];
+                if (nextRow) nextRow.querySelector('input[name="v1"]').checked = true;
+            }
+        } else {
+            // v1 = older, v2 must be above it
+            const v2idx = indexOfChecked("v2");
+            if (v2idx >= changedIdx) {
+                const prevRow = rows[changedIdx - 1];
+                if (prevRow) prevRow.querySelector('input[name="v2"]').checked = true;
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

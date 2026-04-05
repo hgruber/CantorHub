@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="diff-view">
+
+    <div class="diff-meta">
+        <div class="diff-meta-versions">
+            <span class="diff-old">
+                Version {{ v1 }} – {{ old.datum|date:"d.m.Y H:i" }} – {{ old.autor }}{% if old.kommentar %}: <em>{{ old.kommentar }}</em>{% endif %}
+            </span>
+            <span class="diff-arrow">→</span>
+            <span class="diff-new">
+                Version {{ v2 }} – {{ new.datum|date:"d.m.Y H:i" }} – {{ new.autor }}{% if new.kommentar %}: <em>{{ new.kommentar }}</em>{% endif %}
+            </span>
+        </div>
+        <div class="diff-mode-toggle">
+            <a href="?v1={{ v1 }}&v2={{ v2 }}&mode=unified"
+               class="btn {% if mode == 'unified' %}btn-primary{% else %}btn-secondary{% endif %}">Unified</a>
+            <a href="?v1={{ v1 }}&v2={{ v2 }}&mode=side"
+               class="btn {% if mode == 'side' %}btn-primary{% else %}btn-secondary{% endif %}">Side-by-Side</a>
+        </div>
+    </div>
+
+    {% if unified_lines|length == 0 and not side_table %}
+        <div class="diff-empty">Die beiden Versionen sind identisch.</div>
+    {% endif %}
+
+    {% if mode == "unified" %}
+        <div class="diff-unified-wrap">
+            <table class="diff-unified">
+                <tbody>
+                {% for kind, line in unified_lines %}
+                    {% if kind == "hunk" %}
+                    <tr class="diff-hunk"><td colspan="2" class="diff-hunk-label">{{ line }}</td></tr>
+                    {% elif kind == "add" %}
+                    <tr class="diff-add"><td class="diff-gutter">+</td><td class="diff-code">{{ line }}</td></tr>
+                    {% elif kind == "del" %}
+                    <tr class="diff-del"><td class="diff-gutter">−</td><td class="diff-code">{{ line }}</td></tr>
+                    {% else %}
+                    <tr class="diff-ctx"><td class="diff-gutter"> </td><td class="diff-code">{{ line }}</td></tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% if mode == "side" and side_table %}
+        <div class="diff-side-wrap">
+            {{ side_table|safe }}
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

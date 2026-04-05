@@ -48,8 +48,16 @@
     --r-lg: 12px;
 
     /* Typography */
-    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    --font:       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-sans:  -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono:       ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+
+    /* Table */
+    --bg-thead:     #f9fafb;
+    --bg-row-hover: #f3f4f6;
+
+    /* Aliases */
+    --text-muted:  #6b7280;
 
     --ease: 0.18s ease;
 }
@@ -1061,3 +1069,240 @@ span.not_found {
 @media (min-width: 769px) {
     .hamburger { display: none !important; }
 }
+
+/* ── Outdated version banner ──────────────────────────── */
+.outdated-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 16px;
+    padding: 10px 14px;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: var(--r);
+    color: #92400e;
+    font-size: 0.875rem;
+}
+
+.outdated-banner svg {
+    flex-shrink: 0;
+    color: #d97706;
+}
+
+.outdated-banner a {
+    color: #b45309;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+/* ── Article history ──────────────────────────────────── */
+.history-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.history-view form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.history-toolbar {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    background: var(--bg-thead);
+    border-bottom: 1px solid var(--border);
+}
+
+.history-table-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.history-table th,
+.history-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.history-table thead th {
+    background: var(--bg-thead);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.history-table tbody tr:hover {
+    background: var(--bg-row-hover);
+}
+
+.radio-cell {
+    width: 32px;
+    text-align: center;
+}
+
+.history-table .nowrap { white-space: nowrap; }
+
+.history-table .comment { color: var(--text-muted); font-style: italic; }
+
+.diff-size { white-space: nowrap; }
+.diff-size .added  { color: #16a34a; font-weight: 600; margin-right: 4px; }
+.diff-size .removed { color: #dc2626; font-weight: 600; }
+.diff-size .muted   { color: var(--text-muted); }
+
+/* ── Article diff ─────────────────────────────────────── */
+.diff-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.diff-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-app);
+    flex-shrink: 0;
+}
+
+.diff-meta-versions {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+}
+
+.diff-old  { color: #b91c1c; }
+.diff-new  { color: #15803d; }
+.diff-arrow { color: var(--text-muted); }
+
+.diff-mode-toggle {
+    display: flex;
+    gap: 6px;
+}
+
+.diff-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Unified diff */
+.diff-unified-wrap {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+}
+
+.diff-unified {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: ui-monospace, "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+    font-size: 0.8125rem;
+    tab-size: 4;
+}
+
+.diff-unified td {
+    padding: 1px 8px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.diff-gutter {
+    width: 24px;
+    text-align: center;
+    user-select: none;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.diff-add  { background: #f0fdf4; }
+.diff-add .diff-gutter  { background: #bbf7d0; color: #15803d; border-color: #86efac; }
+.diff-add .diff-code    { color: #15803d; }
+
+.diff-del  { background: #fef2f2; }
+.diff-del .diff-gutter  { background: #fecaca; color: #b91c1c; border-color: #fca5a5; }
+.diff-del .diff-code    { color: #b91c1c; }
+
+.diff-hunk { background: #eff6ff; }
+.diff-hunk-label {
+    padding: 3px 10px;
+    color: #1d4ed8;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.8rem;
+    border-top: 1px solid #bfdbfe;
+    border-bottom: 1px solid #bfdbfe;
+}
+
+/* Side-by-side (difflib.HtmlDiff output) */
+.diff-side-wrap {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+    padding: 0;
+}
+
+.diff-side-wrap table.diff {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 0.8125rem;
+}
+
+.diff-side-wrap table.diff td,
+.diff-side-wrap table.diff th {
+    padding: 2px 8px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+}
+
+.diff-side-wrap table.diff th {
+    background: var(--bg-thead);
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.diff-side-wrap td.diff_header { color: var(--text-muted); user-select: none; width: 3em; text-align: right; }
+.diff-side-wrap td.diff_next,
+.diff-side-wrap th.diff_next   { display: none; }
+
+.diff-side-wrap tr.diff_add td { background: #f0fdf4; }
+.diff-side-wrap tr.diff_chg td { background: #fefce8; }
+.diff-side-wrap tr.diff_sub td { background: #fef2f2; }
+
+.diff-side-wrap span.diff_add { background: #bbf7d0; }
+.diff-side-wrap span.diff_chg { background: #fde68a; }
+.diff-side-wrap span.diff_sub { background: #fecaca; }
