@@ -84,6 +84,8 @@ document.addEventListener("DOMContentLoaded", function () {
       ".table-container tbody input[type=checkbox]:checked",
     ).length;
     const anyChecked = checkedCount > 0;
+    const countEl = document.getElementById("selected-count");
+    if (countEl) countEl.textContent = checkedCount;
     // Reagiere nur bei Zustandswechsel
     if (anyChecked !== anyPreviouslyChecked) {
       if (anyChecked && action) {
@@ -264,6 +266,55 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   });
+
+  // File actions: delete / move / copy
+  window.fileAction = function (action) {
+    const formId = action === "delete" ? "delete-form"
+                 : action === "move"   ? "move-form"
+                 :                       "copy-form";
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    // Collect selected items (skip ".." nav row)
+    const checked = document.querySelectorAll(
+      ".table-container tbody input[type=checkbox]:checked"
+    );
+    const items = [];
+    checked.forEach((cb) => {
+      const tr = cb.closest("tr");
+      if (!tr || tr.dataset.nav) return;
+      items.push(tr.dataset.itemType + ":" + tr.dataset.itemId);
+    });
+
+    if (items.length === 0) { alert("Keine Elemente ausgewählt."); return; }
+
+    if (action === "delete") {
+      if (!confirm(`${items.length} Element(e) wirklich löschen?`)) return;
+    } else {
+      const picker = document.querySelector("#folder-picker .folder-picker-item.selected");
+      if (!picker) { alert("Bitte erst einen Zielordner auswählen."); return; }
+      const targetInput = document.getElementById(
+        action === "move" ? "move-target" : "copy-target"
+      );
+      if (targetInput) targetInput.value = picker.dataset.pk;
+    }
+
+    // Remove previously appended item inputs
+    form.querySelectorAll('input[name="item"]').forEach((el) => el.remove());
+    items.forEach((val) => {
+      const inp = document.createElement("input");
+      inp.type = "hidden"; inp.name = "item"; inp.value = val;
+      form.appendChild(inp);
+    });
+    form.submit();
+  };
+
+  window.selectFolderTarget = function (el) {
+    document.querySelectorAll("#folder-picker .folder-picker-item").forEach(
+      (i) => i.classList.remove("selected")
+    );
+    el.classList.add("selected");
+  };
 
   // Add event listener for save order button
   const saveOrderButton = document.getElementById("saveOrderButton");

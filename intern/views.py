@@ -167,8 +167,34 @@ def visible_fields(request, tabelle):
     return visible_fields
 
 
+def _build_folder_flat(exclude_pk=None):
+    """Return all folders as a flat list with full path strings, for the folder picker."""
+    all_fldrs = list(Folder.objects.order_by("name").values("id", "name", "parent_id"))
+    folder_map = {f["id"]: f for f in all_fldrs}
+
+    def path_of(f):
+        parts = [f["name"]]
+        cur = f
+        seen = set()
+        while cur["parent_id"] and cur["parent_id"] not in seen:
+            seen.add(cur["id"])
+            par = folder_map.get(cur["parent_id"])
+            if not par:
+                break
+            parts.append(par["name"])
+            cur = par
+        return " / ".join(reversed(parts))
+
+    return [
+        {"id": f["id"], "path": path_of(f)}
+        for f in all_fldrs
+        if f["id"] != exclude_pk
+    ]
+
+
 @login_required
 def folder_view(request, pk):
+    original_pk = pk          # 0 means root; keep for URLs
     folder_up = []
     if pk == 0:
         pk = None
@@ -257,8 +283,84 @@ def folder_view(request, pk):
             "seitentitel": f"Ordner: {name}",
             "folder_id": pk,
             "table": table,
+            "show_file_actions": True,
+            "new_folder_pk": original_pk,
+            "current_pk": original_pk,
+            "all_folders_flat": _build_folder_flat(),
         },
     )
+
+
+@login_required
+@require_POST
+def folder_create(request, pk):
+    name = request.POST.get("name", "").strip()
+    if name:
+        Folder.objects.create(
+            name=name,
+            parent_id=pk if pk != 0 else None,
+            owner=request.user,
+        )
+    return redirect("folder_view", pk=pk)
+
+
+def _parse_items(post):
+    """Parse 'item' list of 'Type:id' strings from POST data."""
+    items = []
+    for raw in post.getlist("item"):
+        if ":" in raw:
+            t, _, i = raw.partition(":")
+            items.append((t, int(i)))
+    return items
+
+
+@login_required
+@require_POST
+def folder_delete(request):
+    referer_pk = int(request.POST.get("referer_pk", 0))
+    for item_type, item_id in _parse_items(request.POST):
+        if item_type == "Folder":
+            Folder.objects.filter(pk=item_id).delete()
+        else:
+            File.objects.filter(pk=item_id).delete()
+    return redirect("folder_view", pk=referer_pk)
+
+
+@login_required
+@require_POST
+def folder_move(request):
+    referer_pk = int(request.POST.get("referer_pk", 0))
+    raw_target = request.POST.get("target_pk", "")
+    target_id = int(raw_target) if raw_target else None
+    for item_type, item_id in _parse_items(request.POST):
+        if item_type == "Folder":
+            Folder.objects.filter(pk=item_id).update(parent_id=target_id)
+        else:
+            File.objects.filter(pk=item_id).update(folder_id=target_id)
+    return redirect("folder_view", pk=referer_pk)
+
+
+@login_required
+@require_POST
+def folder_copy(request):
+    referer_pk = int(request.POST.get("referer_pk", 0))
+    raw_target = request.POST.get("target_pk", "")
+    target_id = int(raw_target) if raw_target else None
+    for item_type, item_id in _parse_items(request.POST):
+        if item_type == "File":
+            try:
+                f = File.objects.get(pk=item_id)
+                File.objects.create(
+                    file=f.file,
+                    original_filename=f.original_filename,
+                    name=f.name,
+                    owner=request.user,
+                    folder_id=target_id,
+                    mime_type=f.mime_type,
+                )
+            except File.DoesNotExist:
+                pass
+    return redirect("folder_view", pk=referer_pk)
 
 
 @login_required

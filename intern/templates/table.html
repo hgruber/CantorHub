@@ -2,13 +2,51 @@
 {% load django_tables2 %}
 {% block content %}
 <div class="table-view">
+    {% if show_file_actions %}
     <div class="action offcanvas" id="Action">
-        Kopieren
-        <br />
-        Verschieben
-        <br />
-        Löschen
+        <div class="action-header">
+            <span id="selected-count">0</span> ausgewählt
+        </div>
+
+        <form id="delete-form" method="post" action="{% url 'folder_delete' %}">
+            {% csrf_token %}
+            <input type="hidden" name="referer_pk" value="{{ current_pk }}">
+        </form>
+        <form id="move-form" method="post" action="{% url 'folder_move' %}">
+            {% csrf_token %}
+            <input type="hidden" name="referer_pk" value="{{ current_pk }}">
+            <input type="hidden" id="move-target" name="target_pk" value="">
+        </form>
+        <form id="copy-form" method="post" action="{% url 'folder_copy' %}">
+            {% csrf_token %}
+            <input type="hidden" name="referer_pk" value="{{ current_pk }}">
+            <input type="hidden" id="copy-target" name="target_pk" value="">
+        </form>
+
+        <button class="btn btn-danger action-btn" onclick="fileAction('delete')">Löschen</button>
+
+        <div class="action-divider"></div>
+        <div class="action-label">Zielordner</div>
+        <div class="folder-picker" id="folder-picker">
+            <div class="folder-picker-item" data-pk="0" onclick="selectFolderTarget(this)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                / (Wurzel)
+            </div>
+            {% for f in all_folders_flat %}
+            <div class="folder-picker-item" data-pk="{{ f.id }}" onclick="selectFolderTarget(this)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                {{ f.path }}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="action-move-btns">
+            <button class="btn btn-secondary action-btn" onclick="fileAction('move')">Verschieben</button>
+            <button class="btn btn-primary action-btn" onclick="fileAction('copy')">Kopieren</button>
+        </div>
     </div>
+    {% else %}
+    <div class="action offcanvas" id="Action"></div>
+    {% endif %}
     {% if order %}
         <div class="pool offcanvas" id="PoolSelector">
             <button id="saveOrderButton" class="btn btn-primary">speichern</button>

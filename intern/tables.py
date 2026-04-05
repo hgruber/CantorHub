@@ -78,6 +78,11 @@ class OrdnerTabelle(tables.Table):
 
     class Meta:
         attrs = {"class": "table"}
+        row_attrs = {
+            "data-item-type": lambda record: record.get("type", ""),
+            "data-item-id": lambda record: str(record.get("id", "")),
+            "data-nav": lambda record: "1" if record.get("name") == ".." else "",
+        }
 
 
 class TerminTabelle(tables.Table):
