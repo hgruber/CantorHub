@@ -26,7 +26,7 @@ VERSION = (
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-96c((62k0dknm__v%zrw3#3=7pc^$tc)&#w1m50#5ly)o71#la"
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-96c((62k0dknm__v%zrw3#3=7pc^$tc)&#w1m50#5ly)o71#la")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", False) == '1'

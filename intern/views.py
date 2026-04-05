@@ -11,6 +11,7 @@ from django.db.models.functions import Coalesce, Concat
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.crypto import get_random_string
+from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from filer.models import File, Folder
@@ -51,7 +52,7 @@ def register(request):
             try:
                 user = User.objects.get(username=form.cleaned_data["username"])
                 password = get_random_string(10)
-                # user.set_password(password)
+                user.set_password(password)
                 subject = "Dein neues Passwort"
                 message = f"""Du kannst Dich sofort im internen Bereich anmelden\nmit deinem Benutzer '{user.username}' und Deinem\nneuen Passwort: {password}"""
                 from_email = "webmaster@example.org"
@@ -148,9 +149,12 @@ def visible_fields(request, tabelle):
         try:
             pref = TabellenPreferenzen.objects.get(person=request.user, tabelle=tabelle)
             return pref.sichtbare_spalten
-        except:
-            pref = TabellenPreferenzen.objects.get(person=None, tabelle=tabelle)
-            return pref.sichtbare_spalten
+        except TabellenPreferenzen.DoesNotExist:
+            try:
+                pref = TabellenPreferenzen.objects.get(person=None, tabelle=tabelle)
+                return pref.sichtbare_spalten
+            except TabellenPreferenzen.DoesNotExist:
+                return []
     else:
         TabellenPreferenzen.objects.update_or_create(
             person=request.user,
@@ -269,8 +273,8 @@ def forum_list(request):
 @login_required
 def forum_view(request, forum):
     messages = Mitteilung.objects.filter(forum_id=forum)[:25]
-    last_id = max(msg.id for msg in messages)
-    oldest_id = min(msg.id for msg in messages)
+    last_id = max((msg.id for msg in messages), default=0)
+    oldest_id = min((msg.id for msg in messages), default=0)
     return render(
         request,
         "forum.html",
@@ -409,14 +413,11 @@ def update_order(request):
         data = json.loads(request.body)
         konzert_id = data.get("konzert_id")
         order = data.get("order", [])
-        print(konzert_id, order)
-
         Konzert.objects.filter(termin__id=konzert_id).delete()
         k = [
             Konzert(position=position, lied_id=lied_id, termin_id=konzert_id)
             for position, lied_id in enumerate(order)
         ]
-        print(k)
         Konzert.objects.bulk_create(k)
         return JsonResponse({"status": "success"})
 
@@ -533,6 +534,8 @@ def member_view(request, id):
 
 @login_required
 def member_edit(request, id):
+    if request.user.id != id and not request.user.is_superuser:
+        return redirect("member_view", id=id)
     user = get_object_or_404(User, id=id)
 
     if request.method == "POST":
@@ -619,15 +622,28 @@ def article_list(request):
 @login_required
 def article_edit(request, name):
     artikel = Artikel.objects.filter(name=name).order_by("-id").first()
+
+    if request.method == "POST":
+        text = request.POST.get("text", "")
+        kommentar = request.POST.get("kommentar", "")
+        next_version = (artikel.version + 1) if artikel else 1
+        Artikel.objects.create(
+            name=name,
+            version=next_version,
+            datum=now(),
+            autor=request.user,
+            kommentar=kommentar,
+            text=text,
+        )
+        return redirect("article_view", name=name)
+
     context = {
         "artikel": artikel,
-        "text": '<textarea wrap="soft">' + artikel.text + "</textarea>"
-        if artikel
-        else "",
+        "edit_text": artikel.text if artikel else "",
         "seitentitel": f"bearbeiten: {name}",
         "up": "article_list",
         "view": "article_view",
-        "id": artikel,
+        "id": name,
         "back": "",
     }
     return render(request, "artikel.html", context)

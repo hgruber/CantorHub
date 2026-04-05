@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var myDropzone = new Dropzone("#InternDropzone", {
     url: "/intern/upload/",
     paramName: "file",
-    maxFilesize: 25000000,
+    maxFilesize: 50,
     headers: {
       "X-CSRFToken": "{{ csrf_token }}",
     },

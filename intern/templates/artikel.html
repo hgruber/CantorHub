@@ -1,3 +1,18 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block content %}<div class="wiki">{{ text|safe }}</div>{% endblock %}
+{% block content %}
+{% if edit_text is not None %}
+<form method="post">
+  {% csrf_token %}
+  <div class="wiki">
+    <textarea name="text" wrap="soft" style="width:100%;min-height:400px">{{ edit_text }}</textarea>
+  </div>
+  <div style="margin-top:0.5em;display:flex;gap:0.5em;align-items:center">
+    <input type="text" name="kommentar" placeholder="Kommentar (optional)" style="flex:1">
+    <button type="submit">Speichern</button>
+  </div>
+</form>
+{% else %}
+<div class="wiki">{{ text|safe }}</div>
+{% endif %}
+{% endblock %}
