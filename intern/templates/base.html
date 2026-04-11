@@ -37,7 +37,21 @@
                     <path d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
 
+                {% if breadcrumb %}
+                <span class="breadcrumb-nav">
+                    <a href="{% url 'folder_view' 0 %}" class="breadcrumb-seg">Ordner</a>
+                    {% for crumb in breadcrumb %}
+                    <span class="breadcrumb-sep">/</span>
+                    {% if forloop.last %}
+                    <span class="breadcrumb-seg breadcrumb-current">{{ crumb.name }}</span>
+                    {% else %}
+                    <a href="{% url 'folder_view' crumb.pk %}" class="breadcrumb-seg">{{ crumb.name }}</a>
+                    {% endif %}
+                    {% endfor %}
+                </span>
+                {% else %}
                 <span class="title">{{ seitentitel }}</span>
+                {% endif %}
 
                 {% if up %}
                     <a href="{% url up %}" title="Zurück zur Übersicht">

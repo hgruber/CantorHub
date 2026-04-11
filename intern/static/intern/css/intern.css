@@ -300,6 +300,43 @@ body {
     letter-spacing: -0.01em;
 }
 
+.breadcrumb-nav {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 6px;
+    gap: 2px;
+    font-size: 14px;
+}
+
+.breadcrumb-seg {
+    white-space: nowrap;
+    color: var(--brand);
+    text-decoration: none;
+    font-weight: 500;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.breadcrumb-seg:hover { text-decoration: underline; }
+
+.breadcrumb-current {
+    color: var(--t1);
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.breadcrumb-sep {
+    color: var(--t4);
+    flex-shrink: 0;
+    padding: 0 2px;
+    font-size: 13px;
+}
+
 /* ─── Top Bar Icons ──────────────────────────────── */
 .hamburger,
 .toolicon {
@@ -652,11 +689,18 @@ time {
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--t2);
+    margin: 0;
+    font-weight: normal;
+}
+
+.folder-picker-item input[type="radio"] {
+    flex-shrink: 0;
+    accent-color: var(--brand);
 }
 
 .folder-picker-item:hover { background: var(--bg-row-hover); }
 
-.folder-picker-item.selected {
+.folder-picker-item:has(input:checked) {
     background: var(--brand-light);
     color: var(--brand);
     font-weight: 600;
@@ -1174,6 +1218,20 @@ span.not_found {
 
 @media (min-width: 769px) {
     .hamburger { display: none !important; }
+}
+
+/* ── Folder drag-and-drop ─────────────────────────────── */
+.table-container tbody tr[draggable="true"] { cursor: grab; }
+.table-container tbody tr[draggable="true"]:active { cursor: grabbing; }
+
+.dnd-dragging {
+    opacity: 0.35;
+}
+
+.dnd-over td {
+    background: var(--brand-light) !important;
+    outline: 2px solid var(--brand);
+    outline-offset: -2px;
 }
 
 /* ── Outdated version banner ──────────────────────────── */

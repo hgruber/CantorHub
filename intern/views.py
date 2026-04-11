@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from filer.models import File, Folder
 
+from intern import folders
 from intern.replacements import apply_replacements
 
 from .forms import RegisterForm, UserEditForm
@@ -114,13 +115,13 @@ def upload(request):
         # Determine folder_id
         # If file is found in Lied table, use the folder_id from the appropriate field
         if song and file_type and file_type_config:
-            folder_id = file_type_config["folder_id"]
+            folder_id = folders._get(file_type_config["folder_name"])
         elif song and hasattr(song, f'{file_type}_id'):
             # Use the folder_id from the song's specific field
             field_name = f'{file_type}_id'
             folder_id = getattr(song, field_name)
         else:
-            folder_id = preferred_folder_id or settings.ORDNER_ID_UNSORTIERT
+            folder_id = preferred_folder_id or folders.unsortiert()
 
         # Create file record
         filer_file = File.objects.create(
@@ -192,6 +193,17 @@ def _build_folder_flat(exclude_pk=None):
     ]
 
 
+def _folder_breadcrumb(folder):
+    """Walk parent chain and return list of {name, pk} from root → current."""
+    crumbs = []
+    cur = folder
+    while cur:
+        crumbs.append({"name": cur.name, "pk": cur.pk})
+        cur = cur.parent
+    crumbs.reverse()
+    return crumbs
+
+
 @login_required
 def folder_view(request, pk):
     original_pk = pk          # 0 means root; keep for URLs
@@ -201,9 +213,11 @@ def folder_view(request, pk):
         current = None
         parent = None
         name = "/"
+        breadcrumb = []
     else:
         current = Folder.objects.get(pk=pk)
         parent = current.parent
+        breadcrumb = _folder_breadcrumb(current)
         if current is not None:
             folder_up = [
                 {
@@ -213,7 +227,7 @@ def folder_view(request, pk):
                     "type": "Folder",
                     "besitzer": (
                         (parent.owner.first_name + " " + parent.owner.last_name)
-                        if parent
+                        if parent and parent.owner
                         else ""
                     ),
                     "created": parent.created_at if parent else None,
@@ -276,11 +290,13 @@ def folder_view(request, pk):
     table = OrdnerTabelle(folder_up + list(folders) + list(files))
     RequestConfig(request, paginate=False).configure(table)
 
+    path_str = " / ".join(c["name"] for c in breadcrumb) if breadcrumb else "/"
     return render(
         request,
         "table.html",
         {
-            "seitentitel": f"Ordner: {name}",
+            "seitentitel": f"Ordner: {path_str}",
+            "breadcrumb": breadcrumb,
             "folder_id": pk,
             "table": table,
             "show_file_actions": True,
@@ -301,6 +317,7 @@ def folder_create(request, pk):
             parent_id=pk if pk != 0 else None,
             owner=request.user,
         )
+        folders.invalidate()
     return redirect("folder_view", pk=pk)
 
 
@@ -331,7 +348,7 @@ def folder_delete(request):
 def folder_move(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
     raw_target = request.POST.get("target_pk", "")
-    target_id = int(raw_target) if raw_target else None
+    target_id = int(raw_target) if raw_target and raw_target != "0" else None
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
             Folder.objects.filter(pk=item_id).update(parent_id=target_id)
@@ -345,7 +362,7 @@ def folder_move(request):
 def folder_copy(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
     raw_target = request.POST.get("target_pk", "")
-    target_id = int(raw_target) if raw_target else None
+    target_id = int(raw_target) if raw_target and raw_target != "0" else None
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "File":
             try:
@@ -369,7 +386,7 @@ def forum_list(request):
     table = ForumTabelle(foren)
     RequestConfig(request, paginate=False).configure(table)
     return render(
-        request, "table.html", {"table": table, "seitentitel": "Foren", "folder_id": 3}
+        request, "table.html", {"table": table, "seitentitel": "Foren", "folder_id": folders.forum()}
     )
 
 
@@ -387,7 +404,7 @@ def forum_view(request, forum):
             "last_id": last_id,
             "oldest_id": oldest_id,
             "messages": messages,
-            "folder_id": 3,
+            "folder_id": folders.forum(),
             "up": "forum_list",
             "edit": "forum_edit",
             "id": forum,
@@ -502,7 +519,7 @@ def titel_list(request):
             "filter": repertoire_filter,
             "pool": remaining_table,
             "seitentitel": seitentitel,
-            "folder_id": 5,
+            "folder_id": folders.musik(),
             "showfilter": True,
             "order": len(konzerte) == 1,
         },
@@ -629,7 +646,7 @@ def member_view(request, id):
         "up": "member_list",
         "edit": "member_edit",
         "changepass": "member_passwd",
-        "folder_id": 4,
+        "folder_id": folders.artikel(),
         "id": id,
     }
     return render(request, "mitglied.html", context)
@@ -655,7 +672,7 @@ def member_edit(request, id):
         "seitentitel": f"bearbeiten: {user.first_name} {user.last_name}",
         "view": "member_view",
         "changepass": "member_passwd",
-        "folder_id": 4,
+        "folder_id": folders.artikel(),
         "id": id,
     }
     return render(request, "member_edit.html", context)
@@ -773,7 +790,7 @@ def article_view(request, name):
         "seitentitel": f"{artikel.name} (vom {artikel.datum.strftime('%-d.%-m.%Y')})" if is_outdated else artikel.name,
         "is_outdated": is_outdated,
         "latest_version": latest.version,
-        "folder_id": 4,
+        "folder_id": folders.artikel(),
         "up": "article_list",
         "edit": "article_edit",
         "history": "article_history",

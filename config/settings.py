@@ -151,30 +151,20 @@ MEDIA_URL = "/media/"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-ORDNER_ID_AVATARE = 1
-ORDNER_ID_UNSORTIERT = 2
-ORDNER_ID_FORUM = 3
-ORDNER_ID_ARTIKEL = 4
-ORDNER_ID_MUSIK = 5
-ORDNER_ID_TERMINE = 6
-ORDNER_ID_EXTERN = 7
-ORDNER_ID_REPERTOIRE = 8
-ORDNER_ID_PDF = 9
-ORDNER_ID_NOTENSATZ = 10
-
-# File type to folder ID mappings for special handling
+# File type routing for uploads — folder_name is resolved at runtime via
+# intern.folders so no integer IDs are hardcoded here.
 FILE_TYPE_CONFIG = {
     'audio': {
         'extensions': ['.mp3', '.m4a'],
-        'folder_id': ORDNER_ID_REPERTOIRE,
+        'folder_name': 'Repertoire',
     },
     'music': {
         'extensions': ['.cap', '.msc', '.mscz'],
-        'folder_id': ORDNER_ID_NOTENSATZ,
+        'folder_name': 'Notensatz',
     },
     'pdf': {
         'extensions': ['.pdf'],
-        'folder_id': ORDNER_ID_PDF,
+        'folder_name': 'PDF',
     },
 }
 

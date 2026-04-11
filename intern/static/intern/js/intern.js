@@ -71,51 +71,31 @@ function toggle(offcanvas) {
 Dropzone.autoDiscover = false;
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Table selection functionality
-  const action = document.getElementById("Action");
-  const headerCheckbox = document.querySelector(".select-all");
-  const rowCheckboxes = document.querySelectorAll(
-    ".table-container tbody input[type=checkbox]",
-  );
-  let anyPreviouslyChecked = false;
-
-  function checkSelectionState() {
-    const checkedCount = document.querySelectorAll(
-      ".table-container tbody input[type=checkbox]:checked",
-    ).length;
-    const anyChecked = checkedCount > 0;
+  // ── Table row selection (event delegation) ──────────────
+  function updateSelectionState() {
+    const checked = document.querySelectorAll(
+      'input[type="checkbox"][name="select"]:checked',
+    );
+    const count = checked.length;
     const countEl = document.getElementById("selected-count");
-    if (countEl) countEl.textContent = checkedCount;
-    // Reagiere nur bei Zustandswechsel
-    if (anyChecked !== anyPreviouslyChecked) {
-      if (anyChecked && action) {
-        action.classList.add("open");
-      } else if (action) {
-        action.classList.remove("open");
-      }
+    if (countEl) countEl.textContent = count;
+    const action = document.getElementById("Action");
+    if (action) action.classList.toggle("open", count > 0);
+  }
+
+  document.addEventListener("change", function (e) {
+    const cb = e.target;
+    if (cb.type !== "checkbox") return;
+    if (cb.classList.contains("select-all")) {
+      // header checkbox: toggle all row checkboxes
+      document
+        .querySelectorAll('input[type="checkbox"][name="select"]')
+        .forEach((row) => { row.checked = cb.checked; });
     }
-    anyPreviouslyChecked = anyChecked;
-  }
-
-  // Einzelne Checkboxen
-  if (rowCheckboxes) {
-    rowCheckboxes.forEach((checkbox) => {
-      checkbox.addEventListener("change", checkSelectionState);
-    });
-  }
-
-  // Select-All
-  if (headerCheckbox) {
-    headerCheckbox.addEventListener("change", function () {
-      if (rowCheckboxes) {
-        rowCheckboxes.forEach((cb) => {
-          cb.checked = this.checked;
-        });
-      }
-      // EINMAL final prüfen
-      checkSelectionState();
-    });
-  }
+    if (cb.classList.contains("select-all") || cb.name === "select") {
+      updateSelectionState();
+    }
+  });
 
   // Dropzone initialization
   var myDropzone = new Dropzone("#InternDropzone", {
@@ -275,31 +255,27 @@ document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById(formId);
     if (!form) return;
 
-    // Collect selected items (skip ".." nav row)
-    const checked = document.querySelectorAll(
-      ".table-container tbody input[type=checkbox]:checked"
-    );
+    // Collect selected items via data-type on each checkbox
     const items = [];
-    checked.forEach((cb) => {
-      const tr = cb.closest("tr");
-      if (!tr || tr.dataset.nav) return;
-      items.push(tr.dataset.itemType + ":" + tr.dataset.itemId);
-    });
+    document.querySelectorAll('input[type="checkbox"][name="select"]:checked')
+      .forEach((cb) => {
+        if (cb.dataset.type) items.push(cb.dataset.type + ":" + cb.value);
+      });
 
     if (items.length === 0) { alert("Keine Elemente ausgewählt."); return; }
 
     if (action === "delete") {
       if (!confirm(`${items.length} Element(e) wirklich löschen?`)) return;
     } else {
-      const picker = document.querySelector("#folder-picker .folder-picker-item.selected");
-      if (!picker) { alert("Bitte erst einen Zielordner auswählen."); return; }
+      const targetRadio = document.querySelector('input[name="folder-target"]:checked');
+      if (!targetRadio) { alert("Bitte erst einen Zielordner auswählen."); return; }
       const targetInput = document.getElementById(
         action === "move" ? "move-target" : "copy-target"
       );
-      if (targetInput) targetInput.value = picker.dataset.pk;
+      if (targetInput) targetInput.value = targetRadio.value;
     }
 
-    // Remove previously appended item inputs
+    // Append item inputs and submit
     form.querySelectorAll('input[name="item"]').forEach((el) => el.remove());
     items.forEach((val) => {
       const inp = document.createElement("input");
@@ -309,12 +285,98 @@ document.addEventListener("DOMContentLoaded", function () {
     form.submit();
   };
 
-  window.selectFolderTarget = function (el) {
-    document.querySelectorAll("#folder-picker .folder-picker-item").forEach(
-      (i) => i.classList.remove("selected")
-    );
-    el.classList.add("selected");
-  };
+  // ── Folder drag-and-drop ──────────────────────────────────
+  (function initFolderDragDrop() {
+    const moveForm = document.getElementById("move-form");
+    if (!moveForm) return; // only active on folder views
+
+    const allRows = document.querySelectorAll(".table-container tbody tr");
+    let draggedItems = [];
+
+    // ── Drag sources: rows that have a select checkbox ──────
+    allRows.forEach((row) => {
+      const cb = row.querySelector('input[type="checkbox"][name="select"]');
+      if (!cb) return;
+
+      row.draggable = true;
+
+      row.addEventListener("dragstart", (e) => {
+        const checked = document.querySelectorAll(
+          'input[type="checkbox"][name="select"]:checked'
+        );
+        // If this row is part of the selection, drag the whole selection
+        if (checked.length > 0 && cb.checked) {
+          draggedItems = [...checked]
+            .filter((c) => c.dataset.type)
+            .map((c) => c.dataset.type + ":" + c.value);
+        } else {
+          draggedItems = cb.dataset.type ? [cb.dataset.type + ":" + cb.value] : [];
+        }
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", draggedItems.join(","));
+        setTimeout(() => row.classList.add("dnd-dragging"), 0);
+      });
+
+      row.addEventListener("dragend", () => {
+        row.classList.remove("dnd-dragging");
+        clearHighlights();
+      });
+    });
+
+    // ── Drop targets: folder rows (including "..") ──────────
+    allRows.forEach((row) => {
+      // Extract folder pk from the first ordner link in this row
+      const link = row.querySelector('a[href*="/ordner/"]');
+      if (!link) return;
+      const m = link.getAttribute("href").match(/\/ordner\/(\d+)\//);
+      if (!m) return;
+      const targetPk = m[1];
+
+      row.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        row.classList.add("dnd-over");
+      });
+
+      row.addEventListener("dragleave", () => {
+        row.classList.remove("dnd-over");
+      });
+
+      row.addEventListener("drop", (e) => {
+        e.preventDefault();
+        row.classList.remove("dnd-over");
+
+        const items = draggedItems.filter((item) => {
+          // Don't drop a folder into itself
+          const [type, id] = item.split(":");
+          return !(type === "Folder" && id === targetPk);
+        });
+        if (!items.length) return;
+
+        submitDragMove(items, targetPk);
+      });
+    });
+
+    function clearHighlights() {
+      document.querySelectorAll(".dnd-over").forEach((el) =>
+        el.classList.remove("dnd-over")
+      );
+    }
+
+    function submitDragMove(items, targetPk) {
+      moveForm.querySelectorAll('input[name="item"]').forEach((el) => el.remove());
+      items.forEach((val) => {
+        const inp = document.createElement("input");
+        inp.type = "hidden";
+        inp.name = "item";
+        inp.value = val;
+        moveForm.appendChild(inp);
+      });
+      const targetInput = document.getElementById("move-target");
+      if (targetInput) targetInput.value = targetPk;
+      moveForm.submit();
+    }
+  })();
 
   // Add event listener for save order button
   const saveOrderButton = document.getElementById("saveOrderButton");

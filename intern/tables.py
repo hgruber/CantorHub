@@ -33,6 +33,15 @@ class OrdnerTabelle(tables.Table):
         orderable=False,
         attrs={"th__input": {"class": "select-all"}, "td": {"style": "width: 0px;"}},
     )
+
+    def render_select(self, record, value):
+        if record.get("name") == "..":
+            return ""
+        return format_html(
+            '<input type="checkbox" name="select" value="{}" data-type="{}">',
+            record["id"],
+            record.get("type", ""),
+        )
     type = tables.Column(
         attrs={"th": {"style": "width: 15px;"}, "td": {"style": "width: 15px;"}}
     )
@@ -78,11 +87,6 @@ class OrdnerTabelle(tables.Table):
 
     class Meta:
         attrs = {"class": "table"}
-        row_attrs = {
-            "data-item-type": lambda record: record.get("type", ""),
-            "data-item-id": lambda record: str(record.get("id", "")),
-            "data-nav": lambda record: "1" if record.get("name") == ".." else "",
-        }
 
 
 class TerminTabelle(tables.Table):
