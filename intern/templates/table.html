@@ -8,6 +8,7 @@
             <span id="selected-count">0</span> ausgewählt
         </div>
 
+        {% if perms.filer.add_folder %}
         <form id="delete-form" method="post" action="{% url 'folder_delete' %}">
             {% csrf_token %}
             <input type="hidden" name="referer_pk" value="{{ current_pk }}">
@@ -45,6 +46,7 @@
             <button class="btn btn-secondary action-btn" onclick="fileAction('move')">Verschieben</button>
             <button class="btn btn-primary action-btn" onclick="fileAction('copy')">Kopieren</button>
         </div>
+        {% endif %}
     </div>
     {% else %}
     <div class="action offcanvas" id="Action"></div>

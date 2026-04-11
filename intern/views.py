@@ -5,7 +5,7 @@ from datetime import date, datetime
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.core.mail import send_mail
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, Concat
@@ -307,7 +307,7 @@ def folder_view(request, pk):
     )
 
 
-@login_required
+@permission_required("filer.add_folder", raise_exception=True)
 @require_POST
 def folder_create(request, pk):
     name = request.POST.get("name", "").strip()
@@ -331,7 +331,7 @@ def _parse_items(post):
     return items
 
 
-@login_required
+@permission_required("filer.add_folder", raise_exception=True)
 @require_POST
 def folder_delete(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
@@ -343,7 +343,7 @@ def folder_delete(request):
     return redirect("folder_view", pk=referer_pk)
 
 
-@login_required
+@permission_required("filer.add_folder", raise_exception=True)
 @require_POST
 def folder_move(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
@@ -357,7 +357,7 @@ def folder_move(request):
     return redirect("folder_view", pk=referer_pk)
 
 
-@login_required
+@permission_required("filer.add_folder", raise_exception=True)
 @require_POST
 def folder_copy(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
@@ -526,7 +526,7 @@ def titel_list(request):
     )
 
 
-@login_required
+@permission_required("intern.change_lied", raise_exception=True)
 @require_POST
 def update_order(request):
     try:
@@ -640,12 +640,13 @@ def member_list(request):
 @login_required
 def member_view(request, id):
     user = get_object_or_404(User, id=id)
+    can_edit = request.user.id == id or request.user.is_superuser or request.user.has_perm("intern.change_user")
     context = {
         "user": user,
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
         "up": "member_list",
-        "edit": "member_edit",
-        "changepass": "member_passwd",
+        "edit": "member_edit" if can_edit else None,
+        "changepass": "member_passwd" if can_edit else None,
         "folder_id": folders.artikel(),
         "id": id,
     }
@@ -654,7 +655,7 @@ def member_view(request, id):
 
 @login_required
 def member_edit(request, id):
-    if request.user.id != id and not request.user.is_superuser:
+    if request.user.id != id and not request.user.is_superuser and not request.user.has_perm("intern.change_user"):
         return redirect("member_view", id=id)
     user = get_object_or_404(User, id=id)
 
@@ -683,7 +684,7 @@ def member_passwd(request, id):
     target_user = get_object_or_404(User, id=id)
 
     # Prüfe, ob der aktuelle Benutzer der Zielbenutzer ist oder Admin
-    if request.user.id != target_user.id and not request.user.is_superuser:
+    if request.user.id != target_user.id and not request.user.is_superuser and not request.user.has_perm("intern.change_user"):
         return redirect("member_view", id=id)
 
     if request.method == "POST":
@@ -739,7 +740,7 @@ def article_list(request):
     return render(request, "wiki.html", context)
 
 
-@login_required
+@permission_required("intern.change_artikel", raise_exception=True)
 def article_edit(request, name):
     artikel = Artikel.objects.filter(name=name).order_by("-id").first()
 
@@ -792,7 +793,7 @@ def article_view(request, name):
         "latest_version": latest.version,
         "folder_id": folders.artikel(),
         "up": "article_list",
-        "edit": "article_edit",
+        "edit": "article_edit" if request.user.has_perm("intern.change_artikel") else None,
         "history": "article_history",
         "id": artikel.name,
     }
