@@ -32,6 +32,8 @@ Avatare/
 # Editor/IDE-specific files
 .idea/
 .vscode/
+.claw
+.clawd-todos.json
 *.sublime-project
 *.tmproj
 

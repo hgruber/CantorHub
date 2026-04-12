@@ -333,21 +333,29 @@ document.addEventListener("DOMContentLoaded", function () {
       const targetPk = m[1];
 
       row.addEventListener("dragover", (e) => {
+        const isExternalFile = e.dataTransfer.types.includes("Files");
         e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        row.classList.add("dnd-over");
+        e.dataTransfer.dropEffect = isExternalFile ? "copy" : "move";
+        row.classList.toggle("dnd-file-over", isExternalFile);
+        row.classList.toggle("dnd-over", !isExternalFile);
       });
 
       row.addEventListener("dragleave", () => {
-        row.classList.remove("dnd-over");
+        row.classList.remove("dnd-over", "dnd-file-over");
       });
 
       row.addEventListener("drop", (e) => {
         e.preventDefault();
-        row.classList.remove("dnd-over");
+        row.classList.remove("dnd-over", "dnd-file-over");
 
+        // External file drop: upload files to this folder
+        if (e.dataTransfer.files.length > 0) {
+          uploadFilesToFolder(e.dataTransfer.files, targetPk);
+          return;
+        }
+
+        // Internal move: don't drop a folder into itself
         const items = draggedItems.filter((item) => {
-          // Don't drop a folder into itself
           const [type, id] = item.split(":");
           return !(type === "Folder" && id === targetPk);
         });
@@ -358,9 +366,24 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     function clearHighlights() {
-      document.querySelectorAll(".dnd-over").forEach((el) =>
-        el.classList.remove("dnd-over")
+      document.querySelectorAll(".dnd-over, .dnd-file-over").forEach((el) =>
+        el.classList.remove("dnd-over", "dnd-file-over")
       );
+    }
+
+    function uploadFilesToFolder(files, targetPk) {
+      const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+      const promises = [...files].map((file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder_id", targetPk);
+        return fetch("/intern/upload/", {
+          method: "POST",
+          headers: { "X-CSRFToken": csrfToken },
+          body: formData,
+        });
+      });
+      Promise.all(promises).then(() => window.location.reload());
     }
 
     function submitDragMove(items, targetPk) {
