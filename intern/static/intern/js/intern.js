@@ -17,6 +17,39 @@ if (overlay) {
   });
 }
 
+// Theme toggle
+(function initTheme() {
+  const btn = document.getElementById("theme-toggle");
+  if (!btn) return;
+
+  function current() {
+    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  }
+
+  function apply(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+    const lightIcon = btn.querySelector(".theme-icon-light");
+    const darkIcon = btn.querySelector(".theme-icon-dark");
+    const label = btn.querySelector(".theme-label");
+    if (theme === "dark") {
+      lightIcon.style.display = "none";
+      darkIcon.style.display = "";
+      if (label) label.textContent = "Hell";
+    } else {
+      lightIcon.style.display = "";
+      darkIcon.style.display = "none";
+      if (label) label.textContent = "Dunkel";
+    }
+  }
+
+  apply(current());
+
+  btn.addEventListener("click", () => {
+    apply(current() === "dark" ? "light" : "dark");
+  });
+})();
+
 // Active navigation state
 document.querySelectorAll(".sidebar-nav .nav-item[href]").forEach((link) => {
   try {
