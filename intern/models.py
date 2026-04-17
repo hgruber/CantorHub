@@ -70,7 +70,7 @@ class User(AbstractUser):
     telefon_job_mobil = models.CharField(max_length=32, null=True, blank=True)
     fax = models.CharField(max_length=32, null=True, blank=True)
     email = models.EmailField(max_length=48, null=True, blank=True)
-    xmpp = models.CharField(max_length=48, null=True, blank=True)
+    xmpp = models.CharField(max_length=255, null=True, blank=True)
 
     # --- Meta / Status ---
     text = models.TextField(null=True, blank=True)
@@ -162,6 +162,7 @@ class ForumQuerySet(models.QuerySet):
 
 class Forum(models.Model):
     thema = models.CharField(max_length=120)
+    xmpp_muc_jid = models.CharField(max_length=255, null=True, blank=True, unique=True)
     objects = ForumQuerySet.as_manager()
 
     class Meta:
@@ -185,6 +186,9 @@ class Mitteilung(models.Model):
     sender = models.ForeignKey("User", null=True, on_delete=models.SET_NULL)
     datum = models.DateTimeField()
     mitteilung = models.TextField(blank=True, null=True)
+    xmpp_stanza_id = models.CharField(
+        max_length=255, null=True, blank=True, unique=True, db_index=True
+    )
 
     class Meta:
         verbose_name_plural = "Mitteilungen"

@@ -11,5 +11,13 @@ mv 0003_import.py intern/migrations
 ./manage.py migrate
 ./manage.py collectstatic --noinput
 
+# XMPP/ejabberd integration
+if [ "${EJABBERD_ENABLED}" = "1" ]; then
+    echo "ejabberd_sync: syncing XMPP state..."
+    ./manage.py ejabberd_sync --sync
+    echo "ejabberd_bot: starting bot..."
+    ./manage.py ejabberd_bot &
+fi
+
 /usr/sbin/nginx -g 'daemon on; master_process on;'
 gunicorn --bind 0.0.0.0:8001 --workers 3 config.wsgi:application

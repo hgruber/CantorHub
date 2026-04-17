@@ -1,6 +1,8 @@
 import difflib
 import json
+import logging
 import os
+import threading
 from datetime import date, datetime
 
 from django.conf import settings
@@ -17,7 +19,7 @@ from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from filer.models import File, Folder
 
-from intern import folders
+from intern import ejabberd, folders
 from intern.replacements import apply_replacements
 
 from .forms import RegisterForm, UserEditForm
@@ -41,6 +43,8 @@ from .tables import (
     RepertoireTabelle,
     TerminTabelle,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def home(request):
@@ -116,9 +120,9 @@ def upload(request):
         # If file is found in Lied table, use the folder_id from the appropriate field
         if song and file_type and file_type_config:
             folder_id = folders._get(file_type_config["folder_name"])
-        elif song and hasattr(song, f'{file_type}_id'):
+        elif song and hasattr(song, f"{file_type}_id"):
             # Use the folder_id from the song's specific field
-            field_name = f'{file_type}_id'
+            field_name = f"{file_type}_id"
             folder_id = getattr(song, field_name)
         else:
             folder_id = preferred_folder_id or folders.unsortiert()
@@ -187,9 +191,7 @@ def _build_folder_flat(exclude_pk=None):
         return " / ".join(reversed(parts))
 
     return [
-        {"id": f["id"], "path": path_of(f)}
-        for f in all_fldrs
-        if f["id"] != exclude_pk
+        {"id": f["id"], "path": path_of(f)} for f in all_fldrs if f["id"] != exclude_pk
     ]
 
 
@@ -206,7 +208,7 @@ def _folder_breadcrumb(folder):
 
 @login_required
 def folder_view(request, pk):
-    original_pk = pk          # 0 means root; keep for URLs
+    original_pk = pk  # 0 means root; keep for URLs
     folder_up = []
     if pk == 0:
         pk = None
@@ -386,7 +388,9 @@ def forum_list(request):
     table = ForumTabelle(foren)
     RequestConfig(request, paginate=False).configure(table)
     return render(
-        request, "table.html", {"table": table, "seitentitel": "Foren", "folder_id": folders.forum()}
+        request,
+        "table.html",
+        {"table": table, "seitentitel": "Foren", "folder_id": folders.forum()},
     )
 
 
@@ -451,13 +455,35 @@ def forum_send(request, forum):
     mitteilung = request.POST.get("mitteilung", "").strip()
     last_id = request.POST.get("last_id", 0)
     if mitteilung:
-        Mitteilung.objects.create(
+        msg = Mitteilung.objects.create(
             sender_id=request.user.id,
             forum_id=forum,
             mitteilung=mitteilung,
             datum=datetime.now(),
         )
+        # Forward to XMPP MUC in background thread
+        if settings.EJABBERD_ENABLED:
+            threading.Thread(
+                target=_forward_to_xmpp,
+                args=(msg,),
+                daemon=True,
+            ).start()
     return forum_get(request, forum, last_id)
+
+
+def _forward_to_xmpp(msg):
+    """Forward a forum message to the corresponding XMPP MUC room."""
+    try:
+        forum = msg.forum
+        if not forum.xmpp_muc_jid:
+            return
+        if not settings.EJABBERD_ENABLED:
+            return
+        sender_name = str(msg.sender) if msg.sender else "Anonymous"
+        text = f"*{sender_name}*: {msg.mitteilung}"
+        ejabberd.send_muc_message(forum.xmpp_muc_jid, text)
+    except Exception as exc:
+        logger.error("ejabberd: failed to forward message %s to MUC: %s", msg.id, exc)
 
 
 @login_required
@@ -640,7 +666,11 @@ def member_list(request):
 @login_required
 def member_view(request, id):
     user = get_object_or_404(User, id=id)
-    can_edit = request.user.id == id or request.user.is_superuser or request.user.has_perm("intern.change_user")
+    can_edit = (
+        request.user.id == id
+        or request.user.is_superuser
+        or request.user.has_perm("intern.change_user")
+    )
     context = {
         "user": user,
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
@@ -655,7 +685,11 @@ def member_view(request, id):
 
 @login_required
 def member_edit(request, id):
-    if request.user.id != id and not request.user.is_superuser and not request.user.has_perm("intern.change_user"):
+    if (
+        request.user.id != id
+        and not request.user.is_superuser
+        and not request.user.has_perm("intern.change_user")
+    ):
         return redirect("member_view", id=id)
     user = get_object_or_404(User, id=id)
 
@@ -684,7 +718,11 @@ def member_passwd(request, id):
     target_user = get_object_or_404(User, id=id)
 
     # Prüfe, ob der aktuelle Benutzer der Zielbenutzer ist oder Admin
-    if request.user.id != target_user.id and not request.user.is_superuser and not request.user.has_perm("intern.change_user"):
+    if (
+        request.user.id != target_user.id
+        and not request.user.is_superuser
+        and not request.user.has_perm("intern.change_user")
+    ):
         return redirect("member_view", id=id)
 
     if request.method == "POST":
@@ -788,12 +826,16 @@ def article_view(request, name):
     context = {
         "artikel": artikel,
         "text": apply_replacements(artikel.text, request),
-        "seitentitel": f"{artikel.name} (vom {artikel.datum.strftime('%-d.%-m.%Y')})" if is_outdated else artikel.name,
+        "seitentitel": f"{artikel.name} (vom {artikel.datum.strftime('%-d.%-m.%Y')})"
+        if is_outdated
+        else artikel.name,
         "is_outdated": is_outdated,
         "latest_version": latest.version,
         "folder_id": folders.artikel(),
         "up": "article_list",
-        "edit": "article_edit" if request.user.has_perm("intern.change_artikel") else None,
+        "edit": "article_edit"
+        if request.user.has_perm("intern.change_artikel")
+        else None,
         "history": "article_history",
         "id": artikel.name,
     }
@@ -822,16 +864,24 @@ def article_history(request, name):
             lines_removed = 0
         else:
             prev = versions[i - 1]
-            diff = list(difflib.unified_diff(
-                prev.text.splitlines(), v.text.splitlines(), lineterm=""
-            ))
-            lines_added = sum(1 for l in diff if l.startswith("+") and not l.startswith("+++"))
-            lines_removed = sum(1 for l in diff if l.startswith("-") and not l.startswith("---"))
-        rows.append({
-            "version": v,
-            "lines_added": lines_added,
-            "lines_removed": lines_removed,
-        })
+            diff = list(
+                difflib.unified_diff(
+                    prev.text.splitlines(), v.text.splitlines(), lineterm=""
+                )
+            )
+            lines_added = sum(
+                1 for l in diff if l.startswith("+") and not l.startswith("+++")
+            )
+            lines_removed = sum(
+                1 for l in diff if l.startswith("-") and not l.startswith("---")
+            )
+        rows.append(
+            {
+                "version": v,
+                "lines_added": lines_added,
+                "lines_removed": lines_removed,
+            }
+        )
     rows.reverse()
 
     context = {

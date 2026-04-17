@@ -26,10 +26,12 @@ VERSION = (
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-96c((62k0dknm__v%zrw3#3=7pc^$tc)&#w1m50#5ly)o71#la")
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", "django-insecure-96c((62k0dknm__v%zrw3#3=7pc^$tc)&#w1m50#5ly)o71#la"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", False) == '1'
+DEBUG = os.environ.get("DEBUG", False) == "1"
 
 ALLOWED_HOSTS = ["test.example.org", "narsil", "localhost", "127.0.0.1"]
 CSRF_TRUSTED_ORIGINS = [
@@ -154,23 +156,37 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # File type routing for uploads — folder_name is resolved at runtime via
 # intern.folders so no integer IDs are hardcoded here.
 FILE_TYPE_CONFIG = {
-    'audio': {
-        'extensions': ['.mp3', '.m4a'],
-        'folder_name': 'Repertoire',
+    "audio": {
+        "extensions": [".mp3", ".m4a"],
+        "folder_name": "Repertoire",
     },
-    'music': {
-        'extensions': ['.cap', '.msc', '.mscz'],
-        'folder_name': 'Notensatz',
+    "music": {
+        "extensions": [".cap", ".msc", ".mscz"],
+        "folder_name": "Notensatz",
     },
-    'pdf': {
-        'extensions': ['.pdf'],
-        'folder_name': 'PDF',
+    "pdf": {
+        "extensions": [".pdf"],
+        "folder_name": "PDF",
     },
 }
 
 # File type to Lied model field mapping
 FILE_TYPE_LIED_MAP = {
-    'audio': 'original_id',
-    'music': 'noten_id',
-    'pdf': 'pdf_id',
+    "audio": "original_id",
+    "music": "noten_id",
+    "pdf": "pdf_id",
 }
+
+# XMPP/ejabberd integration settings
+# All configured via environment variables
+EJABBERD_ENABLED = os.environ.get("EJABBERD_ENABLED", "0") == "1"
+EJABBERD_API_URL = os.environ.get("EJABBERD_API_URL", "http://127.0.0.1:5280")
+EJABBERD_HOST = os.environ.get("EJABBERD_HOST", "example.net")
+EJABBERD_MUC_SERVICE = os.environ.get(
+    "EJABBERD_MUC_SERVICE", "conference.example.net"
+)
+EJABBERD_ADMIN_USER = os.environ.get("EJABBERD_ADMIN_USER", "admin@example.net")
+EJABBERD_ADMIN_PASSWORD = os.environ.get("EJABBERD_ADMIN_PASSWORD", "")
+EJABBERD_BOT_JID = os.environ.get("EJABBERD_BOT_JID", "forum@example.org")
+EJABBERD_BOT_PASSWORD = os.environ.get("EJABBERD_BOT_PASSWORD", "")
+EJABBERD_BOT_PORT = int(os.environ.get("EJABBERD_BOT_PORT", "5222"))
