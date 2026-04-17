@@ -56,7 +56,7 @@
         <span>Dateien</span>
     </a>
 
-    {% if user.is_staff %}
+    {% if user.is_superuser %}
     <div class="nav-divider"></div>
 
     <a href="/admin/" class="nav-item" data-path="/admin/">
