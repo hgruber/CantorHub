@@ -94,5 +94,30 @@
         </div>
     {% endif %}
     {% render_table table %}
+    {% if ical_url %}
+    <div class="ical-subscribe" id="ical-subscribe">
+        <button type="button" class="ical-close" aria-label="Schließen"
+                onclick="document.getElementById('ical-subscribe').style.display='none';document.getElementById('ical-show').style.display='';localStorage.setItem('ical-subscribe-hidden','1');">×</button>
+        <h3>Kalender abonnieren</h3>
+        <div class="ical-url-row">
+            <code id="ical-url">{{ webcal_url }}</code>
+            <a class="btn" href="{{ webcal_url }}">Abonnieren</a>
+            <button type="button" class="btn btn-secondary" onclick="navigator.clipboard.writeText('{{ ical_url }}').then(() =&gt; { this.textContent = 'Kopiert'; setTimeout(() =&gt; this.textContent = 'Link kopieren', 1500); });">Link kopieren</button>
+        </div>
+        <ul>
+            <li>iOS: Einstellungen → Kalender → Accounts → Kalenderabo hinzufügen. Aktualisierungsintervall auf <strong>„Alle 15 Minuten"</strong> setzen, sonst synchronisiert iOS nur wöchentlich.</li>
+            <li>Android: ICSx⁵-App empfohlen. Google Kalender-Web synchronisiert abonnierte Kalender nur bis zu einmal pro Tag.</li>
+            <li>Thunderbird/Desktop: Neuer Kalender → Im Netzwerk → iCalendar → obige URL einfügen.</li>
+        </ul>
+    </div>
+    <button type="button" class="btn btn-secondary ical-show" id="ical-show" style="display:none;margin-top:16px;"
+            onclick="document.getElementById('ical-subscribe').style.display='';document.getElementById('ical-show').style.display='none';localStorage.removeItem('ical-subscribe-hidden');">Kalender abonnieren</button>
+    <script>
+        if (localStorage.getItem('ical-subscribe-hidden') === '1') {
+            document.getElementById('ical-subscribe').style.display = 'none';
+            document.getElementById('ical-show').style.display = '';
+        }
+    </script>
+    {% endif %}
 </div>
 {% endblock %}

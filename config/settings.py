@@ -188,3 +188,6 @@ EJABBERD_MUC_SERVICE = os.environ.get(
 EJABBERD_BOT_JID = os.environ.get("EJABBERD_BOT_JID", "forum@example.org")
 EJABBERD_BOT_PASSWORD = os.environ.get("EJABBERD_BOT_PASSWORD", "")
 EJABBERD_BOT_PORT = int(os.environ.get("EJABBERD_BOT_PORT", "5222"))
+
+# iCal subscription feed — shared secret in the URL path
+ICAL_SECRET = os.environ.get("ICAL_SECRET", "cantorhub-ical-change-me-f7a3c2")

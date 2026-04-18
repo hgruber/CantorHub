@@ -2,8 +2,9 @@ import difflib
 import json
 import logging
 import os
+import secrets
 import threading
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.contrib import messages
@@ -12,13 +13,15 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.core.mail import send_mail
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, Concat
-from django.http import JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from filer.models import File, Folder
+from icalendar import Calendar, Event
 
 from intern import ejabberd, folders
 from intern.replacements import apply_replacements
@@ -611,6 +614,32 @@ def update_order(request):
         return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
 
+def calendar_ics(request, secret):
+    if not secrets.compare_digest(secret, settings.ICAL_SECRET):
+        raise Http404
+    cutoff = datetime.now() - timedelta(days=180)
+    termine = Termin.objects.filter(datum__gte=cutoff).select_related("ort").order_by("datum")
+    cal = Calendar()
+    cal.add("prodid", "-//CantorHub//DE")
+    cal.add("version", "2.0")
+    cal.add("x-wr-calname", "CantorHub")
+    for t in termine:
+        ev = Event()
+        ev.add("uid", f"termin-{t.pk}@cantorhub")
+        ev.add("summary", t.kurz)
+        ev.add("dtstart", t.datum)
+        ev.add("dtend", t.datum_bis or t.datum + timedelta(hours=2))
+        if t.lang:
+            ev.add("description", t.lang)
+        if t.ort:
+            parts = [t.ort.name, t.ort.strasse, f"{t.ort.plz or ''} {t.ort.ort or ''}".strip()]
+            ev.add("location", ", ".join(p for p in parts if p))
+            if t.ort.breite is not None and t.ort.laenge is not None:
+                ev.add("geo", (t.ort.breite, t.ort.laenge))
+        cal.add_component(ev)
+    return HttpResponse(cal.to_ical(), content_type="text/calendar; charset=utf-8")
+
+
 @login_required
 def termin_list(request):
     # Erweite das QuerySet um die Anwesenheitsinformationen für den eingeloggten Benutzer
@@ -662,7 +691,19 @@ def termin_list(request):
 
     table = TerminTabelle(termin_queryset)
     RequestConfig(request, paginate=False).configure(table)
-    return render(request, "table.html", {"table": table, "seitentitel": "Termine"})
+    ical_path = reverse("calendar_ics", args=[settings.ICAL_SECRET])
+    ical_url = request.build_absolute_uri(ical_path)
+    webcal_url = "webcal://" + request.get_host() + ical_path
+    return render(
+        request,
+        "table.html",
+        {
+            "table": table,
+            "seitentitel": "Termine",
+            "ical_url": ical_url,
+            "webcal_url": webcal_url,
+        },
+    )
 
 
 @login_required
