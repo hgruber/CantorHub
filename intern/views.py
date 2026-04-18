@@ -199,6 +199,20 @@ def upload(request):
         return JsonResponse({"status": "success", "id": filer_file.id, "url": url})
 
 
+@login_required
+def file_search(request):
+    q = request.GET.get("q", "")
+    if len(q) < 2:
+        return JsonResponse([], safe=False)
+    files = (
+        File.objects
+        .filter(original_filename__istartswith=q)
+        .only("id", "original_filename", "file")[:20]
+    )
+    results = [{"id": f.id, "name": f.original_filename, "url": f.url} for f in files]
+    return JsonResponse(results, safe=False)
+
+
 def visible_fields(request, tabelle):
     visible_fields = request.POST.getlist("columns")
     if len(visible_fields) == 0:

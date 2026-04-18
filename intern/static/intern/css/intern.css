@@ -1685,3 +1685,46 @@ span.not_found {
     border-radius: var(--r-sm);
     box-sizing: border-box;
 }
+
+/* =================================================== */
+/* Wiki file-name autocomplete                         */
+/* =================================================== */
+.wiki-autocomplete {
+    position: fixed;
+    z-index: 1000;
+    min-width: 260px;
+    max-width: 420px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--r-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    font-size: 13px;
+    display: none;
+}
+.wiki-autocomplete.active {
+    display: block;
+}
+.wiki-autocomplete-item {
+    display: block;
+    width: 100%;
+    padding: 7px 12px;
+    background: transparent;
+    color: var(--t1);
+    border: none;
+    border-radius: var(--r-sm);
+    text-align: left;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wiki-autocomplete-item:hover,
+.wiki-autocomplete-item.selected {
+    background: var(--bg-row-hover);
+    color: var(--t1);
+}

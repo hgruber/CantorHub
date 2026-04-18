@@ -658,3 +658,206 @@ document.addEventListener("DOMContentLoaded", function () {
     input.addEventListener("input", evaluatePassword);
   }
 });
+
+// ── Wiki file-name autocomplete ([[Datei:...]]) ───────────
+(function initFileAutocomplete() {
+  const DEBOUNCE_MS = 300;
+  const MIN_QUERY_LEN = 2;
+
+  let dropdownEl = null;
+  let currentResults = [];
+  let selectedIndex = 0;
+  let currentMatch = null;
+  let debounceTimer = null;
+  let activeTextarea = null;
+
+  // Hidden mirror div for caret position calculation
+  const mirror = document.createElement("div");
+  mirror.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none;white-space:pre-wrap;word-wrap:break-word;overflow:hidden;";
+  document.body.appendChild(mirror);
+
+  function detectPattern(ta) {
+    const pos = ta.selectionStart;
+    const text = ta.value;
+    const before = text.substring(0, pos);
+    const openIdx = before.lastIndexOf("[[");
+    if (openIdx === -1) return null;
+    // No closing ]] between [[ and cursor
+    if (before.substring(openIdx).indexOf("]]") !== -1) return null;
+    const afterOpen = before.substring(openIdx + 2);
+    const m = afterOpen.match(/^Datei:(.*)/i);
+    if (!m) return null;
+    const query = m[1];
+    if (query.length < MIN_QUERY_LEN) return null;
+    return {
+      prefixStart: openIdx,
+      queryStart: openIdx + 2 + 6, // after "[[Datei:"
+      queryText: query,
+    };
+  }
+
+  function getCaretPos(ta, charIndex) {
+    const cs = getComputedStyle(ta);
+    const props = [
+      "font", "fontFamily", "fontSize", "fontWeight", "lineHeight",
+      "paddingTop", "paddingRight", "paddingBottom", "paddingLeft",
+      "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth",
+      "boxSizing", "width", "letterSpacing",
+    ];
+    props.forEach((p) => (mirror.style[p] = cs[p]));
+    // Handle border-box width
+    if (cs.boxSizing === "border-box") {
+      mirror.style.width = cs.width;
+    } else {
+      mirror.style.width = (
+        parseFloat(cs.width) -
+        parseFloat(cs.paddingLeft) -
+        parseFloat(cs.paddingRight) -
+        parseFloat(cs.borderLeftWidth) -
+        parseFloat(cs.borderRightWidth)
+      ) + "px";
+    }
+    mirror.textContent = ta.value.substring(0, charIndex);
+    const span = document.createElement("span");
+    span.textContent = "|";
+    mirror.appendChild(span);
+    return { left: span.offsetLeft, top: span.offsetTop, height: span.offsetHeight };
+  }
+
+  async function fetchResults(query) {
+    try {
+      const resp = await fetch("/intern/file-search/?q=" + encodeURIComponent(query));
+      if (!resp.ok) return [];
+      return resp.json();
+    } catch {
+      return [];
+    }
+  }
+
+  function showDropdown(ta, results, match) {
+    if (!dropdownEl) {
+      dropdownEl = document.createElement("div");
+      dropdownEl.className = "wiki-autocomplete";
+      document.body.appendChild(dropdownEl);
+    }
+    dropdownEl.innerHTML = "";
+    currentResults = results;
+    currentMatch = match;
+    selectedIndex = 0;
+
+    results.forEach((item, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "wiki-autocomplete-item" + (i === 0 ? " selected" : "");
+      btn.textContent = item.name;
+      btn.addEventListener("mousedown", (e) => {
+        e.preventDefault(); // prevent blur
+        completeItem(ta, item);
+        hideDropdown();
+      });
+      dropdownEl.appendChild(btn);
+    });
+
+    const caretPos = getCaretPos(ta, ta.selectionStart);
+    const taRect = ta.getBoundingClientRect();
+    let left = taRect.left + caretPos.left;
+    let top = taRect.top + caretPos.top + caretPos.height + 4;
+    // Clamp to viewport
+    dropdownEl.classList.add("active");
+    const ddRect = dropdownEl.getBoundingClientRect();
+    if (left + ddRect.width > window.innerWidth - 8) {
+      left = window.innerWidth - ddRect.width - 8;
+    }
+    if (top + ddRect.height > window.innerHeight - 8) {
+      top = taRect.top + caretPos.top - ddRect.height - 4;
+    }
+    dropdownEl.style.left = Math.max(4, left) + "px";
+    dropdownEl.style.top = Math.max(4, top) + "px";
+  }
+
+  function hideDropdown() {
+    if (dropdownEl) {
+      dropdownEl.classList.remove("active");
+      dropdownEl.innerHTML = "";
+    }
+    currentResults = [];
+    selectedIndex = -1;
+    currentMatch = null;
+  }
+
+  function completeItem(ta, item) {
+    const match = currentMatch;
+    if (!match) return;
+    const text = ta.value;
+    const replacement = "[[Datei:" + item.name + "]]";
+    ta.value = text.substring(0, match.prefixStart) + replacement + text.substring(ta.selectionStart);
+    const newPos = match.prefixStart + replacement.length;
+    ta.setSelectionRange(newPos, newPos);
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function updateSelection() {
+    if (!dropdownEl) return;
+    const items = dropdownEl.querySelectorAll(".wiki-autocomplete-item");
+    items.forEach((el, i) => el.classList.toggle("selected", i === selectedIndex));
+  }
+
+  function onInput() {
+    const ta = activeTextarea;
+    if (!ta) return;
+    clearTimeout(debounceTimer);
+    const match = detectPattern(ta);
+    if (!match) { hideDropdown(); return; }
+    debounceTimer = setTimeout(async () => {
+      const results = await fetchResults(match.queryText);
+      if (!results.length || !detectPattern(ta)) { hideDropdown(); return; }
+      showDropdown(ta, results, detectPattern(ta) || match);
+    }, DEBOUNCE_MS);
+  }
+
+  function onKeydown(e) {
+    if (!dropdownEl || !dropdownEl.classList.contains("active")) return;
+    if (e.key === "Tab") {
+      e.preventDefault();
+      if (currentResults.length > 0) {
+        completeItem(e.target, currentResults[0]);
+      }
+      hideDropdown();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      hideDropdown();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      selectedIndex = Math.min(selectedIndex + 1, currentResults.length - 1);
+      updateSelection();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      selectedIndex = Math.max(selectedIndex - 1, 0);
+      updateSelection();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (selectedIndex >= 0 && selectedIndex < currentResults.length) {
+        completeItem(e.target, currentResults[selectedIndex]);
+      }
+      hideDropdown();
+    }
+  }
+
+  function setupTextarea(ta) {
+    ta.addEventListener("input", () => { activeTextarea = ta; onInput(); });
+    ta.addEventListener("keydown", onKeydown);
+    ta.addEventListener("blur", () => { setTimeout(hideDropdown, 150); });
+  }
+
+  // Target: artikel editor textarea + forum textarea
+  document.querySelectorAll(".wiki textarea").forEach(setupTextarea);
+  const forumTa = document.getElementById("mitteilung-textarea");
+  if (forumTa) setupTextarea(forumTa);
+
+  document.addEventListener("click", (e) => {
+    if (dropdownEl && !dropdownEl.contains(e.target)) hideDropdown();
+  });
+  window.addEventListener("scroll", hideDropdown, true);
+  window.addEventListener("resize", hideDropdown);
+})();
