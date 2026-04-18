@@ -26,6 +26,7 @@ from django.utils.crypto import get_random_string
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 from icalendar import Calendar, Event
 
@@ -338,7 +339,22 @@ def folder_view(request, pk):
         created=F("uploaded_at"),
         modified=F("modified_at"),
     )
-    table = OrdnerTabelle(folder_up + list(folders) + list(files))
+    files_list = list(files)
+    image_ids = [r["id"] for r in files_list if (r.get("mime") or "").startswith("image")]
+    if image_ids:
+        image_objs = {f.pk: f for f in File.objects.filter(pk__in=image_ids)}
+        for record in files_list:
+            if record["id"] not in image_objs:
+                continue
+            try:
+                thumb = get_thumbnailer(image_objs[record["id"]].file).get_thumbnail(
+                    {"size": (32, 32), "crop": True, "quality": 85}
+                )
+                record["thumb_url"] = thumb.url
+            except Exception:
+                pass
+
+    table = OrdnerTabelle(folder_up + list(folders) + files_list)
     RequestConfig(request, paginate=False).configure(table)
 
     path_str = " / ".join(c["name"] for c in breadcrumb) if breadcrumb else "/"

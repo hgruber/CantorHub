@@ -72,8 +72,8 @@ class OrdnerTabelle(tables.Table):
                 media = static("filer/icons/folder.svg")
                 url = reverse("folder_view", args=[record["id"]])
             return format_html('<a href="{}"><img src="{}" /></a>', url, media)
-        elif record["mime"].startswith("image"):
-            media = f"/media/filer_public_thumbnails/{record['link']}__32x32_q85_crop_subsampling-2_upscale.jpg"
+        elif record["mime"].startswith("image") and record.get("thumb_url"):
+            media = record["thumb_url"]
         elif record["mime"].endswith("pdf"):
             media = static("filer/icons/file-pdf.svg")
         url = f"/media/{record['link']}"
