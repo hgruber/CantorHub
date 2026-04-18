@@ -3,10 +3,11 @@ Django signals for the XMPP/ejabberd integration.
 
 Handles:
 1. Auto-assigning MUC JIDs when new Forum threads are created
-2. Inviting users to the XMPP Space when they set their XMPP JID
+2. Syncing vCard (name + avatar) to ejabberd when User.avatar changes
 """
 
 import logging
+import threading
 
 from django.conf import settings
 from django.db.models.signals import post_save, pre_save
@@ -52,56 +53,70 @@ def assign_xmpp_muc_jid(sender, instance, created, **kwargs):
 
 
 @receiver(pre_save, sender="intern.User")
-def _capture_old_xmpp(sender, instance, **kwargs):
+def _capture_old_values(sender, instance, **kwargs):
     """
-    Capture the current xmpp value before a save so the post_save handler
-    can detect changes. This is needed because post_save doesn't have access
-    to the old value.
+    Capture the current xmpp and avatar values before a save so the post_save
+    handler can detect changes. This is needed because post_save doesn't have
+    access to the old value.
     """
     if instance.pk:
         try:
             old_user = sender.objects.get(pk=instance.pk)
             instance._old_xmpp = old_user.xmpp
+            instance._old_avatar_id = old_user.avatar_id
         except sender.DoesNotExist:
             instance._old_xmpp = None
+            instance._old_avatar_id = None
     else:
         instance._old_xmpp = None
+        instance._old_avatar_id = None
+
+
+def _sync_vcard(user_pk):
+    """Sync a user's vCard (full name + avatar) to ejabberd. Runs in a daemon thread."""
+    from .ejabberd import set_vcard
+    from .models import User
+
+    try:
+        user = User.objects.get(pk=user_pk)
+    except User.DoesNotExist:
+        return
+
+    if not user.xmpp:
+        return
+
+    localpart = user.xmpp.split("@")[0]
+    full_name = f"{user.first_name} {user.last_name}".strip() or user.username
+    set_vcard(localpart, full_name, avatar_file=user.avatar)
 
 
 @receiver(post_save, sender="intern.User")
-def invite_user_on_xmpp_set(sender, instance, created, **kwargs):
+def sync_xmpp_on_user_save(sender, instance, created, **kwargs):
     """
-    When a user sets (or changes) their XMPP/Jabber ID, invite them to the
-    CantorHub Space. This only happens if:
-    - The user's XMPP value actually changed
-    - The value is a valid JID (contains @)
-    - EJABBERD_ENABLED is True
-    - Not during migration
-
-    Note: This invites to the Space, not to individual forum MUCs.
-    Forum invitations happen on first message in each room (bot triggers them).
+    Handle XMPP-related changes on User save:
+    - Log when xmpp JID is set or changed
+    - Sync vCard when avatar changes and user has an xmpp account
     """
-    new_xmpp = instance.xmpp or ""
-    old_xmpp = getattr(instance, "_old_xmpp", None)
-
-    # Skip if no change or no XMPP set
-    if new_xmpp == old_xmpp:
-        return
-    if not new_xmpp or "@" not in new_xmpp:
-        return
-
-    # Skip during migration
     if getattr(_migrating, "active", False):
         return
-
-    # Skip if XMPP integration disabled
     if not settings.EJABBERD_ENABLED:
         return
 
-    # Only invite if this is a new JID being set (not during migration import)
-    # The bot will handle inviting users when it joins rooms
-    logger.info(
-        "ejabberd: user %s set XMPP JID %s - will be invited to Space on next bot scan",
-        instance.username,
-        new_xmpp,
-    )
+    new_xmpp = instance.xmpp or ""
+    old_xmpp = getattr(instance, "_old_xmpp", None)
+
+    if new_xmpp != old_xmpp and new_xmpp and "@" in new_xmpp:
+        logger.info(
+            "ejabberd: user %s set XMPP JID %s",
+            instance.username,
+            new_xmpp,
+        )
+
+    # Sync vCard when avatar changes and user has an xmpp account
+    old_avatar_id = getattr(instance, "_old_avatar_id", None)
+    if instance.xmpp and instance.avatar_id != old_avatar_id:
+        threading.Thread(
+            target=_sync_vcard,
+            args=(instance.pk,),
+            daemon=True,
+        ).start()

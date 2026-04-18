@@ -61,11 +61,15 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth. A `Host` header is re
 |---|---|---|---|
 | `register_user` | `register` | user, host, password | Returns full JID; 409 = already exists |
 | `ensure_bot` | `register` | user, host, password | Idempotent bot account creation |
+| `set_user_password` | `change_password` | user, host, newpass | Syncs password changes to ejabberd |
+| `set_vcard` | `set_vcard` + `set_vcard2` | user, host, name, avatar_file | Sets FN and PHOTO (base64); avatar_file is a FilerFileField |
 | `get_room_members` | `get_room_affiliations` | room, service | Returns `[{jid, affiliation, reason}]` — no `host` param |
 | `set_room_affiliation` | `set_room_affiliation` | room, service, user, host, affiliation | `host` is the *user* host |
 | `get_room_occupants` | `get_room_occupants` | room, service | Returns `[{jid, nick, role}]` — real JIDs exposed in non-anonymous rooms |
 | `change_room_option` | `change_room_option` | room, service, option, value | Used for title, persistent, anonymous |
 | `send_invitation` | `send_direct_invitation` | room, service, password, reason, users | `users` is a list of JIDs; `reason` and `password` must be non-empty |
+| `unregister_user` | `unregister` | user, host | Delete ejabberd account; returns True/False |
+| `destroy_room` | `destroy_room` | room, service | Delete MUC room; returns True/False |
 | `send_muc_message` | (slixmpp) | — | Short-lived XMPP connection, configures room, sends groupchat, disconnects |
 
 ### REST API quirks
@@ -150,7 +154,22 @@ slixmpp runs in an async event loop. Django ORM is sync-only. All DB access is w
 
 ## User provisioning (`intern/views.py` — `CantorLoginView`)
 
-On first login, if `user.xmpp` is empty, a daemon thread calls `ejabberd.register_user()` and stores the returned JID in `User.xmpp`.
+On first login, if `user.xmpp` is empty, a daemon thread calls `_provision_xmpp_user` which:
+1. Calls `ejabberd.register_user(user.username, password)` — creates account with the login password
+2. Stores the returned JID in `User.xmpp`
+3. Calls `ejabberd.set_vcard()` to upload the user's full name and avatar to ejabberd vCard
+
+This uses a custom `CantorLoginView` that overrides Django's `LoginView.form_valid()` to access the plaintext password from the login form.
+
+## Password sync (`intern/views.py` — `member_passwd`)
+
+When a user changes their password, `member_passwd` calls `ejabberd.set_user_password()` in a daemon thread to keep the ejabberd password in sync. Only triggers if `user.xmpp` is set.
+
+## vCard / avatar sync (`intern/signals.py`)
+
+When a `User` is saved and their `avatar` field has changed, a daemon thread calls `ejabberd.set_vcard()` to update the ejabberd vCard (FN + PHOTO). The pre_save signal captures `old_avatar_id` for change detection.
+
+The `_provision_xmpp_user` function also uploads the vCard on first login, so both initial provisioning and subsequent avatar changes are covered.
 
 ## Startup script (`start.sh`)
 
@@ -158,11 +177,29 @@ When `EJABBERD_ENABLED=1`:
 1. `./manage.py ejabberd_sync --sync` — registers bot account, assigns MUC JIDs
 2. `./manage.py ejabberd_bot &` — starts the bot in background
 
+## Admin management command (`manage.py ejabberd_admin`)
+
+```
+./manage.py ejabberd_admin delete_forum <forum_id>   # Delete a forum's MUC room (with confirmation)
+./manage.py ejabberd_admin delete_user <username_or_id> # Delete a user's ejabberd account (with confirmation)
+./manage.py ejabberd_admin clear_invites --forum=<id> [--user=<username_or_id>]  # Remove affiliations/invitations
+./manage.py ejabberd_admin invite --forum=<id> --user=<username_or_id>  # Send direct invitation
+./manage.py ejabberd_admin remove_user --forum=<id> --user=<username_or_id>  # Remove user from room
+./manage.py ejabberd_admin list_rooms   # List forums and their MUC JIDs
+./manage.py ejabberd_admin list_users   # List users with XMPP JIDs
+./manage.py ejabberd_admin sync_vcard <username_or_id>  # Re-upload vCard (name + avatar)
+./manage.py ejabberd_admin sync_password <username_or_id>  # Sync password (prompts for password)
+```
+
+All sub-commands require `EJABBERD_ENABLED=1`. Destructive operations (`delete_forum`, `delete_user`, `clear_invites`) prompt for confirmation. User identifiers accept either numeric pk or username string.
+
+`clear_invites` without `--user` removes all members from the room. With `--user`, removes only that user's affiliation.
+
 ## ejabberd server configuration
 
 - `mod_http_api` under the `example.net` vhost
 - HAProxy injects `Host: example.net` header on the ejabberd backend
-- `api_permissions` must allow the CantorHub backend IP for: `register`, `get_room_affiliations`, `set_room_affiliation`, `get_room_occupants`, `change_room_option`, `send_direct_invitation`
+- `api_permissions` must allow the CantorHub backend IP for: `register`, `change_password`, `set_vcard`, `set_vcard2`, `get_room_affiliations`, `set_room_affiliation`, `get_room_occupants`, `change_room_option`, `send_direct_invitation`, `destroy_room`, `unregister`
 
 ## Cross-domain setup
 

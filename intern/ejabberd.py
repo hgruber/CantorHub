@@ -6,6 +6,7 @@ management (set_room_affiliation). Room creation and message sending are handled
 by the slixmpp bot (ejabberd_bot management command).
 """
 
+import base64
 import logging
 import re
 import threading
@@ -154,6 +155,134 @@ def ensure_bot():
         settings.EJABBERD_HOST,
     )
     return True
+
+
+def unregister_user(localpart):
+    """
+    Delete a user account on ejabberd via POST /api/unregister.
+
+    Returns True on success, False on failure.
+    """
+    result = _request(
+        "unregister",
+        {
+            "user": localpart,
+            "host": settings.EJABBERD_HOST,
+        },
+    )
+    if result is None:
+        return False
+    logger.info("ejabberd: unregistered user %s@%s", localpart, settings.EJABBERD_HOST)
+    return True
+
+
+def destroy_room(muc_jid):
+    """
+    Destroy a MUC room on ejabberd via POST /api/destroy_room.
+
+    Returns True on success, False on failure.
+    """
+    room_localpart = muc_jid.split("@")[0]
+    result = _request(
+        "destroy_room",
+        {
+            "room": room_localpart,
+            "service": settings.EJABBERD_MUC_SERVICE,
+        },
+    )
+    if result is None:
+        return False
+    logger.info("ejabberd: destroyed room %s", muc_jid)
+    return True
+
+
+def set_user_password(localpart, password):
+    """
+    Change a user's password on ejabberd via POST /api/change_password.
+
+    Returns True on success, False on failure.
+    """
+    result = _request(
+        "change_password",
+        {
+            "user": localpart,
+            "host": settings.EJABBERD_HOST,
+            "newpass": password,
+        },
+    )
+    if result is None:
+        return False
+    logger.info("ejabberd: changed password for %s@%s", localpart, settings.EJABBERD_HOST)
+    return True
+
+
+def set_vcard(localpart, full_name, avatar_file=None):
+    """
+    Set a user's vCard on ejabberd: FN (full name) and optionally PHOTO.
+
+    avatar_file: a FilerFileField instance with an actual file.
+    Returns True on success, False on failure.
+    """
+    ok = True
+
+    result = _request(
+        "set_vcard",
+        {
+            "user": localpart,
+            "host": settings.EJABBERD_HOST,
+            "name": "FN",
+            "content": full_name,
+        },
+    )
+    if result is None:
+        ok = False
+
+    if avatar_file:
+        try:
+            f = avatar_file.file
+            f.open("rb")
+            data = f.read()
+            f.close()
+            b64 = base64.b64encode(data).decode("ascii")
+
+            mime = getattr(avatar_file, "mime_type", "") or ""
+            if not mime.startswith("image/"):
+                name = getattr(avatar_file, "original_filename", "") or ""
+                ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+                mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif"}.get(ext, "image/jpeg")
+
+            result_type = _request(
+                "set_vcard2",
+                {
+                    "user": localpart,
+                    "host": settings.EJABBERD_HOST,
+                    "name": "PHOTO",
+                    "subname": "TYPE",
+                    "content": mime,
+                },
+            )
+            if result_type is None:
+                ok = False
+
+            result_bval = _request(
+                "set_vcard2",
+                {
+                    "user": localpart,
+                    "host": settings.EJABBERD_HOST,
+                    "name": "PHOTO",
+                    "subname": "BINVAL",
+                    "content": b64,
+                },
+            )
+            if result_bval is None:
+                ok = False
+        except Exception as exc:
+            logger.error("ejabberd: failed to read avatar for vCard: %s", exc)
+            ok = False
+
+    if ok:
+        logger.info("ejabberd: set vCard for %s@%s", localpart, settings.EJABBERD_HOST)
+    return ok
 
 
 def set_room_affiliation(muc_jid, user_jid, affiliation):

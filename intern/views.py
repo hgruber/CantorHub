@@ -7,6 +7,7 @@ from datetime import date, datetime
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.mail import send_mail
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
@@ -45,6 +46,45 @@ from .tables import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _provision_xmpp_user(user_pk, password):
+    """Create an ejabberd account for a user and set their vCard. Runs in a daemon thread."""
+    from .models import User
+
+    try:
+        user = User.objects.get(pk=user_pk)
+    except User.DoesNotExist:
+        return
+
+    if user.xmpp:
+        return
+
+    jid = ejabberd.register_user(user.username, password)
+    if not jid:
+        return
+
+    User.objects.filter(pk=user_pk).update(xmpp=jid)
+
+    full_name = f"{user.first_name} {user.last_name}".strip() or user.username
+    localpart = jid.split("@")[0]
+    ejabberd.set_vcard(localpart, full_name, avatar_file=user.avatar)
+
+
+class CantorLoginView(auth_views.LoginView):
+    """Login view that provisions ejabberd accounts on first login."""
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        user = form.get_user()
+        if settings.EJABBERD_ENABLED and not user.xmpp:
+            password = form.cleaned_data["password"]
+            threading.Thread(
+                target=_provision_xmpp_user,
+                args=(user.pk, password),
+                daemon=True,
+            ).start()
+        return response
 
 
 def home(request):
@@ -744,6 +784,15 @@ def member_passwd(request, id):
         # Setze neues Passwort
         target_user.set_password(new_password1)
         target_user.save()
+
+        # Sync password to ejabberd if user has an XMPP account
+        if settings.EJABBERD_ENABLED and target_user.xmpp:
+            localpart = target_user.xmpp.split("@")[0]
+            threading.Thread(
+                target=ejabberd.set_user_password,
+                args=(localpart, new_password1),
+                daemon=True,
+            ).start()
 
         messages.success(request, "Das Passwort wurde erfolgreich geändert.")
 
