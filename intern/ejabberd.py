@@ -32,7 +32,7 @@ def _request(endpoint, body=None, allow_statuses=None):
     (e.g. {409} for "already exists" responses from register).
     """
     url = f"{settings.EJABBERD_API_URL.rstrip('/')}/api/{endpoint}"
-    auth = (settings.EJABBERD_ADMIN_USER, settings.EJABBERD_ADMIN_PASSWORD)
+    auth = (settings.EJABBERD_BOT_JID, settings.EJABBERD_BOT_PASSWORD)
     allowed = allow_statuses or set()
 
     for attempt in range(_MAX_RETRIES):

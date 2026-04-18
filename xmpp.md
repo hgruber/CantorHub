@@ -21,7 +21,7 @@ Two processes:
 1. **Django web process** — forwards Forum posts to MUC via short-lived slixmpp connections
 2. **`ejabberd_bot` management command** — long-running slixmpp bot that receives MUC messages, stores them as Mitteilung records, and sends invitations
 
-All ejabberd admin operations (room config, affiliations, invitations) use the REST API to avoid cross-domain permission issues (bot JID is on `example.org`, MUC service on `conference.example.net`).
+All ejabberd admin operations (room config, affiliations, invitations) use the REST API, authenticated as the bot user. The bot JID has admin rights in ejabberd. This avoids cross-domain permission issues (bot JID is on `example.org`, MUC service on `conference.example.net`).
 
 ## Model fields
 
@@ -40,9 +40,7 @@ EJABBERD_ENABLED          "0" / "1"
 EJABBERD_API_URL          ejabberd REST API URL, e.g. http://10.88.0.8:5280
 EJABBERD_HOST             XMPP domain, e.g. example.net
 EJABBERD_MUC_SERVICE      MUC service domain, e.g. conference.example.net
-EJABBERD_ADMIN_USER       Full admin JID, e.g. admin@example.net
-EJABBERD_ADMIN_PASSWORD
-EJABBERD_BOT_JID          Bot JID, e.g. forum@example.org
+EJABBERD_BOT_JID          Bot JID (also used for REST API auth), e.g. forum@example.org
 EJABBERD_BOT_PASSWORD
 EJABBERD_BOT_PORT         c2s port (default 5222)
 ```
@@ -55,7 +53,7 @@ No dedicated unencrypted c2s listener is needed.
 
 ## REST API client (`intern/ejabberd.py`)
 
-All calls are `POST /api/<endpoint>` with HTTP Basic auth. A `Host` header is required because HAProxy sits in front of ejabberd.
+All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `Host` header is required because HAProxy sits in front of ejabberd.
 
 | Function | ejabberd API | Parameters | Notes |
 |---|---|---|---|

@@ -185,8 +185,6 @@ EJABBERD_HOST = os.environ.get("EJABBERD_HOST", "example.net")
 EJABBERD_MUC_SERVICE = os.environ.get(
     "EJABBERD_MUC_SERVICE", "conference.example.net"
 )
-EJABBERD_ADMIN_USER = os.environ.get("EJABBERD_ADMIN_USER", "admin@example.net")
-EJABBERD_ADMIN_PASSWORD = os.environ.get("EJABBERD_ADMIN_PASSWORD", "")
 EJABBERD_BOT_JID = os.environ.get("EJABBERD_BOT_JID", "forum@example.org")
 EJABBERD_BOT_PASSWORD = os.environ.get("EJABBERD_BOT_PASSWORD", "")
 EJABBERD_BOT_PORT = int(os.environ.get("EJABBERD_BOT_PORT", "5222"))

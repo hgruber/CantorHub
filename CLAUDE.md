@@ -119,7 +119,6 @@ SQLite in development (`db.sqlite3`, excluded from git). MySQL-compatible for pr
 
 **XMPP Integration:**
 - `EJABBERD_ENABLED`, `EJABBERD_API_URL`, `EJABBERD_HOST`, `EJABBERD_MUC_SERVICE`
-- `EJABBERD_ADMIN_USER`, `EJABBERD_ADMIN_PASSWORD`
 - `EJABBERD_BOT_JID`, `EJABBERD_BOT_PASSWORD`, `EJABBERD_BOT_PORT`
 
 **Matrix Integration:**
