@@ -207,10 +207,11 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 14px 12px;
+    padding: 0 14px;
+    height: var(--tb-h);
     border-bottom: 1px solid var(--sb-divider);
     flex-shrink: 0;
-    min-height: var(--tb-h);
+    box-sizing: border-box;
 }
 
 .sidebar-logo {
