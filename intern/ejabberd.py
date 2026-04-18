@@ -450,7 +450,6 @@ def _send_muc_message_thread(muc_jid, body):
 
         def on_session_start(event):
             bot.send_presence()
-            bot.get_roster()
             bot.plugin["xep_0045"].join_muc(room_jid, "CantorBot")
             # Wait for room creation, then configure and send
             bot.schedule("configure_and_send", 2, lambda: _configure_send_disconnect(bot, room_jid, body))

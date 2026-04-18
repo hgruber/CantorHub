@@ -196,7 +196,6 @@ class CantorBot:
     async def _on_session_start(self, event):
         self._auth_retries = 0
         self._client.send_presence()
-        await self._client.get_roster()
 
         await self._ensure_rooms()
 
