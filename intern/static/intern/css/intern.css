@@ -1623,3 +1623,65 @@ span.not_found {
     font-size: 12px;
     line-height: 1.5;
 }
+
+/* =================================================== */
+/* Row context menu                                    */
+/* =================================================== */
+.context-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 200px;
+    padding: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--r-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.context-menu-item {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    color: var(--t1);
+    border: none;
+    border-radius: var(--r-sm);
+    text-align: left;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    box-shadow: none;
+    white-space: nowrap;
+}
+.context-menu-item:hover {
+    background: var(--bg-row-hover);
+    box-shadow: none;
+    color: var(--t1);
+}
+.context-menu-item.danger {
+    color: var(--brand);
+}
+.context-menu-item.danger:hover {
+    background: var(--brand-light);
+    color: var(--brand-dark);
+}
+.context-menu-sep {
+    height: 1px;
+    margin: 4px 6px;
+    background: var(--border);
+}
+.rename-input {
+    width: 100%;
+    min-width: 120px;
+    padding: 2px 6px;
+    font-size: inherit;
+    font-family: inherit;
+    background: var(--bg-app);
+    color: var(--t1);
+    border: 1px solid var(--brand);
+    border-radius: var(--r-sm);
+    box-sizing: border-box;
+}

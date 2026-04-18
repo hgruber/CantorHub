@@ -434,6 +434,206 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   })();
 
+  // ── Row context menu (right-click / long-press) ─────────
+  (function initRowContextMenu() {
+    const tbody = document.querySelector(".table-container tbody");
+    if (!tbody) return;
+    const deleteForm = document.getElementById("delete-form");
+    if (!deleteForm) return; // only on folder views
+
+    function csrfToken() {
+      const el = document.querySelector("[name=csrfmiddlewaretoken]");
+      return el ? el.value : "";
+    }
+
+    function rowFrom(target) {
+      const tr = target.closest("tr");
+      if (!tr || !tr.dataset.id || !tr.dataset.type) return null;
+      return tr;
+    }
+
+    let menuEl = null;
+    function closeMenu() {
+      if (menuEl) { menuEl.remove(); menuEl = null; }
+    }
+
+    function openMenu(tr, x, y) {
+      closeMenu();
+      const id = tr.dataset.id;
+      const type = tr.dataset.type;
+      const name = tr.dataset.name || "";
+      const isZip = type === "File" && name.toLowerCase().endsWith(".zip");
+
+      menuEl = document.createElement("div");
+      menuEl.className = "context-menu";
+      const items = [];
+      items.push({ label: "Umbenennen", action: () => startInlineRename(tr, type, id, name) });
+      if (type === "Folder") {
+        items.push({ label: "Als ZIP herunterladen", action: () => {
+          window.location.href = "/intern/ordner/" + id + "/zip/";
+        }});
+      }
+      if (isZip) {
+        items.push({ label: "Entpacken", action: () => submitUnzip(id) });
+      }
+      items.push({ sep: true });
+      items.push({ label: "Löschen", danger: true, action: () => submitDelete(type, id, name) });
+
+      for (const it of items) {
+        if (it.sep) {
+          const s = document.createElement("div");
+          s.className = "context-menu-sep";
+          menuEl.appendChild(s);
+          continue;
+        }
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "context-menu-item" + (it.danger ? " danger" : "");
+        b.textContent = it.label;
+        b.addEventListener("click", () => { closeMenu(); it.action(); });
+        menuEl.appendChild(b);
+      }
+
+      document.body.appendChild(menuEl);
+      const rect = menuEl.getBoundingClientRect();
+      const maxX = window.innerWidth - rect.width - 4;
+      const maxY = window.innerHeight - rect.height - 4;
+      menuEl.style.left = Math.max(4, Math.min(x, maxX)) + "px";
+      menuEl.style.top = Math.max(4, Math.min(y, maxY)) + "px";
+    }
+
+    function submitDelete(type, id, name) {
+      if (!confirm(`"${name}" wirklich löschen?`)) return;
+      deleteForm.querySelectorAll('input[name="item"]').forEach((el) => el.remove());
+      const inp = document.createElement("input");
+      inp.type = "hidden"; inp.name = "item"; inp.value = type + ":" + id;
+      deleteForm.appendChild(inp);
+      deleteForm.submit();
+    }
+
+    function submitUnzip(id) {
+      const f = document.createElement("form");
+      f.method = "POST";
+      f.action = "/intern/file/" + id + "/entpacken/";
+      const tok = document.createElement("input");
+      tok.type = "hidden"; tok.name = "csrfmiddlewaretoken"; tok.value = csrfToken();
+      f.appendChild(tok);
+      document.body.appendChild(f);
+      f.submit();
+    }
+
+    function startInlineRename(tr, type, id, oldName) {
+      // The name cell has <a>TEXT</a>; the icon cell has <a><img></a>. Pick the text one.
+      const link = Array.from(tr.querySelectorAll("td a")).find((a) => !a.querySelector("img"));
+      const cell = link ? link.parentElement : null;
+      if (!cell || !link) return;
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "rename-input";
+      input.value = oldName;
+      const originalHTML = cell.innerHTML;
+      cell.innerHTML = "";
+      cell.appendChild(input);
+      input.focus();
+      // Preselect the stem for files (before the last dot) — folders get full selection.
+      if (type === "File" && oldName.includes(".")) {
+        input.setSelectionRange(0, oldName.lastIndexOf("."));
+      } else {
+        input.select();
+      }
+
+      let finished = false;
+      function restore() {
+        if (finished) return;
+        finished = true;
+        cell.innerHTML = originalHTML;
+      }
+
+      async function commit() {
+        if (finished) return;
+        const newName = input.value.trim();
+        if (!newName || newName === oldName) { restore(); return; }
+        try {
+          const res = await fetch("/intern/ordner/umbenennen/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": csrfToken(),
+            },
+            body: new URLSearchParams({ type, id, name: newName }).toString(),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            alert(data.message || "Umbenennen fehlgeschlagen.");
+            restore();
+            return;
+          }
+          finished = true;
+          const newLink = link.cloneNode(false);
+          newLink.textContent = data.name || newName;
+          cell.innerHTML = "";
+          cell.appendChild(newLink);
+          tr.dataset.name = data.name || newName;
+        } catch (err) {
+          alert("Netzwerkfehler beim Umbenennen.");
+          restore();
+        }
+      }
+
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); commit(); }
+        else if (e.key === "Escape") { e.preventDefault(); restore(); }
+      });
+      input.addEventListener("blur", () => { if (!finished) commit(); });
+    }
+
+    tbody.addEventListener("contextmenu", (e) => {
+      const tr = rowFrom(e.target);
+      if (!tr) return;
+      e.preventDefault();
+      openMenu(tr, e.clientX, e.clientY);
+    });
+
+    // Long-press for touch
+    let touchTimer = null;
+    let touchTr = null;
+    let touchStart = null;
+    tbody.addEventListener("touchstart", (e) => {
+      const tr = rowFrom(e.target);
+      if (!tr) return;
+      touchTr = tr;
+      const t = e.touches[0];
+      touchStart = { x: t.clientX, y: t.clientY };
+      touchTimer = setTimeout(() => {
+        openMenu(tr, touchStart.x, touchStart.y);
+        touchTimer = null;
+      }, 500);
+    }, { passive: true });
+    function cancelTouch() {
+      if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
+      touchTr = null;
+    }
+    tbody.addEventListener("touchmove", (e) => {
+      if (!touchTimer || !touchStart) return;
+      const t = e.touches[0];
+      if (Math.abs(t.clientX - touchStart.x) > 8 || Math.abs(t.clientY - touchStart.y) > 8) {
+        cancelTouch();
+      }
+    }, { passive: true });
+    tbody.addEventListener("touchend", cancelTouch);
+    tbody.addEventListener("touchcancel", cancelTouch);
+
+    document.addEventListener("click", (e) => {
+      if (menuEl && !menuEl.contains(e.target)) closeMenu();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeMenu();
+    });
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("resize", closeMenu);
+  })();
+
   // Add event listener for save order button
   const saveOrderButton = document.getElementById("saveOrderButton");
   if (saveOrderButton) {

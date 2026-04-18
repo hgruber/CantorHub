@@ -23,10 +23,13 @@ urlpatterns = [
     path("upload/", views.upload, name="upload"),
     path("ordner/<int:pk>/", views.folder_view, name="folder_view"),
     path("ordner/<int:pk>/neu/", views.folder_create, name="folder_create"),
+    path("ordner/<int:pk>/zip/", views.folder_zip_download, name="folder_zip"),
     path("ordner/loeschen/", views.folder_delete, name="folder_delete"),
     path("ordner/verschieben/", views.folder_move, name="folder_move"),
     path("ordner/kopieren/", views.folder_copy, name="folder_copy"),
+    path("ordner/umbenennen/", views.folder_rename, name="folder_rename"),
     path("file/", views.dummy, name="file_list"),
+    path("file/<int:pk>/entpacken/", views.file_unzip, name="file_unzip"),
     path("file/<str:name>/", views.dummy, name="file_view"),
     path("file/<str:name>/edit/", views.dummy, name="file_edit"),
     # Forum URLs

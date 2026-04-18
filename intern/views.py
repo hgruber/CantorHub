@@ -1,19 +1,25 @@
 import difflib
 import json
 import logging
+import mimetypes
 import os
+import posixpath
 import secrets
 import threading
+import zipfile
 from datetime import date, datetime, timedelta
+from io import BytesIO
+from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required, permission_required
+from django.core.files.base import ContentFile
 from django.core.mail import send_mail
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce, Concat
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.crypto import get_random_string
@@ -376,15 +382,32 @@ def _parse_items(post):
     return items
 
 
+def _delete_folder_deep(folder):
+    """Recursively delete a folder and its contents, calling File.delete() on each
+    file so filer's custom delete() also removes the underlying blob from storage."""
+    for f in File.objects.filter(folder=folder).iterator():
+        f.delete()
+    for child in Folder.objects.filter(parent=folder):
+        _delete_folder_deep(child)
+    folder.delete()
+
+
 @permission_required("filer.add_folder", raise_exception=True)
 @require_POST
 def folder_delete(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
-            Folder.objects.filter(pk=item_id).delete()
+            try:
+                _delete_folder_deep(Folder.objects.get(pk=item_id))
+            except Folder.DoesNotExist:
+                pass
         else:
-            File.objects.filter(pk=item_id).delete()
+            try:
+                File.objects.get(pk=item_id).delete()
+            except File.DoesNotExist:
+                pass
+    folders.invalidate()
     return redirect("folder_view", pk=referer_pk)
 
 
@@ -402,6 +425,44 @@ def folder_move(request):
     return redirect("folder_view", pk=referer_pk)
 
 
+def _is_descendant_or_self(candidate_id, ancestor_id):
+    """True if candidate_id == ancestor_id or candidate is reachable by walking up
+    parent pointers from candidate until it equals ancestor_id."""
+    if candidate_id is None or ancestor_id is None:
+        return False
+    cur = candidate_id
+    while cur is not None:
+        if cur == ancestor_id:
+            return True
+        try:
+            cur = Folder.objects.values_list("parent_id", flat=True).get(pk=cur)
+        except Folder.DoesNotExist:
+            return False
+    return False
+
+
+def _copy_folder_deep(src_folder, target_parent_id, owner):
+    """Recursively copy a folder and its contents into target_parent_id.
+    File records are duplicated, but their underlying storage blob is shared —
+    matches filer's own copy semantics (and how single-file copy already worked)."""
+    new_name = _unique_folder_name(target_parent_id, src_folder.name)
+    new_folder = Folder.objects.create(
+        name=new_name, parent_id=target_parent_id, owner=owner
+    )
+    for f in File.objects.filter(folder=src_folder):
+        File.objects.create(
+            file=f.file,
+            original_filename=f.original_filename,
+            name=f.name,
+            owner=owner,
+            folder=new_folder,
+            mime_type=f.mime_type,
+        )
+    for child in Folder.objects.filter(parent=src_folder):
+        _copy_folder_deep(child, new_folder.pk, owner)
+    return new_folder
+
+
 @permission_required("filer.add_folder", raise_exception=True)
 @require_POST
 def folder_copy(request):
@@ -409,20 +470,216 @@ def folder_copy(request):
     raw_target = request.POST.get("target_pk", "")
     target_id = int(raw_target) if raw_target and raw_target != "0" else None
     for item_type, item_id in _parse_items(request.POST):
-        if item_type == "File":
+        if item_type == "Folder":
+            try:
+                src = Folder.objects.get(pk=item_id)
+            except Folder.DoesNotExist:
+                continue
+            if _is_descendant_or_self(target_id, src.pk):
+                continue
+            _copy_folder_deep(src, target_id, request.user)
+        elif item_type == "File":
             try:
                 f = File.objects.get(pk=item_id)
-                File.objects.create(
-                    file=f.file,
-                    original_filename=f.original_filename,
-                    name=f.name,
-                    owner=request.user,
-                    folder_id=target_id,
-                    mime_type=f.mime_type,
-                )
             except File.DoesNotExist:
-                pass
+                continue
+            File.objects.create(
+                file=f.file,
+                original_filename=f.original_filename,
+                name=f.name,
+                owner=request.user,
+                folder_id=target_id,
+                mime_type=f.mime_type,
+            )
+    folders.invalidate()
     return redirect("folder_view", pk=referer_pk)
+
+
+def _validate_rename(name):
+    name = (name or "").strip()
+    if not name or len(name) > 255 or "/" in name or "\\" in name or name in (".", ".."):
+        return None
+    return name
+
+
+@permission_required("filer.add_folder", raise_exception=True)
+@require_POST
+def folder_rename(request):
+    item_type = request.POST.get("type", "")
+    raw_id = request.POST.get("id", "")
+    new_name = _validate_rename(request.POST.get("name", ""))
+    if not new_name or not raw_id.isdigit():
+        return JsonResponse({"status": "error", "message": "Ungültiger Name."}, status=400)
+    item_id = int(raw_id)
+    if item_type == "Folder":
+        folder = get_object_or_404(Folder, pk=item_id)
+        if Folder.objects.filter(parent_id=folder.parent_id, name=new_name).exclude(pk=item_id).exists():
+            return JsonResponse({"status": "error", "message": "Name bereits vergeben."}, status=400)
+        folder.name = new_name
+        folder.save(update_fields=["name"])
+        folders.invalidate()
+    elif item_type == "File":
+        f = get_object_or_404(File, pk=item_id)
+        f.original_filename = new_name
+        f.name = new_name
+        f.save(update_fields=["original_filename", "name"])
+    else:
+        return JsonResponse({"status": "error", "message": "Unbekannter Typ."}, status=400)
+    return JsonResponse({"status": "ok", "name": new_name})
+
+
+def _iter_folder_tree(folder, prefix=""):
+    """Yield (arcname, filer_file) tuples for a folder and its descendants."""
+    for f in File.objects.filter(folder=folder):
+        name = f.original_filename or f.name or f"file-{f.pk}"
+        yield posixpath.join(prefix, name) if prefix else name, f
+    for child in Folder.objects.filter(parent=folder).order_by("name"):
+        child_prefix = posixpath.join(prefix, child.name) if prefix else child.name
+        yield from _iter_folder_tree(child, child_prefix)
+
+
+class _ZipBuffer:
+    def __init__(self):
+        self._buf = bytearray()
+
+    def write(self, data):
+        self._buf.extend(data)
+        return len(data)
+
+    def drain(self):
+        data = bytes(self._buf)
+        self._buf.clear()
+        return data
+
+    def tell(self):
+        return len(self._buf)
+
+    def flush(self):
+        pass
+
+
+@login_required
+def folder_zip_download(request, pk):
+    folder = get_object_or_404(Folder, pk=pk)
+
+    def generator():
+        buf = _ZipBuffer()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED, allowZip64=True) as zf:
+            for arcname, f in _iter_folder_tree(folder):
+                try:
+                    with f.file.open("rb") as src:
+                        data = src.read()
+                except Exception:
+                    continue
+                zf.writestr(arcname, data)
+                chunk = buf.drain()
+                if chunk:
+                    yield chunk
+        tail = buf.drain()
+        if tail:
+            yield tail
+
+    safe_name = (folder.name or f"ordner-{pk}").replace('"', "")
+    response = StreamingHttpResponse(generator(), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="{safe_name}.zip"'
+    return response
+
+
+def _decode_zip_name(info):
+    """Return a str filename from a ZipInfo, handling cp437-encoded legacy zips."""
+    raw = info.filename
+    if info.flag_bits & 0x800:
+        return raw
+    try:
+        return raw.encode("cp437").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return raw
+
+
+def _unique_folder_name(parent_id, base):
+    candidate = base
+    suffix = 2
+    while Folder.objects.filter(parent_id=parent_id, name=candidate).exists():
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+    return candidate
+
+
+@permission_required("filer.add_folder", raise_exception=True)
+@require_POST
+def file_unzip(request, pk):
+    src_file = get_object_or_404(File, pk=pk)
+    original = (src_file.original_filename or src_file.name or "").lower()
+    if not original.endswith(".zip"):
+        return JsonResponse({"status": "error", "message": "Keine Zip-Datei."}, status=400)
+
+    parent_id = src_file.folder_id
+    with src_file.file.open("rb") as fh:
+        payload = fh.read()
+    try:
+        zf = zipfile.ZipFile(BytesIO(payload))
+    except zipfile.BadZipFile:
+        return JsonResponse({"status": "error", "message": "Beschädigtes Archiv."}, status=400)
+
+    entries = []
+    for info in zf.infolist():
+        name = _decode_zip_name(info)
+        if not name or name.startswith("__MACOSX/") or "/.DS_Store" in name:
+            continue
+        if name.endswith("/"):
+            continue
+        parts = [p for p in PurePosixPath(name).parts if p not in (".", "")]
+        if not parts or ".." in parts:
+            continue
+        entries.append((parts, info))
+
+    if not entries:
+        return JsonResponse({"status": "error", "message": "Leeres Archiv."}, status=400)
+
+    top_levels = {parts[0] for parts, _ in entries}
+    if len(top_levels) == 1 and any(len(parts) > 1 for parts, _ in entries):
+        target_base = next(iter(top_levels))
+        strip = 1
+    else:
+        target_base = PurePosixPath(src_file.original_filename or "archive.zip").stem or "archive"
+        strip = 0
+
+    target_name = _unique_folder_name(parent_id, target_base)
+    root = Folder.objects.create(name=target_name, parent_id=parent_id, owner=request.user)
+
+    folder_cache = {(): root}
+
+    def ensure_folder(rel_parts):
+        key = tuple(rel_parts)
+        if key in folder_cache:
+            return folder_cache[key]
+        parent = ensure_folder(rel_parts[:-1])
+        folder = Folder.objects.create(name=rel_parts[-1], parent=parent, owner=request.user)
+        folder_cache[key] = folder
+        return folder
+
+    for parts, info in entries:
+        effective = parts[strip:]
+        if not effective:
+            continue
+        dir_parts, fname = effective[:-1], effective[-1]
+        target_folder = ensure_folder(dir_parts)
+        try:
+            data = zf.read(info)
+        except Exception:
+            continue
+        mime = mimetypes.guess_type(fname)[0] or "application/octet-stream"
+        File.objects.create(
+            file=ContentFile(data, name=fname),
+            original_filename=fname,
+            name=fname,
+            owner=request.user,
+            folder=target_folder,
+            mime_type=mime,
+        )
+
+    folders.invalidate()
+    return redirect("folder_view", pk=parent_id or 0)
 
 
 @login_required

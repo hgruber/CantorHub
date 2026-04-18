@@ -87,6 +87,14 @@ class OrdnerTabelle(tables.Table):
 
     class Meta:
         attrs = {"class": "table"}
+        row_attrs = {
+            "data-id": lambda record: "" if record.get("name") == ".." else record["id"],
+            "data-type": lambda record: "" if record.get("name") == ".." else record.get("type", ""),
+            "data-name": lambda record: (
+                "" if record.get("name") == ".."
+                else (record.get("original_filename") or record.get("name") or "")
+            ),
+        }
 
 
 class TerminTabelle(tables.Table):
