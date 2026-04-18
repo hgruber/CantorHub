@@ -113,8 +113,8 @@
     --forum-bg:        #16161e;
     --msg-bg:          #1e1e2e;
     --msg-border:      rgba(255, 255, 255, 0.07);
-    --msg-me-bg:       rgba(193, 68, 104, 0.10);
-    --msg-me-border:   rgba(193, 68, 104, 0.20);
+    --msg-me-bg:       rgba(193, 68, 104, 0.22);
+    --msg-me-border:   rgba(193, 68, 104, 0.35);
     --mention-bg:      rgba(6, 95, 70, 0.15);
     --mention-border:  rgba(110, 231, 183, 0.30);
     --mention-color:   #6ee7b7;
@@ -1181,7 +1181,6 @@ div.avatar { cursor: pointer; }
     font-size: 12.5px;
     line-height: 1.6;
     margin: 1em 0;
-    overflow-x: auto;
 }
 
 .wiki textarea {

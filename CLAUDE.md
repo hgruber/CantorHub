@@ -37,6 +37,7 @@ docker run -p 8000:8000 cantoreub
 |---|---|
 | `ejabberd_sync --sync` | Sync XMPP users/rooms when EJABBERD_ENABLED=1 |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding |
+| `ejabberd_admin <action>` | Admin ops: delete_forum, delete_user, clear_invites, invite, remove_user, list_rooms, list_users, sync_vcard, sync_password |
 | `matrix_sync --sync` | Sync Matrix rooms when MATRIX_ENABLED=1 |
 | `matrix_sync --backfill` | Backfill forum messages to Matrix |
 | `matrix_sync --create-user PK` | Create Matrix user for a member |
@@ -88,12 +89,18 @@ Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. 
 
 See `xmpp.md` and `matrix.md` for detailed implementation notes.
 
+### Frontend design system (`intern/static/intern/css/intern.css`)
+
+All colors use CSS custom properties defined in `:root` (light mode). Dark mode is a `[data-theme="dark"]` block that overrides all color tokens. Theme is toggled via a button in the sidebar footer; persisted to `localStorage`; falls back to `prefers-color-scheme`. An inline `<script>` in `base.html` head sets `data-theme` before paint to avoid flash.
+
+When adding new colors, always use CSS variables and add dark-mode values to `[data-theme="dark"]`. Avoid hardcoded hex colors in component styles.
+
 ### Notable utilities (`intern/`)
 
 - `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file links)
 - `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings
 - `fuzzy.py` — fuzzy song title matching used in article references
-- `context_processors.py` — injects global template context
+- `context_processors.py` — injects global template context (`VERSION`)
 
 **External integrations:**
 - `ejabberd.py` — REST API client for ejabberd admin API and message sending
