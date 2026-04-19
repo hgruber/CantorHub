@@ -1632,6 +1632,70 @@ span.not_found {
     padding: 0 2px;
 }
 
+/* === Wiki Tables === */
+.wiki-table {
+    border-collapse: collapse;
+    margin: 1.2em 0;
+    width: 100%;
+    font-size: 0.9em;
+    border-radius: var(--r);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.wiki-table th,
+.wiki-table td {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+    text-align: left;
+}
+
+.wiki-table thead th {
+    background: var(--brand);
+    color: #fff;
+    font-weight: 600;
+    border-color: var(--brand-dark);
+    letter-spacing: 0.02em;
+}
+
+.wiki-table tbody th {
+    background: var(--brand-light);
+    color: var(--brand-dark);
+    font-weight: 600;
+    border-color: rgba(193, 68, 104, 0.18);
+    white-space: nowrap;
+}
+
+.wiki-table tbody tr:nth-child(even) td {
+    background: var(--bg-app);
+}
+
+.wiki-table tbody tr:hover td,
+.wiki-table tbody tr:hover th {
+    background: var(--bg-row-hover);
+    transition: background var(--ease);
+}
+
+[data-theme="dark"] .wiki-table th,
+[data-theme="dark"] .wiki-table td {
+    border-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] .wiki-table thead th {
+    border-color: var(--brand-dark);
+}
+
+[data-theme="dark"] .wiki-table tbody th {
+    background: rgba(193, 68, 104, 0.14);
+    color: #e89ab5;
+    border-color: rgba(193, 68, 104, 0.20);
+}
+
+[data-theme="dark"] .wiki-table tbody tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.025);
+}
+
 /* =================================================== */
 /* Password Strength                                   */
 /* =================================================== */

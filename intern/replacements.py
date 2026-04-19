@@ -50,6 +50,63 @@ class ListProcessor:
         return tags + f"<li>{content}</li>"
 
 
+class TableProcessor:
+    def __init__(self):
+        self.in_table = False
+        self.in_thead = False
+
+    def _make_row(self, cells, tag):
+        return '<tr>' + ''.join(f'<{tag}>{c}</{tag}>' for c in cells) + '</tr>'
+
+    def process_line(self, line):
+        """Returns (prefix_to_emit, modified_line)."""
+        if line.startswith('!'):
+            cells = [c.strip() for c in line[1:].split('!')]
+            row = self._make_row(cells, 'th')
+            if not self.in_table:
+                self.in_table = True
+                self.in_thead = True
+                return '', '<table class="wiki-table"><thead>' + row
+            return '', row
+        elif line.startswith('_'):
+            parts = [p.strip() for p in line[1:].split('|')]
+            row = '<tr><th>' + parts[0] + '</th>' + ''.join(f'<td>{c}</td>' for c in parts[1:]) + '</tr>'
+            prefix = ''
+            if not self.in_table:
+                self.in_table = True
+                prefix = '<table class="wiki-table"><tbody>'
+            elif self.in_thead:
+                self.in_thead = False
+                prefix = '</thead><tbody>'
+            return prefix, row
+        elif line.startswith('|'):
+            cells = [c.strip() for c in line[1:].split('|')]
+            row = self._make_row(cells, 'td')
+            prefix = ''
+            if not self.in_table:
+                self.in_table = True
+                prefix = '<table class="wiki-table"><tbody>'
+            elif self.in_thead:
+                self.in_thead = False
+                prefix = '</thead><tbody>'
+            return prefix, row
+        else:
+            if self.in_table:
+                self.in_table = False
+                closing = '</thead></table>' if self.in_thead else '</tbody></table>'
+                self.in_thead = False
+                return closing, line
+            return '', line
+
+    def close(self):
+        if self.in_table:
+            self.in_table = False
+            closing = '</thead></table>' if self.in_thead else '</tbody></table>'
+            self.in_thead = False
+            return closing
+        return ''
+
+
 class CodeBlockProcessor:
     def __init__(self):
         self.in_code_block = False
@@ -141,6 +198,7 @@ def apply_replacements(text, request=None):
 
     list_processor = ListProcessor()
     code_processor = CodeBlockProcessor()
+    table_processor = TableProcessor()
 
     # Definiere deine regulären Ausdrücke und Ersetzungen
     REPLACEMENTS = [
@@ -205,15 +263,22 @@ def apply_replacements(text, request=None):
         if request is not None:  # Skip codeblock for forum
             repl, skip_block = code_processor.process_line(repl)
             if skip_block:
+                table_closing = table_processor.close()
+                if table_closing:
+                    result.append(table_closing)
                 result.append(repl)
                 continue
             if repl.startswith("</code></pre>"):
                 result.append("</code></pre>\n")
                 repl = repl[13:]
+        table_prefix, repl = table_processor.process_line(repl)
+        if table_prefix:
+            result.append(table_prefix)
         for pattern, replacement in REPLACEMENTS:
             repl = re.sub(pattern, replacement, repl, flags=re.IGNORECASE)
         result.append(f"{repl}")
     result.append(code_processor.close())
+    result.append(table_processor.close())
     if request is not None:
         result.append(
             '<p id="footer"><img src="/static/intern/images/JG-Frankfurt-wG-color.svg" style="width: 14px;">&nbsp;Just Gospel!</p>'
