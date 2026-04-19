@@ -571,9 +571,11 @@ def _iter_folder_tree(folder, prefix=""):
 class _ZipBuffer:
     def __init__(self):
         self._buf = bytearray()
+        self._pos = 0
 
     def write(self, data):
         self._buf.extend(data)
+        self._pos += len(data)
         return len(data)
 
     def drain(self):
@@ -582,7 +584,7 @@ class _ZipBuffer:
         return data
 
     def tell(self):
-        return len(self._buf)
+        return self._pos
 
     def flush(self):
         pass
