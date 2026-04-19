@@ -63,6 +63,15 @@ document.querySelectorAll(".sidebar-nav .nav-item[href]").forEach((link) => {
   } catch (e) {}
 });
 
+// Settings submenu toggle
+function toggleSettingsMenu() {
+  const submenu = document.getElementById("settings-submenu");
+  const toggle = document.getElementById("settings-toggle");
+  if (!submenu || !toggle) return;
+  submenu.classList.toggle("open");
+  toggle.classList.toggle("open");
+}
+
 // Filter offcanvas functionality - ensure only one offcanvas is open at a time
 function toggle(offcanvas) {
   const offcanvases = document.querySelectorAll(".offcanvas");

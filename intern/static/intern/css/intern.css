@@ -421,8 +421,7 @@ body {
 }
 
 /* ─── Top Bar Icons ──────────────────────────────── */
-.hamburger,
-.toolicon {
+.hamburger {
     width: 34px;
     height: 34px;
     display: flex;
@@ -436,20 +435,89 @@ body {
     stroke: currentColor;
 }
 
-.hamburger:hover,
-.toolicon:hover {
+.hamburger:hover {
     background: var(--hover-icon-bg);
     color: var(--brand);
+}
+
+.toolicon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--tb-icon);
+    transition: color var(--ease);
+    stroke: currentColor;
 }
 
 .top-bar a {
     display: flex;
     align-items: center;
+    padding: 7px;
+    border-radius: var(--r-sm);
+    transition: background var(--ease);
 }
 
-.top-bar a:hover { text-decoration: none; }
+.top-bar a:hover {
+    background: var(--hover-icon-bg);
+    text-decoration: none;
+}
+
+.top-bar a:hover .toolicon { color: var(--brand); }
 
 .hamburger { display: none; }
+
+/* ─── Sidebar Submenu ────────────────────────────── */
+.nav-submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease;
+}
+
+.nav-submenu.open {
+    max-height: 300px;
+}
+
+.nav-subitem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px 6px 38px;
+    margin: 1px 6px;
+    border-radius: var(--r-sm);
+    color: var(--sb-text);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: calc(100% - 12px);
+    white-space: nowrap;
+}
+
+.nav-subitem:hover {
+    background: var(--sb-hover);
+    color: var(--sb-text-hover);
+    text-decoration: none;
+}
+
+.nav-subitem .nav-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.nav-chevron {
+    width: 12px;
+    height: 12px;
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0.45;
+    transition: transform 0.2s ease;
+}
+
+.nav-item-settings.open .nav-chevron {
+    transform: rotate(180deg);
+}
 
 /* =================================================== */
 /* Content Area                                        */
@@ -1064,8 +1132,7 @@ div.avatar { cursor: pointer; }
 
 .profile-image img {
     width: 110px;
-    height: 147px;
-    object-fit: cover;
+    height: auto;
     border-radius: var(--r);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
