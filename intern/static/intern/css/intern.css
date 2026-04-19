@@ -139,8 +139,7 @@
 [data-theme="dark"] .message_me .content_me { background: var(--msg-me-bg); border-color: var(--msg-me-border); }
 [data-theme="dark"] .mention { background: var(--mention-bg); border-color: var(--mention-border); color: var(--mention-color); }
 [data-theme="dark"] .wiki pre { background: var(--pre-bg); }
-[data-theme="dark"] .dropzone { border-color: rgba(255,255,255,0.08) !important; background: rgba(255,255,255,0.02) !important; }
-[data-theme="dark"] .dropzone .dz-message { color: rgba(255,255,255,0.25) !important; }
+[data-theme="dark"] #app-main.drag-active .upload-overlay { background: rgba(193,68,104,0.18); }
 [data-theme="dark"] span.not_found { background: rgba(254,249,195,0.10); }
 [data-theme="dark"] .offcanvas { box-shadow: -2px 0 16px rgba(0,0,0,0.30); }
 
@@ -198,6 +197,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    position: relative;
 }
 
 /* =================================================== */
@@ -325,34 +325,40 @@ body {
 }
 
 /* =================================================== */
-/* Sidebar – Dropzone                                  */
+/* Upload overlay (app-main drag target)               */
 /* =================================================== */
-.file-container {
-    border-top: 1px solid var(--sb-divider);
-    padding: 8px;
-    flex-shrink: 0;
+.upload-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 400;
+    pointer-events: none;
 }
 
-.dropzone {
-    min-height: 64px !important;
-    border: 1px dashed var(--border-dark) !important;
-    border-radius: var(--r-sm) !important;
-    background: var(--hover-bg) !important;
-    transition: border-color var(--ease), background var(--ease);
-    padding: 8px !important;
+#app-main.drag-active .upload-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(193,68,104,0.10);
+    border: 2px dashed var(--brand);
+    border-radius: var(--r);
 }
 
-.dropzone:hover,
-.dropzone.dz-drag-hover {
-    border-color: var(--brand) !important;
-    background: var(--sb-active-bg) !important;
+.upload-overlay-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--brand);
+    font-size: 18px;
+    font-weight: 600;
+    pointer-events: none;
+    user-select: none;
 }
 
-.dropzone .dz-message {
-    color: var(--t4) !important;
-    font-size: 11px;
-    margin: 0 !important;
-    font-family: var(--font);
+.upload-overlay-inner svg {
+    width: 52px;
+    height: 52px;
 }
 
 /* =================================================== */
@@ -753,8 +759,8 @@ tbody tr:hover td { background: var(--bg-row-hover); }
 
 th.right, td.right { text-align: right; }
 
-th.asc::after  { content: " ↑"; color: var(--brand); font-size: 10px; font-weight: 700; }
-th.desc::after { content: " ↓"; color: var(--brand); font-size: 10px; font-weight: 700; }
+th.asc a::after  { content: " ↑"; color: var(--brand); font-size: 10px; font-weight: 700; }
+th.desc a::after { content: " ↓"; color: var(--brand); font-size: 10px; font-weight: 700; }
 
 time {
     font-size: 11.5px;

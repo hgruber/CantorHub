@@ -143,11 +143,32 @@ def _get_lied_by_filename(filename):
     """Look up Lied object by filename (with JG- prefix support)"""
     name, _ = os.path.splitext(filename)
     try:
+        if name.startswith("JG - "):
+            return Lied.objects.get(titel=name[5:])
         if name.startswith("JG-"):
             return Lied.objects.get(titel=name[3:])
         return Lied.objects.get(titel=name)
     except Lied.DoesNotExist:
         return None
+
+
+def _assign_file_to_song(filename, filer_file):
+    """If filename matches a song title, assign filer_file to the appropriate Lied field."""
+    song = _get_lied_by_filename(filename)
+    if not song:
+        return
+    extension = _get_file_extension(filename)
+    file_type, _ = _get_file_type_config(extension)
+    if not file_type:
+        return
+    name_stem = os.path.splitext(filename)[0]
+    if file_type == "audio" and name_stem.startswith(("JG - ", "JG-")):
+        field_name = "aufnahme"
+    else:
+        field_name = settings.FILE_TYPE_LIED_MAP.get(file_type)
+    if field_name:
+        setattr(song, field_name, filer_file)
+        song.save()
 
 
 @login_required
@@ -156,6 +177,9 @@ def upload(request):
     if request.FILES:
         file = request.FILES["file"]
         preferred_folder_id = request.POST.get("folder_id")
+        rename_to = request.POST.get("rename_to")
+        avatar_user_id = request.POST.get("avatar_user_id")
+        route_by_type = request.POST.get("route_by_type")
 
         # Extract extension
         extension = _get_file_extension(file.name)
@@ -166,16 +190,20 @@ def upload(request):
         # Look up song if filename matches
         song = _get_lied_by_filename(file.name)
 
-        # Determine folder_id
-        # If file is found in Lied table, use the folder_id from the appropriate field
-        if song and file_type and file_type_config:
-            folder_id = folders._get(file_type_config["folder_name"])
-        elif song and hasattr(song, f"{file_type}_id"):
-            # Use the folder_id from the song's specific field
-            field_name = f"{file_type}_id"
-            folder_id = getattr(song, field_name)
+        # Determine folder_id:
+        # Use type-specific subfolder when we know the file type AND either a
+        # matching song was found or the upload context explicitly requests it
+        # (e.g. dropped on the Repertoire/Titel page).
+        _type_folder = {"audio": folders.repertoire, "music": folders.notensatz, "pdf": folders.pdf}
+        if file_type and file_type_config and (song or route_by_type):
+            folder_id = (_type_folder.get(file_type) or folders.unsortiert)()
         else:
             folder_id = preferred_folder_id or folders.unsortiert()
+
+        if not folder_id:
+            return JsonResponse(
+                {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
+            )
 
         # Create file record
         filer_file = File.objects.create(
@@ -186,13 +214,23 @@ def upload(request):
             folder_id=folder_id,
         )
 
-        # Update song if applicable
-        if song and file_type:
-            # Update song with appropriate file field
-            field_name = settings.FILE_TYPE_LIED_MAP.get(file_type)
-            if field_name:
-                setattr(song, field_name, filer_file)
-                song.save()
+        # Rename file if requested (e.g. avatar → <user_id>.<ext>)
+        if rename_to:
+            ext = _get_file_extension(file.name)
+            new_name = f"{rename_to}{ext}"
+            filer_file.original_filename = new_name
+            filer_file.name = new_name
+            filer_file.save(update_fields=["original_filename", "name"])
+
+        # Update user avatar if requested
+        if avatar_user_id:
+            try:
+                User.objects.filter(pk=int(avatar_user_id)).update(avatar=filer_file)
+            except (ValueError, TypeError):
+                pass
+
+        # Assign to matching song if applicable
+        _assign_file_to_song(file.name, filer_file)
 
         # Return response
         url = request.META.get("HTTP_ORIGIN") + filer_file.url
@@ -378,7 +416,7 @@ def folder_view(request, pk):
         {
             "seitentitel": f"Ordner: {path_str}",
             "breadcrumb": breadcrumb,
-            "folder_id": pk,
+            "upload_folder_id": pk,
             "table": table,
             "show_file_actions": True,
             "new_folder_pk": original_pk,
@@ -701,7 +739,7 @@ def file_unzip(request, pk):
         except Exception:
             continue
         mime = mimetypes.guess_type(fname)[0] or "application/octet-stream"
-        File.objects.create(
+        filer_file = File.objects.create(
             file=ContentFile(data, name=fname),
             original_filename=fname,
             name=fname,
@@ -709,6 +747,7 @@ def file_unzip(request, pk):
             folder=target_folder,
             mime_type=mime,
         )
+        _assign_file_to_song(fname, filer_file)
 
     folders.invalidate()
     return redirect("folder_view", pk=parent_id or 0)
@@ -722,7 +761,7 @@ def forum_list(request):
     return render(
         request,
         "table.html",
-        {"table": table, "seitentitel": "Foren", "folder_id": folders.forum()},
+        {"table": table, "seitentitel": "Foren", "upload_folder_id": folders.forum()},
     )
 
 
@@ -740,7 +779,7 @@ def forum_view(request, forum):
             "last_id": last_id,
             "oldest_id": oldest_id,
             "messages": messages,
-            "folder_id": folders.forum(),
+            "upload_folder_id": folders.forum(),
             "up": "forum_list",
             "edit": "forum_edit",
             "id": forum,
@@ -877,7 +916,8 @@ def titel_list(request):
             "filter": repertoire_filter,
             "pool": remaining_table,
             "seitentitel": seitentitel,
-            "folder_id": folders.musik(),
+            "upload_folder_id": folders.musik(),
+            "upload_route_by_type": True,
             "showfilter": True,
             "order": len(konzerte) == 1,
         },
@@ -991,6 +1031,7 @@ def termin_list(request):
             "seitentitel": "Termine",
             "ical_url": ical_url,
             "webcal_url": webcal_url,
+            "upload_folder_id": folders.termine(),
         },
     )
 
@@ -1047,7 +1088,6 @@ def member_view(request, id):
         "up": "member_list",
         "edit": "member_edit" if can_edit else None,
         "changepass": "member_passwd" if can_edit else None,
-        "folder_id": folders.artikel(),
         "id": id,
     }
     return render(request, "mitglied.html", context)
@@ -1077,7 +1117,9 @@ def member_edit(request, id):
         "seitentitel": f"bearbeiten: {user.first_name} {user.last_name}",
         "view": "member_view",
         "changepass": "member_passwd",
-        "folder_id": folders.artikel(),
+        "upload_folder_id": folders.avatare(),
+        "upload_rename_to": id,
+        "upload_avatar_user_id": id,
         "id": id,
     }
     return render(request, "member_edit.html", context)
@@ -1153,6 +1195,7 @@ def article_list(request):
     context = {
         "seitentitel": "Alle Artikel",
         "artikel": artikel,
+        "upload_folder_id": folders.artikel(),
     }
     return render(request, "wiki.html", context)
 
@@ -1184,6 +1227,7 @@ def article_edit(request, name):
         "history": "article_history",
         "id": name,
         "back": "",
+        "upload_folder_id": folders.artikel(),
     }
     return render(request, "artikel.html", context)
 
@@ -1210,7 +1254,7 @@ def article_view(request, name):
         else artikel.name,
         "is_outdated": is_outdated,
         "latest_version": latest.version,
-        "folder_id": folders.artikel(),
+        "upload_folder_id": folders.artikel(),
         "up": "article_list",
         "edit": "article_edit"
         if request.user.has_perm("intern.change_artikel")

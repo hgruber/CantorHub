@@ -176,9 +176,9 @@ FILE_TYPE_CONFIG = {
 
 # File type to Lied model field mapping
 FILE_TYPE_LIED_MAP = {
-    "audio": "original_id",
-    "music": "noten_id",
-    "pdf": "pdf_id",
+    "audio": "original",
+    "music": "noten",
+    "pdf": "pdf",
 }
 
 # XMPP/ejabberd integration settings

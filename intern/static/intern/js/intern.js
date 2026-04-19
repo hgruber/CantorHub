@@ -112,6 +112,13 @@ function toggle(offcanvas) {
 // Dropzone configuration - set autoDiscover to false at the beginning
 Dropzone.autoDiscover = false;
 
+function getCsrfToken() {
+  const el = document.querySelector("[name=csrfmiddlewaretoken]");
+  if (el) return el.value;
+  const match = document.cookie.match(/csrftoken=([^;]+)/);
+  return match ? match[1] : "";
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   // ── Table row selection (event delegation) ──────────────
   function updateSelectionState() {
@@ -139,31 +146,63 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Dropzone initialization
-  var myDropzone = new Dropzone("#InternDropzone", {
-    url: "/intern/upload/",
-    paramName: "file",
-    maxFilesize: 50,
-    headers: {
-      "X-CSRFToken": "{{ csrf_token }}",
-    },
-    init: function () {
-      this.on("success", function (file, response) {
-        console.log(file);
-        console.log(response);
-        const textarea = document.getElementById("mitteilung-textarea");
-        if (textarea) {
-          textarea.value += response.url;
-        }
-      });
-      this.on("queuecomplete", function () {
-        console.log("Alle Uploads abgeschlossen!");
-        if (window.location.pathname.startsWith("/intern/ordner/")) {
-          window.location.reload();
-        }
-      });
-    },
-  });
+  // App-main overlay dropzone
+  const appMain = document.getElementById("app-main");
+  if (appMain) {
+    new Dropzone(appMain, {
+      url: "/intern/upload/",
+      paramName: "file",
+      maxFilesize: 50,
+      clickable: false,
+      previewsContainer: false,
+      headers: { "X-CSRFToken": getCsrfToken() },
+      init: function () {
+        this.on("sending", function (file, xhr, formData) {
+          const folderId = appMain.dataset.uploadFolderId;
+          const renameTo = appMain.dataset.uploadRenameTo;
+          const avatarUserId = appMain.dataset.uploadAvatarUserId;
+          const routeByType = appMain.dataset.uploadRouteByType;
+          if (folderId) formData.append("folder_id", folderId);
+          if (renameTo) formData.append("rename_to", renameTo);
+          if (avatarUserId) formData.append("avatar_user_id", avatarUserId);
+          if (routeByType) formData.append("route_by_type", "1");
+        });
+        this.on("success", function (file, response) {
+          const textarea = document.getElementById("mitteilung-textarea");
+          if (textarea) textarea.value += response.url;
+        });
+        this.on("queuecomplete", function () {
+          if (window.location.pathname.startsWith("/intern/ordner/")) {
+            window.location.reload();
+          }
+        });
+      },
+    });
+
+    let dragCounter = 0;
+    appMain.addEventListener("dragenter", (e) => {
+      if (!e.dataTransfer || !e.dataTransfer.types.includes("Files")) return;
+      dragCounter++;
+      appMain.classList.add("drag-active");
+    });
+    appMain.addEventListener("dragleave", (e) => {
+      if (!e.dataTransfer || !e.dataTransfer.types.includes("Files")) return;
+      if (--dragCounter <= 0) {
+        dragCounter = 0;
+        appMain.classList.remove("drag-active");
+      }
+    });
+    appMain.addEventListener("drop", () => {
+      dragCounter = 0;
+      appMain.classList.remove("drag-active");
+    });
+    document.addEventListener("dragleave", (e) => {
+      if (e.relatedTarget === null) {
+        dragCounter = 0;
+        appMain.classList.remove("drag-active");
+      }
+    });
+  }
 
   // Sortable functionality
   const tbody = document.querySelectorAll(".table-container table tbody");
@@ -392,6 +431,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // External file drop: upload files to this folder
         if (e.dataTransfer.files.length > 0) {
+          e.stopPropagation();
+          document.getElementById("app-main")?.classList.remove("drag-active");
           uploadFilesToFolder(e.dataTransfer.files, targetPk);
           return;
         }
