@@ -34,6 +34,10 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get("DEBUG", False) == "1"
 
 ALLOWED_HOSTS = ["test.example.org", "narsil", "localhost", "127.0.0.1"]
+
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [
     "https://test.example.org",
     "http://narsil:8000",
