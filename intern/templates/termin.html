@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="detail-info">
+            <h1>{{ termin.kurz }}</h1>
+            <p class="detail-subtitle">{{ termin.datum|date:"l, d. F Y · H:i" }}{% if termin.datum_bis %} – {{ termin.datum_bis|date:"H:i" }}{% endif %}</p>
+        </div>
+    </div>
+
+    <div class="detail-cards">
+        <div class="detail-card">
+            <div class="detail-card-row">
+                <span class="label">Datum</span>
+                <span class="value">{{ termin.datum|date:"d.m.Y" }}</span>
+            </div>
+            <div class="detail-card-row">
+                <span class="label">Uhrzeit</span>
+                <span class="value">{{ termin.datum|date:"H:i" }}{% if termin.datum_bis %} – {{ termin.datum_bis|date:"H:i" }}{% endif %}</span>
+            </div>
+            {% if termin.ort %}
+            <div class="detail-card-row">
+                <span class="label">Ort</span>
+                <span class="value">{{ termin.ort.name }}{% if termin.ort.strasse %}, {{ termin.ort.strasse }}{% endif %}{% if termin.ort.ort %}, {{ termin.ort.plz }} {{ termin.ort.ort }}{% endif %}</span>
+            </div>
+            {% endif %}
+            <div class="detail-card-row">
+                <span class="label">Anwesenheit</span>
+                <span class="value">{% if termin.anwesenheit %}<span class="badge badge-primary">Ja</span>{% else %}Nein{% endif %}</span>
+            </div>
+            <div class="detail-card-row">
+                <span class="label">Repertoire</span>
+                <span class="value">{% if termin.repertoire %}<span class="badge badge-primary">Ja</span>{% else %}Nein{% endif %}</span>
+            </div>
+        </div>
+
+        {% if termin.lang %}
+        <div class="detail-card">
+            <h3>Beschreibung</h3>
+            <div class="detail-card-content">{{ termin.lang|linebreaksbr }}</div>
+        </div>
+        {% endif %}
+
+        {% if termin.ort and termin.ort.breite is not None and termin.ort.laenge is not None %}
+        <div class="detail-card">
+            <h3>Karte</h3>
+            <div id="map" class="detail-map"></div>
+        </div>
+        {% endif %}
+
+        {% if lieder %}
+        <div class="detail-card">
+            <h3>Lieder <span class="badge">{{ lieder|length }}</span></h3>
+            <ol class="detail-list">
+                {% for k in lieder %}
+                <li>{{ k.lied }}</li>
+                {% endfor %}
+            </ol>
+        </div>
+        {% endif %}
+
+        {% if stimme_groups %}
+        <div class="detail-card detail-card-wide">
+            <h3>Anwesenheit</h3>
+
+            <!-- Single table: visible on desktop, hidden on mobile -->
+            <div class="attendance-single">
+            <table class="attendance-table">
+                <thead>
+                    <tr>
+                        <th>Stimme</th>
+                        <th class="att-yes">Zusage</th>
+                        <th class="att-no">Absage</th>
+                        <th class="att-maybe">Eventuell</th>
+                        <th class="att-na">Keine Angabe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in stimme_groups %}
+                    <tr>
+                        <td class="att-voice">{{ g.label }}</td>
+                        <td class="att-yes">
+                            {% if g.zusagen %}
+                            <span class="att-count">{{ g.zusagen|length }}</span>
+                            <span class="att-names">{% for u in g.zusagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                            {% else %}–{% endif %}
+                        </td>
+                        <td class="att-no">
+                            {% if g.absagen %}
+                            <span class="att-count">{{ g.absagen|length }}</span>
+                            <span class="att-names">{% for u in g.absagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                            {% else %}–{% endif %}
+                        </td>
+                        <td class="att-maybe">
+                            {% if g.vielleicht %}
+                            <span class="att-count">{{ g.vielleicht|length }}</span>
+                            <span class="att-names">{% for u in g.vielleicht %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                            {% else %}–{% endif %}
+                        </td>
+                        <td class="att-na">
+                            {% if g.keine_angabe %}
+                            <span class="att-count">{{ g.keine_angabe|length }}</span>
+                            <span class="att-names">{% for u in g.keine_angabe %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                            {% else %}–{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <!-- Split tables: hidden on desktop, visible on mobile -->
+            <div class="attendance-split">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Stimme</th>
+                            <th class="att-yes">Zusage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for g in stimme_groups %}
+                        <tr>
+                            <td class="att-voice">{{ g.label }}</td>
+                            <td class="att-yes">
+                                {% if g.zusagen %}
+                                <span class="att-count">{{ g.zusagen|length }}</span>
+                                <span class="att-names">{% for u in g.zusagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                                {% else %}–{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Stimme</th>
+                            <th class="att-no">Absage</th>
+                            <th class="att-maybe">Eventuell</th>
+                            <th class="att-na">Keine Angabe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for g in stimme_groups %}
+                        <tr>
+                            <td class="att-voice">{{ g.label }}</td>
+                            <td class="att-no">
+                                {% if g.absagen %}
+                                <span class="att-count">{{ g.absagen|length }}</span>
+                                <span class="att-names">{% for u in g.absagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                                {% else %}–{% endif %}
+                            </td>
+                            <td class="att-maybe">
+                                {% if g.vielleicht %}
+                                <span class="att-count">{{ g.vielleicht|length }}</span>
+                                <span class="att-names">{% for u in g.vielleicht %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                                {% else %}–{% endif %}
+                            </td>
+                            <td class="att-na">
+                                {% if g.keine_angabe %}
+                                <span class="att-count">{{ g.keine_angabe|length }}</span>
+                                <span class="att-names">{% for u in g.keine_angabe %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                                {% else %}–{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if termin.ort and termin.ort.breite is not None and termin.ort.laenge is not None %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var lat = parseFloat("{{ termin.ort.breite }}".replace(',', '.'));
+    var lng = parseFloat("{{ termin.ort.laenge }}".replace(',', '.'));
+    if (!isNaN(lat) && !isNaN(lng)) {
+        var map = L.map('map').setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        var popup = '{{ termin.ort.name|escapejs }}';
+        {% if termin.ort.strasse %}popup += '<br>{{ termin.ort.strasse|escapejs }}';{% endif %}
+        {% if termin.ort.ort %}popup += '<br>{{ termin.ort.plz|escapejs }} {{ termin.ort.ort|escapejs }}';{% endif %}
+        L.marker([lat, lng]).addTo(map).bindPopup(popup).openPopup();
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

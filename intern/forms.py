@@ -3,7 +3,7 @@ from django.db import models
 from filer.fields.file import FilerFileField
 from filer.fields.image import AdminImageWidget
 
-from .models import User
+from .models import Forum, Lied, Termin, User
 
 
 class RegisterForm(forms.Form):
@@ -30,11 +30,59 @@ class RegisterForm(forms.Form):
         return cleaned_data
 
 
-class TerminForm(forms.Form):
-    kurz = forms.CharField(max_length=64, required=True)
-    datum = forms.DateTimeField()
-    datum_bis = forms.DateTimeInput()
-    lang = forms.TextInput()
+class TerminForm(forms.ModelForm):
+    class Meta:
+        model = Termin
+        fields = ["kurz", "datum", "datum_bis", "lang", "ort", "anwesenheit", "repertoire"]
+        widgets = {
+            "kurz": forms.TextInput(attrs={"class": "form-control"}),
+            "datum": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M",
+                attrs={"class": "form-control", "type": "datetime-local"},
+            ),
+            "datum_bis": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M",
+                attrs={"class": "form-control", "type": "datetime-local"},
+            ),
+            "lang": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "ort": forms.Select(attrs={"class": "form-control"}),
+        }
+
+
+class LiedEditForm(forms.ModelForm):
+    class Meta:
+        model = Lied
+        fields = [
+            "titel", "aktiv", "tempo", "beats", "hymne", "acapella", "weihnacht",
+            "original", "aufnahme", "pdf", "noten", "komponist", "bearbeiter",
+        ]
+        widgets = {
+            "titel": forms.TextInput(attrs={"class": "form-control"}),
+            "aktiv": forms.CheckboxInput(),
+            "tempo": forms.Select(attrs={"class": "form-control"}),
+            "beats": forms.NumberInput(attrs={"class": "form-control"}),
+            "hymne": forms.CheckboxInput(),
+            "acapella": forms.CheckboxInput(),
+            "weihnacht": forms.CheckboxInput(),
+            "original": AdminImageWidget,
+            "aufnahme": AdminImageWidget,
+            "pdf": AdminImageWidget,
+            "noten": AdminImageWidget,
+            "komponist": forms.TextInput(attrs={"class": "form-control"}),
+            "bearbeiter": forms.TextInput(attrs={"class": "form-control"}),
+        }
+
+
+class ForumEditForm(forms.ModelForm):
+    bild = FilerFileField(null=True, blank=True, on_delete=models.SET_NULL, related_name="forum_bild")
+
+    class Meta:
+        model = Forum
+        fields = ["thema", "bild"]
+        widgets = {
+            "thema": forms.TextInput(attrs={"class": "form-control"}),
+            "bild": AdminImageWidget,
+        }
 
 
 class UserEditForm(forms.ModelForm):

@@ -33,7 +33,7 @@ from icalendar import Calendar, Event
 from intern import ejabberd, folders
 from intern.replacements import apply_replacements
 
-from .forms import RegisterForm, UserEditForm
+from .forms import RegisterForm, TerminForm, LiedEditForm, ForumEditForm, UserEditForm
 from .models import (
     Artikel,
     Forum,
@@ -857,6 +857,87 @@ def _forward_to_xmpp(msg):
         logger.error("ejabberd: failed to forward message %s to MUC: %s", msg.id, exc)
 
 
+def _forum_user_lists(forum_obj):
+    """Compute invited, attending, without_invitation, without_xmpp user lists for a forum."""
+    active_users = list(User.objects.filter(is_active=True).order_by("last_name", "first_name"))
+
+    if settings.EJABBERD_ENABLED and forum_obj.xmpp_muc_jid:
+        from . import ejabberd as xmpp
+
+        room_members = xmpp.get_room_members(forum_obj.xmpp_muc_jid)
+        member_jids = {jid.lower() for jid, _aff in room_members}
+
+        room_occupants = xmpp.get_room_occupants(forum_obj.xmpp_muc_jid)
+        occupant_jids = {jid.split("/")[0].lower() for jid, _nick in room_occupants}
+
+        invited = [u for u in active_users if u.xmpp and u.xmpp.lower() in member_jids]
+        attending = [u for u in active_users if u.xmpp and u.xmpp.lower() in occupant_jids]
+        with_xmpp = {u.xmpp.lower() for u in active_users if u.xmpp}
+        without_invitation = [u for u in active_users if u.xmpp and u.xmpp.lower() not in member_jids]
+        without_xmpp = [u for u in active_users if not u.xmpp]
+    else:
+        sender_ids = set(
+            Mitteilung.objects.filter(forum=forum_obj)
+            .values_list("sender_id", flat=True)
+        )
+        invited = [u for u in active_users if u.id in sender_ids]
+        attending = invited
+        without_invitation = [u for u in active_users if u.id not in sender_ids]
+        without_xmpp = []
+
+    return {
+        "invited": invited,
+        "attending": attending,
+        "without_invitation": without_invitation,
+        "without_xmpp": without_xmpp,
+    }
+
+
+@login_required
+def forum_edit(request, forum):
+    forum_obj = get_object_or_404(Forum, id=forum)
+
+    if request.method == "POST":
+        form = ForumEditForm(request.POST, request.FILES, instance=forum_obj)
+        if form.is_valid():
+            form.save()
+            return redirect("forum_view", forum=forum)
+    else:
+        form = ForumEditForm(instance=forum_obj)
+
+    user_lists = _forum_user_lists(forum_obj)
+
+    context = {
+        "form": form,
+        "seitentitel": f"bearbeiten: {forum_obj.thema}",
+        "view": "forum_view",
+        "id": forum,
+        **user_lists,
+    }
+    return render(request, "forum_edit.html", context)
+
+
+@login_required
+@require_POST
+def forum_invite(request, forum, user_id):
+    forum_obj = get_object_or_404(Forum, id=forum)
+    user = get_object_or_404(User, id=user_id)
+
+    if settings.EJABBERD_ENABLED and forum_obj.xmpp_muc_jid and user.xmpp:
+        from . import ejabberd as xmpp
+
+        xmpp.send_invitation(forum_obj.xmpp_muc_jid, user.xmpp)
+        xmpp.set_room_affiliation(forum_obj.xmpp_muc_jid, user.xmpp, "member")
+    else:
+        # Fallback: send email invitation
+        if user.email:
+            subject = f"Einladung: {forum_obj.thema}"
+            message = f"Hallo {user.first_name},\n\nDu wurdest zum Forum \"{forum_obj.thema}\" eingeladen.\n\nBesuche das Forum unter: {request.build_absolute_uri(reverse('forum_view', args=[forum]))}"
+            send_mail(subject, message, "webmaster@example.org", [user.email])
+
+    return redirect("forum_edit", forum=forum)
+
+
 @login_required
 def titel_list(request):
     queryset = Lied.objects.order_by("titel")
@@ -922,6 +1003,40 @@ def titel_list(request):
             "order": len(konzerte) == 1,
         },
     )
+
+
+@login_required
+def titel_view(request, titel):
+    lied = get_object_or_404(Lied.objects.prefetch_related("solist", "dirigent"), id=titel)
+    context = {
+        "seitentitel": lied.titel,
+        "lied": lied,
+        "up": "titel_list",
+        "edit": "titel_edit",
+        "id": titel,
+    }
+    return render(request, "titel.html", context)
+
+
+@permission_required("intern.change_lied", raise_exception=True)
+def titel_edit(request, titel):
+    lied = get_object_or_404(Lied, id=titel)
+
+    if request.method == "POST":
+        form = LiedEditForm(request.POST, request.FILES, instance=lied)
+        if form.is_valid():
+            form.save()
+            return redirect("titel_view", titel=titel)
+    else:
+        form = LiedEditForm(instance=lied)
+
+    context = {
+        "form": form,
+        "seitentitel": f"bearbeiten: {lied.titel}",
+        "view": "titel_view",
+        "id": titel,
+    }
+    return render(request, "titel_edit.html", context)
 
 
 @permission_required("intern.change_lied", raise_exception=True)
@@ -1015,6 +1130,14 @@ def termin_list(request):
                 filter=Q(zusage__option="2"),
                 distinct=True,
             ),
+            anzahl_keine_angabe=Coalesce(
+                Value(
+                    User.objects.filter(is_active=True).count(),
+                    output_field=IntegerField(),
+                ) - Count("zusage", distinct=True),
+                Value(0),
+                output_field=IntegerField(),
+            ),
         )
     )
 
@@ -1034,6 +1157,72 @@ def termin_list(request):
             "upload_folder_id": folders.termine(),
         },
     )
+
+
+@login_required
+def termin_view(request, id):
+    termin = get_object_or_404(Termin.objects.select_related("ort"), id=id)
+    lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
+
+    # Build attendance grouped by stimme
+    STIMMEN_ORDER = ["S", "A", "T", "B", "C", "M"]
+    STIMMEN_LABELS = {"S": "Sopran", "A": "Alt", "T": "Tenor", "B": "Bass", "C": "Chorleiter", "M": "Musiker"}
+
+    active_users = User.objects.filter(is_active=True).order_by("last_name", "first_name")
+    zusagen = {
+        z.person_id: z.option
+        for z in Zusage.objects.filter(termin=termin).select_related("person")
+    }
+
+    stimme_groups = []
+    for stimme in STIMMEN_ORDER:
+        users_in_voice = [u for u in active_users if u.stimme == stimme]
+        if not users_in_voice:
+            continue
+        grouped = {"1": [], "2": [], "3": [], "": []}
+        for u in users_in_voice:
+            opt = zusagen.get(u.id, "")
+            grouped[opt].append(u)
+        stimme_groups.append({
+            "key": stimme,
+            "label": STIMMEN_LABELS[stimme],
+            "zusagen": grouped["1"],
+            "absagen": grouped["2"],
+            "vielleicht": grouped["3"],
+            "keine_angabe": grouped[""],
+        })
+
+    context = {
+        "seitentitel": str(termin),
+        "termin": termin,
+        "stimme_groups": stimme_groups,
+        "lieder": lieder,
+        "up": "termin_list",
+        "edit": "termin_edit",
+        "id": id,
+    }
+    return render(request, "termin.html", context)
+
+
+@permission_required("intern.change_termin", raise_exception=True)
+def termin_edit(request, id):
+    termin = get_object_or_404(Termin, id=id)
+
+    if request.method == "POST":
+        form = TerminForm(request.POST, instance=termin)
+        if form.is_valid():
+            form.save()
+            return redirect("termin_view", id=id)
+    else:
+        form = TerminForm(instance=termin)
+
+    context = {
+        "form": form,
+        "seitentitel": f"bearbeiten: {termin.kurz}",
+        "view": "termin_view",
+        "id": id,
+    }
+    return render(request, "termin_edit.html", context)
 
 
 @login_required

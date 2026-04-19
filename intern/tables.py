@@ -6,18 +6,22 @@ from django.db.models import FilteredRelation, Q
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from .models import Lied, Termin, User
 from .replacements import format_bytes, format_datetime
 
 
 class ForumTabelle(tables.Table):
-    thema = tables.Column(linkify=("forum_view", {"forum": tables.A("id")}))
+    thema = tables.Column()
     zugriff = tables.Column()
     anzahl_mitteilungen = tables.Column(
         verbose_name="Anzahl",
         attrs={"th": {"class": "right"}, "td": {"class": "right"}},
     )
+
+    class Meta:
+        row_attrs = {"data-href": lambda record: reverse("forum_view", args=[record.id])}
 
     def render_zugriff(self, record):
         return format_html(
@@ -102,7 +106,6 @@ class TerminTabelle(tables.Table):
     kurz = tables.Column(
         verbose_name="Termin",
         orderable=False,
-        linkify=("admin:intern_termin_change", {"object_id": tables.A("id")}),
     )
     anwesenheit_option = tables.Column(
         verbose_name="Du",
@@ -117,32 +120,37 @@ class TerminTabelle(tables.Table):
     anzahl_zusagen_sopran = tables.Column(
         verbose_name="S",
         orderable=False,
-        attrs={"td": {"class": "right"}},
+        attrs={"td": {"class": "right att-yes"}},
     )
     anzahl_zusagen_alt = tables.Column(
         verbose_name="A",
         orderable=False,
-        attrs={"td": {"class": "right"}},
+        attrs={"td": {"class": "right att-yes"}},
     )
     anzahl_zusagen_tenor = tables.Column(
         verbose_name="T",
         orderable=False,
-        attrs={"td": {"class": "right"}},
+        attrs={"td": {"class": "right att-yes"}},
     )
     anzahl_zusagen_bass = tables.Column(
         verbose_name="B",
         orderable=False,
-        attrs={"td": {"class": "right"}},
-    )
-    anzahl_vielleicht = tables.Column(
-        verbose_name="🤔",
-        orderable=False,
-        attrs={"td": {"class": "right"}},
+        attrs={"td": {"class": "right att-yes"}},
     )
     anzahl_absagen = tables.Column(
-        verbose_name="❌",
+        verbose_name="Absage",
         orderable=False,
-        attrs={"td": {"class": "right"}},
+        attrs={"td": {"class": "right att-no"}},
+    )
+    anzahl_vielleicht = tables.Column(
+        verbose_name="Eventuell",
+        orderable=False,
+        attrs={"td": {"class": "right att-maybe"}},
+    )
+    anzahl_keine_angabe = tables.Column(
+        verbose_name="Offen",
+        orderable=False,
+        attrs={"td": {"class": "right att-na"}},
     )
     lang = tables.Column(
         verbose_name="Info",
@@ -154,23 +162,48 @@ class TerminTabelle(tables.Table):
         return format_datetime(value)
 
     def render_anwesenheit_option(self, value):
-        """Rendert die Anwesenheitsoption für den Benutzer"""
-        if value == "":
-            return "❗"
-        elif value == "1":
-            return "✅"
-        elif value == "0":
-            return "❌"
+        if value == "1":
+            return mark_safe('<span class="att-inline att-inline-yes">Zusage</span>')
         elif value == "2":
-            return "🤔"
+            return mark_safe('<span class="att-inline att-inline-no">Absage</span>')
+        elif value == "3":
+            return mark_safe('<span class="att-inline att-inline-maybe">Eventuell</span>')
         else:
-            return value
+            return mark_safe('<span class="att-inline att-inline-na">Offen</span>')
 
     def render_anzahl_songs(self, value):
         if value > 0:
             return value
         else:
             return ""
+
+    def render_anzahl_zusagen_sopran(self, value):
+        return self._att_badge(value, "yes") if value else ""
+
+    def render_anzahl_zusagen_alt(self, value):
+        return self._att_badge(value, "yes") if value else ""
+
+    def render_anzahl_zusagen_tenor(self, value):
+        return self._att_badge(value, "yes") if value else ""
+
+    def render_anzahl_zusagen_bass(self, value):
+        return self._att_badge(value, "yes") if value else ""
+
+    def render_anzahl_absagen(self, value):
+        return self._att_badge(value, "no") if value else ""
+
+    def render_anzahl_vielleicht(self, value):
+        return self._att_badge(value, "maybe") if value else ""
+
+    def render_anzahl_keine_angabe(self, value):
+        return self._att_badge(value, "na") if value else ""
+
+    @staticmethod
+    def _att_badge(value, kind):
+        return format_html('<span class="att-count att-count-{}">{}</span>', kind, value)
+
+    class Meta:
+        row_attrs = {"data-href": lambda record: reverse("termin_view", args=[record.id])}
 
 
 class RepertoireFilter(filters.FilterSet):
@@ -260,7 +293,6 @@ class RepertoireTabelle(tables.Table):
         },
     )
     titel = tables.Column(
-        linkify=("admin:intern_lied_change", {"object_id": tables.A("id")}),
         attrs={"td": {"data-id": lambda record: record.id}},
     )
     aktiv = tables.BooleanColumn()
@@ -278,6 +310,9 @@ class RepertoireTabelle(tables.Table):
 
     komponist = tables.Column(attrs={"td": {"style": "font-size: 0.8em;"}})
     bearbeiter = tables.Column(attrs={"td": {"style": "font-size: 0.8em;"}})
+
+    class Meta:
+        row_attrs = {"data-href": lambda record: reverse("titel_view", args=[record.id])}
 
     def __init__(self, *args, visible_fields=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -351,7 +386,7 @@ class MitgliederFilter(filters.FilterSet):
 class MitgliederTabelle(tables.Table):
     avatar = tables.Column()
     first_name = tables.Column()
-    last_name = tables.Column(linkify=("member_edit", {"id": tables.A("id")}))
+    last_name = tables.Column()
     stimme = tables.Column()
     email = tables.EmailColumn()
     xmpp = tables.EmailColumn()
@@ -370,6 +405,9 @@ class MitgliederTabelle(tables.Table):
     telefon_mobil = tables.Column()
     telefon_job_mobil = tables.Column()
     fax = tables.Column()
+
+    class Meta:
+        row_attrs = {"data-href": lambda record: reverse("member_view", args=[record.id])}
 
     def __init__(self, *args, visible_fields=None, **kwargs):
         super().__init__(*args, **kwargs)

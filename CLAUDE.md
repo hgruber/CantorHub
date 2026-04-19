@@ -62,13 +62,38 @@ Nginx serves `/static/` and `/media/` directly; everything else is proxied to gu
 - `/intern/*` — all authenticated views (`intern/urls.py`)
 - `/_matrix/app/v1/*` — Matrix AppService hooks (no auth required)
 
+### Detail pages
+
+All list views use django-tables2 with clickable rows (`data-href` on `<tr>`). Each table row navigates to a detail page. Detail pages have an edit button in the top bar (via `edit`/`id` context variables rendered in `base.html`).
+
+| URL pattern | View | Template |
+|---|---|---|
+| `/intern/forum/<id>/` | `forum_view` | `forum.html` |
+| `/intern/forum/<id>/edit/` | `forum_edit` | `forum_edit.html` |
+| `/intern/termin/<id>/` | `termin_view` | `termin.html` |
+| `/intern/termin/<id>/edit/` | `termin_edit` | `termin_edit.html` |
+| `/intern/titel/<id>/` | `titel_view` | `titel.html` |
+| `/intern/titel/<id>/edit/` | `titel_edit` | `titel_edit.html` |
+| `/intern/mitglied/<id>/` | `member_view` | `mitglied.html` |
+| `/intern/mitglied/<id>/edit/` | `member_edit` | `member_edit.html` |
+
+Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card grid, single column on mobile). Edit pages use the `.wiki` container with `.form-grid`.
+
+### Attendance (Zusage) options
+
+`Zusage.option` values: `"1"` = Zusage, `"2"` = Absage, `"3"` = Eventuell, empty/missing = Keine Angabe. The attendance table on the termin detail page groups users by `Stimme` (S, A, T, B, C, M) and splits into two tables on mobile.
+
+### Forum edit page
+
+`/intern/forum/<id>/edit/` shows user lists sourced from XMPP MUC room data (when `EJABBERD_ENABLED` and `xmpp_muc_jid` exists): invited (room members), attending (room occupants), without invitation (active users not in room), without XMPP account (active users without `xmpp` JID). The invite button calls `ejabberd.send_invitation()` + `ejabberd.set_room_affiliation()`. Falls back to message-based lists when XMPP is disabled.
+
 ### Key models (`intern/models.py`)
 
 | Model | Purpose |
 |---|---|
 | `User` | Extended `AbstractUser` — adds voice type, address, XMPP/Matrix JID, coordinates |
 | `Artikel` | Versioned articles/news items |
-| `Forum` | Discussion threads; adds `matrix_room_id` for Matrix bridge |
+| `Forum` | Discussion threads; `bild` (FilerFileField), `aktiv` (Boolean), `xmpp_muc_jid` for XMPP bridge |
 | `Mitteilung` | Forum messages; adds `matrix_event_id`/`xmpp_stanza_id` for bridge deduplication |
 | `Termin` / `Ort` | Events and locations |
 | `Lied` | Songs in the repertoire |

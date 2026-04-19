@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="wiki">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.kurz.id_for_label }}">Termin</label>
+                {{ form.kurz }}
+                {% if form.kurz.errors %}<div class="invalid-feedback">{{ form.kurz.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.ort.id_for_label }}">Ort</label>
+                {{ form.ort }}
+                {% if form.ort.errors %}<div class="invalid-feedback">{{ form.ort.errors }}</div>{% endif %}
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.datum.id_for_label }}">Von</label>
+                {{ form.datum }}
+                {% if form.datum.errors %}<div class="invalid-feedback">{{ form.datum.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.datum_bis.id_for_label }}">Bis</label>
+                {{ form.datum_bis }}
+                {% if form.datum_bis.errors %}<div class="invalid-feedback">{{ form.datum_bis.errors }}</div>{% endif %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="{{ form.lang.id_for_label }}">Beschreibung</label>
+            {{ form.lang }}
+            {% if form.lang.errors %}<div class="invalid-feedback">{{ form.lang.errors }}</div>{% endif %}
+        </div>
+        <div class="form-grid">
+            <div class="form-group checkbox-group">
+                <label>{{ form.anwesenheit }} Anwesenheit</label>
+            </div>
+            <div class="form-group checkbox-group">
+                <label>{{ form.repertoire }} Repertoire</label>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            <a href="{% url 'termin_view' id=id %}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

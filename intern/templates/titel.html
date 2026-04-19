@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <div class="detail-info">
+            <h1>{{ lied.titel }}</h1>
+            <p class="detail-subtitle">
+                {% if lied.aktiv %}<span class="badge badge-primary">Aktiv</span>{% else %}<span class="badge">Inaktiv</span>{% endif %}
+                {% if lied.hymne %} <span class="badge">Hymne</span>{% endif %}
+                {% if lied.acapella %} <span class="badge">Acapella</span>{% endif %}
+                {% if lied.weihnacht %} <span class="badge">Weihnacht</span>{% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="detail-cards">
+        <div class="detail-card">
+            <div class="detail-card-row">
+                <span class="label">Tempo</span>
+                <span class="value">{{ lied.get_tempo_display }}</span>
+            </div>
+            {% if lied.beats %}
+            <div class="detail-card-row">
+                <span class="label">Beats</span>
+                <span class="value">{{ lied.beats }}</span>
+            </div>
+            {% endif %}
+            {% if lied.komponist %}
+            <div class="detail-card-row">
+                <span class="label">Komponist</span>
+                <span class="value">{{ lied.komponist }}</span>
+            </div>
+            {% endif %}
+            {% if lied.bearbeiter %}
+            <div class="detail-card-row">
+                <span class="label">Bearbeiter</span>
+                <span class="value">{{ lied.bearbeiter }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if lied.original or lied.aufnahme or lied.pdf or lied.noten %}
+        <div class="detail-card">
+            <h3>Medien</h3>
+            {% if lied.original %}
+            <div class="media-row">
+                <span class="media-label">Original</span>
+                <button class="audio-button" data-audio-url="{{ lied.original.url }}" data-song-id="{{ lied.id }}">▶</button>
+            </div>
+            {% endif %}
+            {% if lied.aufnahme %}
+            <div class="media-row">
+                <span class="media-label">Aufnahme</span>
+                <button class="audio-button" data-audio-url="{{ lied.aufnahme.url }}" data-song-id="r{{ lied.id }}">▶</button>
+            </div>
+            {% endif %}
+            {% if lied.pdf %}
+            <div class="media-row">
+                <span class="media-label">Notenblatt</span>
+                <a href="{{ lied.pdf.url }}" target="_blank" class="btn btn-sm">PDF ansehen</a>
+            </div>
+            {% endif %}
+            {% if lied.noten %}
+            <div class="media-row">
+                <span class="media-label">Notensatz</span>
+                <a href="{{ lied.noten.url }}" target="_blank" class="btn btn-sm">Datei ansehen</a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if lied.solist.exists %}
+        <div class="detail-card">
+            <h3>Solisten <span class="badge">{{ lied.solist.count }}</span></h3>
+            <div class="tag-list">
+                {% for s in lied.solist.all %}
+                <span class="tag">{{ s.first_name }} {{ s.last_name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if lied.dirigent.exists %}
+        <div class="detail-card">
+            <h3>Dirigenten <span class="badge">{{ lied.dirigent.count }}</span></h3>
+            <div class="tag-list">
+                {% for d in lied.dirigent.all %}
+                <span class="tag">{{ d.first_name }} {{ d.last_name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

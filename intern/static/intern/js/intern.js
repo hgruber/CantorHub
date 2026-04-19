@@ -120,6 +120,15 @@ function getCsrfToken() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  // ── Clickable table rows ──────────────────────────────────
+  document.addEventListener("click", function (e) {
+    const tr = e.target.closest("tr[data-href]");
+    if (!tr) return;
+    // Don't navigate if clicking on interactive elements
+    if (e.target.closest("a, button, input, select, textarea, label")) return;
+    window.location.href = tr.dataset.href;
+  });
+
   // ── Table row selection (event delegation) ──────────────
   function updateSelectionState() {
     const checked = document.querySelectorAll(

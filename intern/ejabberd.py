@@ -428,6 +428,26 @@ def send_invitation(muc_jid, user_jid, reason="", password=""):
     return True
 
 
+def list_registered_users():
+    """
+    List all registered users on the ejabberd server via REST API.
+    Returns list of JIDs (localpart@host) on success, empty list on failure.
+    """
+    result = _request("registered_users", {"host": settings.EJABBERD_HOST})
+    if result is None:
+        return []
+    # Result can be a list of strings (usernames/localparts) or list of dicts
+    users = []
+    for item in result:
+        if isinstance(item, str):
+            users.append(f"{item}@{settings.EJABBERD_HOST}")
+        elif isinstance(item, dict):
+            username = item.get("username", item.get("user", ""))
+            if username:
+                users.append(f"{username}@{settings.EJABBERD_HOST}")
+    return users
+
+
 def _send_muc_message_thread(muc_jid, body):
     """
     Internal function to send a message to a MUC room.

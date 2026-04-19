@@ -37,17 +37,19 @@ urlpatterns = [
     path("forum/", views.forum_list, name="forum_list"),
     path("forum/<int:forum>/", views.forum_view, name="forum_view"),
     path("forum/<int:forum>/get/", views.forum_get, name="forum_get"),
-    path("forum/<int:forum>/edit/", views.dummy, name="forum_edit"),
+    path("forum/<int:forum>/edit/", views.forum_edit, name="forum_edit"),
+    path("forum/<int:forum>/invite/<int:user_id>/", views.forum_invite, name="forum_invite"),
     path("forum/<int:forum>/more/", views.forum_more, name="forum_more"),
     path("forum/<int:forum>/send/", views.forum_send, name="forum_send"),
     # Repertoire URLs
     path("titel/", views.titel_list, name="titel_list"),
-    path("titel/<int:titel>/", views.dummy, name="titel_view"),
-    path("titel/<int:titel>/edit", views.dummy, name="titel_edit"),
+    path("titel/<int:titel>/", views.titel_view, name="titel_view"),
+    path("titel/<int:titel>/edit/", views.titel_edit, name="titel_edit"),
     path("update-order/", views.update_order, name="update-order"),
     # Termin URLs
     path("termin/", views.termin_list, name="termin_list"),
-    path("termin/<int:id>/edit", views.dummy, name="termin_edit"),
+    path("termin/<int:id>/", views.termin_view, name="termin_view"),
+    path("termin/<int:id>/edit/", views.termin_edit, name="termin_edit"),
     path("calendar/<str:secret>.ics", views.calendar_ics, name="calendar_ics"),
     # Mitglieder URLs
     path("mitglied/", views.member_list, name="member_list"),

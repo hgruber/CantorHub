@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="wiki">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.titel.id_for_label }}">Titel</label>
+                {{ form.titel }}
+                {% if form.titel.errors %}<div class="invalid-feedback">{{ form.titel.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.tempo.id_for_label }}">Tempo</label>
+                {{ form.tempo }}
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.beats.id_for_label }}">Beats</label>
+                {{ form.beats }}
+            </div>
+            <div class="form-group checkbox-row">
+                <label>{{ form.aktiv }} Aktiv</label>
+                <label>{{ form.hymne }} Hymne</label>
+                <label>{{ form.acapella }} Acapella</label>
+                <label>{{ form.weihnacht }} Weihnacht</label>
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.original.id_for_label }}">Original</label>
+                {{ form.original }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.aufnahme.id_for_label }}">Aufnahme</label>
+                {{ form.aufnahme }}
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.pdf.id_for_label }}">Notenblatt</label>
+                {{ form.pdf }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.noten.id_for_label }}">Notensatz</label>
+                {{ form.noten }}
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.komponist.id_for_label }}">Komponist</label>
+                {{ form.komponist }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.bearbeiter.id_for_label }}">Bearbeiter</label>
+                {{ form.bearbeiter }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            <a href="{% url 'titel_view' titel=id %}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

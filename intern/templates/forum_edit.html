@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="wiki">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.thema.id_for_label }}">Thema</label>
+                {{ form.thema }}
+                {% if form.thema.errors %}<div class="invalid-feedback">{{ form.thema.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.bild.id_for_label }}">Bild</label>
+                {{ form.bild }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            <a href="{% url 'forum_view' forum=id %}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </form>
+
+    <div class="detail-cards detail-cards-spaced">
+        <div class="detail-card">
+            <h3>Eingeladene Mitglieder <span class="badge">{{ invited|length }}</span></h3>
+            {% if invited %}
+            <div class="tag-list">
+                {% for u in invited %}
+                <span class="tag">{{ u.first_name }} {{ u.last_name }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">Keine eingeladenen Mitglieder.</p>
+            {% endif %}
+        </div>
+
+        <div class="detail-card">
+            <h3>Anwesende Mitglieder <span class="badge">{{ attending|length }}</span></h3>
+            {% if attending %}
+            <div class="tag-list">
+                {% for u in attending %}
+                <span class="tag tag-active">{{ u.first_name }} {{ u.last_name }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">Keine anwesenden Mitglieder.</p>
+            {% endif %}
+        </div>
+
+        {% if without_invitation %}
+        <div class="detail-card">
+            <h3>Nicht eingeladen <span class="badge">{{ without_invitation|length }}</span></h3>
+            <div class="invite-list">
+                {% for u in without_invitation %}
+                <div class="invite-row">
+                    <span>{{ u.first_name }} {{ u.last_name }}</span>
+                    <form method="post" action="{% url 'forum_invite' forum=id user_id=u.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-primary">Einladen</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if without_xmpp %}
+        <div class="detail-card">
+            <h3>Kein XMPP-Account <span class="badge">{{ without_xmpp|length }}</span></h3>
+            <div class="invite-list">
+                {% for u in without_xmpp %}
+                <div class="invite-row">
+                    <span>{{ u.first_name }} {{ u.last_name }}</span>
+                    <span class="text-muted">Kein XMPP-Account</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="detail-card detail-card-danger">
+            <h3>Forum deaktivieren</h3>
+            <p class="text-muted danger-desc">Deaktiviert das Forum. Diese Aktion kann später rückgängig gemacht werden.</p>
+            <button class="btn btn-danger" disabled>Forum deaktivieren</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
