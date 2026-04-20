@@ -289,6 +289,24 @@ body {
     border-radius: 0 2px 2px 0;
 }
 
+/* Flashing indicator for nav items with pending action */
+.nav-item-offen::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--brand);
+    animation: nav-offen-pulse 1.6s ease-in-out infinite;
+}
+@keyframes nav-offen-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(193,68,104,.5); }
+    50%       { opacity: .7; box-shadow: 0 0 0 4px rgba(193,68,104,0); }
+}
+
 .nav-icon {
     width: 16px;
     height: 16px;
@@ -1433,7 +1451,16 @@ div.avatar { cursor: pointer; }
 .att-inline-yes { background: #dcfce7; color: #166534; }
 .att-inline-no { background: #fee2e2; color: #991b1b; }
 .att-inline-maybe { background: #fef9c3; color: #854d0e; }
-.att-inline-na { background: var(--bg-row-hover); color: var(--t4); }
+.att-inline-na {
+    background: var(--bg-row-hover);
+    color: var(--t4);
+    border: 1.5px solid transparent;
+    animation: att-na-flash 1.6s ease-in-out infinite;
+}
+@keyframes att-na-flash {
+    0%, 100% { border-color: transparent; box-shadow: none; }
+    50%       { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(193,68,104,.18); }
+}
 .att-names {
     font-size: 12px;
     color: var(--t4);
@@ -1485,7 +1512,7 @@ div.avatar { cursor: pointer; }
 [data-theme="dark"] .att-inline-yes { background: rgba(22,101,52,0.25); color: #86efac; }
 [data-theme="dark"] .att-inline-no { background: rgba(153,27,27,0.25); color: #fca5a5; }
 [data-theme="dark"] .att-inline-maybe { background: rgba(133,77,14,0.25); color: #fde047; }
-[data-theme="dark"] .att-inline-na { background: rgba(255,255,255,0.08); color: var(--t4); }
+[data-theme="dark"] .att-inline-na { background: rgba(255,255,255,0.08); color: var(--t4); border-color: transparent; }
 
 /* =================================================== */
 /* Zusage Widget                                        */
