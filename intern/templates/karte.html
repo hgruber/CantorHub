@@ -8,46 +8,51 @@
   <div class="karte-legend" id="karte-legend">
     <div class="karte-legend-title">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-      Karte
+      <span>Karte</span>
+      <button class="karte-legend-collapse" id="btn-legend-collapse" title="Ein-/ausklappen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="18 15 12 9 6 15"/></svg>
+      </button>
     </div>
 
-    <div class="karte-legend-section">
-      <label class="karte-toggle-row">
-        <span class="karte-dot karte-dot-ort"></span>
-        <span class="karte-toggle-label">Orte</span>
-        <span class="karte-toggle-switch">
-          <input type="checkbox" id="toggle-orte" checked>
-          <span class="karte-switch-track"></span>
-        </span>
-      </label>
-      <label class="karte-toggle-row">
-        <span class="karte-dot karte-dot-member"></span>
-        <span class="karte-toggle-label">Mitglieder</span>
-        <span class="karte-toggle-switch">
-          <input type="checkbox" id="toggle-members" checked>
-          <span class="karte-switch-track"></span>
-        </span>
-      </label>
-      <label class="karte-toggle-row">
-        <span class="karte-dot karte-dot-live"></span>
-        <span class="karte-toggle-label">Live-Standorte</span>
-        <span class="karte-toggle-switch">
-          <input type="checkbox" id="toggle-live" checked>
-          <span class="karte-switch-track"></span>
-        </span>
-      </label>
+    <div class="karte-legend-body" id="karte-legend-body">
+      <div class="karte-legend-section">
+        <label class="karte-toggle-row">
+          <span class="karte-dot karte-dot-ort"></span>
+          <span class="karte-toggle-label">Orte</span>
+          <span class="karte-toggle-switch">
+            <input type="checkbox" id="toggle-orte" checked>
+            <span class="karte-switch-track"></span>
+          </span>
+        </label>
+        <label class="karte-toggle-row">
+          <span class="karte-dot karte-dot-member"></span>
+          <span class="karte-toggle-label">Mitglieder</span>
+          <span class="karte-toggle-switch">
+            <input type="checkbox" id="toggle-members" checked>
+            <span class="karte-switch-track"></span>
+          </span>
+        </label>
+        <label class="karte-toggle-row">
+          <span class="karte-dot karte-dot-live"></span>
+          <span class="karte-toggle-label">Live-Standorte</span>
+          <span class="karte-toggle-switch">
+            <input type="checkbox" id="toggle-live" checked>
+            <span class="karte-switch-track"></span>
+          </span>
+        </label>
+      </div>
+
+      <div class="karte-legend-divider"></div>
+
+      <button class="karte-action-btn karte-btn-location" id="btn-share-location">
+        <svg class="karte-share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.94 11a8 8 0 1 0-15.88 0"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <span id="share-btn-label">Standort teilen</span>
+      </button>
+      <button class="karte-action-btn karte-btn-add" id="btn-add-ort">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        Ort hinzufügen
+      </button>
     </div>
-
-    <div class="karte-legend-divider"></div>
-
-    <button class="karte-action-btn karte-btn-location" id="btn-share-location">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.94 11a8 8 0 1 0-15.88 0"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-      Standort teilen
-    </button>
-    <button class="karte-action-btn karte-btn-add" id="btn-add-ort">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-      Ort hinzufügen
-    </button>
   </div>
 
   <!-- Status toast -->
@@ -122,7 +127,7 @@
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  // ── Map init ────────────────────────────────────────
+  // ── Map init ─────────────────────────────────────────
   const map = L.map('map', { zoomControl: false }).setView(FRANKFURT, 12);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -130,37 +135,33 @@
     maxZoom: 19,
   }).addTo(map);
 
-  // ── Custom icons ─────────────────────────────────────
+  // ── Icons ─────────────────────────────────────────────
   function pinIcon(color, inner) {
     return L.divIcon({
       className: '',
       html: `<div class="karte-pin" style="--pin-color:${color}">${inner}</div>`,
-      iconSize: [28, 36],
-      iconAnchor: [14, 36],
-      popupAnchor: [0, -38],
+      iconSize: [28, 36], iconAnchor: [14, 36], popupAnchor: [0, -38],
     });
   }
   function dotIcon(cls) {
     return L.divIcon({
       className: '',
       html: `<div class="${cls}"></div>`,
-      iconSize: [16, 16],
-      iconAnchor: [8, 8],
-      popupAnchor: [0, -12],
+      iconSize: [16, 16], iconAnchor: [8, 8], popupAnchor: [0, -12],
     });
   }
 
   const ortIcon    = pinIcon('var(--brand)', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>');
   const memberIcon = pinIcon('#4b80c0', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>');
-  const liveIcon   = dotIcon('karte-live-dot');
-  const meIcon     = dotIcon('karte-live-dot karte-live-dot-me');
+  const liveIcon   = dotIcon('karte-live-dot');           // blue — other users
+  const meIcon     = dotIcon('karte-live-dot-me');        // red  — myself
 
   // ── Layer groups ─────────────────────────────────────
   const ortLayer    = L.layerGroup().addTo(map);
   const memberLayer = L.layerGroup().addTo(map);
   const liveLayer   = L.layerGroup().addTo(map);
 
-  // ── Ort markers (with edit popup) ───────────────────
+  // ── Ort markers ──────────────────────────────────────
   const ortMarkers = {};
 
   function buildOrtPopup(o) {
@@ -186,12 +187,55 @@
     L.marker([m.breite, m.laenge], { icon: memberIcon }).bindPopup(popup).addTo(memberLayer);
   });
 
-  // ── Live markers ─────────────────────────────────────
-  standorte.forEach(s => {
-    L.marker([s.breite, s.laenge], { icon: s.ich ? meIcon : liveIcon })
-      .bindPopup(`<strong>${escHtml(s.name)}</strong><br><span style="font-size:11px;color:#888">${escHtml(s.aktualisiert)}</span>`)
-      .addTo(liveLayer);
-  });
+  // ── Live markers — others only ───────────────────────
+  const liveMarkers = {};   // person_id → marker (others only)
+  let myMarker = null;      // own position, separate from layer
+
+  function livePopup(s) {
+    return `<div><strong>${escHtml(s.name)}</strong><br>` +
+           `<span style="font-size:11px;color:#888">zuletzt: ${escHtml(s.aktualisiert)}</span></div>`;
+  }
+  function myPopup(timeStr) {
+    return `<div><strong>Mein Standort</strong><br>` +
+           `<span style="font-size:11px;color:#888">aktuell: ${escHtml(timeStr)}</span></div>`;
+  }
+
+  function applyLiveUpdate(list) {
+    const seen = {};
+    list.filter(s => !s.ich).forEach(s => {
+      seen[s.person_id] = true;
+      if (liveMarkers[s.person_id]) {
+        liveMarkers[s.person_id].setLatLng([s.breite, s.laenge]);
+        liveMarkers[s.person_id].setPopupContent(livePopup(s));
+      } else {
+        const m = L.marker([s.breite, s.laenge], { icon: liveIcon }).bindPopup(livePopup(s));
+        m.addTo(liveLayer);
+        liveMarkers[s.person_id] = m;
+      }
+    });
+    Object.keys(liveMarkers).forEach(pid => {
+      if (!seen[pid]) { liveLayer.removeLayer(liveMarkers[pid]); delete liveMarkers[pid]; }
+    });
+  }
+
+  applyLiveUpdate(standorte);
+
+  // Poll every 10 s for others; pause when tab hidden
+  let pollTimer = null;
+  function startPolling() {
+    if (pollTimer) return;
+    pollTimer = setInterval(() => {
+      fetch('{% url "karte_standorte_live" %}')
+        .then(r => r.json())
+        .then(d => applyLiveUpdate(d.standorte))
+        .catch(() => {});
+    }, 10000);
+  }
+  function stopPolling() { clearInterval(pollTimer); pollTimer = null; }
+  document.addEventListener('visibilitychange', () =>
+    document.hidden ? stopPolling() : startPolling()
+  );
+  startPolling();
 
   // ── Legend toggles ───────────────────────────────────
   document.getElementById('toggle-orte').addEventListener('change', e => {
@@ -204,6 +248,11 @@
     e.target.checked ? liveLayer.addTo(map) : map.removeLayer(liveLayer);
   });
 
+  // ── Legend collapse ───────────────────────────────────
+  document.getElementById('btn-legend-collapse').addEventListener('click', () => {
+    document.getElementById('karte-legend').classList.toggle('karte-legend-collapsed');
+  });
+
   // ── Toast helper ─────────────────────────────────────
   const toast = document.getElementById('karte-toast');
   let toastTimer;
@@ -214,37 +263,68 @@
     toastTimer = setTimeout(() => toast.classList.remove('karte-toast-show'), 3000);
   }
 
-  // ── Share location ───────────────────────────────────
-  let myLiveMarker = null;
-  document.getElementById('btn-share-location').addEventListener('click', () => {
+  // ── Share location (watchPosition + toggle) ──────────
+  let watchId    = null;
+  let lastPost   = 0;
+  const btnShare = document.getElementById('btn-share-location');
+  const shareLabel = document.getElementById('share-btn-label');
+
+  function postMyLocation(lat, lng) {
+    const now = Date.now();
+    if (now - lastPost < 9000) return;   // throttle: max once per 9 s
+    lastPost = now;
+    const fd = new FormData();
+    fd.append('breite', lat);
+    fd.append('laenge', lng);
+    fd.append('csrfmiddlewaretoken', getCsrf());
+    fetch('{% url "karte_standort" %}', { method: 'POST', body: fd }).catch(() => {});
+  }
+
+  function updateMyMarker(lat, lng) {
+    const t = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    if (myMarker) {
+      myMarker.setLatLng([lat, lng]);
+      myMarker.setPopupContent(myPopup(t));
+    } else {
+      myMarker = L.marker([lat, lng], { icon: meIcon }).bindPopup(myPopup(t)).addTo(map);
+    }
+  }
+
+  function setShareActive(active) {
+    btnShare.classList.toggle('karte-btn-sharing', active);
+    shareLabel.textContent = active ? 'Teilen beenden' : 'Standort teilen';
+  }
+
+  btnShare.addEventListener('click', () => {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+      setShareActive(false);
+      showToast('Standort teilen beendet', 'info');
+      return;
+    }
     if (!navigator.geolocation) { showToast('Geolokation nicht verfügbar', 'error'); return; }
     showToast('Standort wird ermittelt…');
-    navigator.geolocation.getCurrentPosition(pos => {
-      const { latitude, longitude } = pos.coords;
-      const fd = new FormData();
-      fd.append('breite', latitude);
-      fd.append('laenge', longitude);
-      fd.append('csrfmiddlewaretoken', getCsrf());
-      fetch('{% url "karte_standort" %}', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(data => {
-          if (data.error) { showToast(data.error, 'error'); return; }
-          if (myLiveMarker) liveLayer.removeLayer(myLiveMarker);
-          myLiveMarker = L.marker([data.breite, data.laenge], { icon: meIcon });
-          myLiveMarker.bindPopup(`<strong>Ich</strong><br><span style="font-size:11px;color:#888">${escHtml(data.aktualisiert)}</span>`);
-          myLiveMarker.addTo(liveLayer);
-          const tog = document.getElementById('toggle-live');
-          if (!tog.checked) { tog.click(); }
-          map.setView([data.breite, data.laenge], Math.max(map.getZoom(), 14));
-          showToast('Standort geteilt', 'ok');
-        })
-        .catch(() => showToast('Fehler beim Übermitteln', 'error'));
-    }, () => showToast('Standort-Zugriff verweigert', 'error'));
+    watchId = navigator.geolocation.watchPosition(
+      pos => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        updateMyMarker(lat, lng);
+        postMyLocation(lat, lng);
+        setShareActive(true);
+        map.setView([lat, lng], Math.max(map.getZoom(), 14));
+      },
+      () => {
+        showToast('Standort-Zugriff verweigert', 'error');
+        watchId = null;
+        setShareActive(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
   });
 
   // ── Ort dialog ───────────────────────────────────────
-  const dialog    = document.getElementById('ort-dialog');
-  const form      = document.getElementById('ort-form');
+  const dialog     = document.getElementById('ort-dialog');
+  const form       = document.getElementById('ort-form');
   let pickingCoord = false;
   let tempMarker   = null;
   let editingOrtId = null;
@@ -254,17 +334,13 @@
     document.getElementById('ort-edit-id').value = editId || '';
     document.getElementById('ort-dialog-title').textContent = editId ? 'Ort bearbeiten' : 'Neuer Ort';
     document.getElementById('ort-delete').style.display = editId ? '' : 'none';
-    if (!editId) {
-      form.reset();
-      pickingCoord = true;
-    }
+    if (!editId) { form.reset(); pickingCoord = true; }
     updateCoordHint();
     dialog.showModal();
   }
 
   document.getElementById('btn-add-ort').addEventListener('click', () => openDialog(null));
-
-  document.getElementById('ort-cancel').addEventListener('click', () => { dialog.close(); });
+  document.getElementById('ort-cancel').addEventListener('click', () => dialog.close());
   dialog.addEventListener('close', cleanupPick);
 
   function updateCoordHint() {
@@ -275,7 +351,6 @@
     if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
   }
 
-  // Map click → fill coords
   map.on('click', e => {
     if (!pickingCoord || !dialog.open) return;
     const { lat, lng } = e.latlng;
@@ -290,7 +365,7 @@
   document.getElementById('ort-breite').addEventListener('input', () => { pickingCoord = false; updateCoordHint(); });
   document.getElementById('ort-laenge').addEventListener('input', () => { pickingCoord = false; updateCoordHint(); });
 
-  // ── Geocoding ────────────────────────────────────────
+  // ── Geocoding ─────────────────────────────────────────
   document.getElementById('btn-geocode').addEventListener('click', async () => {
     const parts = [
       document.getElementById('ort-strasse').value.trim(),
@@ -322,8 +397,8 @@
     }
   });
 
-  // ── Edit existing Ort (called from popup) ────────────
-  const ORT_BASE = '{% url "karte_ort_create" %}';  // /intern/karte/ort/
+  // ── Edit / delete Ort ────────────────────────────────
+  const ORT_BASE = '{% url "karte_ort_create" %}';
 
   window._karteEditOrt = function(id) {
     map.closePopup();
@@ -345,7 +420,6 @@
       .catch(() => showToast('Fehler beim Laden', 'error'));
   };
 
-  // ── Delete ───────────────────────────────────────────
   document.getElementById('ort-delete').addEventListener('click', () => {
     if (!editingOrtId || !confirm('Ort wirklich löschen?')) return;
     const fd = new FormData();
@@ -365,7 +439,6 @@
       .catch(() => showToast('Fehler beim Löschen', 'error'));
   });
 
-  // ── Save (create or update) ──────────────────────────
   form.addEventListener('submit', e => {
     e.preventDefault();
     const fd = new FormData(form);

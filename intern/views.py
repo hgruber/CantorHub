@@ -1616,19 +1616,29 @@ def karte_view(request):
          "breite": u.breite, "laenge": u.laenge}
         for u in User.objects.filter(is_active=True, breite__isnull=False, laenge__isnull=False)
     ]
-    standorte = [
-        {"id": s.id, "name": f"{s.person.first_name} {s.person.last_name}".strip() or s.person.username,
-         "breite": s.breite, "laenge": s.laenge,
-         "aktualisiert": s.aktualisiert.strftime("%d.%m.%Y %H:%M"),
-         "ich": s.person_id == request.user.id}
-        for s in Standort.objects.select_related("person").all()
-    ]
+    standorte = _standorte_data(request.user)
     return render(request, "karte.html", {
         "seitentitel": "Karte",
         "orte_json": orte,
         "members_json": members,
         "standorte_json": standorte,
     })
+
+
+def _standorte_data(current_user):
+    return [
+        {"person_id": s.person_id,
+         "name": f"{s.person.first_name} {s.person.last_name}".strip() or s.person.username,
+         "breite": s.breite, "laenge": s.laenge,
+         "aktualisiert": s.aktualisiert.strftime("%d.%m.%Y %H:%M"),
+         "ich": s.person_id == current_user.id}
+        for s in Standort.objects.select_related("person").all()
+    ]
+
+
+@login_required
+def karte_standorte_live(request):
+    return JsonResponse({"standorte": _standorte_data(request.user)})
 
 
 @login_required

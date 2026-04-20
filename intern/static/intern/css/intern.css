@@ -180,6 +180,7 @@ body {
     flex-direction: column;
     flex-shrink: 0;
     overflow: hidden;
+    position: relative;
     z-index: 200;
     border-right: 1px solid var(--sb-divider);
     transition: width var(--ease), transform var(--ease);
@@ -2067,7 +2068,7 @@ span.not_found {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.45);
-    z-index: 150;
+    z-index: 750;
 }
 
 /* =================================================== */
@@ -2081,6 +2082,7 @@ span.not_found {
         height: 100vh;
         width: var(--sb-width) !important;
         transform: translateX(-100%);
+        z-index: 800;
     }
 
     .sidebar.active {
@@ -2576,6 +2578,54 @@ span.not_found {
     color: var(--brand);
     letter-spacing: 0.02em;
 }
+.karte-legend-title > span {
+    flex: 1;
+    transition: opacity .15s ease, max-width .2s ease;
+}
+.karte-legend-collapsed .karte-legend-title > span {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+}
+.karte-legend-collapsed {
+    padding: 5px 7px;
+    gap: 0;
+    min-width: 0;
+    width: auto;
+}
+
+.karte-legend-collapse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    color: var(--t3);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    padding: 0;
+    transition: color var(--ease), background var(--ease);
+    flex-shrink: 0;
+}
+.karte-legend-collapse:hover { color: var(--brand); background: var(--bg-row-hover); }
+.karte-legend-collapse svg { transition: transform .2s ease; }
+.karte-legend-collapsed .karte-legend-collapse svg { transform: rotate(180deg); }
+
+.karte-legend-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+    max-height: 400px;
+    transition: max-height .25s ease, opacity .2s ease;
+    opacity: 1;
+}
+.karte-legend-collapsed .karte-legend-body {
+    max-height: 0;
+    opacity: 0;
+}
 
 .karte-legend-section {
     display: flex;
@@ -2616,7 +2666,7 @@ span.not_found {
 }
 .karte-dot-ort    { background: var(--brand); }
 .karte-dot-member { background: #4b80c0; }
-.karte-dot-live   { background: #22c55e; }
+.karte-dot-live   { background: #4b80c0; }
 
 /* Toggle switch */
 .karte-toggle-switch {
@@ -2698,6 +2748,22 @@ span.not_found {
     box-shadow: 0 2px 8px rgba(75,128,192,.25);
 }
 
+/* Share button — active/sharing state */
+.karte-btn-sharing {
+    background: rgba(230,57,70,.1);
+    border-color: #e63946;
+    color: #e63946;
+}
+.karte-btn-sharing:hover {
+    background: #e63946;
+    border-color: #e63946;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(230,57,70,.3);
+}
+.karte-btn-sharing .karte-share-icon {
+    animation: karte-pulse-me 1.5s infinite;
+}
+
 /* ── Toast notifications ── */
 .karte-toast {
     position: absolute;
@@ -2744,26 +2810,30 @@ span.not_found {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #22c55e;
+    background: #4b80c0;
     border: 2.5px solid #fff;
-    box-shadow: 0 0 0 0 rgba(34,197,94,.5);
+    box-shadow: 0 0 0 0 rgba(75,128,192,.5);
     animation: karte-pulse 2s infinite;
 }
 .karte-live-dot-me {
-    background: var(--brand);
-    box-shadow: 0 0 0 0 rgba(193,68,104,.5);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #e63946;
+    border: 2.5px solid #fff;
+    box-shadow: 0 0 0 0 rgba(230,57,70,.5);
     animation: karte-pulse-me 2s infinite;
 }
 
 @keyframes karte-pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
-    70%  { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
-    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    0%   { box-shadow: 0 0 0 0 rgba(75,128,192,.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(75,128,192,0); }
+    100% { box-shadow: 0 0 0 0 rgba(75,128,192,0); }
 }
 @keyframes karte-pulse-me {
-    0%   { box-shadow: 0 0 0 0 rgba(193,68,104,.5); }
-    70%  { box-shadow: 0 0 0 8px rgba(193,68,104,0); }
-    100% { box-shadow: 0 0 0 0 rgba(193,68,104,0); }
+    0%   { box-shadow: 0 0 0 0 rgba(230,57,70,.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(230,57,70,0); }
+    100% { box-shadow: 0 0 0 0 rgba(230,57,70,0); }
 }
 
 /* ── Coord hint in dialog ── */
@@ -2867,7 +2937,8 @@ span.not_found {
     color: #fca5a5;
     border-color: rgba(153,27,27,.4);
 }
-[data-theme="dark"] .karte-live-dot {
+[data-theme="dark"] .karte-live-dot,
+[data-theme="dark"] .karte-live-dot-me {
     border-color: var(--bg-card);
 }
 [data-theme="dark"] .karte-pin {
