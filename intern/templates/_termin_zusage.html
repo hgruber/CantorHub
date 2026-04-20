@@ -1,0 +1,116 @@
+<div id="zusage-widget" class="zusage-widget">
+
+{% if my_option == "1" %}
+  <span class="zusage-state-badge zusage-state-yes">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    Zugesagt
+  </span>
+  <span class="zusage-locked-note">Deine Zusage ist bestätigt.</span>
+
+{% else %}
+
+  {% if my_option == "" %}
+    <span class="zusage-state-badge zusage-state-na">Keine Angabe</span>
+  {% elif my_option == "3" %}
+    <span class="zusage-state-badge zusage-state-maybe">Eventuell</span>
+  {% elif my_option == "2" %}
+    <span class="zusage-state-badge zusage-state-no">Abgesagt</span>
+  {% endif %}
+
+  <div class="zusage-actions">
+    <form method="post" action="{% url 'termin_zusage' id=termin.id %}"
+          hx-post="{% url 'termin_zusage' id=termin.id %}"
+          hx-target="#zusage-widget" hx-swap="outerHTML">
+      {% csrf_token %}
+      <input type="hidden" name="option" value="1">
+      <button type="submit" class="zusage-btn zusage-btn-yes">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Zusagen
+      </button>
+    </form>
+
+    {% if my_option == "" or my_option == "2" %}
+    <form method="post" action="{% url 'termin_zusage' id=termin.id %}"
+          hx-post="{% url 'termin_zusage' id=termin.id %}"
+          hx-target="#zusage-widget" hx-swap="outerHTML">
+      {% csrf_token %}
+      <input type="hidden" name="option" value="3">
+      <button type="submit" class="zusage-btn zusage-btn-maybe">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Eventuell
+      </button>
+    </form>
+    {% endif %}
+
+    {% if my_option != "2" %}
+    <form method="post" action="{% url 'termin_zusage' id=termin.id %}"
+          hx-post="{% url 'termin_zusage' id=termin.id %}"
+          hx-target="#zusage-widget" hx-swap="outerHTML">
+      {% csrf_token %}
+      <input type="hidden" name="option" value="2">
+      <button type="submit" class="zusage-btn zusage-btn-no">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Absagen
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+{% endif %}
+</div>
+
+{% if not widget_only %}
+<div id="attendance-section" class="detail-card detail-card-wide" hx-swap-oob="true">
+    <h3>Anwesenheit</h3>
+    <div class="attendance-single">
+    <table class="attendance-table">
+        <thead>
+            <tr>
+                <th>Stimme</th>
+                <th class="att-yes">Zusage</th>
+                <th class="att-no">Absage</th>
+                <th class="att-maybe">Eventuell</th>
+                <th class="att-na">Keine Angabe</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for g in stimme_groups %}
+            <tr>
+                <td class="att-voice">{{ g.label }}</td>
+                <td class="att-yes">{% if g.zusagen %}<span class="att-count">{{ g.zusagen|length }}</span> <span class="att-names">{% for u in g.zusagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</td>
+                <td class="att-no">{% if g.absagen %}<span class="att-count">{{ g.absagen|length }}</span> <span class="att-names">{% for u in g.absagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</td>
+                <td class="att-maybe">{% if g.vielleicht %}<span class="att-count">{{ g.vielleicht|length }}</span> <span class="att-names">{% for u in g.vielleicht %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</td>
+                <td class="att-na">{% if g.keine_angabe %}<span class="att-count">{{ g.keine_angabe|length }}</span> <span class="att-names">{% for u in g.keine_angabe %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <div class="attendance-split">
+        <table class="attendance-table">
+            <thead><tr><th>Stimme</th><th class="att-yes">Zusage</th></tr></thead>
+            <tbody>
+                {% for g in stimme_groups %}
+                <tr>
+                    <td class="att-voice">{{ g.label }}</td>
+                    <td class="att-yes">{% if g.zusagen %}<span class="att-count">{{ g.zusagen|length }}</span> <span class="att-names">{% for u in g.zusagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <table class="attendance-table">
+            <thead><tr><th>Stimme</th><th class="att-no">Absage</th><th class="att-maybe">Eventuell</th><th class="att-na">Keine Angabe</th></tr></thead>
+            <tbody>
+                {% for g in stimme_groups %}
+                <tr>
+                    <td class="att-voice">{{ g.label }}</td>
+                    <td class="att-no">{% if g.absagen %}<span class="att-count">{{ g.absagen|length }}</span> <span class="att-names">{% for u in g.absagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</td>
+                    <td class="att-maybe">{% if g.vielleicht %}<span class="att-count">{{ g.vielleicht|length }}</span> <span class="att-names">{% for u in g.vielleicht %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</td>
+                    <td class="att-na">{% if g.keine_angabe %}<span class="att-count">{{ g.keine_angabe|length }}</span> <span class="att-names">{% for u in g.keine_angabe %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}

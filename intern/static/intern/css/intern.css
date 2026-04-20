@@ -1486,6 +1486,80 @@ div.avatar { cursor: pointer; }
 [data-theme="dark"] .att-inline-maybe { background: rgba(133,77,14,0.25); color: #fde047; }
 [data-theme="dark"] .att-inline-na { background: rgba(255,255,255,0.08); color: var(--t4); }
 
+/* =================================================== */
+/* Zusage Widget                                        */
+/* =================================================== */
+.zusage-widget {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    animation: zusage-fade 0.2s ease;
+}
+
+@keyframes zusage-fade {
+    from { opacity: 0; transform: translateY(-3px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.zusage-state-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+}
+
+.zusage-state-yes   { background: #dcfce7; color: #166534; border: 1.5px solid #bbf7d0; }
+.zusage-state-no    { background: #fee2e2; color: #991b1b; border: 1.5px solid #fecaca; }
+.zusage-state-maybe { background: #fef9c3; color: #854d0e; border: 1.5px solid #fde68a; }
+.zusage-state-na    { background: var(--bg-row-hover); color: var(--t4); border: 1.5px solid var(--border); }
+
+.zusage-locked-note { font-size: 12px; color: var(--t4); font-style: italic; }
+
+.zusage-actions      { display: flex; gap: 6px; flex-wrap: wrap; }
+.zusage-actions form { margin: 0; padding: 0; }
+
+.zusage-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 11px;
+    border-radius: var(--r-sm);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    background: transparent;
+    line-height: 1.5;
+    white-space: nowrap;
+    transition: background var(--ease), border-color var(--ease),
+                color var(--ease), box-shadow var(--ease);
+}
+
+.zusage-btn-yes   { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.zusage-btn-yes:hover   { background: #16a34a; color: #fff; border-color: #16a34a; box-shadow: 0 2px 8px rgba(22,163,74,.25); }
+.zusage-btn-maybe { background: #fef9c3; color: #854d0e; border-color: #fde68a; }
+.zusage-btn-maybe:hover { background: #ca8a04; color: #fff; border-color: #ca8a04; box-shadow: 0 2px 8px rgba(202,138,4,.25); }
+.zusage-btn-no    { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.zusage-btn-no:hover    { background: #dc2626; color: #fff; border-color: #dc2626; box-shadow: 0 2px 8px rgba(220,38,38,.25); }
+
+[data-theme="dark"] .zusage-state-yes   { background: rgba(22,101,52,.25);  color: #86efac; border-color: rgba(22,101,52,.40); }
+[data-theme="dark"] .zusage-state-no    { background: rgba(153,27,27,.25);  color: #fca5a5; border-color: rgba(153,27,27,.40); }
+[data-theme="dark"] .zusage-state-maybe { background: rgba(133,77,14,.25);  color: #fde047; border-color: rgba(133,77,14,.40); }
+[data-theme="dark"] .zusage-state-na    { background: rgba(255,255,255,.05); color: var(--t4); border-color: rgba(255,255,255,.08); }
+[data-theme="dark"] .zusage-btn-yes   { background: rgba(22,101,52,.20);  color: #86efac; border-color: rgba(22,101,52,.35); }
+[data-theme="dark"] .zusage-btn-yes:hover   { background: #16a34a; color: #fff; border-color: #16a34a; }
+[data-theme="dark"] .zusage-btn-maybe { background: rgba(133,77,14,.20);  color: #fde047; border-color: rgba(133,77,14,.35); }
+[data-theme="dark"] .zusage-btn-maybe:hover { background: #ca8a04; color: #fff; border-color: #ca8a04; }
+[data-theme="dark"] .zusage-btn-no    { background: rgba(153,27,27,.20);  color: #fca5a5; border-color: rgba(153,27,27,.35); }
+[data-theme="dark"] .zusage-btn-no:hover    { background: #dc2626; color: #fff; border-color: #dc2626; }
+
 /* Invite list */
 .invite-list {
     display: flex;

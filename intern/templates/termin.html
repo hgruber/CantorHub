@@ -36,6 +36,10 @@
                 <span class="label">Repertoire</span>
                 <span class="value">{% if termin.repertoire %}<span class="badge badge-primary">Ja</span>{% else %}Nein{% endif %}</span>
             </div>
+            <div class="detail-card-row">
+                <span class="label">Du</span>
+                <div class="value">{% include "_termin_zusage.html" with widget_only=True %}</div>
+            </div>
         </div>
 
         {% if termin.lang %}
@@ -64,7 +68,7 @@
         {% endif %}
 
         {% if stimme_groups %}
-        <div class="detail-card detail-card-wide">
+        <div class="detail-card detail-card-wide" id="attendance-section">
             <h3>Anwesenheit</h3>
 
             <!-- Single table: visible on desktop, hidden on mobile -->

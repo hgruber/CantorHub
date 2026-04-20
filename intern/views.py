@@ -1159,49 +1159,77 @@ def termin_list(request):
     )
 
 
+def _build_stimme_groups(termin):
+    STIMMEN_ORDER = ["S", "A", "T", "B", "C", "M"]
+    STIMMEN_LABELS = {"S": "Sopran", "A": "Alt", "T": "Tenor", "B": "Bass", "C": "Chorleiter", "M": "Musiker"}
+    active_users = User.objects.filter(is_active=True).order_by("last_name", "first_name")
+    zusagen = {z.person_id: z.option for z in Zusage.objects.filter(termin=termin)}
+    groups = []
+    for stimme in STIMMEN_ORDER:
+        users = [u for u in active_users if u.stimme == stimme]
+        if not users:
+            continue
+        g = {"1": [], "2": [], "3": [], "": []}
+        for u in users:
+            g[zusagen.get(u.id, "")].append(u)
+        groups.append({
+            "key": stimme, "label": STIMMEN_LABELS[stimme],
+            "zusagen": g["1"], "absagen": g["2"],
+            "vielleicht": g["3"], "keine_angabe": g[""],
+        })
+    return groups
+
+
+ZUSAGE_TRANSITIONS = {
+    "":  ["1", "2", "3"],
+    "3": ["1", "2"],
+    "1": [],
+    "2": ["1", "3"],
+}
+
+
 @login_required
 def termin_view(request, id):
     termin = get_object_or_404(Termin.objects.select_related("ort"), id=id)
     lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
-
-    # Build attendance grouped by stimme
-    STIMMEN_ORDER = ["S", "A", "T", "B", "C", "M"]
-    STIMMEN_LABELS = {"S": "Sopran", "A": "Alt", "T": "Tenor", "B": "Bass", "C": "Chorleiter", "M": "Musiker"}
-
-    active_users = User.objects.filter(is_active=True).order_by("last_name", "first_name")
-    zusagen = {
-        z.person_id: z.option
-        for z in Zusage.objects.filter(termin=termin).select_related("person")
-    }
-
-    stimme_groups = []
-    for stimme in STIMMEN_ORDER:
-        users_in_voice = [u for u in active_users if u.stimme == stimme]
-        if not users_in_voice:
-            continue
-        grouped = {"1": [], "2": [], "3": [], "": []}
-        for u in users_in_voice:
-            opt = zusagen.get(u.id, "")
-            grouped[opt].append(u)
-        stimme_groups.append({
-            "key": stimme,
-            "label": STIMMEN_LABELS[stimme],
-            "zusagen": grouped["1"],
-            "absagen": grouped["2"],
-            "vielleicht": grouped["3"],
-            "keine_angabe": grouped[""],
-        })
-
+    my_zusage = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
+    my_option = my_zusage.option if my_zusage else ""
     context = {
         "seitentitel": str(termin),
         "termin": termin,
-        "stimme_groups": stimme_groups,
+        "stimme_groups": _build_stimme_groups(termin),
+        "my_option": my_option,
         "lieder": lieder,
         "up": "termin_list",
         "edit": "termin_edit",
         "id": id,
     }
     return render(request, "termin.html", context)
+
+
+@login_required
+@require_POST
+def termin_zusage(request, id):
+    termin = get_object_or_404(Termin, id=id)
+    new_option = request.POST.get("option", "")
+    current = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
+    current_option = current.option if current else ""
+
+    if new_option in ZUSAGE_TRANSITIONS.get(current_option, []):
+        Zusage.objects.update_or_create(
+            person=request.user, termin=termin,
+            defaults={"option": new_option},
+        )
+        current_option = new_option
+
+    if not request.headers.get("HX-Request"):
+        return redirect("termin_view", id=id)
+
+    return render(request, "_termin_zusage.html", {
+        "termin": termin,
+        "my_option": current_option,
+        "stimme_groups": _build_stimme_groups(termin),
+    })
 
 
 @permission_required("intern.change_termin", raise_exception=True)
