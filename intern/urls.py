@@ -51,6 +51,11 @@ urlpatterns = [
     path("termin/<int:id>/", views.termin_view, name="termin_view"),
     path("termin/<int:id>/edit/", views.termin_edit, name="termin_edit"),
     path("termin/<int:id>/zusage/", views.termin_zusage, name="termin_zusage"),
+    # Karte
+    path("karte/", views.karte_view, name="karte_view"),
+    path("karte/ort/", views.karte_ort_create, name="karte_ort_create"),
+    path("karte/ort/<int:pk>/", views.karte_ort_detail, name="karte_ort_detail"),
+    path("karte/standort/", views.karte_standort, name="karte_standort"),
     path("calendar/<str:secret>.ics", views.calendar_ics, name="calendar_ics"),
     # Mitglieder URLs
     path("mitglied/", views.member_list, name="member_list"),

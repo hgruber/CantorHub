@@ -2532,3 +2532,347 @@ span.not_found {
     background: var(--bg-row-hover);
     color: var(--t1);
 }
+
+/* =================================================== */
+/* Karte (Map page)                                    */
+/* =================================================== */
+
+/* Full-bleed map container — fills .content exactly */
+.karte-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* ── Floating legend panel ── */
+.karte-legend {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 500;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: 0 4px 16px rgba(0,0,0,.14);
+    padding: 12px 14px;
+    min-width: 190px;
+    font-size: 13px;
+    color: var(--t1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.karte-legend-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--brand);
+    letter-spacing: 0.02em;
+}
+
+.karte-legend-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.karte-legend-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+}
+
+/* ── Layer toggle rows ── */
+.karte-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+.karte-toggle-row:hover .karte-toggle-label {
+    color: var(--brand);
+}
+.karte-toggle-label {
+    flex: 1;
+    font-size: 12.5px;
+    transition: color var(--ease);
+}
+
+/* Color legend dots */
+.karte-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 2px solid rgba(0,0,0,.15);
+}
+.karte-dot-ort    { background: var(--brand); }
+.karte-dot-member { background: #4b80c0; }
+.karte-dot-live   { background: #22c55e; }
+
+/* Toggle switch */
+.karte-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+    flex-shrink: 0;
+}
+.karte-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+.karte-switch-track {
+    position: absolute;
+    inset: 0;
+    background: var(--border-dark);
+    border-radius: 9px;
+    transition: background var(--ease);
+    cursor: pointer;
+}
+.karte-switch-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform var(--ease);
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.karte-toggle-switch input:checked + .karte-switch-track {
+    background: var(--brand);
+}
+.karte-toggle-switch input:checked + .karte-switch-track::after {
+    transform: translateX(14px);
+}
+
+/* ── Action buttons ── */
+.karte-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: var(--r-sm);
+    border: 1.5px solid transparent;
+    font-size: 12.5px;
+    font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background var(--ease), border-color var(--ease), color var(--ease), box-shadow var(--ease);
+    line-height: 1.4;
+    width: 100%;
+    background: transparent;
+    color: var(--t2);
+}
+.karte-btn-location {
+    border-color: var(--border-dark);
+    color: var(--t2);
+}
+.karte-btn-location:hover {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(193,68,104,.25);
+}
+.karte-btn-add {
+    border-color: var(--border-dark);
+    color: var(--t2);
+}
+.karte-btn-add:hover {
+    background: #4b80c0;
+    border-color: #4b80c0;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(75,128,192,.25);
+}
+
+/* ── Toast notifications ── */
+.karte-toast {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    z-index: 600;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--bg-card);
+    color: var(--t1);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease;
+    white-space: nowrap;
+}
+.karte-toast.karte-toast-show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.karte-toast-ok    { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.karte-toast-error { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.karte-toast-info  { background: var(--bg-card); color: var(--t1); border-color: var(--border); }
+
+/* ── Custom Leaflet markers ── */
+.karte-pin {
+    width: 28px;
+    height: 36px;
+    background: var(--pin-color, var(--brand));
+    border-radius: 14px 14px 4px 4px;
+    clip-path: polygon(50% 100%, 0% 30%, 0% 0%, 100% 0%, 100% 30%);
+    display: flex;
+    align-items: 38%;
+    justify-content: center;
+    padding-top: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+
+.karte-live-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #22c55e;
+    border: 2.5px solid #fff;
+    box-shadow: 0 0 0 0 rgba(34,197,94,.5);
+    animation: karte-pulse 2s infinite;
+}
+.karte-live-dot-me {
+    background: var(--brand);
+    box-shadow: 0 0 0 0 rgba(193,68,104,.5);
+    animation: karte-pulse-me 2s infinite;
+}
+
+@keyframes karte-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+@keyframes karte-pulse-me {
+    0%   { box-shadow: 0 0 0 0 rgba(193,68,104,.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(193,68,104,0); }
+    100% { box-shadow: 0 0 0 0 rgba(193,68,104,0); }
+}
+
+/* ── Coord hint in dialog ── */
+.karte-coord-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--t4);
+    padding: 6px 10px;
+    border-radius: var(--r-sm);
+    background: var(--bg-row-hover);
+    border: 1px solid var(--border);
+    margin-bottom: 4px;
+    transition: background var(--ease), color var(--ease), border-color var(--ease);
+}
+.karte-coord-hint-active {
+    background: rgba(193,68,104,.08);
+    color: var(--brand);
+    border-color: var(--brand);
+    font-weight: 500;
+}
+.karte-coord-hint svg {
+    flex-shrink: 0;
+}
+
+/* ── Ort dialog sizing ── */
+.karte-ort-dialog {
+    width: min(420px, 95vw);
+}
+
+/* ── Geocode button ── */
+.karte-geocode-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    margin-bottom: 8px;
+    border-radius: var(--r-sm);
+    border: 1.5px solid var(--border-dark);
+    background: transparent;
+    color: var(--t2);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background var(--ease), border-color var(--ease), color var(--ease);
+}
+.karte-geocode-btn:hover {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+}
+
+/* ── Popup extras ── */
+.karte-popup-addr {
+    font-size: 11px;
+    color: #888;
+}
+.karte-popup-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 3px 9px;
+    border-radius: var(--r-sm);
+    border: 1.5px solid var(--border-dark, #ccc);
+    background: transparent;
+    color: var(--brand, #c14468);
+    font-size: 11.5px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+.karte-popup-btn:hover {
+    background: var(--brand, #c14468);
+    color: #fff;
+    border-color: var(--brand, #c14468);
+}
+.karte-popup-link {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 11.5px;
+    color: #4b80c0;
+    text-decoration: none;
+}
+.karte-popup-link:hover { text-decoration: underline; }
+
+/* ── Dark mode ── */
+[data-theme="dark"] .karte-legend {
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+[data-theme="dark"] .karte-toast-ok {
+    background: rgba(22,101,52,.25);
+    color: #86efac;
+    border-color: rgba(22,101,52,.4);
+}
+[data-theme="dark"] .karte-toast-error {
+    background: rgba(153,27,27,.25);
+    color: #fca5a5;
+    border-color: rgba(153,27,27,.4);
+}
+[data-theme="dark"] .karte-live-dot {
+    border-color: var(--bg-card);
+}
+[data-theme="dark"] .karte-pin {
+    box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+[data-theme="dark"] .karte-coord-hint-active {
+    background: rgba(193,68,104,.15);
+}

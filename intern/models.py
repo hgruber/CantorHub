@@ -356,6 +356,20 @@ class Abstimmung(models.Model):
         verbose_name_plural = "Abstimmungen"
 
 
+class Standort(models.Model):
+    """Live location shared voluntarily by a member."""
+    person = models.OneToOneField("User", on_delete=models.CASCADE)
+    breite = models.FloatField()
+    laenge = models.FloatField()
+    aktualisiert = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Standorte"
+
+    def __str__(self):
+        return f"{self.person} ({self.breite:.4f}, {self.laenge:.4f})"
+
+
 class TabellenPreferenzen(models.Model):
     person = models.ForeignKey("User", on_delete=models.CASCADE, null=True)
     tabelle = models.CharField(max_length=100)
