@@ -127,6 +127,21 @@
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // Patch tile images to send Referer (required by OSM tile policy)
+  L.TileLayer.prototype.createTile = function(coords, done) {
+    const tile = document.createElement('img');
+    tile.referrerPolicy = 'origin';
+    L.DomEvent.on(tile, 'load', L.bind(this._tileOnLoad, this, done, tile));
+    L.DomEvent.on(tile, 'error', L.bind(this._tileOnError, this, done, tile));
+    if (this.options.crossOrigin || this.options.crossOrigin === '') {
+      tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
+    }
+    tile.alt = '';
+    tile.setAttribute('role', 'presentation');
+    tile.src = this.getTileUrl(coords);
+    return tile;
+  };
+
   // ── Map init ─────────────────────────────────────────
   const map = L.map('map', { zoomControl: false }).setView(FRANKFURT, 12);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
