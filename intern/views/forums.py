@@ -1,6 +1,6 @@
 import logging
 import threading
-from datetime import datetime
+from django.utils.timezone import now as timezone_now
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required, permission_required
@@ -53,12 +53,10 @@ def _forum_user_lists(forum_obj):
     active_users = list(User.objects.filter(is_active=True).order_by("last_name", "first_name"))
 
     if settings.EJABBERD_ENABLED and forum_obj.xmpp_muc_jid:
-        from . import ejabberd as xmpp
-
-        room_members = xmpp.get_room_members(forum_obj.xmpp_muc_jid)
+        room_members = ejabberd.get_room_members(forum_obj.xmpp_muc_jid)
         member_jids = {jid.lower() for jid, _aff in room_members}
 
-        room_occupants = xmpp.get_room_occupants(forum_obj.xmpp_muc_jid)
+        room_occupants = ejabberd.get_room_occupants(forum_obj.xmpp_muc_jid)
         occupant_jids = {jid.split("/")[0].lower() for jid, _nick in room_occupants}
 
         invited = [u for u in active_users if u.xmpp and u.xmpp.lower() in member_jids]
@@ -169,7 +167,7 @@ def forum_send(request, forum):
             sender_id=request.user.id,
             forum_id=forum,
             mitteilung=mitteilung,
-            datum=datetime.now(),
+            datum=timezone_now(),
         )
         # Forward to XMPP MUC in background thread
         if settings.EJABBERD_ENABLED:
@@ -224,10 +222,8 @@ def forum_invite(request, forum, user_id):
     user = get_object_or_404(User, id=user_id)
 
     if settings.EJABBERD_ENABLED and forum_obj.xmpp_muc_jid and user.xmpp:
-        from . import ejabberd as xmpp
-
-        xmpp.send_invitation(forum_obj.xmpp_muc_jid, user.xmpp)
-        xmpp.set_room_affiliation(forum_obj.xmpp_muc_jid, user.xmpp, "member")
+        ejabberd.send_invitation(forum_obj.xmpp_muc_jid, user.xmpp)
+        ejabberd.set_room_affiliation(forum_obj.xmpp_muc_jid, user.xmpp, "member")
     else:
         # Fallback: send email invitation
         if user.email:

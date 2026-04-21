@@ -824,7 +824,7 @@ time {
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
 }
-.offcanvas-header strong { font-size: 0.875rem; color: var(--heading); }
+.offcanvas-header strong { font-size: 0.875rem; color: var(--t1); }
 .offcanvas-close {
     background: none;
     border: none;
@@ -849,14 +849,14 @@ time {
     padding-bottom: 10px;
     border-bottom: 2px solid var(--brand);
 }
-.add-panel-header strong { font-size: 1rem; color: var(--heading); }
+.add-panel-header strong { font-size: 1rem; color: var(--t1); }
 .add-panel-close {
     background: none; border: none; cursor: pointer;
     font-size: 1.2rem; color: var(--text-muted); padding: 0 4px;
 }
 .add-panel-close:hover { color: var(--brand); }
 .add-panel form .form-group { margin-bottom: 14px; }
-.add-panel form label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.add-panel form label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 4px; color: var(--t2); }
 .add-panel form .checkbox-label { display: flex; align-items: center; gap: 8px; font-weight: normal; }
 .add-panel form input[type="text"],
 .add-panel form input[type="email"],
@@ -1014,7 +1014,6 @@ time {
     line-height: 1;
 }
 .dialog-close:hover { color: var(--brand); }
-}
 
 .app-dialog input[type="text"] {
     width: 100%;
@@ -1573,7 +1572,7 @@ div.avatar { cursor: pointer; }
 
 /* Attendance split layout (mobile) */
 .attendance-split {
-    display: flex;
+    display: none;
     gap: 12px;
 }
 
@@ -1582,15 +1581,12 @@ div.avatar { cursor: pointer; }
     min-width: 0;
 }
 
-/* Desktop: show single table, hide split */
-@media (min-width: 769px) {
-    .attendance-split { display: none; }
-}
+.attendance-split .attendance-table + .attendance-table { margin-top: 12px; }
 
 /* Mobile: hide single table, show split */
 @media (max-width: 768px) {
     .attendance-single { display: none; }
-    .attendance-split { display: flex; }
+    .attendance-split { display: block; }
 }
 
 .detail-card-wide {
@@ -1762,10 +1758,6 @@ div.avatar { cursor: pointer; }
     gap: 4px;
     padding-top: 4px;
 }
-
-/* Attendance responsive split */
-.attendance-split { display: none; }
-.attendance-split .attendance-table + .attendance-table { margin-top: 12px; }
 
 /* Single-column cards on small screens */
 @media (max-width: 768px) {
@@ -3075,7 +3067,7 @@ span.not_found {
     color: var(--t3);
 }
 [data-theme="dark"] .dialog-field input {
-    background: var(--input-bg);
+    background: var(--bg-card);
     border-color: var(--border-dark);
     color: var(--t1);
 }

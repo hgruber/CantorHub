@@ -3,6 +3,7 @@ import difflib
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.timezone import now
 
 from intern import folders
@@ -67,7 +68,7 @@ def article_edit(request, name):
 def article_view(request, name):
     latest = Artikel.objects.filter(name=name).order_by("-version").first()
     if not latest:
-        return redirect(f"/intern/artikel/{name}/bearbeiten/")
+        return redirect(reverse("article_edit", args=[name]))
 
     version_param = request.GET.get("version")
     if version_param:

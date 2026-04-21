@@ -2,6 +2,7 @@ import secrets
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
+from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
@@ -59,7 +60,7 @@ def calendar_ics(request, secret):
     if not secrets.compare_digest(secret, settings.ICAL_SECRET):
         from django.http import Http404
         raise Http404
-    cutoff = datetime.now() - timedelta(days=180)
+    cutoff = timezone_now() - timedelta(days=180)
     termine = Termin.objects.filter(datum__gte=cutoff).select_related("ort").order_by("datum")
     cal = Calendar()
     cal.add("prodid", "-//CantorHub//DE")
@@ -85,7 +86,7 @@ def calendar_ics(request, secret):
 @login_required
 def termin_list(request):
     termin_queryset = (
-        Termin.objects.filter(datum__gt=datetime.now())
+        Termin.objects.filter(datum__gt=timezone_now())
         .order_by("datum")
         .annotate(
             anwesenheit_option=Coalesce(

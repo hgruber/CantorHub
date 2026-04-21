@@ -1,8 +1,6 @@
-from pyexpat import model
-
 import django_filters as filters
 import django_tables2 as tables
-from django.db.models import FilteredRelation, Q
+from django.db.models import Q
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html

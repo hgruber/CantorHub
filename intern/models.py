@@ -1,6 +1,5 @@
 import re
 from datetime import datetime
-from types import ClassMethodDescriptorType
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
