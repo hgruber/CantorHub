@@ -201,6 +201,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let dragCounter = 0;
     appMain.addEventListener("dragenter", (e) => {
       if (!e.dataTransfer || !e.dataTransfer.types.includes("Files")) return;
+      // Don't show overlay when a panel dropzone is active
+      if (document.querySelector('.add-panel.open') || document.querySelector('.dropzone-field.dz-dragover')) return;
       dragCounter++;
       appMain.classList.add("drag-active");
     });
