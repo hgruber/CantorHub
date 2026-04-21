@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django import forms
 from django.db import models
 from filer.fields.file import FilerFileField
@@ -31,14 +33,23 @@ class RegisterForm(forms.Form):
 
 
 class TerminForm(forms.ModelForm):
+    uhrzeit = forms.TimeField(
+        required=False,
+        label="Uhrzeit",
+        widget=forms.TimeInput(
+            format="%H:%M",
+            attrs={"class": "form-control", "type": "time"},
+        ),
+    )
+
     class Meta:
         model = Termin
-        fields = ["kurz", "datum", "datum_bis", "lang", "ort", "anwesenheit", "repertoire"]
+        fields = ["kurz", "datum", "uhrzeit", "datum_bis", "lang", "ort", "anwesenheit", "repertoire"]
         widgets = {
             "kurz": forms.TextInput(attrs={"class": "form-control"}),
-            "datum": forms.DateTimeInput(
-                format="%Y-%m-%dT%H:%M",
-                attrs={"class": "form-control", "type": "datetime-local"},
+            "datum": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"class": "form-control", "type": "date"},
             ),
             "datum_bis": forms.DateTimeInput(
                 format="%Y-%m-%dT%H:%M",
@@ -47,6 +58,21 @@ class TerminForm(forms.ModelForm):
             "lang": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "ort": forms.Select(attrs={"class": "form-control"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.datum:
+            self.initial["uhrzeit"] = self.instance.datum.strftime("%H:%M")
+
+    def clean(self):
+        cleaned = super().clean()
+        datum = cleaned.get("datum")
+        uhrzeit = cleaned.get("uhrzeit")
+        if datum and uhrzeit:
+            cleaned["datum"] = datetime.combine(datum, uhrzeit)
+        elif datum:
+            cleaned["datum"] = datetime.combine(datum, datetime.min.time())
+        return cleaned
 
 
 class LiedEditForm(forms.ModelForm):

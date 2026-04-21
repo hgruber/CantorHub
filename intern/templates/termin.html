@@ -8,7 +8,7 @@
         </div>
         <div class="detail-info">
             <h1>{{ termin.kurz }}</h1>
-            <p class="detail-subtitle">{{ termin.datum|date:"l, d. F Y · H:i" }}{% if termin.datum_bis %} – {{ termin.datum_bis|date:"H:i" }}{% endif %}</p>
+            <p class="detail-subtitle">{{ termin.datum|date:"l, d. F Y" }}{% if termin.datum.hour or termin.datum.minute %} · {{ termin.datum|date:"H:i" }}{% endif %}{% if termin.datum_bis %} – {{ termin.datum_bis|date:"H:i" }}{% endif %}</p>
         </div>
     </div>
 
@@ -18,10 +18,12 @@
                 <span class="label">Datum</span>
                 <span class="value">{{ termin.datum|date:"d.m.Y" }}</span>
             </div>
+            {% if termin.datum.hour or termin.datum.minute or termin.datum_bis %}
             <div class="detail-card-row">
                 <span class="label">Uhrzeit</span>
                 <span class="value">{{ termin.datum|date:"H:i" }}{% if termin.datum_bis %} – {{ termin.datum_bis|date:"H:i" }}{% endif %}</span>
             </div>
+            {% endif %}
             {% if termin.ort %}
             <div class="detail-card-row">
                 <span class="label">Ort</span>

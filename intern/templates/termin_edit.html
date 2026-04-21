@@ -20,9 +20,14 @@
         </div>
         <div class="form-grid">
             <div class="form-group">
-                <label for="{{ form.datum.id_for_label }}">Von</label>
+                <label for="{{ form.datum.id_for_label }}">Datum</label>
                 {{ form.datum }}
                 {% if form.datum.errors %}<div class="invalid-feedback">{{ form.datum.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.uhrzeit.id_for_label }}">Uhrzeit</label>
+                {{ form.uhrzeit }}
+                {% if form.uhrzeit.errors %}<div class="invalid-feedback">{{ form.uhrzeit.errors }}</div>{% endif %}
             </div>
             <div class="form-group">
                 <label for="{{ form.datum_bis.id_for_label }}">Bis</label>
