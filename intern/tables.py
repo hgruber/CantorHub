@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from .models import Lied, Termin, User
+from .models import Lied, Ort, Termin, User
 from .replacements import format_bytes, format_datetime
 
 
@@ -407,7 +407,7 @@ class MitgliederTabelle(tables.Table):
     fax = tables.Column()
 
     class Meta:
-        row_attrs = {"data-href": lambda record: reverse("member_view", args=[record.id])}
+        row_attrs = {"data-href": lambda record: reverse("mitglied_view", args=[record.id])}
 
     def __init__(self, *args, visible_fields=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -435,3 +435,14 @@ class MitgliederTabelle(tables.Table):
             '<img src="{}" width="40" height="40">',
             static("filer/icons/file-unknown.svg"),
         )
+
+
+class OrtTabelle(tables.Table):
+    name = tables.Column(verbose_name="Name")
+    strasse = tables.Column(verbose_name="Straße")
+    plz = tables.Column(verbose_name="PLZ")
+    ort = tables.Column(verbose_name="Ort")
+
+    class Meta:
+        attrs = {"class": "table table-hover"}
+        row_attrs = {"data-href": lambda record: reverse("ort_view", args=[record.id])}

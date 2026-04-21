@@ -16,7 +16,11 @@
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Speichern</button>
+            {% if id %}
             <a href="{% url 'forum_view' forum=id %}" class="btn btn-secondary">Abbrechen</a>
+            {% else %}
+            <a href="{% url 'forum_list' %}" class="btn btn-secondary">Abbrechen</a>
+            {% endif %}
         </div>
     </form>
 

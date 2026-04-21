@@ -91,8 +91,15 @@
                         </svg>
                     </a>
                 {% endif %}
+                {% if add %}
+                    <a href="{% url add %}" onclick="if(document.getElementById('AddPanel')){toggle('AddPanel');return false;}" title="Neu anlegen">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                    </a>
+                {% endif %}
                 {% if changepass %}
-                    <a href="{% url 'member_passwd' id=id %}" title="Passwort ändern">
+                    <a href="{% url 'mitglied_passwd' id=id %}" title="Passwort ändern">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                         </svg>

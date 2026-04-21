@@ -35,6 +35,7 @@ urlpatterns = [
     path("file/<str:name>/edit/", views.dummy, name="file_edit"),
     # Forum URLs
     path("forum/", views.forum_list, name="forum_list"),
+    path("forum/add/", views.forum_add, name="forum_add"),
     path("forum/<int:forum>/", views.forum_view, name="forum_view"),
     path("forum/<int:forum>/get/", views.forum_get, name="forum_get"),
     path("forum/<int:forum>/edit/", views.forum_edit, name="forum_edit"),
@@ -43,14 +44,21 @@ urlpatterns = [
     path("forum/<int:forum>/send/", views.forum_send, name="forum_send"),
     # Repertoire URLs
     path("titel/", views.titel_list, name="titel_list"),
+    path("titel/add/", views.titel_add, name="titel_add"),
     path("titel/<int:titel>/", views.titel_view, name="titel_view"),
     path("titel/<int:titel>/edit/", views.titel_edit, name="titel_edit"),
     path("update-order/", views.update_order, name="update-order"),
     # Termin URLs
     path("termin/", views.termin_list, name="termin_list"),
+    path("termin/add/", views.termin_add, name="termin_add"),
     path("termin/<int:id>/", views.termin_view, name="termin_view"),
     path("termin/<int:id>/edit/", views.termin_edit, name="termin_edit"),
     path("termin/<int:id>/zusage/", views.termin_zusage, name="termin_zusage"),
+    # Ort URLs
+    path("ort/", views.ort_list, name="ort_list"),
+    path("ort/add/", views.ort_add, name="ort_add"),
+    path("ort/<int:id>/", views.ort_view, name="ort_view"),
+    path("ort/<int:id>/edit/", views.ort_edit, name="ort_edit"),
     # Karte
     path("karte/", views.karte_view, name="karte_view"),
     path("karte/ort/", views.karte_ort_create, name="karte_ort_create"),
@@ -59,10 +67,11 @@ urlpatterns = [
     path("karte/standorte/", views.karte_standorte_live, name="karte_standorte_live"),
     path("calendar/<str:secret>.ics", views.calendar_ics, name="calendar_ics"),
     # Mitglieder URLs
-    path("mitglied/", views.member_list, name="member_list"),
-    path("mitglied/<int:id>/", views.member_view, name="member_view"),
-    path("mitglied/<int:id>/edit/", views.member_edit, name="member_edit"),
-    path("mitglied/<int:id>/passwd/", views.member_passwd, name="member_passwd"),
+    path("mitglied/", views.mitglied_list, name="mitglied_list"),
+    path("mitglied/add/", views.mitglied_add, name="mitglied_add"),
+    path("mitglied/<int:id>/", views.mitglied_view, name="mitglied_view"),
+    path("mitglied/<int:id>/edit/", views.mitglied_edit, name="mitglied_edit"),
+    path("mitglied/<int:id>/passwd/", views.mitglied_passwd, name="mitglied_passwd"),
     # Artikel URLs
     path("artikel/", views.article_list, name="article_list"),
     path("artikel/<str:name>/", views.article_view, name="article_view"),

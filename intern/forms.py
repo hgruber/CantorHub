@@ -3,7 +3,7 @@ from django.db import models
 from filer.fields.file import FilerFileField
 from filer.fields.image import AdminImageWidget
 
-from .models import Forum, Lied, Termin, User
+from .models import Forum, Lied, Ort, Termin, User
 
 
 class RegisterForm(forms.Form):
@@ -135,3 +135,49 @@ class UserEditForm(forms.ModelForm):
             "xmpp": forms.TextInput(attrs={"class": "form-control"}),
             "text": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
         }
+
+
+class OrtForm(forms.ModelForm):
+    class Meta:
+        model = Ort
+        fields = ["name", "beschreibung", "strasse", "plz", "ort", "breite", "laenge"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "beschreibung": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "strasse": forms.TextInput(attrs={"class": "form-control"}),
+            "plz": forms.TextInput(attrs={"class": "form-control"}),
+            "ort": forms.TextInput(attrs={"class": "form-control"}),
+            "breite": forms.NumberInput(attrs={"class": "form-control", "step": "any"}),
+            "laenge": forms.NumberInput(attrs={"class": "form-control", "step": "any"}),
+        }
+
+
+class MitgliedAddForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control"}),
+        required=False,
+        label="Passwort",
+        help_text="Leer lassen für automatisches Passwort.",
+    )
+
+    class Meta:
+        model = User
+        fields = ["username", "first_name", "last_name", "email", "stimme"]
+        widgets = {
+            "username": forms.TextInput(attrs={"class": "form-control"}),
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "stimme": forms.Select(attrs={"class": "form-control"}),
+        }
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        password = self.cleaned_data.get("password")
+        if password:
+            user.set_password(password)
+        else:
+            user.set_password(get_random_string(10))
+        if commit:
+            user.save()
+        return user

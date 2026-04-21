@@ -33,7 +33,7 @@ from icalendar import Calendar, Event
 from intern import ejabberd, folders
 from intern.replacements import apply_replacements
 
-from .forms import RegisterForm, TerminForm, LiedEditForm, ForumEditForm, UserEditForm
+from .forms import RegisterForm, TerminForm, LiedEditForm, ForumEditForm, UserEditForm, OrtForm, MitgliedAddForm
 from .models import (
     Artikel,
     Forum,
@@ -52,6 +52,7 @@ from .tables import (
     MitgliederFilter,
     MitgliederTabelle,
     OrdnerTabelle,
+    OrtTabelle,
     RepertoireFilter,
     RepertoireTabelle,
     TerminTabelle,
@@ -760,10 +761,19 @@ def forum_list(request):
     foren = Forum.objects.extra_data().order_by("-zugriff")
     table = ForumTabelle(foren)
     RequestConfig(request, paginate=False).configure(table)
+    add = "forum_add" if request.user.has_perm("intern.add_forum") else None
     return render(
         request,
         "table.html",
-        {"table": table, "seitentitel": "Foren", "upload_folder_id": folders.forum()},
+        {
+            "table": table,
+            "seitentitel": "Foren",
+            "upload_folder_id": folders.forum(),
+            "add": add,
+            "add_form": ForumEditForm() if request.user.has_perm("intern.add_forum") else None,
+            "add_form_multipart": True,
+            "add_label": "Neues Forum",
+        },
     )
 
 
@@ -989,6 +999,7 @@ def titel_list(request):
     else:
         seitentitel = "Repertoire"
 
+    add = "titel_add" if request.user.has_perm("intern.add_lied") else None
     return render(
         request,
         "table.html",
@@ -1003,6 +1014,10 @@ def titel_list(request):
             "upload_route_by_type": True,
             "showfilter": True,
             "order": len(konzerte) == 1,
+            "add": add,
+            "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
+            "add_form_multipart": True,
+            "add_label": "Neuer Titel",
         },
     )
 
@@ -1148,6 +1163,7 @@ def termin_list(request):
     ical_path = reverse("calendar_ics", args=[settings.ICAL_SECRET])
     ical_url = request.build_absolute_uri(ical_path)
     webcal_url = "webcal://" + request.get_host() + ical_path
+    add = "termin_add" if request.user.has_perm("intern.add_termin") else None
     return render(
         request,
         "table.html",
@@ -1157,6 +1173,9 @@ def termin_list(request):
             "ical_url": ical_url,
             "webcal_url": webcal_url,
             "upload_folder_id": folders.termine(),
+            "add": add,
+            "add_form": TerminForm() if request.user.has_perm("intern.add_termin") else None,
+            "add_label": "Neuer Termin",
         },
     )
 
@@ -1256,7 +1275,7 @@ def termin_edit(request, id):
 
 
 @login_required
-def member_list(request):
+def mitglied_list(request):
     queryset = (
         User.objects.filter(is_active=True)
         .annotate(
@@ -1289,12 +1308,15 @@ def member_list(request):
             "filter": mitglieder_filter,
             "showfilter": True,
             "seitentitel": "Mitgliederliste",
+            "add": "mitglied_add" if request.user.has_perm("intern.add_user") else None,
+            "add_form": MitgliedAddForm() if request.user.has_perm("intern.add_user") else None,
+            "add_label": "Neues Mitglied",
         },
     )
 
 
 @login_required
-def member_view(request, id):
+def mitglied_view(request, id):
     user = get_object_or_404(User, id=id)
     can_edit = (
         request.user.id == id
@@ -1304,29 +1326,29 @@ def member_view(request, id):
     context = {
         "user": user,
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
-        "up": "member_list",
-        "edit": "member_edit" if can_edit else None,
-        "changepass": "member_passwd" if can_edit else None,
+        "up": "mitglied_list",
+        "edit": "mitglied_edit" if can_edit else None,
+        "changepass": "mitglied_passwd" if can_edit else None,
         "id": id,
     }
     return render(request, "mitglied.html", context)
 
 
 @login_required
-def member_edit(request, id):
+def mitglied_edit(request, id):
     if (
         request.user.id != id
         and not request.user.is_superuser
         and not request.user.has_perm("intern.change_user")
     ):
-        return redirect("member_view", id=id)
+        return redirect("mitglied_view", id=id)
     user = get_object_or_404(User, id=id)
 
     if request.method == "POST":
         form = UserEditForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             form.save()
-            return redirect("member_view", id=id)
+            return redirect("mitglied_view", id=id)
     else:
         form = UserEditForm(instance=user)
 
@@ -1334,18 +1356,18 @@ def member_edit(request, id):
         "form": form,
         "user": user,
         "seitentitel": f"bearbeiten: {user.first_name} {user.last_name}",
-        "view": "member_view",
-        "changepass": "member_passwd",
+        "view": "mitglied_view",
+        "changepass": "mitglied_passwd",
         "upload_folder_id": folders.avatare(),
         "upload_rename_to": id,
         "upload_avatar_user_id": id,
         "id": id,
     }
-    return render(request, "member_edit.html", context)
+    return render(request, "mitglied_edit.html", context)
 
 
 @login_required
-def member_passwd(request, id):
+def mitglied_passwd(request, id):
     target_user = get_object_or_404(User, id=id)
 
     # Prüfe, ob der aktuelle Benutzer der Zielbenutzer ist oder Admin
@@ -1354,7 +1376,7 @@ def member_passwd(request, id):
         and not request.user.is_superuser
         and not request.user.has_perm("intern.change_user")
     ):
-        return redirect("member_view", id=id)
+        return redirect("mitglied_view", id=id)
 
     if request.method == "POST":
         new_password1 = request.POST.get("new_password1")
@@ -1363,14 +1385,14 @@ def member_passwd(request, id):
         # Überprüfe, ob die neuen Passwörter übereinstimmen
         if new_password1 != new_password2:
             messages.error(request, "Die neuen Passwörter stimmen nicht überein.")
-            return render(request, "member_passwd.html", {"user": target_user})
+            return render(request, "mitglied_passwd.html", {"user": target_user})
 
         # Überprüfe Passwortlänge
         if len(new_password1) < 5:
             messages.error(
                 request, "Das neue Passwort muss mindestens 5 Zeichen lang sein."
             )
-            return render(request, "member_passwd.html", {"user": target_user})
+            return render(request, "mitglied_passwd.html", {"user": target_user})
 
         # Setze neues Passwort
         target_user.set_password(new_password1)
@@ -1396,16 +1418,16 @@ def member_passwd(request, id):
             if user is not None:
                 login(request, user)
 
-        return redirect("member_passwd", id=id)
+        return redirect("mitglied_passwd", id=id)
     else:
         context = {
             "user": target_user,
             "seitentitel": f"Passwort ändern: {target_user.first_name} {target_user.last_name}",
-            "view": "member_view",
-            "edit": "member_edit",
+            "view": "mitglied_view",
+            "edit": "mitglied_edit",
             "id": id,
         }
-        return render(request, "member_passwd.html", context)
+        return render(request, "mitglied_passwd.html", context)
 
 
 @login_required
@@ -1711,3 +1733,138 @@ def karte_standort(request):
         "laenge": standort.laenge,
         "aktualisiert": standort.aktualisiert.strftime("%d.%m.%Y %H:%M"),
     })
+
+
+# ──────────────────────────────────────────────────────
+# Add views
+# ──────────────────────────────────────────────────────
+
+@permission_required("intern.add_forum", raise_exception=True)
+def forum_add(request):
+    if request.method == "POST":
+        form = ForumEditForm(request.POST, request.FILES)
+        if form.is_valid():
+            forum = form.save()
+            return redirect("forum_view", forum=forum.id)
+    else:
+        form = ForumEditForm()
+    context = {
+        "form": form,
+        "seitentitel": "Neues Forum",
+    }
+    return render(request, "forum_edit.html", context)
+
+
+@permission_required("intern.add_termin", raise_exception=True)
+def termin_add(request):
+    if request.method == "POST":
+        form = TerminForm(request.POST)
+        if form.is_valid():
+            termin = form.save()
+            return redirect("termin_view", id=termin.id)
+    else:
+        form = TerminForm()
+    context = {
+        "form": form,
+        "seitentitel": "Neuer Termin",
+    }
+    return render(request, "termin_edit.html", context)
+
+
+@permission_required("intern.add_lied", raise_exception=True)
+def titel_add(request):
+    if request.method == "POST":
+        form = LiedEditForm(request.POST, request.FILES)
+        if form.is_valid():
+            lied = form.save()
+            return redirect("titel_view", titel=lied.id)
+    else:
+        form = LiedEditForm()
+    context = {
+        "form": form,
+        "seitentitel": "Neuer Titel",
+    }
+    return render(request, "titel_edit.html", context)
+
+
+@permission_required("intern.add_user", raise_exception=True)
+def mitglied_add(request):
+    if request.method == "POST":
+        form = MitgliedAddForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            return redirect("mitglied_view", id=user.id)
+    else:
+        form = MitgliedAddForm()
+    context = {
+        "form": form,
+        "seitentitel": "Neues Mitglied",
+    }
+    return render(request, "mitglied_add.html", context)
+
+
+# ──────────────────────────────────────────────────────
+# Ort CRUD views
+# ──────────────────────────────────────────────────────
+
+@login_required
+def ort_list(request):
+    orte = Ort.objects.order_by("name")
+    table = OrtTabelle(orte)
+    RequestConfig(request, paginate=False).configure(table)
+    add = "ort_add" if request.user.has_perm("intern.add_ort") else None
+    return render(request, "table.html", {
+        "table": table,
+        "seitentitel": "Orte",
+        "add": add,
+        "add_form": OrtForm() if request.user.has_perm("intern.add_ort") else None,
+        "add_label": "Neuer Ort",
+    })
+
+
+@login_required
+def ort_view(request, id):
+    ort = get_object_or_404(Ort, id=id)
+    context = {
+        "seitentitel": ort.name,
+        "ort": ort,
+        "up": "ort_list",
+        "edit": "ort_edit",
+        "id": id,
+    }
+    return render(request, "ort_detail.html", context)
+
+
+@permission_required("intern.add_ort", raise_exception=True)
+def ort_add(request):
+    if request.method == "POST":
+        form = OrtForm(request.POST)
+        if form.is_valid():
+            ort = form.save()
+            return redirect("ort_view", id=ort.id)
+    else:
+        form = OrtForm()
+    context = {
+        "form": form,
+        "seitentitel": "Neuer Ort",
+    }
+    return render(request, "ort_edit.html", context)
+
+
+@permission_required("intern.change_ort", raise_exception=True)
+def ort_edit(request, id):
+    ort = get_object_or_404(Ort, id=id)
+    if request.method == "POST":
+        form = OrtForm(request.POST, instance=ort)
+        if form.is_valid():
+            form.save()
+            return redirect("ort_view", id=id)
+    else:
+        form = OrtForm(instance=ort)
+    context = {
+        "form": form,
+        "seitentitel": f"bearbeiten: {ort.name}",
+        "view": "ort_view",
+        "id": id,
+    }
+    return render(request, "ort_edit.html", context)

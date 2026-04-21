@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="wiki">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="{{ form.name.id_for_label }}">Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="invalid-feedback">{{ form.name.errors }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.beschreibung.id_for_label }}">Beschreibung</label>
+            {{ form.beschreibung }}
+            {% if form.beschreibung.errors %}<div class="invalid-feedback">{{ form.beschreibung.errors }}</div>{% endif %}
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.strasse.id_for_label }}">Straße</label>
+                {{ form.strasse }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.plz.id_for_label }}">PLZ</label>
+                {{ form.plz }}
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.ort.id_for_label }}">Ort</label>
+                {{ form.ort }}
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.breite.id_for_label }}">Breite (lat)</label>
+                {{ form.breite }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.laenge.id_for_label }}">Länge (lng)</label>
+                {{ form.laenge }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            {% if id %}
+            <a href="{% url 'ort_view' id=id %}" class="btn btn-secondary">Abbrechen</a>
+            {% else %}
+            <a href="{% url 'ort_list' %}" class="btn btn-secondary">Abbrechen</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

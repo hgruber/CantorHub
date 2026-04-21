@@ -65,24 +65,23 @@
     {% csrf_token %}
     <input type="hidden" id="ort-edit-id">
     <h3 id="ort-dialog-title">Neuer Ort</h3>
-    <div class="form-group">
+    <div class="dialog-field">
       <label for="ort-name">Name <span style="color:var(--brand)">*</span></label>
       <input type="text" id="ort-name" name="name" required autocomplete="off">
     </div>
-    <div class="form-grid" style="grid-template-columns:1fr 80px">
-      <div class="form-group">
+    <div class="dialog-row">
+      <div class="dialog-field dialog-field-grow">
         <label for="ort-strasse">Straße</label>
         <input type="text" id="ort-strasse" name="strasse" autocomplete="off">
       </div>
-      <div></div>
-      <div class="form-group">
-        <label for="ort-ort">Stadt</label>
-        <input type="text" id="ort-ort" name="ort_name" autocomplete="off">
-      </div>
-      <div class="form-group">
+      <div class="dialog-field dialog-field-shrink">
         <label for="ort-plz">PLZ</label>
         <input type="text" id="ort-plz" name="plz" autocomplete="off" maxlength="5">
       </div>
+    </div>
+    <div class="dialog-field">
+      <label for="ort-ort">Stadt</label>
+      <input type="text" id="ort-ort" name="ort_name" autocomplete="off">
     </div>
 
     <button type="button" class="karte-geocode-btn" id="btn-geocode">
@@ -94,12 +93,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       Klicke auf die Karte, um die Position zu setzen
     </div>
-    <div class="form-grid">
-      <div class="form-group">
+    <div class="dialog-row">
+      <div class="dialog-field">
         <label for="ort-breite">Breite (lat)</label>
         <input type="number" id="ort-breite" name="breite" step="any" placeholder="50.1109">
       </div>
-      <div class="form-group">
+      <div class="dialog-field">
         <label for="ort-laenge">Länge (lng)</label>
         <input type="number" id="ort-laenge" name="laenge" step="any" placeholder="8.6821">
       </div>

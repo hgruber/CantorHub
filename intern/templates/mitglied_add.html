@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ seitentitel }}{% endblock %}
+{% block content %}
+    <div class="wiki">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}">Benutzername</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}<div class="invalid-feedback">{{ form.username.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.first_name.id_for_label }}">Vorname</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}<div class="invalid-feedback">{{ form.first_name.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.last_name.id_for_label }}">Nachname</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}<div class="invalid-feedback">{{ form.last_name.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}">E-Mail</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.stimme.id_for_label }}">Stimme</label>
+                    {{ form.stimme }}
+                    {% if form.stimme.errors %}<div class="invalid-feedback">{{ form.stimme.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.password.id_for_label }}">Passwort</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}<div class="invalid-feedback">{{ form.password.errors }}</div>{% endif %}
+                    {% if form.password.help_text %}<small class="form-text text-muted">{{ form.password.help_text }}</small>{% endif %}
+                </div>
+            </div>
+            <div class="form-group text-center">
+                <button type="submit" class="btn btn-primary">Anlegen</button>
+                <a href="{% url 'mitglied_list' %}" class="btn btn-secondary">Abbrechen</a>
+            </div>
+            <br />
+        </form>
+    </div>
+{% endblock %}

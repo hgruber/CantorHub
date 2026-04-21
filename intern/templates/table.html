@@ -93,6 +93,33 @@
             </form>
         </div>
     {% endif %}
+    {% if add_form %}
+    <div class="add-panel offcanvas" id="AddPanel">
+        <div class="add-panel-header">
+            <strong>{{ add_label|default:"Neu anlegen" }}</strong>
+            <button type="button" class="add-panel-close" onclick="toggle('AddPanel')" aria-label="Schließen">&#x2715;</button>
+        </div>
+        <form method="post" action="{% url add %}" {% if add_form_multipart %}enctype="multipart/form-data"{% endif %}>
+            {% csrf_token %}
+            {% for field in add_form %}
+            <div class="form-group">
+                {% if field.field.widget.input_type == 'checkbox' %}
+                <label class="checkbox-label">{{ field }} {{ field.label }}</label>
+                {% else %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% endif %}
+                {% if field.errors %}<div class="invalid-feedback">{{ field.errors }}</div>{% endif %}
+                {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+            </div>
+            {% endfor %}
+            <div class="add-panel-actions">
+                <button type="submit" class="btn btn-primary">Speichern</button>
+                <button type="button" class="btn btn-secondary" onclick="toggle('AddPanel')">Abbrechen</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
     {% render_table table %}
     {% if ical_url %}
     <div class="ical-subscribe" id="ical-subscribe">

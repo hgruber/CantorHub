@@ -11,7 +11,10 @@
             </div>
             <div class="form-group">
                 <label for="{{ form.ort.id_for_label }}">Ort</label>
-                {{ form.ort }}
+                <div class="form-field-with-action">
+                    {{ form.ort }}
+                    <a href="{% url 'ort_add' %}" class="btn btn-sm btn-secondary" title="Neuen Ort anlegen">+</a>
+                </div>
                 {% if form.ort.errors %}<div class="invalid-feedback">{{ form.ort.errors }}</div>{% endif %}
             </div>
         </div>
@@ -42,7 +45,11 @@
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Speichern</button>
+            {% if id %}
             <a href="{% url 'termin_view' id=id %}" class="btn btn-secondary">Abbrechen</a>
+            {% else %}
+            <a href="{% url 'termin_list' %}" class="btn btn-secondary">Abbrechen</a>
+            {% endif %}
         </div>
     </form>
 </div>

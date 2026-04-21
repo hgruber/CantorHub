@@ -58,7 +58,11 @@
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Speichern</button>
+            {% if id %}
             <a href="{% url 'titel_view' titel=id %}" class="btn btn-secondary">Abbrechen</a>
+            {% else %}
+            <a href="{% url 'titel_list' %}" class="btn btn-secondary">Abbrechen</a>
+            {% endif %}
         </div>
     </form>
 </div>

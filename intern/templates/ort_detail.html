@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="detail-info">
+            <h1>{{ ort.name }}</h1>
+            {% if ort.strasse or ort.ort %}
+            <p class="detail-subtitle">{{ ort.strasse }}{% if ort.strasse and ort.ort %}, {% endif %}{% if ort.plz %}{{ ort.plz }} {% endif %}{{ ort.ort }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="detail-cards">
+        <div class="detail-card">
+            {% if ort.strasse %}
+            <div class="detail-card-row">
+                <span class="label">Straße</span>
+                <span class="value">{{ ort.strasse }}</span>
+            </div>
+            {% endif %}
+            {% if ort.plz %}
+            <div class="detail-card-row">
+                <span class="label">PLZ</span>
+                <span class="value">{{ ort.plz }}</span>
+            </div>
+            {% endif %}
+            {% if ort.ort %}
+            <div class="detail-card-row">
+                <span class="label">Ort</span>
+                <span class="value">{{ ort.ort }}</span>
+            </div>
+            {% endif %}
+            {% if ort.breite is not None and ort.laenge is not None %}
+            <div class="detail-card-row">
+                <span class="label">Koordinaten</span>
+                <span class="value">{{ ort.breite }}, {{ ort.laenge }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if ort.beschreibung %}
+        <div class="detail-card">
+            <h3>Beschreibung</h3>
+            <div class="detail-card-content">{{ ort.beschreibung|linebreaksbr }}</div>
+        </div>
+        {% endif %}
+
+        {% if ort.breite is not None and ort.laenge is not None %}
+        <div class="detail-card">
+            <h3>Karte</h3>
+            <div id="map" class="detail-map"></div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if ort.breite is not None and ort.laenge is not None %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var lat = parseFloat("{{ ort.breite }}".replace(',', '.'));
+    var lng = parseFloat("{{ ort.laenge }}".replace(',', '.'));
+    if (!isNaN(lat) && !isNaN(lng)) {
+        var map = L.map('map').setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        L.marker([lat, lng]).addTo(map).bindPopup('{{ ort.name|escapejs }}').openPopup();
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
