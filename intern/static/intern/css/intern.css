@@ -816,6 +816,26 @@ time {
 
 .offcanvas.open { transform: translateX(0); }
 
+.offcanvas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+.offcanvas-header strong { font-size: 0.875rem; color: var(--heading); }
+.offcanvas-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    padding: 0 4px;
+    line-height: 1;
+}
+.offcanvas-close:hover { color: var(--brand); }
+
 #ColumnSelector { width: 200px; z-index: 503; }
 #Filter         { width: 300px; z-index: 501; }
 #Action         { width: 260px; z-index: 502; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
