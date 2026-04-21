@@ -72,6 +72,9 @@ function toggleSettingsMenu() {
   toggle.classList.toggle("open");
 }
 
+// Global reference to the app-main Dropzone, set in DOMContentLoaded below
+var appMainDz = null;
+
 // Filter offcanvas functionality - ensure only one offcanvas is open at a time
 function toggle(offcanvas) {
   const offcanvases = document.querySelectorAll(".offcanvas");
@@ -166,7 +169,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // App-main overlay dropzone
   const appMain = document.getElementById("app-main");
-  let appMainDz = null;
   if (appMain) {
     appMainDz = new Dropzone(appMain, {
       url: "/intern/upload/",
