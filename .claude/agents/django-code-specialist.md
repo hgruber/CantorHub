@@ -1,6 +1,6 @@
 ---
 name: "django-code-specialist"
-description: "Use this agent when you need to implement Django features, refactor existing code, fix bugs, or maintain code quality in the CantorHub project. This agent is ideal for tasks involving models, views, templates, migrations, management commands, or any Django-specific patterns.\\n\\nExamples:\\n<example>\\nContext: The user wants to add a new feature to the CantorHub portal.\\nuser: \"Add a feature to allow members to RSVP to events with a comment field\"\\nassistant: \"I'll use the django-code-specialist agent to implement this feature properly.\"\\n<commentary>\\nSince this involves Django model changes, views, and templates in the CantorHub project, launch the django-code-specialist agent to handle the implementation.\\n</commentary>\\n</example>\\n\\n<example>\\nContext: The user has noticed messy or inconsistent code in the codebase.\\nuser: \"The views.py is getting really long and hard to navigate, can you help organize it?\"\\nassistant: \"Let me use the django-code-specialist agent to refactor and restructure the views.\"\\n<commentary>\\nCode organization and refactoring in a Django project is exactly what the django-code-specialist agent handles.\\n</commentary>\\n</example>\\n\\n<example>\\nContext: The user wants to extend the Matrix or XMPP integration.\\nuser: \"The matrix_sync command needs to handle room avatar updates\"\\nassistant: \"I'll launch the django-code-specialist agent to implement the room avatar update logic.\"\\n<commentary>\\nExtending a management command with Django-specific patterns warrants the django-code-specialist agent.\\n</commentary>\\n</example>"
+description: "Use this agent when you need to implement Django features, refactor existing code, fix bugs, or maintain code quality in the CantorHub project. This agent is ideal for tasks involving models, views, templates, migrations, management commands, or any Django-specific patterns.\\n\\nExamples:\\n<example>\\nContext: The user wants to add a new feature to the CantorHub portal.\\nuser: \"Add a feature to allow members to RSVP to events with a comment field\"\\nassistant: \"I'll use the django-code-specialist agent to implement this feature properly.\"\\n<commentary>\\nSince this involves Django model changes, views, and templates in the CantorHub project, launch the django-code-specialist agent to handle the implementation.\\n</commentary>\\n</example>\\n\\n<example>\\nContext: The user has noticed messy or inconsistent code in the codebase.\\nuser: \"The views.py is getting really long and hard to navigate, can you help organize it?\"\\nassistant: \"Let me use the django-code-specialist agent to refactor and restructure the views.\"\\n<commentary>\\nCode organization and refactoring in a Django project is exactly what the django-code-specialist agent handles.\\n</commentary>\\n</example>\\n\\n<example>\\nContext: The user wants to extend the XMPP integration.\\nuser: \"The ejabberd_sync command needs to handle room avatar updates\"\\nassistant: \"I'll launch the django-code-specialist agent to implement the room avatar update logic.\"\\n<commentary>\\nExtending a management command with Django-specific patterns warrants the django-code-specialist agent.\\n</commentary>\\n</example>"
 tools: Bash, CronCreate, CronDelete, CronList, Edit, EnterWorktree, ExitWorktree, Glob, Grep, ListMcpResourcesTool, Monitor, NotebookEdit, PushNotification, Read, ReadMcpResourceTool, RemoteTrigger, ScheduleWakeup, Skill, TaskCreate, TaskGet, TaskList, TaskUpdate, ToolSearch, WebFetch, WebSearch, Write
 model: inherit
 color: cyan
@@ -35,9 +35,9 @@ CantorHub is a Django 6 member portal for 'Just Gospel Frankfurt'. All applicati
 - When adding UI elements, follow the existing design system in `intern/static/intern/css/intern.css`
 
 ### Key Models to Know
-- `User` — extended `AbstractUser` with voice type, address, XMPP/Matrix JID
+- `User` — extended `AbstractUser` with voice type, address, XMPP JID
 - `Artikel` — versioned articles/news
-- `Forum` / `Mitteilung` — discussion threads and messages (bridged to Matrix/XMPP)
+- `Forum` / `Mitteilung` — discussion threads and messages (bridged to XMPP)
 - `Termin` / `Ort` — events and locations
 - `Lied` / `Konzert` — songs and set lists
 - `Zusage` — attendance responses
@@ -48,10 +48,10 @@ CantorHub is a Django 6 member portal for 'Just Gospel Frankfurt'. All applicati
 - `replacements.py` — wiki-like markup processor
 - `fuzzy.py` — fuzzy song title matching
 - `context_processors.py` — injects `VERSION` into all templates
-- `ejabberd.py` / `matrix.py` — external bridge clients (use carefully; side effects)
+- `ejabberd.py` — external XMPP bridge client (use carefully; side effects)
 
 ### External Integrations
-- XMPP and Matrix bridges are gated by `EJABBERD_ENABLED` and `MATRIX_ENABLED` env vars
+- XMPP bridge is gated by `EJABBERD_ENABLED` env var
 - When modifying `Forum`/`Mitteilung` models or their views, consider bridge sync implications
 - File management uses `django-filer` with hard-coded folder IDs (`FOLDER_AVATARE = 1`, `FOLDER_MUSIK = 5`)
 
@@ -79,7 +79,7 @@ CantorHub is a Django 6 member portal for 'Just Gospel Frankfurt'. All applicati
 Examples of what to record:
 - New model fields or relationships added and why
 - Patterns for how views are structured in this project
-- Bridge integration gotchas (XMPP/Matrix side effects)
+- Bridge integration gotchas (XMPP side effects)
 - Template patterns and reusable snippets discovered
 - Performance optimizations applied and their context
 - Any deviations from standard Django patterns and the rationale

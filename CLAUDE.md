@@ -38,10 +38,6 @@ docker run -p 8000:8000 cantoreub
 | `ejabberd_sync --sync` | Sync XMPP users/rooms when EJABBERD_ENABLED=1 |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding |
 | `ejabberd_admin <action>` | Admin ops: delete_forum, delete_user, clear_invites, invite, remove_user, list_rooms, list_users, sync_vcard, sync_password |
-| `matrix_sync --sync` | Sync Matrix rooms when MATRIX_ENABLED=1 |
-| `matrix_sync --backfill` | Backfill forum messages to Matrix |
-| `matrix_sync --create-user PK` | Create Matrix user for a member |
-| `matrix_sync --set-bot-avatar FILE` | Set bot avatar |
 
 ## Architecture
 
@@ -60,7 +56,6 @@ Nginx serves `/static/` and `/media/` directly; everything else is proxied to gu
 - `/` — public homepage (`templates/index.html`)
 - `/admin/` — Django admin
 - `/intern/*` — all authenticated views (`intern/urls.py`)
-- `/_matrix/app/v1/*` — Matrix AppService hooks (no auth required)
 
 ### Detail pages
 
@@ -91,10 +86,10 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 | Model | Purpose |
 |---|---|
-| `User` | Extended `AbstractUser` — adds voice type, address, XMPP/Matrix JID, coordinates |
+| `User` | Extended `AbstractUser` — adds voice type, address, XMPP JID, coordinates |
 | `Artikel` | Versioned articles/news items |
 | `Forum` | Discussion threads; `bild` (FilerFileField), `aktiv` (Boolean), `xmpp_muc_jid` for XMPP bridge |
-| `Mitteilung` | Forum messages; adds `matrix_event_id`/`xmpp_stanza_id` for bridge deduplication |
+| `Mitteilung` | Forum messages; adds `xmpp_stanza_id` for bridge deduplication |
 | `Termin` / `Ort` | Events and locations |
 | `Lied` | Songs in the repertoire |
 | `Konzert` | Ordered song list for a specific event (links `Lied` ↔ `Termin`) |
@@ -110,9 +105,7 @@ Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. 
 
 **XMPP/ejabberd** (`EJABBERD_ENABLED=1`): Bidirectional bridge between Forum MUC rooms and ejabberd. Messages sync in both directions. Uses REST API for admin operations and a long-running slixmpp bot for message relay.
 
-**Matrix/Synapse** (`MATRIX_ENABLED=1`): Bidirectional bridge between Forum threads and Matrix rooms via AppService. Files upload as native Matrix media. Supports user provisioning, Space organization, and message backfill. Requires `MATRIX_ADMIN_TOKEN` for user creation.
-
-See `xmpp.md` and `matrix.md` for detailed implementation notes.
+See `xmpp.md` for detailed implementation notes.
 
 ### Frontend design system (`intern/static/intern/css/intern.css`)
 
@@ -129,12 +122,10 @@ When adding new colors, always use CSS variables and add dark-mode values to `[d
 
 **External integrations:**
 - `ejabberd.py` — REST API client for ejabberd admin API and message sending
-- `matrix.py` — Matrix AppService client for room/user management and messaging
 
 **Management commands:**
 - `ejabberd_bot` — slixmpp XMPP bot for MUC message forwarding
 - `ejabberd_sync` — sync XMPP users/rooms at startup
-- `matrix_sync` — Matrix room sync, backfill, user creation, and maintenance
 
 ### Migration quirks
 
@@ -152,7 +143,3 @@ SQLite in development (`db.sqlite3`, excluded from git). MySQL-compatible for pr
 **XMPP Integration:**
 - `EJABBERD_ENABLED`, `EJABBERD_API_URL`, `EJABBERD_HOST`, `EJABBERD_MUC_SERVICE`
 - `EJABBERD_BOT_JID`, `EJABBERD_BOT_PASSWORD`, `EJABBERD_BOT_PORT`
-
-**Matrix Integration:**
-- `MATRIX_ENABLED`, `MATRIX_HOMESERVER`, `MATRIX_AS_TOKEN`, `MATRIX_HS_TOKEN`
-- `MATRIX_BOT_USER`, `MATRIX_PUBLIC_URL`, `MATRIX_SPACE_NAME`, `MATRIX_ADMIN_TOKEN`
