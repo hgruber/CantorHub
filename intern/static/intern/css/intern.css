@@ -929,6 +929,7 @@ time {
     min-width: 300px;
     font-family: var(--font);
     font-size: 0.9375rem;
+    position: relative;
 }
 
 .app-dialog::backdrop {
@@ -940,6 +941,21 @@ time {
     font-size: 1rem;
     font-weight: 700;
     color: var(--t1);
+}
+
+.dialog-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    padding: 0 4px;
+    line-height: 1;
+}
+.dialog-close:hover { color: var(--brand); }
 }
 
 .app-dialog input[type="text"] {

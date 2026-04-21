@@ -163,10 +163,10 @@
         <dialog id="new-folder-dialog" class="app-dialog">
             <form method="post" action="{% url 'folder_create' pk=new_folder_pk %}">
                 {% csrf_token %}
+                <button type="button" class="dialog-close" onclick="this.closest('dialog').close()" aria-label="Schließen">&#x2715;</button>
                 <h3>Neuer Ordner</h3>
                 <input type="text" name="name" placeholder="Ordnername" autocomplete="off" required>
                 <div class="dialog-actions">
-                    <button type="button" class="btn btn-secondary" onclick="this.closest('dialog').close()">Abbrechen</button>
                     <button type="submit" class="btn btn-primary">Erstellen</button>
                 </div>
             </form>
