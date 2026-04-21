@@ -97,6 +97,10 @@ function toggle(offcanvas) {
     ) {
       window.sortable.option("disabled", false);
     }
+    // When hiding AddPanel, re-enable the app-main dropzone
+    if (offcanvas === "AddPanel" && appMainDz) {
+      appMainDz.enable();
+    }
   } else if (filter) {
     filter.classList.add("open");
     // When showing PoolSelector, enable sorting
@@ -105,6 +109,11 @@ function toggle(offcanvas) {
       typeof window.sortable !== "undefined"
     ) {
       window.sortable.option("disabled", false);
+    }
+    // When showing AddPanel with file dropzones, disable app-main dropzone
+    // so it doesn't steal drag events from the panel's own dropzones
+    if (offcanvas === "AddPanel" && appMainDz) {
+      appMainDz.disable();
     }
   }
 }
@@ -157,8 +166,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // App-main overlay dropzone
   const appMain = document.getElementById("app-main");
+  let appMainDz = null;
   if (appMain) {
-    new Dropzone(appMain, {
+    appMainDz = new Dropzone(appMain, {
       url: "/intern/upload/",
       paramName: "file",
       maxFilesize: 50,
