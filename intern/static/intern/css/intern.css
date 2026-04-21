@@ -2872,6 +2872,16 @@ span.not_found {
     color: #fff;
     box-shadow: 0 2px 8px rgba(75,128,192,.25);
 }
+.karte-btn-locate {
+    border-color: var(--border-dark);
+    color: var(--t2);
+}
+.karte-btn-locate:hover {
+    background: #5a9e6f;
+    border-color: #5a9e6f;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(90,158,111,.25);
+}
 
 /* Share button — active/sharing state */
 .karte-btn-sharing {
