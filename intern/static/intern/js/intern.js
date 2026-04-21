@@ -213,6 +213,70 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // ── Dropzone file fields in AddPanel ─────────────────────
+  (function initAddPanelDropzones() {
+    const panel = document.getElementById("AddPanel");
+    if (!panel) return;
+    const form = panel.querySelector("form");
+    if (!form || !form.enctype) return; // only multipart forms
+
+    const fileInputs = panel.querySelectorAll('input[type="file"]');
+    if (!fileInputs.length) return;
+
+    const uploadFolder = appMain?.dataset.uploadFolderId || "";
+
+    fileInputs.forEach((input) => {
+      const name = input.name;
+      const label = input.closest(".form-group")?.querySelector("label");
+      const labelText = label ? label.textContent : name;
+
+      // Hide the original input
+      input.style.display = "none";
+
+      // Create dropzone element
+      const dz = document.createElement("div");
+      dz.className = "dropzone-field";
+      dz.dataset.fieldName = name;
+
+      const preview = document.createElement("div");
+      preview.className = "dropzone-field-preview";
+      preview.innerHTML = '<span class="dropzone-field-placeholder">' + labelText + ' ablegen oder klicken</span>';
+
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.name = name + "_filer_id";
+      hiddenInput.value = "";
+
+      dz.appendChild(preview);
+      input.closest(".form-group")?.appendChild(hiddenInput);
+
+      new Dropzone(dz, {
+        url: "/intern/upload/",
+        paramName: "file",
+        maxFilesize: 50,
+        maxFiles: 1,
+        clickable: true,
+        previewsContainer: false,
+        headers: { "X-CSRFToken": getCsrfToken() },
+        init: function () {
+          this.on("sending", function (file, xhr, formData) {
+            if (uploadFolder) formData.append("folder_id", uploadFolder);
+          });
+          this.on("success", function (file, response) {
+            hiddenInput.value = response.id;
+            preview.innerHTML = '<span class="dropzone-field-done">' + file.name + '</span>';
+          });
+          this.on("addedfile", function () {
+            preview.innerHTML = '<span class="dropzone-field-uploading">Hochladen…</span>';
+          });
+        },
+      });
+
+      // Replace the input with the dropzone
+      input.closest(".form-group")?.appendChild(dz);
+    });
+  })();
+
   // Sortable functionality
   const tbody = document.querySelectorAll(".table-container table tbody");
   const moderation = document.querySelector("#PoolSelector table tbody");

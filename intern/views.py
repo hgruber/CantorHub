@@ -1744,7 +1744,14 @@ def forum_add(request):
     if request.method == "POST":
         form = ForumEditForm(request.POST, request.FILES)
         if form.is_valid():
-            forum = form.save()
+            forum = form.save(commit=False)
+            filer_id = request.POST.get("bild_filer_id")
+            if filer_id:
+                try:
+                    forum.bild = File.objects.get(pk=int(filer_id))
+                except (File.DoesNotExist, ValueError):
+                    pass
+            forum.save()
             return redirect("forum_view", forum=forum.id)
     else:
         form = ForumEditForm()

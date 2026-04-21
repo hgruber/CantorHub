@@ -871,6 +871,36 @@ time {
 .add-panel-actions { display: flex; gap: 10px; margin-top: 20px; }
 .add-panel-actions .btn { flex: 1; }
 
+/* Dropzone fields in AddPanel */
+.dropzone-field {
+    border: 2px dashed var(--border-dark);
+    border-radius: var(--r-sm);
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    min-height: 48px;
+    margin-bottom: 8px;
+    transition: border-color var(--ease), background var(--ease);
+}
+.dropzone-field:hover,
+.dropzone-field.dz-drag-hover {
+    border-color: var(--brand);
+    background: var(--brand-light);
+}
+.dropzone-field-placeholder {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+.dropzone-field-uploading {
+    font-size: 0.8125rem;
+    color: var(--t3);
+}
+.dropzone-field-done {
+    font-size: 0.8125rem;
+    color: var(--brand);
+    font-weight: 600;
+}
+
 .action-header {
     font-size: 0.8rem;
     font-weight: 600;
