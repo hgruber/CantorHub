@@ -1748,7 +1748,12 @@ def forum_add(request):
             filer_id = request.POST.get("bild_filer_id")
             if filer_id:
                 try:
-                    forum.bild = File.objects.get(pk=int(filer_id))
+                    f = File.objects.get(pk=int(filer_id))
+                    folder_id = folders.forum()
+                    if folder_id:
+                        f.folder_id = folder_id
+                        f.save()
+                    forum.bild = f
                 except (File.DoesNotExist, ValueError):
                     pass
             forum.save()
@@ -1783,7 +1788,33 @@ def titel_add(request):
     if request.method == "POST":
         form = LiedEditForm(request.POST, request.FILES)
         if form.is_valid():
-            lied = form.save()
+            lied = form.save(commit=False)
+            # Handle dropzone-uploaded files: filer IDs come as <field>_filer_id
+            _FILER_FIELD_MAP = {
+                "original_filer_id": ("original", folders.repertoire),
+                "aufnahme_filer_id": ("aufnahme", folders.repertoire),
+                "pdf_filer_id": ("pdf", folders.pdf),
+                "noten_filer_id": ("noten", folders.notensatz),
+            }
+            for post_key, (model_field, folder_fn) in _FILER_FIELD_MAP.items():
+                filer_id = request.POST.get(post_key)
+                if filer_id:
+                    try:
+                        f = File.objects.get(pk=int(filer_id))
+                        # Move file to its final folder
+                        folder_id = folder_fn()
+                        if folder_id:
+                            f.folder_id = folder_id
+                        # Rename file to match the song title
+                        ext = _get_file_extension(f.original_filename or f.name or "")
+                        new_name = f"JG - {lied.titel}{ext}" if model_field == "aufnahme" else f"{lied.titel}{ext}"
+                        f.name = new_name
+                        f.original_filename = new_name
+                        f.save()
+                        setattr(lied, model_field, f)
+                    except (File.DoesNotExist, ValueError):
+                        pass
+            lied.save()
             return redirect("titel_view", titel=lied.id)
     else:
         form = LiedEditForm()

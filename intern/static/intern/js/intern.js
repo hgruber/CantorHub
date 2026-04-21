@@ -223,15 +223,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const fileInputs = panel.querySelectorAll('input[type="file"]');
     if (!fileInputs.length) return;
 
-    const uploadFolder = appMain?.dataset.uploadFolderId || "";
-
     fileInputs.forEach((input) => {
       const name = input.name;
       const label = input.closest(".form-group")?.querySelector("label");
       const labelText = label ? label.textContent : name;
 
-      // Hide the original input
+      // Hide the original input and remove its name so it doesn't submit
       input.style.display = "none";
+      input.removeAttribute("name");
 
       // Create dropzone element
       const dz = document.createElement("div");
@@ -260,7 +259,8 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: { "X-CSRFToken": getCsrfToken() },
         init: function () {
           this.on("sending", function (file, xhr, formData) {
-            if (uploadFolder) formData.append("folder_id", uploadFolder);
+            // Upload to Unsortiert; the view will move files to their
+            // final folder after the form is saved.
           });
           this.on("success", function (file, response) {
             hiddenInput.value = response.id;
