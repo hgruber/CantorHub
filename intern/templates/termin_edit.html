@@ -11,7 +11,8 @@
             </div>
             <div class="form-group">
                 <label for="{{ form.ort.id_for_label }}">Ort</label>
-                <div class="form-field-with-action">
+                <div class="form-field-with-action searchable-select-wrap">
+                    <input type="text" class="form-control searchable-select-input" placeholder="Ort suchen…" autocomplete="off">
                     {{ form.ort }}
                     <a href="{% url 'ort_add' %}" class="btn btn-sm btn-secondary" title="Neuen Ort anlegen">+</a>
                 </div>
@@ -58,4 +59,37 @@
         </div>
     </form>
 </div>
+<script>
+(function() {
+  var wrap = document.querySelector('.searchable-select-wrap');
+  if (!wrap) return;
+  var input = wrap.querySelector('.searchable-select-input');
+  var select = wrap.querySelector('select');
+  if (!input || !select) return;
+  var options = Array.from(select.options);
+
+  input.addEventListener('input', function() {
+    var q = input.value.toLowerCase();
+    options.forEach(function(opt) {
+      opt.hidden = q && opt.value && !opt.textContent.toLowerCase().includes(q);
+    });
+    select.value = '';
+    var visible = options.filter(function(o) { return !o.hidden && o.value; });
+    if (visible.length === 1) select.value = visible[0].value;
+  });
+
+  input.addEventListener('focus', function() {
+    select.size = Math.min(options.length, 8);
+  });
+
+  select.addEventListener('change', function() {
+    input.value = select.options[select.selectedIndex].text;
+    select.size = 1;
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!wrap.contains(e.target)) select.size = 1;
+  });
+})();
+</script>
 {% endblock %}

@@ -1693,6 +1693,18 @@ div.avatar { cursor: pointer; }
     font-size: 0.85rem;
 }
 
+/* Searchable select */
+.searchable-select-wrap {
+    flex-wrap: wrap;
+}
+.searchable-select-input {
+    flex: 1 1 100%;
+    margin-bottom: 4px;
+}
+.searchable-select-wrap select {
+    flex: 1 1 100%;
+}
+
 /* Checkbox row in forms */
 .checkbox-group label,
 .checkbox-row label {
