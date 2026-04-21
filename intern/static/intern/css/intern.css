@@ -2823,6 +2823,23 @@ span.not_found {
 .karte-dot-member { background: #4b80c0; }
 .karte-dot-live   { background: #4b80c0; }
 
+/* Icon placeholders for indented toggle rows (locate/share) */
+.karte-locate-icon-wrap,
+.karte-share-icon-wrap {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--t3);
+}
+.karte-locate-icon-wrap svg,
+.karte-share-icon-wrap svg {
+    width: 14px;
+    height: 14px;
+}
+
 /* Toggle switch */
 .karte-toggle-switch {
     position: relative;
@@ -2882,16 +2899,6 @@ span.not_found {
     background: transparent;
     color: var(--t2);
 }
-.karte-btn-location {
-    border-color: var(--border-dark);
-    color: var(--t2);
-}
-.karte-btn-location:hover {
-    background: var(--brand);
-    border-color: var(--brand);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(193,68,104,.25);
-}
 .karte-btn-add {
     border-color: var(--border-dark);
     color: var(--t2);
@@ -2901,32 +2908,6 @@ span.not_found {
     border-color: #4b80c0;
     color: #fff;
     box-shadow: 0 2px 8px rgba(75,128,192,.25);
-}
-.karte-btn-locate {
-    border-color: var(--border-dark);
-    color: var(--t2);
-}
-.karte-btn-locate:hover {
-    background: #5a9e6f;
-    border-color: #5a9e6f;
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(90,158,111,.25);
-}
-
-/* Share button — active/sharing state */
-.karte-btn-sharing {
-    background: rgba(230,57,70,.1);
-    border-color: #e63946;
-    color: #e63946;
-}
-.karte-btn-sharing:hover {
-    background: #e63946;
-    border-color: #e63946;
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(230,57,70,.3);
-}
-.karte-btn-sharing .karte-share-icon {
-    animation: karte-pulse-me 1.5s infinite;
 }
 
 /* ── Toast notifications ── */
@@ -3028,6 +3009,24 @@ span.not_found {
 /* ── Ort dialog sizing ── */
 .karte-ort-dialog {
     width: min(420px, 95vw);
+}
+
+/* Anchor the ort dialog to top-left instead of center */
+.karte-ort-dialog[open] {
+    align-self: flex-start;
+    justify-self: flex-start;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+/* Indented toggle rows under Live-Standorte */
+.karte-row-indent {
+    padding-left: 20px;
+}
+
+/* Active icon state for locate/share toggles */
+.karte-icon-active svg {
+    color: var(--brand);
 }
 
 /* ── Dialog form fields (no display:contents, unlike .form-grid) ── */

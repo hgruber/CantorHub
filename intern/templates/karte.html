@@ -40,18 +40,26 @@
             <span class="karte-switch-track"></span>
           </span>
         </label>
+        <label class="karte-toggle-row karte-row-indent">
+          <span class="karte-locate-icon-wrap" id="locate-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg></span>
+          <span class="karte-toggle-label">Standortfreigabe</span>
+          <span class="karte-toggle-switch">
+            <input type="checkbox" id="toggle-locate">
+            <span class="karte-switch-track"></span>
+          </span>
+        </label>
+        <label class="karte-toggle-row karte-row-indent">
+          <span class="karte-share-icon-wrap" id="share-icon-wrap"><svg class="karte-share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.94 11a8 8 0 1 0-15.88 0"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span>
+          <span class="karte-toggle-label" id="share-btn-label">Standort teilen</span>
+          <span class="karte-toggle-switch">
+            <input type="checkbox" id="toggle-share">
+            <span class="karte-switch-track"></span>
+          </span>
+        </label>
       </div>
 
       <div class="karte-legend-divider"></div>
 
-      <button class="karte-action-btn karte-btn-location" id="btn-share-location">
-        <svg class="karte-share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.94 11a8 8 0 1 0-15.88 0"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-        <span id="share-btn-label">Standort teilen</span>
-      </button>
-      <button class="karte-action-btn karte-btn-locate" id="btn-locate">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
-        Standortfreigabe
-      </button>
       <button class="karte-action-btn karte-btn-add" id="btn-add-ort">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
         Ort hinzufügen
@@ -207,7 +215,6 @@
 
   // ── Live markers — others only ───────────────────────
   const liveMarkers = {};   // person_id → marker (others only)
-  let myMarker = null;      // own position, separate from layer
 
   function livePopup(s) {
     return `<div><strong>${escHtml(s.name)}</strong><br>` +
@@ -281,11 +288,60 @@
     toastTimer = setTimeout(() => toast.classList.remove('karte-toast-show'), 3000);
   }
 
+  // ── Locate (toggle on/off with marker) ─────────────────
+  let locateWatchId = null;
+  let locateMarker = null;
+  const toggleLocate = document.getElementById('toggle-locate');
+  const toggleShare = document.getElementById('toggle-share');
+
+  function setLocateActive(active) {
+    toggleLocate.checked = active;
+    document.getElementById('locate-icon-wrap').classList.toggle('karte-icon-active', active);
+  }
+
+  function locateUpdateMarker(lat, lng) {
+    const t = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    if (locateMarker) {
+      locateMarker.setLatLng([lat, lng]);
+      locateMarker.setPopupContent(myPopup(t));
+    } else {
+      locateMarker = L.marker([lat, lng], { icon: meIcon }).bindPopup(myPopup(t)).addTo(map);
+    }
+  }
+
+  toggleLocate.addEventListener('change', () => {
+    if (toggleLocate.checked) {
+      if (!navigator.geolocation) { showToast('Geolokation nicht verfügbar', 'error'); toggleLocate.checked = false; return; }
+      showToast('Standort wird ermittelt…');
+      locateWatchId = navigator.geolocation.watchPosition(
+        pos => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          locateUpdateMarker(lat, lng);
+          map.setView([lat, lng], Math.max(map.getZoom(), 14));
+        },
+        () => {
+          showToast('Standort-Zugriff verweigert', 'error');
+          setLocateActive(false);
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      );
+    } else {
+      // Turn off locate
+      if (locateWatchId !== null) { navigator.geolocation.clearWatch(locateWatchId); locateWatchId = null; }
+      if (locateMarker) { map.removeLayer(locateMarker); locateMarker = null; }
+      // Also turn off share if active
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        setShareActive(false);
+        showToast('Standortfreigabe beendet', 'info');
+      }
+    }
+  });
+
   // ── Share location (watchPosition + toggle) ──────────
   let watchId    = null;
   let lastPost   = 0;
-  const btnShare = document.getElementById('btn-share-location');
-  const shareLabel = document.getElementById('share-btn-label');
 
   function postMyLocation(lat, lng) {
     const now = Date.now();
@@ -299,60 +355,53 @@
   }
 
   function updateMyMarker(lat, lng) {
-    const t = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    if (myMarker) {
-      myMarker.setLatLng([lat, lng]);
-      myMarker.setPopupContent(myPopup(t));
-    } else {
-      myMarker = L.marker([lat, lng], { icon: meIcon }).bindPopup(myPopup(t)).addTo(map);
-    }
+    // Reuse locateMarker
+    locateUpdateMarker(lat, lng);
   }
 
   function setShareActive(active) {
-    btnShare.classList.toggle('karte-btn-sharing', active);
-    shareLabel.textContent = active ? 'Teilen beenden' : 'Standort teilen';
+    toggleShare.checked = active;
+    document.getElementById('share-btn-label').textContent = active ? 'Teilen beenden' : 'Standort teilen';
+    document.getElementById('share-icon-wrap').classList.toggle('karte-icon-active', active);
+    if (active) {
+      document.getElementById('share-icon-wrap').querySelector('.karte-share-icon').style.animation = 'karte-pulse-me 1.5s infinite';
+    } else {
+      document.getElementById('share-icon-wrap').querySelector('.karte-share-icon').style.animation = '';
+    }
   }
 
-  btnShare.addEventListener('click', () => {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      watchId = null;
+  toggleShare.addEventListener('change', () => {
+    if (toggleShare.checked) {
+      // Enable locate first if not already
+      if (!toggleLocate.checked) {
+        toggleLocate.checked = true;
+        toggleLocate.dispatchEvent(new Event('change'));
+      }
+      if (!navigator.geolocation) { showToast('Geolokation nicht verfügbar', 'error'); setShareActive(false); return; }
+      showToast('Standort wird geteilt…');
+      watchId = navigator.geolocation.watchPosition(
+        pos => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          updateMyMarker(lat, lng);
+          postMyLocation(lat, lng);
+          setShareActive(true);
+        },
+        () => {
+          showToast('Standort-Zugriff verweigert', 'error');
+          watchId = null;
+          setShareActive(false);
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      );
+    } else {
+      // Stop sharing
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
       setShareActive(false);
       showToast('Standort teilen beendet', 'info');
-      return;
     }
-    if (!navigator.geolocation) { showToast('Geolokation nicht verfügbar', 'error'); return; }
-    showToast('Standort wird ermittelt…');
-    watchId = navigator.geolocation.watchPosition(
-      pos => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        updateMyMarker(lat, lng);
-        postMyLocation(lat, lng);
-        setShareActive(true);
-        map.setView([lat, lng], Math.max(map.getZoom(), 14));
-      },
-      () => {
-        showToast('Standort-Zugriff verweigert', 'error');
-        watchId = null;
-        setShareActive(false);
-      },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
-    );
-  });
-
-  // ── Locate (one-shot) ──────────────────────────────────
-  document.getElementById('btn-locate').addEventListener('click', () => {
-    if (!navigator.geolocation) { showToast('Geolokation nicht verfügbar', 'error'); return; }
-    showToast('Standort wird ermittelt…');
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        map.setView([lat, lng], Math.max(map.getZoom(), 15));
-        showToast('Dein Standort wird angezeigt', 'ok');
-      },
-      () => showToast('Standort-Zugriff verweigert', 'error'),
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
-    );
   });
 
   // ── Ort dialog ───────────────────────────────────────
