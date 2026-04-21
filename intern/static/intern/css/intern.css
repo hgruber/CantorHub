@@ -900,6 +900,14 @@ time {
     color: var(--brand);
     font-weight: 600;
 }
+.dropzone-field-thumb {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: var(--r-sm);
+    vertical-align: middle;
+    margin-right: 8px;
+}
 
 .action-header {
     font-size: 0.8rem;

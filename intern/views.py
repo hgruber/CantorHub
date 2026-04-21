@@ -237,7 +237,12 @@ def upload(request):
 
         # Return response
         url = request.META.get("HTTP_ORIGIN") + filer_file.url
-        return JsonResponse({"status": "success", "id": filer_file.id, "url": url})
+        thumb = ""
+        try:
+            thumb = filer_file.thumbnails.get("admin_clipboard_icon", "")
+        except Exception:
+            pass
+        return JsonResponse({"status": "success", "id": filer_file.id, "url": url, "thumbnail_url": thumb})
 
 
 @login_required
@@ -912,6 +917,18 @@ def forum_edit(request, forum):
     if request.method == "POST":
         form = ForumEditForm(request.POST, request.FILES, instance=forum_obj)
         if form.is_valid():
+            # Move dropzone-uploaded bild to Forum folder
+            new_bild_id = request.POST.get("bild")
+            old_bild_id = str(forum_obj.bild_id) if forum_obj.bild_id else ""
+            if new_bild_id and new_bild_id != old_bild_id:
+                try:
+                    f = File.objects.get(pk=int(new_bild_id))
+                    folder_id = folders.forum()
+                    if folder_id:
+                        f.folder_id = folder_id
+                        f.save()
+                except (File.DoesNotExist, ValueError):
+                    pass
             form.save()
             return redirect("forum_view", forum=forum)
     else:
@@ -1042,6 +1059,32 @@ def titel_edit(request, titel):
     if request.method == "POST":
         form = LiedEditForm(request.POST, request.FILES, instance=lied)
         if form.is_valid():
+            # Move dropzone-uploaded files to their correct folders
+            _FILER_EDIT_MAP = {
+                "original": folders.repertoire,
+                "aufnahme": folders.repertoire,
+                "pdf": folders.pdf,
+                "noten": folders.notensatz,
+            }
+            for field_name, folder_fn in _FILER_EDIT_MAP.items():
+                new_id = request.POST.get(field_name)
+                old_id = str(getattr(lied, field_name + "_id") or "") if hasattr(lied, field_name + "_id") else ""
+                if new_id and new_id != old_id:
+                    try:
+                        f = File.objects.get(pk=int(new_id))
+                        folder_id = folder_fn()
+                        if folder_id:
+                            f.folder_id = folder_id
+                        ext = _get_file_extension(f.original_filename or f.name or "")
+                        if field_name == "aufnahme":
+                            new_name = f"JG - {lied.titel}{ext}"
+                        else:
+                            new_name = f"{lied.titel}{ext}"
+                        f.original_filename = new_name
+                        f.name = new_name
+                        f.save()
+                    except (File.DoesNotExist, ValueError):
+                        pass
             form.save()
             return redirect("titel_view", titel=titel)
     else:
@@ -1355,6 +1398,24 @@ def mitglied_edit(request, id):
     if request.method == "POST":
         form = UserEditForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
+            # Move dropzone-uploaded avatar to Avatare folder and rename.
+            # The avatar text input (set by JS on upload) holds the new filer ID;
+            # if it differs from the original, the file was just uploaded.
+            new_avatar_id = request.POST.get("avatar")
+            old_avatar_id = str(user.avatar_id) if user.avatar_id else ""
+            if new_avatar_id and new_avatar_id != old_avatar_id:
+                try:
+                    f = File.objects.get(pk=int(new_avatar_id))
+                    folder_id = folders.avatare()
+                    if folder_id:
+                        f.folder_id = folder_id
+                    ext = _get_file_extension(f.original_filename or f.name or "")
+                    new_name = f"{id}{ext}"
+                    f.original_filename = new_name
+                    f.name = new_name
+                    f.save()
+                except (File.DoesNotExist, ValueError):
+                    pass
             form.save()
             return redirect("mitglied_view", id=id)
     else:
