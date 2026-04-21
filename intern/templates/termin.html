@@ -28,17 +28,19 @@
                 <span class="value">{{ termin.ort.name }}{% if termin.ort.strasse %}, {{ termin.ort.strasse }}{% endif %}{% if termin.ort.ort %}, {{ termin.ort.plz }} {{ termin.ort.ort }}{% endif %}</span>
             </div>
             {% endif %}
+            {% if termin.anwesenheit %}
             <div class="detail-card-row">
                 <span class="label">Anwesenheit</span>
-                <span class="value">{% if termin.anwesenheit %}<span class="badge badge-primary">Ja</span>{% else %}Nein{% endif %}</span>
-            </div>
-            <div class="detail-card-row">
-                <span class="label">Repertoire</span>
-                <span class="value">{% if termin.repertoire %}<span class="badge badge-primary">Ja</span>{% else %}Nein{% endif %}</span>
+                <span class="value"><span class="badge badge-primary">Ja</span></span>
             </div>
             <div class="detail-card-row">
                 <span class="label">Du</span>
                 <div class="value">{% include "_termin_zusage.html" with widget_only=True %}</div>
+            </div>
+            {% endif %}
+            <div class="detail-card-row">
+                <span class="label">Repertoire</span>
+                <span class="value">{% if termin.repertoire %}<span class="badge badge-primary">Ja</span>{% else %}Nein{% endif %}</span>
             </div>
         </div>
 
@@ -67,7 +69,7 @@
         </div>
         {% endif %}
 
-        {% if stimme_groups %}
+        {% if termin.anwesenheit and stimme_groups %}
         <div class="detail-card detail-card-wide" id="attendance-section">
             <h3>Anwesenheit</h3>
 
