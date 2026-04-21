@@ -161,7 +161,9 @@ class TerminTabelle(tables.Table):
     def render_datum(self, value):
         return format_datetime(value)
 
-    def render_anwesenheit_option(self, value):
+    def render_anwesenheit_option(self, value, record):
+        if not record.anwesenheit:
+            return ""
         if value == "1":
             return mark_safe('<span class="att-inline att-inline-yes">Zusage</span>')
         elif value == "2":
@@ -177,26 +179,26 @@ class TerminTabelle(tables.Table):
         else:
             return ""
 
-    def render_anzahl_zusagen_sopran(self, value):
-        return self._att_badge(value, "yes") if value else ""
+    def render_anzahl_zusagen_sopran(self, value, record):
+        return self._att_badge(value, "yes") if value and record.anwesenheit else ""
 
-    def render_anzahl_zusagen_alt(self, value):
-        return self._att_badge(value, "yes") if value else ""
+    def render_anzahl_zusagen_alt(self, value, record):
+        return self._att_badge(value, "yes") if value and record.anwesenheit else ""
 
-    def render_anzahl_zusagen_tenor(self, value):
-        return self._att_badge(value, "yes") if value else ""
+    def render_anzahl_zusagen_tenor(self, value, record):
+        return self._att_badge(value, "yes") if value and record.anwesenheit else ""
 
-    def render_anzahl_zusagen_bass(self, value):
-        return self._att_badge(value, "yes") if value else ""
+    def render_anzahl_zusagen_bass(self, value, record):
+        return self._att_badge(value, "yes") if value and record.anwesenheit else ""
 
-    def render_anzahl_absagen(self, value):
-        return self._att_badge(value, "no") if value else ""
+    def render_anzahl_absagen(self, value, record):
+        return self._att_badge(value, "no") if value and record.anwesenheit else ""
 
-    def render_anzahl_vielleicht(self, value):
-        return self._att_badge(value, "maybe") if value else ""
+    def render_anzahl_vielleicht(self, value, record):
+        return self._att_badge(value, "maybe") if value and record.anwesenheit else ""
 
-    def render_anzahl_keine_angabe(self, value):
-        return self._att_badge(value, "na") if value else ""
+    def render_anzahl_keine_angabe(self, value, record):
+        return self._att_badge(value, "na") if value and record.anwesenheit else ""
 
     @staticmethod
     def _att_badge(value, kind):

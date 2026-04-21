@@ -1232,6 +1232,14 @@ def termin_view(request, id):
 @require_POST
 def termin_zusage(request, id):
     termin = get_object_or_404(Termin, id=id)
+    if not termin.anwesenheit:
+        if not request.headers.get("HX-Request"):
+            return redirect("termin_view", id=id)
+        return render(request, "_termin_zusage.html", {
+            "termin": termin,
+            "my_option": "",
+            "stimme_groups": [],
+        })
     new_option = request.POST.get("option", "")
     current = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
     current_option = current.option if current else ""

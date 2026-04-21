@@ -11,5 +11,7 @@ def project_meta(request):
             termin__datum__gt=now(),
             option__in=["1", "2", "3"],
         ).values("termin_id")
-        result["offen_termine"] = Termin.objects.filter(datum__gt=now()).exclude(id__in=answered).count()
+        result["offen_termine"] = Termin.objects.filter(
+            datum__gt=now(), anwesenheit=True,
+        ).exclude(id__in=answered).count()
     return result
