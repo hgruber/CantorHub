@@ -227,53 +227,62 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ── Dropzone file fields in AddPanel ─────────────────────
-  (function initAddPanelDropzones() {
-    const panel = document.getElementById("AddPanel");
-    if (!panel) return;
-    const form = panel.querySelector("form");
-    if (!form) return;
+  // ── Dropzone for filer widgets (AddPanel + edit pages) ──────
+  (function initFilerDropzones() {
+    // On AddPanel pages, scope to the panel; on edit pages, scope to .wiki.
+    // Both render AdminImageWidget/AdminFileWidget as .filer-widget elements
+    // containing a hidden text input with the foreign-key ID, plus a complex
+    // admin lookup UI we replace with a simpler dropzone.
+    const scope = document.getElementById("AddPanel") || document.querySelector(".wiki");
+    if (!scope) return;
 
-    // Find all filer widgets (AdminImageWidget/AdminFileWidget) in the form.
-    // These render as .filer-widget containing a hidden text input with the
-    // foreign-key ID, plus a complex admin dropzone/lookup UI we don't want.
-    const filerWidgets = panel.querySelectorAll(".filer-widget");
-    if (!filerWidgets.length) return;
-
+    const filerWidgets = scope.querySelectorAll(".filer-widget");
     filerWidgets.forEach((widget) => {
       const formGroup = widget.closest(".form-group");
       if (!formGroup) return;
       const label = formGroup.querySelector("label");
       const labelText = label ? label.textContent.trim() : "";
 
-      // Find the hidden text input that holds the filer file ID
       const fkInput = widget.querySelector("input.vForeignKeyRawIdAdminField");
       if (!fkInput) return;
       const name = fkInput.name; // e.g. "bild", "original"
-
-      // Remove the name from the original input so it doesn't submit with
-      // the form — we'll use our own hidden input instead.
-      fkInput.removeAttribute("name");
+      const existingId = fkInput.value; // pre-filled on edit pages
 
       // Hide the entire filer widget UI
       widget.style.display = "none";
 
-      // Create a simple dropzone area
+      // On AddPanel: create a separate hidden input with _filer_id suffix
+      // (the view reads <field>_filer_id from POST). On edit pages: keep
+      // the original input name so form.save() picks up the new value.
+      let valueInput;
+      if (document.getElementById("AddPanel")) {
+        fkInput.removeAttribute("name");
+        valueInput = document.createElement("input");
+        valueInput.type = "hidden";
+        valueInput.name = name + "_filer_id";
+        valueInput.value = existingId || "";
+        formGroup.appendChild(valueInput);
+      } else {
+        valueInput = fkInput;
+      }
+
+      // Create dropzone area
       const dz = document.createElement("div");
       dz.className = "dropzone-field";
       dz.dataset.fieldName = name;
 
       const preview = document.createElement("div");
       preview.className = "dropzone-field-preview";
-      preview.innerHTML = '<span class="dropzone-field-placeholder">' + labelText + ' ablegen oder klicken</span>';
-
-      const hiddenInput = document.createElement("input");
-      hiddenInput.type = "hidden";
-      hiddenInput.name = name + "_filer_id";
-      hiddenInput.value = "";
+      if (existingId) {
+        // Show current file name on edit pages
+        const descEl = widget.querySelector(".description_text");
+        const fileName = descEl && descEl.textContent.trim() ? descEl.textContent.trim() : "aktuelle Datei";
+        preview.innerHTML = '<span class="dropzone-field-done">' + fileName + '</span>';
+      } else {
+        preview.innerHTML = '<span class="dropzone-field-placeholder">' + labelText + ' ablegen oder klicken</span>';
+      }
 
       dz.appendChild(preview);
-      formGroup.appendChild(hiddenInput);
 
       new Dropzone(dz, {
         url: "/intern/upload/",
@@ -284,12 +293,8 @@ document.addEventListener("DOMContentLoaded", function () {
         previewsContainer: false,
         headers: { "X-CSRFToken": getCsrfToken() },
         init: function () {
-          this.on("sending", function (file, xhr, formData) {
-            // Upload to Unsortiert; the view will move files to their
-            // final folder after the form is saved.
-          });
           this.on("success", function (file, response) {
-            hiddenInput.value = response.id;
+            valueInput.value = response.id;
             preview.innerHTML = '<span class="dropzone-field-done">' + file.name + '</span>';
           });
           this.on("addedfile", function () {
