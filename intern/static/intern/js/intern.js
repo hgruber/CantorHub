@@ -232,21 +232,33 @@ document.addEventListener("DOMContentLoaded", function () {
     const panel = document.getElementById("AddPanel");
     if (!panel) return;
     const form = panel.querySelector("form");
-    if (!form || !form.enctype) return; // only multipart forms
+    if (!form) return;
 
-    const fileInputs = panel.querySelectorAll('input[type="file"]');
-    if (!fileInputs.length) return;
+    // Find all filer widgets (AdminImageWidget/AdminFileWidget) in the form.
+    // These render as .filer-widget containing a hidden text input with the
+    // foreign-key ID, plus a complex admin dropzone/lookup UI we don't want.
+    const filerWidgets = panel.querySelectorAll(".filer-widget");
+    if (!filerWidgets.length) return;
 
-    fileInputs.forEach((input) => {
-      const name = input.name;
-      const label = input.closest(".form-group")?.querySelector("label");
-      const labelText = label ? label.textContent : name;
+    filerWidgets.forEach((widget) => {
+      const formGroup = widget.closest(".form-group");
+      if (!formGroup) return;
+      const label = formGroup.querySelector("label");
+      const labelText = label ? label.textContent.trim() : "";
 
-      // Hide the original input and remove its name so it doesn't submit
-      input.style.display = "none";
-      input.removeAttribute("name");
+      // Find the hidden text input that holds the filer file ID
+      const fkInput = widget.querySelector("input.vForeignKeyRawIdAdminField");
+      if (!fkInput) return;
+      const name = fkInput.name; // e.g. "bild", "original"
 
-      // Create dropzone element
+      // Remove the name from the original input so it doesn't submit with
+      // the form — we'll use our own hidden input instead.
+      fkInput.removeAttribute("name");
+
+      // Hide the entire filer widget UI
+      widget.style.display = "none";
+
+      // Create a simple dropzone area
       const dz = document.createElement("div");
       dz.className = "dropzone-field";
       dz.dataset.fieldName = name;
@@ -261,7 +273,7 @@ document.addEventListener("DOMContentLoaded", function () {
       hiddenInput.value = "";
 
       dz.appendChild(preview);
-      input.closest(".form-group")?.appendChild(hiddenInput);
+      formGroup.appendChild(hiddenInput);
 
       new Dropzone(dz, {
         url: "/intern/upload/",
@@ -286,8 +298,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
       });
 
-      // Replace the input with the dropzone
-      input.closest(".form-group")?.appendChild(dz);
+      formGroup.appendChild(dz);
     });
   })();
 
