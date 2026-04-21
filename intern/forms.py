@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django import forms
+from django.utils.crypto import get_random_string
 from django.db import models
 from filer.fields.file import FilerFileField
 from filer.fields.image import AdminImageWidget
