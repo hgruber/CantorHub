@@ -400,19 +400,25 @@
 
   // ── Geocoding ─────────────────────────────────────────
   document.getElementById('btn-geocode').addEventListener('click', async () => {
-    const parts = [
-      document.getElementById('ort-strasse').value.trim(),
-      document.getElementById('ort-plz').value.trim(),
-      document.getElementById('ort-ort').value.trim(),
-      document.getElementById('ort-name').value.trim(),
-    ].filter(Boolean);
-    if (!parts.length) { showToast('Bitte erst Adressdaten eingeben', 'error'); return; }
+    const str = document.getElementById('ort-strasse').value.trim();
+    const plz = document.getElementById('ort-plz').value.trim();
+    const city = document.getElementById('ort-ort').value.trim();
+    const name = document.getElementById('ort-name').value.trim();
+    const params = new URLSearchParams({
+      format: 'json', limit: '5', 'Accept-Language': 'de', countrycodes: 'de',
+    });
+    if (str || plz || city) {
+      params.set('street', str);
+      params.set('city', city);
+      params.set('postalcode', plz);
+    } else if (name) {
+      params.set('q', name);
+    } else {
+      showToast('Bitte erst Adressdaten eingeben', 'error'); return;
+    }
     showToast('Suche Koordinaten…');
     try {
-      const r = await fetch(
-        'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(parts.join(', ')) + '&format=json&limit=1',
-        { headers: { 'Accept-Language': 'de' } }
-      );
+      const r = await fetch('https://nominatim.openstreetmap.org/search?' + params.toString());
       const data = await r.json();
       if (!data.length) { showToast('Adresse nicht gefunden', 'error'); return; }
       const lat = parseFloat(data[0].lat);
