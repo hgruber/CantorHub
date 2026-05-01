@@ -162,8 +162,8 @@ EMAIL_BACKEND = (
     if EMAIL_HOST and EMAIL_PORT
     else "django.core.mail.backends.console.EmailBackend"
 )
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "") or None
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "") or None
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "0") == "1"
 EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "0") == "1"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "webmaster@example.org")
