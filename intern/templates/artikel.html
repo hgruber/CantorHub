@@ -5,24 +5,96 @@
 {% endblock %}
 {% block content %}
 {% if edit_text is not None %}
-<form method="post">
+<form method="post" class="article-editor">
   {% csrf_token %}
-  <div class="wiki">
-    <textarea name="text" wrap="soft" style="width:100%;min-height:400px">{{ edit_text }}</textarea>
+
+  <div class="ae-bar ae-bar-top">
+    <div class="ae-ident">
+      <svg class="ae-ident-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      <div class="ae-ident-text">
+        <div class="ae-name">{{ id }}</div>
+        {% if artikel %}
+        <div class="ae-base">Basiert auf Version {{ artikel.version }} · {{ artikel.autor.get_full_name|default:artikel.autor }} · {{ artikel.datum|date:"j.n.Y" }}</div>
+        {% else %}
+        <div class="ae-base ae-base-new">Neuer Artikel</div>
+        {% endif %}
+      </div>
+    </div>
   </div>
-  <div style="margin-top:0.5em;display:flex;gap:0.5em;align-items:center">
-    <input type="text" name="kommentar" placeholder="Kommentar (optional)" style="flex:1">
-    <button type="submit">Speichern</button>
+
+  <details class="ae-help">
+    <summary>Syntax-Hilfe</summary>
+    <div class="ae-cheats">
+      <span class="ae-cheat"><code>== Titel ==</code> Überschrift</span>
+      <span class="ae-cheat"><code>'''fett'''</code> Fett</span>
+      <span class="ae-cheat"><code>''kursiv''</code> Kursiv</span>
+      <span class="ae-cheat"><code>* Punkt</code> Aufzählung</span>
+      <span class="ae-cheat"><code># Punkt</code> Nummeriert</span>
+      <span class="ae-cheat"><code>[[Datei:Name]]</code> Datei einbetten</span>
+      <span class="ae-cheat"><code>[[Artikel]]</code> Interner Link</span>
+      <span class="ae-cheat"><code>[https://… Name]</code> Externer Link</span>
+      <span class="ae-cheat"><code>! A ! B</code> Tabellenkopf</span>
+      <span class="ae-cheat"><code>| A | B</code> Tabellenzeile</span>
+      <span class="ae-cheat"><code>{abstimmung:…}</code> Abstimmung</span>
+    </div>
+  </details>
+
+  <div class="ae-body">
+    <div class="wiki">
+      <textarea name="text" wrap="soft" spellcheck="false" placeholder="Artikeltext …">{{ edit_text }}</textarea>
+    </div>
+  </div>
+
+  <div class="ae-bar ae-bar-foot">
+    <input type="text" name="kommentar" class="ae-comment" placeholder="Was hast du geändert? (optional)" autocomplete="off">
+    {% if artikel %}
+    <a href="{% url 'article_view' name=id %}" class="btn btn-secondary">Abbrechen</a>
+    {% else %}
+    <a href="{% url 'article_list' %}" class="btn btn-secondary">Abbrechen</a>
+    {% endif %}
+    <button type="submit" class="btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Speichern
+    </button>
   </div>
 </form>
 {% else %}
 <div class="wiki-page">
   {% if is_outdated %}
-  <div class="outdated-banner">
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    <span>Dies ist Version {{ artikel.version }}. Die aktuelle Version ist
-      <a href="{% url 'article_view' name=artikel.name %}">Version {{ latest_version }}</a>.
-    </span>
+  <div class="version-banner">
+    <div class="version-banner-msg">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div>
+        <strong>Ältere Version</strong>
+        <span>Du siehst Version {{ artikel.version }} von {{ latest_version }} — nicht die aktuelle Fassung.</span>
+      </div>
+    </div>
+    <nav class="version-nav" aria-label="Versionen">
+      {% if prev_version %}
+      <a class="version-step" href="?version={{ prev_version }}" title="Zu Version {{ prev_version }}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <span>V{{ prev_version }}</span>
+      </a>
+      {% else %}
+      <span class="version-step version-step-disabled" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <span>V{{ artikel.version }}</span>
+      </span>
+      {% endif %}
+      <span class="version-current">{{ artikel.version }} / {{ latest_version }}</span>
+      <a class="version-step" href="?version={{ next_version }}" title="Zu Version {{ next_version }}">
+        <span>V{{ next_version }}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a class="version-latest" href="{% url 'article_view' name=artikel.name %}" title="Zur aktuellen Version">
+        Aktuelle Version
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+      </a>
+    </nav>
   </div>
   {% endif %}
   <div class="wiki">{{ text|safe }}</div>

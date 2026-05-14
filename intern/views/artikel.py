@@ -93,6 +93,22 @@ def article_view(request, name):
         artikel = latest
         is_outdated = False
 
+    prev_version = None
+    next_version = None
+    if is_outdated:
+        prev_version = (
+            Artikel.objects.filter(name=name, version__lt=artikel.version)
+            .order_by("-version")
+            .values_list("version", flat=True)
+            .first()
+        )
+        next_version = (
+            Artikel.objects.filter(name=name, version__gt=artikel.version)
+            .order_by("version")
+            .values_list("version", flat=True)
+            .first()
+        )
+
     context = {
         "artikel": artikel,
         "text": apply_replacements(artikel.text, request),
@@ -101,6 +117,8 @@ def article_view(request, name):
         else artikel.name,
         "is_outdated": is_outdated,
         "latest_version": latest.version,
+        "prev_version": prev_version,
+        "next_version": next_version,
         "upload_folder_id": folders.artikel(),
         "up": "article_list",
         "edit": "article_edit"
