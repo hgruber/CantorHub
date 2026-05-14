@@ -210,7 +210,7 @@ def upload(request):
 @login_required
 def file_search(request):
     q = request.GET.get("q", "")
-    if len(q) < 2:
+    if not q:
         return JsonResponse([], safe=False)
     files = (
         File.objects

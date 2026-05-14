@@ -822,10 +822,10 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// ── Wiki file-name autocomplete ([[Datei:...]]) ───────────
+// ── Wiki link autocomplete ([[Datei:...]] and [[Artikel-Links]]) ──
 (function initFileAutocomplete() {
   const DEBOUNCE_MS = 300;
-  const MIN_QUERY_LEN = 2;
+  const MIN_QUERY_LEN = 1;
 
   let dropdownEl = null;
   let currentResults = [];
@@ -849,14 +849,26 @@ document.addEventListener("DOMContentLoaded", function () {
     // No closing ]] between [[ and cursor
     if (before.substring(openIdx).indexOf("]]") !== -1) return null;
     const afterOpen = before.substring(openIdx + 2);
-    const m = afterOpen.match(/^Datei:(.*)/i);
-    if (!m) return null;
-    const query = m[1];
-    if (query.length < MIN_QUERY_LEN) return null;
+    // File reference: [[Datei:<query>]]
+    const fileM = afterOpen.match(/^Datei:(.*)/i);
+    if (fileM) {
+      const query = fileM[1];
+      if (query.length < MIN_QUERY_LEN) return null;
+      return {
+        kind: "datei",
+        prefixStart: openIdx,
+        queryStart: openIdx + 2 + 6, // after "[[Datei:"
+        queryText: query,
+      };
+    }
+    // Article link: [[<query> — bail on chars that would break the link
+    if (/[[\]|\n]/.test(afterOpen)) return null;
+    if (afterOpen.length < MIN_QUERY_LEN) return null;
     return {
+      kind: "artikel",
       prefixStart: openIdx,
-      queryStart: openIdx + 2 + 6, // after "[[Datei:"
-      queryText: query,
+      queryStart: openIdx + 2,
+      queryText: afterOpen,
     };
   }
 
@@ -898,6 +910,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  async function fetchArticles(query) {
+    try {
+      const resp = await fetch("/intern/article-search/?q=" + encodeURIComponent(query));
+      if (!resp.ok) return [];
+      return resp.json();
+    } catch {
+      return [];
+    }
+  }
+
   function showDropdown(ta, results, match) {
     if (!dropdownEl) {
       dropdownEl = document.createElement("div");
@@ -913,7 +935,8 @@ document.addEventListener("DOMContentLoaded", function () {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "wiki-autocomplete-item" + (i === 0 ? " selected" : "");
-      btn.textContent = item.name;
+      btn.textContent =
+        item.kind === "datei-prefix" ? "Datei: – Dateiverweis" : item.name;
       btn.addEventListener("mousedown", (e) => {
         e.preventDefault(); // prevent blur
         completeItem(ta, item);
@@ -953,7 +976,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const match = currentMatch;
     if (!match) return;
     const text = ta.value;
-    const replacement = "[[Datei:" + item.name + "]]";
+    let replacement;
+    if (item.kind === "datei-prefix") {
+      // Complete just the "Datei:" prefix; the file search takes over as the
+      // user keeps typing the filename.
+      replacement = "[[Datei:";
+    } else if (item.kind === "datei") {
+      replacement = "[[Datei:" + item.name + "]]";
+    } else {
+      replacement = "[[" + item.name + "]]";
+    }
     ta.value = text.substring(0, match.prefixStart) + replacement + text.substring(ta.selectionStart);
     const newPos = match.prefixStart + replacement.length;
     ta.setSelectionRange(newPos, newPos);
@@ -973,9 +1005,24 @@ document.addEventListener("DOMContentLoaded", function () {
     const match = detectPattern(ta);
     if (!match) { hideDropdown(); return; }
     debounceTimer = setTimeout(async () => {
-      const results = await fetchResults(match.queryText);
-      if (!results.length || !detectPattern(ta)) { hideDropdown(); return; }
-      showDropdown(ta, results, detectPattern(ta) || match);
+      let results;
+      if (match.kind === "datei") {
+        results = (await fetchResults(match.queryText)).map((r) => ({
+          kind: "datei", name: r.name,
+        }));
+      } else {
+        results = (await fetchArticles(match.queryText)).map((r) => ({
+          kind: "artikel", name: r.name,
+        }));
+        // Offer the "Datei:" file-reference prefix when the query is a prefix
+        // of it (e.g. typing "[[Dat" suggests "[[Datei:").
+        if ("datei:".startsWith(match.queryText.toLowerCase())) {
+          results.unshift({ kind: "datei-prefix", name: "Datei:" });
+        }
+      }
+      const fresh = detectPattern(ta);
+      if (!results.length || !fresh) { hideDropdown(); return; }
+      showDropdown(ta, results, fresh);
     }, DEBOUNCE_MS);
   }
 

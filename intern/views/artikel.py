@@ -3,7 +3,7 @@ import difflib
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import OuterRef, Subquery
 from django.db.models.functions import Length
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.timezone import now
@@ -21,6 +21,7 @@ __all__ = [
     "article_view",
     "article_history",
     "article_diff",
+    "article_search",
     "dummy",
 ]
 
@@ -45,6 +46,22 @@ def article_list(request):
         "upload_folder_id": folders.artikel(),
     }
     return render(request, "table.html", context)
+
+
+@login_required
+def article_search(request):
+    """Autocomplete for [[Artikel-Links]] in the wiki editor — distinct article
+    names starting with the query."""
+    q = request.GET.get("q", "")
+    if not q:
+        return JsonResponse([], safe=False)
+    names = (
+        Artikel.objects.filter(name__istartswith=q)
+        .order_by("name")
+        .values_list("name", flat=True)
+        .distinct()[:20]
+    )
+    return JsonResponse([{"name": n} for n in names], safe=False)
 
 
 @permission_required("intern.change_artikel", raise_exception=True)
