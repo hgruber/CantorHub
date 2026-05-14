@@ -183,17 +183,22 @@ document.addEventListener("DOMContentLoaded", function () {
           const renameTo = appMain.dataset.uploadRenameTo;
           const avatarUserId = appMain.dataset.uploadAvatarUserId;
           const routeByType = appMain.dataset.uploadRouteByType;
+          const liedId = appMain.dataset.uploadLiedId;
           if (folderId) formData.append("folder_id", folderId);
           if (renameTo) formData.append("rename_to", renameTo);
           if (avatarUserId) formData.append("avatar_user_id", avatarUserId);
           if (routeByType) formData.append("route_by_type", "1");
+          if (liedId) formData.append("lied_id", liedId);
         });
         this.on("success", function (file, response) {
           const textarea = document.getElementById("mitteilung-textarea");
           if (textarea) textarea.value += response.url;
         });
         this.on("queuecomplete", function () {
-          if (window.location.pathname.startsWith("/intern/ordner/")) {
+          if (
+            window.location.pathname.startsWith("/intern/ordner/") ||
+            appMain.dataset.uploadLiedId
+          ) {
             window.location.reload();
           }
         });

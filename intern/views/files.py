@@ -28,6 +28,7 @@ __all__ = [
     "_get_file_type_config",
     "_get_lied_by_filename",
     "_assign_file_to_song",
+    "_route_and_rename_for_lied",
 ]
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,52 @@ def _assign_file_to_song(filename, filer_file):
     if field_name:
         setattr(song, field_name, filer_file)
         song.save()
+
+
+def _route_and_rename_for_lied(lied, filer_file, source_name):
+    """Route a dropzone-uploaded file by its extension, rename it after the song
+    title, and assign it to the matching FilerFileField on `lied`.
+
+    The extension decides the kind: PDF → Notenblatt (`pdf`), notation files →
+    Notensatz (`noten`), audio → Original/Aufnahme. An audio file uploaded with
+    a "JG - " prefix counts as our own recording (`aufnahme`), otherwise as the
+    reference original (`original`). Returns the assigned field name, or None
+    for extensions that don't map to a known song-file type.
+    """
+    extension = _get_file_extension(source_name)
+    file_type, _ = _get_file_type_config(extension)
+    if not file_type:
+        return None
+
+    name_stem = os.path.splitext(source_name)[0]
+    if file_type == "audio" and name_stem.startswith(("JG - ", "JG-")):
+        field_name = "aufnahme"
+    else:
+        field_name = settings.FILE_TYPE_LIED_MAP.get(file_type)
+    if not field_name:
+        return None
+
+    _type_folder = {
+        "audio": folders.repertoire,
+        "music": folders.notensatz,
+        "pdf": folders.pdf,
+    }
+    folder_id = (_type_folder.get(file_type) or folders.unsortiert)()
+    if folder_id:
+        filer_file.folder_id = folder_id
+
+    new_name = (
+        f"JG - {lied.titel}{extension}"
+        if field_name == "aufnahme"
+        else f"{lied.titel}{extension}"
+    )
+    filer_file.original_filename = new_name
+    filer_file.name = new_name
+    filer_file.save()
+
+    setattr(lied, field_name, filer_file)
+    lied.save(update_fields=[field_name])
+    return field_name
 
 
 @login_required
@@ -136,8 +183,17 @@ def upload(request):
             except (ValueError, TypeError):
                 pass
 
-        # Assign to matching song if applicable
-        _assign_file_to_song(file.name, filer_file)
+        # Assign to a song: explicitly by id when dropped on a Titel detail
+        # page, otherwise by filename match.
+        lied_id = request.POST.get("lied_id")
+        if lied_id and request.user.has_perm("intern.change_lied"):
+            try:
+                lied = Lied.objects.get(pk=int(lied_id))
+                _route_and_rename_for_lied(lied, filer_file, file.name)
+            except (Lied.DoesNotExist, ValueError):
+                pass
+        else:
+            _assign_file_to_song(file.name, filer_file)
 
         # Return response
         url = request.META.get("HTTP_ORIGIN") + filer_file.url

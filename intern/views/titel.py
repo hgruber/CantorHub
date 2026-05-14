@@ -108,6 +108,9 @@ def titel_view(request, titel):
         "up": "titel_list",
         "edit": "titel_edit",
         "id": titel,
+        "upload_folder_id": folders.musik(),
+        "upload_route_by_type": True,
+        "upload_lied_id": titel,
     }
     return render(request, "titel.html", context)
 
