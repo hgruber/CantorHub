@@ -26,6 +26,9 @@ This is a Django-based web application for managing a cantor (choral) organizati
 - Forum system for communication
 - File management through django-filer
 - Custom password hashing for legacy compatibility
+- Versioned articles with edit history, unified/side-by-side diffs, and version-to-version navigation
+- Interactive map of members and locations (Leaflet + OpenStreetMap tiles)
+- Light/dark theme toggle
 
 ## Technical Details
 
