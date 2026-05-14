@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from .models import Lied, Ort, Termin, User
+from .models import Artikel, Lied, Ort, Termin, User
 from .replacements import format_bytes, format_datetime
 
 
@@ -439,6 +439,34 @@ class MitgliederTabelle(tables.Table):
             '<img src="{}" width="40" height="40">',
             static("filer/icons/file-unknown.svg"),
         )
+
+
+class ArtikelTabelle(tables.Table):
+    name = tables.Column(verbose_name="Artikel")
+    autor = tables.Column(
+        verbose_name="Letzter Autor",
+        order_by=("autor__last_name", "autor__first_name"),
+    )
+    datum = tables.DateTimeColumn(verbose_name="Zuletzt bearbeitet")
+    size = tables.Column(
+        verbose_name="Größe",
+        attrs={"th": {"class": "right"}, "td": {"class": "right"}},
+    )
+
+    class Meta:
+        order_by = "-datum"
+        row_attrs = {
+            "data-href": lambda record: reverse("article_view", args=[record.name])
+        }
+
+    def render_autor(self, value):
+        return str(value) if value else ""
+
+    def render_datum(self, value):
+        return format_datetime(value)
+
+    def render_size(self, value):
+        return format_bytes(value)
 
 
 class OrtTabelle(tables.Table):

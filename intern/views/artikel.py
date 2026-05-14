@@ -1,15 +1,19 @@
 import difflib
 
 from django.contrib.auth.decorators import login_required, permission_required
+from django.db.models import OuterRef, Subquery
+from django.db.models.functions import Length
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.timezone import now
+from django_tables2 import RequestConfig
 
 from intern import folders
 from intern.replacements import apply_replacements
 
 from ..models import Artikel
+from ..tables import ArtikelTabelle
 
 __all__ = [
     "article_list",
@@ -23,13 +27,24 @@ __all__ = [
 
 @login_required
 def article_list(request):
-    artikel = Artikel.objects.values_list("name", flat=True).distinct()
+    latest_id = (
+        Artikel.objects.filter(name=OuterRef("name"))
+        .order_by("-version")
+        .values("id")[:1]
+    )
+    artikel = (
+        Artikel.objects.filter(id=Subquery(latest_id))
+        .select_related("autor")
+        .annotate(size=Length("text"))
+    )
+    table = ArtikelTabelle(artikel)
+    RequestConfig(request, paginate=False).configure(table)
     context = {
         "seitentitel": "Alle Artikel",
-        "artikel": artikel,
+        "table": table,
         "upload_folder_id": folders.artikel(),
     }
-    return render(request, "wiki.html", context)
+    return render(request, "table.html", context)
 
 
 @permission_required("intern.change_artikel", raise_exception=True)
