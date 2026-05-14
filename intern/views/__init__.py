@@ -1,3 +1,4 @@
+from .abstimmung import *
 from .auth import *
 from .artikel import *
 from .files import *

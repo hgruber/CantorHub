@@ -3328,3 +3328,126 @@ span.not_found {
 [data-theme="dark"] .karte-coord-hint-active {
     background: rgba(193,68,104,.15);
 }
+
+/* Abstimmung (poll widget in articles) */
+.abstimmung {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+.abstimmung-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--brand-dark);
+    border-bottom: 2px solid var(--brand);
+    padding-bottom: 6px;
+    margin: 0 0 12px;
+}
+.abstimmung-countdown {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--t3);
+    white-space: nowrap;
+}
+.abstimmung-options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.abstimmung-option {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+}
+.abstimmung-option:last-child {
+    border-bottom: none;
+}
+.abstimmung-option.is-mine {
+    background: var(--brand-light);
+}
+.abstimmung-choice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: var(--t1);
+}
+.abstimmung-choice input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+.abstimmung-choice input[type="checkbox"]:disabled + .abstimmung-label {
+    color: var(--t3);
+}
+.abstimmung-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 2px 24px;
+}
+.abstimmung-count {
+    display: inline-block;
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
+    padding: 0 5px;
+    border-radius: 8px;
+    font-size: 11px;
+    line-height: 18px;
+    background: var(--brand-light);
+    color: var(--brand);
+}
+.abstimmung-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-row-hover);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.abstimmung-bar span {
+    display: block;
+    height: 100%;
+    background: var(--brand);
+    border-radius: 4px;
+}
+.abstimmung-voters {
+    font-size: 11px;
+    color: var(--t3);
+    flex: 2;
+}
+.abstimmung-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+.abstimmung-limit {
+    font-size: 12px;
+    color: var(--t3);
+}
+.abstimmung-counter {
+    font-weight: 700;
+    color: var(--brand);
+}
+.abstimmung-toggle-form {
+    margin-top: 8px;
+}
+.abstimmung-locked {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: var(--t3);
+}
+.abstimmung-readonly .abstimmung-label {
+    color: var(--t1);
+    font-weight: 500;
+}
+.abstimmung-readonly .abstimmung-result {
+    margin-left: 0;
+}

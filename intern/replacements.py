@@ -165,27 +165,179 @@ def insert_file_object(f):
     return f'<a href="{f.url}">Datei: {f.original_filename}</a>'
 
 
-def abstimmung(match, request):
+ABSTIMMUNG_DIRECTIVE = (
+    r"^{abstimmung:([^:]+):(\d+):(?:(\d{1,2}\.\d{1,2}\.\d{4}):)?([^\}]+)\}"
+)
+
+
+def _parse_deadline(value):
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%d.%m.%Y").date()
+    except ValueError:
+        return None
+
+
+def parse_abstimmung_directive(text, titel):
+    """Findet die Abstimmungs-Direktive mit dem gegebenen Titel im Artikeltext.
+
+    Liefert (max_stimmen, options, deadline) oder None.
+    """
+    for match in re.finditer(
+        ABSTIMMUNG_DIRECTIVE, text or "", re.IGNORECASE | re.MULTILINE
+    ):
+        if match.group(1).strip() != titel:
+            continue
+        max_stimmen = int(match.group(2))
+        deadline = _parse_deadline(match.group(3))
+        options = [o.strip() for o in match.group(4).split(";") if o.strip()]
+        return max_stimmen, options, deadline
+    return None
+
+
+def render_abstimmung(
+    request,
+    seite,
+    titel,
+    max_stimmen,
+    options,
+    deadline,
+    show_results=False,
+    outdated=False,
+):
+    """Rendert das Abstimmungs-Widget als HTML-String."""
+    from django.template.loader import render_to_string
+
     from intern.models import Abstimmung
 
-    seite = request.resolver_match.kwargs["name"]
-    titel = match.group(1)
-    abstimmung = seite + ":" + titel
-    max_stimmen = match.group(2)
-    options = match.group(3).split(";")
-    res = Abstimmung.objects.values(
+    key = f"{seite}:{titel}"
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", key).strip("-")
+
+    rows = Abstimmung.objects.values(
         "person_id", "person__first_name", "person__last_name", "option"
-    ).filter(abstimmung=abstimmung)
+    ).filter(abstimmung=key)
+
+    voters_by_option = {}
+    my_votes = set()
+    for row in rows:
+        name = f"{row['person__first_name']} {row['person__last_name']}".strip()
+        voters_by_option.setdefault(row["option"], []).append(name)
+        if row["person_id"] == request.user.id:
+            my_votes.add(row["option"])
+
+    max_count = max((len(v) for v in voters_by_option.values()), default=0)
+    option_data = []
+    for opt in options:
+        voters = sorted(voters_by_option.get(opt, []))
+        count = len(voters)
+        option_data.append(
+            {
+                "text": opt,
+                "count": count,
+                "voters": voters,
+                "percent": round(count / max_count * 100) if max_count else 0,
+            }
+        )
+
+    has_voted = bool(my_votes)
+    locked = bool(deadline and date.today() > deadline)
+    if locked:
+        show_results = True
+        option_data.sort(key=lambda o: o["count"], reverse=True)
+
+    deadline_target = None
+    if deadline:
+        deadline_target = (
+            datetime(deadline.year, deadline.month, deadline.day)
+            + timedelta(days=1)
+        ).isoformat()
+
     context = {
+        "slug": slug,
+        "seite": seite,
         "titel": titel,
         "max_stimmen": max_stimmen,
-        "options": options,
-        "result": str(list(res)),
+        "options": option_data,
+        "my_votes": my_votes,
+        "has_voted": has_voted,
+        "locked": locked,
+        "outdated": outdated,
+        "deadline": deadline,
+        "deadline_target": deadline_target,
+        "show_results": show_results,
     }
-    return str(context)
-    return (
-        "Abstimmung:" + match.group(1) + " (" + match.group(2) + ") " + match.group(3)
+    return render_to_string("_abstimmung.html", context, request=request)
+
+
+def abstimmung(match, request):
+    if request is None:
+        return ""
+    seite = request.resolver_match.kwargs.get("name", "")
+    titel = match.group(1).strip()
+    max_stimmen = int(match.group(2))
+    deadline = _parse_deadline(match.group(3))
+    options = [o.strip() for o in match.group(4).split(";") if o.strip()]
+
+    # Voting is only allowed on the most recent article version.
+    outdated = False
+    version_param = request.GET.get("version")
+    if version_param:
+        from intern.models import Artikel
+
+        latest = Artikel.objects.filter(name=seite).order_by("-version").first()
+        if latest and str(latest.version) != str(version_param):
+            outdated = True
+
+    return render_abstimmung(
+        request, seite, titel, max_stimmen, options, deadline, outdated=outdated
     )
+
+
+# Legacy read-only results directive: {auswertung:<key>:<num>}
+# where <key> is the full Abstimmung name (may itself contain colons).
+AUSWERTUNG_DIRECTIVE = r"^{auswertung:(.+):\d+\}"
+
+
+def render_auswertung(request, key):
+    """Rendert die reine Ergebnisanzeige einer Abstimmung als HTML-String."""
+    from django.template.loader import render_to_string
+
+    from intern.models import Abstimmung
+
+    rows = Abstimmung.objects.values(
+        "person__first_name", "person__last_name", "option"
+    ).filter(abstimmung=key)
+
+    voters_by_option = {}
+    for row in rows:
+        name = f"{row['person__first_name']} {row['person__last_name']}".strip()
+        voters_by_option.setdefault(row["option"], []).append(name)
+
+    max_count = max((len(v) for v in voters_by_option.values()), default=0)
+    option_data = [
+        {
+            "text": opt,
+            "count": len(voters),
+            "voters": sorted(voters),
+            "percent": round(len(voters) / max_count * 100) if max_count else 0,
+        }
+        for opt, voters in voters_by_option.items()
+    ]
+    option_data.sort(key=lambda o: o["count"], reverse=True)
+
+    context = {
+        "slug": re.sub(r"[^a-zA-Z0-9]+", "-", key).strip("-"),
+        "titel": key.rpartition(":")[2] or key,
+        "options": option_data,
+    }
+    return render_to_string("_auswertung.html", context, request=request)
+
+
+def auswertung(match, request):
+    if request is None:
+        return ""
+    return render_auswertung(request, match.group(1).strip())
 
 
 def internal_links(match, request):
@@ -255,17 +407,24 @@ def apply_replacements(text, request=None):
     ]
 
     FULLTEXT_REPLACEMENTS = [
-        (
-            r"^{abstimmung:([^:]+):(\d+):([^\}]+)\}",
-            lambda match: abstimmung(match, request),
-        ),
+        (ABSTIMMUNG_DIRECTIVE, lambda match: abstimmung(match, request)),
+        (AUSWERTUNG_DIRECTIVE, lambda match: auswertung(match, request)),
     ]
 
     if not text:
         return text
 
+    # Block-level widgets are rendered up front and stashed behind HTML-comment
+    # placeholders so the per-line processing below leaves their markup intact.
+    placeholders = {}
     for pattern, replacement in FULLTEXT_REPLACEMENTS:
-        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE | re.MULTILINE)
+
+        def _store(match, _repl=replacement):
+            key = f"<!--block-{len(placeholders)}-->"
+            placeholders[key] = _repl(match)
+            return key
+
+        text = re.sub(pattern, _store, text, flags=re.IGNORECASE | re.MULTILINE)
 
     result = []
     for line in text.splitlines():
@@ -297,7 +456,10 @@ def apply_replacements(text, request=None):
         result.append(
             '<p id="footer"><img src="/static/intern/images/JG-Frankfurt-wG-color.svg" style="width: 14px;">&nbsp;Just Gospel!</p>'
         )
-    return "\n".join(result)
+    output = "\n".join(result)
+    for key, value in placeholders.items():
+        output = output.replace(key, value)
+    return output
 
 
 def get_references(article_list):

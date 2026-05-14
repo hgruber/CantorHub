@@ -73,6 +73,7 @@ urlpatterns = [
     path("mitglied/<int:id>/edit/", views.mitglied_edit, name="mitglied_edit"),
     path("mitglied/<int:id>/passwd/", views.mitglied_passwd, name="mitglied_passwd"),
     # Artikel URLs
+    path("abstimmung/vote/", views.abstimmung_vote, name="abstimmung_vote"),
     path("artikel/", views.article_list, name="article_list"),
     path("artikel/<str:name>/", views.article_view, name="article_view"),
     path("artikel/<str:name>/edit/", views.article_edit, name="article_edit"),

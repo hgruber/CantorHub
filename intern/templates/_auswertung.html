@@ -1,0 +1,15 @@
+<div id="auswertung-{{ slug }}" class="abstimmung abstimmung-readonly">
+  <h3 class="abstimmung-title">{{ titel }}</h3>
+  <ul class="abstimmung-options">
+    {% for opt in options %}
+    <li class="abstimmung-option">
+      <span class="abstimmung-label">{{ opt.text }}</span>
+      <div class="abstimmung-result">
+        <span class="abstimmung-count">{{ opt.count }}</span>
+        <div class="abstimmung-bar"><span style="width:{{ opt.percent }}%"></span></div>
+        {% if opt.voters %}<span class="abstimmung-voters">{{ opt.voters|join:", " }}</span>{% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
