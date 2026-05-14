@@ -12,6 +12,7 @@ from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpRespon
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
 from intern import folders
@@ -142,7 +143,9 @@ def upload(request):
         url = request.META.get("HTTP_ORIGIN") + filer_file.url
         thumb = ""
         try:
-            thumb = filer_file.thumbnails.get("admin_clipboard_icon", "")
+            thumb = get_thumbnailer(filer_file.file).get_thumbnail(
+                {"size": (120, 120), "crop": True, "quality": 85}
+            ).url
         except Exception:
             pass
         return JsonResponse({"status": "success", "id": filer_file.id, "url": url, "thumbnail_url": thumb})

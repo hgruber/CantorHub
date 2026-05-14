@@ -1818,6 +1818,14 @@ div.avatar { cursor: pointer; }
 
 .wiki strong { font-weight: 600; }
 
+.datei-preview {
+    max-width: 200px;
+    max-height: 200px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
 .wiki pre {
     background: var(--pre-bg);
     border: 1px solid var(--border);

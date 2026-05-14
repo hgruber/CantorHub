@@ -4,6 +4,7 @@ import re
 from datetime import date, datetime, timedelta
 from typing import Union
 
+from easy_thumbnails.files import get_thumbnailer
 from filer.models import File
 
 
@@ -148,6 +149,19 @@ class CodeBlockProcessor:
 
 
 def insert_file_object(f):
+    mime = f.mime_type or ""
+    if mime.startswith("image") or mime.endswith("pdf"):
+        try:
+            thumb = get_thumbnailer(f.file).get_thumbnail(
+                {"size": (200, 200), "quality": 85}
+            )
+            alt = html.escape(f.original_filename or "")
+            return (
+                f'<a href="{f.url}">'
+                f'<img src="{thumb.url}" alt="{alt}" class="datei-preview" /></a>'
+            )
+        except Exception:
+            pass
     return f'<a href="{f.url}">Datei: {f.original_filename}</a>'
 
 

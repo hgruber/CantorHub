@@ -257,14 +257,19 @@ def folder_view(request, pk):
         modified=F("modified_at"),
     )
     files_list = list(files)
-    image_ids = [r["id"] for r in files_list if (r.get("mime") or "").startswith("image")]
-    if image_ids:
-        image_objs = {f.pk: f for f in File.objects.filter(pk__in=image_ids)}
+
+    def _is_thumbnailable(mime):
+        mime = mime or ""
+        return mime.startswith("image") or mime.endswith("pdf")
+
+    thumb_ids = [r["id"] for r in files_list if _is_thumbnailable(r.get("mime"))]
+    if thumb_ids:
+        thumb_objs = {f.pk: f for f in File.objects.filter(pk__in=thumb_ids)}
         for record in files_list:
-            if record["id"] not in image_objs:
+            if record["id"] not in thumb_objs:
                 continue
             try:
-                thumb = get_thumbnailer(image_objs[record["id"]].file).get_thumbnail(
+                thumb = get_thumbnailer(thumb_objs[record["id"]].file).get_thumbnail(
                     {"size": (32, 32), "crop": True, "quality": 85}
                 )
                 record["thumb_url"] = thumb.url

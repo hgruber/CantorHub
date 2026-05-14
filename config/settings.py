@@ -168,6 +168,13 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "0") == "1"
 EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "0") == "1"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "webmaster@example.org")
 
+# Thumbnail generation: pil_image handles images, pdf_source renders the
+# first page of PDFs. easy-thumbnails tries each in order and caches results.
+THUMBNAIL_SOURCE_GENERATORS = (
+    "easy_thumbnails.source_generators.pil_image",
+    "intern.thumbnails.pdf_source",
+)
+
 # File type routing for uploads — folder_name is resolved at runtime via
 # intern.folders so no integer IDs are hardcoded here.
 FILE_TYPE_CONFIG = {
