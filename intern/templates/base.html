@@ -132,6 +132,16 @@
                         </svg>
                     </a>
                 {% endif %}
+                {% if show_file_search %}
+                    <form class="topbar-search" method="get" role="search">
+                        <svg class="topbar-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="search" name="q" value="{{ search_query }}" placeholder="Suchen …"
+                               aria-label="Dateien nach Name oder Inhalt durchsuchen" autocomplete="off"
+                               onsearch="if(!this.value){this.form.submit();}">
+                    </form>
+                {% endif %}
                 {% if show_file_actions and perms.filer.add_folder %}
                     <a href="#" onclick="document.getElementById('new-folder-dialog').showModal(); return false;" title="Neuer Ordner">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -9,6 +9,7 @@ set -e
 mv 0003_import.py intern/migrations
 ./manage.py import_files --path Avatare
 ./manage.py migrate
+./manage.py index_files
 ./manage.py collectstatic --noinput
 
 # XMPP/ejabberd integration

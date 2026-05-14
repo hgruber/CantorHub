@@ -48,6 +48,7 @@ class OrdnerTabelle(tables.Table):
         attrs={"th": {"style": "width: 15px;"}, "td": {"style": "width: 15px;"}}
     )
     name = tables.Column()
+    pfad = tables.Column(verbose_name="Pfad", empty_values=(), orderable=False)
     size = tables.Column(attrs={"td": {"class": "right"}})
     besitzer = tables.Column()
     created = tables.DateTimeColumn()
@@ -80,6 +81,9 @@ class OrdnerTabelle(tables.Table):
             media = static("filer/icons/file-pdf.svg")
         url = f"/media/{record['link']}"
         return format_html('<a href="{}"><img src="{}" /></a>', url, media)
+
+    def render_pfad(self, record):
+        return record.get("pfad", "")
 
     def render_size(self, record):
         if record["type"] == "File":

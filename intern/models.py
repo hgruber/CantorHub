@@ -379,3 +379,19 @@ class TabellenPreferenzen(models.Model):
             "person",
             "tabelle",
         )
+
+
+class DateiIndex(models.Model):
+    """Extracted text content of a filer File, for content search in the folder
+    browser. Populated lazily by intern.fileindex; file_size is used to detect
+    when the underlying file changed and the row is stale."""
+
+    file = models.OneToOneField(
+        "filer.File", on_delete=models.CASCADE, related_name="suchindex"
+    )
+    text = models.TextField(blank=True)
+    file_size = models.BigIntegerField(default=0)
+    indexed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "DateiIndizes"
