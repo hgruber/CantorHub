@@ -163,20 +163,29 @@ def forum_get(request, forum, last_id=0):
     )
 
 
+FORUM_MORE_BATCH = 20
+
+
 @login_required
 def forum_more(request, forum):
-    """Return älterer Nachrichten (30 Stück) als HTML-Snippet."""
+    """Return älterer Nachrichten (20 Stück) als HTML-Snippet mit neuem Sentinel."""
     oldest_id = request.GET.get("oldest_id", 0)
-    last_id = request.GET.get("last_id", 0)
-    messages = Mitteilung.objects.filter(forum_id=forum, id__lt=oldest_id)
+    messages = list(
+        Mitteilung.objects.filter(forum_id=forum, id__lt=oldest_id)[:FORUM_MORE_BATCH]
+    )
+    new_oldest_id = min((msg.id for msg in messages), default=0)
+    has_more = (
+        len(messages) == FORUM_MORE_BATCH
+        and Mitteilung.objects.filter(forum_id=forum, id__lt=new_oldest_id).exists()
+    )
     return render(
         request,
-        "_messages.html",
+        "_forum_more.html",
         {
             "forum": forum,
-            "last_id": last_id,
-            "oldest_id": oldest_id,
+            "oldest_id": new_oldest_id,
             "messages": messages,
+            "has_more": has_more,
         },
     )
 

@@ -1,0 +1,11 @@
+{% for message in messages %}
+    {% include '_message.html' with message=message %}
+{% endfor %}
+{% if has_more %}
+    <div id="load-more"
+         class="sentinel"
+         style="height:1px;background:transparent"
+         hx-get="{% url 'forum_more' forum=forum %}?oldest_id={{ oldest_id }}"
+         hx-swap="outerHTML"
+         hx-trigger="intersect once root:#messages"></div>
+{% endif %}
