@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="forum-search">
+    {% for message in messages %}
+    <div class="forum-search-row">
+        <a class="forum-search-forum" href="{% url 'forum_view' forum=message.forum_id %}"
+           title="{{ message.forum.thema }}">{{ message.forum.thema }}</a>
+        <div class="forum-search-msg">
+            {% include '_message.html' with message=message highlight_query=search_query %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="forum-search-empty">Keine Nachrichten gefunden.</div>
+    {% endfor %}
+</div>
+{% endblock %}

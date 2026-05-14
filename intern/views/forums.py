@@ -32,6 +32,8 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
+FORUM_SEARCH_LIMIT = 200
+
 
 def _forward_to_xmpp(msg):
     """Forward a forum message to the corresponding XMPP MUC room."""
@@ -84,10 +86,30 @@ def _forum_user_lists(forum_obj):
 
 @login_required
 def forum_list(request):
+    q = (request.GET.get("q") or "").strip()
+    add = "forum_add" if request.user.has_perm("intern.add_forum") else None
+
+    if len(q) >= 2:
+        messages = (
+            Mitteilung.objects.filter(mitteilung__icontains=q)
+            .select_related("forum", "sender")
+            .order_by("-datum")[:FORUM_SEARCH_LIMIT]
+        )
+        return render(
+            request,
+            "forum_search.html",
+            {
+                "seitentitel": f"Forensuche: „{q}“",
+                "messages": messages,
+                "add": add,
+                "show_search": True,
+                "search_query": q,
+            },
+        )
+
     foren = Forum.objects.extra_data().order_by("-zugriff")
     table = ForumTabelle(foren)
     RequestConfig(request, paginate=False).configure(table)
-    add = "forum_add" if request.user.has_perm("intern.add_forum") else None
     return render(
         request,
         "table.html",
@@ -99,6 +121,8 @@ def forum_list(request):
             "add_form": ForumEditForm() if request.user.has_perm("intern.add_forum") else None,
             "add_form_multipart": True,
             "add_label": "Neues Forum",
+            "show_search": True,
+            "search_query": "",
         },
     )
 

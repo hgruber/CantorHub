@@ -177,10 +177,10 @@
     });
   }
 
-  const ortIcon    = pinIcon('var(--brand)', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>');
-  const memberIcon = pinIcon('#4b80c0', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>');
-  const liveIcon   = dotIcon('karte-live-dot');           // blue — other users
-  const meIcon     = dotIcon('karte-live-dot-me');        // red  — myself
+  const ortIcon    = pinIcon('#4b80c0', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>');
+  const memberIcon = pinIcon('var(--brand)', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>');
+  const liveIcon   = dotIcon('karte-live-dot');           // red   — other users
+  const meIcon     = dotIcon('karte-live-dot-me');        // green — myself
 
   // ── Layer groups ─────────────────────────────────────
   const ortLayer    = L.layerGroup().addTo(map);
@@ -206,11 +206,12 @@
   });
 
   // ── Member markers ───────────────────────────────────
+  const memberMarkers = {};
   members.forEach(m => {
     if (m.breite == null || m.laenge == null) return;
     const popup = `<div><strong>${escHtml(m.name)}</strong><br>` +
                   `<a class="karte-popup-link" href="/intern/mitglied/${m.id}/">Profil ansehen →</a></div>`;
-    L.marker([m.breite, m.laenge], { icon: memberIcon }).bindPopup(popup).addTo(memberLayer);
+    memberMarkers[m.id] = L.marker([m.breite, m.laenge], { icon: memberIcon }).bindPopup(popup).addTo(memberLayer);
   });
 
   // ── Live markers — others only ───────────────────────
@@ -287,6 +288,140 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove('karte-toast-show'), 3000);
   }
+
+  // ── Jump to first search result ──────────────────────
+  (function () {
+    const input = document.querySelector('.topbar-search input[name="q"]');
+    const q = (input?.value || '').trim().toLowerCase();
+    if (!q) return;
+    let hit = null;
+    for (const o of orte) {
+      if (o.breite == null || o.laenge == null) continue;
+      if (String(o.name).toLowerCase().includes(q) ||
+          String(o.adresse || '').toLowerCase().includes(q)) {
+        hit = { lat: o.breite, lng: o.laenge, marker: ortMarkers[o.id]?.marker };
+        break;
+      }
+    }
+    if (!hit) {
+      for (const m of members) {
+        if (m.breite == null || m.laenge == null) continue;
+        if (String(m.name).toLowerCase().includes(q)) {
+          hit = { lat: m.breite, lng: m.laenge, marker: memberMarkers[m.id] };
+          break;
+        }
+      }
+    }
+    if (hit) {
+      map.setView([hit.lat, hit.lng], Math.max(map.getZoom(), 15));
+      if (hit.marker) hit.marker.openPopup();
+    } else {
+      showToast(`Kein Treffer für „${q}"`, 'error');
+    }
+  })();
+
+  // ── Live search autocomplete dropdown ────────────────
+  (function () {
+    const input = document.querySelector('.topbar-search input[name="q"]');
+    if (!input) return;
+    const wrap = input.closest('.topbar-search');
+    const results = document.createElement('div');
+    results.className = 'karte-search-results';
+    wrap.appendChild(results);
+
+    let items = [];
+    let activeIdx = -1;
+
+    function closeResults() {
+      results.classList.remove('karte-search-open');
+      results.innerHTML = '';
+      items = [];
+      activeIdx = -1;
+    }
+
+    function gotoEntry(entry) {
+      if (!entry) return;
+      map.setView([entry.lat, entry.lng], Math.max(map.getZoom(), 15));
+      if (entry.marker) entry.marker.openPopup();
+      closeResults();
+      input.blur();
+    }
+
+    function highlight() {
+      [...results.children].forEach((el, i) =>
+        el.classList.toggle('karte-search-active', i === activeIdx));
+    }
+
+    function render(q) {
+      const ql = q.toLowerCase();
+      items = [];
+      for (const o of orte) {
+        if (o.breite == null || o.laenge == null) continue;
+        if (String(o.name).toLowerCase().includes(ql) ||
+            String(o.adresse || '').toLowerCase().includes(ql)) {
+          items.push({ kind: 'ort', name: o.name, sub: o.adresse || '',
+                       lat: o.breite, lng: o.laenge, marker: ortMarkers[o.id]?.marker });
+        }
+      }
+      for (const m of members) {
+        if (m.breite == null || m.laenge == null) continue;
+        if (String(m.name).toLowerCase().includes(ql)) {
+          items.push({ kind: 'member', name: m.name, sub: 'Mitglied',
+                       lat: m.breite, lng: m.laenge, marker: memberMarkers[m.id] });
+        }
+      }
+      items = items.slice(0, 12);
+      activeIdx = -1;
+      if (!items.length) {
+        results.innerHTML = '<div class="karte-search-empty">Kein Treffer</div>';
+        results.classList.add('karte-search-open');
+        return;
+      }
+      results.innerHTML = items.map((it, i) =>
+        `<div class="karte-search-item" data-idx="${i}">` +
+        `<span class="karte-dot karte-dot-${it.kind}"></span>` +
+        `<span class="karte-search-item-text">${escHtml(it.name)}` +
+        (it.sub ? ` <span class="karte-search-item-sub">· ${escHtml(it.sub)}</span>` : '') +
+        `</span></div>`
+      ).join('');
+      results.classList.add('karte-search-open');
+    }
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim();
+      if (!q) { closeResults(); return; }
+      render(q);
+    });
+
+    results.addEventListener('mousedown', e => {
+      const el = e.target.closest('.karte-search-item');
+      if (!el) return;
+      e.preventDefault();
+      gotoEntry(items[Number(el.dataset.idx)]);
+    });
+
+    input.addEventListener('keydown', e => {
+      if (!results.classList.contains('karte-search-open') || !items.length) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIdx = (activeIdx + 1) % items.length;
+        highlight();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIdx = (activeIdx - 1 + items.length) % items.length;
+        highlight();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        gotoEntry(items[activeIdx >= 0 ? activeIdx : 0]);
+      } else if (e.key === 'Escape') {
+        closeResults();
+      }
+    });
+
+    document.addEventListener('click', e => {
+      if (!wrap.contains(e.target)) closeResults();
+    });
+  })();
 
   // ── Locate (toggle on/off with marker) ─────────────────
   let locateWatchId = null;

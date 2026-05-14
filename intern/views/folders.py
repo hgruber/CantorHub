@@ -290,7 +290,7 @@ def folder_view(request, pk):
                 "breadcrumb": breadcrumb,
                 "table": table,
                 "current_pk": original_pk,
-                "show_file_search": True,
+                "show_search": True,
                 "search_query": q,
             },
         )
@@ -412,7 +412,7 @@ def folder_view(request, pk):
             "new_folder_pk": original_pk,
             "current_pk": original_pk,
             "all_folders_flat": _build_folder_flat(),
-            "show_file_search": True,
+            "show_search": True,
             "search_query": "",
         },
     )

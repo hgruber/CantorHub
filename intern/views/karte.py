@@ -43,6 +43,8 @@ def karte_view(request):
         "orte_json": orte,
         "members_json": members,
         "standorte_json": standorte,
+        "show_search": True,
+        "search_query": (request.GET.get("q") or "").strip(),
     })
 
 

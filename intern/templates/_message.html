@@ -1,3 +1,5 @@
+{% load search_highlight %}
+{% with hq=highlight_query|default:"" %}
 <div class="{% if message.sender == user %}message_me{% else %}message{% endif %}"
      data-id="{{ message.id }}">
     <div class="avatar"
@@ -9,7 +11,8 @@
         {% endif %}
     </div>
     <div class="{% if message.sender == user %}content_me{% else %}content{% endif %}">
-        {{ message.formatiert|safe }}
+        {{ message.formatiert|highlight:hq }}
         <time>{{ message.datum|date:"d.M Y H:i" }}</time>
     </div>
 </div>
+{% endwith %}
