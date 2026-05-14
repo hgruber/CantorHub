@@ -2813,6 +2813,29 @@ span.not_found {
     color: var(--t1);
 }
 
+/* Live syntax guide for the {abstimmung:...} editor helper */
+.wiki-hint {
+    position: fixed;
+    z-index: 1000;
+    max-width: 360px;
+    padding: 6px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--r-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--t2);
+    pointer-events: none;
+    display: none;
+}
+.wiki-hint.active {
+    display: block;
+}
+.wiki-hint strong {
+    color: var(--t1);
+}
+
 /* =================================================== */
 /* Karte (Map page)                                    */
 /* =================================================== */
