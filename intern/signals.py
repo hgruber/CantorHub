@@ -74,13 +74,22 @@ def _capture_old_values(sender, instance, **kwargs):
 
 def _sync_vcard(user_pk):
     """Sync a user's vCard (full name + avatar) to ejabberd. Runs in a daemon thread."""
+    import time
+
+    from django.db import OperationalError
+
     from .ejabberd import set_vcard
     from .models import User
 
-    try:
-        user = User.objects.get(pk=user_pk)
-    except User.DoesNotExist:
-        return
+    for attempt in range(3):
+        try:
+            user = User.objects.get(pk=user_pk)
+            break
+        except OperationalError:
+            if attempt == 2:
+                logger.warning("ejabberd: vcard sync for user %s gave up after DB lock", user_pk)
+                return
+            time.sleep(0.5 * (attempt + 1))
 
     if not user.xmpp:
         return
