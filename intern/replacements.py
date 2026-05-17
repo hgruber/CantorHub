@@ -150,6 +150,8 @@ class CodeBlockProcessor:
 
 def insert_file_object(f):
     mime = f.mime_type or ""
+    filename = html.escape(f.original_filename or "")
+    caption = f"<figcaption>{filename}</figcaption>"
     if mime.startswith("image") or mime.endswith("pdf"):
         try:
             thumb = get_thumbnailer(f.file).get_thumbnail(
@@ -157,12 +159,18 @@ def insert_file_object(f):
             )
             alt = html.escape(f.original_filename or "")
             return (
+                f'<figure class="wiki-figure">'
                 f'<a href="{f.url}">'
                 f'<img src="{thumb.url}" alt="{alt}" class="datei-preview" /></a>'
+                f'{caption}</figure>'
             )
         except Exception:
             pass
-    return f'<a href="{f.url}">Datei: {f.original_filename}</a>'
+    return (
+        f'<figure class="wiki-figure">'
+        f'<a href="{f.url}">Datei: {f.original_filename}</a>'
+        f'{caption}</figure>'
+    )
 
 
 ABSTIMMUNG_DIRECTIVE = (

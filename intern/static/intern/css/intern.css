@@ -1957,6 +1957,60 @@ div.avatar { cursor: pointer; }
     vertical-align: middle;
 }
 
+/* ── Floated file thumbnails ──────────────────────── */
+.wiki-page .wiki .wiki-figure {
+    float: right;
+    clear: right;
+    margin: 0.2em 0 1em 1.5em;
+    max-width: 220px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 6px;
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+}
+
+.wiki-page .wiki .wiki-figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--r-sm);
+    margin: 0;
+    box-shadow: none;
+}
+
+.wiki-page .wiki .wiki-figure figcaption {
+    font-size: 11.5px;
+    color: var(--t3);
+    margin-top: 6px;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wiki-page .wiki .wiki-figure a {
+    border-bottom: none;
+}
+.wiki-page .wiki .wiki-figure a:hover {
+    border-bottom: none;
+}
+
+/* Mobile: floaten aufheben, damit der Text lesbar bleibt */
+@media (max-width: 768px) {
+    .wiki-page .wiki .wiki-figure {
+        float: none;
+        margin: 1em auto;
+        max-width: 100%;
+    }
+}
+
+[data-theme="dark"] .wiki-page .wiki .wiki-figure {
+    background: var(--bg-card);
+    border-color: rgba(255, 255, 255, 0.07);
+}
+
 .wiki pre {
     background: var(--pre-bg);
     border: 1px solid var(--border);
