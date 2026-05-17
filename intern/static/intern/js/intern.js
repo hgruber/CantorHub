@@ -392,6 +392,40 @@ document.addEventListener("DOMContentLoaded", function () {
     let queue = [];
     let queueIndex = -1;
 
+    // ── Media Session (lock screen / OS media controls) ──────
+    const HAS_MS = "mediaSession" in navigator;
+    const ARTWORK = [
+      { src: "/static/intern/images/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/static/intern/images/icon-512.png", sizes: "512x512", type: "image/png" },
+    ];
+    function msState(state) {
+      if (HAS_MS) { try { navigator.mediaSession.playbackState = state; } catch (_) {} }
+    }
+    function msAction(action, handler) {
+      if (HAS_MS) { try { navigator.mediaSession.setActionHandler(action, handler); } catch (_) {} }
+    }
+    function msMetadata(item) {
+      if (!HAS_MS) return;
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: item.title || "",
+          artist: item.type || "",
+          album: "Just Gospel Frankfurt",
+          artwork: ARTWORK,
+        });
+      } catch (_) {}
+      const hasPrev = queueIndex > 0;
+      const hasNext = queue.length > 0 && queueIndex < queue.length - 1;
+      msAction("previoustrack", hasPrev ? playPrev : null);
+      msAction("nexttrack",     hasNext ? playNext : null);
+    }
+    function playPrev() {
+      if (queueIndex <= 0) return;
+      queueIndex--;
+      loadTrack(queue[queueIndex], advance);
+    }
+    function playNext() { advance(); }
+
     function fmt(t) {
       if (!isFinite(t) || t < 0) return "0:00";
       const m = Math.floor(t / 60);
@@ -424,6 +458,8 @@ document.addEventListener("DOMContentLoaded", function () {
       totalEl.textContent = "0:00";
       setMainIcon(false);
       hide();
+      msState("none");
+      if (HAS_MS) { try { navigator.mediaSession.metadata = null; } catch (_) {} }
     }
     function loadTrack(item, onEnded) {
       if (audio) { try { audio.pause(); } catch (_) {} }
@@ -451,6 +487,9 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Error playing audio:", item.url);
         onEnded();
       });
+      audio.addEventListener("play",  () => msState("playing"));
+      audio.addEventListener("pause", () => msState("paused"));
+      msMetadata(item);
       audio.play().catch((err) => console.error("Audio play() rejected:", err));
       setMainIcon(true);
       show();
@@ -528,6 +567,14 @@ document.addEventListener("DOMContentLoaded", function () {
       const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
       audio.currentTime = pct * audio.duration;
     });
+
+    msAction("play", () => {
+      if (audio && audio.paused) { audio.play(); setMainIcon(true); setBtnPlaying(activeBtn, true); }
+    });
+    msAction("pause", () => {
+      if (audio && !audio.paused) { audio.pause(); setMainIcon(false); setBtnPlaying(activeBtn, false); }
+    });
+    msAction("stop", stop);
   })();
 
   // File actions: delete / move / copy
