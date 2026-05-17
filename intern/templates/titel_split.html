@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load django_tables2 %}
+{% block content %}
+<div class="table-view">
+    {% csrf_token %}
+    <div class="split-layout" data-konzert-id="{{ konzert_id }}">
+        <div class="split-panel split-panel--konzert">
+            <div class="split-header">
+                <strong>Konzertablauf</strong>
+                <button id="saveOrderButton" class="btn btn-primary btn-sm">Speichern</button>
+            </div>
+            <div class="split-body" id="konzert-list">
+                {% for item in konzert_items %}
+                <div class="split-item" data-id="{{ item.id }}">
+                    <span class="split-item-handle" title="Ziehen zum Verschieben">&#x2807;</span>
+                    <span class="split-item-pos">{{ item.position }}</span>
+                    <span class="split-item-titel">{{ item.titel }}</span>
+                    <span class="split-item-eig">{{ item.eigenschaften }}</span>
+                </div>
+                {% empty %}
+                <div class="split-empty">Keine Titel zugeordnet</div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="split-divider" id="split-divider"></div>
+        <div class="split-panel split-panel--pool">
+            <div class="split-header">
+                <strong>Verfügbar</strong>
+                <span class="btn btn-primary btn-sm" style="visibility:hidden" aria-hidden="true">Speichern</span>
+            </div>
+            <div class="split-body" id="pool-list">
+                {% for item in pool_items %}
+                <div class="split-item" data-id="{{ item.id }}">
+                    <span class="split-item-handle" title="Ziehen zum Hinzufügen">&#x2807;</span>
+                    <span class="split-item-titel">{{ item.titel }}</span>
+                    <span class="split-item-eig">{{ item.eigenschaften }}</span>
+                </div>
+                {% empty %}
+                <div class="split-empty">Alle Titel zugeordnet</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="filter offcanvas" id="Filter">
+        <div class="offcanvas-header">
+            <strong>Filtern</strong>
+            <button type="button" class="offcanvas-close" onclick="toggle('Filter')" aria-label="Schließen">&#x2715;</button>
+        </div>
+        <form method="get" class="filter-form">
+            <input type="hidden" name="edit" value="1">
+            <div class="filter-body">
+                {{ filter.form.as_div }}
+            </div>
+            <div class="filter-actions">
+                <a href="?" class="btn btn-secondary">Zurücksetzen</a>
+                <button type="submit" class="btn btn-primary">Filtern</button>
+            </div>
+        </form>
+    </div>
+    {% if add_form %}
+    <div class="add-panel offcanvas" id="AddPanel">
+        <div class="add-panel-header">
+            <strong>{{ add_label|default:"Neu anlegen" }}</strong>
+            <button type="button" class="add-panel-close" onclick="toggle('AddPanel')" aria-label="Schließen">&#x2715;</button>
+        </div>
+        <form method="post" action="{% url add %}" {% if add_form_multipart %}enctype="multipart/form-data"{% endif %}>
+            {% csrf_token %}
+            {% for field in add_form %}
+            <div class="form-group">
+                {% if field.field.widget.input_type == 'checkbox' %}
+                <label class="checkbox-label">{{ field }} {{ field.label }}</label>
+                {% else %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% endif %}
+                {% if field.errors %}<div class="invalid-feedback">{{ field.errors }}</div>{% endif %}
+                {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+            </div>
+            {% endfor %}
+            <div class="add-panel-actions">
+                <button type="submit" class="btn btn-primary">Speichern</button>
+                <button type="button" class="btn btn-secondary" onclick="toggle('AddPanel')">Abbrechen</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

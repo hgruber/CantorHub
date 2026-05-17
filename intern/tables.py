@@ -271,11 +271,10 @@ class RepertoireFilter(filters.FilterSet):
     konzert_qs = (
         Termin.objects.filter(konzert__isnull=False).distinct().order_by("-datum")
     )
-    konzert = filters.ModelMultipleChoiceFilter(
+    konzert = filters.ModelChoiceFilter(
         field_name="termin",
         queryset=konzert_qs,
-        widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
-        label="Konzerte",
+        label="Konzert",
     )
 
     class Meta:

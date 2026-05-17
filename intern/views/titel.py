@@ -1,7 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Count, F, Q, Value
+from django.db.models import Count, F, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -28,7 +28,7 @@ __all__ = [
 @login_required
 def titel_list(request):
     queryset = Lied.objects.order_by("titel")
-    konzerte = request.GET.getlist("konzert")
+    konzert_id = request.GET.get("konzert")
     repertoire_filter = RepertoireFilter(request.GET, queryset=queryset)
     fields = visible_fields(request, "RepertoireTabelle")
     # Legacy single-property columns now live in one Eigenschaften column
@@ -37,19 +37,70 @@ def titel_list(request):
         fields = [f for f in fields if f not in _LEGACY_EIG]
         if "eigenschaften" not in fields:
             fields.append("eigenschaften")
-    if len(konzerte) == 1:
+
+    # Konzert reorder mode: split-screen layout
+    if konzert_id and "edit" in request.GET:
         qs = (
             repertoire_filter.qs.annotate(position=F("konzert__position"))
             .distinct()
             .order_by("position")
         )
-        fields.append("position")
-    else:
-        qs = repertoire_filter.qs
-    table = RepertoireTabelle(
-        qs,
-        visible_fields=fields,
-    )
+        fields = ["titel", "eigenschaften", "position"]
+        table = RepertoireTabelle(qs, visible_fields=fields)
+        RequestConfig(request, paginate=False).configure(table)
+
+        from datetime import date
+
+        seitentitel = f"Ablauf {Termin.objects.get(id=konzert_id)}"
+        konzert_items = []
+        for i, lied in enumerate(qs.select_related("original", "aufnahme")):
+            konzert_items.append({
+                "id": lied.id,
+                "titel": lied.titel,
+                "position": i + 1,
+                "eigenschaften": table.render_eigenschaften(lied),
+            })
+        remaining_qs = (
+            Lied.objects.exclude(konzert__termin__id=konzert_id)
+            .annotate(
+                cnt=Count(
+                    1,
+                    filter=Q(konzert__termin__datum__gt=date(2015, 12, 23)),
+                ),
+            )
+            .order_by("-cnt", "titel")
+        )
+        pool_items = []
+        for lied in remaining_qs:
+            pool_items.append({
+                "id": lied.id,
+                "titel": lied.titel,
+                "eigenschaften": table.render_eigenschaften(lied),
+            })
+
+        add = "titel_add" if request.user.has_perm("intern.add_lied") else None
+        return render(
+            request,
+            "titel_split.html",
+            {
+                "filter": repertoire_filter,
+                "seitentitel": seitentitel,
+                "konzert_items": konzert_items,
+                "pool_items": pool_items,
+                "konzert_id": konzert_id,
+                "konzert_back_url": f"/intern/titel/?konzert={konzert_id}",
+                "add": add,
+                "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
+                "add_form_multipart": True,
+                "add_label": "Neuer Titel",
+            },
+        )
+
+    # Normal repertoire table mode
+    qs = repertoire_filter.qs
+    if konzert_id:
+        qs = qs.annotate(position=F("konzert__position")).order_by("position")
+    table = RepertoireTabelle(qs, visible_fields=fields)
     playlist = []
     for lied in qs.select_related("original", "aufnahme"):
         audio = lied.original or lied.aufnahme
@@ -70,51 +121,33 @@ def titel_list(request):
         if name != "position"
     ]
     RequestConfig(request, paginate=False).configure(table)
-    remaining_table = []
-    if len(konzerte) == 1:
-        from datetime import date
-
-        seitentitel = f"Ablauf {Termin.objects.get(id=konzerte[0])}"
-        remaining_qs = (
-            Lied.objects.exclude(konzert__termin__id=konzerte[0])
-            .annotate(
-                position=Value("-"),
-                cnt=Count(
-                    1,
-                    filter=Q(konzert__termin__datum__gt=date(2015, 12, 23)),
-                ),
-            )
-            .order_by("-cnt", "titel")
-        )
-        remaining_table = RepertoireTabelle(
-            remaining_qs, visible_fields=["position", "titel"]
-        )
-    else:
-        seitentitel = "Repertoire"
 
     add = "titel_add" if request.user.has_perm("intern.add_lied") else None
-    return render(
-        request,
-        "table.html",
-        {
-            "table": table,
-            "column_choices": column_choices,
-            "visible_fields": fields,
-            "filter": repertoire_filter,
-            "pool": remaining_table,
-            "seitentitel": seitentitel,
-            "upload_folder_id": folders.musik(),
-            "upload_route_by_type": True,
-            "showfilter": True,
-            "order": len(konzerte) == 1,
-            "add": add,
-            "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
-            "add_form_multipart": True,
-            "add_label": "Neuer Titel",
-            "playall": bool(playlist),
-            "playlist_json": json.dumps(playlist, ensure_ascii=False),
-        },
-    )
+    seitentitel = "Repertoire"
+    if konzert_id:
+        try:
+            seitentitel = str(Termin.objects.get(id=konzert_id))
+        except Termin.DoesNotExist:
+            pass
+    context = {
+        "table": table,
+        "column_choices": column_choices,
+        "visible_fields": fields,
+        "filter": repertoire_filter,
+        "seitentitel": seitentitel,
+        "upload_folder_id": folders.musik(),
+        "upload_route_by_type": True,
+        "showfilter": True,
+        "add": add,
+        "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
+        "add_form_multipart": True,
+        "add_label": "Neuer Titel",
+        "playall": bool(playlist),
+        "playlist_json": json.dumps(playlist, ensure_ascii=False),
+    }
+    if konzert_id and request.user.has_perm("intern.change_lied"):
+        context["konzert_order_url"] = f"/intern/titel/?konzert={konzert_id}&edit"
+    return render(request, "table.html", context)
 
 
 @login_required

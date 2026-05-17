@@ -81,38 +81,18 @@ function toggle(offcanvas) {
   offcanvases.forEach((element) => {
     if (element.id !== offcanvas && element.classList.contains("open")) {
       element.classList.remove("open");
-      if (
-        element.id === "PoolSelector" &&
-        typeof window.sortable !== "undefined"
-      ) {
-        window.sortable.option("disabled", true);
-      }
     }
   });
 
   const filter = document.getElementById(offcanvas);
   if (filter && filter.classList.contains("open")) {
     filter.classList.remove("open");
-    // When hiding PoolSelector, disable sorting
-    if (
-      offcanvas === "PoolSelector" &&
-      typeof window.sortable !== "undefined"
-    ) {
-      window.sortable.option("disabled", false);
-    }
     // When hiding AddPanel, re-enable the app-main dropzone
     if (offcanvas === "AddPanel" && appMainDz) {
       appMainDz.enable();
     }
   } else if (filter) {
     filter.classList.add("open");
-    // When showing PoolSelector, enable sorting
-    if (
-      offcanvas === "PoolSelector" &&
-      typeof window.sortable !== "undefined"
-    ) {
-      window.sortable.option("disabled", false);
-    }
     // When showing AddPanel with file dropzones, disable app-main dropzone
     // so it doesn't steal drag events from the panel's own dropzones
     if (offcanvas === "AddPanel" && appMainDz) {
@@ -317,44 +297,69 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   })();
 
-  // Sortable functionality
-  const tbody = document.querySelectorAll(".table-container table tbody");
-  const moderation = document.querySelector("#PoolSelector table tbody");
-  if (tbody && tbody.length >= 2) {
-    const sortable = new Sortable(tbody[1], {
+  // Sortable functionality — split layout (konzert reorder mode)
+  const splitLayout = document.querySelector(".split-layout");
+  const konzertList = document.getElementById("konzert-list");
+  const poolList = document.getElementById("pool-list");
+
+  if (splitLayout && konzertList && poolList) {
+    const konzertId = splitLayout.dataset.konzertId;
+
+    function updatePositions() {
+      konzertList.querySelectorAll(".split-item").forEach((item, i) => {
+        const pos = item.querySelector(".split-item-pos");
+        if (pos) pos.textContent = i + 1;
+      });
+    }
+
+    function ensurePositionNumber(item) {
+      if (!item.querySelector(".split-item-pos")) {
+        const pos = document.createElement("span");
+        pos.className = "split-item-pos";
+        item.insertBefore(pos, item.querySelector(".split-item-titel"));
+      }
+    }
+
+    function removePositionNumber(item) {
+      const pos = item.querySelector(".split-item-pos");
+      if (pos) pos.remove();
+    }
+
+    const konzertSortable = new Sortable(konzertList, {
       group: { name: "shared" },
-      disabled: true,
       animation: 150,
-      ghostClass: "blue-background-class",
-    });
-    const pool = new Sortable(tbody[0], {
-      group: { name: "shared" },
-      sortable: false,
-      animation: 150,
-      ghostClass: "blue-background-class",
-    });
-    const moderate = new Sortable(moderation, {
-      group: { name: "shared", pull: "clone", put: false },
-      sortable: false,
-      animation: 150,
-      ghostClass: "blue-background-class",
+      ghostClass: "sortable-ghost",
+      chosenClass: "sortable-chosen",
+      handle: ".split-item-handle",
+      onAdd(evt) {
+        ensurePositionNumber(evt.item);
+        updatePositions();
+      },
+      onEnd: updatePositions,
+      onRemove: updatePositions,
     });
 
-    window.sortable = sortable;
+    const poolSortable = new Sortable(poolList, {
+      group: { name: "shared" },
+      animation: 150,
+      ghostClass: "sortable-ghost",
+      chosenClass: "sortable-chosen",
+      handle: ".split-item-handle",
+      onAdd(evt) {
+        removePositionNumber(evt.item);
+      },
+    });
 
-    // Function to save order
+    window.sortable = konzertSortable;
+
     function saveOrder() {
-      const order = [...tbody[1].children].map(
-        (row) => row.querySelector("td[data-id]")?.dataset.id,
+      const order = [...konzertList.querySelectorAll(".split-item")].map(
+        (item) => item.dataset.id,
       );
-
-      // Get CSRF token from Django
       const csrfTokenElement = document.querySelector(
         "[name=csrfmiddlewaretoken]",
       );
       const csrfToken = csrfTokenElement ? csrfTokenElement.value : "";
-      const konzert = document.querySelector('select[name="konzert"]');
-      const konzert_id = konzert ? konzert.value : "";
 
       fetch("/intern/update-order/", {
         method: "POST",
@@ -362,12 +367,84 @@ document.addEventListener("DOMContentLoaded", function () {
           "Content-Type": "application/json",
           "X-CSRFToken": csrfToken,
         },
-        body: JSON.stringify({ order: order, konzert_id: konzert_id }),
+        body: JSON.stringify({ order: order, konzert_id: konzertId }),
       });
     }
 
-    // Make saveOrder globally accessible
     window.saveOrder = saveOrder;
+
+    // Split divider resize
+    const divider = document.getElementById("split-divider");
+    if (divider) {
+      const panels = splitLayout.querySelectorAll(".split-panel");
+      let isDragging = false;
+
+      function isVertical() {
+        return getComputedStyle(splitLayout).flexDirection === "column";
+      }
+
+      function getPointerPos(e) {
+        var src = e.touches ? e.touches[0] : e;
+        return isVertical() ? src.clientY : src.clientX;
+      }
+
+      function onPointerDown(e) {
+        isDragging = true;
+        divider.classList.add("dragging");
+        document.body.style.cursor = isVertical() ? "row-resize" : "col-resize";
+        document.body.style.userSelect = "none";
+        e.preventDefault();
+      }
+
+      function onPointerMove(e) {
+        if (!isDragging) return;
+        var vert = isVertical();
+        var containerRect = splitLayout.getBoundingClientRect();
+        var dividerSize = vert ? divider.offsetHeight : divider.offsetWidth;
+        var totalSize = (vert ? containerRect.height : containerRect.width) - dividerSize;
+        var minSize = totalSize * 0.15;
+        var pointerPos = getPointerPos(e) - (vert ? containerRect.top : containerRect.left);
+        var firstSize = Math.max(minSize, Math.min(totalSize - minSize, pointerPos));
+        var secondSize = totalSize - firstSize;
+        if (vert) {
+          panels[0].style.height = firstSize + "px";
+          panels[0].style.width = "";
+          panels[1].style.height = secondSize + "px";
+          panels[1].style.width = "";
+        } else {
+          panels[0].style.width = firstSize + "px";
+          panels[0].style.height = "";
+          panels[1].style.width = secondSize + "px";
+          panels[1].style.height = "";
+        }
+      }
+
+      function onPointerUp() {
+        if (!isDragging) return;
+        isDragging = false;
+        divider.classList.remove("dragging");
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+
+      divider.addEventListener("mousedown", onPointerDown);
+      divider.addEventListener("touchstart", onPointerDown, { passive: false });
+      document.addEventListener("mousemove", onPointerMove);
+      document.addEventListener("touchmove", onPointerMove, { passive: false });
+      document.addEventListener("mouseup", onPointerUp);
+      document.addEventListener("touchend", onPointerUp);
+
+      // Clear inline sizes when switching between horizontal/vertical layout
+      var mql = window.matchMedia("(max-width: 600px)");
+      function clearInlineSizes() {
+        panels.forEach(function (p) {
+          p.style.width = "";
+          p.style.height = "";
+        });
+      }
+      mql.addEventListener("change", clearInlineSizes);
+      clearInlineSizes();
+    }
   }
 
   // ── Audio mini-player ─────────────────────────────────────
@@ -937,9 +1014,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const saveOrderButton = document.getElementById("saveOrderButton");
   if (saveOrderButton) {
     saveOrderButton.addEventListener("click", function () {
-      // Save the order
       if (typeof window.saveOrder !== "undefined") {
         window.saveOrder();
+        const btn = saveOrderButton;
+        const orig = btn.textContent;
+        btn.textContent = "Gespeichert";
+        btn.disabled = true;
+        setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
       }
     });
   }
