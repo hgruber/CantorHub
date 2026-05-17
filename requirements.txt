@@ -1,4 +1,5 @@
 Django==6.0.1
+odfpy==1.4.1
 django-djconfig==0.11.0
 django-filer==3.4.3
 django-filter==25.2

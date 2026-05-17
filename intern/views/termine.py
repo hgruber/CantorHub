@@ -1,3 +1,5 @@
+import io
+
 import secrets
 from datetime import date, datetime, timedelta
 
@@ -6,11 +8,15 @@ from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from icalendar import Calendar, Event
+from odf.opendocument import OpenDocumentText
+from odf.style import ParagraphProperties, Style, TextProperties
+from odf.text import P
+from odf.namespaces import FONS
 
 from intern import folders
 
@@ -25,6 +31,7 @@ __all__ = [
     "termin_edit",
     "termin_add",
     "calendar_ics",
+    "konzert_odt",
 ]
 
 ZUSAGE_TRANSITIONS = {
@@ -85,59 +92,61 @@ def calendar_ics(request, secret):
 
 @login_required
 def termin_list(request):
-    termin_queryset = (
-        Termin.objects.filter(datum__gt=timezone_now())
-        .order_by("datum")
-        .annotate(
-            anwesenheit_option=Coalesce(
-                Subquery(
-                    Zusage.objects.filter(
-                        termin=OuterRef("pk"), person=request.user
-                    ).values("option")[:1]
-                ),
-                Value(""),
+    past = request.GET.get("past") == "1"
+    annotations = {
+        "anwesenheit_option": Coalesce(
+            Subquery(
+                Zusage.objects.filter(
+                    termin=OuterRef("pk"), person=request.user
+                ).values("option")[:1]
             ),
-            anzahl_songs=Count("konzert", distinct=True),
-            anzahl_zusagen_sopran=Count(
-                "zusage",
-                filter=Q(zusage__person__stimme="S", zusage__option="1"),
-                distinct=True,
-            ),
-            anzahl_zusagen_alt=Count(
-                "zusage",
-                filter=Q(zusage__person__stimme="A", zusage__option="1"),
-                distinct=True,
-            ),
-            anzahl_zusagen_tenor=Count(
-                "zusage",
-                filter=Q(zusage__person__stimme="T", zusage__option="1"),
-                distinct=True,
-            ),
-            anzahl_zusagen_bass=Count(
-                "zusage",
-                filter=Q(zusage__person__stimme="B", zusage__option="1"),
-                distinct=True,
-            ),
-            anzahl_vielleicht=Count(
-                "zusage",
-                filter=Q(zusage__option="3"),
-                distinct=True,
-            ),
-            anzahl_absagen=Count(
-                "zusage",
-                filter=Q(zusage__option="2"),
-                distinct=True,
-            ),
-            anzahl_keine_angabe=Coalesce(
-                Value(
-                    User.objects.filter(is_active=True).count(),
-                    output_field=IntegerField(),
-                ) - Count("zusage", distinct=True),
-                Value(0),
+            Value(""),
+        ),
+        "anzahl_songs": Count("konzert", distinct=True),
+        "anzahl_zusagen_sopran": Count(
+            "zusage",
+            filter=Q(zusage__person__stimme="S", zusage__option="1"),
+            distinct=True,
+        ),
+        "anzahl_zusagen_alt": Count(
+            "zusage",
+            filter=Q(zusage__person__stimme="A", zusage__option="1"),
+            distinct=True,
+        ),
+        "anzahl_zusagen_tenor": Count(
+            "zusage",
+            filter=Q(zusage__person__stimme="T", zusage__option="1"),
+            distinct=True,
+        ),
+        "anzahl_zusagen_bass": Count(
+            "zusage",
+            filter=Q(zusage__person__stimme="B", zusage__option="1"),
+            distinct=True,
+        ),
+        "anzahl_vielleicht": Count(
+            "zusage",
+            filter=Q(zusage__option="3"),
+            distinct=True,
+        ),
+        "anzahl_absagen": Count(
+            "zusage",
+            filter=Q(zusage__option="2"),
+            distinct=True,
+        ),
+        "anzahl_keine_angabe": Coalesce(
+            Value(
+                User.objects.filter(is_active=True).count(),
                 output_field=IntegerField(),
-            ),
-        )
-    )
+            ) - Count("zusage", distinct=True),
+            Value(0),
+            output_field=IntegerField(),
+        ),
+    }
+    if past:
+        qs = Termin.objects.filter(datum__lte=timezone_now()).order_by("-datum")
+    else:
+        qs = Termin.objects.filter(datum__gt=timezone_now()).order_by("datum")
+    termin_queryset = qs.annotate(**annotations)
 
     table = TerminTabelle(termin_queryset)
     RequestConfig(request, paginate=False).configure(table)
@@ -152,13 +161,14 @@ def termin_list(request):
         "table.html",
         {
             "table": table,
-            "seitentitel": "Termine",
+            "seitentitel": "Vergangene Termine" if past else "Termine",
             "ical_url": ical_url,
             "webcal_url": webcal_url,
             "upload_folder_id": folders.termine(),
             "add": add,
             "add_form": TerminForm() if request.user.has_perm("intern.add_termin") else None,
             "add_label": "Neuer Termin",
+            "past": past,
         },
     )
 
@@ -180,6 +190,47 @@ def termin_view(request, id):
         "id": id,
     }
     return render(request, "termin.html", context)
+
+
+@login_required
+def konzert_odt(request, id):
+    termin = get_object_or_404(Termin, id=id)
+    lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
+
+    doc = OpenDocumentText()
+
+    def _add_style(name, font_size, bold=False, align=None):
+        style = Style(name=name, family="paragraph")
+        tp = TextProperties()
+        tp.setAttrNS(FONS, "font-name", "Sans Serif")
+        tp.setAttrNS(FONS, "font-size", font_size)
+        if bold:
+            tp.setAttrNS(FONS, "font-weight", "bold")
+        style.addElement(tp)
+        if align:
+            pp = ParagraphProperties()
+            pp.setAttrNS(FONS, "text-align", align)
+            style.addElement(pp)
+        doc.styles.addElement(style)
+
+    _add_style("Titel", "18pt", bold=True, align="center")
+    _add_style("Item", "14pt")
+    _add_style("Composer", "10pt", align="right")
+
+    doc.text.addElement(P(text=str(termin), stylename="Titel"))
+
+    for k in lieder:
+        if k.lied:
+            doc.text.addElement(P(text=k.lied.titel, stylename="Item"))
+            if k.lied.komponist:
+                doc.text.addElement(P(text=k.lied.komponist, stylename="Composer"))
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+
+    safe_name = termin.kurz.replace('"', "")
+    return FileResponse(buf, as_attachment=True, filename=f"{safe_name}.odt", content_type="application/vnd.oasis.opendocument.text")
 
 
 @login_required

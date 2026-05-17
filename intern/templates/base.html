@@ -129,6 +129,28 @@
                         </svg>
                     </a>
                 {% endif %}
+                {% if konzert_id %}
+                    <a href="{% url 'konzert_odt' konzert_id %}" title="Als ODT herunterladen">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </a>
+                {% endif %}
+                {% if past is not None %}
+                    {% if past %}
+                    <a href="{% url 'termin_list' %}" title="Kommende Termine">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="10 14 7 17 10 20"/><line x1="14" y1="17" x2="17" y2="17"/>
+                        </svg>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'termin_list' %}?past=1" title="Vergangene Termine">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="14 14 17 17 14 20"/><line x1="7" y1="17" x2="10" y2="17"/>
+                        </svg>
+                    </a>
+                    {% endif %}
+                {% endif %}
                 {% if add %}
                     <a href="{% url add %}" onclick="if(document.getElementById('AddPanel')){toggle('AddPanel');return false;}" title="Neu anlegen">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -1886,6 +1886,13 @@ div.avatar { cursor: pointer; }
     text-decoration: underline;
 }
 
+.detail-card h3 .h3-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
 .detail-card h3 a.h3-edit {
     display: inline-flex;
     align-items: center;
