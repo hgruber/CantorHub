@@ -370,20 +370,25 @@ def _chip_icon(svg, label, extra_cls=""):
 def _audio_button_html(url, song_id, title, kind):
     """Render a single play button. kind is 'original' or 'jg'."""
     type_label = "Original" if kind == "original" else "JG Aufnahme"
-    badge = "" if kind == "original" else '<span class="audio-btn-label">JG</span>'
+    if kind == "jg":
+        inner = format_html(
+            '<img src="{}" class="audio-btn-logo" alt="JG" />',
+            static("intern/images/JG-Frankfurt-wG-color.svg"),
+        )
+    else:
+        inner = mark_safe(_PLAY_ICON_SVG)
     return format_html(
         '<button type="button" class="audio-btn audio-btn--{kind}" '
         'data-audio-url="{url}" data-song-id="{sid}" '
         'data-title="{title}" data-type="{type}" '
         'title="{type} abspielen" aria-label="{type} – {title} abspielen">'
-        "{icon}{badge}</button>",
+        "{inner}</button>",
         kind=kind,
         url=url,
         sid=song_id,
         title=title,
         type=type_label,
-        icon=mark_safe(_PLAY_ICON_SVG),
-        badge=mark_safe(badge),
+        inner=inner,
     )
 
 

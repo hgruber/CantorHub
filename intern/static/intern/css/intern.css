@@ -2579,6 +2579,7 @@ span.not_found {
     font-weight: 700;
     line-height: 1;
     cursor: pointer;
+    vertical-align: middle;
     transition: background var(--ease), color var(--ease), border-color var(--ease), transform var(--ease);
 }
 .audio-btn:focus-visible {
@@ -2591,8 +2592,11 @@ span.not_found {
     flex: 0 0 auto;
     transform: translateX(0.5px);  /* optical centering of play triangle */
 }
-.audio-btn-label {
-    letter-spacing: 0.03em;
+.audio-btn-logo {
+    display: block;
+    height: 14px;
+    width: 14px;
+    flex: 0 0 auto;
 }
 
 /* Original = outline / quiet */
