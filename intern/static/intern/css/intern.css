@@ -1957,11 +1957,18 @@ div.avatar { cursor: pointer; }
     vertical-align: middle;
 }
 
-/* ── Floated file thumbnails ──────────────────────── */
+/* View context uses block layout so float works (text wraps around figures). */
+/* The flex column on .wiki is only needed in the editor so the textarea fills height. */
+.wiki-page .wiki {
+    display: block;
+    height: auto;
+}
+
+/* ── Right-floated file thumbnails ────────────────── */
 .wiki-page .wiki .wiki-figure {
     float: right;
     clear: right;
-    margin: 0.2em 0 1em 1.5em;
+    margin: 0.2em 0 0.8em 1.2em;
     max-width: 220px;
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -2001,6 +2008,7 @@ div.avatar { cursor: pointer; }
 @media (max-width: 768px) {
     .wiki-page .wiki .wiki-figure {
         float: none;
+        clear: none;
         margin: 1em auto;
         max-width: 100%;
     }
