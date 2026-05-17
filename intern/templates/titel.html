@@ -10,15 +10,15 @@
             <h1>{{ lied.titel }}</h1>
             <div class="detail-subtitle eig-cell">
                 <span class="eig-chip eig-chip--dot" title="{% if lied.aktiv %}Aktiv{% else %}Archiviert{% endif %}" aria-label="{% if lied.aktiv %}Aktiv{% else %}Archiviert{% endif %}"><span class="eig-dot {% if lied.aktiv %}eig-dot--on{% else %}eig-dot--off{% endif %}"></span></span>
-                {% if lied.beats %}
-                <span class="eig-chip eig-chip--beats" title="{{ lied.beats }} Beats per Minute" aria-label="{{ lied.beats }} BPM"><span class="eig-beats">{{ lied.beats }}</span></span>
-                {% endif %}
                 {% if lied.tempo == 'l' %}
                 <span class="eig-chip eig-chip--tempo" title="Tempo: Langsam" aria-label="Tempo Langsam"><span class="eig-tempo">›</span></span>
                 {% elif lied.tempo == 'm' %}
                 <span class="eig-chip eig-chip--tempo" title="Tempo: Mittel" aria-label="Tempo Mittel"><span class="eig-tempo">››</span></span>
                 {% elif lied.tempo == 's' %}
                 <span class="eig-chip eig-chip--tempo" title="Tempo: Schnell" aria-label="Tempo Schnell"><span class="eig-tempo">›››</span></span>
+                {% endif %}
+                {% if lied.beats %}
+                <span class="eig-chip eig-chip--beats" title="{{ lied.beats }} Beats per Minute" aria-label="{{ lied.beats }} BPM"><span class="eig-beats">{{ lied.beats }}</span></span>
                 {% endif %}
                 {% if lied.hymne %}
                 <span class="eig-chip" title="Hymne" aria-label="Hymne"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"/><line x1="6" y1="9" x2="18" y2="9"/></svg></span>

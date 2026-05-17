@@ -412,7 +412,7 @@ class RepertoireTabelle(tables.Table):
         accessor="id",
         attrs={
             "td": {"class": "eig-cell"},
-            "th": {"class": "eig-cell-head", "title": "Aktiv / Beats / Tempo / Hymne / Acapella / Weihnachten"},
+            "th": {"class": "eig-cell-head", "title": "Aktiv / Tempo / Beats / Hymne / Acapella / Weihnachten"},
         },
     )
 
@@ -494,11 +494,11 @@ class RepertoireTabelle(tables.Table):
 
     def render_eigenschaften(self, record):
         parts = [_chip_aktiv(bool(record.aktiv))]
-        if record.beats:
-            parts.append(_chip_beats(record.beats))
         tempo_chip = _chip_tempo(record.tempo)
         if tempo_chip:
             parts.append(tempo_chip)
+        if record.beats:
+            parts.append(_chip_beats(record.beats))
         if record.hymne:
             parts.append(_chip_icon(_CROSS_SVG, "Hymne"))
         if record.acapella:
