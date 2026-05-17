@@ -26,7 +26,12 @@
         <div class="split-panel split-panel--pool">
             <div class="split-header">
                 <strong>Verfügbar</strong>
-                <span class="btn btn-primary btn-sm" style="visibility:hidden" aria-hidden="true">Speichern</span>
+                <div class="pool-search">
+                    <svg class="pool-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="search" id="pool-search" placeholder="Suchen…" autocomplete="off" aria-label="Titel suchen">
+                </div>
             </div>
             <div class="split-body" id="pool-list">
                 {% for item in pool_items %}
@@ -85,4 +90,13 @@
     </div>
     {% endif %}
 </div>
+<script>
+document.getElementById('pool-search').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('#pool-list .split-item').forEach(function(item) {
+        var title = item.querySelector('.split-item-titel').textContent.toLowerCase();
+        item.style.display = title.includes(q) ? '' : 'none';
+    });
+});
+</script>
 {% endblock %}
