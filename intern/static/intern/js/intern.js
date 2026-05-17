@@ -334,9 +334,19 @@ document.addEventListener("DOMContentLoaded", function () {
       onAdd(evt) {
         ensurePositionNumber(evt.item);
         updatePositions();
+        var empty = konzertList.querySelector(".split-empty");
+        if (empty) empty.remove();
       },
       onEnd: updatePositions,
-      onRemove: updatePositions,
+      onRemove(evt) {
+        updatePositions();
+        if (!konzertList.querySelector(".split-item")) {
+          var empty = document.createElement("div");
+          empty.className = "split-empty";
+          empty.textContent = "Keine Titel zugeordnet";
+          konzertList.appendChild(empty);
+        }
+      },
     });
 
     const poolSortable = new Sortable(poolList, {
@@ -347,6 +357,16 @@ document.addEventListener("DOMContentLoaded", function () {
       handle: ".split-item-handle",
       onAdd(evt) {
         removePositionNumber(evt.item);
+        var empty = poolList.querySelector(".split-empty");
+        if (empty) empty.remove();
+      },
+      onRemove(evt) {
+        if (!poolList.querySelector(".split-item")) {
+          var empty = document.createElement("div");
+          empty.className = "split-empty";
+          empty.textContent = "Alle Titel zugeordnet";
+          poolList.appendChild(empty);
+        }
       },
     });
 

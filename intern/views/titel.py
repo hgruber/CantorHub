@@ -41,12 +41,14 @@ def titel_list(request):
     # Konzert reorder mode: split-screen layout
     if konzert_id and "edit" in request.GET:
         qs = (
-            repertoire_filter.qs.annotate(position=F("konzert__position"))
-            .distinct()
+            Lied.objects.filter(konzert__termin__id=konzert_id)
+            .annotate(position=F("konzert__position"))
             .order_by("position")
         )
         fields = ["titel", "eigenschaften", "position"]
-        table = RepertoireTabelle(qs, visible_fields=fields)
+        table = RepertoireTabelle(
+            repertoire_filter.qs, visible_fields=fields
+        )
         RequestConfig(request, paginate=False).configure(table)
 
         from datetime import date
@@ -60,6 +62,7 @@ def titel_list(request):
                 "position": i + 1,
                 "eigenschaften": table.render_eigenschaften(lied),
             })
+        pool_items = []
         remaining_qs = (
             Lied.objects.exclude(konzert__termin__id=konzert_id)
             .annotate(
@@ -70,7 +73,6 @@ def titel_list(request):
             )
             .order_by("-cnt", "titel")
         )
-        pool_items = []
         for lied in remaining_qs:
             pool_items.append({
                 "id": lied.id,
