@@ -907,7 +907,10 @@ time {
 .offcanvas-close:hover { color: var(--brand); }
 
 #ColumnSelector { width: 200px; z-index: 503; }
-#Filter         { width: 300px; z-index: 501; }
+#Filter         { width: 320px; z-index: 501; }
+@media (max-width: 480px) {
+    #Filter     { width: 100%; max-width: 360px; }
+}
 #Action         { width: 260px; z-index: 502; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
 #PoolSelector   { width: 280px; z-index: 503; }
 #AddPanel       { width: 420px; z-index: 504; font-size: 1rem; }
@@ -1107,31 +1110,158 @@ time {
     justify-content: flex-end;
 }
 
-.filter label {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--t3);
-    margin-bottom: 3px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.filter input,
-.filter select {
-    font-size: 12.5px;
-    padding: 5px 8px;
-    margin-bottom: 8px;
-}
-
-.filter button {
-    font-size: 12px;
-    padding: 6px 12px;
-}
-
-.filter > div {
+/* ─── Filter offcanvas (redesigned) ──────────────── */
+#Filter {
     display: flex;
     flex-direction: column;
-    margin-bottom: 4px;
+    padding: 0;
+    overflow: hidden;
+}
+
+#Filter .offcanvas-header {
+    padding: 12px 16px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.filter-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.filter-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 16px 8px;
+}
+
+/* Each field wrapper from {{ form.as_div }} */
+.filter-body > div {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 14px;
+}
+
+.filter-body > div:last-child { margin-bottom: 0; }
+
+/* Field labels become section headers */
+.filter-body label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--t3);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* Inputs and selects */
+.filter-body input[type="text"],
+.filter-body input[type="number"],
+.filter-body input[type="search"],
+.filter-body select {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--t1);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    transition: border-color var(--ease), box-shadow var(--ease);
+}
+
+.filter-body input[type="text"]:focus,
+.filter-body input[type="number"]:focus,
+.filter-body input[type="search"]:focus,
+.filter-body select:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-ring);
+}
+
+/* Fieldset/legend wrapping multi-checkbox fields (konzert/dirigent/solist) */
+.filter-body fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+}
+
+.filter-body legend {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--t3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* Checkbox list wrapper */
+div.filter-checks {
+    padding: 4px;
+    background: var(--bg-app);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    max-height: 220px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Each option row (Django wraps each in a <div>) */
+div.filter-checks > div { margin: 0; }
+
+div.filter-checks > div > label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 9px;
+    margin: 0;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--t1);
+    text-transform: none;
+    letter-spacing: normal;
+    cursor: pointer;
+    transition: background var(--ease);
+}
+
+div.filter-checks > div > label:hover { background: var(--brand-light); }
+
+div.filter-checks > div:has(input:checked) > label {
+    background: var(--brand-light);
+    color: var(--brand);
+    font-weight: 500;
+}
+
+div.filter-checks input[type="checkbox"] {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--brand);
+    flex-shrink: 0;
+}
+
+/* Sticky action bar at the bottom */
+.filter-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+    flex-shrink: 0;
+}
+
+.filter-actions .btn {
+    flex: 1;
+    padding: 9px 14px;
+    font-size: 13px;
 }
 
 /* =================================================== */

@@ -1,5 +1,6 @@
 import django_filters as filters
 import django_tables2 as tables
+from django import forms
 from django.db.models import Q
 from django.templatetags.static import static
 from django.urls import reverse
@@ -211,8 +212,16 @@ class TerminTabelle(tables.Table):
 
 
 class RepertoireFilter(filters.FilterSet):
-    titel = filters.CharFilter(field_name="titel", lookup_expr="icontains")
-    tempo = filters.ChoiceFilter(field_name="tempo", choices=Lied.CHOICES)
+    titel = filters.CharFilter(
+        field_name="titel", lookup_expr="icontains", label="Suche"
+    )
+    tempo = filters.ChoiceFilter(
+        field_name="tempo", choices=Lied.CHOICES, label="Tempo"
+    )
+    aktiv = filters.BooleanFilter(field_name="aktiv", label="Aktiv")
+    hymne = filters.BooleanFilter(field_name="hymne", label="Hymne")
+    acapella = filters.BooleanFilter(field_name="acapella", label="A cappella")
+    weihnacht = filters.BooleanFilter(field_name="weihnacht", label="Weihnachten")
     original = filters.BooleanFilter(
         field_name="original",
         lookup_expr="isnull",
@@ -243,19 +252,30 @@ class RepertoireFilter(filters.FilterSet):
         .order_by("last_name", "first_name")
     )
     dirigent = filters.ModelMultipleChoiceFilter(
-        field_name="dirigent", queryset=dirigent_qs
+        field_name="dirigent",
+        queryset=dirigent_qs,
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
+        label="Dirigent",
     )
     solist_qs = (
         User.objects.filter(solist__isnull=False, is_active=True)
         .distinct()
         .order_by("last_name", "first_name")
     )
-    solist = filters.ModelMultipleChoiceFilter(field_name="solist", queryset=solist_qs)
+    solist = filters.ModelMultipleChoiceFilter(
+        field_name="solist",
+        queryset=solist_qs,
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
+        label="Solist",
+    )
     konzert_qs = (
         Termin.objects.filter(konzert__isnull=False).distinct().order_by("-datum")
     )
     konzert = filters.ModelMultipleChoiceFilter(
-        field_name="termin", queryset=konzert_qs
+        field_name="termin",
+        queryset=konzert_qs,
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
+        label="Konzerte",
     )
 
     class Meta:
@@ -275,6 +295,12 @@ class RepertoireFilter(filters.FilterSet):
             "solist",
             "dirigent",
         ]
+
+    @property
+    def form(self):
+        form = super().form
+        form.label_suffix = ""
+        return form
 
 
 _PLAY_ICON_SVG = (
