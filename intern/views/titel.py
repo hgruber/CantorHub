@@ -31,6 +31,12 @@ def titel_list(request):
     konzerte = request.GET.getlist("konzert")
     repertoire_filter = RepertoireFilter(request.GET, queryset=queryset)
     fields = visible_fields(request, "RepertoireTabelle")
+    # Legacy single-property columns now live in one Eigenschaften column
+    _LEGACY_EIG = {"aktiv", "tempo", "beats", "hymne", "acapella", "weihnacht"}
+    if _LEGACY_EIG.intersection(fields):
+        fields = [f for f in fields if f not in _LEGACY_EIG]
+        if "eigenschaften" not in fields:
+            fields.append("eigenschaften")
     if len(konzerte) == 1:
         qs = (
             repertoire_filter.qs.annotate(position=F("konzert__position"))

@@ -370,76 +370,112 @@ document.addEventListener("DOMContentLoaded", function () {
     window.saveOrder = saveOrder;
   }
 
-  // Audio play/pause functionality
-  let currentAudio = null;
-  let currentAudioElement = null;
+  // ── Audio mini-player ─────────────────────────────────────
+  (function initMiniPlayer() {
+    const player = document.getElementById("mini-player");
+    if (!player) return;
 
-  document.addEventListener("click", function (e) {
-    // Check if the target has classList before accessing it
-    if (
-      e.target &&
-      e.target.classList &&
-      e.target.classList.contains("audio-button")
-    ) {
-      const button = e.target;
-      const audioUrl = button.getAttribute("data-audio-url");
-      const songId = button.getAttribute("data-song-id");
+    const titleEl   = player.querySelector(".mp-title");
+    const typeEl    = player.querySelector(".mp-type");
+    const playBtn   = player.querySelector(".mp-play");
+    const currentEl = player.querySelector(".mp-current");
+    const totalEl   = player.querySelector(".mp-total");
+    const progress  = player.querySelector(".mp-progress");
+    const bar       = player.querySelector(".mp-progress-bar");
+    const closeBtn  = player.querySelector(".mp-close");
 
-      // If there's a currently playing audio and it's not the same song, stop it
-      if (currentAudio && currentAudio !== button) {
-        if (currentAudioElement) {
-          currentAudioElement.pause();
-          currentAudioElement = null;
-        }
-        currentAudio.classList.remove("playing");
-        currentAudio.textContent = "▶";
-        currentAudio = null;
-      }
+    const ICON_PLAY  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+    const ICON_PAUSE = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
 
-      // Create audio element if it doesn't exist or if it's a different song
-      if (!currentAudio || currentAudio !== button) {
-        // If there's an existing audio element, pause it
-        if (currentAudioElement) {
-          currentAudioElement.pause();
-        }
+    let audio = null;
+    let activeBtn = null;
 
-        const audio = new Audio(audioUrl);
-        audio.play();
-        currentAudio = button;
-        currentAudioElement = audio;
-        button.classList.add("playing");
-        button.textContent = "⏸";
-
-        audio.addEventListener("ended", function () {
-          button.classList.remove("playing");
-          button.textContent = "▶";
-          currentAudio = null;
-          currentAudioElement = null;
-        });
-
-        audio.addEventListener("error", function () {
-          console.error("Error playing audio:", audioUrl);
-          button.classList.remove("playing");
-          button.textContent = "▶";
-          currentAudio = null;
-          currentAudioElement = null;
-        });
-      } else {
-        // Toggle play/pause for the same song
-        if (currentAudioElement.paused) {
-          currentAudioElement.play();
-          button.classList.add("playing");
-          button.textContent = "⏸";
-        } else {
-          currentAudioElement.pause();
-          button.classList.remove("playing");
-          button.textContent = "▶";
-          currentAudio = null;
-          currentAudioElement = null;
-        }
-      }
+    function fmt(t) {
+      if (!isFinite(t) || t < 0) return "0:00";
+      const m = Math.floor(t / 60);
+      const s = Math.floor(t % 60).toString().padStart(2, "0");
+      return `${m}:${s}`;
     }
-  });
+    function setBtnPlaying(btn, playing) {
+      if (!btn) return;
+      btn.classList.toggle("playing", playing);
+    }
+    function setMainIcon(playing) {
+      playBtn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+    }
+    function show() {
+      player.classList.add("open");
+      player.setAttribute("aria-hidden", "false");
+    }
+    function hide() {
+      player.classList.remove("open");
+      player.setAttribute("aria-hidden", "true");
+    }
+    function stop() {
+      if (audio) { try { audio.pause(); } catch (_) {} audio = null; }
+      setBtnPlaying(activeBtn, false);
+      activeBtn = null;
+      bar.style.width = "0%";
+      currentEl.textContent = "0:00";
+      totalEl.textContent = "0:00";
+      setMainIcon(false);
+      hide();
+    }
+    function play(btn) {
+      if (audio) { try { audio.pause(); } catch (_) {} }
+      setBtnPlaying(activeBtn, false);
+      activeBtn = btn;
+      setBtnPlaying(btn, true);
+      titleEl.textContent = btn.dataset.title || "";
+      typeEl.textContent  = btn.dataset.type  || "";
+      audio = new Audio(btn.dataset.audioUrl);
+      audio.addEventListener("loadedmetadata", () => {
+        totalEl.textContent = fmt(audio.duration);
+      });
+      audio.addEventListener("timeupdate", () => {
+        currentEl.textContent = fmt(audio.currentTime);
+        if (audio.duration) {
+          bar.style.width = (audio.currentTime / audio.duration * 100) + "%";
+        }
+      });
+      audio.addEventListener("ended", stop);
+      audio.addEventListener("error", () => {
+        console.error("Error playing audio:", btn.dataset.audioUrl);
+        stop();
+      });
+      audio.play().catch((err) => console.error("Audio play() rejected:", err));
+      setMainIcon(true);
+      show();
+    }
+
+    document.addEventListener("click", function (e) {
+      const btn = e.target.closest && e.target.closest(".audio-btn");
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (btn === activeBtn && audio) {
+        if (audio.paused) { audio.play(); setMainIcon(true); setBtnPlaying(btn, true); }
+        else              { audio.pause(); setMainIcon(false); setBtnPlaying(btn, false); }
+      } else {
+        play(btn);
+      }
+    });
+
+    playBtn.addEventListener("click", () => {
+      if (!audio) return;
+      if (audio.paused) { audio.play(); setMainIcon(true); setBtnPlaying(activeBtn, true); }
+      else              { audio.pause(); setMainIcon(false); setBtnPlaying(activeBtn, false); }
+    });
+
+    closeBtn.addEventListener("click", stop);
+
+    progress.addEventListener("click", (e) => {
+      if (!audio || !audio.duration) return;
+      const rect = progress.getBoundingClientRect();
+      const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      audio.currentTime = pct * audio.duration;
+    });
+  })();
 
   // File actions: delete / move / copy
   window.fileAction = function (action) {

@@ -8,27 +8,34 @@
         </div>
         <div class="detail-info">
             <h1>{{ lied.titel }}</h1>
-            <p class="detail-subtitle">
-                {% if lied.aktiv %}<span class="badge badge-primary">Aktiv</span>{% else %}<span class="badge">Inaktiv</span>{% endif %}
-                {% if lied.hymne %} <span class="badge">Hymne</span>{% endif %}
-                {% if lied.acapella %} <span class="badge">Acapella</span>{% endif %}
-                {% if lied.weihnacht %} <span class="badge">Weihnacht</span>{% endif %}
-            </p>
+            <div class="detail-subtitle eig-cell">
+                <span class="eig-chip eig-chip--dot" title="{% if lied.aktiv %}Aktiv{% else %}Archiviert{% endif %}" aria-label="{% if lied.aktiv %}Aktiv{% else %}Archiviert{% endif %}"><span class="eig-dot {% if lied.aktiv %}eig-dot--on{% else %}eig-dot--off{% endif %}"></span></span>
+                {% if lied.beats %}
+                <span class="eig-chip eig-chip--beats" title="{{ lied.beats }} Beats per Minute" aria-label="{{ lied.beats }} BPM"><span class="eig-beats">{{ lied.beats }}</span></span>
+                {% endif %}
+                {% if lied.tempo == 'l' %}
+                <span class="eig-chip eig-chip--tempo" title="Tempo: Langsam" aria-label="Tempo Langsam"><span class="eig-tempo">›</span></span>
+                {% elif lied.tempo == 'm' %}
+                <span class="eig-chip eig-chip--tempo" title="Tempo: Mittel" aria-label="Tempo Mittel"><span class="eig-tempo">››</span></span>
+                {% elif lied.tempo == 's' %}
+                <span class="eig-chip eig-chip--tempo" title="Tempo: Schnell" aria-label="Tempo Schnell"><span class="eig-tempo">›››</span></span>
+                {% endif %}
+                {% if lied.hymne %}
+                <span class="eig-chip" title="Hymne" aria-label="Hymne"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"/><line x1="6" y1="9" x2="18" y2="9"/></svg></span>
+                {% endif %}
+                {% if lied.acapella %}
+                <span class="eig-chip" title="Acapella" aria-label="Acapella"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></span>
+                {% endif %}
+                {% if lied.weihnacht %}
+                <span class="eig-chip" title="Weihnachten" aria-label="Weihnachten"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></span>
+                {% endif %}
+            </div>
         </div>
     </div>
 
     <div class="detail-cards">
+        {% if lied.komponist or lied.bearbeiter %}
         <div class="detail-card">
-            <div class="detail-card-row">
-                <span class="label">Tempo</span>
-                <span class="value">{{ lied.get_tempo_display }}</span>
-            </div>
-            {% if lied.beats %}
-            <div class="detail-card-row">
-                <span class="label">Beats</span>
-                <span class="value">{{ lied.beats }}</span>
-            </div>
-            {% endif %}
             {% if lied.komponist %}
             <div class="detail-card-row">
                 <span class="label">Komponist</span>
@@ -42,6 +49,7 @@
             </div>
             {% endif %}
         </div>
+        {% endif %}
 
         {% if lied.original or lied.aufnahme or lied.pdf or lied.noten %}
         <div class="detail-card">
@@ -49,25 +57,50 @@
             {% if lied.original %}
             <div class="media-row">
                 <span class="media-label">Original</span>
-                <button class="audio-button" data-audio-url="{{ lied.original.url }}" data-song-id="{{ lied.id }}">▶</button>
+                <button type="button" class="audio-btn audio-btn--original"
+                        data-audio-url="{{ lied.original.url }}"
+                        data-song-id="{{ lied.id }}"
+                        data-title="{{ lied.titel }}"
+                        data-type="Original"
+                        aria-label="Original – {{ lied.titel }} abspielen">
+                    <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                </button>
             </div>
             {% endif %}
             {% if lied.aufnahme %}
             <div class="media-row">
-                <span class="media-label">Aufnahme</span>
-                <button class="audio-button" data-audio-url="{{ lied.aufnahme.url }}" data-song-id="r{{ lied.id }}">▶</button>
+                <span class="media-label">JG Aufnahme</span>
+                <button type="button" class="audio-btn audio-btn--jg"
+                        data-audio-url="{{ lied.aufnahme.url }}"
+                        data-song-id="r{{ lied.id }}"
+                        data-title="{{ lied.titel }}"
+                        data-type="JG Aufnahme"
+                        aria-label="JG Aufnahme – {{ lied.titel }} abspielen">
+                    <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                    <span class="audio-btn-label">JG</span>
+                </button>
             </div>
             {% endif %}
             {% if lied.pdf %}
             <div class="media-row">
                 <span class="media-label">Notenblatt</span>
-                <a href="{{ lied.pdf.url }}" target="_blank" class="btn btn-sm">PDF ansehen</a>
+                <a href="{{ lied.pdf.url }}" target="_blank" rel="noopener"
+                   class="file-icon-btn file-icon-btn--pdf"
+                   title="Notenblatt: {{ lied.titel }}"
+                   aria-label="Notenblatt {{ lied.titel }} öffnen">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                </a>
             </div>
             {% endif %}
             {% if lied.noten %}
             <div class="media-row">
                 <span class="media-label">Notensatz</span>
-                <a href="{{ lied.noten.url }}" target="_blank" class="btn btn-sm">Datei ansehen</a>
+                <a href="{{ lied.noten.url }}" target="_blank" rel="noopener"
+                   class="file-icon-btn file-icon-btn--notes"
+                   title="Notensatz: {{ lied.titel }}"
+                   aria-label="Notensatz {{ lied.titel }} öffnen">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                </a>
             </div>
             {% endif %}
         </div>
