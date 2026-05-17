@@ -389,6 +389,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let audio = null;
     let activeBtn = null;
+    let queue = [];
+    let queueIndex = -1;
 
     function fmt(t) {
       if (!isFinite(t) || t < 0) return "0:00";
@@ -415,20 +417,26 @@ document.addEventListener("DOMContentLoaded", function () {
       if (audio) { try { audio.pause(); } catch (_) {} audio = null; }
       setBtnPlaying(activeBtn, false);
       activeBtn = null;
+      queue = [];
+      queueIndex = -1;
       bar.style.width = "0%";
       currentEl.textContent = "0:00";
       totalEl.textContent = "0:00";
       setMainIcon(false);
       hide();
     }
-    function play(btn) {
+    function loadTrack(item, onEnded) {
       if (audio) { try { audio.pause(); } catch (_) {} }
-      setBtnPlaying(activeBtn, false);
-      activeBtn = btn;
-      setBtnPlaying(btn, true);
-      titleEl.textContent = btn.dataset.title || "";
-      typeEl.textContent  = btn.dataset.type  || "";
-      audio = new Audio(btn.dataset.audioUrl);
+      titleEl.textContent = item.title || "";
+      let typeText = item.type || "";
+      if (queue.length > 1) {
+        typeText += ` · ${queueIndex + 1} / ${queue.length}`;
+      }
+      typeEl.textContent = typeText;
+      bar.style.width = "0%";
+      currentEl.textContent = "0:00";
+      totalEl.textContent = "0:00";
+      audio = new Audio(item.url);
       audio.addEventListener("loadedmetadata", () => {
         totalEl.textContent = fmt(audio.duration);
       });
@@ -438,15 +446,60 @@ document.addEventListener("DOMContentLoaded", function () {
           bar.style.width = (audio.currentTime / audio.duration * 100) + "%";
         }
       });
-      audio.addEventListener("ended", stop);
+      audio.addEventListener("ended", onEnded);
       audio.addEventListener("error", () => {
-        console.error("Error playing audio:", btn.dataset.audioUrl);
-        stop();
+        console.error("Error playing audio:", item.url);
+        onEnded();
       });
       audio.play().catch((err) => console.error("Audio play() rejected:", err));
       setMainIcon(true);
       show();
     }
+    function play(btn) {
+      setBtnPlaying(activeBtn, false);
+      queue = [];
+      queueIndex = -1;
+      activeBtn = btn;
+      setBtnPlaying(btn, true);
+      loadTrack({
+        url: btn.dataset.audioUrl,
+        title: btn.dataset.title || "",
+        type: btn.dataset.type || "",
+      }, stop);
+    }
+    function advance() {
+      queueIndex++;
+      if (queueIndex < queue.length) {
+        loadTrack(queue[queueIndex], advance);
+      } else {
+        stop();
+      }
+    }
+    function playQueue(items, shuffle) {
+      if (!items || !items.length) {
+        alert("Keine spielbaren Audios in der Liste.");
+        return;
+      }
+      setBtnPlaying(activeBtn, false);
+      activeBtn = null;
+      queue = items.slice();
+      if (shuffle) {
+        for (let i = queue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [queue[i], queue[j]] = [queue[j], queue[i]];
+        }
+      }
+      queueIndex = 0;
+      loadTrack(queue[0], advance);
+    }
+    window.startPlaylist = function (shuffle) {
+      const dataEl = document.getElementById("playlist-data");
+      let items = [];
+      if (dataEl) {
+        try { items = JSON.parse(dataEl.textContent); } catch (_) { items = []; }
+      }
+      playQueue(items, shuffle);
+    };
 
     document.addEventListener("click", function (e) {
       const btn = e.target.closest && e.target.closest(".audio-btn");

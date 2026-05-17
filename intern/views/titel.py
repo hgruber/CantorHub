@@ -50,6 +50,16 @@ def titel_list(request):
         qs,
         visible_fields=fields,
     )
+    playlist = []
+    for lied in qs.select_related("original", "aufnahme"):
+        audio = lied.original or lied.aufnahme
+        if not audio:
+            continue
+        playlist.append({
+            "url": audio.url,
+            "title": lied.titel,
+            "type": "Original" if lied.original else "JG Aufnahme",
+        })
     column_choices = [
         {
             "name": name,
@@ -101,6 +111,8 @@ def titel_list(request):
             "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
             "add_form_multipart": True,
             "add_label": "Neuer Titel",
+            "playall": bool(playlist),
+            "playlist_json": json.dumps(playlist, ensure_ascii=False),
         },
     )
 

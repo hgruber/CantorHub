@@ -103,6 +103,25 @@
                                onsearch="if(!this.value){this.form.submit();}">
                     </form>
                 {% endif %}
+                {% if playall %}
+                    <a href="#" onclick="startPlaylist(false); return false;" title="Alle in Reihenfolge abspielen">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="6" x2="13" y2="6"/>
+                            <line x1="3" y1="12" x2="13" y2="12"/>
+                            <line x1="3" y1="18" x2="10" y2="18"/>
+                            <polygon points="17 13 22 17 17 21" fill="currentColor" stroke="none"/>
+                        </svg>
+                    </a>
+                    <a href="#" onclick="startPlaylist(true); return false;" title="Zufällig abspielen">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 3 21 3 21 8"/>
+                            <line x1="4" y1="20" x2="21" y2="3"/>
+                            <polyline points="21 16 21 21 16 21"/>
+                            <line x1="15" y1="15" x2="21" y2="21"/>
+                            <line x1="4" y1="4" x2="9" y2="9"/>
+                        </svg>
+                    </a>
+                {% endif %}
                 {% if add %}
                     <a href="{% url add %}" onclick="if(document.getElementById('AddPanel')){toggle('AddPanel');return false;}" title="Neu anlegen">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
