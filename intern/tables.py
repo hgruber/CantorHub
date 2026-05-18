@@ -397,8 +397,9 @@ def _audio_button_html(url, song_id, title, kind):
     type_label = "Original" if kind == "original" else "JG Aufnahme"
     if kind == "jg":
         inner = format_html(
-            '<img src="{}" class="audio-btn-logo" alt="JG" />',
-            static("intern/images/JG-Frankfurt-wG-color.svg"),
+            '{play}<img src="{logo}" class="audio-btn-logo" alt="JG" />',
+            play=mark_safe(_PLAY_ICON_SVG),
+            logo=static("intern/images/JG-Frankfurt-wG-color.svg"),
         )
     else:
         inner = mark_safe(_PLAY_ICON_SVG)

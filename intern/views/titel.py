@@ -104,16 +104,16 @@ def titel_list(request):
     if konzert_id:
         qs = qs.annotate(position=F("konzert__position")).order_by("position")
     table = RepertoireTabelle(qs, visible_fields=fields)
-    playlist = []
+    playlist_originals, playlist_aufnahmen, playlist_all = [], [], []
     for lied in qs.select_related("original", "aufnahme"):
+        if lied.original:
+            playlist_originals.append({"url": lied.original.url, "title": lied.titel, "type": "Original"})
+        if lied.aufnahme:
+            playlist_aufnahmen.append({"url": lied.aufnahme.url, "title": lied.titel, "type": "JG Aufnahme"})
         audio = lied.original or lied.aufnahme
-        if not audio:
-            continue
-        playlist.append({
-            "url": audio.url,
-            "title": lied.titel,
-            "type": "Original" if lied.original else "JG Aufnahme",
-        })
+        if audio:
+            playlist_all.append({"url": audio.url, "title": lied.titel, "type": "Original" if lied.original else "JG Aufnahme"})
+    playlists = {"originals": playlist_originals, "aufnahmen": playlist_aufnahmen, "all": playlist_all}
     column_choices = [
         {
             "name": name,
@@ -145,8 +145,11 @@ def titel_list(request):
         "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
         "add_form_multipart": True,
         "add_label": "Neuer Titel",
-        "playall": bool(playlist),
-        "playlist_json": json.dumps(playlist, ensure_ascii=False),
+        "play_menu": bool(playlist_originals or playlist_aufnahmen),
+        "playlists_json": json.dumps(playlists, ensure_ascii=False),
+        "playlist_originals_count": len(playlist_originals),
+        "playlist_aufnahmen_count": len(playlist_aufnahmen),
+        "playlist_all_count": len(playlist_all),
         "konzert_id": konzert_id,
         "chips_skip": ["konzert"],
     }

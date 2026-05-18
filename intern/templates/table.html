@@ -132,8 +132,8 @@
     </div>
     {% endif %}
     {% render_table table %}
-    {% if playlist_json %}
-    <script id="playlist-data" type="application/json">{{ playlist_json|safe }}</script>
+    {% if playlists_json %}
+    <script id="playlists-data" type="application/json">{{ playlists_json|safe }}</script>
     {% endif %}
     {% if ical_url %}
     <div class="ical-subscribe" id="ical-subscribe">

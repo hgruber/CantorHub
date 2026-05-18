@@ -3170,17 +3170,37 @@ span.not_found {
     background: var(--brand-light);
 }
 
-/* JG Aufnahme = solid brand */
+/* JG Aufnahme = tinted / subdued */
 .audio-btn--jg {
+    background: var(--brand-light);
+    border-color: var(--brand);
+    color: var(--brand);
+}
+.audio-btn--jg:hover {
+    background: rgba(193, 68, 104, 0.20);
+    border-color: var(--brand-dark);
+    color: var(--brand-dark);
+}
+.audio-btn--jg.playing {
     background: var(--brand);
     border-color: var(--brand);
     color: #fff;
-}
-.audio-btn--jg:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
-.audio-btn--jg.playing {
-    background: var(--brand-dark);
-    border-color: var(--brand-dark);
     box-shadow: 0 0 0 3px var(--brand-ring);
+}
+[data-theme="dark"] .audio-btn--jg {
+    background: rgba(193, 68, 104, 0.15);
+    border-color: rgba(193, 68, 104, 0.40);
+    color: #d97a96;
+}
+[data-theme="dark"] .audio-btn--jg:hover {
+    background: rgba(193, 68, 104, 0.28);
+    border-color: rgba(193, 68, 104, 0.60);
+    color: #eba8be;
+}
+[data-theme="dark"] .audio-btn--jg.playing {
+    background: rgba(193, 68, 104, 0.55);
+    border-color: var(--brand);
+    color: #fff;
 }
 
 /* Pulse while playing */

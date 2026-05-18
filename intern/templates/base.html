@@ -105,24 +105,66 @@
                                onsearch="if(!this.value){this.form.submit();}">
                     </form>
                 {% endif %}
-                {% if playall %}
-                    <a href="#" onclick="startPlaylist(false); return false;" title="Alle in Reihenfolge abspielen">
+                {% if play_menu %}
+                <div class="dl-trigger" id="playTrigger">
+                    <button type="button" class="dl-trigger-btn" id="playMenuBtn" title="Wiedergabe" aria-haspopup="true" aria-expanded="false">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="3" y1="6" x2="13" y2="6"/>
-                            <line x1="3" y1="12" x2="13" y2="12"/>
-                            <line x1="3" y1="18" x2="10" y2="18"/>
-                            <polygon points="17 13 22 17 17 21" fill="currentColor" stroke="none"/>
+                            <circle cx="12" cy="12" r="9"/>
+                            <polygon points="10 8 18 12 10 16" fill="currentColor" stroke="none"/>
                         </svg>
-                    </a>
-                    <a href="#" onclick="startPlaylist(true); return false;" title="Zufällig abspielen">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="16 3 21 3 21 8"/>
-                            <line x1="4" y1="20" x2="21" y2="3"/>
-                            <polyline points="21 16 21 21 16 21"/>
-                            <line x1="15" y1="15" x2="21" y2="21"/>
-                            <line x1="4" y1="4" x2="9" y2="9"/>
-                        </svg>
-                    </a>
+                    </button>
+                    <div class="dl-menu" id="playMenu" role="menu">
+                        <div class="dl-menu-header">Wiedergabe</div>
+                        {% if playlist_originals_count %}
+                        <a href="#" class="dl-item" data-playlist-type="originals" data-shuffle="false">
+                            <span class="dl-item-icon dl-icon-audio">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="13" y2="12"/><line x1="3" y1="18" x2="10" y2="18"/><polygon points="17 13 22 17 17 21" fill="currentColor" stroke="none"/>
+                                </svg>
+                            </span>
+                            <span class="dl-item-body">
+                                <span class="dl-item-title">Alle Originale</span>
+                                <span class="dl-item-sub">{{ playlist_originals_count }} Songs in Reihenfolge</span>
+                            </span>
+                        </a>
+                        <a href="#" class="dl-item" data-playlist-type="originals" data-shuffle="true">
+                            <span class="dl-item-icon dl-icon-audio">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>
+                                </svg>
+                            </span>
+                            <span class="dl-item-body">
+                                <span class="dl-item-title">Originale zufällig</span>
+                                <span class="dl-item-sub">{{ playlist_originals_count }} Songs in Zufallsreihenfolge</span>
+                            </span>
+                        </a>
+                        {% endif %}
+                        {% if playlist_aufnahmen_count %}
+                        <a href="#" class="dl-item" data-playlist-type="aufnahmen" data-shuffle="false">
+                            <span class="dl-item-icon dl-icon-jg-rec">
+                                <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" width="18" height="18" alt="" aria-hidden="true" />
+                            </span>
+                            <span class="dl-item-body">
+                                <span class="dl-item-title">JG Aufnahmen</span>
+                                <span class="dl-item-sub">{{ playlist_aufnahmen_count }} Aufnahmen in Reihenfolge</span>
+                            </span>
+                        </a>
+                        {% endif %}
+                        {% if playlist_all_count %}
+                        <a href="#" class="dl-item" data-playlist-type="all" data-shuffle="false">
+                            <span class="dl-item-icon dl-icon-audio">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                                </svg>
+                            </span>
+                            <span class="dl-item-body">
+                                <span class="dl-item-title">Alle Songs</span>
+                                <span class="dl-item-sub">Original bevorzugt · {{ playlist_all_count }} Songs</span>
+                            </span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
                 {% endif %}
                 {% if konzert_back_url %}
                     <a href="{{ konzert_back_url }}" title="Zurück zur Übersicht">
@@ -340,6 +382,35 @@
                     menu.classList.remove('open');
                     btn.setAttribute('aria-expanded', 'false');
                 }
+            });
+        })();
+        (function() {
+            var pbtn = document.getElementById('playMenuBtn');
+            var pmenu = document.getElementById('playMenu');
+            if (!pbtn) return;
+            pbtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var open = pmenu.classList.toggle('open');
+                pbtn.setAttribute('aria-expanded', open);
+            });
+            document.addEventListener('click', function(e) {
+                if (pmenu.classList.contains('open') && !document.getElementById('playTrigger').contains(e.target)) {
+                    pmenu.classList.remove('open');
+                    pbtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+            pmenu.addEventListener('click', function(e) {
+                var item = e.target.closest('[data-playlist-type]');
+                if (!item) return;
+                e.preventDefault();
+                var type = item.dataset.playlistType;
+                var shuffle = item.dataset.shuffle === 'true';
+                if (window.startPlaylistType) window.startPlaylistType(type, shuffle);
+                pmenu.classList.remove('open');
+                pbtn.setAttribute('aria-expanded', 'false');
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') { pmenu.classList.remove('open'); pbtn.setAttribute('aria-expanded', 'false'); }
             });
         })();
         </script>

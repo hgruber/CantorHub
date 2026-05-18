@@ -636,6 +636,14 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       playQueue(items, shuffle);
     };
+    window.startPlaylistType = function (type, shuffle) {
+      const dataEl = document.getElementById("playlists-data");
+      let playlists = {};
+      if (dataEl) {
+        try { playlists = JSON.parse(dataEl.textContent); } catch (_) {}
+      }
+      playQueue(playlists[type] || [], shuffle);
+    };
 
     document.addEventListener("click", function (e) {
       const btn = e.target.closest && e.target.closest(".audio-btn");
