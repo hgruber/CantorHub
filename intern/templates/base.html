@@ -132,11 +132,74 @@
                     </a>
                 {% endif %}
                 {% if konzert_id %}
-                    <a href="{% url 'konzert_docx' konzert_id %}" title="Als Word herunterladen">
+                <div class="dl-trigger" id="dlTrigger">
+                    <button type="button" class="dl-trigger-btn" id="dlBtn" title="Downloads" aria-haspopup="true" aria-expanded="false">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                         </svg>
-                    </a>
+                    </button>
+                    <div class="dl-menu" id="dlMenu" role="menu">
+                        <div class="dl-menu-header">Downloads</div>
+                        <div class="dl-group-label">Word</div>
+                        <a href="{% url 'konzert_docx' konzert_id %}" class="dl-item">
+                            <span class="dl-item-icon dl-icon-word">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                                </svg>
+                            </span>
+                            <span class="dl-item-body">
+                                <span class="dl-item-title">Konzertprogramm</span>
+                                <span class="dl-item-sub">Mit Titeln &amp; Komponisten</span>
+                            </span>
+                        </a>
+                        <a href="{% url 'konzert_docx_titles' konzert_id %}" class="dl-item">
+                            <span class="dl-item-icon dl-icon-word">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/>
+                                </svg>
+                            </span>
+                            <span class="dl-item-body">
+                                <span class="dl-item-title">Nur Titel</span>
+                                <span class="dl-item-sub">Zentriert, ohne Komponisten</span>
+                            </span>
+                        </a>
+                        <div class="dl-group-label">PDF</div>
+                        <a href="{% url 'konzert_pdf' konzert_id %}" class="dl-item">
+                            <span class="dl-item-icon dl-icon-pdf">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+                                </svg>
+                            </span>
+                            <span class="dl-item-body">
+                                <span class="dl-item-title">Zusammengeführt</span>
+                                <span class="dl-item-sub">Alle Songs in einer PDF-Datei</span>
+                            </span>
+                        </a>
+                        <a href="{% url 'konzert_pdf_zip' konzert_id %}" class="dl-item">
+                            <span class="dl-item-icon dl-icon-pdf">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+                                </svg>
+                            </span>
+                            <span class="dl-item-body">
+                                <span class="dl-item-title">PDF-Archiv</span>
+                                <span class="dl-item-sub">Einzelne PDFs als ZIP</span>
+                            </span>
+                        </a>
+                        <div class="dl-group-label">Noten</div>
+                        <a href="{% url 'konzert_noten_zip' konzert_id %}" class="dl-item">
+                            <span class="dl-item-icon dl-icon-noten">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                                </svg>
+                            </span>
+                            <span class="dl-item-body">
+                                <span class="dl-item-title">Notenarchiv</span>
+                                <span class="dl-item-sub">Alle Noten als ZIP-Datei</span>
+                            </span>
+                        </a>
+                    </div>
+                </div>
                 {% endif %}
                 {% if past is not None %}
                     {% if past %}
@@ -256,5 +319,29 @@
             </form>
         </dialog>
         {% endif %}
+        <script>
+        (function() {
+            var btn = document.getElementById('dlBtn');
+            var menu = document.getElementById('dlMenu');
+            if (!btn) return;
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var open = menu.classList.toggle('open');
+                btn.setAttribute('aria-expanded', open);
+            });
+            document.addEventListener('click', function(e) {
+                if (menu.classList.contains('open') && !document.getElementById('dlTrigger').contains(e.target)) {
+                    menu.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    menu.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        })();
+        </script>
     </body>
 </html>

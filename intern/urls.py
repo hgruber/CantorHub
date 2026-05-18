@@ -55,6 +55,10 @@ urlpatterns = [
     path("termin/<int:id>/", views.termin_view, name="termin_view"),
     path("termin/<int:id>/edit/", views.termin_edit, name="termin_edit"),
     path("termin/<int:id>/docx/", views.konzert_docx, name="konzert_docx"),
+    path("termin/<int:id>/docx-titles/", views.konzert_docx_titles, name="konzert_docx_titles"),
+    path("termin/<int:id>/pdf/", views.konzert_pdf, name="konzert_pdf"),
+    path("termin/<int:id>/pdf-zip/", views.konzert_pdf_zip, name="konzert_pdf_zip"),
+    path("termin/<int:id>/noten-zip/", views.konzert_noten_zip, name="konzert_noten_zip"),
     path("termin/<int:id>/zusage/", views.termin_zusage, name="termin_zusage"),
     # Ort URLs
     path("ort/", views.ort_list, name="ort_list"),

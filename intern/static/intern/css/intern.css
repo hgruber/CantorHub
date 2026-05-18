@@ -4678,3 +4678,115 @@ span.not_found {
 .abstimmung-readonly .abstimmung-result {
     margin-left: 0;
 }
+
+/* === Konzert Download Menu === */
+.dl-trigger {
+    position: relative;
+    display: inline-flex;
+}
+.dl-trigger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px;
+    border-radius: var(--r-sm);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--tb-icon);
+    transition: background var(--ease);
+}
+.dl-trigger-btn:hover {
+    background: var(--hover-icon-bg);
+}
+.dl-trigger-btn .toolicon {
+    /* inherit toolicon sizing — no extra margin needed */
+    display: block;
+}
+.dl-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 270px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-md);
+    padding: 8px;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition: opacity var(--ease), transform var(--ease);
+}
+.dl-menu.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+.dl-menu-header {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--t4);
+    padding: 4px 8px 8px;
+}
+.dl-group-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--t4);
+    padding: 8px 8px 4px;
+    margin-top: 4px;
+}
+.dl-group-label:not(:first-of-type) {
+    border-top: 1px solid var(--border);
+}
+.dl-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: var(--r-sm);
+    text-decoration: none;
+    color: var(--t1);
+    transition: background var(--ease);
+}
+.dl-item:hover {
+    background: var(--hover-bg);
+}
+.dl-item:hover .dl-item-title {
+    color: var(--brand);
+}
+.dl-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--r-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.dl-icon-word  { background: #eff6ff; color: #2563eb; }
+.dl-icon-pdf   { background: #fef2f2; color: #dc2626; }
+.dl-icon-noten { background: #f0fdf4; color: #16a34a; }
+.dl-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.dl-item-title {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--t1);
+    transition: color var(--ease);
+}
+.dl-item-sub {
+    font-size: 0.78rem;
+    color: var(--t3);
+}
+[data-theme="dark"] .dl-icon-word  { background: rgba(37,99,235,0.15);  color: #60a5fa; }
+[data-theme="dark"] .dl-icon-pdf   { background: rgba(220,38,38,0.15);  color: #f87171; }
+[data-theme="dark"] .dl-icon-noten { background: rgba(22,163,74,0.15);  color: #4ade80; }

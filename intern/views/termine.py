@@ -1,6 +1,7 @@
 import io
-
+import os
 import secrets
+import zipfile
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
@@ -31,6 +32,10 @@ __all__ = [
     "termin_add",
     "calendar_ics",
     "konzert_docx",
+    "konzert_docx_titles",
+    "konzert_pdf",
+    "konzert_pdf_zip",
+    "konzert_noten_zip",
 ]
 
 ZUSAGE_TRANSITIONS = {
@@ -219,6 +224,91 @@ def konzert_docx(request, id):
 
     safe_name = termin.kurz.replace('"', "")
     return FileResponse(buf, as_attachment=True, filename=f"{safe_name}.docx", content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+
+@login_required
+def konzert_docx_titles(request, id):
+    termin = get_object_or_404(Termin, id=id)
+    lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
+
+    doc = Document()
+
+    titel = doc.add_paragraph(str(termin))
+    titel.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = titel.runs[0]
+    run.bold = True
+    run.font.size = Pt(18)
+
+    for k in lieder:
+        if k.lied:
+            item = doc.add_paragraph(k.lied.titel)
+            item.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            item.runs[0].font.size = Pt(14)
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+
+    safe_name = termin.kurz.replace('"', "")
+    return FileResponse(buf, as_attachment=True, filename=f"{safe_name}-titel.docx", content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+
+@login_required
+def konzert_pdf(request, id):
+    import fitz
+
+    termin = get_object_or_404(Termin, id=id)
+    lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
+
+    combined = fitz.open()
+    for k in lieder:
+        if k.lied and k.lied.pdf:
+            src = fitz.open(k.lied.pdf.file.path)
+            combined.insert_pdf(src)
+            src.close()
+
+    buf = io.BytesIO()
+    combined.save(buf)
+    combined.close()
+    buf.seek(0)
+
+    safe_name = termin.kurz.replace('"', "")
+    return FileResponse(buf, as_attachment=True, filename=f"{safe_name}.pdf", content_type="application/pdf")
+
+
+@login_required
+def konzert_pdf_zip(request, id):
+    termin = get_object_or_404(Termin, id=id)
+    lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for k in lieder:
+            if k.lied and k.lied.pdf:
+                arcname = f"{k.position:02d} {k.lied.titel}.pdf"
+                zf.write(k.lied.pdf.file.path, arcname)
+    buf.seek(0)
+
+    safe_name = termin.kurz.replace('"', "")
+    return FileResponse(buf, as_attachment=True, filename=f"{safe_name}-pdfs.zip", content_type="application/zip")
+
+
+@login_required
+def konzert_noten_zip(request, id):
+    termin = get_object_or_404(Termin, id=id)
+    lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for k in lieder:
+            if k.lied and k.lied.noten:
+                ext = os.path.splitext(k.lied.noten.file.path)[1]
+                arcname = f"{k.position:02d} {k.lied.titel}{ext}"
+                zf.write(k.lied.noten.file.path, arcname)
+    buf.seek(0)
+
+    safe_name = termin.kurz.replace('"', "")
+    return FileResponse(buf, as_attachment=True, filename=f"{safe_name}-noten.zip", content_type="application/zip")
 
 
 @login_required
