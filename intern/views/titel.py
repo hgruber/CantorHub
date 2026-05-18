@@ -95,6 +95,7 @@ def titel_list(request):
                 "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
                 "add_form_multipart": True,
                 "add_label": "Neuer Titel",
+                "chips_skip": ["konzert"],
             },
         )
 
