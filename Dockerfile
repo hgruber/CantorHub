@@ -30,6 +30,9 @@ RUN useradd -m -r appuser && \
 # Copy the Python dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
+ENV LANG=de_DE.UTF-8
+ENV LC_ALL=de_DE.UTF-8
+
 RUN apt update -y && apt install -y nginx locales git && \
     locale-gen de_DE.UTF-8 && \
     update-locale LANG=de_DE.UTF-8 LC_ALL=de_DE.UTF-8 && \
@@ -40,10 +43,6 @@ WORKDIR /app
 
 # Copy application code
 #COPY --chown=appuser:appuser . .
-
-# Set environment variables to optimize Python
-ENV LANG=de_DE.UTF-8
-ENV LC_ALL=de_DE.UTF-8
 
 # Switch to non-root user
 #USER appuser
