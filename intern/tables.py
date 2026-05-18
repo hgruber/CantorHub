@@ -460,6 +460,13 @@ class RepertoireTabelle(tables.Table):
         },
     )
 
+    zuletzt = tables.DateColumn(
+        verbose_name="Zuletzt",
+        accessor="zuletzt",
+        format="d.m.Y",
+        attrs={"td": {"style": "font-size: 0.85em; white-space: nowrap;"}},
+    )
+
     solist = tables.ManyToManyColumn(attrs={"td": {"style": "font-size: 0.8em;"}})
     dirigent = tables.ManyToManyColumn(attrs={"td": {"style": "font-size: 0.8em;"}})
 
