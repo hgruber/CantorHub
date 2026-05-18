@@ -147,6 +147,7 @@ def titel_list(request):
         "playall": bool(playlist),
         "playlist_json": json.dumps(playlist, ensure_ascii=False),
         "konzert_id": konzert_id,
+        "chips_skip": ["konzert"],
     }
     if konzert_id and request.user.has_perm("intern.change_lied"):
         context["konzert_order_url"] = f"/intern/titel/?konzert={konzert_id}&edit"

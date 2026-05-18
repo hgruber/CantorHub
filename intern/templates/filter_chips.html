@@ -1,0 +1,10 @@
+{% if chips %}
+<div class="filter-chips">
+    {% for chip in chips %}
+    <a href="{{ chip.url }}" class="filter-chip filter-chip--{{ chip.chip_type }}">
+        {{ chip.label }}{% if chip.value %}: {{ chip.value }}{% endif %}
+        <span class="filter-chip-x">&times;</span>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}

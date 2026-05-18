@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
-{% load django_tables2 %}
+{% load django_tables2 filter_tags %}
+{% block topbar_after %}
+{% if filter %}{% filter_chips filter request chips_skip %}{% endif %}
+{% endblock %}
 {% block content %}
 <div class="table-view">
     {% if show_file_actions %}

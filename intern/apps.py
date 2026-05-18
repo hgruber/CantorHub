@@ -9,6 +9,7 @@ _migrating = threading.local()
 
 class InternConfig(AppConfig):
     name = "intern"
+    default_auto_field = "django.db.models.BigAutoField"
 
     def ready(self):
         def _start_migration(sender, **kwargs):

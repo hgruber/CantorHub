@@ -416,7 +416,7 @@ body {
 }
 
 .top-bar .title {
-    flex: 1;
+    flex: 0 1 auto;
     font-size: 15px;
     font-weight: 600;
     color: var(--t1);
@@ -427,6 +427,45 @@ body {
     padding: 0 6px;
     letter-spacing: -0.01em;
 }
+
+/* Filter chips in topbar */
+.filter-chips {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 5px;
+    height: 16px;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 3px;
+    white-space: nowrap;
+    text-decoration: none;
+    line-height: 16px;
+    transition: opacity var(--ease);
+}
+.filter-chip:hover { opacity: 0.8; }
+.filter-chip--default { background: var(--bg-row-hover); color: var(--t3); }
+.filter-chip--true  { background: #dcfce7; color: #166534; }
+.filter-chip--false { background: #fee2e2; color: #991b1b; }
+.filter-chip-x {
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0.55;
+    line-height: 1;
+}
+.filter-chip:hover .filter-chip-x { opacity: 1; }
+
+[data-theme="dark"] .filter-chip--default { background: rgba(255,255,255,0.08); color: var(--t3); }
+[data-theme="dark"] .filter-chip--true  { background: rgba(16,185,129,0.20); color: #6ee7b7; }
+[data-theme="dark"] .filter-chip--false { background: rgba(239,68,68,0.20); color: #fca5a5; }
 
 .breadcrumb-nav {
     flex: 1;
@@ -508,6 +547,14 @@ body {
 }
 
 .top-bar a:hover .toolicon { color: var(--brand); }
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
 
 /* ─── Top Bar Search ─────────────────────────────── */
 .topbar-search {

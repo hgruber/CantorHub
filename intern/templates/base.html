@@ -70,8 +70,10 @@
                 </span>
                 {% else %}
                 <span class="title">{{ seitentitel }}</span>
+                {% block topbar_after %}{% endblock %}
                 {% endif %}
 
+                <div class="topbar-actions">
                 {% if up %}
                     <a href="{% url up %}" title="Zurück zur Übersicht">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -206,6 +208,7 @@
                         </svg>
                     </a>
                 {% endif %}
+                </div>
             </header>
 
             <!-- Page Content -->
