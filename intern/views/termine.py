@@ -12,11 +12,10 @@ from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from icalendar import Calendar, Event
-from odf.opendocument import OpenDocumentText
-from odf.style import ParagraphProperties, Style, TextProperties
-from odf.text import P
-from odf.namespaces import FONS
 
 from intern import folders
 
@@ -31,7 +30,7 @@ __all__ = [
     "termin_edit",
     "termin_add",
     "calendar_ics",
-    "konzert_odt",
+    "konzert_docx",
 ]
 
 ZUSAGE_TRANSITIONS = {
@@ -193,44 +192,33 @@ def termin_view(request, id):
 
 
 @login_required
-def konzert_odt(request, id):
+def konzert_docx(request, id):
     termin = get_object_or_404(Termin, id=id)
     lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
 
-    doc = OpenDocumentText()
+    doc = Document()
 
-    def _add_style(name, font_size, bold=False, align=None):
-        style = Style(name=name, family="paragraph")
-        tp = TextProperties()
-        tp.setAttrNS(FONS, "font-name", "Sans Serif")
-        tp.setAttrNS(FONS, "font-size", font_size)
-        if bold:
-            tp.setAttrNS(FONS, "font-weight", "bold")
-        style.addElement(tp)
-        if align:
-            pp = ParagraphProperties()
-            pp.setAttrNS(FONS, "text-align", align)
-            style.addElement(pp)
-        doc.styles.addElement(style)
-
-    _add_style("Titel", "18pt", bold=True, align="center")
-    _add_style("Item", "14pt")
-    _add_style("Composer", "10pt", align="right")
-
-    doc.text.addElement(P(text=str(termin), stylename="Titel"))
+    titel = doc.add_paragraph(str(termin))
+    titel.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = titel.runs[0]
+    run.bold = True
+    run.font.size = Pt(18)
 
     for k in lieder:
         if k.lied:
-            doc.text.addElement(P(text=k.lied.titel, stylename="Item"))
+            item = doc.add_paragraph(k.lied.titel)
+            item.runs[0].font.size = Pt(14)
             if k.lied.komponist:
-                doc.text.addElement(P(text=k.lied.komponist, stylename="Composer"))
+                comp = doc.add_paragraph(k.lied.komponist)
+                comp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                comp.runs[0].font.size = Pt(10)
 
     buf = io.BytesIO()
     doc.save(buf)
     buf.seek(0)
 
     safe_name = termin.kurz.replace('"', "")
-    return FileResponse(buf, as_attachment=True, filename=f"{safe_name}.odt", content_type="application/vnd.oasis.opendocument.text")
+    return FileResponse(buf, as_attachment=True, filename=f"{safe_name}.docx", content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
 
 @login_required

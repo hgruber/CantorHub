@@ -54,7 +54,7 @@ urlpatterns = [
     path("termin/add/", views.termin_add, name="termin_add"),
     path("termin/<int:id>/", views.termin_view, name="termin_view"),
     path("termin/<int:id>/edit/", views.termin_edit, name="termin_edit"),
-    path("termin/<int:id>/odt/", views.konzert_odt, name="konzert_odt"),
+    path("termin/<int:id>/docx/", views.konzert_docx, name="konzert_docx"),
     path("termin/<int:id>/zusage/", views.termin_zusage, name="termin_zusage"),
     # Ort URLs
     path("ort/", views.ort_list, name="ort_list"),
