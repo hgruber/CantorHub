@@ -46,14 +46,16 @@ class OrdnerTabelle(tables.Table):
             record.get("type", ""),
         )
     type = tables.Column(
-        attrs={"th": {"style": "width: 15px;"}, "td": {"style": "width: 15px;"}}
+        verbose_name="Typ",
+        attrs={"th": {"style": "width: 15px;"}, "td": {"style": "width: 15px;"}},
     )
-    name = tables.Column()
+    name = tables.Column(verbose_name="Name")
     pfad = tables.Column(verbose_name="Pfad", empty_values=(), orderable=False)
-    size = tables.Column(attrs={"td": {"class": "right"}})
-    besitzer = tables.Column()
-    created = tables.DateTimeColumn()
-    modified = tables.DateTimeColumn()
+    size = tables.Column(verbose_name="Elemente", attrs={"td": {"class": "right"}})
+    groesse = tables.Column(verbose_name="Größe", orderable=False, attrs={"td": {"class": "right"}})
+    besitzer = tables.Column(verbose_name="Besitzer")
+    created = tables.DateTimeColumn(verbose_name="Hochgeladen")
+    modified = tables.DateTimeColumn(verbose_name="Geändert")
 
     def render_name(self, record):
         if "original_filename" in record:
@@ -87,10 +89,15 @@ class OrdnerTabelle(tables.Table):
         return record.get("pfad", "")
 
     def render_size(self, record):
-        if record["type"] == "File":
-            return format_bytes(record["size"])
-        else:
-            return record["count"]
+        if record["type"] == "Folder":
+            return record.get("count", "")
+        return ""
+
+    def render_groesse(self, record):
+        v = record.get("groesse")
+        if v is None:
+            return ""
+        return format_bytes(v)
 
     class Meta:
         attrs = {"class": "table"}

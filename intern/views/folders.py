@@ -263,6 +263,7 @@ def _folder_search_records(pk, q):
     path_map = _folder_path_map()
     for record in files_list:
         record["pfad"] = path_map.get(record["folder_id"], "/")
+        record["groesse"] = record.get("size") or 0
     return files_list
 
 
@@ -376,6 +377,8 @@ def folder_view(request, pk):
         modified=F("modified_at"),
     )
     files_list = list(files)
+    for record in files_list:
+        record["groesse"] = record.get("size") or 0
 
     def _is_thumbnailable(mime):
         mime = mime or ""
@@ -395,7 +398,18 @@ def folder_view(request, pk):
             except Exception:
                 pass
 
-    table = OrdnerTabelle(folder_up + list(folders_qs) + files_list)
+    folders_list = list(folders_qs)
+    for record in folders_list:
+        desc_ids = _descendant_folder_ids(record["id"])
+        agg = File.objects.filter(folder_id__in=desc_ids).aggregate(
+            s=Sum("_file_size"), c=Count("id")
+        )
+        record["groesse"] = agg["s"] or 0
+        record["count"] = agg["c"] or 0
+    for record in folder_up:
+        record["groesse"] = None
+
+    table = OrdnerTabelle(folder_up + folders_list + files_list)
     table.columns.hide("pfad")
     RequestConfig(request, paginate=False).configure(table)
 
