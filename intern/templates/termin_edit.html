@@ -1,94 +1,166 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="wiki">
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="detail-info">
+            <h1>{{ termin.kurz }}</h1>
+            <p class="detail-subtitle">{{ termin.datum|date:"l, d. F Y" }}</p>
+        </div>
+    </div>
+
     <form method="post">
         {% csrf_token %}
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.kurz.id_for_label }}">Termin</label>
-                {{ form.kurz }}
-                {% if form.kurz.errors %}<div class="invalid-feedback">{{ form.kurz.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.ort.id_for_label }}">Ort</label>
-                <div class="form-field-with-action searchable-select-wrap">
-                    <input type="text" class="form-control searchable-select-input" placeholder="Ort suchen…" autocomplete="off">
-                    {{ form.ort }}
-                    <a href="{% url 'ort_add' %}" class="btn btn-sm btn-secondary" title="Neuen Ort anlegen">+</a>
+        <div class="detail-cards">
+            <div class="detail-card">
+                <h3>Termin</h3>
+                <div class="form-group">
+                    <label for="{{ form.kurz.id_for_label }}">Name</label>
+                    {{ form.kurz }}
+                    {% if form.kurz.errors %}<div class="invalid-feedback">{{ form.kurz.errors }}</div>{% endif %}
                 </div>
-                {% if form.ort.errors %}<div class="invalid-feedback">{{ form.ort.errors }}</div>{% endif %}
+            </div>
+
+            <div class="detail-card">
+                <h3>Zeit &amp; Ort</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.datum.id_for_label }}">Datum</label>
+                        {{ form.datum }}
+                        {% if form.datum.errors %}<div class="invalid-feedback">{{ form.datum.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.uhrzeit.id_for_label }}">Uhrzeit</label>
+                        {{ form.uhrzeit }}
+                        {% if form.uhrzeit.errors %}<div class="invalid-feedback">{{ form.uhrzeit.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.datum_bis.id_for_label }}">Bis</label>
+                        {{ form.datum_bis }}
+                        {% if form.datum_bis.errors %}<div class="invalid-feedback">{{ form.datum_bis.errors }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.ort.id_for_label }}">Ort</label>
+                    <div class="search-select-wrap">
+                        <svg class="search-select-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="search" class="search-select-input" placeholder="Ort suchen…" autocomplete="off" data-target="id_ort">
+                        {{ form.ort }}
+                        <a href="{% url 'ort_add' %}" class="search-select-add" title="Neuen Ort anlegen">+</a>
+                    </div>
+                    {% if form.ort.errors %}<div class="invalid-feedback">{{ form.ort.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Beschreibung</h3>
+                <div class="form-group">
+                    {{ form.lang }}
+                    {% if form.lang.errors %}<div class="invalid-feedback">{{ form.lang.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Optionen</h3>
+                <div class="form-grid">
+                    <div class="form-group checkbox-group">
+                        <label>{{ form.anwesenheit }} Anwesenheit</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label>{{ form.repertoire }} Repertoire</label>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.datum.id_for_label }}">Datum</label>
-                {{ form.datum }}
-                {% if form.datum.errors %}<div class="invalid-feedback">{{ form.datum.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.uhrzeit.id_for_label }}">Uhrzeit</label>
-                {{ form.uhrzeit }}
-                {% if form.uhrzeit.errors %}<div class="invalid-feedback">{{ form.uhrzeit.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.datum_bis.id_for_label }}">Bis</label>
-                {{ form.datum_bis }}
-                {% if form.datum_bis.errors %}<div class="invalid-feedback">{{ form.datum_bis.errors }}</div>{% endif %}
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="{{ form.lang.id_for_label }}">Beschreibung</label>
-            {{ form.lang }}
-            {% if form.lang.errors %}<div class="invalid-feedback">{{ form.lang.errors }}</div>{% endif %}
-        </div>
-        <div class="form-grid">
-            <div class="form-group checkbox-group">
-                <label>{{ form.anwesenheit }} Anwesenheit</label>
-            </div>
-            <div class="form-group checkbox-group">
-                <label>{{ form.repertoire }} Repertoire</label>
-            </div>
-        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Speichern</button>
-            {% if id %}
             <a href="{% url 'termin_view' id=id %}" class="btn btn-secondary">Abbrechen</a>
-            {% else %}
-            <a href="{% url 'termin_list' %}" class="btn btn-secondary">Abbrechen</a>
-            {% endif %}
         </div>
     </form>
 </div>
 <script>
 (function() {
-  var wrap = document.querySelector('.searchable-select-wrap');
+  var wrap = document.querySelector('.search-select-wrap');
   if (!wrap) return;
-  var input = wrap.querySelector('.searchable-select-input');
+  var input = wrap.querySelector('.search-select-input');
   var select = wrap.querySelector('select');
   if (!input || !select) return;
   var options = Array.from(select.options);
 
-  input.addEventListener('input', function() {
-    var q = input.value.toLowerCase();
-    options.forEach(function(opt) {
-      opt.hidden = q && opt.value && !opt.textContent.toLowerCase().includes(q);
+  // Create dropdown
+  var dd = document.createElement('div');
+  dd.className = 'search-select-dropdown';
+  wrap.appendChild(dd);
+
+  // Pre-fill from current selection
+  if (select.value) {
+    var sel = select.options[select.selectedIndex];
+    if (sel) input.value = sel.textContent;
+  }
+  select.style.display = 'none';
+
+  function render(q) {
+    dd.innerHTML = '';
+    var lower = q.toLowerCase();
+    var matches = options.filter(function(o) { return o.value && (!q || o.textContent.toLowerCase().includes(lower)); });
+    if (!q || matches.length === 0) {
+      dd.classList.remove('active');
+      return;
+    }
+    matches.forEach(function(opt) {
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'search-select-item';
+      item.textContent = opt.textContent;
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        select.value = opt.value;
+        input.value = opt.textContent;
+        dd.classList.remove('active');
+      });
+      dd.appendChild(item);
     });
+    dd.classList.add('active');
+  }
+
+  input.addEventListener('input', function() {
     select.value = '';
-    var visible = options.filter(function(o) { return !o.hidden && o.value; });
-    if (visible.length === 1) select.value = visible[0].value;
+    render(input.value);
   });
 
   input.addEventListener('focus', function() {
-    select.size = Math.min(options.length, 8);
+    if (input.value) render(input.value);
   });
 
-  select.addEventListener('change', function() {
-    input.value = select.options[select.selectedIndex].text;
-    select.size = 1;
+  input.addEventListener('blur', function() {
+    // Small delay so mousedown on item fires first
+    setTimeout(function() { dd.classList.remove('active'); }, 150);
   });
 
+  // Keyboard navigation
+  var idx = -1;
+  input.addEventListener('keydown', function(e) {
+    var items = dd.querySelectorAll('.search-select-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); highlight(items); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); highlight(items); }
+    else if (e.key === 'Enter' && idx >= 0) { e.preventDefault(); items[idx].click(); }
+    else if (e.key === 'Escape') { dd.classList.remove('active'); }
+  });
+
+  function highlight(items) {
+    items.forEach(function(it, i) { it.classList.toggle('selected', i === idx); });
+    if (items[idx]) items[idx].scrollIntoView({ block: 'nearest' });
+  }
+
+  // Close on outside click
   document.addEventListener('click', function(e) {
-    if (!wrap.contains(e.target)) select.size = 1;
+    if (!wrap.contains(e.target)) dd.classList.remove('active');
   });
 })();
 </script>

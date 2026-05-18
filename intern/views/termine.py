@@ -280,6 +280,7 @@ def termin_edit(request, id):
 
     context = {
         "form": form,
+        "termin": termin,
         "seitentitel": f"bearbeiten: {termin.kurz}",
         "view": "termin_view",
         "id": id,
