@@ -109,6 +109,7 @@ class TerminTabelle(tables.Table):
     kurz = tables.Column(
         verbose_name="Termin",
         orderable=False,
+        attrs={"td": {"style": "font-weight: 600;"}},
     )
     anwesenheit_option = tables.Column(
         verbose_name="Du",
@@ -429,7 +430,7 @@ class RepertoireTabelle(tables.Table):
         },
     )
     titel = tables.Column(
-        attrs={"td": {"data-id": lambda record: record.id}},
+        attrs={"td": {"data-id": lambda record: record.id, "style": "font-weight: 600;"}},
     )
     eigenschaften = tables.Column(
         verbose_name="Eigenschaften",
