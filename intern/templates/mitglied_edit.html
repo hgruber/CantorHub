@@ -1,116 +1,137 @@
-{% extends "base.html" %}
-{% block title %}{{ seitentitel }}{% endblock %}
+{% extends 'base.html' %}
 {% block content %}
-    <div class="wiki">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="{{ form.first_name.id_for_label }}">Vorname</label>
-                    {{ form.first_name }}
-                    {% if form.first_name.errors %}<div class="invalid-feedback">{{ form.first_name.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.last_name.id_for_label }}">Nachname</label>
-                    {{ form.last_name }}
-                    {% if form.last_name.errors %}<div class="invalid-feedback">{{ form.last_name.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.username.id_for_label }}">Benutzername</label>
-                    {{ form.username }}
-                    {% if form.username.errors %}<div class="invalid-feedback">{{ form.username.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.avatar.id_for_label }}">Avatar</label>
-                    {{ form.avatar }}
-                    {% if form.avatar.errors %}<div class="invalid-feedback">{{ form.avatar.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.stimme.id_for_label }}">Stimme</label>
-                    {{ form.stimme }}
-                    {% if form.stimme.errors %}<div class="invalid-feedback">{{ form.stimme.errors }}</div>{% endif %}
-                </div>
-            </div>
-            <h3>Persönliche Daten</h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="{{ form.geburtstag.id_for_label }}">Geburtsdatum</label>
-                    {{ form.geburtstag }}
-                    {% if form.geburtstag.errors %}<div class="invalid-feedback">{{ form.geburtstag.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.strasse.id_for_label }}">Straße</label>
-                    {{ form.strasse }}
-                    {% if form.strasse.errors %}<div class="invalid-feedback">{{ form.strasse.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.plz.id_for_label }}">PLZ</label>
-                    {{ form.plz }}
-                    {% if form.plz.errors %}<div class="invalid-feedback">{{ form.plz.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.ort.id_for_label }}">Ort</label>
-                    {{ form.ort }}
-                    {% if form.ort.errors %}<div class="invalid-feedback">{{ form.ort.errors }}</div>{% endif %}
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="detail-info">
+            {% if id %}
+            <h1>{{ user.first_name }} {{ user.last_name }}</h1>
+            {% else %}
+            <h1>Neues Mitglied</h1>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="detail-cards">
+            <div class="detail-card">
+                <h3>Persönliche Daten</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.first_name.id_for_label }}">Vorname</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<div class="invalid-feedback">{{ form.first_name.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.last_name.id_for_label }}">Nachname</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<div class="invalid-feedback">{{ form.last_name.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.username.id_for_label }}">Benutzername</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}<div class="invalid-feedback">{{ form.username.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.avatar.id_for_label }}">Avatar</label>
+                        {{ form.avatar }}
+                        {% if form.avatar.errors %}<div class="invalid-feedback">{{ form.avatar.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.stimme.id_for_label }}">Stimme</label>
+                        {{ form.stimme }}
+                        {% if form.stimme.errors %}<div class="invalid-feedback">{{ form.stimme.errors }}</div>{% endif %}
+                    </div>
                 </div>
             </div>
-            <h3>Kontaktinformationen</h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="{{ form.email.id_for_label }}">E-Mail</label>
-                    {{ form.email }}
-                    {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.xmpp.id_for_label }}">XMPP/Jabber</label>
-                    {{ form.xmpp }}
-                    {% if form.xmpp.errors %}<div class="invalid-feedback">{{ form.xmpp.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.telefon.id_for_label }}">Telefon</label>
-                    {{ form.telefon }}
-                    {% if form.telefon.errors %}<div class="invalid-feedback">{{ form.telefon.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.telefon_job.id_for_label }}">Telefon (Arbeit)</label>
-                    {{ form.telefon_job }}
-                    {% if form.telefon_job.errors %}<div class="invalid-feedback">{{ form.telefon_job.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.telefon_mobil.id_for_label }}">Mobiltelefon</label>
-                    {{ form.telefon_mobil }}
-                    {% if form.telefon_mobil.errors %}<div class="invalid-feedback">{{ form.telefon_mobil.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.telefon_job_mobil.id_for_label }}">Mobiltelefon (Arbeit)</label>
-                    {{ form.telefon_job_mobil }}
-                    {% if form.telefon_job_mobil.errors %}
-                        <div class="invalid-feedback">{{ form.telefon_job_mobil.errors }}</div>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.fax.id_for_label }}">Fax</label>
-                    {{ form.fax }}
-                    {% if form.fax.errors %}<div class="invalid-feedback">{{ form.fax.errors }}</div>{% endif %}
+
+            <div class="detail-card">
+                <h3>Kontakt</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}">E-Mail</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.xmpp.id_for_label }}">XMPP/Jabber</label>
+                        {{ form.xmpp }}
+                        {% if form.xmpp.errors %}<div class="invalid-feedback">{{ form.xmpp.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.telefon.id_for_label }}">Telefon</label>
+                        {{ form.telefon }}
+                        {% if form.telefon.errors %}<div class="invalid-feedback">{{ form.telefon.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.telefon_job.id_for_label }}">Telefon (Arbeit)</label>
+                        {{ form.telefon_job }}
+                        {% if form.telefon_job.errors %}<div class="invalid-feedback">{{ form.telefon_job.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.telefon_mobil.id_for_label }}">Mobiltelefon</label>
+                        {{ form.telefon_mobil }}
+                        {% if form.telefon_mobil.errors %}<div class="invalid-feedback">{{ form.telefon_mobil.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.telefon_job_mobil.id_for_label }}">Mobiltelefon (Arbeit)</label>
+                        {{ form.telefon_job_mobil }}
+                        {% if form.telefon_job_mobil.errors %}<div class="invalid-feedback">{{ form.telefon_job_mobil.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.fax.id_for_label }}">Fax</label>
+                        {{ form.fax }}
+                        {% if form.fax.errors %}<div class="invalid-feedback">{{ form.fax.errors }}</div>{% endif %}
+                    </div>
                 </div>
             </div>
-            <h3>Beschreibung</h3>
-            <div class="form-grid">
+
+            <div class="detail-card">
+                <h3>Adresse</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.geburtstag.id_for_label }}">Geburtsdatum</label>
+                        {{ form.geburtstag }}
+                        {% if form.geburtstag.errors %}<div class="invalid-feedback">{{ form.geburtstag.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.strasse.id_for_label }}">Straße</label>
+                        {{ form.strasse }}
+                        {% if form.strasse.errors %}<div class="invalid-feedback">{{ form.strasse.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.plz.id_for_label }}">PLZ</label>
+                        {{ form.plz }}
+                        {% if form.plz.errors %}<div class="invalid-feedback">{{ form.plz.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.ort.id_for_label }}">Ort</label>
+                        {{ form.ort }}
+                        {% if form.ort.errors %}<div class="invalid-feedback">{{ form.ort.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Beschreibung</h3>
                 <div class="form-group">
-                    <label for="{{ form.text.id_for_label }}">Beschreibung</label>
                     {{ form.text }}
                     {% if form.text.errors %}<div class="invalid-feedback">{{ form.text.errors }}</div>{% endif %}
                 </div>
             </div>
-            <div class="form-group text-center">
-                <button type="submit" class="btn btn-primary">Speichern</button>
-                {% if id %}
-                <a href="{% url 'mitglied_view' id %}" class="btn btn-secondary">Abbrechen</a>
-                {% else %}
-                <a href="{% url 'mitglied_list' %}" class="btn btn-secondary">Abbrechen</a>
-                {% endif %}
-            </div>
-            <br />
-        </form>
-    </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            {% if id %}
+            <a href="{% url 'mitglied_view' id %}" class="btn btn-secondary">Abbrechen</a>
+            {% else %}
+            <a href="{% url 'mitglied_list' %}" class="btn btn-secondary">Abbrechen</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
 {% endblock %}

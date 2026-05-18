@@ -1,61 +1,88 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="wiki">
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <div class="detail-info">
+            {% if id %}
+            <h1>{{ lied.titel }}</h1>
+            {% else %}
+            <h1>Neuer Titel</h1>
+            {% endif %}
+        </div>
+    </div>
+
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.titel.id_for_label }}">Titel</label>
-                {{ form.titel }}
-                {% if form.titel.errors %}<div class="invalid-feedback">{{ form.titel.errors }}</div>{% endif %}
+        <div class="detail-cards">
+            <div class="detail-card">
+                <h3>Titel</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.titel.id_for_label }}">Name</label>
+                        {{ form.titel }}
+                        {% if form.titel.errors %}<div class="invalid-feedback">{{ form.titel.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.tempo.id_for_label }}">Tempo</label>
+                        {{ form.tempo }}
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.beats.id_for_label }}">Beats</label>
+                        {{ form.beats }}
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label>{{ form.aktiv }} Aktiv</label>
+                        <label>{{ form.hymne }} Hymne</label>
+                        <label>{{ form.acapella }} Acapella</label>
+                        <label>{{ form.weihnacht }} Weihnacht</label>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="{{ form.tempo.id_for_label }}">Tempo</label>
-                {{ form.tempo }}
+
+            <div class="detail-card">
+                <h3>Dateien</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.original.id_for_label }}">Original</label>
+                        {{ form.original }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.aufnahme.id_for_label }}">Aufnahme</label>
+                        {{ form.aufnahme }}
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.pdf.id_for_label }}">Notenblatt</label>
+                        {{ form.pdf }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.noten.id_for_label }}">Notensatz</label>
+                        {{ form.noten }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Urheber</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.komponist.id_for_label }}">Komponist</label>
+                        {{ form.komponist }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.bearbeiter.id_for_label }}">Bearbeiter</label>
+                        {{ form.bearbeiter }}
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.beats.id_for_label }}">Beats</label>
-                {{ form.beats }}
-            </div>
-            <div class="form-group checkbox-row">
-                <label>{{ form.aktiv }} Aktiv</label>
-                <label>{{ form.hymne }} Hymne</label>
-                <label>{{ form.acapella }} Acapella</label>
-                <label>{{ form.weihnacht }} Weihnacht</label>
-            </div>
-        </div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.original.id_for_label }}">Original</label>
-                {{ form.original }}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.aufnahme.id_for_label }}">Aufnahme</label>
-                {{ form.aufnahme }}
-            </div>
-        </div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.pdf.id_for_label }}">Notenblatt</label>
-                {{ form.pdf }}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.noten.id_for_label }}">Notensatz</label>
-                {{ form.noten }}
-            </div>
-        </div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.komponist.id_for_label }}">Komponist</label>
-                {{ form.komponist }}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.bearbeiter.id_for_label }}">Bearbeiter</label>
-                {{ form.bearbeiter }}
-            </div>
-        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Speichern</button>
             {% if id %}

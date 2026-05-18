@@ -1,44 +1,72 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="wiki">
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="detail-info">
+            {% if id %}
+            <h1>{{ ort.name }}</h1>
+            {% else %}
+            <h1>Neuer Ort</h1>
+            {% endif %}
+        </div>
+    </div>
+
     <form method="post">
         {% csrf_token %}
-        <div class="form-group">
-            <label for="{{ form.name.id_for_label }}">Name</label>
-            {{ form.name }}
-            {% if form.name.errors %}<div class="invalid-feedback">{{ form.name.errors }}</div>{% endif %}
-        </div>
-        <div class="form-group">
-            <label for="{{ form.beschreibung.id_for_label }}">Beschreibung</label>
-            {{ form.beschreibung }}
-            {% if form.beschreibung.errors %}<div class="invalid-feedback">{{ form.beschreibung.errors }}</div>{% endif %}
-        </div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.strasse.id_for_label }}">Straße</label>
-                {{ form.strasse }}
+        <div class="detail-cards">
+            <div class="detail-card">
+                <h3>Name</h3>
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="invalid-feedback">{{ form.name.errors }}</div>{% endif %}
+                </div>
             </div>
-            <div class="form-group">
-                <label for="{{ form.plz.id_for_label }}">PLZ</label>
-                {{ form.plz }}
+
+            <div class="detail-card">
+                <h3>Adresse</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.strasse.id_for_label }}">Straße</label>
+                        {{ form.strasse }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.plz.id_for_label }}">PLZ</label>
+                        {{ form.plz }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.ort.id_for_label }}">Ort</label>
+                    {{ form.ort }}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Beschreibung</h3>
+                <div class="form-group">
+                    {{ form.beschreibung }}
+                    {% if form.beschreibung.errors %}<div class="invalid-feedback">{{ form.beschreibung.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Koordinaten</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.breite.id_for_label }}">Breite</label>
+                        {{ form.breite }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.laenge.id_for_label }}">Länge</label>
+                        {{ form.laenge }}
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.ort.id_for_label }}">Ort</label>
-                {{ form.ort }}
-            </div>
-        </div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.breite.id_for_label }}">Breite (lat)</label>
-                {{ form.breite }}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.laenge.id_for_label }}">Länge (lng)</label>
-                {{ form.laenge }}
-            </div>
-        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Speichern</button>
             {% if id %}

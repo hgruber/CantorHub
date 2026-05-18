@@ -70,6 +70,7 @@ def ort_edit(request, id):
         form = OrtForm(instance=ort)
     context = {
         "form": form,
+        "ort": ort,
         "seitentitel": f"bearbeiten: {ort.name}",
         "view": "ort_view",
         "id": id,

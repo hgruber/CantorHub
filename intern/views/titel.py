@@ -209,6 +209,7 @@ def titel_edit(request, titel):
 
     context = {
         "form": form,
+        "lied": lied,
         "seitentitel": f"bearbeiten: {lied.titel}",
         "view": "titel_view",
         "id": titel,

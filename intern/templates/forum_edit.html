@@ -1,19 +1,36 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="wiki">
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="detail-info">
+            {% if id %}
+            <h1>{{ forum_obj.thema }}</h1>
+            {% else %}
+            <h1>Neues Forum</h1>
+            {% endif %}
+        </div>
+    </div>
+
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.thema.id_for_label }}">Thema</label>
-                {{ form.thema }}
-                {% if form.thema.errors %}<div class="invalid-feedback">{{ form.thema.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.bild.id_for_label }}">Bild</label>
-                {{ form.bild }}
+        <div class="detail-cards">
+            <div class="detail-card">
+                <h3>Forum</h3>
+                <div class="form-group">
+                    <label for="{{ form.thema.id_for_label }}">Thema</label>
+                    {{ form.thema }}
+                    {% if form.thema.errors %}<div class="invalid-feedback">{{ form.thema.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.bild.id_for_label }}">Bild</label>
+                    {{ form.bild }}
+                </div>
             </div>
         </div>
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Speichern</button>
             {% if id %}
@@ -24,6 +41,7 @@
         </div>
     </form>
 
+    {% if id %}
     <div class="detail-cards detail-cards-spaced">
         <div class="detail-card">
             <h3>Eingeladene Mitglieder <span class="badge">{{ invited|length }}</span></h3>
@@ -88,5 +106,6 @@
             <button class="btn btn-danger" disabled>Forum deaktivieren</button>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

@@ -240,6 +240,7 @@ def forum_edit(request, forum):
 
     context = {
         "form": form,
+        "forum_obj": forum_obj,
         "seitentitel": f"bearbeiten: {forum_obj.thema}",
         "view": "forum_view",
         "id": forum,
