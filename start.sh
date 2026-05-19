@@ -33,7 +33,8 @@ mv 0003_import.py intern/migrations || true
 ./manage.py import_files --path Avatare
 ./manage.py migrate
 ./manage.py apply_initial_config
-./manage.py index_files
+./manage.py index_files &
+./manage.py thumbnail_files &
 ./manage.py collectstatic --noinput
 
 # XMPP/ejabberd integration — read from DB (set via initial.sh or admin)
