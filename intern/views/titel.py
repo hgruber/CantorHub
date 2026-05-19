@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 
@@ -27,7 +28,9 @@ __all__ = [
 
 @login_required
 def titel_list(request):
-    queryset = Lied.objects.annotate(zuletzt=Max("konzert__termin__datum")).order_by("titel")
+    queryset = Lied.objects.annotate(
+        zuletzt=Max("konzert__termin__datum", filter=Q(konzert__termin__datum__lte=timezone.now().date()))
+    ).order_by("titel")
     konzert_id = request.GET.get("konzert")
     repertoire_filter = RepertoireFilter(request.GET, queryset=queryset)
     fields = visible_fields(request, "RepertoireTabelle")

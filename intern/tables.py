@@ -427,6 +427,12 @@ def _audio_button_html(url, song_id, title, kind):
 
 
 class RepertoireTabelle(tables.Table):
+    counter = tables.Column(
+        verbose_name="#",
+        empty_values=(),
+        orderable=False,
+        attrs={"td": {"class": "right"}, "th": {"class": "right"}},
+    )
     original = tables.Column(
         verbose_name="Audio",
         empty_values=(),
@@ -473,7 +479,10 @@ class RepertoireTabelle(tables.Table):
         verbose_name="Zuletzt",
         accessor="zuletzt",
         format="d.m.Y",
-        attrs={"td": {"style": "font-size: 0.85em; white-space: nowrap;"}},
+        attrs={
+            "td": {"style": "font-size: 0.85em; white-space: nowrap;"},
+            "th": {"title": "zuletzt aufgeführt"},
+        },
     )
 
     solist = tables.ManyToManyColumn(attrs={"td": {"style": "font-size: 0.8em;"}})
@@ -487,11 +496,16 @@ class RepertoireTabelle(tables.Table):
 
     def __init__(self, *args, visible_fields=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._row_counter = 0
         self.visible_fields = visible_fields
         if visible_fields is not None:
             for name in list(self.columns.names()):
                 if name not in visible_fields:
                     self.columns.hide(name)
+
+    def render_counter(self, record):
+        self._row_counter += 1
+        return self._row_counter
 
     def render_original(self, record):
         parts = []
@@ -590,6 +604,12 @@ class MitgliederFilter(filters.FilterSet):
 
 
 class MitgliederTabelle(tables.Table):
+    counter = tables.Column(
+        verbose_name="#",
+        empty_values=(),
+        orderable=False,
+        attrs={"td": {"class": "right"}, "th": {"class": "right"}},
+    )
     avatar = tables.Column()
     first_name = tables.Column()
     last_name = tables.Column()
@@ -617,11 +637,16 @@ class MitgliederTabelle(tables.Table):
 
     def __init__(self, *args, visible_fields=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._row_counter = 0
         self.visible_fields = visible_fields
         if visible_fields is not None:
             for name in list(self.columns.names()):
                 if name not in visible_fields:
                     self.columns.hide(name)
+
+    def render_counter(self, record):
+        self._row_counter += 1
+        return self._row_counter
 
     def render_avatar(self, value, record):
         if record.avatar:
