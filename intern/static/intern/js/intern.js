@@ -214,11 +214,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── Dropzone for filer widgets (AddPanel + edit pages) ──────
   (function initFilerDropzones() {
-    // On AddPanel pages, scope to the panel; on edit pages, scope to .wiki.
-    // Both render AdminImageWidget/AdminFileWidget as .filer-widget elements
-    // containing a hidden text input with the foreign-key ID, plus a complex
-    // admin lookup UI we replace with a simpler dropzone.
-    const scope = document.getElementById("AddPanel") || document.querySelector(".wiki");
+    // On AddPanel pages, scope to the panel; on edit pages, scope to .wiki or
+    // .detail-page (both render AdminImageWidget/AdminFileWidget as .filer-widget
+    // elements containing a hidden text input with the foreign-key ID, plus a
+    // complex admin lookup UI we replace with a simpler dropzone).
+    const scope =
+      document.getElementById("AddPanel") ||
+      document.querySelector(".wiki") ||
+      document.querySelector(".detail-page");
     if (!scope) return;
 
     const filerWidgets = scope.querySelectorAll(".filer-widget");
