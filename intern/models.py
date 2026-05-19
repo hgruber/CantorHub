@@ -381,6 +381,20 @@ class TabellenPreferenzen(models.Model):
         )
 
 
+class Konfiguration(models.Model):
+    key = models.CharField(max_length=64, unique=True, verbose_name="Schlüssel")
+    value = models.TextField(blank=True, verbose_name="Wert")
+    description = models.CharField(max_length=256, blank=True, verbose_name="Beschreibung")
+
+    class Meta:
+        verbose_name = "Konfiguration"
+        verbose_name_plural = "Konfigurationen"
+        ordering = ["key"]
+
+    def __str__(self):
+        return self.key
+
+
 class DateiIndex(models.Model):
     """Extracted text content of a filer File, for content search in the folder
     browser. Populated lazily by intern.fileindex; file_size is used to detect

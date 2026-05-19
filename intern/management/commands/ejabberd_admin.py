@@ -6,7 +6,6 @@ Administrative operations for the XMPP/ejabberd integration.
 
 import getpass
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from intern.ejabberd import (
@@ -18,6 +17,7 @@ from intern.ejabberd import (
     set_vcard,
     unregister_user,
 )
+from intern.app_settings import get_config_bool
 from intern.models import Forum, User
 
 
@@ -67,7 +67,7 @@ class Command(BaseCommand):
         sp.add_argument("user", help="Username or numeric user ID")
 
     def handle(self, *args, **options):
-        if not settings.EJABBERD_ENABLED:
+        if not get_config_bool("EJABBERD_ENABLED"):
             self.stderr.write("EJABBERD_ENABLED is not set.")
             return
 

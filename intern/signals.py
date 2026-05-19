@@ -9,11 +9,11 @@ Handles:
 import logging
 import threading
 
-from django.conf import settings
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from .apps import _migrating
+from .app_settings import get_config, get_config_bool
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +37,12 @@ def assign_xmpp_muc_jid(sender, instance, created, **kwargs):
         return
     if getattr(_migrating, "active", False):
         return
-    if not settings.EJABBERD_ENABLED:
+    if not get_config_bool("EJABBERD_ENABLED"):
         return
     if instance.xmpp_muc_jid:
         return
 
-    muc_jid = f"forum-{instance.pk}@{settings.EJABBERD_MUC_SERVICE}"
+    muc_jid = f"forum-{instance.pk}@{get_config('EJABBERD_MUC_SERVICE', '')}"
     sender.objects.filter(pk=instance.pk).update(xmpp_muc_jid=muc_jid)
     instance.xmpp_muc_jid = muc_jid
     logger.info(
@@ -108,7 +108,7 @@ def sync_xmpp_on_user_save(sender, instance, created, **kwargs):
     """
     if getattr(_migrating, "active", False):
         return
-    if not settings.EJABBERD_ENABLED:
+    if not get_config_bool("EJABBERD_ENABLED"):
         return
 
     new_xmpp = instance.xmpp or ""

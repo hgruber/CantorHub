@@ -1,13 +1,13 @@
 import logging
 import threading
 
-from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.core.mail import send_mail
 from django.shortcuts import redirect, render
 from django.utils.crypto import get_random_string
 
 from intern import ejabberd
+from intern.app_settings import get_config_bool, is_email_configured
 
 from ..forms import RegisterForm
 from ..models import User
@@ -49,7 +49,7 @@ class CantorLoginView(auth_views.LoginView):
     def form_valid(self, form):
         response = super().form_valid(form)
         user = form.get_user()
-        if settings.EJABBERD_ENABLED and not user.xmpp:
+        if get_config_bool("EJABBERD_ENABLED") and not user.xmpp:
             password = form.cleaned_data["password"]
             threading.Thread(
                 target=_provision_xmpp_user,
@@ -110,12 +110,9 @@ def register(request):
                     logger.exception("Failed to send password reset email to %s", user.email)
                     form.add_error(None, "E-Mail konnte nicht versendet werden. Bitte wende Dich an den Administrator.")
                     return render(request, "register.html", {"form": form})
-                if "console" in settings.EMAIL_BACKEND:
+                if not is_email_configured():
                     logger.warning(
-                        "EMAIL_BACKEND is %s — email was written to console, not sent. "
-                        "Set EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend "
-                        "and configure EMAIL_HOST/EMAIL_PORT/EMAIL_USE_TLS to send real emails.",
-                        settings.EMAIL_BACKEND,
+                        "EMAIL_HOST is not set in Konfiguration — email was written to console, not sent."
                     )
                 logger.info("Password reset email sent to %s for user %s", user.email, user.username)
                 return redirect("register_success")

@@ -2,7 +2,6 @@ import logging
 import threading
 from django.utils.timezone import now as timezone_now
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.mail import send_mail
 from django.db.models import Count
@@ -14,6 +13,7 @@ from django_tables2 import RequestConfig
 from filer.models import File
 
 from intern import ejabberd, folders
+from intern.app_settings import get_config_bool
 
 from ..forms import ForumEditForm
 from ..models import Forum, Mitteilung, User
@@ -41,7 +41,7 @@ def _forward_to_xmpp(msg):
         forum = msg.forum
         if not forum.xmpp_muc_jid:
             return
-        if not settings.EJABBERD_ENABLED:
+        if not get_config_bool("EJABBERD_ENABLED"):
             return
         sender_name = str(msg.sender) if msg.sender else "Anonymous"
         text = f"*{sender_name}*: {msg.mitteilung}"
@@ -54,7 +54,7 @@ def _forum_user_lists(forum_obj):
     """Compute invited, attending, without_invitation, without_xmpp user lists for a forum."""
     active_users = list(User.objects.filter(is_active=True).order_by("last_name", "first_name"))
 
-    if settings.EJABBERD_ENABLED and forum_obj.xmpp_muc_jid:
+    if get_config_bool("EJABBERD_ENABLED") and forum_obj.xmpp_muc_jid:
         room_members = ejabberd.get_room_members(forum_obj.xmpp_muc_jid)
         member_jids = {jid.lower() for jid, _aff in room_members}
 
@@ -203,7 +203,7 @@ def forum_send(request, forum):
             datum=timezone_now(),
         )
         # Forward to XMPP MUC in background thread
-        if settings.EJABBERD_ENABLED:
+        if get_config_bool("EJABBERD_ENABLED"):
             threading.Thread(
                 target=_forward_to_xmpp,
                 args=(msg,),
@@ -255,7 +255,7 @@ def forum_invite(request, forum, user_id):
     forum_obj = get_object_or_404(Forum, id=forum)
     user = get_object_or_404(User, id=user_id)
 
-    if settings.EJABBERD_ENABLED and forum_obj.xmpp_muc_jid and user.xmpp:
+    if get_config_bool("EJABBERD_ENABLED") and forum_obj.xmpp_muc_jid and user.xmpp:
         ejabberd.send_invitation(forum_obj.xmpp_muc_jid, user.xmpp)
         ejabberd.set_room_affiliation(forum_obj.xmpp_muc_jid, user.xmpp, "member")
     else:

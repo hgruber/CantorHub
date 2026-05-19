@@ -32,10 +32,12 @@ mv intern/migrations/0003_import.py . || true
 mv 0003_import.py intern/migrations || true
 ./manage.py import_files --path Avatare
 ./manage.py migrate
+./manage.py apply_initial_config
 ./manage.py index_files
 ./manage.py collectstatic --noinput
 
-# XMPP/ejabberd integration
+# XMPP/ejabberd integration — read from DB (set via initial.sh or admin)
+EJABBERD_ENABLED=$(./manage.py shell -c "from intern.app_settings import get_config_bool; print('1' if get_config_bool('EJABBERD_ENABLED') else '0')")
 if [ "${EJABBERD_ENABLED}" = "1" ]; then
     echo "ejabberd_sync: syncing XMPP state..."
     ./manage.py ejabberd_sync --sync

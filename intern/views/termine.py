@@ -4,7 +4,6 @@ import secrets
 import zipfile
 from datetime import date, datetime, timedelta
 
-from django.conf import settings
 from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Value
@@ -19,6 +18,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from icalendar import Calendar, Event
 
 from intern import folders
+from intern.app_settings import get_config
 
 from ..forms import TerminForm
 from ..models import Konzert, Lied, Ort, Termin, User, Zusage
@@ -68,7 +68,7 @@ def _build_stimme_groups(termin):
 
 
 def calendar_ics(request, secret):
-    if not secrets.compare_digest(secret, settings.ICAL_SECRET):
+    if not secrets.compare_digest(secret, get_config("ICAL_SECRET", "")):
         from django.http import Http404
         raise Http404
     cutoff = timezone_now() - timedelta(days=180)
@@ -156,7 +156,7 @@ def termin_list(request):
     RequestConfig(request, paginate=False).configure(table)
     from django.urls import reverse
 
-    ical_path = reverse("calendar_ics", args=[settings.ICAL_SECRET])
+    ical_path = reverse("calendar_ics", args=[get_config("ICAL_SECRET", "")])
     ical_url = request.build_absolute_uri(ical_path)
     webcal_url = "webcal://" + request.get_host() + ical_path
     add = "termin_add" if request.user.has_perm("intern.add_termin") else None

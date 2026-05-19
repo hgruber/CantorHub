@@ -22,8 +22,9 @@ import asyncio
 import logging
 from datetime import datetime
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
+
+from intern.app_settings import get_config, get_config_int
 
 logger = logging.getLogger(__name__)
 
@@ -150,8 +151,8 @@ class CantorBot:
         self._auth_retries = 0
 
         self._client = slixmpp.ClientXMPP(
-            settings.EJABBERD_BOT_JID,
-            settings.EJABBERD_BOT_PASSWORD,
+            get_config("EJABBERD_BOT_JID", ""),
+            get_config("EJABBERD_BOT_PASSWORD", ""),
             sasl_mech="PLAIN",
         )
         self._client.register_plugin("xep_0045")  # MUC
@@ -169,11 +170,11 @@ class CantorBot:
             self._client.cancel_schedule(name)
 
     def run(self):
-        host = settings.EJABBERD_HOST
-        port = settings.EJABBERD_BOT_PORT
+        host = get_config("EJABBERD_HOST", "")
+        port = get_config_int("EJABBERD_BOT_PORT", 5222)
         logger.info(
             "ejabberd_bot: connecting to %s:%s as %s",
-            host, port, settings.EJABBERD_BOT_JID,
+            host, port, get_config("EJABBERD_BOT_JID", ""),
         )
         self._client.connect((host, port))
         loop = asyncio.get_event_loop()
@@ -249,7 +250,7 @@ class CantorBot:
                 "ejabberd_bot: giving up after %d auth failures for %s — "
                 "check EJABBERD_BOT_JID and EJABBERD_BOT_PASSWORD",
                 self._auth_retries,
-                settings.EJABBERD_BOT_JID,
+                get_config("EJABBERD_BOT_JID", ""),
             )
             asyncio.get_event_loop().stop()
             return
@@ -257,7 +258,7 @@ class CantorBot:
         delay = min(300, 30 * 2 ** (self._auth_retries - 1))
         logger.error(
             "ejabberd_bot: authentication failed for %s (attempt %d, retry in %ds)",
-            settings.EJABBERD_BOT_JID,
+            get_config("EJABBERD_BOT_JID", ""),
             self._auth_retries,
             delay,
         )
@@ -319,8 +320,8 @@ class CantorBot:
 
     def _reconnect(self):
         """Attempt to reconnect."""
-        host = settings.EJABBERD_HOST
-        port = settings.EJABBERD_BOT_PORT
+        host = get_config("EJABBERD_HOST", "")
+        port = get_config_int("EJABBERD_BOT_PORT", 5222)
         self._client.connect((host, port))
 
 

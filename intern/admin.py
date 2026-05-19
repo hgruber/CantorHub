@@ -132,3 +132,9 @@ class TabellenPreferenzenAdmin(admin.ModelAdmin):
         "tabelle",
         "sichtbare_spalten",
     )
+
+
+@admin.register(Konfiguration)
+class KonfigurationAdmin(admin.ModelAdmin):
+    list_display = ("key", "value", "description")
+    search_fields = ("key", "description")

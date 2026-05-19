@@ -171,18 +171,8 @@ STATIC_ROOT = BASE_DIR / "static"
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "0")) if EMAIL_HOST else 0
-EMAIL_BACKEND = (
-    "django.core.mail.backends.smtp.EmailBackend"
-    if EMAIL_HOST and EMAIL_PORT
-    else "django.core.mail.backends.console.EmailBackend"
-)
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "") or None
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "") or None
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "0") == "1"
-EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "0") == "1"
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "webmaster@example.org")
+EMAIL_BACKEND = "intern.email_backend.DbEmailBackend"
+DEFAULT_FROM_EMAIL = "webmaster@example.org"
 
 # Thumbnail generation: pil_image handles images, pdf_source renders the
 # first page of PDFs. easy-thumbnails tries each in order and caches results.
@@ -215,17 +205,5 @@ FILE_TYPE_LIED_MAP = {
     "pdf": "pdf",
 }
 
-# XMPP/ejabberd integration settings
-# All configured via environment variables
-EJABBERD_ENABLED = os.environ.get("EJABBERD_ENABLED", "0") == "1"
-EJABBERD_API_URL = os.environ.get("EJABBERD_API_URL", "http://127.0.0.1:5280")
-EJABBERD_HOST = os.environ.get("EJABBERD_HOST", "example.net")
-EJABBERD_MUC_SERVICE = os.environ.get(
-    "EJABBERD_MUC_SERVICE", "conference.example.net"
-)
-EJABBERD_BOT_JID = os.environ.get("EJABBERD_BOT_JID", "forum@example.org")
-EJABBERD_BOT_PASSWORD = os.environ.get("EJABBERD_BOT_PASSWORD", "")
-EJABBERD_BOT_PORT = int(os.environ.get("EJABBERD_BOT_PORT", "5222"))
-
-# iCal subscription feed — shared secret in the URL path
-ICAL_SECRET = os.environ.get("ICAL_SECRET", "cantorhub-ical-change-me-f7a3c2")
+# XMPP and iCal settings are stored in the database (intern.Konfiguration).
+# Use intern.app_settings.get_config() to read them at runtime.

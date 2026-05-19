@@ -1,6 +1,5 @@
 import threading
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.db.models import Count, OuterRef
@@ -10,6 +9,7 @@ from django_tables2 import RequestConfig
 from filer.models import File
 
 from intern import ejabberd, folders
+from intern.app_settings import get_config_bool
 
 from ..forms import MitgliedAddForm, UserEditForm
 from ..models import Mitteilung, User
@@ -170,7 +170,7 @@ def mitglied_passwd(request, id):
         target_user.save()
 
         # Sync password to ejabberd if user has an XMPP account
-        if settings.EJABBERD_ENABLED and target_user.xmpp:
+        if get_config_bool("EJABBERD_ENABLED") and target_user.xmpp:
             localpart = target_user.xmpp.split("@")[0]
             threading.Thread(
                 target=ejabberd.set_user_password,

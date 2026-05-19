@@ -14,7 +14,8 @@ import time
 
 import httpx
 import slixmpp
-from django.conf import settings
+
+from intern.app_settings import get_config, get_config_int
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +32,8 @@ def _request(endpoint, body=None, allow_statuses=None):
     allow_statuses: set of extra HTTP status codes to treat as success
     (e.g. {409} for "already exists" responses from register).
     """
-    url = f"{settings.EJABBERD_API_URL.rstrip('/')}/api/{endpoint}"
-    auth = (settings.EJABBERD_BOT_JID, settings.EJABBERD_BOT_PASSWORD)
+    url = f"{get_config('EJABBERD_API_URL', 'http://127.0.0.1:5280').rstrip('/')}/api/{endpoint}"
+    auth = (get_config("EJABBERD_BOT_JID", ""), get_config("EJABBERD_BOT_PASSWORD", ""))
     allowed = allow_statuses or set()
 
     for attempt in range(_MAX_RETRIES):
@@ -42,7 +43,7 @@ def _request(endpoint, body=None, allow_statuses=None):
                 auth=auth,
                 json=body or {},
                 timeout=10,
-                headers={"Host": settings.EJABBERD_HOST},
+                headers={"Host": get_config("EJABBERD_HOST", "")},
             )
         except httpx.RequestError as exc:
             logger.error("ejabberd request error %s: %s", endpoint, exc)
@@ -102,7 +103,7 @@ def register_user(username, password):
         "register",
         {
             "user": localpart,
-            "host": settings.EJABBERD_HOST,
+            "host": get_config("EJABBERD_HOST", ""),
             "password": password,
         },
         allow_statuses={409},
@@ -118,7 +119,7 @@ def register_user(username, password):
         )
         return None
 
-    jid = f"{localpart}@{settings.EJABBERD_HOST}"
+    jid = f"{localpart}@{get_config("EJABBERD_HOST", "")}"
     logger.info("ejabberd: registered user %s", jid)
     return jid
 
@@ -128,13 +129,13 @@ def ensure_bot():
     Register the bot account (idempotent). Called at startup via ejabberd_sync --sync.
     Returns True on success or if account already exists.
     """
-    localpart = settings.EJABBERD_BOT_JID.split("@")[0]
+    localpart = get_config("EJABBERD_BOT_JID", "").split("@")[0]
     result = _request(
         "register",
         {
             "user": localpart,
-            "host": settings.EJABBERD_HOST,
-            "password": settings.EJABBERD_BOT_PASSWORD,
+            "host": get_config("EJABBERD_HOST", ""),
+            "password": get_config("EJABBERD_BOT_PASSWORD", ""),
         },
         allow_statuses={409},
     )
@@ -146,13 +147,13 @@ def ensure_bot():
         logger.info(
             "ejabberd: bot account %s@%s already exists",
             localpart,
-            settings.EJABBERD_HOST,
+            get_config("EJABBERD_HOST", ""),
         )
         return True
     logger.info(
         "ejabberd: ensured bot account %s@%s",
         localpart,
-        settings.EJABBERD_HOST,
+        get_config("EJABBERD_HOST", ""),
     )
     return True
 
@@ -167,12 +168,12 @@ def unregister_user(localpart):
         "unregister",
         {
             "user": localpart,
-            "host": settings.EJABBERD_HOST,
+            "host": get_config("EJABBERD_HOST", ""),
         },
     )
     if result is None:
         return False
-    logger.info("ejabberd: unregistered user %s@%s", localpart, settings.EJABBERD_HOST)
+    logger.info("ejabberd: unregistered user %s@%s", localpart, get_config("EJABBERD_HOST", ""))
     return True
 
 
@@ -187,7 +188,7 @@ def destroy_room(muc_jid):
         "destroy_room",
         {
             "room": room_localpart,
-            "service": settings.EJABBERD_MUC_SERVICE,
+            "service": get_config("EJABBERD_MUC_SERVICE", ""),
         },
     )
     if result is None:
@@ -206,13 +207,13 @@ def set_user_password(localpart, password):
         "change_password",
         {
             "user": localpart,
-            "host": settings.EJABBERD_HOST,
+            "host": get_config("EJABBERD_HOST", ""),
             "newpass": password,
         },
     )
     if result is None:
         return False
-    logger.info("ejabberd: changed password for %s@%s", localpart, settings.EJABBERD_HOST)
+    logger.info("ejabberd: changed password for %s@%s", localpart, get_config("EJABBERD_HOST", ""))
     return True
 
 
@@ -229,7 +230,7 @@ def set_vcard(localpart, full_name, avatar_file=None):
         "set_vcard",
         {
             "user": localpart,
-            "host": settings.EJABBERD_HOST,
+            "host": get_config("EJABBERD_HOST", ""),
             "name": "FN",
             "content": full_name,
         },
@@ -255,7 +256,7 @@ def set_vcard(localpart, full_name, avatar_file=None):
                 "set_vcard2",
                 {
                     "user": localpart,
-                    "host": settings.EJABBERD_HOST,
+                    "host": get_config("EJABBERD_HOST", ""),
                     "name": "PHOTO",
                     "subname": "TYPE",
                     "content": mime,
@@ -268,7 +269,7 @@ def set_vcard(localpart, full_name, avatar_file=None):
                 "set_vcard2",
                 {
                     "user": localpart,
-                    "host": settings.EJABBERD_HOST,
+                    "host": get_config("EJABBERD_HOST", ""),
                     "name": "PHOTO",
                     "subname": "BINVAL",
                     "content": b64,
@@ -281,7 +282,7 @@ def set_vcard(localpart, full_name, avatar_file=None):
             ok = False
 
     if ok:
-        logger.info("ejabberd: set vCard for %s@%s", localpart, settings.EJABBERD_HOST)
+        logger.info("ejabberd: set vCard for %s@%s", localpart, get_config("EJABBERD_HOST", ""))
     return ok
 
 
@@ -296,7 +297,7 @@ def set_room_affiliation(muc_jid, user_jid, affiliation):
     """
     # Parse muc_jid: forum-1@conference.example.net
     room_localpart = muc_jid.split("@")[0]
-    service = settings.EJABBERD_MUC_SERVICE
+    service = get_config("EJABBERD_MUC_SERVICE", "")
 
     # Parse user_jid: user@example.org
     user_localpart = user_jid.split("@")[0]
@@ -307,7 +308,7 @@ def set_room_affiliation(muc_jid, user_jid, affiliation):
             "room": room_localpart,
             "service": service,
             "user": user_localpart,
-            "host": settings.EJABBERD_HOST,
+            "host": get_config("EJABBERD_HOST", ""),
             "affiliation": affiliation,
         },
     )
@@ -334,7 +335,7 @@ def get_room_members(muc_jid):
         "get_room_affiliations",
         {
             "room": room_localpart,
-            "service": settings.EJABBERD_MUC_SERVICE,
+            "service": get_config("EJABBERD_MUC_SERVICE", ""),
         },
     )
     if result is None:
@@ -365,7 +366,7 @@ def change_room_option(muc_jid, option, value):
         "change_room_option",
         {
             "room": room_localpart,
-            "service": settings.EJABBERD_MUC_SERVICE,
+            "service": get_config("EJABBERD_MUC_SERVICE", ""),
             "option": option,
             "value": value,
         },
@@ -388,7 +389,7 @@ def get_room_occupants(muc_jid):
         "get_room_occupants",
         {
             "room": room_localpart,
-            "service": settings.EJABBERD_MUC_SERVICE,
+            "service": get_config("EJABBERD_MUC_SERVICE", ""),
         },
     )
     if result is None:
@@ -416,7 +417,7 @@ def send_invitation(muc_jid, user_jid, reason="", password=""):
         "send_direct_invitation",
         {
             "room": room_localpart,
-            "service": settings.EJABBERD_MUC_SERVICE,
+            "service": get_config("EJABBERD_MUC_SERVICE", ""),
             "password": password or "",
             "reason": reason or "CantorHub Forum invitation",
             "users": [user_jid],
@@ -433,18 +434,18 @@ def list_registered_users():
     List all registered users on the ejabberd server via REST API.
     Returns list of JIDs (localpart@host) on success, empty list on failure.
     """
-    result = _request("registered_users", {"host": settings.EJABBERD_HOST})
+    result = _request("registered_users", {"host": get_config("EJABBERD_HOST", "")})
     if result is None:
         return []
     # Result can be a list of strings (usernames/localparts) or list of dicts
     users = []
     for item in result:
         if isinstance(item, str):
-            users.append(f"{item}@{settings.EJABBERD_HOST}")
+            users.append(f"{item}@{get_config("EJABBERD_HOST", "")}")
         elif isinstance(item, dict):
             username = item.get("username", item.get("user", ""))
             if username:
-                users.append(f"{username}@{settings.EJABBERD_HOST}")
+                users.append(f"{username}@{get_config("EJABBERD_HOST", "")}")
     return users
 
 
@@ -459,8 +460,8 @@ def _send_muc_message_thread(muc_jid, body):
 
     async def _send():
         bot = slixmpp.ClientXMPP(
-            settings.EJABBERD_BOT_JID,
-            settings.EJABBERD_BOT_PASSWORD,
+            get_config("EJABBERD_BOT_JID", ""),
+            get_config("EJABBERD_BOT_PASSWORD", ""),
             sasl_mech="PLAIN",
         )
         bot.register_plugin("xep_0045")  # MUC
@@ -483,8 +484,8 @@ def _send_muc_message_thread(muc_jid, body):
 
         bot.add_event_handler("session_start", on_session_start)
 
-        host = settings.EJABBERD_HOST
-        port = settings.EJABBERD_BOT_PORT
+        host = get_config("EJABBERD_HOST", "")
+        port = get_config_int("EJABBERD_BOT_PORT", 5222)
         try:
             bot.connect((host, port))
             await bot.disconnected

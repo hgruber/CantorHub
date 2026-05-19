@@ -12,10 +12,10 @@ Tasks:
 
 import logging
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from intern.ejabberd import ensure_bot
+from intern.app_settings import get_config, get_config_bool
 from intern.models import Forum, User
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if not settings.EJABBERD_ENABLED:
+        if not get_config_bool("EJABBERD_ENABLED"):
             self.stdout.write("ejabberd_sync: EJABBERD_ENABLED is False, skipping")
             return
 
@@ -90,7 +90,7 @@ class Command(BaseCommand):
 
             count = 0
             for forum in forums_needing_jid:
-                muc_jid = f"forum-{forum.pk}@{settings.EJABBERD_MUC_SERVICE}"
+                muc_jid = f"forum-{forum.pk}@{get_config('EJABBERD_MUC_SERVICE', '')}"
                 forum.xmpp_muc_jid = muc_jid
                 forum.save(update_fields=["xmpp_muc_jid"])
                 count += 1
