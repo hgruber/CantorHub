@@ -347,7 +347,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("option", models.CharField(default=1)),
+                ("option", models.CharField(max_length=255, default="1")),
                 (
                     "person",
                     models.ForeignKey(
