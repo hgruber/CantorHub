@@ -28,12 +28,19 @@ _CONFIG_DEFAULTS = [
 
 
 def _seed_config(sender, **kwargs):
+    import secrets as _secrets
     from intern.models import Konfiguration
+
     for key, value, description in _CONFIG_DEFAULTS:
         Konfiguration.objects.get_or_create(
             key=key,
             defaults={"value": value, "description": description},
         )
+
+    obj = Konfiguration.objects.get(key="ICAL_SECRET")
+    if not obj.value:
+        obj.value = _secrets.token_urlsafe(6)  # 8 URL-safe chars
+        obj.save(update_fields=["value"])
 
 
 class InternConfig(AppConfig):
