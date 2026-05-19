@@ -68,7 +68,8 @@ def _build_stimme_groups(termin):
 
 
 def calendar_ics(request, secret):
-    if not secrets.compare_digest(secret, get_config("ICAL_SECRET", "")):
+    ical_secret = get_config("ICAL_SECRET") or ""
+    if not ical_secret or not secrets.compare_digest(secret, ical_secret):
         from django.http import Http404
         raise Http404
     cutoff = timezone_now() - timedelta(days=180)
@@ -156,9 +157,13 @@ def termin_list(request):
     RequestConfig(request, paginate=False).configure(table)
     from django.urls import reverse
 
-    ical_path = reverse("calendar_ics", args=[get_config("ICAL_SECRET", "")])
-    ical_url = request.build_absolute_uri(ical_path)
-    webcal_url = "webcal://" + request.get_host() + ical_path
+    ical_secret = get_config("ICAL_SECRET")
+    if ical_secret:
+        ical_path = reverse("calendar_ics", args=[ical_secret])
+        ical_url = request.build_absolute_uri(ical_path)
+        webcal_url = "webcal://" + request.get_host() + ical_path
+    else:
+        ical_url = webcal_url = None
     add = "termin_add" if request.user.has_perm("intern.add_termin") else None
     return render(
         request,
