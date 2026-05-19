@@ -14,6 +14,7 @@ from ..models import User
 
 __all__ = [
     "CantorLoginView",
+    "custom_404",
     "home",
     "register",
     "register_success",
@@ -128,3 +129,7 @@ def register(request):
 
 def register_success(request):
     return render(request, "register_success.html")
+
+
+def custom_404(request, exception):
+    return render(request, "404.html", {"seitentitel": "Seite nicht gefunden"}, status=404)

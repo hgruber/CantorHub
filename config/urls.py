@@ -5,6 +5,8 @@ from django.urls import include, path
 
 from intern import views
 
+handler404 = "intern.views.custom_404"
+
 urlpatterns = [
     path("", views.home),
     path("intern/", include("intern.urls")),

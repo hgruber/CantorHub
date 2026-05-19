@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="error-page">
+    <div class="error-card">
+        <div class="error-note">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                <path d="M24 44V20l28-6v24" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="16" cy="44" r="8" fill="var(--brand-light)" stroke="var(--brand)" stroke-width="3"/>
+                <circle cx="44" cy="38" r="8" fill="var(--brand-light)" stroke="var(--brand)" stroke-width="3"/>
+                <line x1="24" y1="20" x2="52" y2="14" stroke="var(--brand)" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        <div class="error-code">404</div>
+
+        <h1 class="error-title">Seite nicht gefunden</h1>
+        <p class="error-message">
+            Diese Seite existiert nicht oder wurde verschoben.<br>
+            Vielleicht hilft ein Blick in den internen Bereich weiter.
+        </p>
+
+        <div class="error-actions">
+            <a href="{% url 'folder_view' 0 %}" class="error-btn-primary">Zur Startseite</a>
+            <button type="button" class="error-btn-secondary" onclick="history.back()">Zurück</button>
+        </div>
+
+        <p class="error-path">{{ request.path }}</p>
+    </div>
+</div>
+{% endblock %}
