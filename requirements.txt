@@ -11,7 +11,7 @@ httpx==0.28.1
 icalendar==7.0.3
 Pillow==11.3.0
 PyMuPDF==1.27.2.3
-pymysql==1.1.2
+mysqlclient>=2.2.1
 pytz==2025.2
 slixmpp==1.13.2
 tzdata==2025.3

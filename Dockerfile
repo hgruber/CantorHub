@@ -1,6 +1,13 @@
 # Stage 1: Base build stage
 FROM python:3.14-slim AS builder
 
+# Install build dependencies for mysqlclient
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libmariadb-dev \
+    gcc \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create the app directory
 RUN mkdir /app
 
@@ -30,11 +37,13 @@ RUN useradd -m -r appuser && \
 # Copy the Python dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
-RUN apt update -y && apt install -y nginx locales git && \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx locales git libmariadb3 && \
     locale-gen de_DE.UTF-8 && \
     echo 'LANG=de_DE.UTF-8' > /etc/default/locale && \
     echo 'LC_ALL=de_DE.UTF-8' >> /etc/default/locale && \
-    rm -f /etc/nginx/sites-enabled/default
+    rm -f /etc/nginx/sites-enabled/default && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV LANG=de_DE.UTF-8
 ENV LC_ALL=de_DE.UTF-8
