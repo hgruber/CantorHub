@@ -4811,12 +4811,30 @@ span.not_found {
 [data-theme="dark"] .dl-icon-pdf   { background: rgba(220,38,38,0.15);  color: #f87171; }
 
 /* === 404 Error Page === */
-.error-page {
+.error-standalone {
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 100%;
     padding: 2rem;
+    background: var(--bg-app);
+}
+
+.error-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    margin-bottom: 2rem;
+}
+.error-brand img {
+    width: 36px;
+    height: 36px;
+}
+.error-brand span {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--brand);
 }
 
 .error-card {

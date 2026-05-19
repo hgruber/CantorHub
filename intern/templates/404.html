@@ -1,7 +1,22 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="error-page">
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Just Gospel Intern – Seite nicht gefunden</title>
+    <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
+    <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
+    <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark")})()</script>
+</head>
+<body>
+<div class="error-standalone">
     <div class="error-card">
+        <a href="/" class="error-brand">
+            <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" alt="Just Gospel" />
+            <span>Just Gospel</span>
+        </a>
+
         <div class="error-note">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
                 <path d="M24 44V20l28-6v24" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -20,11 +35,12 @@
         </p>
 
         <div class="error-actions">
-            <a href="{% url 'folder_view' 0 %}" class="error-btn-primary">Zur Startseite</a>
+            <a href="/intern/" class="error-btn-primary">Zum internen Bereich</a>
             <button type="button" class="error-btn-secondary" onclick="history.back()">Zurück</button>
         </div>
 
         <p class="error-path">{{ request.path }}</p>
     </div>
 </div>
-{% endblock %}
+</body>
+</html>
