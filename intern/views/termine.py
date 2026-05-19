@@ -29,6 +29,7 @@ __all__ = [
     "termin_view",
     "termin_zusage",
     "termin_edit",
+    "termin_delete",
     "termin_add",
     "calendar_ics",
     "konzert_docx",
@@ -367,8 +368,18 @@ def termin_edit(request, id):
         "seitentitel": f"bearbeiten: {termin.kurz}",
         "view": "termin_view",
         "id": id,
+        "zusagen_count": Zusage.objects.filter(termin=termin).count(),
+        "konzerte_count": Konzert.objects.filter(termin=termin).count(),
     }
     return render(request, "termin_edit.html", context)
+
+
+@permission_required("intern.delete_termin", raise_exception=True)
+@require_POST
+def termin_delete(request, id):
+    termin = get_object_or_404(Termin, id=id)
+    termin.delete()
+    return redirect("termin_list")
 
 
 @permission_required("intern.add_termin", raise_exception=True)

@@ -143,6 +143,26 @@
                     </div>
                 </div>
             {% endif %}
+            {% if user.dirigent.exists %}
+                <div class="profile-section">
+                    <h2>Dirigent bei <span class="badge">{{ user.dirigent.count }}</span></h2>
+                    <div class="tag-list">
+                        {% for lied in user.dirigent.all %}
+                        <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            {% if user.solist.exists %}
+                <div class="profile-section">
+                    <h2>Solist bei <span class="badge">{{ user.solist.count }}</span></h2>
+                    <div class="tag-list">
+                        {% for lied in user.solist.all %}
+                        <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

@@ -21,6 +21,7 @@ __all__ = [
     "titel_list",
     "titel_view",
     "titel_edit",
+    "titel_delete",
     "titel_add",
     "update_order",
 ]
@@ -221,8 +222,17 @@ def titel_edit(request, titel):
         "seitentitel": f"bearbeiten: {lied.titel}",
         "view": "titel_view",
         "id": titel,
+        "konzerte_count": lied.konzert_set.count(),
     }
     return render(request, "titel_edit.html", context)
+
+
+@permission_required("intern.delete_lied", raise_exception=True)
+@require_POST
+def titel_delete(request, titel):
+    lied = get_object_or_404(Lied, id=titel)
+    lied.delete()
+    return redirect("titel_list")
 
 
 @permission_required("intern.change_lied", raise_exception=True)
@@ -276,6 +286,7 @@ def titel_add(request):
                     except (File.DoesNotExist, ValueError):
                         pass
             lied.save()
+            form.save_m2m()
             return redirect("titel_view", titel=lied.id)
     else:
         form = LiedEditForm()

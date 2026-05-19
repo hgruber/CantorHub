@@ -6,7 +6,7 @@ from django.db import models
 from filer.fields.file import FilerFileField
 from filer.fields.image import AdminImageWidget
 
-from .models import Forum, Lied, Ort, Termin, User
+from .models import Forum, Konfiguration, Lied, Ort, Termin, User
 
 
 class RegisterForm(forms.Form):
@@ -77,11 +77,23 @@ class TerminForm(forms.ModelForm):
 
 
 class LiedEditForm(forms.ModelForm):
+    solist = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(is_active=True).order_by("last_name", "first_name"),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-control", "size": "8"}),
+    )
+    dirigent = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(is_active=True).order_by("last_name", "first_name"),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-control", "size": "8"}),
+    )
+
     class Meta:
         model = Lied
         fields = [
             "titel", "aktiv", "tempo", "beats", "hymne", "acapella", "weihnacht",
             "original", "aufnahme", "pdf", "noten", "komponist", "bearbeiter",
+            "solist", "dirigent",
         ]
         widgets = {
             "titel": forms.TextInput(attrs={"class": "form-control"}),
@@ -208,3 +220,19 @@ class MitgliedAddForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class KonfigurationForm(forms.ModelForm):
+    class Meta:
+        model = Konfiguration
+        fields = ["key", "value", "description"]
+        widgets = {
+            "key": forms.TextInput(attrs={"class": "inline-input"}),
+            "value": forms.Textarea(attrs={"class": "inline-input", "rows": 1}),
+            "description": forms.Textarea(attrs={"class": "inline-input", "rows": 1}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields["key"].widget.attrs["readonly"] = True

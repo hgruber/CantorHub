@@ -131,6 +131,17 @@
             {% else %}
             <a href="{% url 'mitglied_list' %}" class="btn btn-secondary">Abbrechen</a>
             {% endif %}
+            {% if id and request.user.is_superuser %}
+            <form method="post" style="display:inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="deactivate">
+                {% if user.is_active %}
+                <button type="submit" class="btn btn-danger">Ruhende Mitgliedschaft</button>
+                {% else %}
+                <button type="submit" class="btn btn-primary">Mitgliedschaft reaktivieren</button>
+                {% endif %}
+            </form>
+            {% endif %}
         </div>
     </form>
 </div>

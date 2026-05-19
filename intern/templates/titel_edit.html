@@ -81,6 +81,20 @@
                     </div>
                 </div>
             </div>
+
+            <div class="detail-card">
+                <h3>Besetzung</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.solist.id_for_label }}">Solisten</label>
+                        {{ form.solist }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.dirigent.id_for_label }}">Dirigenten</label>
+                        {{ form.dirigent }}
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="form-actions">
@@ -90,7 +104,25 @@
             {% else %}
             <a href="{% url 'titel_list' %}" class="btn btn-secondary">Abbrechen</a>
             {% endif %}
+            {% if id %}
+            <button type="button" class="btn btn-danger" onclick="document.getElementById('delete-dialog').showModal()">Lied loeschen</button>
+            {% endif %}
         </div>
     </form>
+
+    {% if id %}
+    <dialog id="delete-dialog">
+        <h3>Lied loeschen</h3>
+        <p>Moechtest du &bdquo;{{ lied.titel }}&ldquo; wirklich loeschen?</p>
+        {% if konzerte_count %}
+        <p class="warn">{{ konzerte_count }} Konzert{{ konzerte_count|pluralize:"e" }} werden ebenfalls geloescht.</p>
+        {% endif %}
+        <form method="post" action="{% url 'titel_delete' titel=id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Ja, loeschen</button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('delete-dialog').close()">Abbrechen</button>
+        </form>
+    </dialog>
+    {% endif %}
 </div>
 {% endblock %}

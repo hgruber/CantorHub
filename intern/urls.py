@@ -19,6 +19,8 @@ urlpatterns = [
         auth_views.LogoutView.as_view(next_page="login"),
         name="logout",
     ),
+    # Konfiguration URLs
+    path("konfiguration/", views.konfiguration, name="konfiguration"),
     # Upload and File URLs
     path("upload/", views.upload, name="upload"),
     path("file-search/", views.file_search, name="file_search"),
@@ -48,12 +50,14 @@ urlpatterns = [
     path("titel/add/", views.titel_add, name="titel_add"),
     path("titel/<int:titel>/", views.titel_view, name="titel_view"),
     path("titel/<int:titel>/edit/", views.titel_edit, name="titel_edit"),
+    path("titel/<int:titel>/delete/", views.titel_delete, name="titel_delete"),
     path("update-order/", views.update_order, name="update-order"),
     # Termin URLs
     path("termin/", views.termin_list, name="termin_list"),
     path("termin/add/", views.termin_add, name="termin_add"),
     path("termin/<int:id>/", views.termin_view, name="termin_view"),
     path("termin/<int:id>/edit/", views.termin_edit, name="termin_edit"),
+    path("termin/<int:id>/delete/", views.termin_delete, name="termin_delete"),
     path("termin/<int:id>/docx/", views.konzert_docx, name="konzert_docx"),
     path("termin/<int:id>/docx-titles/", views.konzert_docx_titles, name="konzert_docx_titles"),
     path("termin/<int:id>/pdf/", views.konzert_pdf, name="konzert_pdf"),

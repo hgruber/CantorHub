@@ -88,8 +88,29 @@
             {% else %}
             <a href="{% url 'termin_list' %}" class="btn btn-secondary">Abbrechen</a>
             {% endif %}
+            {% if id %}
+            <button type="button" class="btn btn-danger" onclick="document.getElementById('delete-dialog').showModal()">Termin loeschen</button>
+            {% endif %}
         </div>
     </form>
+
+    {% if id %}
+    <dialog id="delete-dialog">
+        <h3>Termin loeschen</h3>
+        <p>Moechtest du &bdquo;{{ termin.kurz }}&ldquo; wirklich loeschen?</p>
+        {% if zusagen_count %}
+        <p class="warn">{{ zusagen_count }} Zusage{{ zusagen_count|pluralize:"n" }} werden ebenfalls geloescht.</p>
+        {% endif %}
+        {% if konzerte_count %}
+        <p class="warn">{{ konzerte_count }} Konzert{{ konzerte_count|pluralize:"e" }} werden ebenfalls geloescht.</p>
+        {% endif %}
+        <form method="post" action="{% url 'termin_delete' id=id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Ja, loeschen</button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('delete-dialog').close()">Abbrechen</button>
+        </form>
+    </dialog>
+    {% endif %}
 </div>
 <script>
 (function() {

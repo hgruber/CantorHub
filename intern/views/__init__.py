@@ -5,6 +5,7 @@ from .files import *
 from .folders import *
 from .forums import *
 from .karte import *
+from .konfiguration import *
 from .mitglieder import *
 from .orte import *
 from .termine import *

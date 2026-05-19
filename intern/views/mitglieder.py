@@ -70,7 +70,7 @@ def mitglied_list(request):
 
 @login_required
 def mitglied_view(request, id):
-    user = get_object_or_404(User, id=id)
+    user = get_object_or_404(User.objects.prefetch_related("solist", "dirigent"), id=id)
     can_edit = (
         request.user.id == id
         or request.user.is_superuser
@@ -98,6 +98,17 @@ def mitglied_edit(request, id):
     user = get_object_or_404(User, id=id)
 
     if request.method == "POST":
+        if request.POST.get("action") == "deactivate" and (
+            request.user.is_superuser or request.user.has_perm("intern.change_user")
+        ):
+            user.is_active = not user.is_active
+            user.save(update_fields=["is_active"])
+            if user.is_active:
+                messages.success(request, "Mitgliedschaft reaktiviert.")
+            else:
+                messages.success(request, "Mitgliedschaft ist jetzt ruhend.")
+            return redirect("mitglied_edit", id=id)
+
         form = UserEditForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             # Move dropzone-uploaded avatar to Avatare folder and rename.
@@ -131,7 +142,6 @@ def mitglied_edit(request, id):
         "changepass": "mitglied_passwd",
         "upload_folder_id": folders.avatare(),
         "upload_rename_to": id,
-        "upload_avatar_user_id": id,
         "id": id,
     }
     return render(request, "mitglied_edit.html", context)
