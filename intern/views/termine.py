@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import secrets
 import zipfile
@@ -8,7 +9,7 @@ from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
@@ -28,6 +29,7 @@ __all__ = [
     "termin_list",
     "termin_view",
     "termin_zusage",
+    "termin_anwesenheit_update",
     "termin_edit",
     "termin_delete",
     "termin_add",
@@ -346,6 +348,48 @@ def termin_zusage(request, id):
     return render(request, "_termin_zusage.html", {
         "termin": termin,
         "my_option": current_option,
+        "stimme_groups": _build_stimme_groups(termin),
+    })
+
+
+@permission_required("intern.change_zusage", raise_exception=True)
+@require_POST
+def termin_anwesenheit_update(request, id):
+    termin = get_object_or_404(Termin, id=id)
+    if not termin.anwesenheit:
+        return HttpResponseBadRequest("anwesenheit disabled")
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except ValueError:
+        return HttpResponseBadRequest("invalid json")
+
+    changes = payload.get("changes") or []
+    valid_options = {"1", "2", "3"}
+    active_ids = set(User.objects.filter(is_active=True).values_list("id", flat=True))
+    existing = {
+        z.person_id: z for z in Zusage.objects.filter(termin=termin)
+    }
+
+    for entry in changes:
+        try:
+            person_id = int(entry.get("person_id"))
+        except (TypeError, ValueError):
+            continue
+        option = entry.get("option")
+        if option not in valid_options or person_id not in active_ids:
+            continue
+        current = existing.get(person_id)
+        if current and current.option == option:
+            continue
+        Zusage.objects.update_or_create(
+            person_id=person_id, termin=termin,
+            defaults={"option": option},
+        )
+
+    my_zusage = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
+    return render(request, "_termin_zusage.html", {
+        "termin": termin,
+        "my_option": my_zusage.option if my_zusage else "",
         "stimme_groups": _build_stimme_groups(termin),
     })
 

@@ -72,6 +72,27 @@ function toggleSettingsMenu() {
   toggle.classList.toggle("open");
 }
 
+// Admin submenu toggle
+function toggleAdminMenu() {
+  const submenu = document.getElementById("admin-submenu");
+  const toggle = document.getElementById("admin-toggle");
+  if (!submenu || !toggle) return;
+  submenu.classList.toggle("open");
+  toggle.classList.toggle("open");
+}
+
+// Auto-open admin submenu when on an admin page
+(function () {
+  const adminPaths = ["/intern/konfiguration/", "/intern/berechtigungen/"];
+  const current = window.location.pathname;
+  if (adminPaths.some((p) => current.startsWith(p))) {
+    const submenu = document.getElementById("admin-submenu");
+    const toggle = document.getElementById("admin-toggle");
+    if (submenu) submenu.classList.add("open");
+    if (toggle) toggle.classList.add("open");
+  }
+})();
+
 // Global reference to the app-main Dropzone, set in DOMContentLoaded below
 var appMainDz = null;
 

@@ -1,44 +1,185 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="detail-page">
-    <div class="detail-header">
-        <div class="detail-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </div>
-        <div class="detail-info">
-            <h1>Konfiguration</h1>
-        </div>
+<style>
+/* ─── Konfiguration table (page-scoped) ──────────────── */
+.konfig-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    background: var(--bg-card);
+}
+.konfig-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+    font-family: var(--font);
+    background: var(--bg-card);
+}
+
+/* Sticky header */
+.konfig-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--bg-thead);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t3);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.konfig-col-key   { min-width: 180px; width: 18%; }
+.konfig-col-value { min-width: 200px; width: 28%; }
+.konfig-col-desc  { min-width: 200px; }
+.konfig-col-del   { width: 56px; text-align: center !important; }
+
+/* Table rows */
+.konfig-row td {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+.konfig-row:last-child td { border-bottom: none; }
+.konfig-row:hover td { background: var(--bg-row-hover); }
+
+/* Inputs inside table cells */
+.konfig-table .inline-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 9px;
+    border: 1px solid var(--border-dark);
+    border-radius: 5px;
+    background: var(--bg-card);
+    color: var(--t1);
+    font-size: 13px;
+    font-family: var(--font);
+    resize: none;
+    min-height: 32px;
+    line-height: 1.45;
+    transition: border-color var(--ease), box-shadow var(--ease);
+}
+.konfig-table .inline-input:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 2px var(--brand-light);
+}
+.konfig-table .inline-input[readonly] {
+    background: var(--bg-thead);
+    color: var(--t2);
+    cursor: default;
+}
+
+/* Delete column */
+.konfig-del-td { text-align: center; }
+
+/* Django checkbox — styled as accent color */
+.konfig-del-check {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #e11d48;
+    vertical-align: middle;
+}
+
+/* Mark rows scheduled for deletion */
+.konfig-row.to-delete td:not(.konfig-del-td) .inline-input {
+    opacity: 0.35;
+    text-decoration: line-through;
+    pointer-events: none;
+}
+
+/* Error feedback */
+.invalid-feedback {
+    display: block;
+    font-size: 11px;
+    color: #e11d48;
+    margin-top: 3px;
+}
+
+/* Save bar — always visible, fixed to bottom */
+.konfig-save-bar {
+    position: fixed;
+    bottom: 0;
+    left: var(--sb-width);
+    right: 0;
+    padding: 14px 28px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
+}
+
+/* Dark mode */
+[data-theme="dark"] .konfig-table .inline-input {
+    background: var(--bg-page);
+    border-color: rgba(255,255,255,0.12);
+}
+[data-theme="dark"] .konfig-table .inline-input[readonly] {
+    background: var(--bg-thead);
+}
+[data-theme="dark"] .konfig-save-bar {
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.35);
+}
+
+@media (max-width: 768px) {
+    .konfig-save-bar { left: 0; }
+}
+</style>
+
+<form method="post" class="table-view" id="konfig-form">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    <div class="konfig-wrap">
+        <table class="konfig-table">
+            <thead>
+                <tr>
+                    <th class="konfig-col-key">Schlüssel</th>
+                    <th class="konfig-col-value">Wert</th>
+                    <th class="konfig-col-desc">Beschreibung</th>
+                    <th class="konfig-col-del">Löschen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for form in formset %}
+                <tr class="konfig-row">
+                    <td>{{ form.id }}{{ form.key }}{% if form.key.errors %}<span class="invalid-feedback">{{ form.key.errors }}</span>{% endif %}</td>
+                    <td>{{ form.value }}{% if form.value.errors %}<span class="invalid-feedback">{{ form.value.errors }}</span>{% endif %}</td>
+                    <td>{{ form.description }}{% if form.description.errors %}<span class="invalid-feedback">{{ form.description.errors }}</span>{% endif %}</td>
+                    <td class="konfig-del-td">
+                        {% if form.instance.pk %}{{ form.DELETE }}{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+</form>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ formset.management_form }}
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="min-width:180px">Schluessel</th>
-                        <th style="min-width:260px">Wert</th>
-                        <th>Beschreibung</th>
-                        <th class="center" style="width:60px">Loeschen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for form in formset %}
-                    <tr>
-                        <td>{{ form.id }}{{ form.key }}{% if form.key.errors %} <span class="invalid-feedback">{{ form.key.errors }}</span>{% endif %}</td>
-                        <td>{{ form.value }}{% if form.value.errors %} <span class="invalid-feedback">{{ form.value.errors }}</span>{% endif %}</td>
-                        <td>{{ form.description }}{% if form.description.errors %} <span class="invalid-feedback">{{ form.description.errors }}</span>{% endif %}</td>
-                        <td class="center">{{ form.DELETE }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Speichern</button>
-        </div>
-    </form>
+<!-- Save bar outside the flex container so it doesn't shift layout -->
+<div class="konfig-save-bar">
+    <button type="submit" form="konfig-form" class="btn btn-primary">Speichern</button>
 </div>
+
+<script>
+(function () {
+    // Apply delete-row styling when checkbox is toggled
+    document.querySelectorAll('.konfig-del-td input[type="checkbox"]').forEach(function (cb) {
+        cb.classList.add('konfig-del-check');
+        var row = cb.closest('.konfig-row');
+        function sync() {
+            if (row) row.classList.toggle('to-delete', cb.checked);
+        }
+        sync();
+        cb.addEventListener('change', sync);
+    });
+})();
+</script>
 {% endblock %}

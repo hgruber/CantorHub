@@ -2270,6 +2270,75 @@ div.avatar { cursor: pointer; }
     color: var(--t4);
 }
 
+/* Admin drag-and-drop chips */
+.att-chips {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: none;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 1.5em;
+}
+.attendance-edit-mode .att-display { display: none; }
+.attendance-edit-mode .att-chips { display: flex; }
+.attendance-edit-mode .att-chips:empty::before {
+    content: "–";
+    color: var(--t4);
+    font-size: 12px;
+}
+.att-chip {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--bg-row-hover);
+    color: var(--t2);
+    font-size: 12px;
+    line-height: 1.4;
+    user-select: none;
+    border: 1px solid transparent;
+}
+.attendance-edit-mode .att-chip { cursor: grab; }
+.attendance-edit-mode .att-chip:active { cursor: grabbing; }
+.att-chip.att-chip-dirty {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 2px var(--brand-ring);
+}
+.att-chip.sortable-ghost { opacity: 0.4; }
+.att-chip.sortable-chosen { background: var(--brand); color: #fff; }
+
+.detail-card h3 button.h3-edit {
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.4;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    cursor: pointer;
+}
+.detail-card h3 button.h3-edit:hover { opacity: 1; }
+.detail-card h3 button.h3-edit[hidden] { display: none; }
+
+.anwesenheit-save-btn,
+.anwesenheit-cancel-btn {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-radius: 6px;
+    border: 1px solid var(--brand);
+    cursor: pointer;
+}
+.anwesenheit-save-btn { background: var(--brand); color: #fff; }
+.anwesenheit-save-btn:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
+.anwesenheit-cancel-btn { background: transparent; color: var(--brand); }
+.anwesenheit-cancel-btn:hover { background: var(--brand-light); }
+.anwesenheit-save-btn[hidden],
+.anwesenheit-cancel-btn[hidden] { display: none; }
+.anwesenheit-save-btn:disabled { opacity: 0.6; cursor: wait; }
+
 /* Attendance split layout (mobile) */
 .attendance-split {
     display: none;

@@ -73,10 +73,11 @@
 
         {% if termin.anwesenheit and stimme_groups %}
         <div class="detail-card detail-card-wide" id="attendance-section">
-            <h3>Anwesenheit</h3>
+            <h3>Anwesenheit{% if perms.intern.change_zusage %}<span class="h3-actions"><button type="button" class="h3-edit anwesenheit-edit-btn" title="Anwesenheit bearbeiten"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button type="button" class="anwesenheit-cancel-btn" hidden>Zurück</button><button type="button" class="anwesenheit-save-btn" hidden>Übernehmen</button></span>{% endif %}</h3>
 
             <!-- Single table: visible on desktop, hidden on mobile -->
-            <div class="attendance-single">
+            <div class="attendance-single"{% if perms.intern.change_zusage %} data-editable="1" data-anwesenheit-url="{% url 'termin_anwesenheit_update' termin.id %}"{% endif %}>
+            {% if perms.intern.change_zusage %}{% csrf_token %}{% endif %}
             <table class="attendance-table">
                 <thead>
                     <tr>
@@ -92,28 +93,20 @@
                     <tr>
                         <td class="att-voice">{{ g.label }}</td>
                         <td class="att-yes">
-                            {% if g.zusagen %}
-                            <span class="att-count">{{ g.zusagen|length }}</span>
-                            <span class="att-names">{% for u in g.zusagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-                            {% else %}–{% endif %}
+                            <span class="att-display">{% if g.zusagen %}<span class="att-count">{{ g.zusagen|length }}</span> <span class="att-names">{% for u in g.zusagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</span>
+                            {% if perms.intern.change_zusage %}<ul class="att-chips" data-stimme="{{ g.key }}" data-col="yes">{% for u in g.zusagen %}<li class="att-chip" data-uid="{{ u.id }}" data-original-col="yes">{{ u.first_name }} {{ u.last_name }}</li>{% endfor %}</ul>{% endif %}
                         </td>
                         <td class="att-no">
-                            {% if g.absagen %}
-                            <span class="att-count">{{ g.absagen|length }}</span>
-                            <span class="att-names">{% for u in g.absagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-                            {% else %}–{% endif %}
+                            <span class="att-display">{% if g.absagen %}<span class="att-count">{{ g.absagen|length }}</span> <span class="att-names">{% for u in g.absagen %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</span>
+                            {% if perms.intern.change_zusage %}<ul class="att-chips" data-stimme="{{ g.key }}" data-col="no">{% for u in g.absagen %}<li class="att-chip" data-uid="{{ u.id }}" data-original-col="no">{{ u.first_name }} {{ u.last_name }}</li>{% endfor %}</ul>{% endif %}
                         </td>
                         <td class="att-maybe">
-                            {% if g.vielleicht %}
-                            <span class="att-count">{{ g.vielleicht|length }}</span>
-                            <span class="att-names">{% for u in g.vielleicht %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-                            {% else %}–{% endif %}
+                            <span class="att-display">{% if g.vielleicht %}<span class="att-count">{{ g.vielleicht|length }}</span> <span class="att-names">{% for u in g.vielleicht %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</span>
+                            {% if perms.intern.change_zusage %}<ul class="att-chips" data-stimme="{{ g.key }}" data-col="maybe">{% for u in g.vielleicht %}<li class="att-chip" data-uid="{{ u.id }}" data-original-col="maybe">{{ u.first_name }} {{ u.last_name }}</li>{% endfor %}</ul>{% endif %}
                         </td>
                         <td class="att-na">
-                            {% if g.keine_angabe %}
-                            <span class="att-count">{{ g.keine_angabe|length }}</span>
-                            <span class="att-names">{% for u in g.keine_angabe %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-                            {% else %}–{% endif %}
+                            <span class="att-display">{% if g.keine_angabe %}<span class="att-count">{{ g.keine_angabe|length }}</span> <span class="att-names">{% for u in g.keine_angabe %}{{ u.first_name }} {{ u.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% else %}–{% endif %}</span>
+                            {% if perms.intern.change_zusage %}<ul class="att-chips" data-stimme="{{ g.key }}" data-col="na">{% for u in g.keine_angabe %}<li class="att-chip" data-uid="{{ u.id }}" data-original-col="na">{{ u.first_name }} {{ u.last_name }}</li>{% endfor %}</ul>{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -185,6 +178,9 @@
     </div>
 </div>
 
+{% if perms.intern.change_zusage and termin.anwesenheit %}
+<script defer src="{% static 'intern/js/anwesenheit.js' %}"></script>
+{% endif %}
 {% if termin.ort and termin.ort.breite is not None and termin.ort.laenge is not None %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {

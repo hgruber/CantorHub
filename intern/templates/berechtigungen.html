@@ -1,0 +1,486 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+/* ─── Permission Matrix (page-scoped) ───────────────── */
+.perm-matrix-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    background: var(--bg-card);
+}
+.perm-matrix {
+    border-collapse: collapse;
+    white-space: nowrap;
+    width: 100%;
+}
+
+/* Sticky user column */
+.perm-user-col {
+    min-width: 230px;
+    position: sticky;
+    left: 0;
+    background: var(--bg-card);
+    z-index: 3;
+    border-right: 1px solid var(--border);
+}
+.perm-corner {
+    top: 0;
+    z-index: 5 !important;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-thead);
+}
+.perm-user-head {
+    position: sticky;
+    top: var(--cat-row-h, 29px); /* set precisely by JS, same as perm-col-head */
+    z-index: 4;
+    background: var(--bg-thead);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--t3);
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: bottom;
+}
+
+/* Category header row */
+.perm-cat-row th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--bg-thead);
+    border-bottom: 1px solid var(--border);
+}
+.perm-cat-header {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 6px 4px;
+    color: var(--t3);
+    border-left: 1px solid var(--border);
+}
+.perm-cat-header:first-of-type { border-left: none; }
+
+/* Category color accents */
+.perm-cat-Artikel   { color: #7c3aed; border-bottom: 2px solid #7c3aed; }
+.perm-cat-Forum     { color: #0369a1; border-bottom: 2px solid #0369a1; }
+.perm-cat-Dateien   { color: #059669; border-bottom: 2px solid #059669; }
+.perm-cat-Orte      { color: #b45309; border-bottom: 2px solid #b45309; }
+.perm-cat-Termine   { color: var(--brand); border-bottom: 2px solid var(--brand); }
+.perm-cat-Repertoire { color: #0891b2; border-bottom: 2px solid #0891b2; }
+.perm-cat-Mitglieder { color: #65a30d; border-bottom: 2px solid #65a30d; }
+
+/* Permission label column headers (rotated) */
+.perm-col-head {
+    position: sticky;
+    top: var(--cat-row-h, 29px); /* set precisely by JS */
+    z-index: 2;
+    background: var(--bg-thead);
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    height: 130px;
+    vertical-align: middle;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    padding: 0;
+}
+.perm-col-head:first-of-type { border-left: none; }
+.perm-col-rotate {
+    position: relative;
+    height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.perm-col-rotate span {
+    display: block;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--t2);
+    line-height: 1;
+}
+
+/* Table body rows */
+.perm-row td {
+    border-bottom: 1px solid var(--border);
+}
+.perm-row:last-child td { border-bottom: none; }
+
+.perm-user-name {
+    padding: 8px 12px;
+    vertical-align: middle;
+}
+.perm-user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+.perm-avatar {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-weight: 700;
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: -0.5px;
+}
+.perm-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--t1);
+    white-space: nowrap;
+}
+.perm-crown {
+    color: #d97706;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+.perm-crown svg {
+    width: 13px;
+    height: 13px;
+}
+
+/* Superuser row styling */
+.perm-row-superuser .perm-user-col {
+    background: var(--bg-thead);
+}
+.perm-row-superuser .perm-cell-td {
+    background: var(--bg-thead);
+}
+
+/* Permission cell */
+.perm-cell-td {
+    text-align: center;
+    padding: 6px 4px;
+    vertical-align: middle;
+    border-left: 1px solid var(--border);
+}
+.perm-cell-td:first-of-type { border-left: none; }
+
+.perm-cell {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border-dark);
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--ease), border-color var(--ease), transform 0.1s ease;
+    padding: 0;
+    vertical-align: middle;
+}
+.perm-cell:hover {
+    border-color: var(--brand);
+    background: var(--brand-light);
+    transform: scale(1.1);
+}
+.perm-cell.granted {
+    background: var(--brand);
+    border-color: var(--brand);
+}
+.perm-cell.granted:hover {
+    background: var(--brand-dark);
+    border-color: var(--brand-dark);
+    transform: scale(1.1);
+}
+.perm-cell.pending::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f59e0b;
+    border: 1.5px solid var(--bg-card);
+}
+.perm-cell-super {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--brand);
+    border: 2px solid var(--brand);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.35;
+    cursor: not-allowed;
+    vertical-align: middle;
+}
+
+/* Voice badges */
+.badge-stimme-s { background: rgba(124, 58, 237, 0.12); color: #7c3aed; }
+.badge-stimme-a { background: rgba(193, 68, 104, 0.12); color: #c14468; }
+.badge-stimme-t { background: rgba(3, 105, 161, 0.12);  color: #0369a1; }
+.badge-stimme-b { background: rgba(5, 150, 105, 0.12);  color: #059669; }
+.badge-stimme-c { background: rgba(180, 83, 9, 0.12);   color: #b45309; }
+.badge-stimme-m { background: rgba(8, 145, 178, 0.12);  color: #0891b2; }
+.badge-stimme-n { background: var(--bg-row-hover);       color: var(--t4); }
+
+/* Apply bar */
+.perm-apply-bar {
+    position: fixed;
+    bottom: 0;
+    left: var(--sb-width);
+    right: 0;
+    padding: 14px 28px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    transform: translateY(100%);
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 100;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+}
+.perm-apply-bar.visible {
+    transform: translateY(0);
+}
+.perm-change-summary {
+    font-size: 13px;
+    color: var(--t3);
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] .perm-user-col { background: var(--bg-card); }
+[data-theme="dark"] .perm-row-superuser .perm-user-col,
+[data-theme="dark"] .perm-row-superuser .perm-cell-td { background: var(--bg-thead); }
+[data-theme="dark"] .perm-corner,
+[data-theme="dark"] .perm-user-head,
+[data-theme="dark"] .perm-cat-row th,
+[data-theme="dark"] .perm-col-head { background: var(--bg-thead); }
+[data-theme="dark"] .perm-cell { border-color: rgba(255,255,255,0.15); }
+[data-theme="dark"] .perm-cell:hover { background: var(--brand-light); border-color: var(--brand); }
+[data-theme="dark"] .perm-avatar { background: rgba(193,68,104,0.18); color: var(--brand); }
+[data-theme="dark"] .perm-apply-bar { box-shadow: 0 -2px 12px rgba(0,0,0,0.35); }
+[data-theme="dark"] .perm-cell.pending::after { border-color: var(--bg-card); }
+[data-theme="dark"] .perm-cat-Artikel   { color: #a78bfa; border-bottom-color: #a78bfa; }
+[data-theme="dark"] .perm-cat-Forum     { color: #38bdf8; border-bottom-color: #38bdf8; }
+[data-theme="dark"] .perm-cat-Dateien   { color: #34d399; border-bottom-color: #34d399; }
+[data-theme="dark"] .perm-cat-Orte      { color: #fbbf24; border-bottom-color: #fbbf24; }
+[data-theme="dark"] .perm-cat-Repertoire { color: #22d3ee; border-bottom-color: #22d3ee; }
+[data-theme="dark"] .perm-cat-Mitglieder { color: #86efac; border-bottom-color: #86efac; }
+[data-theme="dark"] .badge-stimme-s { background: rgba(167,139,250,0.15); color: #a78bfa; }
+[data-theme="dark"] .badge-stimme-a { background: rgba(193,68,104,0.20);  color: #f0809a; }
+[data-theme="dark"] .badge-stimme-t { background: rgba(56,189,248,0.15);  color: #38bdf8; }
+[data-theme="dark"] .badge-stimme-b { background: rgba(52,211,153,0.15);  color: #34d399; }
+[data-theme="dark"] .badge-stimme-c { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+[data-theme="dark"] .badge-stimme-m { background: rgba(34,211,238,0.15);  color: #22d3ee; }
+
+@media (max-width: 768px) {
+    .perm-apply-bar { left: 0; }
+}
+</style>
+
+<div class="table-view">
+    <div class="perm-matrix-wrap">
+        <table class="perm-matrix">
+            <thead>
+                <!-- Row 1: Category group headers -->
+                <tr class="perm-cat-row">
+                    <th class="perm-user-col perm-corner"></th>
+                    {% for cat in categories %}
+                    <th colspan="{{ cat.perms|length }}"
+                        class="perm-cat-header perm-cat-{{ cat.name }}">
+                        {{ cat.name }}
+                    </th>
+                    {% endfor %}
+                </tr>
+                <!-- Row 2: Rotated permission labels -->
+                <tr class="perm-label-row">
+                    <th class="perm-user-col perm-user-head">Mitglied</th>
+                    {% for cat in categories %}{% for perm in cat.perms %}
+                    <th class="perm-col-head" data-perm="{{ perm.key }}">
+                        <div class="perm-col-rotate">
+                            <span>{{ perm.label }}</span>
+                        </div>
+                    </th>
+                    {% endfor %}{% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="perm-row{% if user.is_superuser %} perm-row-superuser{% endif %}"
+                    data-user-id="{{ user.pk }}">
+                    <td class="perm-user-col perm-user-name">
+                        <div class="perm-user-info">
+                            <span class="perm-avatar">{{ user.first_name|first }}{{ user.last_name|first }}</span>
+                            <span class="perm-name">{{ user.first_name }} {{ user.last_name }}</span>
+                            {% if user.stimme and user.stimme != "N" %}
+                            <span class="badge badge-stimme-{{ user.stimme|lower }}">{{ user.stimme }}</span>
+                            {% endif %}
+                            {% if user.is_superuser %}
+                            <span class="perm-crown" title="Superuser – hat alle Berechtigungen">
+                                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                    <path d="M2 19l2-9 5 4 3-7 3 7 5-4 2 9H2zm0 2h20v2H2v-2z"/>
+                                </svg>
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    {% for cat in categories %}{% for perm in cat.perms %}
+                    <td class="perm-cell-td">
+                        {% if user.is_superuser %}
+                        <div class="perm-cell-super" title="Superuser hat alle Berechtigungen">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white"
+                                 stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        {% else %}
+                        <button type="button" class="perm-cell"
+                                data-user="{{ user.pk }}"
+                                data-perm="{{ perm.key }}"
+                                title="{{ perm.label }}">
+                        </button>
+                        {% endif %}
+                    </td>
+                    {% endfor %}{% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Apply bar (outside table-view so it overlays correctly) -->
+<div class="perm-apply-bar" id="perm-apply-bar">
+    <span class="perm-change-summary" id="perm-change-summary"></span>
+    <button type="button" class="btn btn-primary" id="perm-apply-btn">
+        Änderungen anwenden (<span id="perm-change-count">0</span>)
+    </button>
+</div>
+
+<script id="matrix-data" type="application/json">{{ matrix_json|safe }}</script>
+<script>
+(function () {
+    'use strict';
+
+    // Measure the actual rendered height of the category row and apply it as
+    // the sticky top-offset for the label row (both the left "Mitglied" header
+    // and all rotated permission column headers must share the same value).
+    var catRow = document.querySelector('.perm-cat-row');
+    if (catRow) {
+        var catH = Math.ceil(catRow.getBoundingClientRect().height);
+        document.documentElement.style.setProperty('--cat-row-h', catH + 'px');
+    }
+
+    const matrixData = JSON.parse(document.getElementById('matrix-data').textContent);
+    // changes: Map of "userId:perm" -> {user_id, permission, granted}
+    const changes = new Map();
+
+    const CHECKMARK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    function isOriginallyGranted(userId, perm) {
+        const perms = matrixData[String(userId)] || [];
+        return perms.includes(perm);
+    }
+
+    // Initialise all cells from the matrix data
+    document.querySelectorAll('.perm-cell[data-user]').forEach(function (btn) {
+        const userId = btn.dataset.user;
+        const perm = btn.dataset.perm;
+        if (isOriginallyGranted(userId, perm)) {
+            btn.classList.add('granted');
+            btn.innerHTML = CHECKMARK;
+        }
+        btn.addEventListener('click', function () { toggleCell(btn); });
+    });
+
+    function toggleCell(btn) {
+        const userId = btn.dataset.user;
+        const perm = btn.dataset.perm;
+        const key = userId + ':' + perm;
+        const currentlyGranted = btn.classList.contains('granted');
+        const newGranted = !currentlyGranted;
+        const originalGranted = isOriginallyGranted(userId, perm);
+
+        btn.classList.toggle('granted', newGranted);
+        btn.innerHTML = newGranted ? CHECKMARK : '';
+
+        if (newGranted !== originalGranted) {
+            changes.set(key, { user_id: parseInt(userId, 10), permission: perm, granted: newGranted });
+            btn.classList.add('pending');
+        } else {
+            changes.delete(key);
+            btn.classList.remove('pending');
+        }
+        updateApplyBar();
+    }
+
+    function updateApplyBar() {
+        const count = changes.size;
+        document.getElementById('perm-change-count').textContent = count;
+        const bar = document.getElementById('perm-apply-bar');
+        bar.classList.toggle('visible', count > 0);
+
+        const summary = document.getElementById('perm-change-summary');
+        if (count === 1) {
+            summary.textContent = '1 ungespeicherte Änderung';
+        } else if (count > 1) {
+            summary.textContent = count + ' ungespeicherte Änderungen';
+        } else {
+            summary.textContent = '';
+        }
+    }
+
+    function getCsrfToken() {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : '';
+    }
+
+    const applyBtn = document.getElementById('perm-apply-btn');
+    const changeCountEl = document.getElementById('perm-change-count');
+
+    applyBtn.addEventListener('click', async function () {
+        applyBtn.disabled = true;
+        applyBtn.classList.add('btn-saving');
+        const savedLabel = changeCountEl.textContent;
+        changeCountEl.textContent = '…';
+
+        const payload = { changes: Array.from(changes.values()) };
+        try {
+            const resp = await fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                },
+                body: JSON.stringify(payload),
+            });
+            if (resp.ok) {
+                location.reload();
+            } else {
+                applyBtn.disabled = false;
+                applyBtn.classList.remove('btn-saving');
+                changeCountEl.textContent = savedLabel;
+            }
+        } catch (e) {
+            applyBtn.disabled = false;
+            applyBtn.classList.remove('btn-saving');
+            changeCountEl.textContent = savedLabel;
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -1,6 +1,7 @@
 from .abstimmung import *
 from .auth import *
 from .artikel import *
+from .berechtigungen import *
 from .files import *
 from .folders import *
 from .forums import *

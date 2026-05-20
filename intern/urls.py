@@ -21,6 +21,7 @@ urlpatterns = [
     ),
     # Konfiguration URLs
     path("konfiguration/", views.konfiguration, name="konfiguration"),
+    path("berechtigungen/", views.berechtigungen, name="berechtigungen"),
     # Upload and File URLs
     path("upload/", views.upload, name="upload"),
     path("file-search/", views.file_search, name="file_search"),
@@ -64,6 +65,7 @@ urlpatterns = [
     path("termin/<int:id>/pdf-zip/", views.konzert_pdf_zip, name="konzert_pdf_zip"),
     path("termin/<int:id>/noten-zip/", views.konzert_noten_zip, name="konzert_noten_zip"),
     path("termin/<int:id>/zusage/", views.termin_zusage, name="termin_zusage"),
+    path("termin/<int:id>/anwesenheit/", views.termin_anwesenheit_update, name="termin_anwesenheit_update"),
     # Ort URLs
     path("ort/", views.ort_list, name="ort_list"),
     path("ort/add/", views.ort_add, name="ort_add"),
