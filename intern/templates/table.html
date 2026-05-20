@@ -91,15 +91,16 @@
         <div class="filter offcanvas" id="Filter">
             <div class="offcanvas-header">
                 <strong>Filtern</strong>
-                <button type="button" class="offcanvas-close" onclick="toggle('Filter')" aria-label="Schließen">&#x2715;</button>
-            </div>
-            <form method="get" class="filter-form">
-                <div class="filter-body">
-                    {{ filter.form.as_div }}
-                </div>
-                <div class="filter-actions">
+                <div class="filter-header-actions">
                     <a href="?" class="btn btn-secondary">Zurücksetzen</a>
-                    <button type="submit" class="btn btn-primary">Filtern</button>
+                    <button type="submit" class="btn btn-primary" form="filter-form">Filtern</button>
+                    <button type="button" class="offcanvas-close" onclick="toggle('Filter')" aria-label="Schließen">&#x2715;</button>
+                </div>
+            </div>
+            <form method="get" class="filter-form" id="filter-form">
+                <div class="filter-body">
+                    {{ filter.form.media }}
+                    {{ filter.form.as_div }}
                 </div>
             </form>
         </div>

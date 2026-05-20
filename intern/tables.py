@@ -8,6 +8,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from .models import Artikel, Lied, Ort, Termin, User
+from .forms import TriStateToggle
 from .replacements import format_bytes, format_datetime
 
 
@@ -224,7 +225,8 @@ class RepertoireFilter(filters.FilterSet):
         field_name="titel", lookup_expr="icontains", label="Suche"
     )
     tempo = filters.ChoiceFilter(
-        field_name="tempo", choices=Lied.CHOICES, label="Tempo"
+        field_name="tempo", choices=Lied.CHOICES, label="Tempo",
+        widget=forms.Select(attrs={"class": "filter-inline"}),
     )
     aktiv = filters.BooleanFilter(field_name="aktiv", label="Aktiv")
     hymne = filters.BooleanFilter(field_name="hymne", label="Hymne")
@@ -302,6 +304,17 @@ class RepertoireFilter(filters.FilterSet):
             "solist",
             "dirigent",
         ]
+
+    BOOLEAN_FILTER_FIELDS = [
+        "aktiv", "hymne", "acapella", "weihnacht",
+        "original", "aufnahme", "sheet", "notensatz",
+    ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in self.BOOLEAN_FILTER_FIELDS:
+            if name in self.form.fields:
+                self.form.fields[name].widget = TriStateToggle()
 
     @property
     def form(self):

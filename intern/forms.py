@@ -2,11 +2,53 @@ from datetime import datetime
 
 from django import forms
 from django.utils.crypto import get_random_string
+from django.utils.safestring import mark_safe
 from django.db import models
 from filer.fields.file import FilerFileField
 from filer.fields.image import AdminImageWidget
 
 from .models import Forum, Konfiguration, Lied, Ort, Termin, User
+
+
+class TriStateToggle(forms.Select):
+    """Three-position sliding toggle for boolean filter fields.
+
+    Renders a hidden <select> (unknown/true/false) plus a pill-shaped
+    sliding switch: red ✗ (exclude) | grey · (any) | green ✓ (include).
+    """
+
+    def __init__(self, attrs=None):
+        choices = [("unknown", "Egal"), ("true", "Ja"), ("false", "Nein")]
+        super().__init__(attrs, choices)
+
+    _OFFSETS = {"false": "0px", "unknown": "14px", "true": "28px"}
+
+    def render(self, name, value, attrs=None, renderer=None):
+        if value is True or value == "true" or value == "2":
+            str_value, current = "true", "true"
+        elif value is False or value == "false" or value == "3":
+            str_value, current = "false", "false"
+        else:
+            str_value, current = "unknown", "unknown"
+        select_html = super().render(
+            name, str_value,
+            attrs={"class": "tri-toggle-select", **(attrs or {})},
+            renderer=renderer,
+        )
+        # Inline transform on the thumb prevents a flash before JS runs.
+        thumb_style = f'style="transform:translateX({self._OFFSETS[current]})"'
+        toggle_html = (
+            f'<div class="tri-toggle" data-value="{current}">'
+            f'<span class="tri-toggle-thumb" {thumb_style}></span>'
+            f'<button type="button" class="tri-toggle-seg{" selected" if current == "false" else ""}" data-val="false" title="Ausschließen">&#x2717;</button>'
+            f'<button type="button" class="tri-toggle-seg{" selected" if current == "unknown" else ""}" data-val="unknown" title="Egal"></button>'
+            f'<button type="button" class="tri-toggle-seg{" selected" if current == "true" else ""}" data-val="true" title="Einschließen">&#x2713;</button>'
+            f'</div>'
+        )
+        return mark_safe(f'<div class="tri-toggle-wrap">{select_html}{toggle_html}</div>')
+
+    class Media:
+        js = ("intern/js/tri-toggle.js",)
 
 
 class RegisterForm(forms.Form):
