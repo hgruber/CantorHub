@@ -77,12 +77,14 @@ def mitglied_view(request, id):
         or request.user.is_superuser
         or request.user.has_perm("intern.change_user")
     )
+    can_view_history = request.user.is_superuser or request.user.has_perm("intern.change_user")
     context = {
         "user": user,
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
         "up": "mitglied_list",
         "edit": "mitglied_edit" if can_edit else None,
         "changepass": "mitglied_passwd" if can_edit else None,
+        "history": "mitglied_aenderungen" if can_view_history else None,
         "id": id,
     }
     return render(request, "mitglied.html", context)
@@ -103,6 +105,7 @@ def mitglied_edit(request, id):
             request.user.is_superuser or request.user.has_perm("intern.change_user")
         ):
             user.is_active = not user.is_active
+            user._audit_user = request.user
             user.save(update_fields=["is_active"])
             if user.is_active:
                 messages.success(request, "Mitgliedschaft reaktiviert.")
@@ -130,7 +133,10 @@ def mitglied_edit(request, id):
                     f.save()
                 except (File.DoesNotExist, ValueError):
                     pass
-            form.save()
+            instance = form.save(commit=False)
+            instance._audit_user = request.user
+            instance.save()
+            form.save_m2m()
             return redirect("mitglied_view", id=id)
     else:
         form = UserEditForm(instance=user)

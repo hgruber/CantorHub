@@ -1,4 +1,5 @@
 from .abstimmung import *
+from .aenderungen import *
 from .auth import *
 from .artikel import *
 from .berechtigungen import *

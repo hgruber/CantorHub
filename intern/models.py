@@ -342,8 +342,14 @@ class Zusage(models.Model):
     termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
     option = models.CharField(max_length=255, default="1")
 
+    OPTION_LABELS = {"1": "Zusage", "2": "Absage", "3": "Eventuell", "": "Keine Angabe"}
+
     class Meta:
         verbose_name_plural = "Zusagen"
+
+    def __str__(self):
+        label = self.OPTION_LABELS.get(self.option, self.option or "Keine Angabe")
+        return f"{self.person} – {label}"
 
 
 class Abstimmung(models.Model):
@@ -409,3 +415,32 @@ class DateiIndex(models.Model):
 
     class Meta:
         verbose_name_plural = "DateiIndizes"
+
+
+class ChangeLog(models.Model):
+    ACTION_CREATE = "create"
+    ACTION_UPDATE = "update"
+    ACTION_DELETE = "delete"
+    ACTION_CHOICES = [
+        (ACTION_CREATE, "Erstellt"),
+        (ACTION_UPDATE, "Geändert"),
+        (ACTION_DELETE, "Gelöscht"),
+    ]
+
+    timestamp = models.DateTimeField(default=datetime.now)
+    user = models.ForeignKey(
+        "User", null=True, on_delete=models.SET_NULL, related_name="changelog_entries"
+    )
+    action = models.CharField(max_length=8, choices=ACTION_CHOICES)
+    model_name = models.CharField(max_length=64)
+    object_id = models.PositiveIntegerField()
+    object_repr = models.CharField(max_length=200)
+    changes = models.JSONField(default=dict)
+
+    class Meta:
+        verbose_name_plural = "Änderungsprotokoll"
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["model_name", "object_id"]),
+            models.Index(fields=["user"]),
+        ]

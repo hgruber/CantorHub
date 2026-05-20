@@ -145,6 +145,7 @@ def forum_view(request, forum):
             "upload_folder_id": folders.forum(),
             "up": "forum_list",
             "edit": "forum_edit",
+            "history": "forum_aenderungen" if request.user.has_perm("intern.change_forum") else None,
             "id": forum,
         },
     )
@@ -232,7 +233,10 @@ def forum_edit(request, forum):
                         f.save()
                 except (File.DoesNotExist, ValueError):
                     pass
-            form.save()
+            instance = form.save(commit=False)
+            instance._audit_user = request.user
+            instance.save()
+            form.save_m2m()
             return redirect("forum_view", forum=forum)
     else:
         form = ForumEditForm(instance=forum_obj)

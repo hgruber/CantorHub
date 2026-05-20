@@ -38,6 +38,7 @@ def ort_view(request, id):
         "ort": ort,
         "up": "ort_list",
         "edit": "ort_edit",
+        "history": "ort_aenderungen" if request.user.has_perm("intern.change_ort") else None,
         "id": id,
     }
     return render(request, "ort_detail.html", context)
@@ -65,7 +66,10 @@ def ort_edit(request, id):
     if request.method == "POST":
         form = OrtForm(request.POST, instance=ort)
         if form.is_valid():
-            form.save()
+            instance = form.save(commit=False)
+            instance._audit_user = request.user
+            instance.save()
+            form.save_m2m()
             return redirect("ort_view", id=id)
     else:
         form = OrtForm(instance=ort)

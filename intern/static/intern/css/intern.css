@@ -5143,3 +5143,10 @@ span.not_found {
     }
 }
 [data-theme="dark"] .dl-icon-noten { background: rgba(22,163,74,0.15);  color: #4ade80; }
+
+/* ChangeLog audit view */
+.change-row { margin-bottom: 0.2rem; font-size: 0.875rem; }
+.change-field { font-weight: 600; color: var(--text); }
+.change-old { color: var(--text-muted); text-decoration: line-through; }
+.change-new { color: var(--text); }
+.nowrap { white-space: nowrap; }

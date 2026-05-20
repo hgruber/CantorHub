@@ -171,6 +171,7 @@ def titel_view(request, titel):
         "lied": lied,
         "up": "titel_list",
         "edit": "titel_edit",
+        "history": "titel_aenderungen" if request.user.has_perm("intern.change_lied") else None,
         "id": titel,
         "upload_folder_id": folders.musik(),
         "upload_route_by_type": True,
@@ -212,7 +213,10 @@ def titel_edit(request, titel):
                         f.save()
                     except (File.DoesNotExist, ValueError):
                         pass
-            form.save()
+            instance = form.save(commit=False)
+            instance._audit_user = request.user
+            instance.save()
+            form.save_m2m()
             return redirect("titel_view", titel=titel)
     else:
         form = LiedEditForm(instance=lied)
@@ -239,16 +243,45 @@ def titel_delete(request, titel):
 @permission_required("intern.change_lied", raise_exception=True)
 @require_POST
 def update_order(request):
+    from ..models import ChangeLog
     try:
         data = json.loads(request.body)
         konzert_id = data.get("konzert_id")
         order = data.get("order", [])
+
+        old_titles = list(
+            Konzert.objects.filter(termin_id=konzert_id)
+            .select_related("lied").order_by("position")
+            .values_list("lied__titel", flat=True)
+        )
+
         Konzert.objects.filter(termin__id=konzert_id).delete()
         k = [
             Konzert(position=position, lied_id=lied_id, termin_id=konzert_id)
             for position, lied_id in enumerate(order)
         ]
         Konzert.objects.bulk_create(k)
+
+        new_titles = list(
+            Konzert.objects.filter(termin_id=konzert_id)
+            .select_related("lied").order_by("position")
+            .values_list("lied__titel", flat=True)
+        )
+
+        if old_titles != new_titles:
+            termin = Termin.objects.filter(pk=konzert_id).first()
+            ChangeLog.objects.create(
+                user=request.user,
+                action=ChangeLog.ACTION_UPDATE,
+                model_name="Konzert",
+                object_id=konzert_id,
+                object_repr=str(termin) if termin else f"Termin #{konzert_id}",
+                changes={"setlist": [
+                    ", ".join(old_titles) or "–",
+                    ", ".join(new_titles) or "–",
+                ]},
+            )
+
         return JsonResponse({"status": "success"})
 
     except Exception as e:

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="detail-page">
+  <div class="detail-card">
+    <p><a href="{{ back_url }}">← Zurück</a></p>
+    {% if entries %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Benutzer</th>
+          <th>Was</th>
+          <th>Betreff</th>
+          <th>Änderungen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in entries %}
+        <tr>
+          <td class="nowrap">{{ entry.timestamp|date:"d.m.Y H:i" }}</td>
+          <td>{{ entry.user|default:"–" }}</td>
+          <td>{{ entry.model_label }} {{ entry.get_action_display }}</td>
+          <td class="muted">{{ entry.object_repr }}</td>
+          <td>
+            {% for label, old, new in entry.change_rows %}
+              <div class="change-row">
+                <span class="change-field">{{ label }}</span>:
+                {% if old %}
+                  <span class="change-old">{{ old }}</span> →
+                {% endif %}
+                <span class="change-new">{{ new|default:"–" }}</span>
+              </div>
+            {% empty %}
+              <span class="muted">Keine Feldänderungen</span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">Noch keine Änderungen protokolliert.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -138,3 +138,17 @@ class TabellenPreferenzenAdmin(admin.ModelAdmin):
 class KonfigurationAdmin(admin.ModelAdmin):
     list_display = ("key", "value", "description")
     search_fields = ("key", "description")
+
+
+@admin.register(ChangeLog)
+class ChangeLogAdmin(admin.ModelAdmin):
+    list_display = ("timestamp", "user", "action", "model_name", "object_repr")
+    list_filter = ("action", "model_name", "user")
+    search_fields = ("object_repr", "model_name")
+    readonly_fields = ("timestamp", "user", "action", "model_name", "object_id", "object_repr", "changes")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

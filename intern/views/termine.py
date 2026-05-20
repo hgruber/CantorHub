@@ -200,6 +200,7 @@ def termin_view(request, id):
         "lieder": lieder,
         "up": "termin_list",
         "edit": "termin_edit",
+        "history": "termin_aenderungen",
         "id": id,
     }
     return render(request, "termin.html", context)
@@ -323,6 +324,9 @@ def konzert_noten_zip(request, id):
 @login_required
 @require_POST
 def termin_zusage(request, id):
+    from ..signals import _log_change
+    from ..models import ChangeLog
+
     termin = get_object_or_404(Termin, id=id)
     if not termin.anwesenheit:
         if not request.headers.get("HX-Request"):
@@ -335,11 +339,17 @@ def termin_zusage(request, id):
     new_option = request.POST.get("option", "")
     current = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
     current_option = current.option if current else ""
+    old_option = current_option
 
     if new_option in ZUSAGE_TRANSITIONS.get(current_option, []):
-        Zusage.objects.update_or_create(
+        obj, created = Zusage.objects.update_or_create(
             person=request.user, termin=termin,
             defaults={"option": new_option},
+        )
+        _log_change(
+            obj, request.user,
+            ChangeLog.ACTION_CREATE if created else ChangeLog.ACTION_UPDATE,
+            old_values={"option": old_option},
         )
         current_option = new_option
 
@@ -356,6 +366,9 @@ def termin_zusage(request, id):
 @permission_required("intern.change_zusage", raise_exception=True)
 @require_POST
 def termin_anwesenheit_update(request, id):
+    from ..models import ChangeLog
+    from ..signals import _log_change
+
     termin = get_object_or_404(Termin, id=id)
     if not termin.anwesenheit:
         return HttpResponseBadRequest("anwesenheit disabled")
@@ -382,9 +395,15 @@ def termin_anwesenheit_update(request, id):
         current = existing.get(person_id)
         if current and current.option == option:
             continue
-        Zusage.objects.update_or_create(
+        old_option = current.option if current else None
+        obj, created = Zusage.objects.update_or_create(
             person_id=person_id, termin=termin,
             defaults={"option": option},
+        )
+        _log_change(
+            obj, request.user,
+            ChangeLog.ACTION_CREATE if created else ChangeLog.ACTION_UPDATE,
+            old_values={"option": old_option},
         )
 
     my_zusage = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
@@ -402,7 +421,10 @@ def termin_edit(request, id):
     if request.method == "POST":
         form = TerminForm(request.POST, instance=termin)
         if form.is_valid():
-            form.save()
+            instance = form.save(commit=False)
+            instance._audit_user = request.user
+            instance.save()
+            form.save_m2m()
             return redirect("termin_view", id=id)
     else:
         form = TerminForm(instance=termin)
