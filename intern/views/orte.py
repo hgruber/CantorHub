@@ -49,7 +49,9 @@ def ort_add(request):
     if request.method == "POST":
         form = OrtForm(request.POST)
         if form.is_valid():
-            ort = form.save()
+            ort = form.save(commit=False)
+            ort._audit_user = request.user
+            ort.save()
             return redirect("ort_view", id=ort.id)
     else:
         form = OrtForm()

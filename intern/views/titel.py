@@ -236,6 +236,7 @@ def titel_edit(request, titel):
 @require_POST
 def titel_delete(request, titel):
     lied = get_object_or_404(Lied, id=titel)
+    lied._audit_user = request.user
     lied.delete()
     return redirect("titel_list")
 
@@ -319,6 +320,7 @@ def titel_add(request):
                         setattr(lied, model_field, f)
                     except (File.DoesNotExist, ValueError):
                         pass
+            lied._audit_user = request.user
             lied.save()
             form.save_m2m()
             return redirect("titel_view", titel=lied.id)

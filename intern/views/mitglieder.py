@@ -223,7 +223,9 @@ def mitglied_add(request):
     if request.method == "POST":
         form = MitgliedAddForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            user = form.save(commit=False)
+            user._audit_user = request.user
+            user.save()
             return redirect("mitglied_view", id=user.id)
     else:
         form = MitgliedAddForm()

@@ -11,7 +11,7 @@ import logging
 import threading
 from datetime import datetime
 
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
 from .apps import _migrating
@@ -137,6 +137,13 @@ def sync_xmpp_on_user_save(sender, instance, created, **kwargs):
     _write_audit_log(instance, created, "User")
 
 
+@receiver(post_delete, sender="intern.User")
+def _audit_user_delete(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _log_change(instance, getattr(instance, "_audit_user", None), "delete")
+
+
 # ---------------------------------------------------------------------------
 # Audit logging
 # ---------------------------------------------------------------------------
@@ -178,6 +185,11 @@ def _log_change(instance, user, action, old_values=None):
                 val = getattr(instance, field, None)
                 if val is not None and val != "" and val is not False:
                     changes[field] = [None, str(val)]
+        elif action == ChangeLog.ACTION_DELETE:
+            for field in allowed:
+                val = getattr(instance, field, None)
+                if val is not None and val != "" and val is not False:
+                    changes[field] = [str(val), None]
         ChangeLog.objects.create(
             timestamp=datetime.now(),
             user=user,
@@ -236,6 +248,13 @@ def _audit_termin_post(sender, instance, created, **kwargs):
     _write_audit_log(instance, created, "Termin")
 
 
+@receiver(post_delete, sender="intern.Termin")
+def _audit_termin_delete(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _log_change(instance, getattr(instance, "_audit_user", None), "delete")
+
+
 # --- Lied ---
 @receiver(pre_save, sender="intern.Lied")
 def _audit_lied_pre(sender, instance, **kwargs):
@@ -249,6 +268,13 @@ def _audit_lied_post(sender, instance, created, **kwargs):
     if getattr(_migrating, "active", False):
         return
     _write_audit_log(instance, created, "Lied")
+
+
+@receiver(post_delete, sender="intern.Lied")
+def _audit_lied_delete(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _log_change(instance, getattr(instance, "_audit_user", None), "delete")
 
 
 # Zusage: no signal handlers — user is injected directly from the view via _log_change()
@@ -269,6 +295,13 @@ def _audit_forum_post(sender, instance, created, **kwargs):
     _write_audit_log(instance, created, "Forum")
 
 
+@receiver(post_delete, sender="intern.Forum")
+def _audit_forum_delete(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _log_change(instance, getattr(instance, "_audit_user", None), "delete")
+
+
 # --- Ort ---
 @receiver(pre_save, sender="intern.Ort")
 def _audit_ort_pre(sender, instance, **kwargs):
@@ -282,3 +315,10 @@ def _audit_ort_post(sender, instance, created, **kwargs):
     if getattr(_migrating, "active", False):
         return
     _write_audit_log(instance, created, "Ort")
+
+
+@receiver(post_delete, sender="intern.Ort")
+def _audit_ort_delete(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _log_change(instance, getattr(instance, "_audit_user", None), "delete")

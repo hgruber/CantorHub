@@ -81,17 +81,25 @@ function toggleAdminMenu() {
   toggle.classList.toggle("open");
 }
 
-// Auto-open admin submenu when on an admin page
-(function () {
-  const adminPaths = ["/intern/konfiguration/", "/intern/berechtigungen/"];
+// Auto-open a submenu when one of its sub-destinations is the current page
+function autoOpenSubmenu(submenuId, toggleId) {
+  const submenu = document.getElementById(submenuId);
+  const toggle  = document.getElementById(toggleId);
+  if (!submenu || !toggle) return;
   const current = window.location.pathname;
-  if (adminPaths.some((p) => current.startsWith(p))) {
-    const submenu = document.getElementById("admin-submenu");
-    const toggle = document.getElementById("admin-toggle");
-    if (submenu) submenu.classList.add("open");
-    if (toggle) toggle.classList.add("open");
+  const isActive = Array.from(submenu.querySelectorAll("a[href]")).some((link) => {
+    try {
+      const path = link.dataset.path || new URL(link.href).pathname;
+      return path.length > 1 && current.startsWith(path);
+    } catch (e) { return false; }
+  });
+  if (isActive) {
+    submenu.classList.add("open");
+    toggle.classList.add("open");
   }
-})();
+}
+autoOpenSubmenu("admin-submenu",    "admin-toggle");
+autoOpenSubmenu("settings-submenu", "settings-toggle");
 
 // Global reference to the app-main Dropzone, set in DOMContentLoaded below
 var appMainDz = null;

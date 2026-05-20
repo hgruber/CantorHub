@@ -5150,3 +5150,4 @@ span.not_found {
 .change-old { color: var(--text-muted); text-decoration: line-through; }
 .change-new { color: var(--text); }
 .nowrap { white-space: nowrap; }
+.changelog-model { font-weight: 600; color: var(--primary); }

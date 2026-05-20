@@ -445,6 +445,7 @@ def termin_edit(request, id):
 @require_POST
 def termin_delete(request, id):
     termin = get_object_or_404(Termin, id=id)
+    termin._audit_user = request.user
     termin.delete()
     return redirect("termin_list")
 
@@ -454,7 +455,9 @@ def termin_add(request):
     if request.method == "POST":
         form = TerminForm(request.POST)
         if form.is_valid():
-            termin = form.save()
+            termin = form.save(commit=False)
+            termin._audit_user = request.user
+            termin.save()
             return redirect("termin_view", id=termin.id)
     else:
         form = TerminForm()

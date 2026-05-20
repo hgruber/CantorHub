@@ -290,6 +290,7 @@ def forum_add(request):
                     forum.bild = f
                 except (File.DoesNotExist, ValueError):
                     pass
+            forum._audit_user = request.user
             forum.save()
             return redirect("forum_view", forum=forum.id)
     else:

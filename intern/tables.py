@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from .models import Artikel, Lied, Ort, Termin, User
+from .models import Artikel, ChangeLog, Lied, Ort, Termin, User
 from .forms import TriStateToggle
 from .replacements import format_bytes, format_datetime
 
@@ -718,3 +718,142 @@ class OrtTabelle(tables.Table):
     class Meta:
         attrs = {"class": "table table-hover"}
         row_attrs = {"data-href": lambda record: reverse("ort_view", args=[record.id])}
+
+
+# ---------------------------------------------------------------------------
+# Änderungsprotokoll
+# ---------------------------------------------------------------------------
+
+_CHANGELOG_MODEL_LABELS = {
+    "Termin": "Termin",
+    "Zusage": "Anwesenheit",
+    "Konzert": "Ablauf",
+    "Lied": "Lied",
+    "User": "Mitglied",
+    "Forum": "Forum",
+    "Ort": "Ort",
+}
+
+_CHANGELOG_MODEL_CHOICES = [("", "Alle")] + [
+    (k, v) for k, v in _CHANGELOG_MODEL_LABELS.items()
+]
+
+_CHANGELOG_FIELD_LABELS = {
+    "first_name": "Vorname", "last_name": "Nachname", "stimme": "Stimme",
+    "is_active": "Aktiv", "email": "E-Mail", "xmpp": "XMPP",
+    "strasse": "Straße", "plz": "PLZ", "ort": "Ort",
+    "telefon": "Telefon", "telefon_mobil": "Mobil", "geburtstag": "Geburtstag",
+    "avatar_id": "Avatar",
+    "kurz": "Kurzbezeichnung", "datum": "Datum", "datum_bis": "Datum bis",
+    "lang": "Beschreibung", "ort_id": "Veranstaltungsort",
+    "anwesenheit": "Anwesenheit", "repertoire": "Repertoire",
+    "titel": "Titel", "aktiv": "Aktiv", "tempo": "Tempo", "beats": "Beats",
+    "hymne": "Hymne", "acapella": "A cappella", "weihnacht": "Weihnachten",
+    "komponist": "Komponist",
+    "original_id": "Original", "aufnahme_id": "Aufnahme",
+    "pdf_id": "PDF", "noten_id": "Noten",
+    "option": "Antwort",
+    "thema": "Thema", "bild_id": "Bild",
+    "name": "Name", "beschreibung": "Beschreibung",
+    "breite": "Breitengrad", "laenge": "Längengrad",
+    "setlist": "Ablauf",
+}
+
+
+class ChangeLogFilter(filters.FilterSet):
+    model_name = filters.ChoiceFilter(
+        choices=_CHANGELOG_MODEL_CHOICES,
+        label="Bereich",
+        empty_label=None,
+    )
+    action = filters.ChoiceFilter(
+        choices=[("", "Alle")] + ChangeLog.ACTION_CHOICES,
+        label="Aktion",
+        empty_label=None,
+    )
+    user = filters.ModelChoiceFilter(
+        queryset=User.objects.filter(is_active=True).order_by("last_name", "first_name"),
+        label="Benutzer",
+        empty_label="Alle",
+    )
+    datum_von = filters.DateFilter(
+        field_name="timestamp", lookup_expr="date__gte", label="Datum von",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    datum_bis = filters.DateFilter(
+        field_name="timestamp", lookup_expr="date__lte", label="Datum bis",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+
+    class Meta:
+        model = ChangeLog
+        fields = ["model_name", "action", "user"]
+
+
+class ChangeLogTabelle(tables.Table):
+    timestamp = tables.DateTimeColumn(
+        verbose_name="Datum",
+        format="d.m.Y H:i",
+        attrs={"td": {"class": "nowrap"}},
+    )
+    user = tables.Column(verbose_name="Benutzer", order_by="user__last_name")
+    was = tables.Column(
+        verbose_name="Was",
+        empty_values=(),
+        orderable=False,
+    )
+    object_repr = tables.Column(verbose_name="Betreff", orderable=False)
+    felder = tables.Column(
+        verbose_name="Felder",
+        empty_values=(),
+        orderable=False,
+        attrs={"td": {"class": "muted"}},
+    )
+
+    class Meta:
+        model = ChangeLog
+        fields = ("timestamp", "user", "was", "object_repr", "felder")
+        order_by = "-timestamp"
+
+    def render_user(self, value):
+        if value is None:
+            return "–"
+        name = f"{value.first_name} {value.last_name}".strip()
+        return name or value.username
+
+    def render_was(self, record):
+        model_label = _CHANGELOG_MODEL_LABELS.get(record.model_name, record.model_name)
+        action_label = dict(ChangeLog.ACTION_CHOICES).get(record.action, record.action)
+        return format_html(
+            '<span class="changelog-model">{}</span> {}',
+            model_label, action_label,
+        )
+
+    def render_felder(self, record):
+        change_rows = getattr(record, "change_rows", None)
+        if change_rows is None:
+            # fallback: no annotation — show field names only
+            labels = [_CHANGELOG_FIELD_LABELS.get(k, k) for k in record.changes]
+            return ", ".join(labels) if labels else "–"
+        if not change_rows:
+            return "–"
+        parts = []
+        for label, old, new in change_rows:
+            if old:
+                parts.append(format_html(
+                    '<div class="change-row">'
+                    '<span class="change-field">{}</span>: '
+                    '<span class="change-old">{}</span> → '
+                    '<span class="change-new">{}</span>'
+                    '</div>',
+                    label, old, new or "–",
+                ))
+            else:
+                parts.append(format_html(
+                    '<div class="change-row">'
+                    '<span class="change-field">{}</span>: '
+                    '<span class="change-new">{}</span>'
+                    '</div>',
+                    label, new or "–",
+                ))
+        return mark_safe("".join(parts))
