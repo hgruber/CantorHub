@@ -6,7 +6,9 @@ from itertools import chain
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import permission_required
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django_tables2 import RequestConfig
 
@@ -235,30 +237,58 @@ def forum_aenderungen(request, id):
     return _render_aenderungen(request, entries, str(obj), reverse("forum_view", args=[id]))
 
 
+PAGE_SIZE = 25
+
+_TOPBAR_ICON = (
+    '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"'
+    ' fill="none" stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<circle cx="12" cy="12" r="10"/>'
+    '<polyline points="12 6 12 12 16 14"/>'
+    "</svg>"
+)
+
+
 @login_required
 def aenderungsprotokoll_list(request):
-    from ..tables import ChangeLogFilter, ChangeLogTabelle
+    from ..tables import ChangeLogFilter
 
     if not request.user.is_superuser:
         return redirect("article_view", name="Aktuell")
 
     qs = ChangeLog.objects.select_related("user").order_by("-timestamp")
     f = ChangeLogFilter(request.GET, queryset=qs)
-    entries = list(f.qs)
-    _annotate_entries(entries)
-    table = ChangeLogTabelle(entries)
-    RequestConfig(request, paginate={"per_page": 100}).configure(table)
 
-    return render(request, "table.html", {
-        "table": table,
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+
+    page_qs = f.qs[offset : offset + PAGE_SIZE + 1]
+    entries = list(page_qs)
+    has_more = len(entries) > PAGE_SIZE
+    if has_more:
+        entries = entries[:PAGE_SIZE]
+    _annotate_entries(entries)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string(
+            "aenderungsprotokoll_rows.html",
+            {"entries": entries},
+            request=request,
+        )
+        return JsonResponse({
+            "html": html,
+            "has_more": has_more,
+            "next_offset": offset + PAGE_SIZE,
+        })
+
+    return render(request, "aenderungsprotokoll_list.html", {
+        "entries": entries,
         "filter": f,
+        "showfilter": True,
+        "has_more": has_more,
+        "next_offset": offset + PAGE_SIZE,
         "seitentitel": "Änderungsprotokoll",
-        "topbar_icon": (
-            '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"'
-            ' fill="none" stroke="currentColor" stroke-width="2"'
-            ' stroke-linecap="round" stroke-linejoin="round">'
-            '<circle cx="12" cy="12" r="10"/>'
-            '<polyline points="12 6 12 12 16 14"/>'
-            "</svg>"
-        ),
+        "topbar_icon": _TOPBAR_ICON,
     })

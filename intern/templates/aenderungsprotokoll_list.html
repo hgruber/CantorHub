@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load filter_tags %}
+
+{% block topbar_icon %}{{ topbar_icon|safe }}{% endblock %}
+
+{% block topbar_after %}
+  {% if filter %}{% filter_chips filter request %}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="table-view">
+  <!-- Filter offcanvas -->
+  <div class="filter offcanvas" id="Filter">
+    <div class="offcanvas-header">
+      <strong>Filtern</strong>
+      <div class="filter-header-actions">
+        <a href="?" class="btn btn-secondary">Zurücksetzen</a>
+        <button type="submit" class="btn btn-primary" form="filter-form">Filtern</button>
+        <button type="button" class="offcanvas-close" onclick="toggle('Filter')" aria-label="Schließen">&#x2715;</button>
+      </div>
+    </div>
+    <form method="get" class="filter-form" id="filter-form">
+      <div class="filter-body">
+        {{ filter.form.media }}
+        {{ filter.form.as_div }}
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Benutzer</th>
+          <th>Was</th>
+          <th>Betreff</th>
+          <th>Felder</th>
+        </tr>
+      </thead>
+      <tbody id="changelog-tbody">
+        {% include "aenderungsprotokoll_rows.html" %}
+      </tbody>
+    </table>
+
+    <!-- Sentinel for infinite scroll -->
+    {% if has_more %}
+    <div id="changelog-sentinel" data-next-offset="{{ next_offset }}"></div>
+    {% endif %}
+
+    <!-- Empty state -->
+    {% if not entries %}
+    <p class="muted" style="padding: 1rem;">Keine Einträge gefunden.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(function() {
+  var sentinel = document.getElementById('changelog-sentinel');
+  if (!sentinel) return;
+
+  var loading = false;
+  var done = false;
+
+  function buildUrl(offset) {
+    var params = new URLSearchParams(window.location.search);
+    params.set('offset', offset);
+    return window.location.pathname + '?' + params.toString();
+  }
+
+  function loadMore() {
+    if (loading || done) return;
+    var offset = parseInt(sentinel.dataset.nextOffset, 10);
+    loading = true;
+    sentinel.classList.add('loading');
+
+    fetch(buildUrl(offset), {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var tbody = document.getElementById('changelog-tbody');
+      tbody.insertAdjacentHTML('beforeend', data.html);
+      if (data.has_more) {
+        sentinel.dataset.nextOffset = data.next_offset;
+      } else {
+        done = true;
+        observer.disconnect();
+        sentinel.remove();
+      }
+    })
+    .catch(function() {})
+    .finally(function() {
+      loading = false;
+      if (!done) sentinel.classList.remove('loading');
+    });
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting) loadMore();
+  }, { rootMargin: '200px' });
+
+  observer.observe(sentinel);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% for entry in entries %}
+<tr>
+  <td class="nowrap">{{ entry.timestamp|date:"d.m.Y H:i" }}</td>
+  <td>{{ entry.user|default:"–" }}</td>
+  <td><span class="changelog-model">{{ entry.model_label }}</span> {{ entry.get_action_display }}</td>
+  <td class="muted">{{ entry.object_repr }}</td>
+  <td>
+    {% for label, old, new in entry.change_rows %}
+    <div class="change-row">
+      <span class="change-field">{{ label }}</span>:
+      {% if old %}<span class="change-old">{{ old }}</span> → {% endif %}
+      <span class="change-new">{{ new|default:"–" }}</span>
+    </div>
+    {% empty %}<span class="muted">–</span>
+    {% endfor %}
+  </td>
+</tr>
+{% endfor %}
