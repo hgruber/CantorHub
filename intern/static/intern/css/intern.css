@@ -428,6 +428,17 @@ body {
     letter-spacing: -0.01em;
 }
 
+/* Section icon left of the topbar title */
+.topbar-icon {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    color: var(--t3);
+    stroke: currentColor;
+    display: block;
+    margin-left: 4px;
+}
+
 /* Filter chips in topbar */
 .filter-chips {
     display: flex;

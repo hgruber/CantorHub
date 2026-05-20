@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load django_tables2 filter_tags %}
+{% block topbar_icon %}{{ topbar_icon|safe }}{% endblock %}
 {% block topbar_after %}
 {% if filter %}{% filter_chips filter request chips_skip %}{% endif %}
 {% endblock %}

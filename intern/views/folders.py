@@ -288,6 +288,7 @@ def folder_view(request, pk):
             "table.html",
             {
                 "seitentitel": f"Suche in {path_str}: „{q}“",
+                "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
                 "breadcrumb": breadcrumb,
                 "table": table,
                 "current_pk": original_pk,
@@ -419,6 +420,7 @@ def folder_view(request, pk):
         "table.html",
         {
             "seitentitel": f"Ordner: {path_str}",
+            "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
             "breadcrumb": breadcrumb,
             "upload_folder_id": pk,
             "table": table,
