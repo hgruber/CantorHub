@@ -842,7 +842,7 @@ class ChangeLogTabelle(tables.Table):
 
     def render_user(self, value):
         if value is None:
-            return "–"
+            return "System"
         name = f"{value.first_name} {value.last_name}".strip()
         return name or value.username
 

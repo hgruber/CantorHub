@@ -18,7 +18,7 @@
         {% for entry in entries %}
         <tr>
           <td class="nowrap">{{ entry.timestamp|date:"d.m.Y H:i" }}</td>
-          <td>{{ entry.user|default:"–" }}</td>
+          <td>{{ entry.user|default:"System" }}</td>
           <td>{{ entry.model_label }} {{ entry.get_action_display }}</td>
           <td class="muted">{{ entry.object_repr }}</td>
           <td>
