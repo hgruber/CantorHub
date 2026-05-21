@@ -65,6 +65,7 @@ def _capture_old_values(sender, instance, **kwargs):
             old_user = sender.objects.get(pk=instance.pk)
             instance._old_xmpp = old_user.xmpp
             instance._old_avatar_id = old_user.avatar_id
+            instance._old_last_login = old_user.last_login
             instance._audit_old = {f: getattr(old_user, f, None) for f in _AUDIT_FIELDS.get("User", [])}
         except sender.DoesNotExist:
             instance._old_xmpp = None
@@ -133,6 +134,11 @@ def sync_xmpp_on_user_save(sender, instance, created, **kwargs):
                 args=(instance.pk,),
                 daemon=True,
             ).start()
+
+    # Detect login: Django updates only last_login when a user logs in
+    old_last_login = getattr(instance, "_old_last_login", None)
+    if not created and instance.last_login != old_last_login:
+        instance._audit_is_login = True
 
     _write_audit_log(instance, created, "User")
 
@@ -224,7 +230,10 @@ def _write_audit_log(instance, created, model_key):
     from .models import ChangeLog
 
     user = getattr(instance, "_audit_user", None)
-    action = ChangeLog.ACTION_CREATE if created else ChangeLog.ACTION_UPDATE
+    if getattr(instance, "_audit_is_login", False):
+        action = ChangeLog.ACTION_LOGIN
+    else:
+        action = ChangeLog.ACTION_CREATE if created else ChangeLog.ACTION_UPDATE
     _log_change(
         instance,
         user,
