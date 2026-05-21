@@ -559,6 +559,20 @@ body {
 
 .top-bar a:hover .toolicon { color: var(--brand); }
 
+.topbar-actions button {
+    display: flex;
+    align-items: center;
+    padding: 7px;
+    border: none;
+    background: none;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: background var(--ease);
+    color: var(--tb-icon);
+}
+.topbar-actions button:hover { background: var(--hover-icon-bg); }
+.topbar-actions button:hover .toolicon { color: var(--brand); }
+
 .topbar-actions {
     display: flex;
     align-items: center;

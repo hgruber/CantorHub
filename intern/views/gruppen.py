@@ -47,7 +47,17 @@ def gruppen(request):
         # Create new group
         new_name = (data.get("new_group") or "").strip()
         if new_name:
-            Group.objects.get_or_create(name=new_name)
+            group, _ = Group.objects.get_or_create(name=new_name)
+            for perm_str in data.get("new_group_perms", []):
+                try:
+                    app_label, codename = perm_str.split(".", 1)
+                    perm = Permission.objects.get(
+                        content_type__app_label=app_label,
+                        codename=codename,
+                    )
+                    group.permissions.add(perm)
+                except Exception:
+                    pass
 
         # Delete group (only if no users are assigned)
         del_name = (data.get("delete_group") or "").strip()
