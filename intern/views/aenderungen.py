@@ -73,6 +73,11 @@ FIELD_LABELS = {
     "beschreibung": "Beschreibung",
     "breite": "Breitengrad",
     "laenge": "Längengrad",
+    # Group / Berechtigungen
+    "is_superuser": "Admin-Status",
+    "gruppe": "Gruppe",
+    "berechtigung": "Berechtigung",
+    "berechtigungen": "Berechtigungen",
 }
 
 # Fields whose values are filer File PKs — resolved to filenames at display time
@@ -98,6 +103,7 @@ MODEL_LABELS = {
     "User": "Mitglied",
     "Forum": "Forum",
     "Ort": "Ort",
+    "Group": "Gruppe",
 }
 
 

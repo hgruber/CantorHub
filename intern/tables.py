@@ -752,6 +752,7 @@ _CHANGELOG_MODEL_LABELS = {
     "User": "Mitglied",
     "Forum": "Forum",
     "Ort": "Ort",
+    "Group": "Gruppe",
 }
 
 _CHANGELOG_MODEL_CHOICES = [("", "Alle")] + [
@@ -777,6 +778,10 @@ _CHANGELOG_FIELD_LABELS = {
     "name": "Name", "beschreibung": "Beschreibung",
     "breite": "Breitengrad", "laenge": "Längengrad",
     "setlist": "Ablauf",
+    "is_superuser": "Admin-Status",
+    "gruppe": "Gruppe",
+    "berechtigung": "Berechtigung",
+    "berechtigungen": "Berechtigungen",
 }
 
 

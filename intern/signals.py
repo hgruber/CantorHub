@@ -159,7 +159,7 @@ def _audit_user_delete(sender, instance, **kwargs):
 
 _AUDIT_FIELDS = {
     "User": [
-        "first_name", "last_name", "stimme", "is_active", "email",
+        "first_name", "last_name", "stimme", "is_active", "is_superuser", "email",
         "xmpp", "strasse", "plz", "ort", "telefon", "telefon_mobil",
         "geburtstag", "avatar_id",
     ],

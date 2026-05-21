@@ -6,7 +6,7 @@ from django.db.models import Case, IntegerField, Value, When
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
-from ..models import User
+from ..models import ChangeLog, User
 
 STIMME_ORDER = Case(
     When(stimme="S", then=Value(0)),
@@ -51,7 +51,16 @@ def berechtigungen(request):
                         user.groups.add(group)
                     else:
                         user.groups.remove(group)
+                    ChangeLog.objects.create(
+                        user=request.user,
+                        action=ChangeLog.ACTION_UPDATE,
+                        model_name="User",
+                        object_id=user.pk,
+                        object_repr=str(user),
+                        changes={"gruppe": [None, group.name] if change["granted"] else [group.name, None]},
+                    )
                 elif change_type == "admin":
+                    user._audit_user = request.user
                     user.is_superuser = change["granted"]
                     user.save(update_fields=["is_superuser"])
             except Exception:

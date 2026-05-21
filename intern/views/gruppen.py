@@ -5,6 +5,8 @@ from django.contrib.auth.models import Group, Permission
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
+from ..models import ChangeLog
+
 __all__ = ["gruppen"]
 
 PERMISSION_DEFS = [
@@ -32,6 +34,12 @@ PERMISSION_DEFS = [
     ("intern.delete_user",    "löschen",      "Mitglieder"),
 ]
 
+# Human-readable label for each permission string, e.g. "intern.add_artikel" → "Artikel anlegen"
+_PERM_LABELS = {
+    perm_str: f"{category} {label}"
+    for perm_str, label, category in PERMISSION_DEFS
+}
+
 
 @login_required
 def gruppen(request):
@@ -47,7 +55,8 @@ def gruppen(request):
         # Create new group
         new_name = (data.get("new_group") or "").strip()
         if new_name:
-            group, _ = Group.objects.get_or_create(name=new_name)
+            group, created = Group.objects.get_or_create(name=new_name)
+            initial_perm_labels = []
             for perm_str in data.get("new_group_perms", []):
                 try:
                     app_label, codename = perm_str.split(".", 1)
@@ -56,6 +65,22 @@ def gruppen(request):
                         codename=codename,
                     )
                     group.permissions.add(perm)
+                    initial_perm_labels.append(_PERM_LABELS.get(perm_str, perm_str))
+                except Exception:
+                    pass
+            if created:
+                try:
+                    changes = {"name": [None, group.name]}
+                    if initial_perm_labels:
+                        changes["berechtigungen"] = [None, ", ".join(initial_perm_labels)]
+                    ChangeLog.objects.create(
+                        user=request.user,
+                        action=ChangeLog.ACTION_CREATE,
+                        model_name="Group",
+                        object_id=group.pk,
+                        object_repr=group.name,
+                        changes=changes,
+                    )
                 except Exception:
                     pass
 
@@ -65,7 +90,19 @@ def gruppen(request):
             try:
                 g = Group.objects.get(name=del_name)
                 if not g.user_set.exists():
+                    g_pk, g_name = g.pk, g.name
                     g.delete()
+                    try:
+                        ChangeLog.objects.create(
+                            user=request.user,
+                            action=ChangeLog.ACTION_DELETE,
+                            model_name="Group",
+                            object_id=g_pk,
+                            object_repr=g_name,
+                            changes={"name": [g_name, None]},
+                        )
+                    except Exception:
+                        pass
             except Group.DoesNotExist:
                 pass
 
@@ -83,6 +120,18 @@ def gruppen(request):
                     group.permissions.add(perm)
                 else:
                     group.permissions.remove(perm)
+                try:
+                    perm_label = _PERM_LABELS.get(perm_str, perm_str)
+                    ChangeLog.objects.create(
+                        user=request.user,
+                        action=ChangeLog.ACTION_UPDATE,
+                        model_name="Group",
+                        object_id=group.pk,
+                        object_repr=group.name,
+                        changes={"berechtigung": [None, perm_label] if change["granted"] else [perm_label, None]},
+                    )
+                except Exception:
+                    pass
             except Exception:
                 pass
 
