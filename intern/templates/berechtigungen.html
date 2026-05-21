@@ -20,7 +20,7 @@
     min-width: 230px;
     position: sticky;
     left: 0;
-    background: var(--bg-card);
+    background: linear-gradient(var(--stimme-tint, transparent), var(--stimme-tint, transparent)), var(--bg-card);
     z-index: 3;
     border-right: 1px solid var(--border);
 }
@@ -74,15 +74,34 @@
 .perm-cat-Repertoire { color: #0891b2; border-bottom: 2px solid #0891b2; }
 .perm-cat-Mitglieder { color: #65a30d; border-bottom: 2px solid #65a30d; }
 
+/* Column tint variables — one per category */
+.perm-col-cat-Artikel    { --perm-tint: rgba(124,  58, 237, 0.05); }
+.perm-col-cat-Forum      { --perm-tint: rgba(  3, 105, 161, 0.05); }
+.perm-col-cat-Dateien    { --perm-tint: rgba(  5, 150, 105, 0.05); }
+.perm-col-cat-Orte       { --perm-tint: rgba(180,  83,   9, 0.05); }
+.perm-col-cat-Termine    { --perm-tint: rgba(193,  68, 104, 0.05); }
+.perm-col-cat-Repertoire { --perm-tint: rgba(  8, 145, 178, 0.05); }
+.perm-col-cat-Mitglieder { --perm-tint: rgba(101, 163,  13, 0.05); }
+
+/* Apply tint to data cells */
+td.perm-cell-td {
+    background-color: var(--perm-tint, transparent);
+}
+/* Apply tint to sticky label-header cells (overlay on solid bg so scroll content stays hidden) */
+th.perm-col-head {
+    background:
+        linear-gradient(var(--perm-tint, transparent), var(--perm-tint, transparent)),
+        var(--bg-thead);
+}
 /* Permission label column headers (rotated) */
 .perm-col-head {
     position: sticky;
     top: var(--cat-row-h, 29px); /* set precisely by JS */
     z-index: 2;
     background: var(--bg-thead);
-    width: 36px;
-    min-width: 36px;
-    max-width: 36px;
+    width: 20px;
+    min-width: 20px;
+    max-width: 20px;
     height: 130px;
     vertical-align: middle;
     text-align: left;
@@ -156,14 +175,6 @@
     height: 13px;
 }
 
-/* Superuser row styling */
-.perm-row-superuser .perm-user-col {
-    background: var(--bg-thead);
-}
-.perm-row-superuser .perm-cell-td {
-    background: var(--bg-thead);
-}
-
 /* Permission cell */
 .perm-cell-td {
     text-align: center;
@@ -175,10 +186,10 @@
 
 .perm-cell {
     position: relative;
-    width: 28px;
-    height: 28px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    border: 2px solid var(--border-dark);
+    border: 1.5px solid var(--border-dark);
     background: transparent;
     cursor: pointer;
     display: inline-flex;
@@ -205,20 +216,20 @@
 .perm-cell.pending::after {
     content: '';
     position: absolute;
-    top: -3px;
-    right: -3px;
-    width: 8px;
-    height: 8px;
+    top: -2px;
+    right: -2px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: #f59e0b;
-    border: 1.5px solid var(--bg-card);
+    border: 1px solid var(--bg-card);
 }
 .perm-cell-super {
-    width: 28px;
-    height: 28px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background: var(--brand);
-    border: 2px solid var(--brand);
+    border: 1.5px solid var(--brand);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -235,6 +246,14 @@
 .badge-stimme-c { background: rgba(180, 83, 9, 0.12);   color: #b45309; }
 .badge-stimme-m { background: rgba(8, 145, 178, 0.12);  color: #0891b2; }
 .badge-stimme-n { background: var(--bg-row-hover);       color: var(--t4); }
+
+/* Stimme tint variables for the user column */
+.perm-stimme-s { --stimme-tint: rgba(124,  58, 237, 0.07); }
+.perm-stimme-a { --stimme-tint: rgba(193,  68, 104, 0.07); }
+.perm-stimme-t { --stimme-tint: rgba(  3, 105, 161, 0.07); }
+.perm-stimme-b { --stimme-tint: rgba(  5, 150, 105, 0.07); }
+.perm-stimme-c { --stimme-tint: rgba(180,  83,   9, 0.07); }
+.perm-stimme-m { --stimme-tint: rgba(  8, 145, 178, 0.07); }
 
 /* Apply bar */
 .perm-apply-bar {
@@ -263,24 +282,36 @@
 }
 
 /* Dark mode overrides */
-[data-theme="dark"] .perm-user-col { background: var(--bg-card); }
-[data-theme="dark"] .perm-row-superuser .perm-user-col,
-[data-theme="dark"] .perm-row-superuser .perm-cell-td { background: var(--bg-thead); }
+[data-theme="dark"] .perm-user-col {
+    background: linear-gradient(var(--stimme-tint, transparent), var(--stimme-tint, transparent)), var(--bg-card);
+}
 [data-theme="dark"] .perm-corner,
 [data-theme="dark"] .perm-user-head,
 [data-theme="dark"] .perm-cat-row th,
 [data-theme="dark"] .perm-col-head { background: var(--bg-thead); }
 [data-theme="dark"] .perm-cell { border-color: rgba(255,255,255,0.15); }
 [data-theme="dark"] .perm-cell:hover { background: var(--brand-light); border-color: var(--brand); }
-[data-theme="dark"] .perm-avatar { background: rgba(193,68,104,0.18); color: var(--brand); }
 [data-theme="dark"] .perm-apply-bar { box-shadow: 0 -2px 12px rgba(0,0,0,0.35); }
 [data-theme="dark"] .perm-cell.pending::after { border-color: var(--bg-card); }
+[data-theme="dark"] .perm-stimme-s { --stimme-tint: rgba(167, 139, 250, 0.10); }
+[data-theme="dark"] .perm-stimme-a { --stimme-tint: rgba(240, 128, 154, 0.10); }
+[data-theme="dark"] .perm-stimme-t { --stimme-tint: rgba( 56, 189, 248, 0.10); }
+[data-theme="dark"] .perm-stimme-b { --stimme-tint: rgba( 52, 211, 153, 0.10); }
+[data-theme="dark"] .perm-stimme-c { --stimme-tint: rgba(251, 191,  36, 0.10); }
+[data-theme="dark"] .perm-stimme-m { --stimme-tint: rgba( 34, 211, 238, 0.10); }
 [data-theme="dark"] .perm-cat-Artikel   { color: #a78bfa; border-bottom-color: #a78bfa; }
 [data-theme="dark"] .perm-cat-Forum     { color: #38bdf8; border-bottom-color: #38bdf8; }
 [data-theme="dark"] .perm-cat-Dateien   { color: #34d399; border-bottom-color: #34d399; }
 [data-theme="dark"] .perm-cat-Orte      { color: #fbbf24; border-bottom-color: #fbbf24; }
 [data-theme="dark"] .perm-cat-Repertoire { color: #22d3ee; border-bottom-color: #22d3ee; }
 [data-theme="dark"] .perm-cat-Mitglieder { color: #86efac; border-bottom-color: #86efac; }
+[data-theme="dark"] .perm-col-cat-Artikel    { --perm-tint: rgba(167, 139, 250, 0.08); }
+[data-theme="dark"] .perm-col-cat-Forum      { --perm-tint: rgba( 56, 189, 248, 0.08); }
+[data-theme="dark"] .perm-col-cat-Dateien    { --perm-tint: rgba( 52, 211, 153, 0.08); }
+[data-theme="dark"] .perm-col-cat-Orte       { --perm-tint: rgba(251, 191,  36, 0.08); }
+[data-theme="dark"] .perm-col-cat-Termine    { --perm-tint: rgba(193,  68, 104, 0.08); }
+[data-theme="dark"] .perm-col-cat-Repertoire { --perm-tint: rgba( 34, 211, 238, 0.08); }
+[data-theme="dark"] .perm-col-cat-Mitglieder { --perm-tint: rgba(134, 239, 172, 0.08); }
 [data-theme="dark"] .badge-stimme-s { background: rgba(167,139,250,0.15); color: #a78bfa; }
 [data-theme="dark"] .badge-stimme-a { background: rgba(193,68,104,0.20);  color: #f0809a; }
 [data-theme="dark"] .badge-stimme-t { background: rgba(56,189,248,0.15);  color: #38bdf8; }
@@ -291,6 +322,34 @@
 @media (max-width: 768px) {
     .perm-apply-bar { left: 0; }
 }
+
+/* ─── Strong borders: row separators + category boundaries ───── */
+.perm-matrix-wrap             { --border-strong: rgba(0, 0, 0, 0.55); }
+[data-theme="dark"] .perm-matrix-wrap { --border-strong: rgba(255, 255, 255, 0.4); }
+
+/* Horizontal row separators: gray within a voice group, strong between groups */
+.perm-row td                  { border-bottom-color: var(--border); }
+.perm-row-group-last td       { border-bottom-color: var(--border-strong); }
+
+/* Right edge of the sticky name column */
+.perm-user-col                { border-right-color: var(--border-strong); }
+
+/* Bottom of both header rows */
+.perm-corner                  { border-bottom-color: var(--border-strong); }
+.perm-user-head               { border-bottom-color: var(--border-strong); }
+.perm-cat-row th              { border-bottom-color: var(--border-strong); }
+th.perm-col-head              { border-bottom-color: var(--border-strong); }
+
+/* Left border between category header cells */
+.perm-cat-header              { border-left-color: var(--border-strong); }
+
+/* Left border at category boundaries in label row and data cells */
+th.perm-col-head.perm-col-cat-first  { border-left-color: var(--border-strong); }
+td.perm-cell-td.perm-col-cat-first   { border-left-color: var(--border-strong); }
+
+/* Black separator line between thead and tbody */
+tr.perm-label-row th { border-bottom: 2px solid #000; }
+[data-theme="dark"] tr.perm-label-row th { border-bottom-color: rgba(255,255,255,0.65); }
 </style>
 
 <div class="table-view">
@@ -311,7 +370,7 @@
                 <tr class="perm-label-row">
                     <th class="perm-user-col perm-user-head">Mitglied</th>
                     {% for cat in categories %}{% for perm in cat.perms %}
-                    <th class="perm-col-head" data-perm="{{ perm.key }}">
+                    <th class="perm-col-head perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}" data-perm="{{ perm.key }}">
                         <div class="perm-col-rotate">
                             <span>{{ perm.label }}</span>
                         </div>
@@ -323,13 +382,9 @@
                 {% for user in users %}
                 <tr class="perm-row{% if user.is_superuser %} perm-row-superuser{% endif %}"
                     data-user-id="{{ user.pk }}">
-                    <td class="perm-user-col perm-user-name">
+                    <td class="perm-user-col perm-user-name{% if user.stimme and user.stimme != 'N' %} perm-stimme-{{ user.stimme|lower }}{% endif %}">
                         <div class="perm-user-info">
-                            <span class="perm-avatar">{{ user.first_name|first }}{{ user.last_name|first }}</span>
                             <span class="perm-name">{{ user.first_name }} {{ user.last_name }}</span>
-                            {% if user.stimme and user.stimme != "N" %}
-                            <span class="badge badge-stimme-{{ user.stimme|lower }}">{{ user.stimme }}</span>
-                            {% endif %}
                             {% if user.is_superuser %}
                             <span class="perm-crown" title="Superuser – hat alle Berechtigungen">
                                 <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
@@ -340,11 +395,11 @@
                         </div>
                     </td>
                     {% for cat in categories %}{% for perm in cat.perms %}
-                    <td class="perm-cell-td">
+                    <td class="perm-cell-td perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}">
                         {% if user.is_superuser %}
                         <div class="perm-cell-super" title="Superuser hat alle Berechtigungen">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white"
-                                 stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="20 6 9 17 4 12"/>
                             </svg>
                         </div>
@@ -386,11 +441,26 @@
         document.documentElement.style.setProperty('--cat-row-h', catH + 'px');
     }
 
+    // Mark the last row of each voice group so CSS can draw a strong separator.
+    var rows = Array.from(document.querySelectorAll('.perm-row'));
+    function rowStimme(row) {
+        var td = row.querySelector('.perm-user-col');
+        if (!td) return '';
+        var m = td.className.match(/perm-stimme-(\w)/);
+        return m ? m[1] : '';
+    }
+    rows.forEach(function (row, i) {
+        var next = rows[i + 1];
+        if (next && rowStimme(row) !== rowStimme(next)) {
+            row.classList.add('perm-row-group-last');
+        }
+    });
+
     const matrixData = JSON.parse(document.getElementById('matrix-data').textContent);
     // changes: Map of "userId:perm" -> {user_id, permission, granted}
     const changes = new Map();
 
-    const CHECKMARK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const CHECKMARK = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
     function isOriginallyGranted(userId, perm) {
         const perms = matrixData[String(userId)] || [];

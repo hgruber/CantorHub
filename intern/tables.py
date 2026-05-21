@@ -680,6 +680,26 @@ class MitgliederTabelle(tables.Table):
             static("filer/icons/file-unknown.svg"),
         )
 
+    def order_stimme(self, queryset, is_descending):
+        from django.db.models import Case, IntegerField, Value, When
+
+        stimme_order = Case(
+            When(stimme="S", then=Value(0)),
+            When(stimme="A", then=Value(1)),
+            When(stimme="T", then=Value(2)),
+            When(stimme="B", then=Value(3)),
+            When(stimme="C", then=Value(4)),
+            When(stimme="M", then=Value(5)),
+            default=Value(6),
+            output_field=IntegerField(),
+        )
+        queryset = queryset.annotate(stimme_order=stimme_order).order_by(
+            ("-" if is_descending else "") + "stimme_order",
+            "last_name",
+            "first_name",
+        )
+        return queryset, True
+
 
 class ArtikelTabelle(tables.Table):
     name = tables.Column(verbose_name="Artikel")

@@ -2,19 +2,38 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Permission
+from django.db.models import Case, IntegerField, Value, When
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
 from ..models import User
 
+STIMME_ORDER = Case(
+    When(stimme="S", then=Value(0)),
+    When(stimme="A", then=Value(1)),
+    When(stimme="T", then=Value(2)),
+    When(stimme="B", then=Value(3)),
+    When(stimme="C", then=Value(4)),
+    When(stimme="M", then=Value(5)),
+    default=Value(6),
+    output_field=IntegerField(),
+)
+
 __all__ = ["berechtigungen"]
 
 PERMISSION_DEFS = [
+    ("intern.add_artikel",    "anlegen",      "Artikel"),
     ("intern.change_artikel", "bearbeiten",   "Artikel"),
-    ("intern.add_forum",      "erstellen",    "Forum"),
-    ("filer.add_folder",      "verwalten",    "Dateien"),
+    ("intern.delete_artikel", "löschen",      "Artikel"),
+    ("intern.add_forum",      "anlegen",      "Forum"),
+    ("intern.change_forum",   "bearbeiten",   "Forum"),
+    ("intern.delete_forum",   "löschen",      "Forum"),
+    ("filer.add_folder",      "anlegen",      "Dateien"),
+    ("filer.change_folder",   "bearbeiten",   "Dateien"),
+    ("filer.delete_folder",   "löschen",      "Dateien"),
     ("intern.add_ort",        "anlegen",      "Orte"),
     ("intern.change_ort",     "bearbeiten",   "Orte"),
+    ("intern.delete_ort",     "löschen",      "Orte"),
     ("intern.add_termin",     "anlegen",      "Termine"),
     ("intern.change_termin",  "bearbeiten",   "Termine"),
     ("intern.delete_termin",  "löschen",      "Termine"),
@@ -23,6 +42,8 @@ PERMISSION_DEFS = [
     ("intern.change_lied",    "bearbeiten",   "Repertoire"),
     ("intern.delete_lied",    "löschen",      "Repertoire"),
     ("intern.add_user",       "anlegen",      "Mitglieder"),
+    ("intern.change_user",    "bearbeiten",   "Mitglieder"),
+    ("intern.delete_user",    "löschen",      "Mitglieder"),
 ]
 
 
@@ -33,7 +54,8 @@ def berechtigungen(request):
 
     users = (
         User.objects.filter(is_active=True)
-        .order_by("stimme", "last_name", "first_name")
+        .annotate(stimme_order=STIMME_ORDER)
+        .order_by("stimme_order", "last_name", "first_name")
         .prefetch_related("user_permissions__content_type")
     )
 

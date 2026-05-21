@@ -135,10 +135,13 @@ def sync_xmpp_on_user_save(sender, instance, created, **kwargs):
                 daemon=True,
             ).start()
 
-    # Detect login: Django updates only last_login when a user logs in
+    # Detect login: Django updates only last_login when a user logs in.
+    # The instance itself is the acting user, so set _audit_user if not already set.
     old_last_login = getattr(instance, "_old_last_login", None)
     if not created and instance.last_login != old_last_login:
         instance._audit_is_login = True
+        if not getattr(instance, "_audit_user", None):
+            instance._audit_user = instance
 
     _write_audit_log(instance, created, "User")
 
