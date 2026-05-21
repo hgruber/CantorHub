@@ -1,7 +1,20 @@
 {% extends 'base.html' %}
-{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>{% endblock %}
+{% block topbar_icon %}
+    <svg class="topbar-icon"
+         xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none" />
+    </svg>
+{% endblock %}
 {% block content %}
-<style>
+    <style>
 /* ─── Permission Matrix ────────────────────────────────── */
 .perm-matrix-wrap {
     flex: 1;
@@ -73,6 +86,9 @@
 }
 
 /* Table body rows */
+.perm-matrix tbody tr:first-child td {
+    border-top: 2px solid black;
+}
 .perm-row td {
     border-bottom: 1px solid var(--border);
 }
@@ -259,74 +275,75 @@
 [data-theme="dark"] .perm-col-head { background: var(--bg-thead); }
 
 @media (max-width: 768px) { .perm-apply-bar { left: 0; } }
-</style>
-
-<div class="table-view">
-    <div class="perm-matrix-wrap">
-        <table class="perm-matrix">
-            <thead>
-                <tr>
-                    <th class="perm-user-col perm-corner"></th>
-                    {% for group in groups %}
-                    <th class="perm-col-head" data-group="{{ group.name }}">
-                        <div class="perm-col-rotate"><span>{{ group.name }}</span></div>
-                    </th>
+    </style>
+    <div class="table-view">
+        <div class="perm-matrix-wrap">
+            <table class="perm-matrix">
+                <thead>
+                    <tr>
+                        <th class="perm-user-col perm-corner"></th>
+                        {% for group in groups %}
+                            <th class="perm-col-head" data-group="{{ group.name }}">
+                                <div class="perm-col-rotate">
+                                    <span>{{ group.name }}</span>
+                                </div>
+                            </th>
+                        {% endfor %}
+                        <th class="perm-col-head perm-col-admin" data-admin="true">
+                            <div class="perm-col-rotate">
+                                <span>Admin</span>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr class="perm-row" data-user-id="{{ user.pk }}">
+                            <td class="perm-user-col perm-user-name{% if user.stimme and user.stimme != 'N' %} perm-stimme-{{ user.stimme|lower }}{% endif %}">
+                                <div class="perm-user-info">
+                                    <span class="badge badge-stimme-{{ user.stimme|lower|default:'n' }}">{{ user.stimme|default:"N" }}</span>
+                                    <span class="perm-name">{{ user.first_name }} {{ user.last_name }}</span>
+                                </div>
+                            </td>
+                            {% for group in groups %}
+                                <td class="perm-cell-td">
+                                    <button type="button"
+                                            class="perm-cell"
+                                            data-type="group"
+                                            data-user="{{ user.pk }}"
+                                            data-group="{{ group.name }}"
+                                            title="{{ group.name }}"></button>
+                                </td>
+                            {% endfor %}
+                            <td class="perm-cell-td perm-col-admin">
+                                <button type="button"
+                                        class="perm-cell-admin"
+                                        data-type="admin"
+                                        data-user="{{ user.pk }}"
+                                        title="Superuser (Admin)"></button>
+                            </td>
+                        </tr>
                     {% endfor %}
-                    <th class="perm-col-head perm-col-admin" data-admin="true">
-                        <div class="perm-col-rotate"><span>Admin</span></div>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr class="perm-row" data-user-id="{{ user.pk }}">
-                    <td class="perm-user-col perm-user-name{% if user.stimme and user.stimme != 'N' %} perm-stimme-{{ user.stimme|lower }}{% endif %}">
-                        <div class="perm-user-info">
-                            <span class="badge badge-stimme-{{ user.stimme|lower|default:'n' }}">{{ user.stimme|default:"N" }}</span>
-                            <span class="perm-name">{{ user.first_name }} {{ user.last_name }}</span>
-                        </div>
-                    </td>
-                    {% for group in groups %}
-                    <td class="perm-cell-td">
-                        <button type="button" class="perm-cell"
-                                data-type="group"
-                                data-user="{{ user.pk }}"
-                                data-group="{{ group.name }}"
-                                title="{{ group.name }}">
-                        </button>
-                    </td>
-                    {% endfor %}
-                    <td class="perm-cell-td perm-col-admin">
-                        <button type="button" class="perm-cell-admin"
-                                data-type="admin"
-                                data-user="{{ user.pk }}"
-                                title="Superuser (Admin)">
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
-
-<div class="perm-apply-bar" id="perm-apply-bar">
-    <span class="perm-change-summary" id="perm-change-summary"></span>
-    <button type="button" class="btn btn-primary" id="perm-apply-btn">
-        Änderungen anwenden (<span id="perm-change-count">0</span>)
-    </button>
-</div>
-
-<script id="matrix-data" type="application/json">{{ matrix_json|safe }}</script>
-<script>
+    <div class="perm-apply-bar" id="perm-apply-bar">
+        <span class="perm-change-summary" id="perm-change-summary"></span>
+        <button type="button" class="btn btn-primary" id="perm-apply-btn">
+            Änderungen anwenden (<span id="perm-change-count">0</span>)
+        </button>
+    </div>
+    <script id="matrix-data" type="application/json">{{ matrix_json|safe }}</script>
+    <script>
 (function () {
     'use strict';
 
     const matrixData = JSON.parse(document.getElementById('matrix-data').textContent);
     const changes = new Map();
 
-    const CHECKMARK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-    const CHECKMARK_GOLD = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const CHECKMARK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>';
+    const CHECKMARK_GOLD = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>';
 
     function isGroupGranted(userId, groupName) {
         const data = matrixData[String(userId)];
@@ -458,5 +475,5 @@
         }
     });
 })();
-</script>
+    </script>
 {% endblock %}
