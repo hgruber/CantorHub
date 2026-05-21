@@ -3,6 +3,7 @@ from .aenderungen import *
 from .auth import *
 from .artikel import *
 from .berechtigungen import *
+from .gruppen import *
 from .files import *
 from .folders import *
 from .forums import *

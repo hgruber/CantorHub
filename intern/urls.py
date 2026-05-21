@@ -22,6 +22,7 @@ urlpatterns = [
     # Konfiguration URLs
     path("konfiguration/", views.konfiguration, name="konfiguration"),
     path("berechtigungen/", views.berechtigungen, name="berechtigungen"),
+    path("gruppen/", views.gruppen, name="gruppen"),
     path("aenderungsprotokoll/", views.aenderungsprotokoll_list, name="aenderungsprotokoll_list"),
     # Upload and File URLs
     path("upload/", views.upload, name="upload"),

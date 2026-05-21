@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
-{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>{% endblock %}
+{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>{% endblock %}
 {% block content %}
 <style>
-/* ─── Permission Matrix (page-scoped) ───────────────── */
+/* ─── Permission Matrix ────────────────────────────────── */
 .perm-matrix-wrap {
     flex: 1;
     min-height: 0;
@@ -22,97 +22,35 @@
     left: 0;
     background: linear-gradient(var(--stimme-tint, transparent), var(--stimme-tint, transparent)), var(--bg-card);
     z-index: 3;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-strong);
 }
 .perm-corner {
     top: 0;
     z-index: 5 !important;
-    border-bottom: 1px solid var(--border);
     background: var(--bg-thead);
 }
-.perm-user-head {
-    position: sticky;
-    top: var(--cat-row-h, 29px); /* set precisely by JS, same as perm-col-head */
-    z-index: 4;
-    background: var(--bg-thead);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--t3);
-    padding: 8px 16px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: bottom;
-}
-
-/* Category header row */
-.perm-cat-row th {
+.perm-col-head {
     position: sticky;
     top: 0;
     z-index: 2;
     background: var(--bg-thead);
-    border-bottom: 1px solid var(--border);
-}
-.perm-cat-header {
-    text-align: center;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    padding: 6px 4px;
-    color: var(--t3);
-    border-left: 1px solid var(--border);
-}
-.perm-cat-header:first-of-type { border-left: none; }
-
-/* Category color accents */
-.perm-cat-Artikel   { color: #7c3aed; border-bottom: 2px solid #7c3aed; }
-.perm-cat-Forum     { color: #0369a1; border-bottom: 2px solid #0369a1; }
-.perm-cat-Dateien   { color: #059669; border-bottom: 2px solid #059669; }
-.perm-cat-Orte      { color: #b45309; border-bottom: 2px solid #b45309; }
-.perm-cat-Termine   { color: var(--brand); border-bottom: 2px solid var(--brand); }
-.perm-cat-Repertoire { color: #0891b2; border-bottom: 2px solid #0891b2; }
-.perm-cat-Mitglieder { color: #65a30d; border-bottom: 2px solid #65a30d; }
-
-/* Column tint variables — one per category */
-.perm-col-cat-Artikel    { --perm-tint: rgba(124,  58, 237, 0.05); }
-.perm-col-cat-Forum      { --perm-tint: rgba(  3, 105, 161, 0.05); }
-.perm-col-cat-Dateien    { --perm-tint: rgba(  5, 150, 105, 0.05); }
-.perm-col-cat-Orte       { --perm-tint: rgba(180,  83,   9, 0.05); }
-.perm-col-cat-Termine    { --perm-tint: rgba(193,  68, 104, 0.05); }
-.perm-col-cat-Repertoire { --perm-tint: rgba(  8, 145, 178, 0.05); }
-.perm-col-cat-Mitglieder { --perm-tint: rgba(101, 163,  13, 0.05); }
-
-/* Apply tint to data cells */
-td.perm-cell-td {
-    background-color: var(--perm-tint, transparent);
-}
-/* Apply tint to sticky label-header cells (overlay on solid bg so scroll content stays hidden) */
-th.perm-col-head {
-    background:
-        linear-gradient(var(--perm-tint, transparent), var(--perm-tint, transparent)),
-        var(--bg-thead);
-}
-/* Permission label column headers (rotated) */
-.perm-col-head {
-    position: sticky;
-    top: var(--cat-row-h, 29px); /* set precisely by JS */
-    z-index: 2;
-    background: var(--bg-thead);
-    width: 20px;
-    min-width: 20px;
-    max-width: 20px;
-    height: 130px;
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    height: 140px;
     vertical-align: middle;
     text-align: left;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border-strong);
     border-left: 1px solid var(--border);
     padding: 0;
 }
 .perm-col-head:first-of-type { border-left: none; }
+.perm-col-head.perm-col-admin {
+    border-left: 2px solid var(--border-strong);
+}
 .perm-col-rotate {
     position: relative;
-    height: 130px;
+    height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -122,10 +60,16 @@ th.perm-col-head {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     white-space: nowrap;
-    font-size: 11.5px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     color: var(--t2);
     line-height: 1;
+}
+.perm-col-head.perm-col-admin .perm-col-rotate span {
+    color: #d97706;
+}
+[data-theme="dark"] .perm-col-head.perm-col-admin .perm-col-rotate span {
+    color: #fbbf24;
 }
 
 /* Table body rows */
@@ -133,6 +77,7 @@ th.perm-col-head {
     border-bottom: 1px solid var(--border);
 }
 .perm-row:last-child td { border-bottom: none; }
+.perm-row-group-last td { border-bottom-color: var(--border-strong); }
 
 .perm-user-name {
     padding: 8px 12px;
@@ -144,36 +89,36 @@ th.perm-col-head {
     gap: 8px;
     flex-wrap: nowrap;
 }
-.perm-avatar {
-    flex-shrink: 0;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: var(--brand-light);
-    color: var(--brand);
-    font-weight: 700;
-    font-size: 10px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    letter-spacing: -0.5px;
-}
 .perm-name {
     font-size: 13px;
     font-weight: 500;
     color: var(--t1);
     white-space: nowrap;
 }
-.perm-crown {
-    color: #d97706;
-    display: inline-flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-.perm-crown svg {
-    width: 13px;
-    height: 13px;
-}
+
+/* Voice badges */
+.badge-stimme-s { background: rgba(124, 58, 237, 0.12); color: #7c3aed; }
+.badge-stimme-a { background: rgba(193, 68, 104, 0.12); color: #c14468; }
+.badge-stimme-t { background: rgba(3, 105, 161, 0.12);  color: #0369a1; }
+.badge-stimme-b { background: rgba(5, 150, 105, 0.12);  color: #059669; }
+.badge-stimme-c { background: rgba(180, 83, 9, 0.12);   color: #b45309; }
+.badge-stimme-m { background: rgba(8, 145, 178, 0.12);  color: #0891b2; }
+.badge-stimme-n { background: var(--bg-row-hover);       color: var(--t4); }
+
+/* Stimme tint for user column */
+.perm-stimme-s { --stimme-tint: rgba(124,  58, 237, 0.07); }
+.perm-stimme-a { --stimme-tint: rgba(193,  68, 104, 0.07); }
+.perm-stimme-t { --stimme-tint: rgba(  3, 105, 161, 0.07); }
+.perm-stimme-b { --stimme-tint: rgba(  5, 150, 105, 0.07); }
+.perm-stimme-c { --stimme-tint: rgba(180,  83,   9, 0.07); }
+.perm-stimme-m { --stimme-tint: rgba(  8, 145, 178, 0.07); }
+
+[data-theme="dark"] .perm-stimme-s { --stimme-tint: rgba(167, 139, 250, 0.10); }
+[data-theme="dark"] .perm-stimme-a { --stimme-tint: rgba(240, 128, 154, 0.10); }
+[data-theme="dark"] .perm-stimme-t { --stimme-tint: rgba( 56, 189, 248, 0.10); }
+[data-theme="dark"] .perm-stimme-b { --stimme-tint: rgba( 52, 211, 153, 0.10); }
+[data-theme="dark"] .perm-stimme-c { --stimme-tint: rgba(251, 191,  36, 0.10); }
+[data-theme="dark"] .perm-stimme-m { --stimme-tint: rgba( 34, 211, 238, 0.10); }
 
 /* Permission cell */
 .perm-cell-td {
@@ -183,11 +128,14 @@ th.perm-col-head {
     border-left: 1px solid var(--border);
 }
 .perm-cell-td:first-of-type { border-left: none; }
+.perm-cell-td.perm-col-admin {
+    border-left: 2px solid var(--border-strong);
+}
 
 .perm-cell {
     position: relative;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     border: 1.5px solid var(--border-dark);
     background: transparent;
@@ -224,36 +172,61 @@ th.perm-col-head {
     background: #f59e0b;
     border: 1px solid var(--bg-card);
 }
-.perm-cell-super {
-    width: 14px;
-    height: 14px;
+
+/* Admin cell — gold variant */
+.perm-cell-admin {
+    position: relative;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    background: var(--brand);
-    border: 1.5px solid var(--brand);
+    border: 1.5px solid var(--border-dark);
+    background: transparent;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.35;
-    cursor: not-allowed;
+    transition: background var(--ease), border-color var(--ease), transform 0.1s ease;
+    padding: 0;
     vertical-align: middle;
 }
+.perm-cell-admin:hover {
+    border-color: #d97706;
+    background: rgba(217, 119, 6, 0.12);
+    transform: scale(1.1);
+}
+.perm-cell-admin.granted {
+    background: #d97706;
+    border-color: #d97706;
+}
+.perm-cell-admin.granted:hover {
+    background: #b45309;
+    border-color: #b45309;
+    transform: scale(1.1);
+}
+.perm-cell-admin.pending::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #f59e0b;
+    border: 1px solid var(--bg-card);
+}
 
-/* Voice badges */
-.badge-stimme-s { background: rgba(124, 58, 237, 0.12); color: #7c3aed; }
-.badge-stimme-a { background: rgba(193, 68, 104, 0.12); color: #c14468; }
-.badge-stimme-t { background: rgba(3, 105, 161, 0.12);  color: #0369a1; }
-.badge-stimme-b { background: rgba(5, 150, 105, 0.12);  color: #059669; }
-.badge-stimme-c { background: rgba(180, 83, 9, 0.12);   color: #b45309; }
-.badge-stimme-m { background: rgba(8, 145, 178, 0.12);  color: #0891b2; }
-.badge-stimme-n { background: var(--bg-row-hover);       color: var(--t4); }
-
-/* Stimme tint variables for the user column */
-.perm-stimme-s { --stimme-tint: rgba(124,  58, 237, 0.07); }
-.perm-stimme-a { --stimme-tint: rgba(193,  68, 104, 0.07); }
-.perm-stimme-t { --stimme-tint: rgba(  3, 105, 161, 0.07); }
-.perm-stimme-b { --stimme-tint: rgba(  5, 150, 105, 0.07); }
-.perm-stimme-c { --stimme-tint: rgba(180,  83,   9, 0.07); }
-.perm-stimme-m { --stimme-tint: rgba(  8, 145, 178, 0.07); }
+[data-theme="dark"] .perm-cell { border-color: rgba(255,255,255,0.15); }
+[data-theme="dark"] .perm-cell:hover { background: var(--brand-light); border-color: var(--brand); }
+[data-theme="dark"] .perm-cell-admin { border-color: rgba(255,255,255,0.15); }
+[data-theme="dark"] .perm-cell-admin.granted { background: #d97706; border-color: #d97706; }
+[data-theme="dark"] .perm-cell.pending::after,
+[data-theme="dark"] .perm-cell-admin.pending::after { border-color: var(--bg-card); }
+[data-theme="dark"] .badge-stimme-s { background: rgba(167,139,250,0.15); color: #a78bfa; }
+[data-theme="dark"] .badge-stimme-a { background: rgba(193,68,104,0.20);  color: #f0809a; }
+[data-theme="dark"] .badge-stimme-t { background: rgba(56,189,248,0.15);  color: #38bdf8; }
+[data-theme="dark"] .badge-stimme-b { background: rgba(52,211,153,0.15);  color: #34d399; }
+[data-theme="dark"] .badge-stimme-c { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+[data-theme="dark"] .badge-stimme-m { background: rgba(34,211,238,0.15);  color: #22d3ee; }
 
 /* Apply bar */
 .perm-apply-bar {
@@ -273,145 +246,63 @@ th.perm-col-head {
     z-index: 100;
     box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
 }
-.perm-apply-bar.visible {
-    transform: translateY(0);
-}
-.perm-change-summary {
-    font-size: 13px;
-    color: var(--t3);
-}
+.perm-apply-bar.visible { transform: translateY(0); }
+.perm-change-summary { font-size: 13px; color: var(--t3); }
+[data-theme="dark"] .perm-apply-bar { box-shadow: 0 -2px 12px rgba(0,0,0,0.35); }
 
-/* Dark mode overrides */
+.perm-matrix-wrap             { --border-strong: rgba(0,0,0,0.55); }
+[data-theme="dark"] .perm-matrix-wrap { --border-strong: rgba(255,255,255,0.4); }
 [data-theme="dark"] .perm-user-col {
     background: linear-gradient(var(--stimme-tint, transparent), var(--stimme-tint, transparent)), var(--bg-card);
 }
 [data-theme="dark"] .perm-corner,
-[data-theme="dark"] .perm-user-head,
-[data-theme="dark"] .perm-cat-row th,
 [data-theme="dark"] .perm-col-head { background: var(--bg-thead); }
-[data-theme="dark"] .perm-cell { border-color: rgba(255,255,255,0.15); }
-[data-theme="dark"] .perm-cell:hover { background: var(--brand-light); border-color: var(--brand); }
-[data-theme="dark"] .perm-apply-bar { box-shadow: 0 -2px 12px rgba(0,0,0,0.35); }
-[data-theme="dark"] .perm-cell.pending::after { border-color: var(--bg-card); }
-[data-theme="dark"] .perm-stimme-s { --stimme-tint: rgba(167, 139, 250, 0.10); }
-[data-theme="dark"] .perm-stimme-a { --stimme-tint: rgba(240, 128, 154, 0.10); }
-[data-theme="dark"] .perm-stimme-t { --stimme-tint: rgba( 56, 189, 248, 0.10); }
-[data-theme="dark"] .perm-stimme-b { --stimme-tint: rgba( 52, 211, 153, 0.10); }
-[data-theme="dark"] .perm-stimme-c { --stimme-tint: rgba(251, 191,  36, 0.10); }
-[data-theme="dark"] .perm-stimme-m { --stimme-tint: rgba( 34, 211, 238, 0.10); }
-[data-theme="dark"] .perm-cat-Artikel   { color: #a78bfa; border-bottom-color: #a78bfa; }
-[data-theme="dark"] .perm-cat-Forum     { color: #38bdf8; border-bottom-color: #38bdf8; }
-[data-theme="dark"] .perm-cat-Dateien   { color: #34d399; border-bottom-color: #34d399; }
-[data-theme="dark"] .perm-cat-Orte      { color: #fbbf24; border-bottom-color: #fbbf24; }
-[data-theme="dark"] .perm-cat-Repertoire { color: #22d3ee; border-bottom-color: #22d3ee; }
-[data-theme="dark"] .perm-cat-Mitglieder { color: #86efac; border-bottom-color: #86efac; }
-[data-theme="dark"] .perm-col-cat-Artikel    { --perm-tint: rgba(167, 139, 250, 0.08); }
-[data-theme="dark"] .perm-col-cat-Forum      { --perm-tint: rgba( 56, 189, 248, 0.08); }
-[data-theme="dark"] .perm-col-cat-Dateien    { --perm-tint: rgba( 52, 211, 153, 0.08); }
-[data-theme="dark"] .perm-col-cat-Orte       { --perm-tint: rgba(251, 191,  36, 0.08); }
-[data-theme="dark"] .perm-col-cat-Termine    { --perm-tint: rgba(193,  68, 104, 0.08); }
-[data-theme="dark"] .perm-col-cat-Repertoire { --perm-tint: rgba( 34, 211, 238, 0.08); }
-[data-theme="dark"] .perm-col-cat-Mitglieder { --perm-tint: rgba(134, 239, 172, 0.08); }
-[data-theme="dark"] .badge-stimme-s { background: rgba(167,139,250,0.15); color: #a78bfa; }
-[data-theme="dark"] .badge-stimme-a { background: rgba(193,68,104,0.20);  color: #f0809a; }
-[data-theme="dark"] .badge-stimme-t { background: rgba(56,189,248,0.15);  color: #38bdf8; }
-[data-theme="dark"] .badge-stimme-b { background: rgba(52,211,153,0.15);  color: #34d399; }
-[data-theme="dark"] .badge-stimme-c { background: rgba(251,191,36,0.15);  color: #fbbf24; }
-[data-theme="dark"] .badge-stimme-m { background: rgba(34,211,238,0.15);  color: #22d3ee; }
 
-@media (max-width: 768px) {
-    .perm-apply-bar { left: 0; }
-}
-
-/* ─── Strong borders: row separators + category boundaries ───── */
-.perm-matrix-wrap             { --border-strong: rgba(0, 0, 0, 0.55); }
-[data-theme="dark"] .perm-matrix-wrap { --border-strong: rgba(255, 255, 255, 0.4); }
-
-/* Horizontal row separators: gray within a voice group, strong between groups */
-.perm-row td                  { border-bottom-color: var(--border); }
-.perm-row-group-last td       { border-bottom-color: var(--border-strong); }
-
-/* Right edge of the sticky name column */
-.perm-user-col                { border-right-color: var(--border-strong); }
-
-/* Bottom of both header rows */
-.perm-corner                  { border-bottom-color: var(--border-strong); }
-.perm-user-head               { border-bottom-color: var(--border-strong); }
-.perm-cat-row th              { border-bottom-color: var(--border-strong); }
-th.perm-col-head              { border-bottom-color: var(--border-strong); }
-
-/* Left border between category header cells */
-.perm-cat-header              { border-left-color: var(--border-strong); }
-
-/* Left border at category boundaries in label row and data cells */
-th.perm-col-head.perm-col-cat-first  { border-left-color: var(--border-strong); }
-td.perm-cell-td.perm-col-cat-first   { border-left-color: var(--border-strong); }
-
-/* Black separator line between thead and tbody */
-tr.perm-label-row th { border-bottom: 2px solid #000; }
-[data-theme="dark"] tr.perm-label-row th { border-bottom-color: rgba(255,255,255,0.65); }
+@media (max-width: 768px) { .perm-apply-bar { left: 0; } }
 </style>
 
 <div class="table-view">
     <div class="perm-matrix-wrap">
         <table class="perm-matrix">
             <thead>
-                <!-- Row 1: Category group headers -->
-                <tr class="perm-cat-row">
+                <tr>
                     <th class="perm-user-col perm-corner"></th>
-                    {% for cat in categories %}
-                    <th colspan="{{ cat.perms|length }}"
-                        class="perm-cat-header perm-cat-{{ cat.name }}">
-                        {{ cat.name }}
+                    {% for group in groups %}
+                    <th class="perm-col-head" data-group="{{ group.name }}">
+                        <div class="perm-col-rotate"><span>{{ group.name }}</span></div>
                     </th>
                     {% endfor %}
-                </tr>
-                <!-- Row 2: Rotated permission labels -->
-                <tr class="perm-label-row">
-                    <th class="perm-user-col perm-user-head">Mitglied</th>
-                    {% for cat in categories %}{% for perm in cat.perms %}
-                    <th class="perm-col-head perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}" data-perm="{{ perm.key }}">
-                        <div class="perm-col-rotate">
-                            <span>{{ perm.label }}</span>
-                        </div>
+                    <th class="perm-col-head perm-col-admin" data-admin="true">
+                        <div class="perm-col-rotate"><span>Admin</span></div>
                     </th>
-                    {% endfor %}{% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for user in users %}
-                <tr class="perm-row{% if user.is_superuser %} perm-row-superuser{% endif %}"
-                    data-user-id="{{ user.pk }}">
+                <tr class="perm-row" data-user-id="{{ user.pk }}">
                     <td class="perm-user-col perm-user-name{% if user.stimme and user.stimme != 'N' %} perm-stimme-{{ user.stimme|lower }}{% endif %}">
                         <div class="perm-user-info">
+                            <span class="badge badge-stimme-{{ user.stimme|lower|default:'n' }}">{{ user.stimme|default:"N" }}</span>
                             <span class="perm-name">{{ user.first_name }} {{ user.last_name }}</span>
-                            {% if user.is_superuser %}
-                            <span class="perm-crown" title="Superuser – hat alle Berechtigungen">
-                                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                                    <path d="M2 19l2-9 5 4 3-7 3 7 5-4 2 9H2zm0 2h20v2H2v-2z"/>
-                                </svg>
-                            </span>
-                            {% endif %}
                         </div>
                     </td>
-                    {% for cat in categories %}{% for perm in cat.perms %}
-                    <td class="perm-cell-td perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}">
-                        {% if user.is_superuser %}
-                        <div class="perm-cell-super" title="Superuser hat alle Berechtigungen">
-                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white"
-                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                        </div>
-                        {% else %}
+                    {% for group in groups %}
+                    <td class="perm-cell-td">
                         <button type="button" class="perm-cell"
+                                data-type="group"
                                 data-user="{{ user.pk }}"
-                                data-perm="{{ perm.key }}"
-                                title="{{ perm.label }}">
+                                data-group="{{ group.name }}"
+                                title="{{ group.name }}">
                         </button>
-                        {% endif %}
                     </td>
-                    {% endfor %}{% endfor %}
+                    {% endfor %}
+                    <td class="perm-cell-td perm-col-admin">
+                        <button type="button" class="perm-cell-admin"
+                                data-type="admin"
+                                data-user="{{ user.pk }}"
+                                title="Superuser (Admin)">
+                        </button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -419,7 +310,6 @@ tr.perm-label-row th { border-bottom: 2px solid #000; }
     </div>
 </div>
 
-<!-- Apply bar (outside table-view so it overlays correctly) -->
 <div class="perm-apply-bar" id="perm-apply-bar">
     <span class="perm-change-summary" id="perm-change-summary"></span>
     <button type="button" class="btn btn-primary" id="perm-apply-btn">
@@ -432,65 +322,73 @@ tr.perm-label-row th { border-bottom: 2px solid #000; }
 (function () {
     'use strict';
 
-    // Measure the actual rendered height of the category row and apply it as
-    // the sticky top-offset for the label row (both the left "Mitglied" header
-    // and all rotated permission column headers must share the same value).
-    var catRow = document.querySelector('.perm-cat-row');
-    if (catRow) {
-        var catH = Math.ceil(catRow.getBoundingClientRect().height);
-        document.documentElement.style.setProperty('--cat-row-h', catH + 'px');
-    }
-
-    // Mark the last row of each voice group so CSS can draw a strong separator.
-    var rows = Array.from(document.querySelectorAll('.perm-row'));
-    function rowStimme(row) {
-        var td = row.querySelector('.perm-user-col');
-        if (!td) return '';
-        var m = td.className.match(/perm-stimme-(\w)/);
-        return m ? m[1] : '';
-    }
-    rows.forEach(function (row, i) {
-        var next = rows[i + 1];
-        if (next && rowStimme(row) !== rowStimme(next)) {
-            row.classList.add('perm-row-group-last');
-        }
-    });
-
     const matrixData = JSON.parse(document.getElementById('matrix-data').textContent);
-    // changes: Map of "userId:perm" -> {user_id, permission, granted}
     const changes = new Map();
 
-    const CHECKMARK = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const CHECKMARK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const CHECKMARK_GOLD = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
-    function isOriginallyGranted(userId, perm) {
-        const perms = matrixData[String(userId)] || [];
-        return perms.includes(perm);
+    function isGroupGranted(userId, groupName) {
+        const data = matrixData[String(userId)];
+        return data ? data.groups.includes(groupName) : false;
+    }
+    function isAdminGranted(userId) {
+        const data = matrixData[String(userId)];
+        return data ? data.is_superuser : false;
     }
 
-    // Initialise all cells from the matrix data
-    document.querySelectorAll('.perm-cell[data-user]').forEach(function (btn) {
+    // Initialise group cells
+    document.querySelectorAll('.perm-cell[data-type="group"]').forEach(function (btn) {
         const userId = btn.dataset.user;
-        const perm = btn.dataset.perm;
-        if (isOriginallyGranted(userId, perm)) {
+        const group = btn.dataset.group;
+        if (isGroupGranted(userId, group)) {
             btn.classList.add('granted');
             btn.innerHTML = CHECKMARK;
         }
-        btn.addEventListener('click', function () { toggleCell(btn); });
+        btn.addEventListener('click', function () { toggleGroupCell(btn); });
     });
 
-    function toggleCell(btn) {
+    // Initialise admin cells
+    document.querySelectorAll('.perm-cell-admin[data-type="admin"]').forEach(function (btn) {
         const userId = btn.dataset.user;
-        const perm = btn.dataset.perm;
-        const key = userId + ':' + perm;
-        const currentlyGranted = btn.classList.contains('granted');
-        const newGranted = !currentlyGranted;
-        const originalGranted = isOriginallyGranted(userId, perm);
+        if (isAdminGranted(userId)) {
+            btn.classList.add('granted');
+            btn.innerHTML = CHECKMARK_GOLD;
+        }
+        btn.addEventListener('click', function () { toggleAdminCell(btn); });
+    });
+
+    function toggleGroupCell(btn) {
+        const userId = btn.dataset.user;
+        const group = btn.dataset.group;
+        const key = userId + ':group:' + group;
+        const newGranted = !btn.classList.contains('granted');
+        const originalGranted = isGroupGranted(userId, group);
 
         btn.classList.toggle('granted', newGranted);
         btn.innerHTML = newGranted ? CHECKMARK : '';
 
         if (newGranted !== originalGranted) {
-            changes.set(key, { user_id: parseInt(userId, 10), permission: perm, granted: newGranted });
+            changes.set(key, { type: 'group', user_id: parseInt(userId, 10), group: group, granted: newGranted });
+            btn.classList.add('pending');
+        } else {
+            changes.delete(key);
+            btn.classList.remove('pending');
+        }
+        updateApplyBar();
+    }
+
+    function toggleAdminCell(btn) {
+        const userId = btn.dataset.user;
+        const key = userId + ':admin';
+        const newGranted = !btn.classList.contains('granted');
+        const originalGranted = isAdminGranted(userId);
+
+        btn.classList.toggle('granted', newGranted);
+        btn.innerHTML = newGranted ? CHECKMARK_GOLD : '';
+
+        if (newGranted !== originalGranted) {
+            changes.set(key, { type: 'admin', user_id: parseInt(userId, 10), granted: newGranted });
             btn.classList.add('pending');
         } else {
             changes.delete(key);
@@ -504,16 +402,26 @@ tr.perm-label-row th { border-bottom: 2px solid #000; }
         document.getElementById('perm-change-count').textContent = count;
         const bar = document.getElementById('perm-apply-bar');
         bar.classList.toggle('visible', count > 0);
-
         const summary = document.getElementById('perm-change-summary');
-        if (count === 1) {
-            summary.textContent = '1 ungespeicherte Änderung';
-        } else if (count > 1) {
-            summary.textContent = count + ' ungespeicherte Änderungen';
-        } else {
-            summary.textContent = '';
-        }
+        summary.textContent = count === 1 ? '1 ungespeicherte Änderung'
+                            : count > 1   ? count + ' ungespeicherte Änderungen'
+                            : '';
     }
+
+    // Mark last row of each voice group for strong separator
+    const rows = Array.from(document.querySelectorAll('.perm-row'));
+    function rowStimme(row) {
+        const td = row.querySelector('.perm-user-col');
+        if (!td) return '';
+        const m = td.className.match(/perm-stimme-(\w)/);
+        return m ? m[1] : '';
+    }
+    rows.forEach(function (row, i) {
+        const next = rows[i + 1];
+        if (next && rowStimme(row) !== rowStimme(next)) {
+            row.classList.add('perm-row-group-last');
+        }
+    });
 
     function getCsrfToken() {
         const match = document.cookie.match(/csrftoken=([^;]+)/);
@@ -525,7 +433,6 @@ tr.perm-label-row th { border-bottom: 2px solid #000; }
 
     applyBtn.addEventListener('click', async function () {
         applyBtn.disabled = true;
-        applyBtn.classList.add('btn-saving');
         const savedLabel = changeCountEl.textContent;
         changeCountEl.textContent = '…';
 
@@ -543,12 +450,10 @@ tr.perm-label-row th { border-bottom: 2px solid #000; }
                 location.reload();
             } else {
                 applyBtn.disabled = false;
-                applyBtn.classList.remove('btn-saving');
                 changeCountEl.textContent = savedLabel;
             }
         } catch (e) {
             applyBtn.disabled = false;
-            applyBtn.classList.remove('btn-saving');
             changeCountEl.textContent = savedLabel;
         }
     });
