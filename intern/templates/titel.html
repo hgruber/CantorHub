@@ -63,6 +63,7 @@
                         data-song-id="{{ lied.id }}"
                         data-title="{{ lied.titel }}"
                         data-type="Original"
+                        {% if lied.komponist %}data-composer="{{ lied.komponist }}"{% endif %}
                         aria-label="Original – {{ lied.titel }} abspielen">
                     <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
                 </button>
@@ -76,6 +77,7 @@
                         data-song-id="r{{ lied.id }}"
                         data-title="{{ lied.titel }}"
                         data-type="JG Aufnahme"
+                        {% if lied.komponist %}data-composer="{{ lied.komponist }}"{% endif %}
                         aria-label="JG Aufnahme – {{ lied.titel }} abspielen">
                     <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
                     <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" class="audio-btn-logo" alt="JG" />

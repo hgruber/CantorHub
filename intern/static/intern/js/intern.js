@@ -504,14 +504,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const player = document.getElementById("mini-player");
     if (!player) return;
 
-    const titleEl   = player.querySelector(".mp-title");
-    const typeEl    = player.querySelector(".mp-type");
-    const playBtn   = player.querySelector(".mp-play");
-    const currentEl = player.querySelector(".mp-current");
-    const totalEl   = player.querySelector(".mp-total");
-    const progress  = player.querySelector(".mp-progress");
-    const bar       = player.querySelector(".mp-progress-bar");
-    const closeBtn  = player.querySelector(".mp-close");
+    const titleEl    = player.querySelector(".mp-title");
+    const composerEl = player.querySelector(".mp-composer");
+    const typeEl     = player.querySelector(".mp-type");
+    const prevBtn    = player.querySelector(".mp-prev");
+    const playBtn    = player.querySelector(".mp-play");
+    const nextBtn    = player.querySelector(".mp-next");
+    const currentEl  = player.querySelector(".mp-current");
+    const totalEl    = player.querySelector(".mp-total");
+    const progress   = player.querySelector(".mp-progress");
+    const bar        = player.querySelector(".mp-progress-bar");
+    const closeBtn   = player.querySelector(".mp-close");
 
     const ICON_PLAY  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
     const ICON_PAUSE = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
@@ -533,12 +536,18 @@ document.addEventListener("DOMContentLoaded", function () {
     function msAction(action, handler) {
       if (HAS_MS) { try { navigator.mediaSession.setActionHandler(action, handler); } catch (_) {} }
     }
+    function updateNavButtons() {
+      const hasPrev = queue.length > 0 && queueIndex > 0;
+      const hasNext = queue.length > 0 && queueIndex < queue.length - 1;
+      prevBtn.disabled = !hasPrev;
+      nextBtn.disabled = !hasNext;
+    }
     function msMetadata(item) {
       if (!HAS_MS) return;
       try {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: item.title || "",
-          artist: item.type || "",
+          artist: item.composer || item.type || "",
           album: "Just Gospel Frankfurt",
           artwork: ARTWORK,
         });
@@ -585,7 +594,9 @@ document.addEventListener("DOMContentLoaded", function () {
       bar.style.width = "0%";
       currentEl.textContent = "0:00";
       totalEl.textContent = "0:00";
+      composerEl.textContent = "";
       setMainIcon(false);
+      updateNavButtons();
       hide();
       msState("none");
       if (HAS_MS) { try { navigator.mediaSession.metadata = null; } catch (_) {} }
@@ -593,6 +604,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function loadTrack(item, onEnded) {
       if (audio) { try { audio.pause(); } catch (_) {} }
       titleEl.textContent = item.title || "";
+      composerEl.textContent = item.composer || "";
       let typeText = item.type || "";
       if (queue.length > 1) {
         typeText += ` · ${queueIndex + 1} / ${queue.length}`;
@@ -601,6 +613,7 @@ document.addEventListener("DOMContentLoaded", function () {
       bar.style.width = "0%";
       currentEl.textContent = "0:00";
       totalEl.textContent = "0:00";
+      updateNavButtons();
       audio = new Audio(item.url);
       audio.addEventListener("loadedmetadata", () => {
         totalEl.textContent = fmt(audio.duration);
@@ -633,6 +646,7 @@ document.addEventListener("DOMContentLoaded", function () {
         url: btn.dataset.audioUrl,
         title: btn.dataset.title || "",
         type: btn.dataset.type || "",
+        composer: btn.dataset.composer || "",
       }, stop);
     }
     function advance() {
@@ -697,6 +711,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     closeBtn.addEventListener("click", stop);
+
+    prevBtn.addEventListener("click", () => {
+      if (queueIndex > 0) { queueIndex--; loadTrack(queue[queueIndex], advance); }
+    });
+    nextBtn.addEventListener("click", () => {
+      if (queueIndex < queue.length - 1) { advance(); }
+    });
 
     progress.addEventListener("click", (e) => {
       if (!audio || !audio.duration) return;

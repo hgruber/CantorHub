@@ -110,13 +110,14 @@ def titel_list(request):
     table = RepertoireTabelle(qs, visible_fields=fields)
     playlist_originals, playlist_aufnahmen, playlist_all = [], [], []
     for lied in qs.select_related("original", "aufnahme"):
+        composer = lied.komponist or ""
         if lied.original:
-            playlist_originals.append({"url": lied.original.url, "title": lied.titel, "type": "Original"})
+            playlist_originals.append({"url": lied.original.url, "title": lied.titel, "type": "Original", "composer": composer})
         if lied.aufnahme:
-            playlist_aufnahmen.append({"url": lied.aufnahme.url, "title": lied.titel, "type": "JG Aufnahme"})
+            playlist_aufnahmen.append({"url": lied.aufnahme.url, "title": lied.titel, "type": "JG Aufnahme", "composer": composer})
         audio = lied.original or lied.aufnahme
         if audio:
-            playlist_all.append({"url": audio.url, "title": lied.titel, "type": "Original" if lied.original else "JG Aufnahme"})
+            playlist_all.append({"url": audio.url, "title": lied.titel, "type": "Original" if lied.original else "JG Aufnahme", "composer": composer})
     playlists = {"originals": playlist_originals, "aufnahmen": playlist_aufnahmen, "all": playlist_all}
     column_choices = [
         {

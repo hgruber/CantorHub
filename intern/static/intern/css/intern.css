@@ -3552,15 +3552,29 @@ span.not_found {
     color: var(--brand);
     display: inline-flex;
 }
+.mp-meta {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
 .mp-title {
     font-weight: 600;
     color: var(--t1);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    flex: 1 1 auto;
-    min-width: 0;
 }
+.mp-composer {
+    font-size: 11px;
+    color: var(--t3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: none;
+}
+.mp-composer:not(:empty) { display: block; }
 .mp-type {
     flex: 0 0 auto;
     font-size: 10.5px;
@@ -3576,10 +3590,12 @@ span.not_found {
 .mp-controls {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .mp-play,
+.mp-prev,
+.mp-next,
 .mp-close {
     display: inline-flex;
     align-items: center;
@@ -3601,10 +3617,24 @@ span.not_found {
 }
 .mp-play:hover { background: var(--brand-dark); }
 .mp-play:focus-visible,
+.mp-prev:focus-visible,
+.mp-next:focus-visible,
 .mp-close:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px var(--brand-ring);
 }
+
+.mp-prev,
+.mp-next {
+    width: 28px;
+    height: 28px;
+    color: var(--t3);
+    flex: 0 0 auto;
+}
+.mp-prev:hover:not(:disabled),
+.mp-next:hover:not(:disabled) { background: var(--hover-bg); color: var(--t1); }
+.mp-prev:disabled,
+.mp-next:disabled { opacity: 0.3; cursor: default; }
 
 .mp-close {
     width: 28px;
