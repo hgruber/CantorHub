@@ -1,5 +1,7 @@
 from django.contrib.auth.decorators import login_required, permission_required
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django_tables2 import RequestConfig
 
 from ..forms import OrtForm
@@ -13,12 +15,34 @@ __all__ = [
     "ort_edit",
 ]
 
+_PAGE_SIZE = 50
+
 
 @login_required
 def ort_list(request):
-    orte = Ort.objects.order_by("name")
-    table = OrtTabelle(orte)
+    qs = Ort.objects.order_by("name")
+
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+
+    page = list(qs[offset : offset + _PAGE_SIZE + 1])
+    has_more = len(page) > _PAGE_SIZE
+    if has_more:
+        page = page[:_PAGE_SIZE]
+
+    table = OrtTabelle(page)
     RequestConfig(request, paginate=False).configure(table)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string("table_rows.html", {"table": table})
+        return JsonResponse({
+            "html": html,
+            "has_more": has_more,
+            "next_offset": offset + _PAGE_SIZE,
+        })
+
     add = "ort_add" if request.user.has_perm("intern.add_ort") else None
     return render(request, "table.html", {
         "table": table,
@@ -27,6 +51,8 @@ def ort_list(request):
         "add": add,
         "add_form": OrtForm() if request.user.has_perm("intern.add_ort") else None,
         "add_label": "Neuer Ort",
+        "has_more": has_more,
+        "next_offset": offset + _PAGE_SIZE,
     })
 
 

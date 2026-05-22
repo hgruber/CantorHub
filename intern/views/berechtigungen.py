@@ -5,8 +5,11 @@ from django.contrib.auth.models import Group
 from django.db.models import Case, IntegerField, Value, When
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 
 from ..models import ChangeLog, User
+
+_PAGE_SIZE = 50
 
 STIMME_ORDER = Case(
     When(stimme="S", then=Value(0)),
@@ -67,18 +70,41 @@ def berechtigungen(request):
                 pass
         return JsonResponse({"ok": True})
 
-    # Build initial state matrix: {str(user_id): {"groups": [...], "is_superuser": bool}}
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+
+    page = list(users[offset : offset + _PAGE_SIZE + 1])
+    has_more = len(page) > _PAGE_SIZE
+    if has_more:
+        page = page[:_PAGE_SIZE]
+
     matrix = {
         str(u.pk): {
             "groups": [g.name for g in u.groups.all()],
             "is_superuser": u.is_superuser,
         }
-        for u in users
+        for u in page
     }
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string(
+            "berechtigungen_rows.html",
+            {"users": page, "groups": groups},
+        )
+        return JsonResponse({
+            "html": html,
+            "matrix": matrix,
+            "has_more": has_more,
+            "next_offset": offset + _PAGE_SIZE,
+        })
 
     return render(request, "berechtigungen.html", {
         "seitentitel": "Berechtigungen",
-        "users": users,
+        "users": page,
         "groups": groups,
         "matrix_json": json.dumps(matrix),
+        "has_more": has_more,
+        "next_offset": offset + _PAGE_SIZE,
     })

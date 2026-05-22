@@ -296,36 +296,13 @@
                         </th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for user in users %}
-                        <tr class="perm-row" data-user-id="{{ user.pk }}">
-                            <td class="perm-user-col perm-user-name{% if user.stimme and user.stimme != 'N' %} perm-stimme-{{ user.stimme|lower }}{% endif %}">
-                                <div class="perm-user-info">
-                                    <span class="badge badge-stimme-{{ user.stimme|lower|default:'n' }}">{{ user.stimme|default:"N" }}</span>
-                                    <span class="perm-name">{{ user.first_name }} {{ user.last_name }}</span>
-                                </div>
-                            </td>
-                            {% for group in groups %}
-                                <td class="perm-cell-td">
-                                    <button type="button"
-                                            class="perm-cell"
-                                            data-type="group"
-                                            data-user="{{ user.pk }}"
-                                            data-group="{{ group.name }}"
-                                            title="{{ group.name }}"></button>
-                                </td>
-                            {% endfor %}
-                            <td class="perm-cell-td perm-col-admin">
-                                <button type="button"
-                                        class="perm-cell-admin"
-                                        data-type="admin"
-                                        data-user="{{ user.pk }}"
-                                        title="Superuser (Admin)"></button>
-                            </td>
-                        </tr>
-                    {% endfor %}
+                <tbody id="perm-tbody">
+                    {% include "berechtigungen_rows.html" %}
                 </tbody>
             </table>
+            {% if has_more %}
+            <div id="perm-sentinel" class="table-sentinel" data-next-offset="{{ next_offset }}"></div>
+            {% endif %}
         </div>
     </div>
     <div class="perm-apply-bar" id="perm-apply-bar">
@@ -354,26 +331,27 @@
         return data ? data.is_superuser : false;
     }
 
-    // Initialise group cells
-    document.querySelectorAll('.perm-cell[data-type="group"]').forEach(function (btn) {
-        const userId = btn.dataset.user;
-        const group = btn.dataset.group;
-        if (isGroupGranted(userId, group)) {
-            btn.classList.add('granted');
-            btn.innerHTML = CHECKMARK;
-        }
-        btn.addEventListener('click', function () { toggleGroupCell(btn); });
-    });
+    function bindCells(root) {
+        root.querySelectorAll('.perm-cell[data-type="group"]').forEach(function (btn) {
+            const userId = btn.dataset.user;
+            const group = btn.dataset.group;
+            if (isGroupGranted(userId, group)) {
+                btn.classList.add('granted');
+                btn.innerHTML = CHECKMARK;
+            }
+            btn.addEventListener('click', function () { toggleGroupCell(btn); });
+        });
+        root.querySelectorAll('.perm-cell-admin[data-type="admin"]').forEach(function (btn) {
+            const userId = btn.dataset.user;
+            if (isAdminGranted(userId)) {
+                btn.classList.add('granted');
+                btn.innerHTML = CHECKMARK_GOLD;
+            }
+            btn.addEventListener('click', function () { toggleAdminCell(btn); });
+        });
+    }
 
-    // Initialise admin cells
-    document.querySelectorAll('.perm-cell-admin[data-type="admin"]').forEach(function (btn) {
-        const userId = btn.dataset.user;
-        if (isAdminGranted(userId)) {
-            btn.classList.add('granted');
-            btn.innerHTML = CHECKMARK_GOLD;
-        }
-        btn.addEventListener('click', function () { toggleAdminCell(btn); });
-    });
+    bindCells(document);
 
     function toggleGroupCell(btn) {
         const userId = btn.dataset.user;
@@ -425,20 +403,23 @@
                             : '';
     }
 
-    // Mark last row of each voice group for strong separator
-    const rows = Array.from(document.querySelectorAll('.perm-row'));
     function rowStimme(row) {
         const td = row.querySelector('.perm-user-col');
         if (!td) return '';
         const m = td.className.match(/perm-stimme-(\w)/);
         return m ? m[1] : '';
     }
-    rows.forEach(function (row, i) {
-        const next = rows[i + 1];
-        if (next && rowStimme(row) !== rowStimme(next)) {
-            row.classList.add('perm-row-group-last');
-        }
-    });
+    function markVoiceGroupLastRows() {
+        const rows = Array.from(document.querySelectorAll('.perm-row'));
+        rows.forEach(function (row, i) {
+            const next = rows[i + 1];
+            row.classList.toggle(
+                'perm-row-group-last',
+                Boolean(next) && rowStimme(row) !== rowStimme(next)
+            );
+        });
+    }
+    markVoiceGroupLastRows();
 
     function getCsrfToken() {
         const match = document.cookie.match(/csrftoken=([^;]+)/);
@@ -447,6 +428,56 @@
 
     const applyBtn = document.getElementById('perm-apply-btn');
     const changeCountEl = document.getElementById('perm-change-count');
+
+    (function setupInfiniteScroll() {
+        const sentinel = document.getElementById('perm-sentinel');
+        if (!sentinel) return;
+        const container = document.querySelector('.perm-matrix-wrap');
+        const tbody = document.getElementById('perm-tbody');
+        if (!container || !tbody) return;
+        let loading = false, done = false;
+        function buildUrl(offset) {
+            const p = new URLSearchParams(window.location.search);
+            p.set('offset', offset);
+            return window.location.pathname + '?' + p.toString();
+        }
+        function loadMore() {
+            if (loading || done) return;
+            const offset = parseInt(sentinel.dataset.nextOffset, 10);
+            loading = true;
+            sentinel.classList.add('loading');
+            fetch(buildUrl(offset), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(function (data) {
+                    Object.assign(matrixData, data.matrix || {});
+                    const temp = document.createElement('tbody');
+                    temp.innerHTML = data.html;
+                    const newRows = Array.from(temp.children);
+                    newRows.forEach(function (row) { tbody.appendChild(row); });
+                    newRows.forEach(bindCells);
+                    markVoiceGroupLastRows();
+                    if (data.has_more) {
+                        sentinel.dataset.nextOffset = data.next_offset;
+                    } else {
+                        done = true;
+                        observer.disconnect();
+                        sentinel.remove();
+                    }
+                })
+                .catch(function (e) { console.error('Berechtigungen scroll error:', e); })
+                .finally(function () {
+                    loading = false;
+                    if (!done) sentinel.classList.remove('loading');
+                });
+        }
+        const observer = new IntersectionObserver(function (entries) {
+            if (entries[0].isIntersecting) loadMore();
+        }, { root: container, rootMargin: '200px' });
+        observer.observe(sentinel);
+    })();
 
     applyBtn.addEventListener('click', async function () {
         applyBtn.disabled = true;

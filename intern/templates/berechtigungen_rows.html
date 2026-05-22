@@ -1,0 +1,27 @@
+{% for user in users %}
+<tr class="perm-row" data-user-id="{{ user.pk }}">
+    <td class="perm-user-col perm-user-name{% if user.stimme and user.stimme != 'N' %} perm-stimme-{{ user.stimme|lower }}{% endif %}">
+        <div class="perm-user-info">
+            <span class="badge badge-stimme-{{ user.stimme|lower|default:'n' }}">{{ user.stimme|default:"N" }}</span>
+            <span class="perm-name">{{ user.first_name }} {{ user.last_name }}</span>
+        </div>
+    </td>
+    {% for group in groups %}
+    <td class="perm-cell-td">
+        <button type="button"
+                class="perm-cell"
+                data-type="group"
+                data-user="{{ user.pk }}"
+                data-group="{{ group.name }}"
+                title="{{ group.name }}"></button>
+    </td>
+    {% endfor %}
+    <td class="perm-cell-td perm-col-admin">
+        <button type="button"
+                class="perm-cell-admin"
+                data-type="admin"
+                data-user="{{ user.pk }}"
+                title="Superuser (Admin)"></button>
+    </td>
+</tr>
+{% endfor %}

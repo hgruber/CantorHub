@@ -3,7 +3,9 @@ import threading
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.db.models import Count, OuterRef
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django_tables2 import RequestConfig
 
 from filer.models import File
@@ -15,6 +17,8 @@ from ..forms import MitgliedAddForm, UserEditForm
 from ..models import Mitteilung, User
 from ..tables import MitgliederFilter, MitgliederTabelle
 from .files import _get_file_extension
+
+_PAGE_SIZE = 50
 
 __all__ = [
     "mitglied_list",
@@ -41,7 +45,28 @@ def mitglied_list(request):
     from .files import visible_fields
 
     fields = visible_fields(request, "MitgliederTabelle")
-    table = MitgliederTabelle(mitglieder_filter.qs, visible_fields=fields)
+
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+
+    page = list(mitglieder_filter.qs[offset : offset + _PAGE_SIZE + 1])
+    has_more = len(page) > _PAGE_SIZE
+    if has_more:
+        page = page[:_PAGE_SIZE]
+
+    table = MitgliederTabelle(page, visible_fields=fields)
+    RequestConfig(request, paginate=False).configure(table)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string("table_rows.html", {"table": table})
+        return JsonResponse({
+            "html": html,
+            "has_more": has_more,
+            "next_offset": offset + _PAGE_SIZE,
+        })
+
     column_choices = [
         {
             "name": name,
@@ -51,7 +76,6 @@ def mitglied_list(request):
         for name in table.base_columns
     ]
 
-    RequestConfig(request, paginate=False).configure(table)
     return render(
         request,
         "table.html",
@@ -65,6 +89,8 @@ def mitglied_list(request):
             "add": "mitglied_add" if request.user.has_perm("intern.add_user") else None,
             "add_form": MitgliedAddForm() if request.user.has_perm("intern.add_user") else None,
             "add_label": "Neues Mitglied",
+            "has_more": has_more,
+            "next_offset": offset + _PAGE_SIZE,
         },
     )
 

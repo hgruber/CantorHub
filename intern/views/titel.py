@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
@@ -16,6 +17,8 @@ from ..forms import LiedEditForm
 from ..models import Konzert, Lied, Termin
 from ..tables import RepertoireFilter, RepertoireTabelle
 from .files import visible_fields, _get_file_extension
+
+_PAGE_SIZE = 50
 
 __all__ = [
     "titel_list",
@@ -107,7 +110,30 @@ def titel_list(request):
     qs = repertoire_filter.qs
     if konzert_id:
         qs = qs.annotate(position=F("konzert__position")).order_by("position")
-    table = RepertoireTabelle(qs, visible_fields=fields)
+
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+
+    page = list(qs[offset : offset + _PAGE_SIZE + 1])
+    has_more = len(page) > _PAGE_SIZE
+    if has_more:
+        page = page[:_PAGE_SIZE]
+
+    table = RepertoireTabelle(page, visible_fields=fields)
+    RequestConfig(request, paginate=False).configure(table)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string("table_rows.html", {"table": table})
+        return JsonResponse({
+            "html": html,
+            "has_more": has_more,
+            "next_offset": offset + _PAGE_SIZE,
+        })
+
+    # Playlists must include every (filtered) song so the player works for any row,
+    # not just the first page — build them from the full qs on initial render only.
     playlist_originals, playlist_aufnahmen, playlist_all = [], [], []
     for lied in qs.select_related("original", "aufnahme"):
         composer = lied.komponist or ""
@@ -128,7 +154,6 @@ def titel_list(request):
         for name in table.base_columns
         if name != "position"
     ]
-    RequestConfig(request, paginate=False).configure(table)
 
     add = "titel_add" if request.user.has_perm("intern.add_lied") else None
     seitentitel = "Repertoire"
@@ -158,6 +183,8 @@ def titel_list(request):
         "playlist_all_count": len(playlist_all),
         "konzert_id": konzert_id,
         "chips_skip": ["konzert"],
+        "has_more": has_more,
+        "next_offset": offset + _PAGE_SIZE,
     }
     if konzert_id and request.user.has_perm("intern.change_lied"):
         context["konzert_order_url"] = f"/intern/titel/?konzert={konzert_id}&edit"
