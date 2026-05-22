@@ -9,8 +9,9 @@ from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
-from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
+from django.http import FileResponse, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from docx import Document
@@ -156,8 +157,27 @@ def termin_list(request):
         qs = Termin.objects.filter(datum__gt=timezone_now()).order_by("datum")
     termin_queryset = qs.annotate(**annotations)
 
-    table = TerminTabelle(termin_queryset)
+    _PAGE_SIZE = 50
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+    rows = list(termin_queryset[offset : offset + _PAGE_SIZE + 1])
+    has_more = len(rows) > _PAGE_SIZE
+    if has_more:
+        rows = rows[:_PAGE_SIZE]
+
+    table = TerminTabelle(rows)
     RequestConfig(request, paginate=False).configure(table)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string("table_rows.html", {"table": table})
+        return JsonResponse({
+            "html": html,
+            "has_more": has_more,
+            "next_offset": offset + _PAGE_SIZE,
+        })
+
     from django.urls import reverse
 
     ical_secret = get_config("ICAL_SECRET")
@@ -182,6 +202,8 @@ def termin_list(request):
             "add_form": TerminForm() if request.user.has_perm("intern.add_termin") else None,
             "add_label": "Neuer Termin",
             "past": past,
+            "has_more": has_more,
+            "next_offset": offset + _PAGE_SIZE,
         },
     )
 

@@ -3,7 +3,7 @@
   <td class="nowrap">{{ entry.timestamp|date:"d.m.Y H:i" }}</td>
   <td>{{ entry.user|default:"System" }}</td>
   <td><span class="changelog-model">{{ entry.model_label }}</span> {{ entry.get_action_display }}</td>
-  <td class="muted">{{ entry.object_repr }}</td>
+  <td class="muted">{% if entry.object_url %}<a href="{{ entry.object_url }}">{{ entry.object_repr }}</a>{% else %}{{ entry.object_repr }}{% endif %}</td>
   <td>
     {% for label, old, new in entry.change_rows %}
     <div class="change-row">

@@ -134,6 +134,57 @@
     </div>
     {% endif %}
     {% render_table table %}
+    {% if has_more %}
+    <div id="table-sentinel" class="table-sentinel" data-next-offset="{{ next_offset }}"></div>
+    <script>
+    (function () {
+      var sentinel = document.getElementById('table-sentinel');
+      var tableView = sentinel && sentinel.closest('.table-view');
+      var container = tableView && tableView.querySelector('.table-container');
+      var tbody = container && container.querySelector('table tbody');
+      if (!sentinel || !container || !tbody) return;
+      // The sentinel must live inside the scrollable .table-container so it can
+      // actually scroll into view — .table-view itself has overflow: hidden.
+      container.appendChild(sentinel);
+      var loading = false, done = false;
+      function buildUrl(offset) {
+        var p = new URLSearchParams(window.location.search);
+        p.set('offset', offset);
+        return window.location.pathname + '?' + p.toString();
+      }
+      function loadMore() {
+        if (loading || done) return;
+        var offset = parseInt(sentinel.dataset.nextOffset, 10);
+        loading = true;
+        sentinel.classList.add('loading');
+        fetch(buildUrl(offset), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          })
+          .then(function (data) {
+            tbody.insertAdjacentHTML('beforeend', data.html);
+            if (data.has_more) {
+              sentinel.dataset.nextOffset = data.next_offset;
+            } else {
+              done = true;
+              observer.disconnect();
+              sentinel.remove();
+            }
+          })
+          .catch(function (e) { console.error('Infinite scroll error:', e); })
+          .finally(function () {
+            loading = false;
+            if (!done) sentinel.classList.remove('loading');
+          });
+      }
+      var observer = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting) loadMore();
+      }, { root: container, rootMargin: '200px' });
+      observer.observe(sentinel);
+    })();
+    </script>
+    {% endif %}
     {% if playlists_json %}
     <script id="playlists-data" type="application/json">{{ playlists_json|safe }}</script>
     {% endif %}

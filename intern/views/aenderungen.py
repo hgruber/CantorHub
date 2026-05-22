@@ -106,6 +106,15 @@ MODEL_LABELS = {
     "Group": "Gruppe",
 }
 
+# model_name → URL name used to build a detail-page link (only for non-delete actions)
+_OBJECT_VIEW = {
+    "Termin": "termin_view",
+    "Lied":   "titel_view",
+    "User":   "mitglied_view",
+    "Forum":  "forum_view",
+    "Ort":    "ort_view",
+}
+
 
 def _translate(model_name, field, value):
     table = _VALUE_TRANSLATIONS.get((model_name, field))
@@ -181,6 +190,14 @@ def _annotate_entries(entries):
             for k, v in entry.changes.items()
         ]
         entry.model_label = MODEL_LABELS.get(entry.model_name, entry.model_name)
+        view_name = _OBJECT_VIEW.get(entry.model_name)
+        if view_name and entry.action != ChangeLog.ACTION_DELETE:
+            try:
+                entry.object_url = reverse(view_name, args=[entry.object_id])
+            except Exception:
+                entry.object_url = None
+        else:
+            entry.object_url = None
     return entries
 
 

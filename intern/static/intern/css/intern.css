@@ -5196,7 +5196,8 @@ span.not_found {
 .nowrap { white-space: nowrap; }
 .changelog-model { font-weight: 600; color: var(--primary); }
 
-#changelog-sentinel {
+#changelog-sentinel,
+.table-sentinel {
   height: 40px;
   display: flex;
   align-items: center;
@@ -5204,6 +5205,7 @@ span.not_found {
   color: var(--text-muted);
   font-size: 0.875rem;
 }
-#changelog-sentinel.loading::after {
+#changelog-sentinel.loading::after,
+.table-sentinel.loading::after {
   content: "Lade \2026";
 }

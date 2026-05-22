@@ -85,6 +85,7 @@ def karte_ort_detail(request, pk):
             "breite": ort.breite, "laenge": ort.laenge,
         })
     if request.POST.get("delete"):
+        ort._audit_user = request.user
         ort.delete()
         return JsonResponse({"deleted": True})
     name = request.POST.get("name", "").strip()

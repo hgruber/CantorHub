@@ -15,6 +15,7 @@ from django.db.models import (
 from django.db.models.functions import Coalesce, Concat
 from django.http import JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 
@@ -267,17 +268,36 @@ def _folder_search_records(pk, q):
     return files_list
 
 
+_FOLDER_PAGE_SIZE = 50
+
+
 @login_required
 def folder_view(request, pk):
     from .files import _get_file_extension
 
     original_pk = pk  # 0 means root; keep for URLs
 
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+
     q = (request.GET.get("q") or "").strip()
     if len(q) >= 2:
-        files_list = _folder_search_records(original_pk, q)
-        table = OrdnerTabelle(files_list)
-        RequestConfig(request, paginate={"per_page": 50}).configure(table)
+        all_files = _folder_search_records(original_pk, q)
+        page_items = all_files[offset : offset + _FOLDER_PAGE_SIZE + 1]
+        has_more = len(page_items) > _FOLDER_PAGE_SIZE
+        if has_more:
+            page_items = page_items[:_FOLDER_PAGE_SIZE]
+        table = OrdnerTabelle(page_items)
+        RequestConfig(request, paginate=False).configure(table)
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            html = render_to_string("table_rows.html", {"table": table})
+            return JsonResponse({
+                "html": html,
+                "has_more": has_more,
+                "next_offset": offset + _FOLDER_PAGE_SIZE,
+            })
         if original_pk == 0:
             breadcrumb = []
         else:
@@ -294,6 +314,8 @@ def folder_view(request, pk):
                 "current_pk": original_pk,
                 "show_search": True,
                 "search_query": q,
+                "has_more": has_more,
+                "next_offset": offset + _FOLDER_PAGE_SIZE,
             },
         )
 
@@ -410,9 +432,25 @@ def folder_view(request, pk):
     for record in folder_up:
         record["groesse"] = None
 
-    table = OrdnerTabelle(folder_up + folders_list + files_list)
+    # Paginate folders + files; folder_up (..) is fixed and always shown on offset=0
+    paginatable = folders_list + files_list
+    page_items = paginatable[offset : offset + _FOLDER_PAGE_SIZE + 1]
+    has_more = len(page_items) > _FOLDER_PAGE_SIZE
+    if has_more:
+        page_items = page_items[:_FOLDER_PAGE_SIZE]
+    display_items = (folder_up if offset == 0 else []) + page_items
+
+    table = OrdnerTabelle(display_items)
     table.columns.hide("pfad")
     RequestConfig(request, paginate=False).configure(table)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string("table_rows.html", {"table": table})
+        return JsonResponse({
+            "html": html,
+            "has_more": has_more,
+            "next_offset": offset + _FOLDER_PAGE_SIZE,
+        })
 
     path_str = " / ".join(c["name"] for c in breadcrumb) if breadcrumb else "/"
     return render(
@@ -430,6 +468,8 @@ def folder_view(request, pk):
             "all_folders_flat": _build_folder_flat(),
             "show_search": True,
             "search_query": "",
+            "has_more": has_more,
+            "next_offset": offset + _FOLDER_PAGE_SIZE,
         },
     )
 
