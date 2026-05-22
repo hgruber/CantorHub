@@ -27,11 +27,15 @@
             });
         });
 
-        /* Omit "unknown" selects from GET params so the URL stays clean. */
+        /* Omit "unknown" selects from GET params so the URL stays clean.
+           Exception: selects marked data-keep-unknown stay in the URL so a
+           server-side default isn't re-applied when the user picks "Egal". */
         document.querySelectorAll(".filter-form").forEach(function (form) {
             form.addEventListener("submit", function () {
                 form.querySelectorAll(".tri-toggle-select").forEach(function (sel) {
-                    if (sel.value === "unknown") sel.disabled = true;
+                    if (sel.value === "unknown" && !sel.dataset.keepUnknown) {
+                        sel.disabled = true;
+                    }
                 });
             });
         });

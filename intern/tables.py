@@ -1,6 +1,7 @@
 import django_filters as filters
 import django_tables2 as tables
 from django import forms
+from django.contrib.auth.models import Group
 from django.db.models import Q
 from django.templatetags.static import static
 from django.urls import reverse
@@ -580,6 +581,14 @@ class MitgliederFilter(filters.FilterSet):
     stimme = filters.MultipleChoiceFilter(field_name="stimme", choices=User.STIMMEN)
     konzert_qs = Termin.objects.filter(anwesenheit=True).distinct().order_by("-datum")
 
+    aktiv = filters.BooleanFilter(field_name="is_active", label="Aktiv")
+    gruppen = filters.ModelMultipleChoiceFilter(
+        field_name="groups",
+        queryset=Group.objects.order_by("name"),
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
+        label="Gruppen",
+    )
+
     status = filters.ChoiceFilter(
         label="Status",
         choices=[
@@ -613,7 +622,28 @@ class MitgliederFilter(filters.FilterSet):
         model = User
         fields = [
             "stimme",
+            "aktiv",
+            "gruppen",
         ]
+
+    BOOLEAN_FILTER_FIELDS = ["aktiv"]
+    MANAGE_ONLY_FIELDS = ["aktiv", "gruppen"]
+
+    def __init__(self, *args, can_manage=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not can_manage:
+            for name in self.MANAGE_ONLY_FIELDS:
+                self.filters.pop(name, None)
+                self.form.fields.pop(name, None)
+            return
+        for name in self.BOOLEAN_FILTER_FIELDS:
+            if name in self.form.fields:
+                self.form.fields[name].widget = TriStateToggle()
+        if "aktiv" in self.form.fields:
+            # Server injects aktiv=true as default when the param is absent.
+            # Tell the toggle JS to keep "unknown" in the URL so users can
+            # explicitly choose "Egal" instead of falling back to the default.
+            self.form.fields["aktiv"].widget.attrs["data-keep-unknown"] = "true"
 
 
 class MitgliederTabelle(tables.Table):
@@ -644,9 +674,22 @@ class MitgliederTabelle(tables.Table):
     telefon_mobil = tables.Column()
     telefon_job_mobil = tables.Column()
     fax = tables.Column()
+    aktiv = tables.BooleanColumn(accessor="is_active", verbose_name="Aktiv")
+    gruppen = tables.Column(accessor="groups", verbose_name="Gruppen", orderable=False)
 
     class Meta:
         row_attrs = {"data-href": lambda record: reverse("mitglied_view", args=[record.id])}
+
+    def render_gruppen(self, record):
+        return ", ".join(g.name for g in record.groups.all())
+
+    def render_aktiv(self, value):
+        label = "Aktiv" if value else "Inaktiv"
+        cls = "status-dot--on" if value else "status-dot--off"
+        return format_html(
+            '<span class="status-dot {cls}" title="{label}" aria-label="{label}"></span>',
+            cls=cls, label=label,
+        )
 
     def __init__(self, *args, visible_fields=None, **kwargs):
         super().__init__(*args, **kwargs)

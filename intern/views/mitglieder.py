@@ -31,20 +31,29 @@ __all__ = [
 
 @login_required
 def mitglied_list(request):
+    can_manage = request.user.is_superuser or request.user.has_perm("intern.change_user")
+    base_qs = User.objects.all() if can_manage else User.objects.filter(is_active=True)
     queryset = (
-        User.objects.filter(is_active=True)
+        base_qs
         .annotate(
             mitteilungen=Mitteilung.objects.filter(sender=OuterRef("pk"))
             .values("sender")
             .annotate(cnt=Count("*"))
             .values("cnt")
         )
+        .prefetch_related("groups")
         .order_by("last_name", "first_name")
     )
-    mitglieder_filter = MitgliederFilter(request.GET, queryset=queryset)
+    filter_data = request.GET
+    if can_manage and "aktiv" not in filter_data:
+        filter_data = filter_data.copy()
+        filter_data["aktiv"] = "true"
+    mitglieder_filter = MitgliederFilter(filter_data, queryset=queryset, can_manage=can_manage)
     from .files import visible_fields
 
     fields = visible_fields(request, "MitgliederTabelle")
+    if not can_manage:
+        fields = [f for f in fields if f not in ("aktiv", "gruppen")]
 
     try:
         offset = max(0, int(request.GET.get("offset", 0)))
@@ -74,6 +83,7 @@ def mitglied_list(request):
             "checked": name in fields,
         }
         for name in table.base_columns
+        if can_manage or name not in ("aktiv", "gruppen")
     ]
 
     return render(
@@ -176,6 +186,7 @@ def mitglied_edit(request, id):
         "upload_folder_id": folders.avatare(),
         "upload_rename_to": id,
         "id": id,
+        "can_manage": request.user.is_superuser or request.user.has_perm("intern.change_user"),
     }
     return render(request, "mitglied_edit.html", context)
 

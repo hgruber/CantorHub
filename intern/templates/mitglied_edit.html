@@ -132,7 +132,7 @@
             {% else %}
             <a href="{% url 'mitglied_list' %}" class="btn btn-secondary">Abbrechen</a>
             {% endif %}
-            {% if id and request.user.is_superuser %}
+            {% if id and can_manage %}
             <form method="post" style="display:inline">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="deactivate">

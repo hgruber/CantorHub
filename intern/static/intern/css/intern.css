@@ -3512,6 +3512,21 @@ span.not_found {
 [data-theme="dark"] .eig-beats    { border-color: rgba(255,255,255,0.18); color: var(--t1); }
 [data-theme="dark"] .eig-chip:hover { background: rgba(193,68,104,0.18); }
 
+/* Aktiv/Inaktiv status dot — used in member tables */
+.status-dot {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    border: 1.5px solid var(--border-dark);
+    vertical-align: middle;
+}
+.status-dot--on  { background: #22c55e; border-color: #16a34a; }
+.status-dot--off { background: #ef4444; border-color: #dc2626; }
+[data-theme="dark"] .status-dot--on  { background: #16a34a; border-color: #22c55e; }
+[data-theme="dark"] .status-dot--off { background: #dc2626; border-color: #ef4444; }
+
 /* =================================================== */
 /* Floating mini audio player                          */
 /* =================================================== */

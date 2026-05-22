@@ -10,14 +10,16 @@ _NO_FILTER_VALUES = frozenset(("", "unknown", "1"))
 @register.inclusion_tag("filter_chips.html")
 def filter_chips(filter_obj, request, skip=None):
     chips = []
-    get = request.GET
+    # Use the filter form's bound data so view-injected defaults (e.g. aktiv=true
+    # for managers) surface as chips even when the URL itself has no params.
+    bound = filter_obj.form.data if filter_obj.form.is_bound else request.GET
     skip_set = set(skip) if skip else set()
 
     for field in filter_obj.form:
         name = field.name
         if name in skip_set:
             continue
-        values = get.getlist(name)
+        values = bound.getlist(name)
         if not values or all(v == "" for v in values):
             continue
 
@@ -27,9 +29,14 @@ def filter_chips(filter_obj, request, skip=None):
         ):
             continue
 
-        # Build URL without this param
+        # Build URL without this param. If the param wasn't in the URL (it was
+        # a server-injected default), explicitly opt out so the default isn't
+        # re-applied on the next request.
         params = request.GET.copy()
-        del params[name]
+        if name in params:
+            del params[name]
+        elif isinstance(field.field, NullBooleanField):
+            params[name] = "unknown"
         url = request.path + ("?" + params.urlencode() if params else "")
 
         label = field.label or name
