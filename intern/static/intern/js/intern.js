@@ -29,6 +29,8 @@ if (overlay) {
   function apply(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
+    const meta = document.getElementById("meta-theme-color");
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#1a1a2e" : "#ffffff");
     const lightIcon = btn.querySelector(".theme-icon-light");
     const darkIcon = btn.querySelector(".theme-icon-dark");
     const label = btn.querySelector(".theme-label");

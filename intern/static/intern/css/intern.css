@@ -195,6 +195,7 @@ body {
 .sidebar {
     width: var(--sb-width);
     height: 100vh;
+    height: 100dvh;
     background: var(--sb-bg);
     display: flex;
     flex-direction: column;
@@ -218,6 +219,8 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
     position: relative;
 }
 
@@ -3533,7 +3536,7 @@ span.not_found {
 .mini-player {
     position: fixed;
     left: 50%;
-    bottom: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
     transform: translate(-50%, calc(100% + 32px));
     width: min(520px, calc(100vw - 24px));
     background: var(--bg-card);
@@ -3733,6 +3736,7 @@ span.not_found {
         left: 0;
         top: 0;
         height: 100vh;
+        height: 100dvh;
         width: var(--sb-width) !important;
         transform: translateX(-100%);
         z-index: 800;

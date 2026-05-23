@@ -3,11 +3,17 @@
 <html lang="de">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <link rel="manifest" href="{% static 'intern/manifest.json' %}">
+        <meta name="theme-color" id="meta-theme-color" content="#ffffff">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <title>Just Gospel Intern – {{ seitentitel }}</title>
         <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
+        <link rel="apple-touch-icon" href="{% static 'intern/images/icon-192.png' %}">
         <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
-    <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark")})()</script>
+    <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark");var m=document.getElementById("meta-theme-color");if(m)m.setAttribute("content",t==="dark"?"#1a1a2e":"#ffffff")})()</script>
         <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         {% block extra_js %}{% endblock %}
