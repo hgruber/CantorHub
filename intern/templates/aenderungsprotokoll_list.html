@@ -60,6 +60,9 @@
 (function() {
   var sentinel = document.getElementById('changelog-sentinel');
   if (!sentinel) return;
+  var container = sentinel.closest('.table-container');
+  var tbody = document.getElementById('changelog-tbody');
+  if (!container || !tbody) return;
 
   var loading = false;
   var done = false;
@@ -79,9 +82,11 @@
     fetch(buildUrl(offset), {
       headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(function(data) {
-      var tbody = document.getElementById('changelog-tbody');
       tbody.insertAdjacentHTML('beforeend', data.html);
       if (data.has_more) {
         sentinel.dataset.nextOffset = data.next_offset;
@@ -91,7 +96,7 @@
         sentinel.remove();
       }
     })
-    .catch(function() {})
+    .catch(function(e) { console.error('Changelog scroll error:', e); })
     .finally(function() {
       loading = false;
       if (!done) sentinel.classList.remove('loading');
@@ -100,7 +105,7 @@
 
   var observer = new IntersectionObserver(function(entries) {
     if (entries[0].isIntersecting) loadMore();
-  }, { rootMargin: '200px' });
+  }, { root: container, rootMargin: '200px' });
 
   observer.observe(sentinel);
 })();
