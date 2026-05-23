@@ -274,7 +274,13 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
 [data-theme="dark"] .perm-col-cat-Repertoire { --perm-tint: rgba( 34,211,238,0.08); }
 [data-theme="dark"] .perm-col-cat-Mitglieder { --perm-tint: rgba(134,239,172,0.08); }
 
-@media (max-width: 768px) { .perm-apply-bar { left: 0; } }
+@media (max-width: 768px) {
+    .perm-apply-bar { left: 0; }
+    .perm-user-col { min-width: 0; }
+    .perm-user-name { padding: 8px; }
+    .perm-group-info { gap: 4px; }
+    .perm-group-count { display: none; }
+}
 </style>
 
 <div class="table-view">

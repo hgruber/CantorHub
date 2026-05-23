@@ -98,4 +98,6 @@ urlpatterns = [
     path("artikel/<str:name>/edit/", views.article_edit, name="article_edit"),
     path("artikel/<str:name>/versionen/", views.article_history, name="article_history"),
     path("artikel/<str:name>/diff/", views.article_diff, name="article_diff"),
+    path("artikel/<str:name>/berechtigungen/", views.article_permissions, name="article_permissions"),
+    path("artikel/<str:name>/loeschen/", views.article_delete, name="article_delete"),
 ]

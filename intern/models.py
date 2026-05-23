@@ -105,6 +105,9 @@ class Artikel(models.Model):
     class Meta:
         unique_together = ("name", "version")
         verbose_name_plural = "Artikel"
+        permissions = [
+            ("manage_artikel_permissions", "Artikel-Berechtigungen bearbeiten"),
+        ]
 
     def __str__(self):
         return self.name
@@ -139,6 +142,23 @@ class Artikel(models.Model):
         for artikel in qs:
             dateien.update(pattern.findall(artikel.text))
         return sorted(dateien)
+
+
+class ArtikelPermission(models.Model):
+    artikel_name = models.CharField(max_length=256)
+    group = models.ForeignKey(
+        "auth.Group", on_delete=models.CASCADE, related_name="artikel_permissions"
+    )
+    can_read = models.BooleanField(default=False)
+    can_edit = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = [("artikel_name", "group")]
+        verbose_name = "Artikelberechtigung"
+        verbose_name_plural = "Artikelberechtigungen"
+
+    def __str__(self):
+        return f"{self.artikel_name} – {self.group}"
 
 
 class ForumQuerySet(models.QuerySet):

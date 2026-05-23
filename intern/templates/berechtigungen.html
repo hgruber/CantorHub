@@ -274,7 +274,13 @@
 [data-theme="dark"] .perm-corner,
 [data-theme="dark"] .perm-col-head { background: var(--bg-thead); }
 
-@media (max-width: 768px) { .perm-apply-bar { left: 0; } }
+@media (max-width: 768px) {
+    .perm-apply-bar { left: 0; }
+    .perm-user-col { min-width: 0; }
+    .perm-user-name { padding: 8px; }
+    .perm-user-info { gap: 0; }
+    .perm-user-info .badge { display: none; }
+}
     </style>
     <div class="table-view">
         <div class="perm-matrix-wrap">

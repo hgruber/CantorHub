@@ -10,9 +10,8 @@ from ..models import ChangeLog
 __all__ = ["gruppen"]
 
 PERMISSION_DEFS = [
-    ("intern.add_artikel",    "anlegen",      "Artikel"),
-    ("intern.change_artikel", "bearbeiten",   "Artikel"),
-    ("intern.delete_artikel", "löschen",      "Artikel"),
+    ("intern.delete_artikel",             "löschen",        "Artikel"),
+    ("intern.manage_artikel_permissions", "Berechtigungen", "Artikel"),
     ("intern.add_forum",      "anlegen",      "Forum"),
     ("intern.change_forum",   "bearbeiten",   "Forum"),
     ("intern.delete_forum",   "löschen",      "Forum"),
