@@ -123,8 +123,13 @@
                                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             }).addTo(map);
 
-                            // Füge einen Marker hinzu
-                            L.marker([lat, lng]).addTo(map)
+                            // Füge einen Marker hinzu (gleiche Farbe wie auf /intern/karte/)
+                            var memberIcon = L.divIcon({
+                                className: '',
+                                html: '<div class="karte-pin" style="--pin-color:var(--brand)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>',
+                                iconSize: [28, 36], iconAnchor: [14, 36], popupAnchor: [0, -38],
+                            });
+                            L.marker([lat, lng], {icon: memberIcon}).addTo(map)
                                 .bindPopup('{{ user.first_name }} {{ user.last_name }}')
                                 .openPopup();
                         } else {

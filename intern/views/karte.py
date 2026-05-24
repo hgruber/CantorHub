@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
-from ..models import Ort, Standort, User
+from ..models import ADDRESS_TRIGGER_FIELDS, Ort, Standort, User
 
 __all__ = [
     "karte_view",
@@ -32,11 +32,21 @@ def karte_view(request):
          "adresse": ", ".join(filter(None, [o.strasse, f"{o.plz or ''} {o.ort or ''}".strip()]))}
         for o in Ort.objects.filter(breite__isnull=False, laenge__isnull=False)
     ]
-    members = [
-        {"id": u.id, "name": f"{u.first_name} {u.last_name}".strip() or u.username,
-         "breite": u.breite, "laenge": u.laenge}
-        for u in User.objects.filter(is_active=True, breite__isnull=False, laenge__isnull=False)
-    ]
+    viewer = request.user
+    members = []
+    for u in User.objects.filter(is_active=True, breite__isnull=False, laenge__isnull=False):
+        hidden = set(u.private_fields or [])
+        if hidden & ADDRESS_TRIGGER_FIELDS and not (
+            viewer.id == u.id or viewer.is_superuser
+            or viewer.has_perm("intern.change_user")
+        ):
+            continue
+        members.append({
+            "id": u.id,
+            "name": f"{u.first_name} {u.last_name}".strip() or u.username,
+            "breite": u.breite,
+            "laenge": u.laenge,
+        })
     standorte = _standorte_data(request.user)
     return render(request, "karte.html", {
         "seitentitel": "Karte",
