@@ -207,6 +207,29 @@ class ArtikelPermission(models.Model):
         return f"{self.artikel_name} – {self.group}"
 
 
+class FolderPermission(models.Model):
+    folder = models.ForeignKey(
+        "filer.Folder", on_delete=models.CASCADE, related_name="folder_permissions"
+    )
+    group = models.ForeignKey(
+        "auth.Group", on_delete=models.CASCADE, related_name="folder_permissions"
+    )
+    can_read = models.BooleanField(default=False)
+    can_write = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = [("folder", "group")]
+        verbose_name = "Ordnerberechtigung"
+        verbose_name_plural = "Ordnerberechtigungen"
+        permissions = [
+            ("manage_folder_permissions", "Kann Ordner-Berechtigungen verwalten"),
+        ]
+
+    def __str__(self):
+        return f"{self.folder} – {self.group}"
+
+
 class ForumQuerySet(models.QuerySet):
     def extra_data(self):
         # Get the full name of the sender of the most recent message

@@ -10,27 +10,35 @@ from ..models import ChangeLog
 __all__ = ["gruppen"]
 
 PERMISSION_DEFS = [
+    # Aktuell (Artikel)
     ("intern.delete_artikel",             "löschen",        "Artikel"),
     ("intern.manage_artikel_permissions", "Berechtigungen", "Artikel"),
-    ("intern.add_forum",      "anlegen",      "Forum"),
-    ("intern.change_forum",   "bearbeiten",   "Forum"),
-    ("intern.delete_forum",   "löschen",      "Forum"),
-    ("filer.add_folder",      "anlegen",      "Dateien"),
-    ("filer.change_folder",   "bearbeiten",   "Dateien"),
-    ("filer.delete_folder",   "löschen",      "Dateien"),
-    ("intern.add_ort",        "anlegen",      "Orte"),
-    ("intern.change_ort",     "bearbeiten",   "Orte"),
-    ("intern.delete_ort",     "löschen",      "Orte"),
-    ("intern.add_termin",     "anlegen",      "Termine"),
-    ("intern.change_termin",  "bearbeiten",   "Termine"),
-    ("intern.delete_termin",  "löschen",      "Termine"),
-    ("intern.change_zusage",  "Anwesenheit",  "Termine"),
-    ("intern.add_lied",       "anlegen",      "Repertoire"),
-    ("intern.change_lied",    "bearbeiten",   "Repertoire"),
-    ("intern.delete_lied",    "löschen",      "Repertoire"),
-    ("intern.add_user",       "anlegen",      "Mitglieder"),
-    ("intern.change_user",    "bearbeiten",   "Mitglieder"),
-    ("intern.delete_user",    "löschen",      "Mitglieder"),
+    # Forum
+    ("intern.add_forum",                  "anlegen",        "Forum"),
+    ("intern.change_forum",               "bearbeiten",     "Forum"),
+    ("intern.delete_forum",               "löschen",        "Forum"),
+    # Termine
+    ("intern.add_termin",                 "anlegen",        "Termine"),
+    ("intern.change_termin",              "bearbeiten",     "Termine"),
+    ("intern.delete_termin",              "löschen",        "Termine"),
+    ("intern.change_zusage",              "Anwesenheit",    "Termine"),
+    # Repertoire
+    ("intern.add_lied",                   "anlegen",        "Repertoire"),
+    ("intern.change_lied",                "bearbeiten",     "Repertoire"),
+    ("intern.delete_lied",                "löschen",        "Repertoire"),
+    # Mitglieder
+    ("intern.add_user",                   "anlegen",        "Mitglieder"),
+    ("intern.change_user",                "bearbeiten",     "Mitglieder"),
+    ("intern.delete_user",                "löschen",        "Mitglieder"),
+    # Orte
+    ("intern.add_ort",                    "anlegen",        "Orte"),
+    ("intern.change_ort",                 "bearbeiten",     "Orte"),
+    ("intern.delete_ort",                 "löschen",        "Orte"),
+    # Dateien
+    ("filer.add_folder",                  "anlegen",        "Dateien"),
+    ("filer.change_folder",               "bearbeiten",     "Dateien"),
+    ("filer.delete_folder",               "löschen",        "Dateien"),
+    ("intern.manage_folder_permissions",  "Berechtigungen", "Dateien"),
 ]
 
 # Human-readable label for each permission string, e.g. "intern.add_artikel" → "Artikel anlegen"

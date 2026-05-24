@@ -2,6 +2,7 @@ import posixpath
 import zipfile
 
 from django.contrib.auth.decorators import login_required, permission_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import (
     Count,
     F,
@@ -13,7 +14,7 @@ from django.db.models import (
     Value,
 )
 from django.db.models.functions import Coalesce, Concat
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import Http404, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
@@ -23,7 +24,13 @@ from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
 from intern import folders
+from intern.folder_access import (
+    folder_access,
+    is_folder_visible,
+    visible_folder_ids,
+)
 
+from ..models import FolderPermission
 from ..tables import OrdnerTabelle
 
 __all__ = [
@@ -37,8 +44,10 @@ __all__ = [
 ]
 
 
-def _build_folder_flat(exclude_pk=None):
-    """Return all folders as a flat list with full path strings, for the folder picker."""
+def _build_folder_flat(exclude_pk=None, user=None):
+    """Return all folders as a flat list with full path strings, for the folder picker.
+
+    When `user` is given, restrict the list to folders the user can read."""
     all_fldrs = list(Folder.objects.order_by("name").values("id", "name", "parent_id"))
     folder_map = {f["id"]: f for f in all_fldrs}
 
@@ -55,19 +64,35 @@ def _build_folder_flat(exclude_pk=None):
             cur = par
         return " / ".join(reversed(parts))
 
+    if user is not None:
+        visible_ids = visible_folder_ids(user)
+        all_fldrs = [f for f in all_fldrs if f["id"] in visible_ids]
+
     return [
         {"id": f["id"], "path": path_of(f)} for f in all_fldrs if f["id"] != exclude_pk
     ]
 
 
-def _folder_breadcrumb(folder):
-    """Walk parent chain and return list of {name, pk} from root → current."""
+def _folder_breadcrumb(folder, user=None):
+    """Walk parent chain and return list of {name, pk} from root → current.
+
+    When `user` is given, the chain is truncated to start at the deepest readable
+    ancestor — folders the user can't see are dropped."""
     crumbs = []
     cur = folder
     while cur:
         crumbs.append({"name": cur.name, "pk": cur.pk})
         cur = cur.parent
     crumbs.reverse()
+    if user is not None and not (user.is_authenticated and user.is_superuser):
+        visible_ids = visible_folder_ids(user) if user.is_authenticated else set()
+        # Drop leading crumbs that aren't visible
+        first_visible = 0
+        for i, c in enumerate(crumbs):
+            if c["pk"] in visible_ids:
+                first_visible = i
+                break
+        crumbs = crumbs[first_visible:]
     return crumbs
 
 
@@ -195,9 +220,11 @@ def _descendant_folder_ids(pk):
     return ids
 
 
-def _folder_path_map():
-    """Map folder id → full path string ('A / B / C'), for labelling search hits."""
-    return {f["id"]: f["path"] for f in _build_folder_flat()}
+def _folder_path_map(user=None):
+    """Map folder id → full path string ('A / B / C'), for labelling search hits.
+
+    When `user` is given, restrict to folders the user can read."""
+    return {f["id"]: f["path"] for f in _build_folder_flat(user=user)}
 
 
 def _attach_thumbnails(files_list):
@@ -223,16 +250,22 @@ def _attach_thumbnails(files_list):
             pass
 
 
-def _folder_search_records(pk, q):
+def _folder_search_records(pk, q, user=None):
     """Recursively find files under folder pk (pk=0 = all folders) whose filename
     or indexed text content contains q. Returns OrdnerTabelle record dicts with
-    an added 'pfad' key showing each file's folder path."""
+    an added 'pfad' key showing each file's folder path.
+
+    When `user` is given, hits are restricted to readable folders."""
     from intern.fileindex import ensure_indexed
 
     if pk == 0:
         scope = File.objects.all()
     else:
         scope = File.objects.filter(folder_id__in=_descendant_folder_ids(pk))
+
+    if user is not None:
+        visible_ids = visible_folder_ids(user)
+        scope = scope.filter(folder_id__in=visible_ids)
 
     ensure_indexed(scope)
 
@@ -261,7 +294,7 @@ def _folder_search_records(pk, q):
     files_list = list(matched)
     _attach_thumbnails(files_list)
 
-    path_map = _folder_path_map()
+    path_map = _folder_path_map(user=user)
     for record in files_list:
         record["pfad"] = path_map.get(record["folder_id"], "/")
         record["groesse"] = record.get("size") or 0
@@ -284,7 +317,7 @@ def folder_view(request, pk):
 
     q = (request.GET.get("q") or "").strip()
     if len(q) >= 2:
-        all_files = _folder_search_records(original_pk, q)
+        all_files = _folder_search_records(original_pk, q, user=request.user)
         page_items = all_files[offset : offset + _FOLDER_PAGE_SIZE + 1]
         has_more = len(page_items) > _FOLDER_PAGE_SIZE
         if has_more:
@@ -301,7 +334,7 @@ def folder_view(request, pk):
         if original_pk == 0:
             breadcrumb = []
         else:
-            breadcrumb = _folder_breadcrumb(Folder.objects.get(pk=original_pk))
+            breadcrumb = _folder_breadcrumb(Folder.objects.get(pk=original_pk), user=request.user)
         path_str = " / ".join(c["name"] for c in breadcrumb) if breadcrumb else "/"
         return render(
             request,
@@ -328,8 +361,10 @@ def folder_view(request, pk):
         breadcrumb = []
     else:
         current = Folder.objects.get(pk=pk)
+        if not is_folder_visible(request.user, current):
+            raise Http404
         parent = current.parent
-        breadcrumb = _folder_breadcrumb(current)
+        breadcrumb = _folder_breadcrumb(current, user=request.user)
         if current is not None:
             folder_up = [
                 {
@@ -356,8 +391,9 @@ def folder_view(request, pk):
             file_count=Count("id"),
         )
     )
+    visible_ids = visible_folder_ids(request.user)
     folders_qs = (
-        Folder.objects.filter(parent_id=pk)
+        Folder.objects.filter(parent_id=pk, id__in=visible_ids)
         .values(
             "id",
             "name",
@@ -453,6 +489,14 @@ def folder_view(request, pk):
         })
 
     path_str = " / ".join(c["name"] for c in breadcrumb) if breadcrumb else "/"
+    permissions_url = None
+    if current is not None and (
+        request.user.is_superuser
+        or request.user.has_perm("intern.manage_folder_permissions")
+    ):
+        from django.urls import reverse
+        permissions_url = reverse("folder_permissions", args=[current.pk])
+
     return render(
         request,
         "table.html",
@@ -465,68 +509,114 @@ def folder_view(request, pk):
             "show_file_actions": True,
             "new_folder_pk": original_pk,
             "current_pk": original_pk,
-            "all_folders_flat": _build_folder_flat(),
+            "all_folders_flat": _build_folder_flat(user=request.user),
             "show_search": True,
             "search_query": "",
             "has_more": has_more,
             "next_offset": offset + _FOLDER_PAGE_SIZE,
+            "permissions_url": permissions_url,
         },
     )
 
 
-@permission_required("filer.add_folder", raise_exception=True)
+@login_required
 @require_POST
 def folder_create(request, pk):
+    parent = Folder.objects.filter(pk=pk).first() if pk != 0 else None
+    if pk != 0 and parent is None:
+        raise Http404
+    if pk != 0 and not is_folder_visible(request.user, parent):
+        raise Http404
+    _, can_write, _ = folder_access(request.user, parent)
+    if not can_write and not request.user.has_perm("filer.add_folder"):
+        raise PermissionDenied
+
     name = request.POST.get("name", "").strip()
     if name:
-        Folder.objects.create(
+        new_folder = Folder.objects.create(
             name=name,
             parent_id=pk if pk != 0 else None,
             owner=request.user,
         )
+        # Copy parent's FolderPermission rows to the new subfolder
+        if parent is not None:
+            FolderPermission.objects.bulk_create([
+                FolderPermission(
+                    folder=new_folder,
+                    group_id=p.group_id,
+                    can_read=p.can_read,
+                    can_write=p.can_write,
+                    can_delete=p.can_delete,
+                )
+                for p in FolderPermission.objects.filter(folder=parent)
+            ])
         folders.invalidate()
     return redirect("folder_view", pk=pk)
 
 
-@permission_required("filer.add_folder", raise_exception=True)
+@login_required
 @require_POST
 def folder_delete(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
+    can_delete_folder = request.user.has_perm("filer.delete_folder")
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
+            # Folder deletion needs Layer 1 only
+            if not can_delete_folder:
+                continue
             try:
                 _delete_folder_deep(Folder.objects.get(pk=item_id))
             except Folder.DoesNotExist:
                 pass
         else:
+            # File deletion needs can_delete on containing folder
             try:
-                File.objects.get(pk=item_id).delete()
+                f = File.objects.get(pk=item_id)
             except File.DoesNotExist:
-                pass
+                continue
+            _, _, can_del = folder_access(request.user, f.folder)
+            if not can_del:
+                continue
+            f.delete()
     folders.invalidate()
     return redirect("folder_view", pk=referer_pk)
 
 
-@permission_required("filer.add_folder", raise_exception=True)
+@permission_required("filer.change_folder", raise_exception=True)
 @require_POST
 def folder_move(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
     raw_target = request.POST.get("target_pk", "")
     target_id = int(raw_target) if raw_target and raw_target != "0" else None
+    target = Folder.objects.filter(pk=target_id).first() if target_id else None
+    _, target_write, _ = folder_access(request.user, target)
+    if not target_write:
+        raise PermissionDenied
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
             Folder.objects.filter(pk=item_id).update(parent_id=target_id)
         else:
+            try:
+                f = File.objects.get(pk=item_id)
+            except File.DoesNotExist:
+                continue
+            _, src_write, _ = folder_access(request.user, f.folder)
+            if not src_write:
+                continue
             File.objects.filter(pk=item_id).update(folder_id=target_id)
     return redirect("folder_view", pk=referer_pk)
 
 
-@permission_required("filer.add_folder", raise_exception=True)
+@permission_required("filer.change_folder", raise_exception=True)
 @require_POST
 def folder_copy(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
     raw_target = request.POST.get("target_pk", "")
     target_id = int(raw_target) if raw_target and raw_target != "0" else None
+    target = Folder.objects.filter(pk=target_id).first() if target_id else None
+    _, target_write, _ = folder_access(request.user, target)
+    if not target_write:
+        raise PermissionDenied
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
             try:
@@ -553,7 +643,7 @@ def folder_copy(request):
     return redirect("folder_view", pk=referer_pk)
 
 
-@permission_required("filer.add_folder", raise_exception=True)
+@permission_required("filer.change_folder", raise_exception=True)
 @require_POST
 def folder_rename(request):
     item_type = request.POST.get("type", "")
@@ -564,6 +654,9 @@ def folder_rename(request):
     item_id = int(raw_id)
     if item_type == "Folder":
         folder = get_object_or_404(Folder, pk=item_id)
+        _, can_write, _ = folder_access(request.user, folder)
+        if not can_write:
+            raise PermissionDenied
         if Folder.objects.filter(parent_id=folder.parent_id, name=new_name).exclude(pk=item_id).exists():
             return JsonResponse({"status": "error", "message": "Name bereits vergeben."}, status=400)
         folder.name = new_name
@@ -571,6 +664,9 @@ def folder_rename(request):
         folders.invalidate()
     elif item_type == "File":
         f = get_object_or_404(File, pk=item_id)
+        _, can_write, _ = folder_access(request.user, f.folder)
+        if not can_write:
+            raise PermissionDenied
         f.original_filename = new_name
         f.name = new_name
         f.save(update_fields=["original_filename", "name"])
@@ -582,6 +678,8 @@ def folder_rename(request):
 @login_required
 def folder_zip_download(request, pk):
     folder = get_object_or_404(Folder, pk=pk)
+    if not is_folder_visible(request.user, folder):
+        raise Http404
 
     def generator():
         buf = _ZipBuffer()

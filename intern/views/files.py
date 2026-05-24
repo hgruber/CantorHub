@@ -129,6 +129,8 @@ def _route_and_rename_for_lied(lied, filer_file, source_name):
 @require_POST
 def upload(request):
     if request.FILES:
+        from intern.folder_access import folder_access
+
         file = request.FILES["file"]
         preferred_folder_id = request.POST.get("folder_id")
         rename_to = request.POST.get("rename_to")
@@ -159,14 +161,37 @@ def upload(request):
                 {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
             )
 
-        # Create file record
-        filer_file = File.objects.create(
-            file=file,
-            original_filename=file.name,
-            name=file.name,
-            owner=request.user,
-            folder_id=folder_id,
-        )
+        target_folder = Folder.objects.filter(pk=folder_id).first()
+        _, can_write, _ = folder_access(request.user, target_folder)
+        if not can_write:
+            return JsonResponse(
+                {"status": "error", "message": "Keine Schreibrechte für diesen Ordner"},
+                status=403,
+            )
+
+        # Overwrite in-place if a file with the same name already exists here.
+        # Replacing the .file field updates content but keeps the same File PK,
+        # so existing Lied/Artikel/Forum references remain intact.
+        existing = File.objects.filter(
+            folder_id=folder_id, original_filename=file.name
+        ).first()
+        if existing is not None:
+            try:
+                existing.file.delete(save=False)
+            except Exception:
+                pass
+            existing.file = file
+            existing.owner = request.user
+            existing.save()
+            filer_file = existing
+        else:
+            filer_file = File.objects.create(
+                file=file,
+                original_filename=file.name,
+                name=file.name,
+                owner=request.user,
+                folder_id=folder_id,
+            )
 
         # Rename file if requested (e.g. avatar → <user_id>.<ext>)
         if rename_to:
@@ -209,12 +234,15 @@ def upload(request):
 
 @login_required
 def file_search(request):
+    from intern.folder_access import visible_folder_ids
+
     q = request.GET.get("q", "")
     if not q:
         return JsonResponse([], safe=False)
+    visible_ids = visible_folder_ids(request.user)
     files = (
         File.objects
-        .filter(original_filename__istartswith=q)
+        .filter(original_filename__istartswith=q, folder_id__in=visible_ids)
         .only("id", "original_filename", "file")[:20]
     )
     results = [{"id": f.id, "name": f.original_filename, "url": f.url} for f in files]
@@ -275,12 +303,21 @@ def _unique_folder_name(parent_id, base):
 
 @login_required
 def file_unzip(request, pk):
+    from intern.folder_access import folder_access
+
     src_file = get_object_or_404(File, pk=pk)
     original = (src_file.original_filename or src_file.name or "").lower()
     if not original.endswith(".zip"):
         return JsonResponse({"status": "error", "message": "Keine Zip-Datei."}, status=400)
 
     parent_id = src_file.folder_id
+    parent_folder = Folder.objects.filter(pk=parent_id).first() if parent_id else None
+    _, can_write, _ = folder_access(request.user, parent_folder)
+    if not can_write:
+        return JsonResponse(
+            {"status": "error", "message": "Keine Schreibrechte für diesen Ordner"},
+            status=403,
+        )
     with src_file.file.open("rb") as fh:
         payload = fh.read()
     try:

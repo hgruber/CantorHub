@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>{% endblock %}
+{% block content %}
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <div class="detail-info">
+            <h1>{{ folder.name }}</h1>
+            <p class="detail-subtitle">Ordnerberechtigungen verwalten · Kein Eintrag = für alle Mitglieder zugänglich</p>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="detail-cards">
+            <div class="detail-card">
+                <h3>Lesen</h3>
+                <label class="radio-label">
+                    <input type="radio" name="read_mode" value="all"
+                           {% if not read_restricted %}checked{% endif %}
+                           onchange="toggleGroups('read', this.value)">
+                    Alle Mitglieder
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="read_mode" value="restricted"
+                           {% if read_restricted %}checked{% endif %}
+                           onchange="toggleGroups('read', this.value)">
+                    Nur bestimmte Gruppen
+                </label>
+                <div id="read-groups" class="group-checkboxes"
+                     {% if not read_restricted %}hidden{% endif %}>
+                    {% for group in groups %}
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="read_groups" value="{{ group.id }}"
+                               {% if group.id in read_group_ids %}checked{% endif %}>
+                        {{ group.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Schreiben</h3>
+                <label class="radio-label">
+                    <input type="radio" name="write_mode" value="all"
+                           {% if not write_restricted %}checked{% endif %}
+                           onchange="toggleGroups('write', this.value)">
+                    Alle Mitglieder
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="write_mode" value="restricted"
+                           {% if write_restricted %}checked{% endif %}
+                           onchange="toggleGroups('write', this.value)">
+                    Nur bestimmte Gruppen
+                </label>
+                <div id="write-groups" class="group-checkboxes"
+                     {% if not write_restricted %}hidden{% endif %}>
+                    {% for group in groups %}
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="write_groups" value="{{ group.id }}"
+                               {% if group.id in write_group_ids %}checked{% endif %}>
+                        {{ group.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Löschen</h3>
+                <label class="radio-label">
+                    <input type="radio" name="delete_mode" value="all"
+                           {% if not delete_restricted %}checked{% endif %}
+                           onchange="toggleGroups('delete', this.value)">
+                    Alle Mitglieder
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="delete_mode" value="restricted"
+                           {% if delete_restricted %}checked{% endif %}
+                           onchange="toggleGroups('delete', this.value)">
+                    Nur bestimmte Gruppen
+                </label>
+                <div id="delete-groups" class="group-checkboxes"
+                     {% if not delete_restricted %}hidden{% endif %}>
+                    {% for group in groups %}
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="delete_groups" value="{{ group.id }}"
+                               {% if group.id in delete_group_ids %}checked{% endif %}>
+                        {{ group.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            <a href="{% url 'folder_view' pk=folder.pk %}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.detail-card .radio-label,
+.detail-card .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    cursor: pointer;
+    color: var(--t2);
+    font-size: 14px;
+}
+.detail-card .group-checkboxes {
+    margin-top: 0.5rem;
+    padding-left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    border-top: 1px solid var(--bg-row-hover);
+    padding-top: 0.5rem;
+}
+.detail-card .group-checkboxes[hidden] { display: none; }
+</style>
+
+<script>
+function toggleGroups(section, value) {
+    var el = document.getElementById(section + '-groups');
+    if (!el) return;
+    if (value === 'restricted') {
+        el.removeAttribute('hidden');
+    } else {
+        el.setAttribute('hidden', '');
+    }
+}
+</script>
+{% endblock %}

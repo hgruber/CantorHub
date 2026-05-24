@@ -29,6 +29,7 @@ urlpatterns = [
     path("file-search/", views.file_search, name="file_search"),
     path("article-search/", views.article_search, name="article_search"),
     path("ordner/<int:pk>/", views.folder_view, name="folder_view"),
+    path("ordner/<int:pk>/berechtigungen/", views.folder_permissions, name="folder_permissions"),
     path("ordner/<int:pk>/neu/", views.folder_create, name="folder_create"),
     path("ordner/<int:pk>/zip/", views.folder_zip_download, name="folder_zip"),
     path("ordner/loeschen/", views.folder_delete, name="folder_delete"),

@@ -2,15 +2,18 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
-from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.core.exceptions import PermissionDenied
+from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 
-from ..models import ChangeLog, User
+from filer.models import Folder
+
+from ..models import ChangeLog, FolderPermission, User
 
 _PAGE_SIZE = 50
 
-__all__ = ["berechtigungen"]
+__all__ = ["berechtigungen", "folder_permissions"]
 
 
 @login_required
@@ -95,4 +98,70 @@ def berechtigungen(request):
         "matrix_json": json.dumps(matrix),
         "has_more": has_more,
         "next_offset": offset + _PAGE_SIZE,
+    })
+
+
+@login_required
+def folder_permissions(request, pk):
+    if not (
+        request.user.is_superuser
+        or request.user.has_perm("intern.manage_folder_permissions")
+    ):
+        raise PermissionDenied
+
+    folder = get_object_or_404(Folder, pk=pk)
+
+    groups = Group.objects.all().order_by("name")
+    existing = {
+        fp.group_id: fp
+        for fp in FolderPermission.objects.filter(folder=folder)
+    }
+
+    read_restricted   = any(fp.can_read   for fp in existing.values())
+    write_restricted  = any(fp.can_write  for fp in existing.values())
+    delete_restricted = any(fp.can_delete for fp in existing.values())
+    read_group_ids    = {gid for gid, fp in existing.items() if fp.can_read}
+    write_group_ids   = {gid for gid, fp in existing.items() if fp.can_write}
+    delete_group_ids  = {gid for gid, fp in existing.items() if fp.can_delete}
+
+    if request.method == "POST":
+        read_mode   = request.POST.get("read_mode")
+        write_mode  = request.POST.get("write_mode")
+        delete_mode = request.POST.get("delete_mode")
+        read_groups   = {int(x) for x in request.POST.getlist("read_groups")}
+        write_groups  = {int(x) for x in request.POST.getlist("write_groups")}
+        delete_groups = {int(x) for x in request.POST.getlist("delete_groups")}
+
+        FolderPermission.objects.filter(folder=folder).delete()
+
+        if (
+            read_mode == "restricted"
+            or write_mode == "restricted"
+            or delete_mode == "restricted"
+        ):
+            all_involved = read_groups | write_groups | delete_groups
+            for gid in all_involved:
+                FolderPermission.objects.create(
+                    folder=folder,
+                    group_id=gid,
+                    can_read=(read_mode   == "restricted" and gid in read_groups),
+                    can_write=(write_mode == "restricted" and gid in write_groups),
+                    can_delete=(delete_mode == "restricted" and gid in delete_groups),
+                )
+
+        return redirect("folder_view", pk=folder.pk)
+
+    from django.urls import reverse
+    return render(request, "folder_berechtigungen.html", {
+        "seitentitel": f"Berechtigungen: {folder.name}",
+        "folder": folder,
+        "groups": groups,
+        "read_restricted":   read_restricted,
+        "write_restricted":  write_restricted,
+        "delete_restricted": delete_restricted,
+        "read_group_ids":    read_group_ids,
+        "write_group_ids":   write_group_ids,
+        "delete_group_ids":  delete_group_ids,
+        "up_url": reverse("folder_view", args=[folder.pk]),
+        "id": folder.pk,
     })
