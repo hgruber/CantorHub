@@ -40,6 +40,7 @@ FIELD_LABELS = {
     "telefon_mobil": "Mobil",
     "geburtstag": "Geburtstag",
     "avatar_id": "Avatar",
+    "private_fields": "Privatsphäre",
     # Termin
     "kurz": "Kurzbezeichnung",
     "datum": "Datum",

@@ -56,36 +56,43 @@
                         <label for="{{ form.email.id_for_label }}">E-Mail</label>
                         {{ form.email }}
                         {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_email }} verbergen</label>{% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.xmpp.id_for_label }}">XMPP/Jabber</label>
                         {{ form.xmpp }}
                         {% if form.xmpp.errors %}<div class="invalid-feedback">{{ form.xmpp.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_xmpp }} verbergen</label>{% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.telefon.id_for_label }}">Telefon</label>
                         {{ form.telefon }}
                         {% if form.telefon.errors %}<div class="invalid-feedback">{{ form.telefon.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_telefon }} verbergen</label>{% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.telefon_job.id_for_label }}">Telefon (Arbeit)</label>
                         {{ form.telefon_job }}
                         {% if form.telefon_job.errors %}<div class="invalid-feedback">{{ form.telefon_job.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_telefon_job }} verbergen</label>{% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.telefon_mobil.id_for_label }}">Mobiltelefon</label>
                         {{ form.telefon_mobil }}
                         {% if form.telefon_mobil.errors %}<div class="invalid-feedback">{{ form.telefon_mobil.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_telefon_mobil }} verbergen</label>{% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.telefon_job_mobil.id_for_label }}">Mobiltelefon (Arbeit)</label>
                         {{ form.telefon_job_mobil }}
                         {% if form.telefon_job_mobil.errors %}<div class="invalid-feedback">{{ form.telefon_job_mobil.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_telefon_job_mobil }} verbergen</label>{% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.fax.id_for_label }}">Fax</label>
                         {{ form.fax }}
                         {% if form.fax.errors %}<div class="invalid-feedback">{{ form.fax.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_fax }} verbergen</label>{% endif %}
                     </div>
                 </div>
             </div>
@@ -97,21 +104,25 @@
                         <label for="{{ form.geburtstag.id_for_label }}">Geburtsdatum</label>
                         {{ form.geburtstag }}
                         {% if form.geburtstag.errors %}<div class="invalid-feedback">{{ form.geburtstag.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_geburtstag }} verbergen</label>{% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.strasse.id_for_label }}">Straße</label>
                         {{ form.strasse }}
                         {% if form.strasse.errors %}<div class="invalid-feedback">{{ form.strasse.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_strasse }} verbergen</label>{% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.plz.id_for_label }}">PLZ</label>
                         {{ form.plz }}
                         {% if form.plz.errors %}<div class="invalid-feedback">{{ form.plz.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_plz }} verbergen</label>{% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.ort.id_for_label }}">Ort</label>
                         {{ form.ort }}
                         {% if form.ort.errors %}<div class="invalid-feedback">{{ form.ort.errors }}</div>{% endif %}
+                        {% if can_set_privacy %}<label class="form-privacy">{{ form.priv_ort }} verbergen</label>{% endif %}
                     </div>
                 </div>
             </div>

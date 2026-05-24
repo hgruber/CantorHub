@@ -27,53 +27,76 @@
             <div class="profile-section">
                 <h2>Kontaktdaten</h2>
                 <div class="contact-info">
+                    {% if visible.email %}
                     <div class="contact-item">
                         <span class="label">E-Mail:</span>
                         <span class="value">{{ user.email }}</span>
                     </div>
+                    {% endif %}
+                    {% if visible.xmpp %}
                     <div class="contact-item">
                         <span class="label">XMPP:</span>
                         <span class="value">{{ user.xmpp }}</span>
                     </div>
+                    {% endif %}
+                    {% if visible.telefon %}
                     <div class="contact-item">
                         <span class="label">Telefon (Privat):</span>
                         <span class="value">{{ user.telefon }}</span>
                     </div>
+                    {% endif %}
+                    {% if visible.telefon_job %}
                     <div class="contact-item">
                         <span class="label">Telefon (Beruf):</span>
                         <span class="value">{{ user.telefon_job }}</span>
                     </div>
+                    {% endif %}
+                    {% if visible.telefon_mobil %}
                     <div class="contact-item">
                         <span class="label">Mobil (Privat):</span>
                         <span class="value">{{ user.telefon_mobil }}</span>
                     </div>
+                    {% endif %}
+                    {% if visible.telefon_job_mobil %}
                     <div class="contact-item">
                         <span class="label">Mobil (Beruf):</span>
                         <span class="value">{{ user.telefon_job_mobil }}</span>
                     </div>
+                    {% endif %}
+                    {% if visible.fax %}
                     <div class="contact-item">
                         <span class="label">Fax:</span>
                         <span class="value">{{ user.fax }}</span>
                     </div>
+                    {% endif %}
                 </div>
             </div>
+            {% if visible.strasse or visible.plz or visible.ort %}
             <div class="profile-section">
                 <h2>Adresse</h2>
                 <div class="address-info">
+                    {% if visible.strasse %}
                     <div class="address-item">
                         <span class="label">Straße:</span>
                         <span class="value">{{ user.strasse }}</span>
                     </div>
+                    {% endif %}
+                    {% if visible.plz or visible.ort %}
                     <div class="address-item">
                         <span class="label">PLZ / Ort:</span>
-                        <span class="value">{{ user.plz }} {{ user.ort }}</span>
+                        <span class="value">{% if visible.plz %}{{ user.plz }}{% endif %} {% if visible.ort %}{{ user.ort }}{% endif %}</span>
                     </div>
+                    {% endif %}
+                    {% if visible.strasse and visible.plz and visible.ort and user.breite and user.laenge %}
                     <div class="address-item">
                         <span class="label">Koordinaten:</span>
                         <span class="value">Breite: {{ user.breite }}, Länge: {{ user.laenge }}</span>
                     </div>
+                    {% endif %}
                 </div>
             </div>
+            {% endif %}
+            {% if visible.strasse and visible.plz and visible.ort and user.breite and user.laenge %}
             <div class="profile-section">
                 <h2>Kartenansicht</h2>
                 <div id="map" style="height: 400px; width: 100%"></div>
@@ -115,13 +138,16 @@
                 });
                 </script>
             </div>
+            {% endif %}
             <div class="profile-section">
                 <h2>Personalien</h2>
                 <div class="personal-info">
+                    {% if visible.geburtstag %}
                     <div class="personal-item">
                         <span class="label">Geburtstag:</span>
                         <span class="value">{{ user.geburtstag|date:"d.m.Y" }}</span>
                     </div>
+                    {% endif %}
                     <div class="personal-item">
                         <span class="label">Mitglied seit:</span>
                         <span class="value">{{ user.date_joined|date:"d.m.Y" }}</span>

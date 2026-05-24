@@ -20,6 +20,16 @@ from filer.fields.file import FilerFileField
 
 from .replacements import apply_replacements, format_datetime
 
+# Contact and address fields a member may individually hide from other members.
+# When ANY of ADDRESS_TRIGGER_FIELDS is hidden, breite/laenge are nulled at save
+# time so the address cannot be reconstructed from the coordinates.
+PRIVACY_FIELDS = [
+    "email", "xmpp",
+    "telefon", "telefon_job", "telefon_mobil", "telefon_job_mobil", "fax",
+    "geburtstag", "strasse", "plz", "ort",
+]
+ADDRESS_TRIGGER_FIELDS = {"strasse", "plz", "ort"}
+
 
 class User(AbstractUser):
     # --- Legacy Identity ---
@@ -73,6 +83,7 @@ class User(AbstractUser):
 
     # --- Meta / Status ---
     text = models.TextField(null=True, blank=True)
+    private_fields = models.JSONField(default=list, blank=True)
 
     REQUIRED_FIELDS = []
 
@@ -92,6 +103,12 @@ class User(AbstractUser):
                 '<img src="{}"></img>',
                 self.avatar.thumbnails.get("admin_clipboard_icon"),
             )
+
+    def field_visible_to(self, viewer, field):
+        if viewer.id == self.id or viewer.is_superuser \
+                or viewer.has_perm("intern.change_user"):
+            return True
+        return field not in (self.private_fields or [])
 
 
 class Artikel(models.Model):

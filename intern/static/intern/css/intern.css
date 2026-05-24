@@ -855,6 +855,22 @@ label {
     margin-top: 3px;
 }
 
+.form-privacy {
+    grid-column: 1 / -1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    justify-self: end;
+    margin: -4px 0 2px;
+    font-size: 12px;
+    color: var(--t2);
+    cursor: pointer;
+    user-select: none;
+}
+.form-privacy input[type="checkbox"] {
+    margin: 0;
+}
+
 .error,
 ul.errorlist {
     background: #fef2f2;

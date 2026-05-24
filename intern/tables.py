@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from .models import Artikel, ChangeLog, Lied, Ort, Termin, User
+from .models import Artikel, ChangeLog, Lied, Ort, PRIVACY_FIELDS, Termin, User
 from .forms import TriStateToggle
 from .replacements import format_bytes, format_datetime
 
@@ -691,14 +691,27 @@ class MitgliederTabelle(tables.Table):
             cls=cls, label=label,
         )
 
-    def __init__(self, *args, visible_fields=None, **kwargs):
+    def __init__(self, *args, visible_fields=None, viewer=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._row_counter = 0
         self.visible_fields = visible_fields
+        self._viewer = viewer
         if visible_fields is not None:
             for name in list(self.columns.names()):
                 if name not in visible_fields:
                     self.columns.hide(name)
+
+        # Per-field privacy: blank out cell values for members who hid this field.
+        if viewer is not None:
+            def _make(field):
+                def _render(value, record):
+                    if record.field_visible_to(viewer, field):
+                        return value
+                    return ""
+                return _render
+            for f in PRIVACY_FIELDS:
+                if f in self.base_columns:
+                    setattr(self, f"render_{f}", _make(f))
 
     def render_counter(self, record):
         self._row_counter += 1
@@ -851,6 +864,7 @@ _CHANGELOG_FIELD_LABELS = {
     "gruppe": "Gruppe",
     "berechtigung": "Berechtigung",
     "berechtigungen": "Berechtigungen",
+    "private_fields": "Privatsphäre",
 }
 
 

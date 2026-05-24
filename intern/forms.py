@@ -7,7 +7,16 @@ from django.db import models
 from filer.fields.file import FilerFileField
 from filer.fields.image import AdminImageWidget
 
-from .models import Forum, Konfiguration, Lied, Ort, Termin, User
+from .models import (
+    ADDRESS_TRIGGER_FIELDS,
+    Forum,
+    Konfiguration,
+    Lied,
+    Ort,
+    PRIVACY_FIELDS,
+    Termin,
+    User,
+)
 
 
 class TriStateToggle(forms.Select):
@@ -216,6 +225,32 @@ class UserEditForm(forms.ModelForm):
             "xmpp": forms.TextInput(attrs={"class": "form-control"}),
             "text": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
         }
+
+    def __init__(self, *args, with_privacy=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._with_privacy = with_privacy
+        if not with_privacy:
+            return
+        current = set((self.instance.private_fields or []) if self.instance else [])
+        for f in PRIVACY_FIELDS:
+            self.fields[f"priv_{f}"] = forms.BooleanField(
+                required=False,
+                initial=f in current,
+                label="verbergen",
+            )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self._with_privacy:
+            hidden = [f for f in PRIVACY_FIELDS if self.cleaned_data.get(f"priv_{f}")]
+            instance.private_fields = hidden
+            if set(hidden) & ADDRESS_TRIGGER_FIELDS:
+                instance.breite = None
+                instance.laenge = None
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 class OrtForm(forms.ModelForm):

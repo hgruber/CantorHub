@@ -14,7 +14,7 @@ from intern import ejabberd, folders
 from intern.app_settings import get_config_bool
 
 from ..forms import MitgliedAddForm, UserEditForm
-from ..models import Mitteilung, User
+from ..models import Mitteilung, PRIVACY_FIELDS, User
 from ..tables import MitgliederFilter, MitgliederTabelle
 from .files import _get_file_extension
 
@@ -65,7 +65,7 @@ def mitglied_list(request):
     if has_more:
         page = page[:_PAGE_SIZE]
 
-    table = MitgliederTabelle(page, visible_fields=fields)
+    table = MitgliederTabelle(page, visible_fields=fields, viewer=request.user)
     RequestConfig(request, paginate=False).configure(table)
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -114,6 +114,7 @@ def mitglied_view(request, id):
         or request.user.has_perm("intern.change_user")
     )
     can_view_history = request.user.is_superuser or request.user.has_perm("intern.change_user")
+    visible = {f: user.field_visible_to(request.user, f) for f in PRIVACY_FIELDS}
     context = {
         "user": user,
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
@@ -122,6 +123,7 @@ def mitglied_view(request, id):
         "changepass": "mitglied_passwd" if can_edit else None,
         "history": "mitglied_aenderungen" if can_view_history else None,
         "id": id,
+        "visible": visible,
     }
     return render(request, "mitglied.html", context)
 
@@ -149,7 +151,10 @@ def mitglied_edit(request, id):
                 messages.success(request, "Mitgliedschaft ist jetzt ruhend.")
             return redirect("mitglied_edit", id=id)
 
-        form = UserEditForm(request.POST, request.FILES, instance=user)
+        form = UserEditForm(
+            request.POST, request.FILES, instance=user,
+            with_privacy=(request.user.id == id),
+        )
         if form.is_valid():
             # Move dropzone-uploaded avatar to Avatare folder and rename.
             # The avatar text input (set by JS on upload) holds the new filer ID;
@@ -175,7 +180,7 @@ def mitglied_edit(request, id):
             form.save_m2m()
             return redirect("mitglied_view", id=id)
     else:
-        form = UserEditForm(instance=user)
+        form = UserEditForm(instance=user, with_privacy=(request.user.id == id))
 
     context = {
         "form": form,
@@ -187,6 +192,8 @@ def mitglied_edit(request, id):
         "upload_rename_to": id,
         "id": id,
         "can_manage": request.user.is_superuser or request.user.has_perm("intern.change_user"),
+        "can_set_privacy": request.user.id == id,
+        "privacy_fields": PRIVACY_FIELDS,
     }
     return render(request, "mitglied_edit.html", context)
 
