@@ -2,7 +2,7 @@ import django_filters as filters
 import django_tables2 as tables
 from django import forms
 from django.contrib.auth.models import Group
-from django.db.models import Case, IntegerField, Q, Value, When
+from django.db.models import Q
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
@@ -656,7 +656,7 @@ class MitgliederTabelle(tables.Table):
     avatar = tables.Column()
     first_name = tables.Column()
     last_name = tables.Column()
-    stimme = tables.Column()
+    stimme = tables.Column(order_by=("stimme_pos", "last_name", "first_name"))
     email = tables.EmailColumn()
     xmpp = tables.EmailColumn()
     geburtstag = tables.DateColumn()
@@ -701,17 +701,16 @@ class MitgliederTabelle(tables.Table):
                 if name not in visible_fields:
                     self.columns.hide(name)
 
-        # Per-field privacy: blank out cell values for members who hid this field.
+        # Per-field privacy: blank fields this viewer may not see by mutating
+        # each record. Done at record level (not via render_<field>) because a
+        # custom render would leave the underlying value visible via linkify
+        # targets — e.g. EmailColumn's mailto: href would still leak the email.
         if viewer is not None:
-            def _make(field):
-                def _render(value, record):
-                    if record.field_visible_to(viewer, field):
-                        return value
-                    return ""
-                return _render
-            for f in PRIVACY_FIELDS:
-                if f in self.base_columns:
-                    setattr(self, f"render_{f}", _make(f))
+            underlying = self.data.data if hasattr(self.data, "data") else self.data
+            for record in underlying:
+                for f in PRIVACY_FIELDS:
+                    if not record.field_visible_to(viewer, f):
+                        setattr(record, f, None if f == "geburtstag" else "")
 
     def render_counter(self, record):
         self._row_counter += 1
@@ -735,27 +734,6 @@ class MitgliederTabelle(tables.Table):
             '<img src="{}" width="40" height="40">',
             static("filer/icons/file-unknown.svg"),
         )
-
-    def order_stimme(self, queryset, is_descending):
-        from django.db.models import Case, IntegerField, Value, When
-
-        stimme_order = Case(
-            When(stimme="S", then=Value(0)),
-            When(stimme="A", then=Value(1)),
-            When(stimme="T", then=Value(2)),
-            When(stimme="B", then=Value(3)),
-            When(stimme="C", then=Value(4)),
-            When(stimme="M", then=Value(5)),
-            default=Value(6),
-            output_field=IntegerField(),
-        )
-        queryset = queryset.annotate(stimme_order=stimme_order).order_by(
-            ("-" if is_descending else "") + "stimme_order",
-            "last_name",
-            "first_name",
-        )
-        return queryset, True
-
 
 class ArtikelTabelle(tables.Table):
     name = tables.Column(verbose_name="Artikel")
@@ -815,24 +793,12 @@ _CHANGELOG_MODEL_CHOICES = [("", "Alle"), ("__gruppe__", "Gruppenzuordnung")] + 
     (k, v) for k, v in _CHANGELOG_MODEL_LABELS.items()
 ]
 
-_STIMME_ORDER = Case(
-    When(stimme="S", then=Value(0)),
-    When(stimme="A", then=Value(1)),
-    When(stimme="T", then=Value(2)),
-    When(stimme="B", then=Value(3)),
-    When(stimme="C", then=Value(4)),
-    When(stimme="M", then=Value(5)),
-    default=Value(6),
-    output_field=IntegerField(),
-)
-
-
 def _changelog_user_choices():
     """User choices for ChangeLogFilter: Alle + System + active users sorted by Stimme/Name."""
     users = (
         User.objects
         .filter(is_active=True)
-        .annotate(_stimme_pos=_STIMME_ORDER)
+        .annotate(_stimme_pos=User.stimme_order_case())
         .order_by("_stimme_pos", "last_name", "first_name")
     )
     choices = [("", "Alle"), ("__system__", "System")]

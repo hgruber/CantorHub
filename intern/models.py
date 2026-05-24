@@ -8,6 +8,7 @@ from django.db.models import (
     CharField,
     Count,
     F,
+    IntegerField,
     Max,
     OuterRef,
     Subquery,
@@ -61,6 +62,8 @@ class User(AbstractUser):
         ("C", "Chorleiter"),
         ("M", "Musiker"),
     ]
+    # Canonical sort order of voices (anything not listed sorts last).
+    STIMME_ORDER = ["S", "A", "T", "B", "C", "M"]
     stimme = models.CharField(max_length=1, choices=STIMMEN, default="N")
 
     geburtstag = models.DateField(null=True, blank=True)
@@ -103,6 +106,32 @@ class User(AbstractUser):
                 '<img src="{}"></img>',
                 self.avatar.thumbnails.get("admin_clipboard_icon"),
             )
+
+    @staticmethod
+    def stimme_order_case():
+        """Case expression mapping each Stimme letter to its sort index.
+
+        Use in an ORM `.annotate(...)` call when ordering members by voice:
+            User.objects.annotate(_so=User.stimme_order_case()).order_by("_so", ...)
+        """
+        return Case(
+            *[When(stimme=s, then=Value(i)) for i, s in enumerate(User.STIMME_ORDER)],
+            default=Value(len(User.STIMME_ORDER)),
+            output_field=IntegerField(),
+        )
+
+    @property
+    def stimme_pos(self):
+        """Sort index of this member's voice in the canonical STIMME_ORDER.
+
+        Used as a column-sort accessor so Python-side table sorting (e.g.
+        django-tables2 with list data) matches the SQL ordering produced by
+        `stimme_order_case()`.
+        """
+        try:
+            return User.STIMME_ORDER.index(self.stimme)
+        except ValueError:
+            return len(User.STIMME_ORDER)
 
     def field_visible_to(self, viewer, field):
         if viewer.id == self.id or viewer.is_superuser \

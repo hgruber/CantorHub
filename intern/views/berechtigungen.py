@@ -2,7 +2,6 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
-from django.db.models import Case, IntegerField, Value, When
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -10,17 +9,6 @@ from django.template.loader import render_to_string
 from ..models import ChangeLog, User
 
 _PAGE_SIZE = 50
-
-STIMME_ORDER = Case(
-    When(stimme="S", then=Value(0)),
-    When(stimme="A", then=Value(1)),
-    When(stimme="T", then=Value(2)),
-    When(stimme="B", then=Value(3)),
-    When(stimme="C", then=Value(4)),
-    When(stimme="M", then=Value(5)),
-    default=Value(6),
-    output_field=IntegerField(),
-)
 
 __all__ = ["berechtigungen"]
 
@@ -33,7 +21,7 @@ def berechtigungen(request):
     groups = list(Group.objects.order_by("name"))
     users = (
         User.objects.filter(is_active=True)
-        .annotate(stimme_order=STIMME_ORDER)
+        .annotate(stimme_order=User.stimme_order_case())
         .order_by("stimme_order", "last_name", "first_name")
         .prefetch_related("groups")
     )
