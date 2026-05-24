@@ -364,7 +364,10 @@ def internal_links(match, request):
     elif match.group(2) == "Geo:":
         return f"<div>Karte: {match.group(4)}</div>"
     else:
-        return f'<a href="/intern/artikel/{match.group(4)}/">{match.group(4)}</a>'
+        prefix = match.group(2) or ""
+        name = match.group(4)
+        display = match.group(6) or name
+        return f'<a href="/intern/artikel/{prefix}{name}/">{display}</a>'
 
 
 def apply_replacements(text, request=None):
