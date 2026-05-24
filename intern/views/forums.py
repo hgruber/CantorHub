@@ -28,6 +28,7 @@ __all__ = [
     "forum_edit",
     "forum_invite",
     "forum_add",
+    "forum_delete",
 ]
 
 logger = logging.getLogger(__name__)
@@ -271,6 +272,20 @@ def forum_invite(request, forum, user_id):
             send_mail(subject, message, "webmaster@example.org", [user.email])
 
     return redirect("forum_edit", forum=forum)
+
+
+@permission_required("intern.delete_forum", raise_exception=True)
+@require_POST
+def forum_delete(request, forum):
+    forum_obj = get_object_or_404(Forum, id=forum)
+    if get_config_bool("EJABBERD_ENABLED") and forum_obj.xmpp_muc_jid:
+        try:
+            ejabberd.destroy_room(forum_obj.xmpp_muc_jid)
+        except Exception as exc:
+            logger.error("ejabberd: failed to destroy room %s: %s", forum_obj.xmpp_muc_jid, exc)
+    forum_obj._audit_user = request.user
+    forum_obj.delete()  # cascades: all Mitteilung rows deleted
+    return redirect("forum_list")
 
 
 @permission_required("intern.add_forum", raise_exception=True)

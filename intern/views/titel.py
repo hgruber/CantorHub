@@ -249,13 +249,26 @@ def titel_edit(request, titel):
     else:
         form = LiedEditForm(instance=lied)
 
+    konzerte_count = lied.konzert_set.count()
+    solist_count   = lied.solist.count()
+    dirigent_count = lied.dirigent.count()
+    blocking = []
+    if konzerte_count:
+        blocking.append(f"{konzerte_count} Konzert{'e' if konzerte_count != 1 else ''}")
+    if solist_count:
+        blocking.append(f"{solist_count} Solist{'en' if solist_count != 1 else ''}")
+    if dirigent_count:
+        blocking.append(f"{dirigent_count} Dirigent{'en' if dirigent_count != 1 else ''}")
+
     context = {
         "form": form,
         "lied": lied,
         "seitentitel": f"bearbeiten: {lied.titel}",
         "view": "titel_view",
         "id": titel,
-        "konzerte_count": lied.konzert_set.count(),
+        "konzerte_count": konzerte_count,
+        "can_delete": not blocking,
+        "delete_tooltip": ("Kann nicht gelöscht werden: " + ", ".join(blocking)) if blocking else "",
     }
     return render(request, "titel_edit.html", context)
 
@@ -264,6 +277,8 @@ def titel_edit(request, titel):
 @require_POST
 def titel_delete(request, titel):
     lied = get_object_or_404(Lied, id=titel)
+    if lied.konzert_set.exists() or lied.solist.exists() or lied.dirigent.exists():
+        return redirect("titel_edit", titel=titel)
     lied._audit_user = request.user
     lied.delete()
     return redirect("titel_list")

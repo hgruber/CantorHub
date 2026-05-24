@@ -45,6 +45,7 @@ urlpatterns = [
     path("forum/<int:forum>/", views.forum_view, name="forum_view"),
     path("forum/<int:forum>/get/", views.forum_get, name="forum_get"),
     path("forum/<int:forum>/edit/", views.forum_edit, name="forum_edit"),
+    path("forum/<int:forum>/delete/", views.forum_delete, name="forum_delete"),
     path("forum/<int:forum>/invite/<int:user_id>/", views.forum_invite, name="forum_invite"),
     path("forum/<int:forum>/more/", views.forum_more, name="forum_more"),
     path("forum/<int:forum>/send/", views.forum_send, name="forum_send"),
@@ -90,6 +91,7 @@ urlpatterns = [
     path("mitglied/<int:id>/", views.mitglied_view, name="mitglied_view"),
     path("mitglied/<int:id>/edit/", views.mitglied_edit, name="mitglied_edit"),
     path("mitglied/<int:id>/passwd/", views.mitglied_passwd, name="mitglied_passwd"),
+    path("mitglied/<int:id>/delete/", views.mitglied_delete, name="mitglied_delete"),
     path("mitglied/<int:id>/aenderungen/", views.mitglied_aenderungen, name="mitglied_aenderungen"),
     # Artikel URLs
     path("abstimmung/vote/", views.abstimmung_vote, name="abstimmung_vote"),

@@ -1,3 +1,4 @@
+import logging
 import threading
 
 from django.contrib.auth.decorators import login_required, permission_required
@@ -6,6 +7,7 @@ from django.db.models import Count, OuterRef
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 
 from filer.models import File
@@ -14,9 +16,11 @@ from intern import ejabberd, folders
 from intern.app_settings import get_config_bool
 
 from ..forms import MitgliedAddForm, UserEditForm
-from ..models import Mitteilung, PRIVACY_FIELDS, User
+from ..models import Abstimmung, Artikel, Mitteilung, PRIVACY_FIELDS, User, Zusage
 from ..tables import MitgliederFilter, MitgliederTabelle
 from .files import _get_file_extension
+
+logger = logging.getLogger(__name__)
 
 _PAGE_SIZE = 50
 
@@ -26,6 +30,7 @@ __all__ = [
     "mitglied_edit",
     "mitglied_passwd",
     "mitglied_add",
+    "mitglied_delete",
 ]
 
 
@@ -260,6 +265,79 @@ def mitglied_passwd(request, id):
             "id": id,
         }
         return render(request, "mitglied_passwd.html", context)
+
+
+@permission_required("intern.delete_user", raise_exception=True)
+@require_POST
+def mitglied_delete(request, id):
+    member = get_object_or_404(User, id=id)
+
+    # Cannot delete/anonymize yourself
+    if member.pk == request.user.pk:
+        return redirect("mitglied_edit", id=id)
+
+    # Unregister from XMPP before any data is cleared
+    if get_config_bool("EJABBERD_ENABLED") and member.xmpp:
+        try:
+            ejabberd.unregister_user(ejabberd.localpart_from_username(member.username))
+        except Exception as exc:
+            logger.error("ejabberd: failed to unregister %s: %s", member.username, exc)
+
+    # Delete avatar in both cases
+    if member.avatar_id:
+        avatar_file = member.avatar
+        member.avatar = None
+        member.save(update_fields=["avatar"])
+        try:
+            avatar_file.delete()
+        except Exception:
+            pass
+
+    # Determine whether history exists that must be preserved
+    has_history = (
+        Mitteilung.objects.filter(sender=member).exists()
+        or Artikel.objects.filter(autor=member).exists()
+        or File.objects.filter(owner=member).exists()
+        or Abstimmung.objects.filter(person=member).exists()
+    )
+
+    if has_history:
+        # Anonymize: erase all PII, keep first_name and last_name
+        member.username          = f"geloescht_{member.id}"
+        member.email             = None
+        member.xmpp              = None
+        member.telefon           = None
+        member.telefon_job       = None
+        member.telefon_mobil     = None
+        member.telefon_job_mobil = None
+        member.fax               = None
+        member.geburtstag        = None
+        member.strasse           = None
+        member.plz               = None
+        member.ort               = None
+        member.breite            = None
+        member.laenge            = None
+        member.legacy_id         = None
+        member.text              = None
+        member.private_fields    = []
+        member.stimme            = "N"
+        member.is_active         = False
+        member.is_staff          = False
+        member.is_superuser      = False
+        member.set_unusable_password()
+        member.groups.clear()
+        member.user_permissions.clear()
+        # Remove attendance, solo, and conductor roles
+        Zusage.objects.filter(person=member).delete()
+        member.solist.clear()
+        member.dirigent.clear()
+        member._audit_user = request.user
+        member.save()
+    else:
+        member._audit_user = request.user
+        member.delete()
+
+    return redirect("mitglied_list")
 
 
 @permission_required("intern.add_user", raise_exception=True)

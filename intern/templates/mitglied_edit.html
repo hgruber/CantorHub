@@ -157,5 +157,12 @@
         {% endif %}
     </form>
     {% endif %}
+
+    {% if id and perms.intern.delete_user and id != request.user.id %}
+    <form method="post" action="{% url 'mitglied_delete' id=id %}" class="form-actions">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Mitglied unwiderruflich löschen oder anonymisieren?')">Mitglied löschen</button>
+    </form>
+    {% endif %}
 </div>
 {% endblock %}

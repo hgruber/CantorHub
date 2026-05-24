@@ -106,6 +106,17 @@
             <p class="text-muted danger-desc">Deaktiviert das Forum. Diese Aktion kann später rückgängig gemacht werden.</p>
             <button class="btn btn-danger" disabled>Forum deaktivieren</button>
         </div>
+
+        {% if perms.intern.delete_forum %}
+        <div class="detail-card detail-card-danger">
+            <h3>Forum löschen</h3>
+            <p class="text-muted danger-desc">Löscht das Forum und alle Nachrichten unwiderruflich.</p>
+            <form method="post" action="{% url 'forum_delete' forum=id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Forum und alle Nachrichten unwiderruflich löschen?')">Forum löschen</button>
+            </form>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 </div>

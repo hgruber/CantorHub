@@ -106,21 +106,24 @@
             <a href="{% url 'titel_list' %}" class="btn btn-secondary">Abbrechen</a>
             {% endif %}
             {% if id %}
-            <button type="button" class="btn btn-danger" onclick="document.getElementById('delete-dialog').showModal()">Lied loeschen</button>
+            {% if can_delete %}
+            <button type="button" class="btn btn-danger" onclick="document.getElementById('delete-dialog').showModal()">Lied löschen</button>
+            {% else %}
+            <span title="{{ delete_tooltip }}" style="cursor:help;display:inline-block">
+                <button type="button" class="btn btn-danger" disabled>Lied löschen</button>
+            </span>
+            {% endif %}
             {% endif %}
         </div>
     </form>
 
-    {% if id %}
+    {% if id and can_delete %}
     <dialog id="delete-dialog">
-        <h3>Lied loeschen</h3>
-        <p>Moechtest du &bdquo;{{ lied.titel }}&ldquo; wirklich loeschen?</p>
-        {% if konzerte_count %}
-        <p class="warn">{{ konzerte_count }} Konzert{{ konzerte_count|pluralize:"e" }} werden ebenfalls geloescht.</p>
-        {% endif %}
+        <h3>Lied löschen</h3>
+        <p>Möchtest du &bdquo;{{ lied.titel }}&ldquo; wirklich löschen?</p>
         <form method="post" action="{% url 'titel_delete' titel=id %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Ja, loeschen</button>
+            <button type="submit" class="btn btn-danger">Ja, löschen</button>
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('delete-dialog').close()">Abbrechen</button>
         </form>
     </dialog>
