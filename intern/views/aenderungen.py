@@ -287,7 +287,7 @@ def aenderungsprotokoll_list(request):
     except (ValueError, TypeError):
         offset = 0
 
-    page_qs = f.qs[offset : offset + PAGE_SIZE + 1]
+    page_qs = f.qs.order_by("-timestamp")[offset : offset + PAGE_SIZE + 1]
     entries = list(page_qs)
     has_more = len(entries) > PAGE_SIZE
     if has_more:

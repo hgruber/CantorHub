@@ -2,7 +2,7 @@ import django_filters as filters
 import django_tables2 as tables
 from django import forms
 from django.contrib.auth.models import Group
-from django.db.models import Q
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
@@ -798,9 +798,35 @@ _CHANGELOG_MODEL_LABELS = {
     "Group": "Gruppe",
 }
 
-_CHANGELOG_MODEL_CHOICES = [("", "Alle")] + [
+_CHANGELOG_MODEL_CHOICES = [("", "Alle"), ("__gruppe__", "Gruppenzuordnung")] + [
     (k, v) for k, v in _CHANGELOG_MODEL_LABELS.items()
 ]
+
+_STIMME_ORDER = Case(
+    When(stimme="S", then=Value(0)),
+    When(stimme="A", then=Value(1)),
+    When(stimme="T", then=Value(2)),
+    When(stimme="B", then=Value(3)),
+    When(stimme="C", then=Value(4)),
+    When(stimme="M", then=Value(5)),
+    default=Value(6),
+    output_field=IntegerField(),
+)
+
+
+def _changelog_user_choices():
+    """User choices for ChangeLogFilter: Alle + System + active users sorted by Stimme/Name."""
+    users = (
+        User.objects
+        .filter(is_active=True)
+        .annotate(_stimme_pos=_STIMME_ORDER)
+        .order_by("_stimme_pos", "last_name", "first_name")
+    )
+    choices = [("", "Alle"), ("__system__", "System")]
+    for u in users:
+        name = f"{u.last_name}, {u.first_name}".strip(", ") or u.username
+        choices.append((str(u.pk), name))
+    return choices
 
 _CHANGELOG_FIELD_LABELS = {
     "first_name": "Vorname", "last_name": "Nachname", "stimme": "Stimme",
@@ -833,16 +859,24 @@ class ChangeLogFilter(filters.FilterSet):
         choices=_CHANGELOG_MODEL_CHOICES,
         label="Bereich",
         empty_label=None,
+        method="filter_model_name",
     )
     action = filters.ChoiceFilter(
         choices=[("", "Alle")] + ChangeLog.ACTION_CHOICES,
         label="Aktion",
         empty_label=None,
     )
-    user = filters.ModelChoiceFilter(
-        queryset=User.objects.filter(is_active=True).order_by("last_name", "first_name"),
+    user = filters.ChoiceFilter(
+        choices=[("", "Alle")],  # populated per-request in __init__
         label="Benutzer",
+        empty_label=None,
+        method="filter_user",
+    )
+    gruppe = filters.ModelChoiceFilter(
+        queryset=Group.objects.order_by("name"),
+        label="Gruppe",
         empty_label="Alle",
+        method="filter_gruppe",
     )
     datum_von = filters.DateFilter(
         field_name="timestamp", lookup_expr="date__gte", label="Datum von",
@@ -853,9 +887,37 @@ class ChangeLogFilter(filters.FilterSet):
         widget=forms.DateInput(attrs={"type": "date"}),
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filters["user"].field.choices = _changelog_user_choices()
+
+    def filter_model_name(self, qs, name, value):
+        if not value:
+            return qs
+        if value == "__gruppe__":
+            return qs.filter(model_name="User", changes__has_key="gruppe")
+        return qs.filter(model_name=value)
+
+    def filter_user(self, qs, name, value):
+        if not value:
+            return qs
+        if value == "__system__":
+            return qs.filter(user__isnull=True)
+        try:
+            return qs.filter(user_id=int(value))
+        except (ValueError, TypeError):
+            return qs
+
+    def filter_gruppe(self, qs, name, value):
+        """Show only entries created by members of this group."""
+        if not value:
+            return qs
+        user_ids = value.user_set.values_list("id", flat=True)
+        return qs.filter(user_id__in=user_ids)
+
     class Meta:
         model = ChangeLog
-        fields = ["model_name", "action", "user"]
+        fields = ["model_name", "action", "user", "gruppe", "datum_von", "datum_bis"]
 
 
 class ChangeLogTabelle(tables.Table):
