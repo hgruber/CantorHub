@@ -508,9 +508,9 @@ class RepertoireTabelle(tables.Table):
     class Meta:
         row_attrs = {"data-href": lambda record: reverse("titel_view", args=[record.id])}
 
-    def __init__(self, *args, visible_fields=None, **kwargs):
+    def __init__(self, *args, visible_fields=None, counter_offset=0, **kwargs):
         super().__init__(*args, **kwargs)
-        self._row_counter = 0
+        self._row_counter = counter_offset
         self.visible_fields = visible_fields
         if visible_fields is not None:
             for name in list(self.columns.names()):
@@ -691,9 +691,9 @@ class MitgliederTabelle(tables.Table):
             cls=cls, label=label,
         )
 
-    def __init__(self, *args, visible_fields=None, viewer=None, **kwargs):
+    def __init__(self, *args, visible_fields=None, viewer=None, counter_offset=0, **kwargs):
         super().__init__(*args, **kwargs)
-        self._row_counter = 0
+        self._row_counter = counter_offset
         self.visible_fields = visible_fields
         self._viewer = viewer
         if visible_fields is not None:

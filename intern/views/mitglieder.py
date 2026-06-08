@@ -70,7 +70,7 @@ def mitglied_list(request):
     if has_more:
         page = page[:_PAGE_SIZE]
 
-    table = MitgliederTabelle(page, visible_fields=fields, viewer=request.user)
+    table = MitgliederTabelle(page, visible_fields=fields, viewer=request.user, counter_offset=offset)
     RequestConfig(request, paginate=False).configure(table)
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
