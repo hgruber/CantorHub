@@ -108,6 +108,31 @@ class TableProcessor:
         return ''
 
 
+class CitationProcessor:
+    def __init__(self):
+        self.in_citation = False
+
+    def process_line(self, line):
+        """Returns (prefix_to_emit, modified_line)."""
+        if line.startswith('%'):
+            content = line[1:]
+            if not self.in_citation:
+                self.in_citation = True
+                return '', '<div class="citation">' + content
+            return '', '<br>' + content
+        else:
+            if self.in_citation:
+                self.in_citation = False
+                return '</div>', line
+            return '', line
+
+    def close(self):
+        if self.in_citation:
+            self.in_citation = False
+            return '</div>'
+        return ''
+
+
 class CodeBlockProcessor:
     def __init__(self):
         self.in_code_block = False
@@ -376,6 +401,7 @@ def apply_replacements(text, request=None):
     list_processor = ListProcessor()
     code_processor = CodeBlockProcessor()
     table_processor = TableProcessor()
+    citation_processor = CitationProcessor()
 
     # Definiere deine regulären Ausdrücke und Ersetzungen
     REPLACEMENTS = [
@@ -385,7 +411,6 @@ def apply_replacements(text, request=None):
         (r"^===(.*)===$", r"<h2>\1</h2>"),
         (r"^==(.*)==$", r"<h1>\1</h1>"),
         (r"^:(.*)$", r'<div class="indent">\1</div>'),
-        (r"^%(.*)$", r'<div class="citation">\1</div>'),
         (r"^@(.*)$", r'<div class="boxed">\1</div>'),
         (
             r"(\[\[(([^\]]*?)\:)?\s*([^\[\]]*?)(\|([^\[\]]+?))?\]\]([a-z]+)?)",
@@ -458,11 +483,15 @@ def apply_replacements(text, request=None):
         table_prefix, repl = table_processor.process_line(repl)
         if table_prefix:
             result.append(table_prefix)
+        citation_prefix, repl = citation_processor.process_line(repl)
+        if citation_prefix:
+            result.append(citation_prefix)
         for pattern, replacement in REPLACEMENTS:
             repl = re.sub(pattern, replacement, repl, flags=re.IGNORECASE)
         result.append(f"{repl}")
     result.append(code_processor.close())
     result.append(table_processor.close())
+    result.append(citation_processor.close())
     if request is not None:
         result.append(
             '<p id="footer"><img src="/static/intern/images/JG-Frankfurt-wG-color.svg" style="width: 14px;">&nbsp;Just Gospel!</p>'
