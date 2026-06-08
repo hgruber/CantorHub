@@ -72,9 +72,12 @@
         <div class="selector offcanvas" id="ColumnSelector">
             <div class="offcanvas-header">
                 <strong>Spalten</strong>
-                <button type="button" class="offcanvas-close" onclick="toggle('ColumnSelector')" aria-label="Schließen">&#x2715;</button>
+                <div class="filter-header-actions">
+                    <button type="submit" class="btn btn-primary" form="column-form">Speichern</button>
+                    <button type="button" class="offcanvas-close" onclick="toggle('ColumnSelector')" aria-label="Schließen">&#x2715;</button>
+                </div>
             </div>
-            <form method="post">
+            <form method="post" id="column-form">
                 {% csrf_token %}
                 {% for col in column_choices %}
                     <label>
@@ -86,7 +89,6 @@
                     </label>
                     <br />
                 {% endfor %}
-                <button type="submit" class="btn btn-primary">Speichern</button>
             </form>
         </div>
         <div class="filter offcanvas" id="Filter">
