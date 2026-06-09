@@ -1841,6 +1841,9 @@ div.avatar { cursor: pointer; }
     border-radius: 2px 12px 12px 12px;
     padding: 8px 12px;
     max-width: 78%;
+    width: max-content;
+    flex: 0 1 auto;
+    overflow-y: visible;
     box-shadow: var(--shadow-xs);
     border: 1px solid var(--msg-border);
 }
@@ -1850,6 +1853,7 @@ div.avatar { cursor: pointer; }
     border-radius: 12px 2px 12px 12px;
     padding: 8px 12px;
     max-width: 78%;
+    width: max-content;
     box-shadow: var(--shadow-xs);
     border: 1px solid var(--msg-me-border);
 }
