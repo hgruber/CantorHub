@@ -88,6 +88,7 @@ urlpatterns = [
     path("calendar/<str:secret>.ics", views.calendar_ics, name="calendar_ics"),
     # Mitglieder URLs
     path("mitglied/", views.mitglied_list, name="mitglied_list"),
+    path("mitglied/emails/", views.mitglied_emails, name="mitglied_emails"),
     path("mitglied/add/", views.mitglied_add, name="mitglied_add"),
     path("mitglied/<int:id>/", views.mitglied_view, name="mitglied_view"),
     path("mitglied/<int:id>/edit/", views.mitglied_edit, name="mitglied_edit"),

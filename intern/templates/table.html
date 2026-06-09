@@ -4,6 +4,24 @@
 {% block topbar_after %}
 {% if filter %}{% filter_chips filter request chips_skip %}{% endif %}
 {% endblock %}
+{% block topbar_actions_extra %}
+{% if show_email_copy %}
+<a href="#" id="copy-emails-btn" data-url="{% url 'mitglied_emails' %}" title="E-Mail-Programm öffnen (BCC)" onclick="(function(btn){
+  var url = btn.dataset.url + window.location.search;
+  fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.emails.length) return;
+      window.location.href = 'mailto:?bcc=' + encodeURIComponent(d.emails.join(','));
+    });
+  return false;
+})(this); return false;">
+  <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+  </svg>
+</a>
+{% endif %}
+{% endblock %}
 {% block content %}
 <div class="table-view">
     {% if show_file_actions %}

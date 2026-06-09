@@ -26,6 +26,7 @@ _PAGE_SIZE = 50
 
 __all__ = [
     "mitglied_list",
+    "mitglied_emails",
     "mitglied_view",
     "mitglied_edit",
     "mitglied_passwd",
@@ -106,6 +107,7 @@ def mitglied_list(request):
             "add_label": "Neues Mitglied",
             "has_more": has_more,
             "next_offset": offset + _PAGE_SIZE,
+            "show_email_copy": "email" in fields,
         },
     )
 
@@ -338,6 +340,28 @@ def mitglied_delete(request, id):
         member.delete()
 
     return redirect("mitglied_list")
+
+
+@login_required
+def mitglied_emails(request):
+    can_manage = request.user.is_superuser or request.user.has_perm("intern.change_user")
+    base_qs = User.objects.all() if can_manage else User.objects.filter(is_active=True)
+    queryset = (
+        base_qs
+        .annotate(_stimme_pos=User.stimme_order_case())
+        .order_by("_stimme_pos", "last_name", "first_name")
+    )
+    filter_data = request.GET
+    if can_manage and "aktiv" not in filter_data:
+        filter_data = filter_data.copy()
+        filter_data["aktiv"] = "true"
+    mitglieder_filter = MitgliederFilter(filter_data, queryset=queryset, can_manage=can_manage)
+    entries = []
+    for user in mitglieder_filter.qs:
+        if user.field_visible_to(request.user, "email") and user.email:
+            name = f"{user.first_name} {user.last_name}".strip()
+            entries.append(f"{name} <{user.email}>")
+    return JsonResponse({"emails": entries})
 
 
 @permission_required("intern.add_user", raise_exception=True)
