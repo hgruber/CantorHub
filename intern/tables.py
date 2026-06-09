@@ -89,7 +89,12 @@ class OrdnerTabelle(tables.Table):
         return format_html('<a href="{}" target="_blank" rel="noopener"><img src="{}" /></a>', url, media)
 
     def render_pfad(self, record):
-        return record.get("pfad", "")
+        pfad = record.get("pfad", "")
+        folder_id = record.get("folder_id")
+        if not pfad or not folder_id:
+            return pfad
+        url = reverse("folder_view", args=[folder_id])
+        return format_html('<a href="{}">{}</a>', url, pfad)
 
     def render_size(self, record):
         if record["type"] == "Folder":
