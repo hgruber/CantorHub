@@ -108,28 +108,35 @@ class TableProcessor:
         return ''
 
 
-class CitationProcessor:
-    def __init__(self):
-        self.in_citation = False
+class BlockLineProcessor:
+    """Buffers consecutive lines sharing a prefix char into a single <div>."""
+
+    def __init__(self, prefix_char, css_class):
+        self.prefix_char = prefix_char
+        self.css_class = css_class
+        self.active = False
+        self.lines = []
 
     def process_line(self, line):
-        """Returns (prefix_to_emit, modified_line)."""
-        if line.startswith('%'):
-            content = line[1:]
-            if not self.in_citation:
-                self.in_citation = True
-                return '', '<div class="citation">' + content
-            return '', '<br>' + content
-        else:
-            if self.in_citation:
-                self.in_citation = False
-                return '</div>', line
-            return '', line
+        """Returns (prefix_to_emit, modified_line).
+        modified_line is None while buffering — caller must skip."""
+        if line.startswith(self.prefix_char):
+            self.lines.append(line[1:].strip())
+            self.active = True
+            return '', None
+        if self.active:
+            self.active = False
+            block = f'<div class="{self.css_class}">' + ' '.join(self.lines) + '</div>'
+            self.lines = []
+            return block, line
+        return '', line
 
     def close(self):
-        if self.in_citation:
-            self.in_citation = False
-            return '</div>'
+        if self.active:
+            self.active = False
+            block = f'<div class="{self.css_class}">' + ' '.join(self.lines) + '</div>'
+            self.lines = []
+            return block
         return ''
 
 
@@ -401,7 +408,9 @@ def apply_replacements(text, request=None):
     list_processor = ListProcessor()
     code_processor = CodeBlockProcessor()
     table_processor = TableProcessor()
-    citation_processor = CitationProcessor()
+    citation_processor = BlockLineProcessor('%', 'citation')
+    indent_processor = BlockLineProcessor(':', 'indent')
+    boxed_processor = BlockLineProcessor('@', 'boxed')
 
     # Definiere deine regulären Ausdrücke und Ersetzungen
     REPLACEMENTS = [
@@ -410,8 +419,6 @@ def apply_replacements(text, request=None):
         (r"^====(.*)====$", r"<h3>\1</h3>"),
         (r"^===(.*)===$", r"<h2>\1</h2>"),
         (r"^==(.*)==$", r"<h1>\1</h1>"),
-        (r"^:(.*)$", r'<div class="indent">\1</div>'),
-        (r"^@(.*)$", r'<div class="boxed">\1</div>'),
         (
             r"(\[\[(([^\]]*?)\:)?\s*([^\[\]]*?)(\|([^\[\]]+?))?\]\]([a-z]+)?)",
             lambda match: internal_links(match, request),
@@ -484,14 +491,28 @@ def apply_replacements(text, request=None):
         if table_prefix:
             result.append(table_prefix)
         citation_prefix, repl = citation_processor.process_line(repl)
+        if repl is None:
+            continue
         if citation_prefix:
             result.append(citation_prefix)
+        indent_prefix, repl = indent_processor.process_line(repl)
+        if repl is None:
+            continue
+        if indent_prefix:
+            result.append(indent_prefix)
+        boxed_prefix, repl = boxed_processor.process_line(repl)
+        if repl is None:
+            continue
+        if boxed_prefix:
+            result.append(boxed_prefix)
         for pattern, replacement in REPLACEMENTS:
             repl = re.sub(pattern, replacement, repl, flags=re.IGNORECASE)
         result.append(f"{repl}")
     result.append(code_processor.close())
     result.append(table_processor.close())
     result.append(citation_processor.close())
+    result.append(indent_processor.close())
+    result.append(boxed_processor.close())
     if request is not None:
         result.append(
             '<p id="footer"><img src="/static/intern/images/JG-Frankfurt-wG-color.svg" style="width: 14px;">&nbsp;Just Gospel!</p>'
