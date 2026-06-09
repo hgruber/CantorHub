@@ -625,11 +625,17 @@ def folder_copy(request):
                 continue
             if _is_descendant_or_self(target_id, src.pk):
                 continue
+            src_read, _, _ = folder_access(request.user, src)
+            if not src_read:
+                continue
             _copy_folder_deep(src, target_id, request.user)
         elif item_type == "File":
             try:
                 f = File.objects.get(pk=item_id)
             except File.DoesNotExist:
+                continue
+            src_read, _, _ = folder_access(request.user, f.folder)
+            if not src_read:
                 continue
             File.objects.create(
                 file=f.file,

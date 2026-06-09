@@ -152,10 +152,10 @@ class CodeBlockProcessor:
                 # Erste eingezogene Zeile - öffne Codeblock
                 self.in_code_block = True
                 self.code_lines = []
-                return "<pre><code>" + html.escape(line), True
+                return "<pre><code>" + line, True
             else:
                 # Weitere eingezogene Zeile
-                return html.escape(line), True
+                return line, True
         else:
             # Normale Zeile - schließe Codeblock wenn nötig
             if self.in_code_block:
@@ -200,7 +200,7 @@ def insert_file_object(f):
             pass
     return (
         f'<figure class="wiki-figure">'
-        f'<a href="{f.url}">Datei: {f.original_filename}</a>'
+        f'<a href="{f.url}">Datei: {filename}</a>'
         f'{caption}</figure>'
     )
 
@@ -388,7 +388,7 @@ def internal_links(match, request):
             return insert_file_object(f)
         except Exception as e:
             return (
-                f'<span title="{e}" class="not_found">⚠️ Datei: {match.group(4)}</span>'
+                f'<span title="{html.escape(str(e))}" class="not_found">⚠️ Datei: {match.group(4)}</span>'
             )
 
     elif match.group(2) == "Aktion:":
@@ -398,7 +398,7 @@ def internal_links(match, request):
     else:
         prefix = match.group(2) or ""
         name = match.group(4)
-        display = match.group(6) or name
+        display = match.group(6) or match.group(4)
         return f'<a href="/intern/artikel/{prefix}{name}/">{display}</a>'
 
 
@@ -414,16 +414,16 @@ def apply_replacements(text, request=None):
 
     # Definiere deine regulären Ausdrücke und Ersetzungen
     REPLACEMENTS = [
-        (r"^======(.*)======$", r"<h5>\1</h5>"),
-        (r"^=====(.*)=====$", r"<h4>\1</h4>"),
-        (r"^====(.*)====$", r"<h3>\1</h3>"),
-        (r"^===(.*)===$", r"<h2>\1</h2>"),
-        (r"^==(.*)==$", r"<h1>\1</h1>"),
+        (r"^======(.*)======$", lambda m: f"<h5>{m.group(1)}</h5>"),
+        (r"^=====(.*)=====$", lambda m: f"<h4>{m.group(1)}</h4>"),
+        (r"^====(.*)====$", lambda m: f"<h3>{m.group(1)}</h3>"),
+        (r"^===(.*)===$", lambda m: f"<h2>{m.group(1)}</h2>"),
+        (r"^==(.*)==$", lambda m: f"<h1>{m.group(1)}</h1>"),
         (
             r"(\[\[(([^\]]*?)\:)?\s*([^\[\]]*?)(\|([^\[\]]+?))?\]\]([a-z]+)?)",
             lambda match: internal_links(match, request),
         ),
-        (r"\[(https?://[^\s\]]+)\s+([^\]]+)\]", r'<a href="\1">\2</a>'),  # [URL Name]
+        (r"\[(https?://[^\s\]]+)\s+([^\]]+)\]", lambda m: f'<a href="{m.group(1)}">{m.group(2)}</a>'),  # [URL Name]
         (
             r"(?<![\"])(https?://[^\s\"]+\.(?:png|jpg|jpeg|gif|bmp|svg|webp))(?![\"])",
             r'<img src="\1"></img>',
@@ -441,11 +441,11 @@ def apply_replacements(text, request=None):
             r'<a href="\1">\1</a>',
         ),  # URL
         (r"^\s*([^<].*)$", r"<p>\1</p>"),
-        (r"''''([\s\S]*)''''", r"<em><strong>\1</strong></em>"),
-        (r"'''([\s\S]*)'''", r"<strong>\1</strong>"),
-        (r"''([\s\S]*)''", r"<em>\1</em>"),
-        (r'""([\s\S]*)""', r"&quot;\1&quot;"),
-        (r"\$([\s\S]*)\$", lambda match: html.escape(match.group(1))),  # no format
+        (r"''''([\s\S]*)''''", lambda m: f"<em><strong>{m.group(1)}</strong></em>"),
+        (r"'''([\s\S]*)'''", lambda m: f"<strong>{m.group(1)}</strong>"),
+        (r"''([\s\S]*)''", lambda m: f"<em>{m.group(1)}</em>"),
+        (r'""([\s\S]*)""', lambda m: f"&quot;{m.group(1)}&quot;"),
+        (r"\$([\s\S]*)\$", r"\1"),  # no format (content pre-escaped)
         (r"(^|\s)(@\w+)", r'<span class="mention">\2</span>'),  # Erwähnungen
     ]
 
@@ -473,6 +473,8 @@ def apply_replacements(text, request=None):
     for line in text.splitlines():
         if line is None or line == "" or re.match(r"^\s+$", line):
             continue
+        if not (line.startswith('<!--block-') and line.endswith('-->')):
+            line = html.escape(line)
         line, repl = list_processor.process_line(line)
         if line:
             result.append(f"{line}")

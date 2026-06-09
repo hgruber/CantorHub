@@ -212,6 +212,9 @@ def dummy(request, *args, **kwargs):
 
 @login_required
 def article_history(request, name):
+    can_read, _ = _artikel_access(request.user, name)
+    if not can_read:
+        raise PermissionDenied
     versions = list(Artikel.objects.filter(name=name).order_by("version"))
     if not versions:
         return redirect("article_list")
@@ -257,6 +260,9 @@ def article_history(request, name):
 
 @login_required
 def article_diff(request, name):
+    can_read, _ = _artikel_access(request.user, name)
+    if not can_read:
+        raise PermissionDenied
     try:
         v1 = int(request.GET.get("v1", ""))
         v2 = int(request.GET.get("v2", ""))
