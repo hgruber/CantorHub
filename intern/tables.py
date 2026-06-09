@@ -68,6 +68,7 @@ class OrdnerTabelle(tables.Table):
             url = reverse("folder_view", args=[record["id"]])
         else:
             url = "/media/" + record["link"]
+            return format_html('<a href="{}" target="_blank" rel="noopener">{}</a>', url, name)
         return format_html('<a href="{}">{}</a>', url, name)
 
     def render_type(self, record):
@@ -85,7 +86,7 @@ class OrdnerTabelle(tables.Table):
         elif record["mime"].endswith("pdf"):
             media = static("filer/icons/file-pdf.svg")
         url = f"/media/{record['link']}"
-        return format_html('<a href="{}"><img src="{}" /></a>', url, media)
+        return format_html('<a href="{}" target="_blank" rel="noopener"><img src="{}" /></a>', url, media)
 
     def render_pfad(self, record):
         return record.get("pfad", "")
