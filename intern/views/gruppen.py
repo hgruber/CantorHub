@@ -35,10 +35,8 @@ PERMISSION_DEFS = [
     ("intern.change_ort",                 "bearbeiten",     "Orte"),
     ("intern.delete_ort",                 "löschen",        "Orte"),
     # Dateien
-    ("filer.add_folder",                  "anlegen",        "Dateien"),
-    ("filer.change_folder",               "bearbeiten",     "Dateien"),
-    ("filer.delete_folder",               "löschen",        "Dateien"),
-    ("intern.manage_folder_permissions",  "Berechtigungen", "Dateien"),
+    ("intern.delete_folder",             "löschen",        "Dateien"),
+    ("intern.manage_folder_permissions", "Berechtigungen", "Dateien"),
 ]
 
 # Human-readable label for each permission string, e.g. "intern.add_artikel" → "Artikel anlegen"

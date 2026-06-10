@@ -225,6 +225,7 @@ class FolderPermission(models.Model):
         verbose_name_plural = "Ordnerberechtigungen"
         permissions = [
             ("manage_folder_permissions", "Kann Ordner-Berechtigungen verwalten"),
+            ("delete_folder", "Kann Ordner und Dateien löschen"),
         ]
 
     def __str__(self):

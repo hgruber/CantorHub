@@ -1,12 +1,10 @@
 """Per-folder access control built on top of the FolderPermission model.
 
-Two layers:
-- Layer 1: Django group perms (filer.add_folder, manage_folder_permissions etc.) —
-  checked with `user.has_perm(...)` directly at the relevant entry points.
-- Layer 2: FolderPermission rows — checked here.
-
-A folder with no FolderPermission rows is fully open (read/write/delete for everyone).
+A folder with no FolderPermission rows is open for read and write, but NOT for delete.
 A folder with rows is restricted: only matching groups have the listed flags.
+
+Delete access requires either the global `intern.delete_folder` permission OR a
+FolderPermission row with can_delete=True for one of the user's groups.
 
 A folder is *visible* (browsable) only if the user has can_read on it AND on every
 ancestor up to the root. Folders without read access vanish entirely from the tree.
@@ -30,7 +28,7 @@ def folder_access(user, folder):
         return True, True, True   # root: open
     perms = list(FolderPermission.objects.filter(folder=folder))
     if not perms:
-        return True, True, True
+        return True, True, False  # no rows: open for read/write, closed for delete
     group_ids = set(user.groups.values_list("id", flat=True))
     matches = [p for p in perms if p.group_id in group_ids]
     return (

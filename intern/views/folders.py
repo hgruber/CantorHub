@@ -1,7 +1,7 @@
 import posixpath
 import zipfile
 
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import (
     Count,
@@ -528,7 +528,7 @@ def folder_create(request, pk):
     if pk != 0 and not is_folder_visible(request.user, parent):
         raise Http404
     _, can_write, _ = folder_access(request.user, parent)
-    if not can_write and not request.user.has_perm("filer.add_folder"):
+    if not can_write:
         raise PermissionDenied
 
     name = request.POST.get("name", "").strip()
@@ -558,36 +558,31 @@ def folder_create(request, pk):
 @require_POST
 def folder_delete(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
-    can_delete_folder = request.user.has_perm("filer.delete_folder")
+    global_delete = request.user.has_perm("intern.delete_folder")
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
-            # Folder deletion needs Layer 1 only
-            if not can_delete_folder:
-                continue
             try:
-                _delete_folder_deep(Folder.objects.get(pk=item_id))
+                folder = Folder.objects.get(pk=item_id)
             except Folder.DoesNotExist:
-                pass
+                continue
+            _, _, can_del = folder_access(request.user, folder)
+            if not (global_delete or can_del):
+                continue
+            _delete_folder_deep(folder)
         else:
-            # File deletion: own uploads immer, fremde Dateien nur mit
-            # filer.delete_file (Layer 1) — zusätzlich can_delete auf dem Ordner.
             try:
                 f = File.objects.get(pk=item_id)
             except File.DoesNotExist:
                 continue
             _, _, can_del = folder_access(request.user, f.folder)
-            if not can_del:
-                continue
-            if f.owner_id != request.user.id and not request.user.has_perm(
-                "filer.delete_file"
-            ):
+            if not (global_delete or can_del):
                 continue
             f.delete()
     folders.invalidate()
     return redirect("folder_view", pk=referer_pk)
 
 
-@permission_required("filer.change_folder", raise_exception=True)
+@login_required
 @require_POST
 def folder_move(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
@@ -612,7 +607,7 @@ def folder_move(request):
     return redirect("folder_view", pk=referer_pk)
 
 
-@permission_required("filer.change_folder", raise_exception=True)
+@login_required
 @require_POST
 def folder_copy(request):
     referer_pk = int(request.POST.get("referer_pk", 0))
@@ -654,7 +649,7 @@ def folder_copy(request):
     return redirect("folder_view", pk=referer_pk)
 
 
-@permission_required("filer.change_folder", raise_exception=True)
+@login_required
 @require_POST
 def folder_rename(request):
     item_type = request.POST.get("type", "")
