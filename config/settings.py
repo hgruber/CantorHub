@@ -58,6 +58,10 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 3600
     SECURE_REFERRER_POLICY = "same-origin"
 
+SESSION_COOKIE_AGE = 14400          # 4 hours
+SESSION_SAVE_EVERY_REQUEST = True   # reset timer on activity
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 # Application definition
 
 INSTALLED_APPS = [
