@@ -22,6 +22,26 @@ logger = logging.getLogger(__name__)
 _MAX_RETRIES = 3
 _RETRY_CAP = 5  # max seconds between retries
 
+_insecure_url_warned = False
+
+
+def _warn_if_insecure(url):
+    """Einmalige Warnung, wenn Klartext-Passwörter über das Netz gehen würden."""
+    global _insecure_url_warned
+    if _insecure_url_warned:
+        return
+    if url.startswith("https://"):
+        return
+    host = url.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0]
+    if host in ("127.0.0.1", "localhost", "::1"):
+        return
+    _insecure_url_warned = True
+    logger.warning(
+        "EJABBERD_API_URL %s ist weder lokal noch HTTPS — Passwörter werden "
+        "im Klartext übertragen.",
+        url,
+    )
+
 
 def _request(endpoint, body=None, allow_statuses=None):
     """
@@ -33,6 +53,7 @@ def _request(endpoint, body=None, allow_statuses=None):
     (e.g. {409} for "already exists" responses from register).
     """
     url = f"{get_config('EJABBERD_API_URL', 'http://127.0.0.1:5280').rstrip('/')}/api/{endpoint}"
+    _warn_if_insecure(url)
     auth = (get_config("EJABBERD_BOT_JID", ""), get_config("EJABBERD_BOT_PASSWORD", ""))
     allowed = allow_statuses or set()
 

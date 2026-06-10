@@ -318,7 +318,7 @@
             Änderungen anwenden (<span id="perm-change-count">0</span>)
         </button>
     </div>
-    <script id="matrix-data" type="application/json">{{ matrix_json|safe }}</script>
+    {{ matrix|json_script:"matrix-data" }}
     <script>
 (function () {
     'use strict';

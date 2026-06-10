@@ -292,13 +292,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const preview = document.createElement("div");
       preview.className = "dropzone-field-preview";
+      // Dateinamen nur über textContent einfügen — nie über innerHTML.
+      function showDone(thumbSrc, fileName) {
+        preview.textContent = "";
+        if (thumbSrc) {
+          const img = document.createElement("img");
+          img.className = "dropzone-field-thumb";
+          img.src = thumbSrc;
+          preview.appendChild(img);
+        }
+        const span = document.createElement("span");
+        span.className = "dropzone-field-done";
+        span.textContent = fileName;
+        preview.appendChild(span);
+      }
       if (existingId) {
         // Show current file thumbnail + name on edit pages
         const thumbImg = widget.querySelector("img.thumbnail_img");
         const descEl = widget.querySelector(".description_text");
         const fileName = descEl && descEl.textContent.trim() ? descEl.textContent.trim() : "aktuelle Datei";
-        const thumbHtml = thumbImg && thumbImg.src ? '<img class="dropzone-field-thumb" src="' + thumbImg.src + '">' : '';
-        preview.innerHTML = thumbHtml + '<span class="dropzone-field-done">' + fileName + '</span>';
+        showDone(thumbImg && thumbImg.src, fileName);
       } else {
         preview.innerHTML = '<span class="dropzone-field-placeholder">' + labelText + ' ablegen oder klicken</span>';
       }
@@ -316,10 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
         init: function () {
           this.on("success", function (file, response) {
             valueInput.value = response.id;
-            const thumbHtml = response.thumbnail_url
-              ? '<img class="dropzone-field-thumb" src="' + response.thumbnail_url + '">'
-              : '';
-            preview.innerHTML = thumbHtml + '<span class="dropzone-field-done">' + file.name + '</span>';
+            showDone(response.thumbnail_url, file.name);
           });
           this.on("addedfile", function () {
             preview.innerHTML = '<span class="dropzone-field-uploading">Hochladen…</span>';

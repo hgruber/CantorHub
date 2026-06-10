@@ -569,13 +569,18 @@ def folder_delete(request):
             except Folder.DoesNotExist:
                 pass
         else:
-            # File deletion needs can_delete on containing folder
+            # File deletion: own uploads immer, fremde Dateien nur mit
+            # filer.delete_file (Layer 1) — zusätzlich can_delete auf dem Ordner.
             try:
                 f = File.objects.get(pk=item_id)
             except File.DoesNotExist:
                 continue
             _, _, can_del = folder_access(request.user, f.folder)
             if not can_del:
+                continue
+            if f.owner_id != request.user.id and not request.user.has_perm(
+                "filer.delete_file"
+            ):
                 continue
             f.delete()
     folders.invalidate()

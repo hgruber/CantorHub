@@ -25,13 +25,20 @@ VERSION = (
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "django-insecure-96c((62k0dknm__v%zrw3#3=7pc^$tc)&#w1m50#5ly)o71#la"
-)
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", False) == "1"
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-96c((62k0dknm__v%zrw3#3=7pc^$tc)&#w1m50#5ly)o71#la"
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+
+        raise ImproperlyConfigured(
+            "SECRET_KEY environment variable must be set when DEBUG is off."
+        )
 
 ALLOWED_HOSTS = ["test.example.org", "narsil", "localhost", "127.0.0.1"]
 
@@ -44,6 +51,12 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 3600
+    SECURE_REFERRER_POLICY = "same-origin"
 
 # Application definition
 

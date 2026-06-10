@@ -2,9 +2,13 @@ import logging
 import threading
 
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.tokens import default_token_generator
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.shortcuts import redirect, render
-from django.utils.crypto import get_random_string
+from django.urls import reverse, reverse_lazy
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from intern import ejabberd
 from intern.app_settings import get_config_bool, is_email_configured
@@ -14,6 +18,7 @@ from ..models import User
 
 __all__ = [
     "CantorLoginView",
+    "CantorPasswordResetConfirmView",
     "custom_404",
     "home",
     "register",
@@ -84,10 +89,38 @@ def _find_user(username, email, first_name, last_name):
     return None
 
 
+def _client_ip(request):
+    """Client-IP hinter nginx: letzter Eintrag in X-Forwarded-For (von nginx
+    angehängt, nicht spoofbar), sonst REMOTE_ADDR."""
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded:
+        return forwarded.split(",")[-1].strip()
+    return request.META.get("REMOTE_ADDR", "")
+
+
+_RESET_MAX_PER_HOUR = 5
+
+
 def register(request):
+    """Passwort-zurücksetzen-Anfrage.
+
+    Setzt das Passwort nicht direkt, sondern verschickt einen Bestätigungslink
+    (Django-Token). Antwortet unabhängig vom Treffer mit derselben neutralen
+    Meldung, damit keine Konten enumeriert werden können, und drosselt pro IP.
+    """
     if request.method == "POST":
         form = RegisterForm(request.POST)
+
+        throttle_key = f"pwreset-throttle:{_client_ip(request)}"
+        attempts = cache.get(throttle_key, 0)
+        if attempts >= _RESET_MAX_PER_HOUR:
+            form.add_error(
+                None, "Zu viele Anfragen. Bitte versuche es später erneut."
+            )
+            return render(request, "register.html", {"form": form})
+
         if form.is_valid():
+            cache.set(throttle_key, attempts + 1, 3600)
             cd = form.cleaned_data
             user = _find_user(
                 cd.get("username"),
@@ -95,36 +128,57 @@ def register(request):
                 cd.get("first_name"),
                 cd.get("last_name"),
             )
-            if user and user.email:
-                password = get_random_string(10)
-                user.set_password(password)
-                user.save()
-                subject = "Dein neues Passwort"
+            if user and user.email and user.is_active:
+                uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+                link = request.build_absolute_uri(
+                    reverse("password_reset_confirm", args=[uidb64, token])
+                )
+                subject = "Passwort zurücksetzen"
                 message = (
-                    f"Du kannst Dich sofort im internen Bereich anmelden\n"
-                    f"mit deinem Benutzer '{user.username}' und Deinem\n"
-                    f"neuen Passwort: {password}"
+                    f"Hallo {user.first_name},\n\n"
+                    f"über diesen Link kannst Du ein neues Passwort für Deinen\n"
+                    f"Benutzer '{user.username}' setzen:\n\n{link}\n\n"
+                    f"Wenn Du das nicht angefordert hast, kannst Du diese E-Mail\n"
+                    f"ignorieren — Dein Passwort bleibt unverändert."
                 )
                 try:
                     send_mail(subject, message, None, [user.email])
                 except Exception:
                     logger.exception("Failed to send password reset email to %s", user.email)
-                    form.add_error(None, "E-Mail konnte nicht versendet werden. Bitte wende Dich an den Administrator.")
-                    return render(request, "register.html", {"form": form})
                 if not is_email_configured():
                     logger.warning(
                         "EMAIL_HOST is not set in Konfiguration — email was written to console, not sent."
                     )
-                logger.info("Password reset email sent to %s for user %s", user.email, user.username)
-                return redirect("register_success")
-            else:
-                form.add_error(
-                    None,
-                    "Benutzer nicht gefunden oder keine E-Mail-Adresse hinterlegt.",
-                )
+                logger.info("Password reset link sent to %s for user %s", user.email, user.username)
+            # Immer dieselbe Antwort — kein Rückschluss auf existierende Konten.
+            return redirect("register_success")
     else:
         form = RegisterForm()
     return render(request, "register.html", {"form": form})
+
+
+class CantorPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+    """Setzt das Passwort nach Klick auf den E-Mail-Link.
+
+    Synchronisiert das neue Passwort anschließend zu ejabberd, wie es auch
+    mitglied_passwd tut.
+    """
+
+    template_name = "reset_confirm.html"
+    success_url = reverse_lazy("login")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        user = form.user
+        if get_config_bool("EJABBERD_ENABLED") and user.xmpp:
+            localpart = user.xmpp.split("@")[0]
+            threading.Thread(
+                target=ejabberd.set_user_password,
+                args=(localpart, form.cleaned_data["new_password1"]),
+                daemon=True,
+            ).start()
+        return response
 
 
 def register_success(request):

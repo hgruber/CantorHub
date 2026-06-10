@@ -2,7 +2,6 @@ import logging
 import mimetypes
 import os
 import zipfile
-from io import BytesIO
 from pathlib import PurePosixPath
 
 from django.conf import settings
@@ -128,6 +127,10 @@ def _route_and_rename_for_lied(lied, filer_file, source_name):
 @login_required
 @require_POST
 def upload(request):
+    if not request.FILES:
+        return JsonResponse(
+            {"status": "error", "message": "Keine Datei übermittelt"}, status=400
+        )
     if request.FILES:
         from intern.folder_access import folder_access
 
@@ -221,7 +224,7 @@ def upload(request):
             _assign_file_to_song(file.name, filer_file)
 
         # Return response
-        url = request.META.get("HTTP_ORIGIN") + filer_file.url
+        url = (request.META.get("HTTP_ORIGIN") or "") + filer_file.url
         thumb = ""
         try:
             thumb = get_thumbnailer(filer_file.file).get_thumbnail(
@@ -301,6 +304,12 @@ def _unique_folder_name(parent_id, base):
     return f"{base}-{n}"
 
 
+# Schutz gegen Zip-Bomben: Grenzen für Anzahl und entpackte Größe.
+_UNZIP_MAX_ENTRIES = 500
+_UNZIP_MAX_TOTAL = 500 * 1000 * 1000   # 500 MB entpackt insgesamt
+_UNZIP_MAX_SINGLE = 100 * 1000 * 1000  # 100 MB pro Datei
+
+
 @login_required
 def file_unzip(request, pk):
     from intern.folder_access import folder_access
@@ -318,14 +327,15 @@ def file_unzip(request, pk):
             {"status": "error", "message": "Keine Schreibrechte für diesen Ordner"},
             status=403,
         )
-    with src_file.file.open("rb") as fh:
-        payload = fh.read()
+    fh = src_file.file.open("rb")
     try:
-        zf = zipfile.ZipFile(BytesIO(payload))
+        zf = zipfile.ZipFile(fh)
     except zipfile.BadZipFile:
+        fh.close()
         return JsonResponse({"status": "error", "message": "Beschädigtes Archiv."}, status=400)
 
     entries = []
+    total_size = 0
     for info in zf.infolist():
         name = _decode_zip_name(info)
         if not name or name.startswith("__MACOSX/") or "/.DS_Store" in name:
@@ -335,9 +345,18 @@ def file_unzip(request, pk):
         parts = [p for p in PurePosixPath(name).parts if p not in (".", "")]
         if not parts or ".." in parts:
             continue
+        total_size += info.file_size
         entries.append((parts, info))
 
+    if len(entries) > _UNZIP_MAX_ENTRIES or total_size > _UNZIP_MAX_TOTAL:
+        fh.close()
+        return JsonResponse(
+            {"status": "error", "message": "Archiv ist zu groß zum Entpacken."},
+            status=400,
+        )
+
     if not entries:
+        fh.close()
         return JsonResponse({"status": "error", "message": "Leeres Archiv."}, status=400)
 
     top_levels = {parts[0] for parts, _ in entries}
@@ -366,9 +385,13 @@ def file_unzip(request, pk):
         effective = parts[strip:]
         if not effective:
             continue
+        if info.file_size > _UNZIP_MAX_SINGLE:
+            continue
         dir_parts, fname = effective[:-1], effective[-1]
         target_folder = ensure_folder(dir_parts)
         try:
+            # zf.read() stoppt bei file_size aus dem Header — eine gefälschte
+            # Größenangabe kann das Limit damit nicht unterlaufen.
             data = zf.read(info)
         except Exception:
             continue
@@ -383,5 +406,6 @@ def file_unzip(request, pk):
         )
         _assign_file_to_song(fname, filer_file)
 
+    fh.close()
     folders.invalidate()
     return redirect("folder_view", pk=parent_id or 0)

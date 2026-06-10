@@ -15,6 +15,11 @@ urlpatterns = [
     path("register/", views.register, name="register"),
     path("register_success/", views.register_success, name="register_success"),
     path(
+        "reset/<uidb64>/<token>/",
+        views.CantorPasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
+    path(
         "logout/",
         auth_views.LogoutView.as_view(next_page="login"),
         name="logout",
@@ -24,6 +29,9 @@ urlpatterns = [
     path("berechtigungen/", views.berechtigungen, name="berechtigungen"),
     path("gruppen/", views.gruppen, name="gruppen"),
     path("aenderungsprotokoll/", views.aenderungsprotokoll_list, name="aenderungsprotokoll_list"),
+    # Media access control
+    path("media-auth/", views.media_auth, name="media_auth"),
+    path("datei/<int:pk>/<str:token>/<path:filename>", views.datei_token, name="datei_token"),
     # Upload and File URLs
     path("upload/", views.upload, name="upload"),
     path("file-search/", views.file_search, name="file_search"),

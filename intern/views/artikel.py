@@ -201,6 +201,7 @@ def article_view(request, name):
     return render(request, "artikel.html", context)
 
 
+@login_required
 def dummy(request, *args, **kwargs):
     context = {
         "seitentitel": "Nicht implementiert",

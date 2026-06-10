@@ -175,6 +175,6 @@ def gruppen(request):
         "groups": all_groups,
         "categories": categories,
         "permission_defs": PERMISSION_DEFS,
-        "matrix_json": json.dumps(matrix),
-        "group_user_counts_json": json.dumps(group_user_counts),
+        "matrix": matrix,
+        "group_user_counts": group_user_counts,
     })

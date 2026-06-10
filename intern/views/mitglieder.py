@@ -1,8 +1,10 @@
 import logging
 import threading
 
+from django.contrib.auth import password_validation, update_session_auth_hash
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.db.models import Count, OuterRef
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -217,21 +219,32 @@ def mitglied_passwd(request, id):
     ):
         return redirect("mitglied_view", id=id)
 
+    # Wer das eigene Passwort ändert, muss das aktuelle kennen — eine
+    # entwendete Session reicht so nicht für eine Kontoübernahme.
+    require_current = request.user.id == target_user.id
+    form_context = {"user": target_user, "require_current": require_current}
+
     if request.method == "POST":
         new_password1 = request.POST.get("new_password1")
         new_password2 = request.POST.get("new_password2")
 
+        if require_current and not request.user.check_password(
+            request.POST.get("old_password") or ""
+        ):
+            messages.error(request, "Das aktuelle Passwort ist nicht korrekt.")
+            return render(request, "mitglied_passwd.html", form_context)
+
         # Überprüfe, ob die neuen Passwörter übereinstimmen
         if new_password1 != new_password2:
             messages.error(request, "Die neuen Passwörter stimmen nicht überein.")
-            return render(request, "mitglied_passwd.html", {"user": target_user})
+            return render(request, "mitglied_passwd.html", form_context)
 
-        # Überprüfe Passwortlänge
-        if len(new_password1) < 5:
-            messages.error(
-                request, "Das neue Passwort muss mindestens 5 Zeichen lang sein."
-            )
-            return render(request, "mitglied_passwd.html", {"user": target_user})
+        try:
+            password_validation.validate_password(new_password1, user=target_user)
+        except ValidationError as exc:
+            for msg in exc.messages:
+                messages.error(request, msg)
+            return render(request, "mitglied_passwd.html", form_context)
 
         # Setze neues Passwort
         target_user.set_password(new_password1)
@@ -248,19 +261,14 @@ def mitglied_passwd(request, id):
 
         messages.success(request, "Das Passwort wurde erfolgreich geändert.")
 
-        # Wenn der aktuelle Benutzer das Passwort geändert hat, automatisch erneut einloggen
+        # Session gültig halten, ohne das Passwort erneut durch authenticate() zu schicken
         if request.user.id == target_user.id:
-            from django.contrib.auth import authenticate, login
-
-            # Erneutes Einloggen des Benutzers mit dem neuen Passwort
-            user = authenticate(username=target_user.username, password=new_password1)
-            if user is not None:
-                login(request, user)
+            update_session_auth_hash(request, target_user)
 
         return redirect("mitglied_passwd", id=id)
     else:
         context = {
-            "user": target_user,
+            **form_context,
             "seitentitel": f"Passwort ändern: {target_user.first_name} {target_user.last_name}",
             "view": "mitglied_view",
             "edit": "mitglied_edit",

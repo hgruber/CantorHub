@@ -347,8 +347,8 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     </button>
 </div>
 
-<script id="matrix-data" type="application/json">{{ matrix_json|safe }}</script>
-<script id="user-counts-data" type="application/json">{{ group_user_counts_json|safe }}</script>
+{{ matrix|json_script:"matrix-data" }}
+{{ group_user_counts|json_script:"user-counts-data" }}
 <script>
 (function () {
     'use strict';

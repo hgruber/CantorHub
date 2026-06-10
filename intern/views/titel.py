@@ -177,7 +177,7 @@ def titel_list(request):
         "add_form_multipart": True,
         "add_label": "Neuer Titel",
         "play_menu": bool(playlist_originals or playlist_aufnahmen),
-        "playlists_json": json.dumps(playlists, ensure_ascii=False),
+        "playlists": playlists,
         "playlist_originals_count": len(playlist_originals),
         "playlist_aufnahmen_count": len(playlist_aufnahmen),
         "playlist_all_count": len(playlist_all),

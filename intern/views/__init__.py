@@ -9,6 +9,7 @@ from .folders import *
 from .forums import *
 from .karte import *
 from .konfiguration import *
+from .media import *
 from .mitglieder import *
 from .orte import *
 from .termine import *

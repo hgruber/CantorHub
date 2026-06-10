@@ -183,6 +183,9 @@ class CodeBlockProcessor:
 def insert_file_object(f):
     mime = f.mime_type or ""
     filename = html.escape(f.original_filename or "")
+    # URLs stammen aus Dateinamen und können Anführungszeichen enthalten —
+    # escapen, damit sie das href/src-Attribut nicht verlassen können.
+    url = html.escape(f.url)
     caption = f"<figcaption>{filename}</figcaption>"
     if mime.startswith("image") or mime.endswith("pdf"):
         try:
@@ -192,15 +195,15 @@ def insert_file_object(f):
             alt = html.escape(f.original_filename or "")
             return (
                 f'<figure class="wiki-figure">'
-                f'<a href="{f.url}">'
-                f'<img src="{thumb.url}" alt="{alt}" class="datei-preview" /></a>'
+                f'<a href="{url}">'
+                f'<img src="{html.escape(thumb.url)}" alt="{alt}" class="datei-preview" /></a>'
                 f'{caption}</figure>'
             )
         except Exception:
             pass
     return (
         f'<figure class="wiki-figure">'
-        f'<a href="{f.url}">Datei: {filename}</a>'
+        f'<a href="{url}">Datei: {filename}</a>'
         f'{caption}</figure>'
     )
 

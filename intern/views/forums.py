@@ -18,6 +18,7 @@ from intern.app_settings import get_config_bool
 from ..forms import ForumEditForm
 from ..models import Forum, Mitteilung, User
 from ..tables import ForumTabelle
+from .media import rewrite_media_urls
 
 __all__ = [
     "forum_list",
@@ -46,6 +47,8 @@ def _forward_to_xmpp(msg):
             return
         sender_name = str(msg.sender) if msg.sender else "Anonymous"
         text = f"*{sender_name}*: {msg.mitteilung}"
+        # /media/-URLs sind session-geschützt; XMPP-Clients brauchen Token-Links.
+        text = rewrite_media_urls(text)
         ejabberd.send_muc_message(forum.xmpp_muc_jid, text)
     except Exception as exc:
         logger.error("ejabberd: failed to forward message %s to MUC: %s", msg.id, exc)
@@ -145,7 +148,7 @@ def forum_view(request, forum):
             "messages": messages,
             "upload_folder_id": folders.forum(),
             "up": "forum_list",
-            "edit": "forum_edit",
+            "edit": "forum_edit" if request.user.has_perm("intern.change_forum") else None,
             "history": "forum_aenderungen" if request.user.has_perm("intern.change_forum") else None,
             "id": forum,
         },
@@ -215,7 +218,7 @@ def forum_send(request, forum):
     return forum_get(request, forum, last_id)
 
 
-@login_required
+@permission_required("intern.change_forum", raise_exception=True)
 def forum_edit(request, forum):
     forum_obj = get_object_or_404(Forum, id=forum)
 
@@ -255,7 +258,7 @@ def forum_edit(request, forum):
     return render(request, "forum_edit.html", context)
 
 
-@login_required
+@permission_required("intern.change_forum", raise_exception=True)
 @require_POST
 def forum_invite(request, forum, user_id):
     forum_obj = get_object_or_404(Forum, id=forum)

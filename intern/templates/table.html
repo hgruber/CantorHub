@@ -205,8 +205,8 @@
     })();
     </script>
     {% endif %}
-    {% if playlists_json %}
-    <script id="playlists-data" type="application/json">{{ playlists_json|safe }}</script>
+    {% if playlists %}
+    {{ playlists|json_script:"playlists-data" }}
     {% endif %}
     {% if ical_url %}
     <div class="ical-subscribe" id="ical-subscribe">

@@ -1,0 +1,22 @@
+{% extends "dialog.html" %}
+{% block title %}Neues Passwort setzen{% endblock %}
+{% block content %}
+    <h1>Neues Passwort setzen</h1>
+    {% if validlink %}
+        <form method="POST" class="form-group">
+            {% csrf_token %} {{ form.as_div }}
+            <br />
+            <div class="form-group">
+                <button type="submit" class="login-button">Passwort speichern</button>
+            </div>
+        </form>
+    {% else %}
+        <div class="welcome-message">
+            <p>
+                Dieser Link ist ungültig oder wurde bereits verwendet.
+                Bitte fordere unter <a href="{% url 'register' %}">Passwort
+                zurücksetzen</a> einen neuen Link an.
+            </p>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -66,6 +66,8 @@ def karte_standorte_live(request):
 @login_required
 @require_POST
 def karte_ort_create(request):
+    if not request.user.has_perm("intern.add_ort"):
+        return JsonResponse({"error": "Keine Berechtigung"}, status=403)
     name = request.POST.get("name", "").strip()
     if not name:
         return JsonResponse({"error": "Name fehlt"}, status=400)
@@ -95,9 +97,13 @@ def karte_ort_detail(request, pk):
             "breite": ort.breite, "laenge": ort.laenge,
         })
     if request.POST.get("delete"):
+        if not request.user.has_perm("intern.delete_ort"):
+            return JsonResponse({"error": "Keine Berechtigung"}, status=403)
         ort._audit_user = request.user
         ort.delete()
         return JsonResponse({"deleted": True})
+    if not request.user.has_perm("intern.change_ort"):
+        return JsonResponse({"error": "Keine Berechtigung"}, status=403)
     name = request.POST.get("name", "").strip()
     if not name:
         return JsonResponse({"error": "Name fehlt"}, status=400)

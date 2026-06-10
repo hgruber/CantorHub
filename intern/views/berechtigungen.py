@@ -95,7 +95,7 @@ def berechtigungen(request):
         "seitentitel": "Berechtigungen",
         "users": page,
         "groups": groups,
-        "matrix_json": json.dumps(matrix),
+        "matrix": matrix,
         "has_more": has_more,
         "next_offset": offset + _PAGE_SIZE,
     })
