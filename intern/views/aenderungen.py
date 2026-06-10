@@ -104,7 +104,9 @@ MODEL_LABELS = {
     "User": "Mitglied",
     "Forum": "Forum",
     "Ort": "Ort",
+    "Mitteilung": "Nachricht",
     "Group": "Gruppe",
+    "Artikel": "Artikel",
 }
 
 # model_name → URL name used to build a detail-page link (only for non-delete actions)
@@ -114,6 +116,7 @@ _OBJECT_VIEW = {
     "User":   "mitglied_view",
     "Forum":  "forum_view",
     "Ort":    "ort_view",
+    "Artikel": "article_view",
 }
 
 
@@ -194,7 +197,11 @@ def _annotate_entries(entries):
         view_name = _OBJECT_VIEW.get(entry.model_name)
         if view_name and entry.action != ChangeLog.ACTION_DELETE:
             try:
-                entry.object_url = reverse(view_name, args=[entry.object_id])
+                # Artikel URLs use name (object_repr), not integer pk
+                if entry.model_name == "Artikel":
+                    entry.object_url = reverse(view_name, args=[entry.object_repr])
+                else:
+                    entry.object_url = reverse(view_name, args=[entry.object_id])
             except Exception:
                 entry.object_url = None
         else:

@@ -5,7 +5,7 @@ def project_meta(request):
     result = {"VERSION": settings.VERSION, "offen_termine": 0}
     if request.user.is_authenticated:
         from django.utils.timezone import now
-        from intern.models import Termin, Zusage
+        from intern.models import ChangeLog, Termin, Zusage
         answered = Zusage.objects.filter(
             person=request.user,
             termin__datum__gt=now(),
@@ -14,4 +14,8 @@ def project_meta(request):
         result["offen_termine"] = Termin.objects.filter(
             datum__gt=now(), anwesenheit=True,
         ).exclude(id__in=answered).count()
+        result["latest_changelog_id"] = (
+            ChangeLog.objects.order_by("-id").values_list("id", flat=True).first() or 0
+        )
+        result["notify_enabled"] = request.user.notify_enabled
     return result

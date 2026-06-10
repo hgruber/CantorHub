@@ -13,6 +13,7 @@ from datetime import datetime
 
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
+from django.contrib.auth.signals import user_logged_out
 
 from .apps import _migrating
 from .app_settings import get_config, get_config_bool
@@ -161,7 +162,7 @@ _AUDIT_FIELDS = {
     "User": [
         "first_name", "last_name", "stimme", "is_active", "is_superuser", "email",
         "xmpp", "strasse", "plz", "ort", "telefon", "telefon_mobil",
-        "geburtstag", "avatar_id", "private_fields",
+        "geburtstag", "avatar_id", "private_fields", "notify_enabled",
     ],
     "Termin": ["kurz", "datum", "datum_bis", "lang", "ort_id", "anwesenheit", "repertoire"],
     "Lied": ["titel", "aktiv", "tempo", "beats", "hymne", "acapella", "weihnacht", "komponist",
@@ -169,6 +170,8 @@ _AUDIT_FIELDS = {
     "Zusage": ["option"],
     "Forum": ["thema", "aktiv", "bild_id"],
     "Ort": ["name", "beschreibung", "strasse", "plz", "ort", "breite", "laenge"],
+    "Artikel": ["name", "version", "kommentar"],
+    "Mitteilung": ["mitteilung"],
 }
 
 
@@ -334,3 +337,74 @@ def _audit_ort_delete(sender, instance, **kwargs):
     if getattr(_migrating, "active", False):
         return
     _log_change(instance, getattr(instance, "_audit_user", None), "delete")
+
+
+# --- Mitteilung ---
+@receiver(pre_save, sender="intern.Mitteilung")
+def _audit_mitteilung_pre(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _capture_audit_old(sender, instance, "Mitteilung")
+
+
+@receiver(post_save, sender="intern.Mitteilung")
+def _audit_mitteilung_post(sender, instance, created, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    # Inject _audit_user from sender FK if not already set
+    if not getattr(instance, "_audit_user", None) and instance.sender_id:
+        from .models import User as UserModel
+        instance._audit_user = UserModel.objects.get(pk=instance.sender_id)
+    _write_audit_log(instance, created, "Mitteilung")
+
+
+@receiver(post_delete, sender="intern.Mitteilung")
+def _audit_mitteilung_delete(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _log_change(instance, getattr(instance, "_audit_user", None), "delete")
+
+
+# --- Artikel ---
+@receiver(pre_save, sender="intern.Artikel")
+def _audit_artikel_pre(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _capture_audit_old(sender, instance, "Artikel")
+
+
+@receiver(post_save, sender="intern.Artikel")
+def _audit_artikel_post(sender, instance, created, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    # Artikel saves are triggered by article_edit; inject _audit_user from autor
+    if not getattr(instance, "_audit_user", None) and instance.autor_id:
+        instance._audit_user = instance.autor
+    _write_audit_log(instance, created, "Artikel")
+
+
+@receiver(post_delete, sender="intern.Artikel")
+def _audit_artikel_delete(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _log_change(instance, getattr(instance, "_audit_user", None), "delete")
+
+
+# --- User logout ---
+@receiver(user_logged_out)
+def _audit_logout(sender, request, user, **kwargs):
+    """Write a ChangeLog entry when a user logs out."""
+    if getattr(_migrating, "active", False):
+        return
+    if user is None:
+        return
+    from .models import ChangeLog
+    ChangeLog.objects.create(
+        timestamp=datetime.now(),
+        user=user,
+        action=ChangeLog.ACTION_LOGOUT,
+        model_name="User",
+        object_id=user.pk,
+        object_repr=str(user)[:200],
+        changes={},
+    )

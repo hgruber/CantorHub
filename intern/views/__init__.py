@@ -11,6 +11,7 @@ from .karte import *
 from .konfiguration import *
 from .media import *
 from .mitglieder import *
+from .notify import *
 from .orte import *
 from .termine import *
 from .titel import *

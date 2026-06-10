@@ -87,6 +87,7 @@ class User(AbstractUser):
     # --- Meta / Status ---
     text = models.TextField(null=True, blank=True)
     private_fields = models.JSONField(default=list, blank=True)
+    notify_enabled = models.BooleanField(default=True, verbose_name="Benachrichtigungen")
 
     REQUIRED_FIELDS = []
 
@@ -511,11 +512,13 @@ class ChangeLog(models.Model):
     ACTION_UPDATE = "update"
     ACTION_DELETE = "delete"
     ACTION_LOGIN = "login"
+    ACTION_LOGOUT = "logout"
     ACTION_CHOICES = [
         (ACTION_CREATE, "Erstellt"),
         (ACTION_UPDATE, "Geändert"),
         (ACTION_DELETE, "Gelöscht"),
         (ACTION_LOGIN, "eingeloggt"),
+        (ACTION_LOGOUT, "ausgeloggt"),
     ]
 
     timestamp = models.DateTimeField(default=datetime.now)

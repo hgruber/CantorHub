@@ -24,6 +24,9 @@ urlpatterns = [
         auth_views.LogoutView.as_view(next_page="login"),
         name="logout",
     ),
+    # Notification URLs
+    path("notify/", views.site_notify, name="site_notify"),
+    path("notify/toggle/", views.notify_toggle, name="notify_toggle"),
     # Konfiguration URLs
     path("konfiguration/", views.konfiguration, name="konfiguration"),
     path("berechtigungen/", views.berechtigungen, name="berechtigungen"),

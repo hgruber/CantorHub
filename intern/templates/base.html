@@ -24,7 +24,7 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script src="{% static 'intern/js/osm-map.js' %}"></script>
     </head>
-    <body>
+    <body{% if request.user.is_authenticated %} data-latest-changelog-id="{{ latest_changelog_id|default:0 }}" data-current-forum="{{ forum|default:'' }}" data-notify-enabled="{{ notify_enabled|yesno:'1,0' }}"{% endif %}>
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             {% include "sidebar.html" %}
@@ -444,5 +444,9 @@
             });
         })();
         </script>
+        {% if request.user.is_authenticated %}
+        <div id="notify-stack" class="notify-stack"></div>
+        <script src="{% static 'intern/js/notify.js' %}" defer></script>
+        {% endif %}
     </body>
 </html>
