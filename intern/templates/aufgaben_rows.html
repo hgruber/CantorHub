@@ -16,6 +16,7 @@
                 title="{{ group.name }}"></button>
     </td>
     {% endfor %}
+    {% if is_admin %}
     <td class="perm-cell-td perm-col-admin">
         <button type="button"
                 class="perm-cell-admin"
@@ -23,5 +24,6 @@
                 data-user="{{ user.pk }}"
                 title="Superuser (Admin)"></button>
     </td>
+    {% endif %}
 </tr>
 {% endfor %}

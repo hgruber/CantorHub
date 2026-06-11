@@ -13,12 +13,12 @@ from ..models import ChangeLog, FolderPermission, User
 
 _PAGE_SIZE = 50
 
-__all__ = ["berechtigungen", "folder_permissions"]
+__all__ = ["aufgaben", "folder_permissions"]
 
 
 @login_required
-def berechtigungen(request):
-    if not request.user.is_superuser:
+def aufgaben(request):
+    if not (request.user.is_superuser or request.user.has_perm("intern.manage_user_permissions")):
         return redirect("article_view", name="Aktuell")
 
     groups = list(Group.objects.order_by("name"))
@@ -53,7 +53,7 @@ def berechtigungen(request):
                         object_repr=str(user),
                         changes={"gruppe": [None, group.name] if change["granted"] else [group.name, None]},
                     )
-                elif change_type == "admin":
+                elif change_type == "admin" and request.user.is_superuser:
                     user._audit_user = request.user
                     user.is_superuser = change["granted"]
                     user.save(update_fields=["is_superuser"])
@@ -71,18 +71,19 @@ def berechtigungen(request):
     if has_more:
         page = page[:_PAGE_SIZE]
 
+    is_admin = request.user.is_superuser
     matrix = {
         str(u.pk): {
             "groups": [g.name for g in u.groups.all()],
-            "is_superuser": u.is_superuser,
+            **({"is_superuser": u.is_superuser} if is_admin else {}),
         }
         for u in page
     }
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         html = render_to_string(
-            "berechtigungen_rows.html",
-            {"users": page, "groups": groups},
+            "aufgaben_rows.html",
+            {"users": page, "groups": groups, "is_admin": is_admin},
         )
         return JsonResponse({
             "html": html,
@@ -91,11 +92,12 @@ def berechtigungen(request):
             "next_offset": offset + _PAGE_SIZE,
         })
 
-    return render(request, "berechtigungen.html", {
-        "seitentitel": "Berechtigungen",
+    return render(request, "aufgaben.html", {
+        "seitentitel": "Aufgaben",
         "users": page,
         "groups": groups,
         "matrix": matrix,
+        "is_admin": is_admin,
         "has_more": has_more,
         "next_offset": offset + _PAGE_SIZE,
     })
@@ -103,10 +105,7 @@ def berechtigungen(request):
 
 @login_required
 def folder_permissions(request, pk):
-    if not (
-        request.user.is_superuser
-        or request.user.has_perm("intern.manage_folder_permissions")
-    ):
+    if not request.user.has_perm("intern.manage_folder_permissions"):
         raise PermissionDenied
 
     folder = get_object_or_404(Folder, pk=pk)

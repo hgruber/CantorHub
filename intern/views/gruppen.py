@@ -27,9 +27,10 @@ PERMISSION_DEFS = [
     ("intern.change_lied",                "bearbeiten",     "Repertoire"),
     ("intern.delete_lied",                "löschen",        "Repertoire"),
     # Mitglieder
-    ("intern.add_user",                   "anlegen",        "Mitglieder"),
-    ("intern.change_user",                "bearbeiten",     "Mitglieder"),
-    ("intern.delete_user",                "löschen",        "Mitglieder"),
+    ("intern.add_user",                    "anlegen",        "Mitglieder"),
+    ("intern.change_user",                 "bearbeiten",     "Mitglieder"),
+    ("intern.delete_user",                 "löschen",        "Mitglieder"),
+    ("intern.manage_user_permissions",     "Berechtigungen", "Mitglieder"),
     # Orte
     ("intern.add_ort",                    "anlegen",        "Orte"),
     ("intern.change_ort",                 "bearbeiten",     "Orte"),
@@ -48,7 +49,7 @@ _PERM_LABELS = {
 
 @login_required
 def gruppen(request):
-    if not request.user.is_superuser:
+    if not (request.user.is_superuser or request.user.has_perm("intern.manage_user_permissions")):
         return redirect("article_view", name="Aktuell")
 
     if request.method == "POST":

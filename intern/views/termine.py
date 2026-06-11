@@ -221,8 +221,8 @@ def termin_view(request, id):
         "my_option": my_option,
         "lieder": lieder,
         "up": "termin_list",
-        "edit": "termin_edit",
-        "history": "termin_aenderungen",
+        "edit": "termin_edit" if request.user.has_perm("intern.change_termin") else None,
+        "history": "termin_aenderungen" if request.user.has_perm("intern.change_termin") else None,
         "id": id,
     }
     return render(request, "termin.html", context)
@@ -459,6 +459,7 @@ def termin_edit(request, id):
         "id": id,
         "zusagen_count": Zusage.objects.filter(termin=termin).count(),
         "konzerte_count": Konzert.objects.filter(termin=termin).count(),
+        "can_delete": request.user.has_perm("intern.delete_termin"),
     }
     return render(request, "termin_edit.html", context)
 

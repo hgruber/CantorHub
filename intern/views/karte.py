@@ -37,8 +37,7 @@ def karte_view(request):
     for u in User.objects.filter(is_active=True, breite__isnull=False, laenge__isnull=False):
         hidden = set(u.private_fields or [])
         if hidden & ADDRESS_TRIGGER_FIELDS and not (
-            viewer.id == u.id or viewer.is_superuser
-            or viewer.has_perm("intern.change_user")
+            viewer.id == u.id or viewer.has_perm("intern.change_user")
         ):
             continue
         members.append({

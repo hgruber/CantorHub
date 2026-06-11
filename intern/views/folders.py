@@ -490,10 +490,7 @@ def folder_view(request, pk):
 
     path_str = " / ".join(c["name"] for c in breadcrumb) if breadcrumb else "/"
     permissions_url = None
-    if current is not None and (
-        request.user.is_superuser
-        or request.user.has_perm("intern.manage_folder_permissions")
-    ):
+    if current is not None and request.user.has_perm("intern.manage_folder_permissions"):
         from django.urls import reverse
         permissions_url = reverse("folder_permissions", args=[current.pk])
 

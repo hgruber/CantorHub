@@ -29,7 +29,7 @@ urlpatterns = [
     path("notify/toggle/", views.notify_toggle, name="notify_toggle"),
     # Konfiguration URLs
     path("konfiguration/", views.konfiguration, name="konfiguration"),
-    path("berechtigungen/", views.berechtigungen, name="berechtigungen"),
+    path("aufgaben/", views.aufgaben, name="aufgaben"),
     path("gruppen/", views.gruppen, name="gruppen"),
     path("aenderungsprotokoll/", views.aenderungsprotokoll_list, name="aenderungsprotokoll_list"),
     # Media access control

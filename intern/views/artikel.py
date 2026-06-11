@@ -37,8 +37,6 @@ def _artikel_access(user, artikel_name):
     No ArtikelPermission rows for this name → True, True (open wiki default).
     Otherwise: user must be in a group with the respective flag.
     """
-    if user.is_superuser:
-        return True, True
     perms = ArtikelPermission.objects.filter(artikel_name=artikel_name)
     if not perms.exists():
         return True, True
@@ -67,7 +65,7 @@ def article_list(request):
     restricted_names = set(
         ArtikelPermission.objects.values_list("artikel_name", flat=True).distinct()
     )
-    if request.user.is_superuser:
+    if request.user.has_perm("intern.manage_artikel_permissions"):
         readable_restricted = restricted_names
     else:
         gids = request.user.groups.values_list("id", flat=True)
@@ -177,8 +175,8 @@ def article_view(request, name):
             .first()
         )
 
-    can_delete = request.user.is_superuser or request.user.has_perm("intern.delete_artikel")
-    can_manage_perms = request.user.is_superuser or request.user.has_perm("intern.manage_artikel_permissions")
+    can_delete = request.user.has_perm("intern.delete_artikel")
+    can_manage_perms = request.user.has_perm("intern.manage_artikel_permissions")
 
     context = {
         "artikel": artikel,
@@ -213,7 +211,7 @@ def dummy(request, *args, **kwargs):
 
 @login_required
 def article_history(request, name):
-    can_read, _ = _artikel_access(request.user, name)
+    can_read, can_edit = _artikel_access(request.user, name)
     if not can_read:
         raise PermissionDenied
     versions = list(Artikel.objects.filter(name=name).order_by("version"))
@@ -253,7 +251,7 @@ def article_history(request, name):
         "rows": rows,
         "up": "article_list",
         "view": "article_view",
-        "edit": "article_edit",
+        "edit": "article_edit" if can_edit else None,
         "id": name,
     }
     return render(request, "artikel_history.html", context)
@@ -261,7 +259,7 @@ def article_history(request, name):
 
 @login_required
 def article_diff(request, name):
-    can_read, _ = _artikel_access(request.user, name)
+    can_read, can_edit = _artikel_access(request.user, name)
     if not can_read:
         raise PermissionDenied
     try:
@@ -317,7 +315,7 @@ def article_diff(request, name):
         "unified_lines": unified_lines,
         "up": "article_list",
         "view": "article_view",
-        "edit": "article_edit",
+        "edit": "article_edit" if can_edit else None,
         "history": "article_history",
         "id": name,
     }
@@ -326,10 +324,7 @@ def article_diff(request, name):
 
 @login_required
 def article_permissions(request, name):
-    if not (
-        request.user.is_superuser
-        or request.user.has_perm("intern.manage_artikel_permissions")
-    ):
+    if not request.user.has_perm("intern.manage_artikel_permissions"):
         raise PermissionDenied
 
     if not Artikel.objects.filter(name=name).exists():
@@ -381,10 +376,7 @@ def article_permissions(request, name):
 
 @login_required
 def article_delete(request, name):
-    if not (
-        request.user.is_superuser
-        or request.user.has_perm("intern.delete_artikel")
-    ):
+    if not request.user.has_perm("intern.delete_artikel"):
         raise PermissionDenied
     if request.method == "POST":
         Artikel.objects.filter(name=name).delete()

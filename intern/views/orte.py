@@ -63,7 +63,7 @@ def ort_view(request, id):
         "seitentitel": ort.name,
         "ort": ort,
         "up": "ort_list",
-        "edit": "ort_edit",
+        "edit": "ort_edit" if request.user.has_perm("intern.change_ort") else None,
         "history": "ort_aenderungen" if request.user.has_perm("intern.change_ort") else None,
         "id": id,
     }

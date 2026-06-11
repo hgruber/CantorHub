@@ -94,6 +94,9 @@ class User(AbstractUser):
     class Meta:
         verbose_name = "Mitglied"
         verbose_name_plural = "Mitglieder"
+        permissions = [
+            ("manage_user_permissions", "Kann Mitglieder-Berechtigungen verwalten"),
+        ]
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -135,8 +138,7 @@ class User(AbstractUser):
             return len(User.STIMME_ORDER)
 
     def field_visible_to(self, viewer, field):
-        if viewer.id == self.id or viewer.is_superuser \
-                or viewer.has_perm("intern.change_user"):
+        if viewer.id == self.id or viewer.has_perm("intern.change_user"):
             return True
         return field not in (self.private_fields or [])
 

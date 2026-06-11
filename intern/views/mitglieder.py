@@ -39,7 +39,7 @@ __all__ = [
 
 @login_required
 def mitglied_list(request):
-    can_manage = request.user.is_superuser or request.user.has_perm("intern.change_user")
+    can_manage = request.user.has_perm("intern.change_user")
     base_qs = User.objects.all() if can_manage else User.objects.filter(is_active=True)
     queryset = (
         base_qs
@@ -119,10 +119,9 @@ def mitglied_view(request, id):
     user = get_object_or_404(User.objects.prefetch_related("solist", "dirigent"), id=id)
     can_edit = (
         request.user.id == id
-        or request.user.is_superuser
         or request.user.has_perm("intern.change_user")
     )
-    can_view_history = request.user.is_superuser or request.user.has_perm("intern.change_user")
+    can_view_history = request.user.has_perm("intern.change_user")
     visible = {f: user.field_visible_to(request.user, f) for f in PRIVACY_FIELDS}
     context = {
         "user": user,
@@ -141,16 +140,13 @@ def mitglied_view(request, id):
 def mitglied_edit(request, id):
     if (
         request.user.id != id
-        and not request.user.is_superuser
         and not request.user.has_perm("intern.change_user")
     ):
         return redirect("mitglied_view", id=id)
     user = get_object_or_404(User, id=id)
 
     if request.method == "POST":
-        if request.POST.get("action") == "deactivate" and (
-            request.user.is_superuser or request.user.has_perm("intern.change_user")
-        ):
+        if request.POST.get("action") == "deactivate" and request.user.has_perm("intern.change_user"):
             user.is_active = not user.is_active
             user._audit_user = request.user
             user.save(update_fields=["is_active"])
@@ -200,7 +196,7 @@ def mitglied_edit(request, id):
         "upload_folder_id": folders.avatare(),
         "upload_rename_to": id,
         "id": id,
-        "can_manage": request.user.is_superuser or request.user.has_perm("intern.change_user"),
+        "can_manage": request.user.has_perm("intern.change_user"),
         "can_set_privacy": request.user.id == id,
         "privacy_fields": PRIVACY_FIELDS,
     }
@@ -214,7 +210,6 @@ def mitglied_passwd(request, id):
     # Prüfe, ob der aktuelle Benutzer der Zielbenutzer ist oder Admin
     if (
         request.user.id != target_user.id
-        and not request.user.is_superuser
         and not request.user.has_perm("intern.change_user")
     ):
         return redirect("mitglied_view", id=id)
@@ -352,7 +347,7 @@ def mitglied_delete(request, id):
 
 @login_required
 def mitglied_emails(request):
-    can_manage = request.user.is_superuser or request.user.has_perm("intern.change_user")
+    can_manage = request.user.has_perm("intern.change_user")
     base_qs = User.objects.all() if can_manage else User.objects.filter(is_active=True)
     queryset = (
         base_qs

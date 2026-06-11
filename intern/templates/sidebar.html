@@ -125,7 +125,7 @@
         </a>
     </div>
 
-    {% if request.user.is_superuser %}
+    {% if request.user.is_superuser or perms.intern.manage_user_permissions %}
     <button type="button" class="nav-item nav-item-admin" id="admin-toggle" onclick="toggleAdminMenu()">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -136,13 +136,13 @@
         </svg>
     </button>
     <div class="nav-submenu" id="admin-submenu">
-        <a href="{% url 'berechtigungen' %}" class="nav-subitem" data-path="/intern/berechtigungen/">
+        <a href="{% url 'aufgaben' %}" class="nav-subitem" data-path="/intern/aufgaben/">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/>
             </svg>
-            <span>Berechtigungen</span>
+            <span>Aufgaben</span>
         </a>
         <a href="{% url 'gruppen' %}" class="nav-subitem" data-path="/intern/gruppen/">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -160,6 +160,7 @@
             </svg>
             <span>Änderungsprotokoll</span>
         </a>
+        {% if request.user.is_superuser %}
         <a href="{% url 'konfiguration' %}" class="nav-subitem" data-path="/intern/konfiguration/">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
@@ -168,6 +169,7 @@
             </svg>
             <span>Konfiguration</span>
         </a>
+        {% endif %}
     </div>
     {% endif %}
 </nav>

@@ -284,7 +284,7 @@ _TOPBAR_ICON = (
 def aenderungsprotokoll_list(request):
     from ..tables import ChangeLogFilter
 
-    if not request.user.is_superuser:
+    if not (request.user.is_superuser or request.user.has_perm("intern.manage_user_permissions")):
         return redirect("article_view", name="Aktuell")
 
     qs = ChangeLog.objects.select_related("user").order_by("-timestamp")

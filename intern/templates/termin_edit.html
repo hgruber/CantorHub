@@ -89,13 +89,13 @@
             {% else %}
             <a href="{% url 'termin_list' %}" class="btn btn-secondary">Abbrechen</a>
             {% endif %}
-            {% if id %}
+            {% if id and can_delete %}
             <button type="button" class="btn btn-danger" onclick="document.getElementById('delete-dialog').showModal()">Termin loeschen</button>
             {% endif %}
         </div>
     </form>
 
-    {% if id %}
+    {% if id and can_delete %}
     <dialog id="delete-dialog">
         <h3>Termin loeschen</h3>
         <p>Moechtest du &bdquo;{{ termin.kurz }}&ldquo; wirklich loeschen?</p>

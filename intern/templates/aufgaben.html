@@ -296,15 +296,17 @@
                                 </div>
                             </th>
                         {% endfor %}
+                        {% if is_admin %}
                         <th class="perm-col-head perm-col-admin" data-admin="true">
                             <div class="perm-col-rotate">
                                 <span>Admin</span>
                             </div>
                         </th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody id="perm-tbody">
-                    {% include "berechtigungen_rows.html" %}
+                    {% include "aufgaben_rows.html" %}
                 </tbody>
             </table>
             {% if has_more %}

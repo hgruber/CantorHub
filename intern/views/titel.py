@@ -198,7 +198,7 @@ def titel_view(request, titel):
         "seitentitel": lied.titel,
         "lied": lied,
         "up": "titel_list",
-        "edit": "titel_edit",
+        "edit": "titel_edit" if request.user.has_perm("intern.change_lied") else None,
         "history": "titel_aenderungen" if request.user.has_perm("intern.change_lied") else None,
         "id": titel,
         "upload_folder_id": folders.musik(),
