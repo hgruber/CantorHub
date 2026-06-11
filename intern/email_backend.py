@@ -18,6 +18,11 @@ class DbEmailBackend(SmtpBackend):
         username = get_config("EMAIL_HOST_USER") or None
         password = get_config("EMAIL_HOST_PASSWORD") or None
 
+        # Django's send_mail() forwards username/password as kwargs to get_connection()
+        # which passes them here — discard them so our DB values take precedence.
+        kwargs.pop("username", None)
+        kwargs.pop("password", None)
+
         super().__init__(
             host=host,
             port=port,
