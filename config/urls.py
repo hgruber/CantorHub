@@ -5,7 +5,10 @@ from django.urls import include, path
 
 from intern import views
 
+handler400 = "intern.views.custom_400"
+handler403 = "intern.views.custom_403"
 handler404 = "intern.views.custom_404"
+handler500 = "intern.views.custom_500"
 
 urlpatterns = [
     path("", views.home),

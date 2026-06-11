@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Just Gospel Intern – Ungültige Anfrage</title>
+    <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
+    <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
+    <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark")})()</script>
+</head>
+<body>
+<div class="error-standalone">
+    <div class="error-card">
+        <a href="/" class="error-brand">
+            <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" alt="Just Gospel" />
+            <span>Just Gospel</span>
+        </a>
+
+        <div class="error-note">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                <path d="M14 8h24l12 12v36H14z" fill="var(--brand-light)" stroke="var(--brand)" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M38 8v12h12" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M32 28v12" stroke="var(--brand)" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="32" cy="46" r="2.5" fill="var(--brand)"/>
+            </svg>
+        </div>
+
+        <div class="error-code">400</div>
+
+        <h1 class="error-title">Ungültige Anfrage</h1>
+        <p class="error-message">
+            Diese Anfrage konnte nicht verarbeitet werden.<br>
+            Bitte überprüfe die eingegebene Adresse oder kehre zur Startseite zurück.
+        </p>
+
+        <div class="error-actions">
+            <a href="/intern/" class="error-btn-primary">Zur Startseite</a>
+            <button type="button" class="error-btn-secondary" onclick="history.back()">Zurück</button>
+        </div>
+
+        <p class="error-path">{{ request.path }}</p>
+    </div>
+</div>
+</body>
+</html>

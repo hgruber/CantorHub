@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Just Gospel Intern – Kein Zugriff</title>
+    <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
+    <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
+    <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark")})()</script>
+</head>
+<body>
+<div class="error-standalone">
+    <div class="error-card">
+        <a href="/" class="error-brand">
+            <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" alt="Just Gospel" />
+            <span>Just Gospel</span>
+        </a>
+
+        <div class="error-note">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                <rect x="16" y="28" width="32" height="24" rx="3" fill="var(--brand-light)" stroke="var(--brand)" stroke-width="3"/>
+                <path d="M22 28v-8a10 10 0 0 1 20 0v8" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="32" cy="40" r="4" fill="var(--brand)" />
+                <line x1="32" y1="44" x2="32" y2="48" stroke="var(--brand)" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        <div class="error-code">403</div>
+
+        <h1 class="error-title">Kein Zugriff</h1>
+        <p class="error-message">
+            Du hast keine Berechtigung, diese Seite aufzurufen.<br>
+            Wenn du denkst, dass das ein Fehler ist, wende dich an einen Administrator.
+        </p>
+
+        <div class="error-actions">
+            <a href="/intern/" class="error-btn-primary">Zum internen Bereich</a>
+            <button type="button" class="error-btn-secondary" onclick="history.back()">Zurück</button>
+        </div>
+
+        <p class="error-path">{{ request.path }}</p>
+    </div>
+</div>
+</body>
+</html>
