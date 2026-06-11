@@ -1,5 +1,22 @@
 {% extends "dialog.html" %}
+{% load static %}
 {% block title %}Neues Passwort setzen{% endblock %}
+{% block extra_js %}
+<script src="{% static 'intern/js/zxcvbn.js' %}"></script>
+<script>
+(function () {
+  const input = document.getElementById("new_password1");
+  const colors = ["#d9534f", "#f0ad4e", "#ffd500", "#9bc53d", "#28a745"];
+  if (!input) return;
+  input.addEventListener("input", function () {
+    if (!input.value) return;
+    const score = zxcvbn(input.value).score;
+    input.style.setProperty("--strength-width", (score + 1) * 20 + "%");
+    input.style.setProperty("--strength-color", colors[score]);
+  });
+}());
+</script>
+{% endblock %}
 {% block content %}
     <h1>Neues Passwort setzen</h1>
     {% if validlink %}

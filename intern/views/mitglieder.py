@@ -1,10 +1,9 @@
 import logging
 import threading
 
-from django.contrib.auth import password_validation, update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
-from django.core.exceptions import ValidationError
 from django.db.models import Count, OuterRef
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -232,13 +231,6 @@ def mitglied_passwd(request, id):
         # Überprüfe, ob die neuen Passwörter übereinstimmen
         if new_password1 != new_password2:
             messages.error(request, "Die neuen Passwörter stimmen nicht überein.")
-            return render(request, "mitglied_passwd.html", form_context)
-
-        try:
-            password_validation.validate_password(new_password1, user=target_user)
-        except ValidationError as exc:
-            for msg in exc.messages:
-                messages.error(request, msg)
             return render(request, "mitglied_passwd.html", form_context)
 
         # Setze neues Passwort

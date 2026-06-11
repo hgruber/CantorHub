@@ -107,6 +107,16 @@ input:focus {
 
 input::placeholder { color: #9ca3af; }
 
+.password-field {
+    --strength-width: 0%;
+    --strength-color: #dc2626;
+    background: linear-gradient(var(--strength-color), var(--strength-color))
+        left bottom / var(--strength-width) 3px no-repeat,
+        #fff;
+    padding-bottom: 10px;
+    transition: background-size 0.25s ease;
+}
+
 .login-button {
     width: 100%;
     padding: 10px;

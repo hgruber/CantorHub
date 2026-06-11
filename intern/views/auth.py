@@ -2,6 +2,7 @@ import logging
 import threading
 
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -158,6 +159,14 @@ def register(request):
     return render(request, "register.html", {"form": form})
 
 
+class PasswordResetForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["new_password1"].widget.attrs.update(
+            {"class": "password-field", "id": "new_password1"}
+        )
+
+
 class CantorPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     """Setzt das Passwort nach Klick auf den E-Mail-Link.
 
@@ -167,6 +176,7 @@ class CantorPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
 
     template_name = "reset_confirm.html"
     success_url = reverse_lazy("login")
+    form_class = PasswordResetForm
 
     def form_valid(self, form):
         response = super().form_valid(form)

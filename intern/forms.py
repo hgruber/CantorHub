@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from django import forms
-from django.contrib.auth import password_validation
 from django.utils.crypto import get_random_string
 from django.utils.safestring import mark_safe
 from django.db import models
@@ -289,10 +288,7 @@ class MitgliedAddForm(forms.ModelForm):
         }
 
     def clean_password(self):
-        password = self.cleaned_data.get("password")
-        if password:
-            password_validation.validate_password(password)
-        return password
+        return self.cleaned_data.get("password")
 
     def save(self, commit=True):
         user = super().save(commit=False)
