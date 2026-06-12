@@ -170,6 +170,7 @@ def titel_list(request):
         "seitentitel": seitentitel,
         "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
         "upload_folder_id": folders.musik(),
+        "upload_folder_name": "Musik",
         "upload_route_by_type": True,
         "showfilter": True,
         "add": add,
@@ -202,6 +203,7 @@ def titel_view(request, titel):
         "history": "titel_aenderungen" if request.user.has_perm("intern.change_lied") else None,
         "id": titel,
         "upload_folder_id": folders.musik(),
+        "upload_folder_name": "Musik",
         "upload_route_by_type": True,
         "upload_lied_id": titel,
     }

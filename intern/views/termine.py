@@ -198,6 +198,7 @@ def termin_list(request):
             "ical_url": ical_url,
             "webcal_url": webcal_url,
             "upload_folder_id": folders.termine(),
+            "upload_folder_name": "Termine",
             "add": add,
             "add_form": TerminForm() if request.user.has_perm("intern.add_termin") else None,
             "add_label": "Neuer Termin",

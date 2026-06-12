@@ -193,6 +193,7 @@ def mitglied_edit(request, id):
         "view": "mitglied_view",
         "changepass": "mitglied_passwd",
         "upload_folder_id": folders.avatare(),
+        "upload_folder_name": "Avatare",
         "upload_rename_to": id,
         "id": id,
         "can_manage": request.user.has_perm("intern.change_user"),

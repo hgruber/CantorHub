@@ -10,13 +10,19 @@
   var errorCount = 0;
 
   function buildCard() {
+    var appMain = document.getElementById("app-main");
+    var folderName = appMain ? (appMain.dataset.uploadFolderName || "") : "";
+
     card = document.createElement("div");
     card.className = "upload-card";
     card.id = "upload-card";
     card.hidden = true;
+    var titleText = folderName
+      ? "Upload · " + folderName + " · <span id=\"uc-done\">0</span> von <span id=\"uc-total\">0</span>"
+      : "Upload · <span id=\"uc-done\">0</span> von <span id=\"uc-total\">0</span>";
     card.innerHTML =
       '<div class="upload-card-header">' +
-        '<span class="upload-card-title">Upload · <span id="uc-done">0</span> von <span id="uc-total">0</span></span>' +
+        '<span class="upload-card-title">' + titleText + '</span>' +
         '<button type="button" class="upload-card-toggle" aria-label="Minimieren">⌄</button>' +
         '<button type="button" class="upload-card-close" aria-label="Schließen">✕</button>' +
       '</div>' +
