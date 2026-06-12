@@ -129,7 +129,7 @@
 {{ standorte_json|json_script:"standorte-data" }}
 
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
   const FRANKFURT = [50.1109, 8.6821];
   const orte      = JSON.parse(document.getElementById('orte-data').textContent);
   const members   = JSON.parse(document.getElementById('members-data').textContent);
@@ -681,6 +681,6 @@
     return document.cookie.split(';').map(c => c.trim())
       .find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
   }
-})();
+});
 </script>
 {% endblock %}
