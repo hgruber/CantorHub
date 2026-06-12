@@ -24,6 +24,7 @@ _CONFIG_DEFAULTS = [
     ("EMAIL_USE_TLS",        "0",                              "SMTP STARTTLS verwenden (1/0)"),
     ("EMAIL_USE_SSL",        "0",                              "SMTP SSL verwenden (1/0)"),
     ("DEFAULT_FROM_EMAIL",   "webmaster@example.org",      "Absenderadresse für E-Mails"),
+    ("UPLOAD_MAX_MB",        "50",                             "Maximale Upload-Größe in MB"),
 ]
 
 

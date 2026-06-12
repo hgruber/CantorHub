@@ -199,11 +199,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // App-main overlay dropzone
   const appMain = document.getElementById("app-main");
+  const uploadMaxMb = appMain ? (parseInt(appMain.dataset.uploadMaxMb, 10) || 50) : 50;
   if (appMain) {
     appMainDz = new Dropzone(appMain, {
       url: "/intern/upload/",
       paramName: "file",
-      maxFilesize: 50,
+      maxFilesize: uploadMaxMb,
       clickable: false,
       previewsContainer: false,
       headers: { "X-CSRFToken": getCsrfToken() },
@@ -339,7 +340,7 @@ document.addEventListener("DOMContentLoaded", function () {
       new Dropzone(dz, {
         url: "/intern/upload/",
         paramName: "file",
-        maxFilesize: 50,
+        maxFilesize: uploadMaxMb,
         maxFiles: 1,
         clickable: true,
         previewsContainer: false,

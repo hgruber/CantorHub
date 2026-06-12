@@ -132,9 +132,17 @@ def upload(request):
             {"status": "error", "message": "Keine Datei übermittelt"}, status=400
         )
     if request.FILES:
+        from intern.app_settings import get_config_int
         from intern.folder_access import folder_access
 
         file = request.FILES["file"]
+
+        max_mb = get_config_int("UPLOAD_MAX_MB", 50)
+        if file.size > max_mb * 1024 * 1024:
+            return JsonResponse(
+                {"status": "error", "message": f"Datei zu groß (max. {max_mb} MB)"},
+                status=413,
+            )
         preferred_folder_id = request.POST.get("folder_id")
         rename_to = request.POST.get("rename_to")
         avatar_user_id = request.POST.get("avatar_user_id")

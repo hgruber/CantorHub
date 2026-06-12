@@ -2,7 +2,12 @@ from django.conf import settings
 
 
 def project_meta(request):
-    result = {"VERSION": settings.VERSION, "offen_termine": 0}
+    from intern.app_settings import get_config_int
+    result = {
+        "VERSION": settings.VERSION,
+        "offen_termine": 0,
+        "upload_max_mb": get_config_int("UPLOAD_MAX_MB", 50),
+    }
     if request.user.is_authenticated:
         from django.utils.timezone import now
         from intern.models import ChangeLog, Termin, Zusage
