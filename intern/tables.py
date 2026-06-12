@@ -701,7 +701,14 @@ class MitgliederTabelle(tables.Table):
     gruppen = tables.Column(accessor="groups", verbose_name="Gruppen", orderable=False)
 
     class Meta:
-        row_attrs = {"data-href": lambda record: reverse("mitglied_view", args=[record.id])}
+        attrs = {"class": "mitglied-table"}
+        row_attrs = {
+            "data-href": lambda record: reverse("mitglied_view", args=[record.id]),
+            "class": lambda record: (
+                "row-inactive" if not record.is_active
+                else (f"row-stimme-{record.stimme.lower()}" if record.stimme and record.stimme != "N" else "")
+            ),
+        }
 
     def render_gruppen(self, record):
         return ", ".join(g.name for g in record.groups.all())
@@ -748,13 +755,13 @@ class MitgliederTabelle(tables.Table):
                 # If thumbnail is not available, use the original image
                 thumbnail_url = record.avatar.url
             return format_html(
-                '<a href="{}/"><img src="{}" width="40" height="40"></a>',
+                '<a href="{}/"><img class="avatar-circle" src="{}" width="40" height="40"></a>',
                 record.id,
                 thumbnail_url,
             )
         # Fallback to default avatar image
         return format_html(
-            '<img src="{}" width="40" height="40">',
+            '<img class="avatar-circle" src="{}" width="40" height="40">',
             static("filer/icons/file-unknown.svg"),
         )
 

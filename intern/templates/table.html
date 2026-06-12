@@ -323,5 +323,87 @@
     })();
     </script>
     {% endif %}
+    <script>
+    (function () {
+        'use strict';
+        var params = new URLSearchParams(window.location.search);
+        var sort = params.get('sort');
+        if (sort !== 'stimme' && sort !== '-stimme') return;
+
+        var table = document.querySelector('table.mitglied-table');
+        if (!table) return;
+
+        var headers = Array.from(table.querySelectorAll('thead th'));
+        var stimmeIdx = headers.findIndex(function (th) {
+            return th.textContent.trim() === 'Stimme';
+        });
+        if (stimmeIdx < 0) return;
+
+        var tbody = table.querySelector('tbody');
+
+        function clearMerge() {
+            tbody.querySelectorAll('.stimme-merged-inner').forEach(function (inner) {
+                var td = inner.parentElement;
+                if (td) td.textContent = inner.textContent;
+            });
+            tbody.querySelectorAll('[data-stimme-hidden]').forEach(function (td) {
+                td.style.display = '';
+                td.removeAttribute('data-stimme-hidden');
+            });
+            tbody.querySelectorAll('.stimme-merged-cell').forEach(function (td) {
+                td.removeAttribute('rowspan');
+                td.classList.remove('stimme-merged-cell');
+            });
+            tbody.querySelectorAll('.stimme-group-start').forEach(function (tr) {
+                tr.classList.remove('stimme-group-start');
+            });
+        }
+
+        function flush(group) {
+            group.firstRow.classList.add('stimme-group-start');
+            if (group.cells.length > 1) {
+                var first = group.cells[0];
+                first.rowSpan = group.cells.length;
+                first.classList.add('stimme-merged-cell');
+                var inner = document.createElement('span');
+                inner.className = 'stimme-merged-inner';
+                inner.textContent = first.textContent;
+                first.textContent = '';
+                first.appendChild(inner);
+                for (var i = 1; i < group.cells.length; i++) {
+                    group.cells[i].style.display = 'none';
+                    group.cells[i].setAttribute('data-stimme-hidden', '1');
+                }
+            }
+        }
+
+        function applyMerge() {
+            clearMerge();
+            var rows = Array.from(tbody.querySelectorAll('tr'));
+            var current = null;
+            rows.forEach(function (row) {
+                var cells = Array.from(row.querySelectorAll('td'));
+                var stimmeCell = cells[stimmeIdx];
+                if (!stimmeCell) return;
+                var val = stimmeCell.textContent.trim();
+                if (current && current.val === val) {
+                    current.cells.push(stimmeCell);
+                } else {
+                    if (current) flush(current);
+                    current = { val: val, firstRow: row, cells: [stimmeCell] };
+                }
+            });
+            if (current) flush(current);
+        }
+
+        applyMerge();
+
+        new MutationObserver(function (mutations) {
+            if (mutations.some(function (m) { return m.addedNodes.length; })) {
+                applyMerge();
+            }
+        }).observe(tbody, { childList: true });
+    }());
+    </script>
 </div>
 {% endblock %}
