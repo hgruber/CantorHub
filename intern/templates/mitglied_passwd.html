@@ -3,6 +3,7 @@
 {% block title %}{{ seitentitel }}{% endblock %}
 {% block extra_js %}
     <script src="{% static '/intern/js/zxcvbn.js' %}"></script>
+    <script src="{% static 'intern/js/password-strength.js' %}"></script>
 {% endblock %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{% endblock %}
 {% block content %}
@@ -41,6 +42,7 @@
                         <input type="password" class="form-control" id="new_password2" name="new_password2" required>
                     </div>
                 </div>
+                <div id="pw-status"></div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Passwort ändern</button>
                     <a href="{% url 'mitglied_view' user.id %}" class="btn btn-secondary">Abbrechen</a>

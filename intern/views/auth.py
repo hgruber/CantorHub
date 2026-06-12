@@ -168,6 +168,7 @@ class PasswordResetForm(SetPasswordForm):
         self.fields["new_password1"].widget.attrs.update(
             {"class": "password-field", "id": "new_password1"}
         )
+        self.fields["new_password2"].widget.attrs.update({"id": "new_password2"})
 
 
 class CantorPasswordResetConfirmView(auth_views.PasswordResetConfirmView):

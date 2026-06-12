@@ -2,15 +2,20 @@
 
 Django instantiates the backend class each time get_connection() is called,
 so reading from the DB here is safe and gives live-updateable email config.
-When EMAIL_HOST is not configured, falls back to the console backend.
+When EMAIL_HOST is not configured, emails are written to the log and dropped.
 """
+import logging
+
 from django.core.mail.backends.smtp import EmailBackend as SmtpBackend
+
+logger = logging.getLogger(__name__)
 
 
 class DbEmailBackend(SmtpBackend):
     def __init__(self, **kwargs):
         from intern.app_settings import get_config, get_config_bool, get_config_int
 
+        self._host_configured = bool(get_config("EMAIL_HOST", ""))
         host = get_config("EMAIL_HOST", "")
         port = get_config_int("EMAIL_PORT", 25)
         use_tls = get_config_bool("EMAIL_USE_TLS")
@@ -32,3 +37,16 @@ class DbEmailBackend(SmtpBackend):
             use_ssl=use_ssl,
             **kwargs,
         )
+
+    def send_messages(self, email_messages):
+        if not self._host_configured:
+            for msg in email_messages:
+                logger.info(
+                    "EMAIL_HOST not configured — email suppressed. "
+                    "To: %s | Subject: %s | Body: %s",
+                    ", ".join(msg.to),
+                    msg.subject,
+                    msg.body,
+                )
+            return len(email_messages)
+        return super().send_messages(email_messages)

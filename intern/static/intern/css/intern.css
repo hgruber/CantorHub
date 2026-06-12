@@ -84,6 +84,13 @@
     --warn-strong:      #78350f;
     --warn-icon:        #d97706;
 
+    /* Password-strength meter (score 0-4) */
+    --strength-0:       #dc2626;
+    --strength-1:       #f0ad4e;
+    --strength-2:       #eab308;
+    --strength-3:       #84cc16;
+    --strength-4:       #22c55e;
+
     /* Hover surfaces */
     --hover-bg:         #f3f4f6;
     --hover-icon-bg:    #f3f4f6;
@@ -148,6 +155,12 @@
     --warn-text:       #e5c97a;
     --warn-strong:     #f3e0a6;
     --warn-icon:       #e0a93a;
+
+    --strength-0:      #ef4444;
+    --strength-1:      #f59e0b;
+    --strength-2:      #facc15;
+    --strength-3:      #a3e635;
+    --strength-4:      #4ade80;
 
     --hover-bg:        rgba(255, 255, 255, 0.04);
     --hover-icon-bg:   rgba(255, 255, 255, 0.06);
@@ -3367,15 +3380,62 @@ span.not_found {
 /* =================================================== */
 /* Password Strength                                   */
 /* =================================================== */
-.password-field {
-    --strength-width: 0%;
-    --strength-color: #dc2626;
-    background: linear-gradient(var(--strength-color), var(--strength-color))
-        left bottom / var(--strength-width) 3px no-repeat,
-        var(--bg-card);
-    padding-bottom: 10px;
-    transition: background-size 0.25s ease;
+.pw-strength {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
 }
+
+/* In a .form-grid the surrounding .form-group is display:contents, so the
+   injected meter would otherwise land in its own grid cell and shove the
+   following field sideways. Span the full width so it sits on its own row. */
+.form-grid .pw-strength {
+    grid-column: 1 / -1;
+    margin-top: 0;
+}
+
+.pw-strength-track {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    overflow: hidden;
+}
+
+.pw-strength-bar {
+    height: 100%;
+    width: 0;
+    border-radius: 3px;
+    background: var(--strength-0);
+    transition: width 0.25s ease, background 0.25s ease;
+}
+
+.pw-strength-label {
+    font-size: 12px;
+    color: var(--t3);
+    white-space: nowrap;
+}
+
+.pw-strength[data-score="0"] .pw-strength-bar { background: var(--strength-0); }
+.pw-strength[data-score="1"] .pw-strength-bar { background: var(--strength-1); }
+.pw-strength[data-score="2"] .pw-strength-bar { background: var(--strength-2); }
+.pw-strength[data-score="3"] .pw-strength-bar { background: var(--strength-3); }
+.pw-strength[data-score="4"] .pw-strength-bar { background: var(--strength-4); }
+
+.pw-widget {
+    margin: 8px 0 4px;
+}
+
+.pw-match {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.pw-match[data-match="yes"] { color: var(--strength-4); }
+.pw-match[data-match="no"]  { color: var(--strength-0); }
 
 /* =================================================== */
 /* Misc                                                */
