@@ -556,26 +556,51 @@ def folder_create(request, pk):
     if not can_write:
         raise PermissionDenied
 
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     name = request.POST.get("name", "").strip()
-    if name:
-        new_folder = Folder.objects.create(
-            name=name,
-            parent_id=pk if pk != 0 else None,
-            owner=request.user,
-        )
-        # Copy parent's FolderPermission rows to the new subfolder
-        if parent is not None:
-            FolderPermission.objects.bulk_create([
-                FolderPermission(
-                    folder=new_folder,
-                    group_id=p.group_id,
-                    can_read=p.can_read,
-                    can_write=p.can_write,
-                    can_delete=p.can_delete,
-                )
-                for p in FolderPermission.objects.filter(folder=parent)
-            ])
-        folders.invalidate()
+
+    if not name:
+        if is_ajax:
+            return JsonResponse({"error": "Name darf nicht leer sein."}, status=400)
+        return redirect("folder_view", pk=pk)
+
+    new_folder = Folder.objects.create(
+        name=name,
+        parent_id=pk if pk != 0 else None,
+        owner=request.user,
+    )
+    # Copy parent's FolderPermission rows to the new subfolder
+    if parent is not None:
+        FolderPermission.objects.bulk_create([
+            FolderPermission(
+                folder=new_folder,
+                group_id=p.group_id,
+                can_read=p.can_read,
+                can_write=p.can_write,
+                can_delete=p.can_delete,
+            )
+            for p in FolderPermission.objects.filter(folder=parent)
+        ])
+    folders.invalidate()
+
+    if is_ajax:
+        row_data = {
+            "id": new_folder.pk,
+            "name": name,
+            "type": "Folder",
+            "besitzer": f"{request.user.first_name} {request.user.last_name}",
+            "created": new_folder.created_at,
+            "modified": new_folder.modified_at,
+            "size": 0,
+            "groesse": 0,
+            "count": 0,
+        }
+        table = OrdnerTabelle([row_data])
+        table.columns.hide("pfad")
+        RequestConfig(request, paginate=False).configure(table)
+        html = render_to_string("table_rows.html", {"table": table})
+        return JsonResponse({"html": html, "pk": new_folder.pk, "name": name})
+
     return redirect("folder_view", pk=pk)
 
 

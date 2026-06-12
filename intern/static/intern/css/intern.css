@@ -1481,6 +1481,42 @@ time {
     justify-content: flex-end;
 }
 
+/* ─── Inline new-folder row ─────────────────────────── */
+.nf-row td { padding-top: 6px; padding-bottom: 6px; }
+.nf-name-cell { display: flex; align-items: center; gap: 6px; }
+.nf-input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--r-sm);
+    font-size: 0.875rem;
+    font-family: var(--font);
+    background: var(--bg-card);
+    color: var(--t1);
+    outline: none;
+}
+.nf-input:focus { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-ring); }
+.nf-input.nf-error { border-color: #c53030; }
+.nf-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--r-sm);
+    background: none;
+    cursor: pointer;
+    color: var(--t3);
+    padding: 0;
+    transition: color var(--ease), border-color var(--ease);
+}
+.nf-btn:hover { color: var(--brand); border-color: var(--brand); }
+.nf-confirm { border-color: var(--border); }
+[data-theme="dark"] .nf-input { background: var(--bg-card); }
+
 /* ─── Filter offcanvas (redesigned) ──────────────── */
 #Filter {
     display: flex;

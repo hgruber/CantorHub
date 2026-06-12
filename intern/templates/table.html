@@ -246,5 +246,82 @@
         }
     </script>
     {% endif %}
+    {% if show_file_actions and can_write_here %}
+    <script>
+    (function() {
+        var createUrl = "{% url 'folder_create' pk=new_folder_pk %}";
+        var container = document.querySelector('.table-container');
+        if (!container) return;
+        var tbody = container.querySelector('table tbody');
+        if (!tbody) return;
+
+        var nfRow = document.createElement('tr');
+        nfRow.id = 'new-folder-row';
+        nfRow.className = 'nf-row';
+        nfRow.style.display = 'none';
+        nfRow.innerHTML =
+            '<td></td>' +
+            '<td style="width:15px"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></td>' +
+            '<td><div class="nf-name-cell">' +
+            '<input type="text" id="nf-input" class="nf-input" placeholder="Ordnername" autocomplete="off">' +
+            '<button type="button" class="nf-btn nf-confirm" title="Erstellen"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>' +
+            '<button type="button" class="nf-btn nf-cancel" title="Abbrechen"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+            '</div></td>' +
+            '<td colspan="5"></td>';
+        tbody.appendChild(nfRow);
+
+        var nfInput = document.getElementById('nf-input');
+        var nfConfirm = nfRow.querySelector('.nf-confirm');
+        var nfCancel = nfRow.querySelector('.nf-cancel');
+
+        window.showNewFolderRow = function() {
+            nfRow.style.display = '';
+            nfInput.value = '';
+            nfInput.classList.remove('nf-error');
+            nfInput.focus();
+        };
+
+        function hideRow() {
+            nfRow.style.display = 'none';
+            nfInput.value = '';
+            nfInput.classList.remove('nf-error');
+        }
+
+        function submitFolder() {
+            var name = nfInput.value.trim();
+            if (!name) { nfInput.classList.add('nf-error'); nfInput.focus(); return; }
+            var csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (!csrf) return;
+            nfInput.disabled = true;
+            nfConfirm.disabled = true;
+            fetch(createUrl, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'name=' + encodeURIComponent(name) + '&csrfmiddlewaretoken=' + encodeURIComponent(csrf.value),
+            })
+            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(data) {
+                if (data.html) nfRow.insertAdjacentHTML('beforebegin', data.html);
+                nfInput.value = '';
+                nfInput.classList.remove('nf-error');
+                nfInput.focus();
+            })
+            .catch(function() { nfInput.classList.add('nf-error'); })
+            .finally(function() { nfInput.disabled = false; nfConfirm.disabled = false; });
+        }
+
+        nfConfirm.addEventListener('click', submitFolder);
+        nfCancel.addEventListener('click', hideRow);
+        nfInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); submitFolder(); }
+            else if (e.key === 'Escape') hideRow();
+            else nfInput.classList.remove('nf-error');
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && nfRow.style.display !== 'none') hideRow();
+        });
+    })();
+    </script>
+    {% endif %}
 </div>
 {% endblock %}

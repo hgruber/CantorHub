@@ -315,7 +315,7 @@
                     </a>
                 {% endif %}
                 {% if show_file_actions and can_write_here %}
-                    <a href="#" onclick="document.getElementById('new-folder-dialog').showModal(); return false;" title="Neuer Ordner">
+                    <a href="#" onclick="typeof showNewFolderRow === 'function' && showNewFolderRow(); return false;" title="Neuer Ordner">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                             <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
@@ -380,20 +380,7 @@
             </div>
         </div>
 
-        <!-- Neuer Ordner dialog -->
-        {% if show_file_actions and can_write_here %}
-        <dialog id="new-folder-dialog" class="app-dialog">
-            <form method="post" action="{% url 'folder_create' pk=new_folder_pk %}">
-                {% csrf_token %}
-                <button type="button" class="dialog-close" onclick="this.closest('dialog').close()" aria-label="Schließen">&#x2715;</button>
-                <h3>Neuer Ordner</h3>
-                <input type="text" name="name" placeholder="Ordnername" autocomplete="off" required>
-                <div class="dialog-actions">
-                    <button type="submit" class="btn btn-primary">Erstellen</button>
-                </div>
-            </form>
-        </dialog>
-        {% endif %}
+
         <script>
         (function() {
             var btn = document.getElementById('dlBtn');
