@@ -12,18 +12,21 @@
         <title>Just Gospel Intern – {{ seitentitel }}</title>
         <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
         <link rel="apple-touch-icon" href="{% static 'intern/images/icon-192.png' %}">
+        <link rel="preconnect" href="https://unpkg.com">
+        <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+        <link rel="preconnect" href="https://cdn.jsdelivr.net">
         <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
     <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark");var m=document.getElementById("meta-theme-color");if(m)m.setAttribute("content",t==="dark"?"#1a1a2e":"#ffffff")})()</script>
         <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         {% block extra_js %}{% endblock %}
+        <script src="{% static 'intern/js/htmx.min.js' %}" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" defer></script>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+        <script src="{% static 'intern/js/osm-map.js' %}" defer></script>
         <script src="{% static 'intern/js/intern.js' %}" defer></script>
         <script src="{% static 'intern/js/upload-progress.js' %}" defer></script>
-        <script src="{% static 'intern/js/htmx.min.js' %}"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <script src="{% static 'intern/js/osm-map.js' %}"></script>
     </head>
     <body{% if request.user.is_authenticated %} data-latest-changelog-id="{{ latest_changelog_id|default:0 }}" data-current-forum="{{ forum|default:'' }}" data-notify-enabled="{{ notify_enabled|yesno:'1,0' }}"{% endif %}>
         <!-- Sidebar -->

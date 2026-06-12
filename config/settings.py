@@ -88,6 +88,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.http.ConditionalGetMiddleware",
     "django.middleware.gzip.GZipMiddleware",
 ]
 
@@ -177,6 +178,13 @@ STATICFILES_DIRS = []
 STATIC_ROOT = BASE_DIR / "static"
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+    },
+}
 
 EMAIL_BACKEND = "intern.email_backend.DbEmailBackend"
 DEFAULT_FROM_EMAIL = "webmaster@example.org"
