@@ -74,6 +74,38 @@ docker run -e DB_HOST=db -e DB_NAME=cantorhub -e DB_USER=cantorhub -e DB_PASSWOR
 | `EJABBERD_BOT_PORT` | `5222` | XMPP bot port |
 | `ICAL_SECRET` | `cantorhub-ical-change-me-f7a3c2` | Shared secret for iCal subscription URLs |
 
+## Runtime Configuration (database)
+
+Most operational settings are **not** environment variables — they live in the
+`intern.Konfiguration` key/value table and can be edited at runtime (Django admin
+or `/intern/konfiguration/`) without a redeploy. Defaults are seeded on first
+migrate from `intern/apps.py` (`_CONFIG_DEFAULTS`). Read them in code via
+`intern.app_settings.get_config()` / `get_config_bool()` / `get_config_int()`.
+
+| Key | Default | Description |
+|---|---|---|
+| `EJABBERD_ENABLED` | `0` | XMPP integration on/off |
+| `EJABBERD_API_URL` | `http://127.0.0.1:5280` | ejabberd REST API URL |
+| `EJABBERD_HOST` | — | ejabberd XMPP domain |
+| `EJABBERD_MUC_SERVICE` | — | ejabberd MUC service domain |
+| `EJABBERD_BOT_JID` | — | Forum bot JID |
+| `EJABBERD_BOT_PASSWORD` | — | Forum bot password |
+| `EJABBERD_BOT_PORT` | `5222` | Forum bot XMPP port |
+| `ICAL_SECRET` | random on seed | Secret token for the iCal feed URL |
+| `EMAIL_HOST` | — | SMTP server (empty → mail is logged, not sent) |
+| `EMAIL_PORT` | `25` | SMTP port |
+| `EMAIL_HOST_USER` | — | SMTP username |
+| `EMAIL_HOST_PASSWORD` | — | SMTP password |
+| `EMAIL_USE_TLS` | `0` | Use STARTTLS |
+| `EMAIL_USE_SSL` | `0` | Use SSL |
+| `DEFAULT_FROM_EMAIL` | `webmaster@example.org` | Sender address for outgoing mail |
+| `UPLOAD_MAX_MB` | `50` | Maximum upload size (MB) |
+| `MAP_CENTER_ID` | `1` | `Ort` id used as the overview map center |
+| `MAP_DEFAULT_ZOOM` | `12` | Default zoom level of the overview map |
+| `PWRESET_MAX_PER_HOUR` | `5` | Max password-reset requests per IP per hour |
+| `NOTIFY_POLL_MS` | `10000` | Notification poll interval (ms) |
+| `NOTIFY_DISMISS_MS` | `6000` | Notification display duration (ms) |
+
 ## Architecture
 
 ```

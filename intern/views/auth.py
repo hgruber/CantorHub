@@ -12,7 +12,12 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from intern import ejabberd
-from intern.app_settings import get_config_bool, is_email_configured
+from intern.app_settings import (
+    get_config_bool,
+    get_config_int,
+    get_from_email,
+    is_email_configured,
+)
 
 from ..forms import RegisterForm
 from ..models import User
@@ -102,9 +107,6 @@ def _client_ip(request):
     return request.META.get("REMOTE_ADDR", "")
 
 
-_RESET_MAX_PER_HOUR = 5
-
-
 def register(request):
     """Passwort-zurücksetzen-Anfrage.
 
@@ -117,7 +119,7 @@ def register(request):
 
         throttle_key = f"pwreset-throttle:{_client_ip(request)}"
         attempts = cache.get(throttle_key, 0)
-        if attempts >= _RESET_MAX_PER_HOUR:
+        if attempts >= get_config_int("PWRESET_MAX_PER_HOUR", 5):
             form.add_error(
                 None, "Zu viele Anfragen. Bitte versuche es später erneut."
             )
@@ -147,7 +149,7 @@ def register(request):
                     f"ignorieren — Dein Passwort bleibt unverändert."
                 )
                 try:
-                    send_mail(subject, message, None, [user.email])
+                    send_mail(subject, message, get_from_email(), [user.email])
                 except Exception:
                     logger.exception("Failed to send password reset email to %s", user.email)
                 if not is_email_configured():

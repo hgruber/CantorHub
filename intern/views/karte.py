@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
+from ..app_settings import get_config_int, get_map_center
 from ..models import ADDRESS_TRIGGER_FIELDS, Ort, Standort, User
 
 __all__ = [
@@ -47,6 +48,7 @@ def karte_view(request):
             "laenge": u.laenge,
         })
     standorte = _standorte_data(request.user)
+    map_center = get_map_center()
     return render(request, "karte.html", {
         "seitentitel": "Karte",
         "orte_json": orte,
@@ -54,6 +56,9 @@ def karte_view(request):
         "standorte_json": standorte,
         "show_search": True,
         "search_query": (request.GET.get("q") or "").strip(),
+        "map_center_lat": str(map_center[0]),
+        "map_center_lng": str(map_center[1]),
+        "map_default_zoom": get_config_int("MAP_DEFAULT_ZOOM", 12),
     })
 
 

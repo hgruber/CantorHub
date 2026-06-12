@@ -104,8 +104,8 @@
                 // Initialisiere die Karte mit den Benutzerkoordinaten
                 document.addEventListener('DOMContentLoaded', function() {
                     // Prüfe, ob Koordinaten vorhanden sind
-                    var breite = "{{ user.breite|default:"50.1109" }}";
-                    var laenge = "{{ user.laenge|default:"8.6821" }}";
+                    var breite = "{{ user.breite|default:map_center_lat }}";
+                    var laenge = "{{ user.laenge|default:map_center_lng }}";
 
                     // Sicherstellen, dass Koordinaten gültig sind
                     if (breite && laenge) {

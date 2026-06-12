@@ -25,6 +25,11 @@ _CONFIG_DEFAULTS = [
     ("EMAIL_USE_SSL",        "0",                              "SMTP SSL verwenden (1/0)"),
     ("DEFAULT_FROM_EMAIL",   "webmaster@example.org",      "Absenderadresse für E-Mails"),
     ("UPLOAD_MAX_MB",        "50",                             "Maximale Upload-Größe in MB"),
+    ("MAP_CENTER_ID",        "1",                              "ID des Orts, der als Karten-Mittelpunkt dient"),
+    ("MAP_DEFAULT_ZOOM",     "12",                             "Standard-Zoomstufe der Gesamtkarte"),
+    ("PWRESET_MAX_PER_HOUR", "5",                              "Maximale Passwort-Reset-Anfragen pro IP und Stunde"),
+    ("NOTIFY_POLL_MS",       "10000",                          "Abfrageintervall für Benachrichtigungen (ms)"),
+    ("NOTIFY_DISMISS_MS",    "6000",                           "Anzeigedauer einer Benachrichtigung (ms)"),
 ]
 
 

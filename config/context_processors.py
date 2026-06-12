@@ -23,4 +23,6 @@ def project_meta(request):
             ChangeLog.objects.order_by("-id").values_list("id", flat=True).first() or 0
         )
         result["notify_enabled"] = request.user.notify_enabled
+        result["notify_poll_ms"] = get_config_int("NOTIFY_POLL_MS", 10000)
+        result["notify_dismiss_ms"] = get_config_int("NOTIFY_DISMISS_MS", 6000)
     return result

@@ -13,7 +13,7 @@ from django_tables2 import RequestConfig
 from filer.models import File
 
 from intern import ejabberd, folders
-from intern.app_settings import get_config_bool
+from intern.app_settings import get_config_bool, get_from_email
 
 from ..forms import ForumEditForm
 from ..models import Forum, Mitteilung, User
@@ -274,7 +274,7 @@ def forum_invite(request, forum, user_id):
         if user.email:
             subject = f"Einladung: {forum_obj.thema}"
             message = f"Hallo {user.first_name},\n\nDu wurdest zum Forum \"{forum_obj.thema}\" eingeladen.\n\nBesuche das Forum unter: {request.build_absolute_uri(reverse('forum_view', args=[forum]))}"
-            send_mail(subject, message, "webmaster@example.org", [user.email])
+            send_mail(subject, message, get_from_email(), [user.email])
 
     return redirect("forum_edit", forum=forum)
 

@@ -15,8 +15,8 @@
     var stack = document.getElementById("notify-stack");
     if (!stack) return;
 
-    var POLL_MS = 10000;
-    var DISMISS_MS = 6000;
+    var POLL_MS = parseInt(body.dataset.notifyPollMs, 10) || 10000;
+    var DISMISS_MS = parseInt(body.dataset.notifyDismissMs, 10) || 6000;
     var MAX_VISIBLE = 5;
     var pollTimer = null;
 

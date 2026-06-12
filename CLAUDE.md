@@ -125,6 +125,10 @@ Map pages use Leaflet. `intern/static/intern/js/osm-map.js` patches `L.TileLayer
 
 Items found during code review, ordered by estimated risk of the fix:
 
+- **Branding is hardcoded** ("Just Gospel Frankfurt", logos, domain) across
+  templates, `replacements.py`, `tables.py`, and static SVGs. Blocks open-sourcing
+  as a white-label app. Full extraction plan in `branding.md`.
+
 **Medium risk (15-30%)** — need testing after fixing:
 - `Zusage.option` is `CharField(max_length=255)` but only uses `"1"`, `"2"`, `"3"`, `""`. Should be a choices field with a migration.
 - `Mitteilung.mitteilung` allows `null=True` but `formatiert()` calls `apply_replacements()` which may crash on `None`. Guard the method or remove `null=True`.
@@ -146,7 +150,8 @@ Items found during code review, ordered by estimated risk of the fix:
 - `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file links)
 - `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings
 - `fuzzy.py` — fuzzy song title matching used in article references
-- `context_processors.py` — injects global template context (`VERSION`)
+- `context_processors.py` — injects global template context (`VERSION`, `upload_max_mb`, notify poll/dismiss intervals)
+- `app_settings.py` — runtime config helpers (`get_config`, `get_config_bool`, `get_config_int`, `get_from_email`, `get_map_center`) backed by the `Konfiguration` table; see "Runtime configuration" below
 
 **External integrations:**
 - `ejabberd.py` — REST API client for ejabberd admin API and message sending
@@ -165,9 +170,27 @@ SQLite in development (`db.sqlite3`, excluded from git). MySQL-compatible for pr
 
 ### Environment variables
 
+Only bootstrap settings (needed before the DB is available) are real env vars:
+
 - `DEBUG` — set to `1` for development mode
 - `SECRET_KEY` — hardcoded in `settings.py` (development only; override for production)
+- `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`/`DB_PORT` — MySQL connection (unset → SQLite)
 
-**XMPP Integration:**
-- `EJABBERD_ENABLED`, `EJABBERD_API_URL`, `EJABBERD_HOST`, `EJABBERD_MUC_SERVICE`
-- `EJABBERD_BOT_JID`, `EJABBERD_BOT_PASSWORD`, `EJABBERD_BOT_PORT`
+### Runtime configuration (`Konfiguration` table)
+
+Operational settings are stored in the `intern.Konfiguration` key/value table, not
+env vars, so they can be changed at runtime (admin or `/intern/konfiguration/`)
+without a redeploy. **Read them via `intern.app_settings` helpers** (`get_config`,
+`get_config_bool`, `get_config_int`) — never `os.environ`/`settings` for these —
+and never call the helpers at settings/import time (the DB may not be ready).
+
+Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py`;
+**add new keys there** (with a German `description`) so fresh installs get them.
+Current keys: the `EJABBERD_*` set, `ICAL_SECRET`, the `EMAIL_*` set,
+`DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`, `MAP_DEFAULT_ZOOM`,
+`PWRESET_MAX_PER_HOUR`, `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`.
+
+For outgoing mail always pass `get_from_email()` as the sender (resolves
+`DEFAULT_FROM_EMAIL` from the DB, falling back to `settings.DEFAULT_FROM_EMAIL`).
+Frontend-facing values (`NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`) reach JS via
+`context_processors.project_meta` → `data-*` attributes on `<body>` → `notify.js`.

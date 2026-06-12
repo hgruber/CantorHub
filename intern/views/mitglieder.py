@@ -14,7 +14,7 @@ from django_tables2 import RequestConfig
 from filer.models import File
 
 from intern import ejabberd, folders
-from intern.app_settings import get_config_bool
+from intern.app_settings import get_config_bool, get_map_center
 
 from ..forms import MitgliedAddForm, UserEditForm
 from ..models import Abstimmung, Artikel, Mitteilung, PRIVACY_FIELDS, User, Zusage
@@ -122,6 +122,7 @@ def mitglied_view(request, id):
     )
     can_view_history = request.user.has_perm("intern.change_user")
     visible = {f: user.field_visible_to(request.user, f) for f in PRIVACY_FIELDS}
+    map_center = get_map_center()
     context = {
         "user": user,
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
@@ -131,6 +132,8 @@ def mitglied_view(request, id):
         "history": "mitglied_aenderungen" if can_view_history else None,
         "id": id,
         "visible": visible,
+        "map_center_lat": str(map_center[0]),
+        "map_center_lng": str(map_center[1]),
     }
     return render(request, "mitglied.html", context)
 
