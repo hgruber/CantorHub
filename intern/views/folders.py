@@ -41,6 +41,7 @@ __all__ = [
     "folder_copy",
     "folder_rename",
     "folder_zip_download",
+    "folder_zip_selection",
 ]
 
 
@@ -468,6 +469,27 @@ def folder_view(request, pk):
     for record in folder_up:
         record["groesse"] = None
 
+    # Sort the full datasets before pagination so ordering is correct across pages.
+    # Folders always come first; the sort key is applied within each group separately.
+    _ALLOWED_SORT_FIELDS = {"name", "besitzer", "created", "modified", "size"}
+    raw_sort = request.GET.get("sort", "name")
+    if raw_sort.startswith("-"):
+        sort_field, sort_reverse = raw_sort[1:], True
+    else:
+        sort_field, sort_reverse = raw_sort, False
+    if sort_field not in _ALLOWED_SORT_FIELDS:
+        sort_field, sort_reverse = "name", False
+
+    def _sort_records(records):
+        return sorted(
+            records,
+            key=lambda r: (r.get(sort_field) is None, r.get(sort_field) or ""),
+            reverse=sort_reverse,
+        )
+
+    folders_list = _sort_records(folders_list)
+    files_list = _sort_records(files_list)
+
     # Paginate folders + files; folder_up (..) is fixed and always shown on offset=0
     paginatable = folders_list + files_list
     page_items = paginatable[offset : offset + _FOLDER_PAGE_SIZE + 1]
@@ -494,6 +516,9 @@ def folder_view(request, pk):
         from django.urls import reverse
         permissions_url = reverse("folder_permissions", args=[current.pk])
 
+    _, can_write_here, can_delete_perm = folder_access(request.user, current)
+    can_delete_here = can_delete_perm or request.user.has_perm("intern.delete_folder")
+
     return render(
         request,
         "table.html",
@@ -504,6 +529,8 @@ def folder_view(request, pk):
             "upload_folder_id": pk,
             "table": table,
             "show_file_actions": True,
+            "can_write_here": can_write_here,
+            "can_delete_here": can_delete_here,
             "new_folder_pk": original_pk,
             "current_pk": original_pk,
             "all_folders_flat": _build_folder_flat(user=request.user),
@@ -704,4 +731,60 @@ def folder_zip_download(request, pk):
     safe_name = (folder.name or f"ordner-{pk}").replace('"', "")
     response = StreamingHttpResponse(generator(), content_type="application/zip")
     response["Content-Disposition"] = f'attachment; filename="{safe_name}.zip"'
+    return response
+
+
+@login_required
+@require_POST
+def folder_zip_selection(request):
+    """Stream a ZIP archive containing all selected folders and files."""
+    items = list(_parse_items(request.POST))
+    if not items:
+        return JsonResponse({"error": "Keine Elemente ausgewählt."}, status=400)
+
+    def generator():
+        buf = _ZipBuffer()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED, allowZip64=True) as zf:
+            for item_type, item_id in items:
+                if item_type == "Folder":
+                    try:
+                        folder = Folder.objects.get(pk=item_id)
+                    except Folder.DoesNotExist:
+                        continue
+                    if not is_folder_visible(request.user, folder):
+                        continue
+                    for arcname, f in _iter_folder_tree(folder, prefix=folder.name):
+                        try:
+                            with f.file.open("rb") as src:
+                                data = src.read()
+                        except Exception:
+                            continue
+                        zf.writestr(arcname, data)
+                        chunk = buf.drain()
+                        if chunk:
+                            yield chunk
+                elif item_type == "File":
+                    try:
+                        f = File.objects.get(pk=item_id)
+                    except File.DoesNotExist:
+                        continue
+                    can_read, _, _ = folder_access(request.user, f.folder)
+                    if not can_read:
+                        continue
+                    try:
+                        with f.file.open("rb") as src:
+                            data = src.read()
+                    except Exception:
+                        continue
+                    arcname = f.original_filename or f.name or f"datei-{f.pk}"
+                    zf.writestr(arcname, data)
+                    chunk = buf.drain()
+                    if chunk:
+                        yield chunk
+        tail = buf.drain()
+        if tail:
+            yield tail
+
+    response = StreamingHttpResponse(generator(), content_type="application/zip")
+    response["Content-Disposition"] = 'attachment; filename="auswahl.zip"'
     return response

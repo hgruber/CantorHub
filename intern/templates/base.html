@@ -18,6 +18,7 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         {% block extra_js %}{% endblock %}
         <script src="{% static 'intern/js/intern.js' %}" defer></script>
+        <script src="{% static 'intern/js/upload-progress.js' %}" defer></script>
         <script src="{% static 'intern/js/htmx.min.js' %}"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -311,7 +312,7 @@
                         </svg>
                     </a>
                 {% endif %}
-                {% if show_file_actions and perms.filer.add_folder %}
+                {% if show_file_actions and can_write_here %}
                     <a href="#" onclick="document.getElementById('new-folder-dialog').showModal(); return false;" title="Neuer Ordner">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -378,7 +379,7 @@
         </div>
 
         <!-- Neuer Ordner dialog -->
-        {% if show_file_actions and perms.filer.add_folder %}
+        {% if show_file_actions and can_write_here %}
         <dialog id="new-folder-dialog" class="app-dialog">
             <form method="post" action="{% url 'folder_create' pk=new_folder_pk %}">
                 {% csrf_token %}

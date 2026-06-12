@@ -106,6 +106,25 @@ autoOpenSubmenu("settings-submenu", "settings-toggle");
 // Global reference to the app-main Dropzone, set in DOMContentLoaded below
 var appMainDz = null;
 
+function refreshFolderTable() {
+  var container = document.querySelector(".table-container");
+  var tbody = container && container.querySelector("tbody");
+  if (!tbody) return;
+  var p = new URLSearchParams(window.location.search);
+  p.delete("offset");
+  var url = window.location.pathname + "?" + p.toString();
+  fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      tbody.innerHTML = data.html;
+      tbody.querySelectorAll("tr").forEach(function (tr) {
+        tr.classList.add("row-fresh");
+        setTimeout(function () { tr.classList.remove("row-fresh"); }, 600);
+      });
+    })
+    .catch(function () {});
+}
+
 // Filter offcanvas functionality - ensure only one offcanvas is open at a time
 function toggle(offcanvas) {
   const offcanvases = document.querySelectorAll(".offcanvas");
@@ -206,10 +225,9 @@ document.addEventListener("DOMContentLoaded", function () {
           if (textarea) textarea.value += response.url;
         });
         this.on("queuecomplete", function () {
-          if (
-            window.location.pathname.startsWith("/intern/ordner/") ||
-            appMain.dataset.uploadLiedId
-          ) {
+          if (window.location.pathname.startsWith("/intern/ordner/")) {
+            refreshFolderTable();
+          } else if (appMain.dataset.uploadLiedId) {
             window.location.reload();
           }
         });
@@ -747,11 +765,14 @@ document.addEventListener("DOMContentLoaded", function () {
     msAction("stop", stop);
   })();
 
-  // File actions: delete / move / copy
+  // File actions: delete / move / copy / zip
   window.fileAction = function (action) {
     const formId = action === "delete" ? "delete-form"
                  : action === "move"   ? "move-form"
-                 :                       "copy-form";
+                 : action === "copy"   ? "copy-form"
+                 : action === "zip"    ? "zip-form"
+                 :                       null;
+    if (!formId) return;
     const form = document.getElementById(formId);
     if (!form) return;
 
@@ -766,7 +787,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (action === "delete") {
       if (!confirm(`${items.length} Element(e) wirklich löschen?`)) return;
-    } else {
+    } else if (action !== "zip") {
       const targetRadio = document.querySelector('input[name="folder-target"]:checked');
       if (!targetRadio) { alert("Bitte erst einen Zielordner auswählen."); return; }
       const targetInput = document.getElementById(
@@ -885,7 +906,7 @@ document.addEventListener("DOMContentLoaded", function () {
           body: formData,
         });
       });
-      Promise.all(promises).then(() => window.location.reload());
+      Promise.all(promises).then(() => refreshFolderTable());
     }
 
     function submitDragMove(items, targetPk) {
@@ -907,8 +928,10 @@ document.addEventListener("DOMContentLoaded", function () {
   (function initRowContextMenu() {
     const tbody = document.querySelector(".table-container tbody");
     if (!tbody) return;
-    const deleteForm = document.getElementById("delete-form");
-    if (!deleteForm) return; // only on folder views
+    const actionPanel = document.getElementById("Action");
+    if (!actionPanel || !actionPanel.dataset.canWrite) return; // only on folder views
+    const canWrite = actionPanel.dataset.canWrite === "true";
+    const canDelete = actionPanel.dataset.canDelete === "true";
 
     function csrfToken() {
       const el = document.querySelector("[name=csrfmiddlewaretoken]");
@@ -935,20 +958,41 @@ document.addEventListener("DOMContentLoaded", function () {
 
       menuEl = document.createElement("div");
       menuEl.className = "context-menu";
-      const items = [];
-      items.push({ label: "Umbenennen", action: () => startInlineRename(tr, type, id, name) });
+      const above = [];
+      const below = [];
+
+      if (canWrite) {
+        above.push({ label: "Umbenennen", action: () => startInlineRename(tr, type, id, name) });
+      }
       if (type === "Folder") {
-        items.push({ label: "Als ZIP herunterladen", action: () => {
+        above.push({ label: "Als ZIP herunterladen", action: () => {
           window.location.href = "/intern/ordner/" + id + "/zip/";
         }});
       }
-      if (isZip) {
-        items.push({ label: "Entpacken", action: () => submitUnzip(id) });
+      if (canWrite) {
+        above.push({ label: "Verschieben nach…", action: () => {
+          const cb = tr.querySelector('input[type="checkbox"][name="select"]');
+          if (cb && !cb.checked) { cb.checked = true; updateSelectionState(); }
+          toggle("Action");
+        }});
+        above.push({ label: "Kopieren nach…", action: () => {
+          const cb = tr.querySelector('input[type="checkbox"][name="select"]');
+          if (cb && !cb.checked) { cb.checked = true; updateSelectionState(); }
+          toggle("Action");
+        }});
+        if (isZip) {
+          above.push({ label: "Entpacken", action: () => submitUnzip(id) });
+        }
       }
-      items.push({ sep: true });
-      items.push({ label: "Löschen", danger: true, action: () => submitDelete(type, id, name) });
+      if (canDelete) {
+        below.push({ label: "Löschen", danger: true, action: () => submitDelete(type, id, name) });
+      }
 
-      for (const it of items) {
+      const allItems = above.length && below.length
+        ? [...above, { sep: true }, ...below]
+        : [...above, ...below];
+
+      for (const it of allItems) {
         if (it.sep) {
           const s = document.createElement("div");
           s.className = "context-menu-sep";
@@ -963,6 +1007,7 @@ document.addEventListener("DOMContentLoaded", function () {
         menuEl.appendChild(b);
       }
 
+      if (!menuEl.children.length) return;
       document.body.appendChild(menuEl);
       const rect = menuEl.getBoundingClientRect();
       const maxX = window.innerWidth - rect.width - 4;
@@ -972,6 +1017,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function submitDelete(type, id, name) {
+      const deleteForm = document.getElementById("delete-form");
+      if (!deleteForm) return;
       if (!confirm(`"${name}" wirklich löschen?`)) return;
       deleteForm.querySelectorAll('input[name="item"]').forEach((el) => el.remove());
       const inp = document.createElement("input");

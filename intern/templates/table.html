@@ -25,12 +25,21 @@
 {% block content %}
 <div class="table-view">
     {% if show_file_actions %}
-    <div class="action offcanvas" id="Action">
+    <div class="action offcanvas" id="Action"
+         data-can-write="{{ can_write_here|yesno:'true,false' }}"
+         data-can-delete="{{ can_delete_here|yesno:'true,false' }}">
         <div class="action-header">
             <span id="selected-count">0</span> ausgewählt
         </div>
 
-        {% if perms.filer.add_folder %}
+        <form id="zip-form" method="post" action="{% url 'folder_zip_selection' %}">
+            {% csrf_token %}
+        </form>
+        <button class="btn btn-secondary action-btn" onclick="fileAction('zip')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Als ZIP herunterladen
+        </button>
+
+        {% if can_write_here or can_delete_here %}
         <form id="delete-form" method="post" action="{% url 'folder_delete' %}">
             {% csrf_token %}
             <input type="hidden" name="referer_pk" value="{{ current_pk }}">
@@ -46,8 +55,11 @@
             <input type="hidden" id="copy-target" name="target_pk" value="">
         </form>
 
+        {% if can_delete_here %}
         <button class="btn btn-danger action-btn" onclick="fileAction('delete')">Löschen</button>
+        {% endif %}
 
+        {% if can_write_here %}
         <div class="action-divider"></div>
         <div class="action-label">Zielordner</div>
         <div class="folder-picker" id="folder-picker">
@@ -68,6 +80,7 @@
             <button class="btn btn-secondary action-btn" onclick="fileAction('move')">Verschieben</button>
             <button class="btn btn-primary action-btn" onclick="fileAction('copy')">Kopieren</button>
         </div>
+        {% endif %}
         {% endif %}
     </div>
     {% else %}

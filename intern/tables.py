@@ -7,6 +7,7 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django_tables2.data import TableListData
 
 from .models import Artikel, ChangeLog, Lied, Ort, PRIVACY_FIELDS, Termin, User
 from .forms import TriStateToggle
@@ -32,7 +33,23 @@ class ForumTabelle(tables.Table):
         )
 
 
+class _FoldersFirstData(TableListData):
+    """TableListData that always keeps the '..' row first, then folders, then files."""
+
+    def order_by(self, aliases):
+        super().order_by(aliases)
+        dots = [r for r in self.data if r.get("name") == ".."]
+        folder_rows = [r for r in self.data if r.get("type") == "Folder" and r.get("name") != ".."]
+        file_rows = [r for r in self.data if r.get("type") != "Folder" and r.get("name") != ".."]
+        self.data = dots + folder_rows + file_rows
+
+
 class OrdnerTabelle(tables.Table):
+    def __init__(self, data, *args, **kwargs):
+        if isinstance(data, list):
+            data = _FoldersFirstData(data)
+        super().__init__(data, *args, **kwargs)
+
     select = tables.CheckBoxColumn(
         accessor="id",
         orderable=False,

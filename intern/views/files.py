@@ -178,7 +178,8 @@ def upload(request):
         existing = File.objects.filter(
             folder_id=folder_id, original_filename=file.name
         ).first()
-        if existing is not None:
+        overwritten = existing is not None
+        if overwritten:
             try:
                 existing.file.delete(save=False)
             except Exception:
@@ -232,7 +233,7 @@ def upload(request):
             ).url
         except Exception:
             pass
-        return JsonResponse({"status": "success", "id": filer_file.id, "url": url, "thumbnail_url": thumb})
+        return JsonResponse({"status": "success", "id": filer_file.id, "url": url, "thumbnail_url": thumb, "overwritten": overwritten})
 
 
 @login_required
