@@ -317,7 +317,7 @@ class Termin(models.Model):
     wiederholung = models.CharField(max_length=1, default="e")
     kurz = models.CharField(max_length=64)
     lang = models.TextField(blank=True, null=True)
-    ort = models.ForeignKey("Ort", null=True, on_delete=models.SET_NULL)
+    ort = models.ForeignKey("Ort", null=True, blank=True, on_delete=models.SET_NULL)
     extern = models.TextField(blank=True, null=True)
     ctag = models.IntegerField(default=0)
     repertoire = models.BooleanField(default=False)
