@@ -60,7 +60,7 @@ def _forum_user_lists(forum_obj):
 
     if get_config_bool("EJABBERD_ENABLED") and forum_obj.xmpp_muc_jid:
         room_members = ejabberd.get_room_members(forum_obj.xmpp_muc_jid)
-        member_jids = {jid.lower() for jid, _aff in room_members}
+        member_jids = {jid.lower() for jid, aff in room_members if aff in ("member", "admin", "owner")}
 
         room_occupants = ejabberd.get_room_occupants(forum_obj.xmpp_muc_jid)
         occupant_jids = {jid.split("/")[0].lower() for jid, _nick in room_occupants}
@@ -266,7 +266,6 @@ def forum_invite(request, forum, user_id):
     user = get_object_or_404(User, id=user_id)
 
     if get_config_bool("EJABBERD_ENABLED") and forum_obj.xmpp_muc_jid and user.xmpp:
-        ejabberd.send_invitation(forum_obj.xmpp_muc_jid, user.xmpp)
         ejabberd.set_room_affiliation(forum_obj.xmpp_muc_jid, user.xmpp, "member")
     else:
         # Fallback: send email invitation

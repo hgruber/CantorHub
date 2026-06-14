@@ -80,7 +80,7 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 ### Forum edit page
 
-`/intern/forum/<id>/edit/` shows user lists sourced from XMPP MUC room data (when `EJABBERD_ENABLED` and `xmpp_muc_jid` exists): invited (room members), attending (room occupants), without invitation (active users not in room), without XMPP account (active users without `xmpp` JID). The invite button calls `ejabberd.send_invitation()` + `ejabberd.set_room_affiliation()`. Falls back to message-based lists when XMPP is disabled.
+`/intern/forum/<id>/edit/` shows user lists sourced from XMPP MUC room data (when `EJABBERD_ENABLED` and `xmpp_muc_jid` exists): invited (room members), attending (room occupants), without invitation (active users not in room), without XMPP account (active users without `xmpp` JID). The invite button calls `ejabberd.set_room_affiliation(..., "member")` to silently add the user to the room (no XMPP notification). "Eingeladene" shows affiliations filtered to `member`/`admin`/`owner` (outcast excluded). Falls back to message-based lists when XMPP is disabled.
 
 ### Article editor & versioning
 
