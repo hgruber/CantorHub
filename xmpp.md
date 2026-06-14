@@ -61,7 +61,7 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `
 | `ensure_bot` | `register` | user, host, password | Idempotent bot account creation |
 | `set_user_password` | `change_password` | user, host, newpass | Syncs password changes to ejabberd |
 | `set_vcard` | `set_vcard` + `set_vcard2` | user, host, name, avatar_file | Sets FN and PHOTO (base64); avatar_file is a FilerFileField |
-| `get_room_members` | `get_room_affiliations` | room, service | Returns `[{jid, affiliation, reason}]` — no `host` param |
+| `get_room_members` | `get_room_affiliations` | room, service | Returns `[{username, domain, affiliation, reason}]` — JID reconstructed as `username@domain` |
 | `set_room_affiliation` | `set_room_affiliation` | room, service, user, host, affiliation | `host` is the *user* host |
 | `get_room_occupants` | `get_room_occupants` | room, service | Returns `[{jid, nick, role}]` — real JIDs exposed in non-anonymous rooms |
 | `change_room_option` | `change_room_option` | room, service, option, value | Used for title, persistent, anonymous |
@@ -73,9 +73,11 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `
 ### REST API quirks
 
 - ejabberd returns JSON `null` for success with no result; `_request()` normalizes to `{}`
-- `None` return means HTTP error (caller distinguishes failure from success)
+- `None` return means HTTP error or string error (caller distinguishes failure from success)
+- ejabberd returns a plain JSON string (HTTP 200) for some errors (e.g. `"Unknown host passed in 'service'"`); `_request()` treats any string result as an error and returns `None`
 - Retries on HTTP 429 with exponential backoff (max 5 s, 3 attempts)
 - `allow_statuses` parameter treats extra status codes as success (e.g. `{409}` for register)
+- All room functions use `_split_muc_jid(muc_jid)` to extract `(room_localpart, service)` directly from the JID — they do **not** rely on `EJABBERD_MUC_SERVICE` config; `set_room_affiliation` similarly extracts `user_host` from `user_jid`
 
 ### slixmpp event loop cleanup
 
@@ -120,7 +122,7 @@ After `forum_send` creates a `Mitteilung`, a daemon thread calls `_forward_to_xm
 On first message in a room (including CantorBot-relayed Forum messages):
 
 1. `get_room_members` via REST → current affiliations
-2. For each active `User` with `xmpp` not in the room: `send_direct_invitation` with `reason = "CantorHub Forum: Full Name"`
+2. For each active `User` with `xmpp` not in the room: `send_direct_invitation` with `reason = "CantorHub Forum: Full Name"`, then `set_room_affiliation(..., "member")` so the user appears in future affiliation queries
 3. Only runs once per room per bot session (`_invitation_done` set)
 
 This avoids mass invitations on startup — invitations only fire when a message actually arrives.

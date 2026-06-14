@@ -114,7 +114,7 @@ def _resolve_sender_jid(room_jid, nickname):
 def _db_invite_missing_users(room_jid):
     """Synchronous: invite active XMPP users who aren't in this room yet."""
     from intern.models import User
-    from intern.ejabberd import get_room_members, send_invitation
+    from intern.ejabberd import get_room_members, send_invitation, set_room_affiliation
 
     users = User.objects.filter(is_active=True).exclude(xmpp=None).exclude(xmpp="")
     if not users.exists():
@@ -129,6 +129,7 @@ def _db_invite_missing_users(room_jid):
             nick = f"{user.first_name} {user.last_name}".strip() or user.username
             reason = f"CantorHub Forum: {nick}"
             if send_invitation(room_jid, user.xmpp, reason=reason):
+                set_room_affiliation(room_jid, user.xmpp, "member")
                 invited += 1
 
     if invited:

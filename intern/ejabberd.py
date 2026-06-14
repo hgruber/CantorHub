@@ -89,7 +89,14 @@ def _request(endpoint, body=None, allow_statuses=None):
 
         try:
             result = resp.json()
-            return {} if result is None else result
+            if result is None:
+                return {}
+            # ejabberd returns a plain string (HTTP 200) for certain errors,
+            # e.g. "Unknown host passed in 'service'" when a parameter is wrong.
+            if isinstance(result, str):
+                logger.error("ejabberd %s -> error: %s", endpoint, result)
+                return None
+            return result
         except Exception:
             return {}
 
@@ -198,18 +205,24 @@ def unregister_user(localpart):
     return True
 
 
+def _split_muc_jid(muc_jid):
+    """Return (room_localpart, service) from a full MUC JID like 'room@conference.host'."""
+    parts = muc_jid.split("@", 1)
+    return parts[0], (parts[1] if len(parts) > 1 else get_config("EJABBERD_MUC_SERVICE", ""))
+
+
 def destroy_room(muc_jid):
     """
     Destroy a MUC room on ejabberd via POST /api/destroy_room.
 
     Returns True on success, False on failure.
     """
-    room_localpart = muc_jid.split("@")[0]
+    room_localpart, service = _split_muc_jid(muc_jid)
     result = _request(
         "destroy_room",
         {
             "room": room_localpart,
-            "service": get_config("EJABBERD_MUC_SERVICE", ""),
+            "service": service,
         },
     )
     if result is None:
@@ -310,18 +323,15 @@ def set_vcard(localpart, full_name, avatar_file=None):
 def set_room_affiliation(muc_jid, user_jid, affiliation):
     """
     Set a user's affiliation in a MUC room via REST API.
-    Uses 'room' (localpart) + 'service' instead of full JID.
 
     Affiliations: 'owner', 'admin', 'member', 'outcast', 'none'
 
     Returns True on success, False on failure.
     """
-    # Parse muc_jid: forum-1@conference.example.net
-    room_localpart = muc_jid.split("@")[0]
-    service = get_config("EJABBERD_MUC_SERVICE", "")
-
-    # Parse user_jid: user@example.org
-    user_localpart = user_jid.split("@")[0]
+    room_localpart, service = _split_muc_jid(muc_jid)
+    user_parts = user_jid.split("@", 1)
+    user_localpart = user_parts[0]
+    user_host = user_parts[1] if len(user_parts) > 1 else get_config("EJABBERD_HOST", "")
 
     result = _request(
         "set_room_affiliation",
@@ -329,7 +339,7 @@ def set_room_affiliation(muc_jid, user_jid, affiliation):
             "room": room_localpart,
             "service": service,
             "user": user_localpart,
-            "host": get_config("EJABBERD_HOST", ""),
+            "host": user_host,
             "affiliation": affiliation,
         },
     )
@@ -350,23 +360,29 @@ def get_room_members(muc_jid):
     Get list of members in a MUC room via REST API.
     Returns list of (user_jid, affiliation) tuples on success, empty list on failure.
     """
-    room_localpart = muc_jid.split("@")[0]
+    room_localpart, service = _split_muc_jid(muc_jid)
 
     result = _request(
         "get_room_affiliations",
         {
             "room": room_localpart,
-            "service": get_config("EJABBERD_MUC_SERVICE", ""),
+            "service": service,
         },
     )
     if result is None:
         return []
 
-    # result is list of dicts: {"jid": "user@host", "affiliation": "member", "reason": "..."}
+    # ejabberd returns {"username": "user", "domain": "host", "affiliation": "member", "reason": "..."}
+    # Some versions may return {"jid": "user@host", ...} — both formats are handled.
     members = []
     for item in result:
         if isinstance(item, dict):
             jid = item.get("jid", "")
+            if not jid:
+                username = item.get("username", "")
+                domain = item.get("domain", "")
+                if username and domain:
+                    jid = f"{username}@{domain}"
             affiliation = item.get("affiliation", "none")
             if jid:
                 members.append((jid, affiliation))
@@ -381,13 +397,13 @@ def change_room_option(muc_jid, option, value):
 
     Returns True on success, False on failure.
     """
-    room_localpart = muc_jid.split("@")[0]
+    room_localpart, service = _split_muc_jid(muc_jid)
 
     result = _request(
         "change_room_option",
         {
             "room": room_localpart,
-            "service": get_config("EJABBERD_MUC_SERVICE", ""),
+            "service": service,
             "option": option,
             "value": value,
         },
@@ -404,13 +420,13 @@ def get_room_occupants(muc_jid):
     Returns list of (jid, nick) tuples on success, empty list on failure.
     jid is the real JID including resource (e.g. "user@host/resource").
     """
-    room_localpart = muc_jid.split("@")[0]
+    room_localpart, service = _split_muc_jid(muc_jid)
 
     result = _request(
         "get_room_occupants",
         {
             "room": room_localpart,
-            "service": get_config("EJABBERD_MUC_SERVICE", ""),
+            "service": service,
         },
     )
     if result is None:
@@ -432,13 +448,13 @@ def send_invitation(muc_jid, user_jid, reason="", password=""):
 
     Returns True on success, False on failure.
     """
-    room_localpart = muc_jid.split("@")[0]
+    room_localpart, service = _split_muc_jid(muc_jid)
 
     result = _request(
         "send_direct_invitation",
         {
             "room": room_localpart,
-            "service": get_config("EJABBERD_MUC_SERVICE", ""),
+            "service": service,
             "password": password or "",
             "reason": reason or "CantorHub Forum invitation",
             "users": [user_jid],

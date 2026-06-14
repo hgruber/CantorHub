@@ -67,7 +67,6 @@ def _forum_user_lists(forum_obj):
 
         invited = [u for u in active_users if u.xmpp and u.xmpp.lower() in member_jids]
         attending = [u for u in active_users if u.xmpp and u.xmpp.lower() in occupant_jids]
-        with_xmpp = {u.xmpp.lower() for u in active_users if u.xmpp}
         without_invitation = [u for u in active_users if u.xmpp and u.xmpp.lower() not in member_jids]
         without_xmpp = [u for u in active_users if not u.xmpp]
     else:
