@@ -120,6 +120,7 @@ def mitglied_view(request, id):
         request.user.id == id
         or request.user.has_perm("intern.change_user")
     )
+    can_change_pass = request.user.id == id or request.user.is_superuser
     can_view_history = request.user.has_perm("intern.change_user")
     visible = {f: user.field_visible_to(request.user, f) for f in PRIVACY_FIELDS}
     map_center = get_map_center()
@@ -128,7 +129,7 @@ def mitglied_view(request, id):
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
         "up": "mitglied_list",
         "edit": "mitglied_edit" if can_edit else None,
-        "changepass": "mitglied_passwd" if can_edit else None,
+        "changepass": "mitglied_passwd" if can_change_pass else None,
         "history": "mitglied_aenderungen" if can_view_history else None,
         "id": id,
         "visible": visible,
@@ -210,11 +211,8 @@ def mitglied_edit(request, id):
 def mitglied_passwd(request, id):
     target_user = get_object_or_404(User, id=id)
 
-    # Prüfe, ob der aktuelle Benutzer der Zielbenutzer ist oder Admin
-    if (
-        request.user.id != target_user.id
-        and not request.user.has_perm("intern.change_user")
-    ):
+    # Prüfe, ob der aktuelle Benutzer der Zielbenutzer ist oder Superuser
+    if request.user.id != target_user.id and not request.user.is_superuser:
         return redirect("mitglied_view", id=id)
 
     # Wer das eigene Passwort ändert, muss das aktuelle kennen — eine
