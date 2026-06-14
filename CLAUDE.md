@@ -145,6 +145,10 @@ Items found during code review, ordered by estimated risk of the fix:
 - `visible_fields()` in `views/files.py` has dual behavior: returns column list on GET, saves and redirects on POST. Splitting it requires touching call sites in `titel.py` and `mitglieder.py`.
 - URL parameter naming is inconsistent across views (`id` vs `pk` vs `forum` vs `titel`). Standardizing requires updating URL patterns, view signatures, templates, and `reverse()` calls.
 
+### Logging
+
+`settings.py` defines a `LOGGING` dict. The `intern` logger hierarchy is set to `INFO`; root and `django` loggers to `WARNING`. All output goes to stderr via `StreamHandler`, which appears in `podman logs` and `journalctl`. Custom loggers use `logging.getLogger(__name__)` — they all fall under `intern.*` and are therefore visible.
+
 ### Notable utilities (`intern/`)
 
 - `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file links)

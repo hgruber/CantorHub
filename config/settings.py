@@ -222,3 +222,36 @@ FILE_TYPE_LIED_MAP = {
 
 # XMPP and iCal settings are stored in the database (intern.Konfiguration).
 # Use intern.app_settings.get_config() to read them at runtime.
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "timestamped",
+        },
+    },
+    "formatters": {
+        "timestamped": {
+            "format": "{asctime} {levelname} {name}: {message}",
+            "style": "{",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "intern": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
