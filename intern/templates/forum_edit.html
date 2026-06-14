@@ -29,6 +29,13 @@
                     <label for="{{ form.bild.id_for_label }}">Bild</label>
                     {{ form.bild }}
                 </div>
+                {% if ejabberd_enabled %}
+                <div class="form-group">
+                    <label for="{{ form.xmpp_muc_jid.id_for_label }}">XMPP-Raum (MUC JID)</label>
+                    {{ form.xmpp_muc_jid }}
+                    {% if form.xmpp_muc_jid.errors %}<div class="invalid-feedback">{{ form.xmpp_muc_jid.errors }}</div>{% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -44,6 +51,26 @@
 
     {% if id %}
     <div class="detail-cards detail-cards-spaced">
+
+        {% if ejabberd_enabled %}
+        <div class="detail-card">
+            <h3>XMPP-Raum</h3>
+            <p class="text-muted" style="font-family: monospace; font-size: 0.85em; word-break: break-all;">{{ muc_jid }}</p>
+            {% if room_info.exists %}
+            <div class="invite-list">
+                <div class="invite-row"><span>Persistenz</span><span>{% if room_info.persistent %}Ja{% else %}Nein{% endif %}</span></div>
+                <div class="invite-row"><span>Nur Mitglieder</span><span>{% if room_info.members_only %}Ja{% else %}Nein{% endif %}</span></div>
+                <div class="invite-row"><span>Öffentlich</span><span>{% if room_info.public %}Ja{% else %}Nein{% endif %}</span></div>
+                <div class="invite-row"><span>Moderiert</span><span>{% if room_info.moderated %}Ja{% else %}Nein{% endif %}</span></div>
+                {% if room_info.title %}<div class="invite-row"><span>Raumname</span><span>{{ room_info.title }}</span></div>{% endif %}
+                <div class="invite-row"><span>Besitzer</span><span>{% for jid in room_info.owners %}{{ jid }}{% if not forloop.last %}, {% endif %}{% empty %}&mdash;{% endfor %}</span></div>
+                <div class="invite-row"><span>Bot anwesend</span><span>{% if room_info.bot_present %}Ja{% else %}Nein{% endif %}</span></div>
+            </div>
+            {% else %}
+            <p class="text-muted">Raum existiert noch nicht auf ejabberd.</p>
+            {% endif %}
+        </div>
+
         <div class="detail-card">
             <h3>Eingeladene Mitglieder <span class="badge">{{ invited|length }}</span></h3>
             {% if invited %}
@@ -99,6 +126,7 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
         {% endif %}
 
         <div class="detail-card detail-card-danger">

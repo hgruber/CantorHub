@@ -80,7 +80,7 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 ### Forum edit page
 
-`/intern/forum/<id>/edit/` shows user lists sourced from XMPP MUC room data (when `EJABBERD_ENABLED` and `xmpp_muc_jid` exists): invited (room members), attending (room occupants), without invitation (active users not in room), without XMPP account (active users without `xmpp` JID). The invite button calls `ejabberd.set_room_affiliation(..., "member")` to silently add the user to the room (no XMPP notification). "Eingeladene" shows affiliations filtered to `member`/`admin`/`owner` (outcast excluded). Falls back to message-based lists when XMPP is disabled.
+`/intern/forum/<id>/edit/` lets admins set `thema`, `bild`, and (when `EJABBERD_ENABLED`) `xmpp_muc_jid`. When EJABBERD is enabled, the MUC JID is auto-derived as `forum-{id}@{EJABBERD_MUC_SERVICE}` if not set; the first invite also persists it to the DB so the bot picks it up. XMPP sections are hidden entirely when `EJABBERD_ENABLED=False` (no fallback). When enabled, shows: a room-info card (exists, persistent, members\_only, public, moderated, title, owners, bot presence via `get_room_options`), invited (affiliations `member`/`admin`/`owner`), attending (occupants), without invitation (active users with xmpp not in affiliations), without XMPP account. The invite button calls `ejabberd.set_room_affiliation(..., "member")` silently.
 
 ### Article editor & versioning
 

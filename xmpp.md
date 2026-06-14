@@ -64,6 +64,7 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `
 | `get_room_members` | `get_room_affiliations` | room, service | Returns `[{username, domain, affiliation, reason}]` — JID reconstructed as `username@domain` |
 | `set_room_affiliation` | `set_room_affiliation` | room, service, user, host, affiliation | `host` is the *user* host |
 | `get_room_occupants` | `get_room_occupants` | room, service | Returns `[{jid, nick, role}]` — real JIDs exposed in non-anonymous rooms |
+| `get_room_options` | `get_room_options` | room, service | Returns `{option_name: value}` dict, or `None` if room doesn't exist |
 | `change_room_option` | `change_room_option` | room, service, option, value | Used for title, persistent, anonymous |
 | `send_invitation` | `send_direct_invitation` | room, service, password, reason, users | `users` is a list of JIDs; `reason` and `password` must be non-empty |
 | `unregister_user` | `unregister` | user, host | Delete ejabberd account; returns True/False |

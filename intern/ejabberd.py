@@ -442,6 +442,21 @@ def get_room_occupants(muc_jid):
     return occupants
 
 
+def get_room_options(muc_jid):
+    """
+    Get options of a MUC room via REST API.
+    Returns dict {option_name: value} if room exists, None on failure (room likely doesn't exist).
+    """
+    room_localpart, service = _split_muc_jid(muc_jid)
+    result = _request(
+        "get_room_options",
+        {"room": room_localpart, "service": service},
+    )
+    if result is None:
+        return None
+    return {item["name"]: item["value"] for item in result if isinstance(item, dict) and "name" in item}
+
+
 def send_invitation(muc_jid, user_jid, reason="", password=""):
     """
     Send a direct invitation to a MUC room via ejabberd REST API.

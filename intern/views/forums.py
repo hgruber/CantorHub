@@ -13,7 +13,7 @@ from django_tables2 import RequestConfig
 from filer.models import File
 
 from intern import ejabberd, folders
-from intern.app_settings import get_config_bool, get_from_email
+from intern.app_settings import get_config, get_config_bool, get_from_email
 
 from ..forms import ForumEditForm
 from ..models import Forum, Mitteilung, User
@@ -54,36 +54,62 @@ def _forward_to_xmpp(msg):
         logger.error("ejabberd: failed to forward message %s to MUC: %s", msg.id, exc)
 
 
+def _get_muc_jid(forum_obj):
+    """Return the MUC JID for a forum, deriving it from config if not explicitly set."""
+    if forum_obj.xmpp_muc_jid:
+        return forum_obj.xmpp_muc_jid
+    muc_service = get_config("EJABBERD_MUC_SERVICE", "")
+    if muc_service:
+        return f"forum-{forum_obj.pk}@{muc_service}"
+    return None
+
+
 def _forum_user_lists(forum_obj):
-    """Compute invited, attending, without_invitation, without_xmpp user lists for a forum."""
+    """Compute XMPP-based user lists and room info. Returns empty dicts when EJABBERD disabled."""
+    empty = {
+        "invited": [],
+        "attending": [],
+        "without_invitation": [],
+        "without_xmpp": [],
+        "room_info": None,
+        "muc_jid": None,
+    }
+    if not get_config_bool("EJABBERD_ENABLED"):
+        return empty
+
+    muc_jid = _get_muc_jid(forum_obj)
+    if not muc_jid:
+        return empty
+
     active_users = list(User.objects.filter(is_active=True).order_by("last_name", "first_name"))
 
-    if get_config_bool("EJABBERD_ENABLED") and forum_obj.xmpp_muc_jid:
-        room_members = ejabberd.get_room_members(forum_obj.xmpp_muc_jid)
-        member_jids = {jid.lower() for jid, aff in room_members if aff in ("member", "admin", "owner")}
+    room_members = ejabberd.get_room_members(muc_jid)
+    member_jids = {jid.lower() for jid, aff in room_members if aff in ("member", "admin", "owner")}
 
-        room_occupants = ejabberd.get_room_occupants(forum_obj.xmpp_muc_jid)
-        occupant_jids = {jid.split("/")[0].lower() for jid, _nick in room_occupants}
+    room_occupants = ejabberd.get_room_occupants(muc_jid)
+    occupant_jids = {jid.split("/")[0].lower() for jid, _nick in room_occupants}
 
-        invited = [u for u in active_users if u.xmpp and u.xmpp.lower() in member_jids]
-        attending = [u for u in active_users if u.xmpp and u.xmpp.lower() in occupant_jids]
-        without_invitation = [u for u in active_users if u.xmpp and u.xmpp.lower() not in member_jids]
-        without_xmpp = [u for u in active_users if not u.xmpp]
-    else:
-        sender_ids = set(
-            Mitteilung.objects.filter(forum=forum_obj)
-            .values_list("sender_id", flat=True)
-        )
-        invited = [u for u in active_users if u.id in sender_ids]
-        attending = invited
-        without_invitation = [u for u in active_users if u.id not in sender_ids]
-        without_xmpp = []
+    options = ejabberd.get_room_options(muc_jid)
+    bot_jid = get_config("EJABBERD_BOT_JID", "").lower()
+    owners = [jid for jid, aff in room_members if aff == "owner"]
+    room_info = {
+        "exists": options is not None,
+        "persistent": options.get("persistent") == "true" if options else False,
+        "members_only": options.get("members_only") == "true" if options else False,
+        "public": options.get("public") == "true" if options else False,
+        "moderated": options.get("moderated") == "true" if options else False,
+        "title": (options or {}).get("title", ""),
+        "owners": owners,
+        "bot_present": bool(bot_jid) and any(bot_jid in jid.lower() for jid in occupant_jids),
+    }
 
     return {
-        "invited": invited,
-        "attending": attending,
-        "without_invitation": without_invitation,
-        "without_xmpp": without_xmpp,
+        "invited": [u for u in active_users if u.xmpp and u.xmpp.lower() in member_jids],
+        "attending": [u for u in active_users if u.xmpp and u.xmpp.lower() in occupant_jids],
+        "without_invitation": [u for u in active_users if u.xmpp and u.xmpp.lower() not in member_jids],
+        "without_xmpp": [u for u in active_users if not u.xmpp],
+        "room_info": room_info,
+        "muc_jid": muc_jid,
     }
 
 
@@ -254,6 +280,7 @@ def forum_edit(request, forum):
         "seitentitel": f"bearbeiten: {forum_obj.thema}",
         "view": "forum_view",
         "id": forum,
+        "ejabberd_enabled": get_config_bool("EJABBERD_ENABLED"),
         **user_lists,
     }
     return render(request, "forum_edit.html", context)
@@ -265,14 +292,12 @@ def forum_invite(request, forum, user_id):
     forum_obj = get_object_or_404(Forum, id=forum)
     user = get_object_or_404(User, id=user_id)
 
-    if get_config_bool("EJABBERD_ENABLED") and forum_obj.xmpp_muc_jid and user.xmpp:
-        ejabberd.set_room_affiliation(forum_obj.xmpp_muc_jid, user.xmpp, "member")
-    else:
-        # Fallback: send email invitation
-        if user.email:
-            subject = f"Einladung: {forum_obj.thema}"
-            message = f"Hallo {user.first_name},\n\nDu wurdest zum Forum \"{forum_obj.thema}\" eingeladen.\n\nBesuche das Forum unter: {request.build_absolute_uri(reverse('forum_view', args=[forum]))}"
-            send_mail(subject, message, get_from_email(), [user.email])
+    muc_jid = _get_muc_jid(forum_obj)
+    if get_config_bool("EJABBERD_ENABLED") and muc_jid and user.xmpp:
+        if not forum_obj.xmpp_muc_jid:
+            forum_obj.xmpp_muc_jid = muc_jid
+            forum_obj.save(update_fields=["xmpp_muc_jid"])
+        ejabberd.set_room_affiliation(muc_jid, user.xmpp, "member")
 
     return redirect("forum_edit", forum=forum)
 
