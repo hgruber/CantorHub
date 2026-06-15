@@ -7,8 +7,8 @@ Started as a background process by start.sh when EJABBERD_ENABLED=1.
 Responsibilities:
 - Joins (and thereby creates) all MUC rooms listed in Forum.xmpp_muc_jid.
 - Sets room title, persistent flag, and semi-anonymous mode (so clients don't
-  default to OMEMO; the bot resolves real JIDs via the admin REST API).
-- Resolves sender JIDs via get_room_occupants REST API for User.xmpp mapping.
+  default to OMEMO; the bot resolves real JIDs via presence events/REST API).
+- Resolves sender JIDs from MUC presence stanzas (cache) with REST API fallback.
 - Rescans every 60 s to pick up newly created forums.
 - Forwards inbound groupchat messages to Mitteilung records,
   mapping senders via User.xmpp (not by nickname).
@@ -142,17 +142,6 @@ def _db_store_message(room_jid, body, sender_jid, stanza_id):
     )
 
 
-def _resolve_sender_jid(room_jid, nickname):
-    """Synchronous: look up a MUC occupant's real XMPP JID via REST API."""
-    from intern.ejabberd import get_room_occupants
-
-    occupants = get_room_occupants(room_jid)
-    for jid, nick in occupants:
-        if nick == nickname:
-            # jid includes resource (user@host/res), strip to bare JID
-            return jid.split("/")[0]
-    return None
-
 
 def _db_invite_missing_users(room_jid):
     """Synchronous: invite active XMPP users who aren't in this room yet."""
@@ -194,6 +183,8 @@ class CantorBot:
         self._invitation_done = set()
         self._auth_retries = 0
         self._relay_cursor = None  # highest forum Mitteilung id relayed to MUC
+        # nick→bare_jid per room, populated from MUC presence stanzas
+        self._nick_jid_cache: dict = {}
 
         self._client = slixmpp.ClientXMPP(
             get_config("EJABBERD_BOT_JID", ""),
@@ -206,6 +197,7 @@ class CantorBot:
 
         self._client.add_event_handler("session_start", self._on_session_start)
         self._client.add_event_handler("groupchat_message", self._on_muc_message)
+        self._client.add_event_handler("presence", self._on_presence)
         self._client.add_event_handler("failed_auth", self._on_failed_auth)
         self._client.add_event_handler("disconnected", self._on_disconnected)
 
@@ -213,6 +205,72 @@ class CantorBot:
         """Cancel all scheduled events on the client to avoid duplicates on reconnect."""
         for name in list(self._client.scheduled_events):
             self._client.cancel_schedule(name)
+
+    def _on_presence(self, pres):
+        """Cache MUC nick→bare-JID from room presence stanzas.
+
+        As room owner the bot receives real JIDs in the <x muc#user> element even
+        in semi-anonymous rooms (moderator privilege). This cache is the primary
+        source for sender resolution; the REST API is only the fallback.
+        """
+        room_jid = str(pres["from"].bare)
+        if room_jid not in self._joined_rooms:
+            return
+        nick = pres["from"].resource
+        if not nick:
+            return
+
+        cache = self._nick_jid_cache.setdefault(room_jid, {})
+
+        if pres["type"] == "unavailable":
+            cache.pop(nick, None)
+            return
+
+        # slixmpp xep_0045 parses <x xmlns="http://jabber.org/protocol/muc#user">
+        # and exposes the real JID via pres["muc"]["item"]["jid"].
+        real_jid = None
+        try:
+            real_jid = str(pres["muc"]["item"]["jid"])
+        except Exception:
+            pass
+
+        if not real_jid or "@" not in real_jid:
+            # Fallback: raw XML search
+            ns = "http://jabber.org/protocol/muc#user"
+            item = pres.xml.find(f"{{{ns}}}x/{{{ns}}}item")
+            if item is not None:
+                real_jid = item.get("jid", "")
+
+        if real_jid and "@" in real_jid:
+            cache[nick] = real_jid.split("/")[0]
+            logger.debug("ejabberd_bot: cached %s → %s in %s", nick, cache[nick], room_jid)
+
+    def _resolve_sender_jid(self, room_jid, nickname):
+        """Synchronous: resolve a MUC nick to the occupant's bare XMPP JID.
+
+        Checks the presence cache first (populated by _on_presence). Falls back to
+        the REST API get_room_occupants with case-insensitive nick matching.
+        """
+        cache = self._nick_jid_cache.get(room_jid, {})
+        if nickname in cache:
+            return cache[nickname]
+
+        from intern.ejabberd import get_room_occupants
+        occupants = get_room_occupants(room_jid)
+        nickname_lower = nickname.lower()
+        for jid, nick in occupants:
+            if nick == nickname or nick.lower() == nickname_lower:
+                bare = jid.split("/")[0]
+                self._nick_jid_cache.setdefault(room_jid, {})[nickname] = bare
+                return bare
+
+        logger.warning(
+            "ejabberd_bot: could not resolve JID for nick %r in %s (occupants: %s)",
+            nickname,
+            room_jid,
+            [n for _, n in occupants],
+        )
+        return None
 
     def run(self):
         host = get_config("EJABBERD_HOST", "")
@@ -381,7 +439,7 @@ class CantorBot:
         # Resolve sender's real XMPP JID from room occupants. For history this may
         # be None (the sender may have left) → stored as an anonymous message.
         sender_jid = await asyncio.to_thread(
-            _resolve_sender_jid, room_jid, sender_nickname
+            self._resolve_sender_jid, room_jid, sender_nickname
         )
 
         await asyncio.to_thread(

@@ -14,7 +14,7 @@ ejabberd_bot ── _relay_messages ────────┴──> CantorBot
 
 ejabberd_bot     <──groupchat_message── XMPP user in MUC
 (long-running)       │
-                     ├── _resolve_sender_jid  (REST: get_room_occupants)
+                     ├── _resolve_sender_jid  (cache → REST: get_room_occupants)
                      ├── _db_store_message     (ORM: create Mitteilung)
                      └── _db_invite_missing_users (REST: send_direct_invitation)
 ```
@@ -116,7 +116,7 @@ This replaced an earlier per-message short-lived slixmpp connection that was unr
 
    These are re-enforced on every (re)join and by `ejabberd_sync --sync` for all existing rooms (overwriting manual admin changes).
 
-   **Why semi-anonymous:** OMEMO in a MUC technically requires a non-anonymous room (clients must know every member's real JID to fetch keys). Making the room semi-anonymous (`anonymous=true`) means Conversations/Gajim won't offer OMEMO and default to **unencrypted**, so the bridge can read messages. The bot still maps senders to users via the admin REST `get_room_occupants`, which returns real JIDs regardless of anonymity (server/moderator privilege) — see `_resolve_sender_jid`. Regular members no longer see each other's real JIDs in their client.
+   **Why semi-anonymous:** OMEMO in a MUC technically requires a non-anonymous room (clients must know every member's real JID to fetch keys). Making the room semi-anonymous (`anonymous=true`) means Conversations/Gajim won't offer OMEMO and default to **unencrypted**, so the bridge can read messages. The bot maps senders to users via a presence-based nick→JID cache (primary) and the admin REST `get_room_occupants` as fallback — see `_resolve_sender_jid`. As room owner/moderator the bot receives real JIDs in MUC presence stanzas even in semi-anonymous rooms. Regular members no longer see each other's real JIDs in their client.
 
 ### slixmpp plugins
 
@@ -128,7 +128,7 @@ This replaced an earlier per-message short-lived slixmpp connection that was unr
 
 1. **Echo prevention**: sender nickname `CantorBot` → skip storage, but still trigger invitations
 2. **History detection**: messages with `<delay xmlns="urn:xmpp:delay"/>` (via `msg.get_plugin("delay")`) are replayed room history — these are messages sent **before the bot joined**; they ARE imported (so pre-join history reaches the Forum), but only if they carry a `stanza_id`, so `xmpp_stanza_id` dedup suppresses re-imports on every reconnect
-3. **Resolve sender JID**: calls `get_room_occupants` REST API to map nickname → real JID (bare JID, resource stripped). For history, the original sender may have left → resolves to `None` → stored as an anonymous message
+3. **Resolve sender JID**: checks `_nick_jid_cache` (populated from MUC presence stanzas — the bot is room owner/moderator, so ejabberd includes real JIDs in `<x muc#user>` even in semi-anonymous rooms). Falls back to `get_room_occupants` REST API with case-insensitive nick matching and updates the cache. For history, the original sender may have left → resolves to `None` → stored as an anonymous message
 4. **Store message**: `_db_store_message` looks up `User.objects.get(xmpp__iexact=sender_jid)` — sender is always mapped via `User.xmpp`, never by nickname
 5. **Deduplication**: by `xmpp_stanza_id` (XEP-0359, via `msg.get_plugin("stanza_id")`), falling back to `msg["id"]`, plus content-based (same text + same sender within 5 s = Forum echo)
 
