@@ -38,6 +38,7 @@ docker run -p 8000:8000 cantoreub
 | `ejabberd_sync --sync` | Sync XMPP users/rooms when EJABBERD_ENABLED=1 |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding |
 | `ejabberd_admin <action>` | Admin ops: delete_forum, delete_user, clear_invites, invite, remove_user, list_rooms, list_users, sync_vcard, sync_password |
+| `apply_initial_config [--file PATH]` | Write KEY=VALUE pairs from a shell config file into the `Konfiguration` table. Tries `/app/initial.sh` (Docker) then `<project>/initial.sh` (local) by default; `--file` overrides. `migrate.sh` calls this with `--file migrate.sh` so its exported vars land in the DB. |
 
 ## Architecture
 
@@ -80,7 +81,19 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 ### Forum edit page
 
-`/intern/forum/<id>/edit/` lets admins set `thema`, `bild`, and (when `EJABBERD_ENABLED`) `xmpp_muc_jid`. When EJABBERD is enabled, the MUC JID is auto-derived as `forum-{id}@{EJABBERD_MUC_SERVICE}` if not set; the first invite also persists it to the DB so the bot picks it up. XMPP sections are hidden entirely when `EJABBERD_ENABLED=False` (no fallback). When enabled, shows: a room-info card (exists, persistent, members\_only, public, moderated, title, owners, bot presence via `get_room_options`), invited (affiliations `member`/`admin`/`owner`), attending (occupants), without invitation (active users with xmpp not in affiliations), without XMPP account. The invite button calls `ejabberd.set_room_affiliation(..., "member")` silently.
+`/intern/forum/<id>/edit/` lets admins set `thema`, `bild`, and (when `EJABBERD_ENABLED`) `xmpp_muc_jid`. When EJABBERD is enabled, the MUC JID is auto-derived as `forum-{id}@{EJABBERD_MUC_SERVICE}` if not set; the first invite also persists it to the DB so the bot picks it up. XMPP sections are hidden entirely when `EJABBERD_ENABLED=False` (no fallback). When enabled, shows: a room-info card (exists, persistent, members\_only, public, moderated, anonymous, allow\_user\_invites, lang, title, owners with bot marker, bot presence via `get_room_options`), invited (affiliations `member`/`admin`/`owner`), attending (occupants), without invitation (active users with xmpp not in affiliations), without XMPP account, and **Gäste/Fremde** (occupants whose bare JID matches no active user and is not the bot JID). The invite button calls `ejabberd.set_room_affiliation(..., "member")` silently.
+
+When `bild` is set or changed, `_sync_forum_avatar(forum_obj)` is called (best-effort) to push the image as MUC room avatar via `ejabberd.set_room_vcard(muc_jid, avatar_file, name)`. This sets the `vcard` room option via `change_room_option` (XEP-0054 vcard-temp XML with `PHOTO/TYPE/BINVAL`). Clients like Conversations fetch the room vCard via IQ and show the avatar. Two quirks found in testing: (1) ejabberd's fxml parser requires **double-quoted** XML namespace attributes — single quotes cause a 500 internal_error; (2) `vcard_xupdate="external"` via `change_room_option` returns 500 — the accepted format is the hex SHA1 hash of the raw image bytes, which ejabberd then includes in the room presence (XEP-0153) so clients like Conversations automatically fetch and display the avatar. Called from `forum_edit` (on every save, idempotent) and `forum_add` (if bild set on creation); no crash if the MUC room doesn't exist yet. The `bild` column also appears in the forum list table (`ForumTabelle`) as a thumbnail in the first column.
+
+`get_room_options` returns a flat `{option_name: value}` dict (all values are strings, e.g. `"true"`); `ejabberd.option_is_true(options, key)` coerces them to bool (handles string/JSON-bool/list-of-objects formats across ejabberd versions). The "Besitzer" of a bot-created room is the bot JID itself (it created the room by joining first); `owner_is_bot` flags this in the UI.
+
+### MUC room configuration
+
+`ejabberd.configure_room(muc_jid, title=None)` is the single source of truth for room invariants and enforces (overwriting manual changes) on every bot (re)join and on `ejabberd_sync --sync`: `persistent=true`, `anonymous=true`, `public=false`, `members_only=true`, `allow_user_invites=true`, `lang=de`, plus `title` when given (the forum `thema`). Defined as `_ROOM_OPTIONS` in `ejabberd.py`. Called from `ejabberd_bot._configure_room` (on join) and `ejabberd_sync._configure_rooms` (all existing rooms at startup).
+
+Forum→MUC delivery: `forum_send` only writes the `Mitteilung`; the persistent `ejabberd_bot` relays it to the MUC room over its live session (`CantorBot._relay_messages`, a 3 s timer reading `_db_pending_forum_messages`). This replaced a per-message short-lived slixmpp connection that was unreliable (flaky first TLS handshake → random timeouts) and collided on the `CantorBot` nick. The relayed message echoes back under nick `CantorBot` and is skipped by echo prevention.
+
+`anonymous=true` (semi-anonymous) is deliberate: OMEMO in a MUC technically requires a non-anonymous room, so a semi-anonymous room makes clients (Conversations, Gajim) default to **unencrypted** — required for the Forum⇄MUC bridge to read messages. The bot still resolves real sender JIDs via the admin REST API (`get_room_occupants`), which exposes them regardless of room anonymity; clients/members no longer see each other's real JIDs.
 
 ### Article editor & versioning
 
@@ -158,7 +171,7 @@ Items found during code review, ordered by estimated risk of the fix:
 - `app_settings.py` — runtime config helpers (`get_config`, `get_config_bool`, `get_config_int`, `get_from_email`, `get_map_center`) backed by the `Konfiguration` table; see "Runtime configuration" below
 
 **External integrations:**
-- `ejabberd.py` — REST API client for ejabberd admin API and message sending
+- `ejabberd.py` — REST API client for ejabberd admin API (room config, affiliations, invitations, vCards). Message sending is done by the bot over its live session, not here.
 
 **Management commands:**
 - `ejabberd_bot` — slixmpp XMPP bot for MUC message forwarding

@@ -7,13 +7,12 @@ by the slixmpp bot (ejabberd_bot management command).
 """
 
 import base64
+import hashlib
 import logging
 import re
-import threading
 import time
 
 import httpx
-import slixmpp
 
 from intern.app_settings import get_config, get_config_int
 
@@ -320,6 +319,61 @@ def set_vcard(localpart, full_name, avatar_file=None):
     return ok
 
 
+def set_room_vcard(muc_jid, avatar_file, name=None):
+    """
+    Set a MUC room's vCard (and avatar) via ejabberd change_room_option "vcard".
+
+    Builds a vcard-temp XML with PHOTO/TYPE/BINVAL and sets it on the room.
+    Clients like Conversations fetch the room vCard via IQ and display the avatar.
+    Note: ejabberd requires double-quoted XML namespace attributes (single quotes
+    cause a 500 internal_error). vcard_xupdate is not set here because ejabberd
+    rejects "external" as a string value via change_room_option; the vCard IQ
+    request path works without it.
+
+    avatar_file: a FilerFileField instance with an actual file.
+    name: optional room display name to include in the vCard FN field.
+    """
+    if not avatar_file:
+        return False
+    try:
+        f = avatar_file.file
+        f.open("rb")
+        data = f.read()
+        f.close()
+        b64 = base64.b64encode(data).decode("ascii")
+
+        mime = getattr(avatar_file, "mime_type", "") or ""
+        if not mime.startswith("image/"):
+            orig = getattr(avatar_file, "original_filename", "") or ""
+            ext = orig.rsplit(".", 1)[-1].lower() if "." in orig else ""
+            mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif"}.get(ext, "image/jpeg")
+    except Exception as exc:
+        logger.error("ejabberd: failed to read forum image for room vCard: %s", exc)
+        return False
+
+    fn_xml = ""
+    if name:
+        import xml.sax.saxutils as saxutils
+        fn_xml = f"<FN>{saxutils.escape(name)}</FN>"
+
+    # ejabberd's fxml parser requires double-quoted attribute values.
+    vcard_xml = (
+        f'<vCard xmlns="vcard-temp">{fn_xml}'
+        f"<PHOTO><TYPE>{mime}</TYPE><BINVAL>{b64}</BINVAL></PHOTO>"
+        f"</vCard>"
+    )
+
+    ok = change_room_option(muc_jid, "vcard", vcard_xml)
+    # XEP-0153: set vcard_xupdate to the SHA1 hash of the raw image data so
+    # ejabberd includes the hash in room presence and clients fetch the avatar.
+    # "external" as string fails; the hex SHA1 hash is the accepted format.
+    sha1 = hashlib.sha1(data).hexdigest()
+    ok &= change_room_option(muc_jid, "vcard_xupdate", sha1)
+    if ok:
+        logger.info("ejabberd: set room vCard/avatar for %s", muc_jid)
+    return ok
+
+
 def set_room_affiliation(muc_jid, user_jid, affiliation):
     """
     Set a user's affiliation in a MUC room via REST API.
@@ -414,6 +468,51 @@ def change_room_option(muc_jid, option, value):
     return True
 
 
+# Invariant MUC room options enforced on every (re)join and sync.
+# title is handled separately because it varies per forum.
+# anonymous=true (semi-anonymous) is deliberate: OMEMO in a MUC technically
+# requires a non-anonymous room, so semi-anonymous rooms make clients
+# (Conversations, Gajim) default to unencrypted — which is required for the
+# Forum<->MUC bridge to read messages. The bot still resolves real sender JIDs
+# via the admin REST API (get_room_occupants), which is unaffected by anonymity.
+_ROOM_OPTIONS = {
+    "persistent": "true",
+    "anonymous": "true",
+    "public": "false",
+    "members_only": "true",
+    "allow_user_invites": "true",
+    "lang": "de",
+}
+
+
+def configure_room(muc_jid, title=None):
+    """
+    Apply the standard CantorHub room options to a MUC room (single source of
+    truth). Sets persistent, semi-anonymous, members-only, non-public, allows
+    member invites, and German language. If title is given, sets the room name.
+
+    Semi-anonymous keeps clients from defaulting to OMEMO so the bridge can read
+    messages; the bot still resolves real JIDs via the admin REST API, not in the
+    client. These options are enforced (overwriting manual changes) on every bot
+    (re)join and on ejabberd_sync. Returns True if all options were set.
+    """
+    ok = True
+    if title:
+        ok &= change_room_option(muc_jid, "title", title)
+    for option, value in _ROOM_OPTIONS.items():
+        ok &= change_room_option(muc_jid, option, value)
+    return ok
+
+
+def option_is_true(options, key):
+    """Robustly coerce a get_room_options value to bool.
+
+    ejabberd may return option values as the strings "true"/"false" or as JSON
+    booleans depending on version; normalize both to a Python bool.
+    """
+    return str((options or {}).get(key, "")).strip().lower() in ("true", "1", "yes")
+
+
 def get_room_occupants(muc_jid):
     """
     Get current occupants of a MUC room via REST API.
@@ -454,7 +553,19 @@ def get_room_options(muc_jid):
     )
     if result is None:
         return None
-    return {item["name"]: item["value"] for item in result if isinstance(item, dict) and "name" in item}
+    # Modern ejabberd returns a flat {option_name: value} dict.
+    # Older/alternative formats: {"options": [...]} or a list of
+    # {"name": ..., "value": ...} objects — normalize all to a flat dict.
+    if isinstance(result, dict):
+        if "options" in result and isinstance(result["options"], list):
+            result = result["options"]
+        else:
+            return result
+    return {
+        item["name"]: item["value"]
+        for item in result
+        if isinstance(item, dict) and "name" in item
+    }
 
 
 def send_invitation(muc_jid, user_jid, reason="", password=""):
@@ -499,74 +610,3 @@ def list_registered_users():
             if username:
                 users.append(f"{username}@{get_config("EJABBERD_HOST", "")}")
     return users
-
-
-def _send_muc_message_thread(muc_jid, body):
-    """
-    Internal function to send a message to a MUC room.
-    Runs in a background thread with its own event loop.
-    Configures room as persistent + non-anonymous before sending,
-    so the message is preserved in room history for late-joining users.
-    """
-    import asyncio
-
-    async def _send():
-        bot = slixmpp.ClientXMPP(
-            get_config("EJABBERD_BOT_JID", ""),
-            get_config("EJABBERD_BOT_PASSWORD", ""),
-            sasl_mech="PLAIN",
-        )
-        bot.register_plugin("xep_0045")  # MUC
-        bot.register_plugin("xep_0359")  # Stanza IDs
-
-        room_jid = muc_jid
-
-        def on_session_start(event):
-            bot.send_presence()
-            bot.plugin["xep_0045"].join_muc(room_jid, "CantorBot")
-            # Wait for room creation, then configure and send
-            bot.schedule("configure_and_send", 2, lambda: _configure_send_disconnect(bot, room_jid, body))
-
-        def _configure_send_disconnect(bot, room_jid, body):
-            # Ensure room is persistent so history is kept for late joiners
-            change_room_option(room_jid, "persistent", "true")
-            change_room_option(room_jid, "anonymous", "false")
-            bot.send_message(mto=room_jid, mbody=body, mtype="groupchat")
-            bot.schedule("disconnect", 1, bot.disconnect)
-
-        bot.add_event_handler("session_start", on_session_start)
-
-        host = get_config("EJABBERD_HOST", "")
-        port = get_config_int("EJABBERD_BOT_PORT", 5222)
-        try:
-            bot.connect((host, port))
-            await bot.disconnected
-            logger.info("ejabberd: sent message to MUC %s", muc_jid)
-        except Exception as exc:
-            logger.error("ejabberd: failed to send MUC message: %s", exc)
-
-    loop = asyncio.new_event_loop()
-    try:
-        loop.run_until_complete(_send())
-    finally:
-        pending = [t for t in asyncio.all_tasks(loop) if not t.done()]
-        for t in pending:
-            t.cancel()
-        if pending:
-            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-        loop.run_until_complete(loop.shutdown_asyncgens())
-        loop.close()
-
-
-def send_muc_message(muc_jid, body):
-    """
-    Send a message to a MUC room using a short-lived slixmpp connection.
-    This opens a connection, joins the room, sends the message, then disconnects.
-
-    Returns True on success, False on failure.
-    """
-    # Run in daemon thread (non-blocking)
-    thread = threading.Thread(target=_send_muc_message_thread, args=(muc_jid, body), daemon=True)
-    thread.start()
-    logger.info("ejabberd: started background thread to send message to %s", muc_jid)
-    return True

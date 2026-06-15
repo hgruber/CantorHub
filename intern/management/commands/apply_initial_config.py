@@ -13,6 +13,7 @@ Accepted line formats:
 """
 
 import logging
+import re
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
@@ -21,7 +22,10 @@ from intern.models import Konfiguration
 
 logger = logging.getLogger(__name__)
 
-INITIAL_FILE = Path("/app/initial.sh")
+_DEFAULT_PATHS = [
+    Path("/app/initial.sh"),
+    Path(__file__).resolve().parents[4] / "initial.sh",
+]
 
 
 def _parse(path: Path) -> dict[str, str]:
@@ -36,23 +40,39 @@ def _parse(path: Path) -> dict[str, str]:
             continue
         key, _, value = line.partition("=")
         key = key.strip()
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
+            continue
         value = value.strip()
         if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
             value = value[1:-1]
-        if key:
-            result[key] = value
+        result[key] = value
     return result
 
 
 class Command(BaseCommand):
-    help = "Apply /app/initial.sh key=value pairs to the Konfiguration table"
+    help = "Apply key=value pairs from a shell config file to the Konfiguration table"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--file",
+            dest="file",
+            default=None,
+            help="Path to the config file (default: tries /app/initial.sh then <project>/initial.sh)",
+        )
 
     def handle(self, *args, **options):
-        if not INITIAL_FILE.exists():
-            self.stdout.write("apply_initial_config: /app/initial.sh not found, skipping.")
+        if options["file"]:
+            candidates = [Path(options["file"])]
+        else:
+            candidates = _DEFAULT_PATHS
+
+        config_file = next((p for p in candidates if p.exists()), None)
+        if config_file is None:
+            self.stdout.write("apply_initial_config: no config file found, skipping.")
             return
 
-        entries = _parse(INITIAL_FILE)
+        self.stdout.write(f"apply_initial_config: reading {config_file}")
+        entries = _parse(config_file)
         if not entries:
             self.stdout.write("apply_initial_config: file is empty or has no valid entries.")
             return

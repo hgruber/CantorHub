@@ -19,8 +19,7 @@
                 <input type="hidden"
                        id="last_id_input"
                        name="last_id"
-                       value="{{ last_id|default:0 }}"
-                       hx-swap-oob="true" />
+                       value="{{ last_id|default:0 }}" />
                 <button type="submit"></button>
             </form>
         </div>
@@ -31,7 +30,7 @@
          hx-include="#last_id_input"
          hx-trigger="every 5s"
          hx-swap="afterbegin">
-        {% include '_messages.html' with messages=messages %}
+        {% include '_messages.html' with messages=messages initial=True %}
         {% if oldest_id %}
             <div id="load-more"
                  class="sentinel"
@@ -42,4 +41,5 @@
         {% endif %}
     </div>
 </div>
+<script src="{% static 'intern/js/forum.js' %}"></script>
 {% endblock %}

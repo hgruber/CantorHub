@@ -1,5 +1,4 @@
 import logging
-import threading
 from django.utils.timezone import now as timezone_now
 
 from django.contrib.auth.decorators import login_required, permission_required
@@ -18,7 +17,6 @@ from intern.app_settings import get_config, get_config_bool, get_from_email
 from ..forms import ForumEditForm
 from ..models import Forum, Mitteilung, User
 from ..tables import ForumTabelle
-from .media import rewrite_media_urls
 
 __all__ = [
     "forum_list",
@@ -37,21 +35,16 @@ logger = logging.getLogger(__name__)
 FORUM_SEARCH_LIMIT = 200
 
 
-def _forward_to_xmpp(msg):
-    """Forward a forum message to the corresponding XMPP MUC room."""
-    try:
-        forum = msg.forum
-        if not forum.xmpp_muc_jid:
-            return
-        if not get_config_bool("EJABBERD_ENABLED"):
-            return
-        sender_name = str(msg.sender) if msg.sender else "Anonymous"
-        text = f"*{sender_name}*: {msg.mitteilung}"
-        # /media/-URLs sind session-geschützt; XMPP-Clients brauchen Token-Links.
-        text = rewrite_media_urls(text)
-        ejabberd.send_muc_message(forum.xmpp_muc_jid, text)
-    except Exception as exc:
-        logger.error("ejabberd: failed to forward message %s to MUC: %s", msg.id, exc)
+def _sync_forum_avatar(forum_obj):
+    """Push Forum.bild as MUC room avatar. Best-effort: logs errors, never raises."""
+    if not get_config_bool("EJABBERD_ENABLED"):
+        return
+    if not forum_obj.bild:
+        return
+    muc_jid = _get_muc_jid(forum_obj)
+    if not muc_jid:
+        return
+    ejabberd.set_room_vcard(muc_jid, forum_obj.bild, name=forum_obj.thema)
 
 
 def _get_muc_jid(forum_obj):
@@ -71,6 +64,7 @@ def _forum_user_lists(forum_obj):
         "attending": [],
         "without_invitation": [],
         "without_xmpp": [],
+        "strangers": [],
         "room_info": None,
         "muc_jid": None,
     }
@@ -92,22 +86,42 @@ def _forum_user_lists(forum_obj):
     options = ejabberd.get_room_options(muc_jid)
     bot_jid = get_config("EJABBERD_BOT_JID", "").lower()
     owners = [jid for jid, aff in room_members if aff == "owner"]
+    is_true = ejabberd.option_is_true
     room_info = {
         "exists": options is not None,
-        "persistent": options.get("persistent") == "true" if options else False,
-        "members_only": options.get("members_only") == "true" if options else False,
-        "public": options.get("public") == "true" if options else False,
-        "moderated": options.get("moderated") == "true" if options else False,
+        "persistent": is_true(options, "persistent"),
+        "members_only": is_true(options, "members_only"),
+        "public": is_true(options, "public"),
+        "moderated": is_true(options, "moderated"),
+        "anonymous": is_true(options, "anonymous"),
+        "allow_user_invites": is_true(options, "allow_user_invites"),
+        "lang": (options or {}).get("lang", ""),
         "title": (options or {}).get("title", ""),
         "owners": owners,
+        "owner_is_bot": bool(bot_jid) and any(bot_jid == jid.lower() for jid in owners),
         "bot_present": bool(bot_jid) and any(bot_jid in jid.lower() for jid in occupant_jids),
     }
+
+    user_jids = {u.xmpp.lower() for u in active_users if u.xmpp}
+    seen_bare = set()
+    strangers = []
+    for full_jid, nick in room_occupants:
+        bare = full_jid.split("/")[0].lower()
+        if bare in seen_bare:
+            continue
+        seen_bare.add(bare)
+        if bare in user_jids:
+            continue
+        if bot_jid and bare == bot_jid:
+            continue
+        strangers.append({"jid": bare, "nick": nick})
 
     return {
         "invited": [u for u in active_users if u.xmpp and u.xmpp.lower() in member_jids],
         "attending": [u for u in active_users if u.xmpp and u.xmpp.lower() in occupant_jids],
         "without_invitation": [u for u in active_users if u.xmpp and u.xmpp.lower() not in member_jids],
         "without_xmpp": [u for u in active_users if not u.xmpp],
+        "strangers": strangers,
         "room_info": room_info,
         "muc_jid": muc_jid,
     }
@@ -186,9 +200,11 @@ def forum_view(request, forum):
 def forum_get(request, forum, last_id=0):
     if last_id == 0:
         last_id = request.GET.get("last_id", 0)
+    last_id = int(last_id or 0)
     messages = Mitteilung.objects.filter(forum_id=forum, id__gt=last_id)
     if messages:
-        last_id = max(msg.id for msg in messages)
+        # Keep last_id monotonic so an in-flight poll never lowers it.
+        last_id = max(last_id, max(msg.id for msg in messages))
     return render(
         request,
         "_messages.html",
@@ -229,19 +245,14 @@ def forum_send(request, forum):
     mitteilung = request.POST.get("mitteilung", "").strip()
     last_id = request.POST.get("last_id", 0)
     if mitteilung:
-        msg = Mitteilung.objects.create(
+        Mitteilung.objects.create(
             sender_id=request.user.id,
             forum_id=forum,
             mitteilung=mitteilung,
             datum=timezone_now(),
         )
-        # Forward to XMPP MUC in background thread
-        if get_config_bool("EJABBERD_ENABLED"):
-            threading.Thread(
-                target=_forward_to_xmpp,
-                args=(msg,),
-                daemon=True,
-            ).start()
+        # The persistent ejabberd_bot picks this up and relays it to the MUC room
+        # over its live session (see CantorBot._relay_messages).
     return forum_get(request, forum, last_id)
 
 
@@ -268,6 +279,7 @@ def forum_edit(request, forum):
             instance._audit_user = request.user
             instance.save()
             form.save_m2m()
+            _sync_forum_avatar(instance)
             return redirect("forum_view", forum=forum)
     else:
         form = ForumEditForm(instance=forum_obj)
@@ -335,6 +347,7 @@ def forum_add(request):
                     pass
             forum._audit_user = request.user
             forum.save()
+            _sync_forum_avatar(forum)
             return redirect("forum_view", forum=forum.id)
     else:
         form = ForumEditForm()

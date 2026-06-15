@@ -245,7 +245,7 @@ class ForumQuerySet(models.QuerySet):
             )[:1]
         )
 
-        return self.annotate(
+        return self.select_related("bild").annotate(
             anzahl_mitteilungen=Count("mitteilung"),
             zugriff=Max("mitteilung__datum"),
             letzter_absender=Subquery(last_sender_subquery),

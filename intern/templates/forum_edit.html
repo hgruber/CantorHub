@@ -62,8 +62,11 @@
                 <div class="invite-row"><span>Nur Mitglieder</span><span>{% if room_info.members_only %}Ja{% else %}Nein{% endif %}</span></div>
                 <div class="invite-row"><span>Öffentlich</span><span>{% if room_info.public %}Ja{% else %}Nein{% endif %}</span></div>
                 <div class="invite-row"><span>Moderiert</span><span>{% if room_info.moderated %}Ja{% else %}Nein{% endif %}</span></div>
+                <div class="invite-row"><span>Anonym</span><span>{% if room_info.anonymous %}Ja{% else %}Nein{% endif %}</span></div>
+                <div class="invite-row"><span>Mitglieder dürfen einladen</span><span>{% if room_info.allow_user_invites %}Ja{% else %}Nein{% endif %}</span></div>
+                {% if room_info.lang %}<div class="invite-row"><span>Sprache</span><span>{{ room_info.lang }}</span></div>{% endif %}
                 {% if room_info.title %}<div class="invite-row"><span>Raumname</span><span>{{ room_info.title }}</span></div>{% endif %}
-                <div class="invite-row"><span>Besitzer</span><span>{% for jid in room_info.owners %}{{ jid }}{% if not forloop.last %}, {% endif %}{% empty %}&mdash;{% endfor %}</span></div>
+                <div class="invite-row"><span>Besitzer</span><span>{% for jid in room_info.owners %}{{ jid }}{% if not forloop.last %}, {% endif %}{% empty %}&mdash;{% endfor %}{% if room_info.owner_is_bot %} (Bot){% endif %}</span></div>
                 <div class="invite-row"><span>Bot anwesend</span><span>{% if room_info.bot_present %}Ja{% else %}Nein{% endif %}</span></div>
             </div>
             {% else %}
@@ -122,6 +125,20 @@
                 <div class="invite-row">
                     <span>{{ u.first_name }} {{ u.last_name }}</span>
                     <span class="text-muted">Kein XMPP-Account</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if strangers %}
+        <div class="detail-card">
+            <h3>Gäste / Fremde <span class="badge">{{ strangers|length }}</span></h3>
+            <div class="invite-list">
+                {% for s in strangers %}
+                <div class="invite-row">
+                    <span>{{ s.nick }}</span>
+                    <span class="text-muted">{{ s.jid }}</span>
                 </div>
                 {% endfor %}
             </div>

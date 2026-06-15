@@ -15,6 +15,7 @@ from .replacements import format_bytes, format_datetime
 
 
 class ForumTabelle(tables.Table):
+    bild = tables.Column(verbose_name="", orderable=False, default="")
     thema = tables.Column()
     zugriff = tables.Column()
     anzahl_mitteilungen = tables.Column(
@@ -24,6 +25,13 @@ class ForumTabelle(tables.Table):
 
     class Meta:
         row_attrs = {"data-href": lambda record: reverse("forum_view", args=[record.id])}
+
+    def render_bild(self, record):
+        try:
+            url = record.bild.thumbnails.get("admin_clipboard_icon")
+        except Exception:
+            url = record.bild.url
+        return format_html('<img class="avatar-circle" src="{}" width="40" height="40">', url)
 
     def render_zugriff(self, record):
         return format_html(

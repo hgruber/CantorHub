@@ -14,7 +14,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from intern.ejabberd import ensure_bot
+from intern.ejabberd import configure_room, ensure_bot
 from intern.app_settings import get_config, get_config_bool
 from intern.models import Forum, User
 
@@ -72,10 +72,31 @@ class Command(BaseCommand):
         self.stdout.write("ejabberd_sync: checking forum MUC assignments...")
         self._assign_muc_jids()
 
+        # Enforce standard room options on all existing rooms
+        self.stdout.write("ejabberd_sync: configuring existing rooms...")
+        self._configure_rooms()
+
         # Check if the bot is in all rooms (it will join on next scan)
         self.stdout.write(
             "ejabberd_sync: bot will join rooms on next 60-second rescan"
         )
+
+    def _configure_rooms(self):
+        """Re-apply the standard room options to all forums with a MUC JID.
+
+        Rooms that don't exist yet on ejabberd are skipped silently (the bot
+        configures them when it first joins).
+        """
+        count = 0
+        for forum in Forum.objects.exclude(xmpp_muc_jid=None).exclude(xmpp_muc_jid=""):
+            if configure_room(forum.xmpp_muc_jid, forum.thema):
+                count += 1
+                logger.info(
+                    "ejabberd_sync: configured room %s (forum #%s)",
+                    forum.xmpp_muc_jid,
+                    forum.pk,
+                )
+        self.stdout.write(f"ejabberd_sync: configured {count} room(s)")
 
     def _assign_muc_jids(self):
         """Assign MUC JIDs to forums that don't have them."""
