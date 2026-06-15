@@ -16,7 +16,7 @@ from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_out
 
 from .apps import _migrating
-from .app_settings import get_config, get_config_bool
+from .app_settings import get_config, is_ejabberd_configured
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def assign_xmpp_muc_jid(sender, instance, created, **kwargs):
     Guard order (belt-and-suspenders):
     1. instance._skip_ejabberd_signal — set by 0003_import to suppress during data import
     2. getattr(_migrating, 'active', False) — thread-local from apps.py
-    3. settings.EJABBERD_ENABLED
+    3. is_ejabberd_configured() (EJABBERD_HOST + EJABBERD_BOT_JID must be set)
     4. instance.xmpp_muc_jid already set
     """
     if not created:
@@ -40,7 +40,7 @@ def assign_xmpp_muc_jid(sender, instance, created, **kwargs):
         return
     if getattr(_migrating, "active", False):
         return
-    if not get_config_bool("EJABBERD_ENABLED"):
+    if not is_ejabberd_configured():
         return
     if instance.xmpp_muc_jid:
         return
@@ -116,7 +116,7 @@ def sync_xmpp_on_user_save(sender, instance, created, **kwargs):
     if getattr(_migrating, "active", False):
         return
 
-    if get_config_bool("EJABBERD_ENABLED"):
+    if is_ejabberd_configured():
         new_xmpp = instance.xmpp or ""
         old_xmpp = getattr(instance, "_old_xmpp", None)
 

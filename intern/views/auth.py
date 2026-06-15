@@ -13,9 +13,9 @@ from django.utils.http import urlsafe_base64_encode
 
 from intern import ejabberd
 from intern.app_settings import (
-    get_config_bool,
     get_config_int,
     get_from_email,
+    is_ejabberd_configured,
     is_email_configured,
 )
 
@@ -64,7 +64,7 @@ class CantorLoginView(auth_views.LoginView):
     def form_valid(self, form):
         response = super().form_valid(form)
         user = form.get_user()
-        if get_config_bool("EJABBERD_ENABLED") and not user.xmpp:
+        if is_ejabberd_configured() and not user.xmpp:
             password = form.cleaned_data["password"]
             threading.Thread(
                 target=_provision_xmpp_user,
@@ -187,7 +187,7 @@ class CantorPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     def form_valid(self, form):
         response = super().form_valid(form)
         user = form.user
-        if get_config_bool("EJABBERD_ENABLED") and user.xmpp:
+        if is_ejabberd_configured() and user.xmpp:
             localpart = user.xmpp.split("@")[0]
             threading.Thread(
                 target=ejabberd.set_user_password,

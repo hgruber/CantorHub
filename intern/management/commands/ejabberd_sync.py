@@ -2,7 +2,7 @@
 Management command: ejabberd_sync
 
 Startup synchronization for XMPP/ejabberd integration.
-Runs at startup when EJABBERD_ENABLED=1.
+Runs at startup when EJABBERD_HOST and EJABBERD_BOT_JID are set.
 
 Tasks:
 - Register the bot account (idempotent)
@@ -15,7 +15,7 @@ import logging
 from django.core.management.base import BaseCommand
 
 from intern.ejabberd import configure_room, ensure_bot
-from intern.app_settings import get_config, get_config_bool
+from intern.app_settings import get_config, is_ejabberd_configured
 from intern.models import Forum, User
 
 logger = logging.getLogger(__name__)
@@ -44,8 +44,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if not get_config_bool("EJABBERD_ENABLED"):
-            self.stdout.write("ejabberd_sync: EJABBERD_ENABLED is False, skipping")
+        if not is_ejabberd_configured():
+            self.stdout.write("ejabberd_sync: EJABBERD_HOST/EJABBERD_BOT_JID not set, skipping")
             return
 
         if options.get("list"):

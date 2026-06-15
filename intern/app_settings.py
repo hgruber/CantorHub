@@ -3,15 +3,32 @@
 Use these helpers instead of os.environ / django.conf.settings for any setting
 that should be changeable without redeploying.  The DB must be available when
 these are called — they are intentionally not called at import/settings-load time.
+
+Environment variables take priority over DB values so that container deployments
+can configure the app via -e flags without needing an initial.sh or admin access.
 """
+
+import os
 
 
 def get_config(key, default=None):
+    env_val = os.environ.get(key)
+    if env_val is not None:
+        return env_val
     try:
         from intern.models import Konfiguration
         return Konfiguration.objects.get(key=key).value
     except Exception:
         return default
+
+
+def is_ejabberd_configured():
+    """Return True when ejabberd credentials are present (env or DB).
+
+    Replaces the old EJABBERD_ENABLED flag — if EJABBERD_HOST and
+    EJABBERD_BOT_JID are set, the integration is active.
+    """
+    return bool(get_config("EJABBERD_HOST")) and bool(get_config("EJABBERD_BOT_JID"))
 
 
 def get_config_bool(key, default=False):

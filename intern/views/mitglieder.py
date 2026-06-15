@@ -14,7 +14,7 @@ from django_tables2 import RequestConfig
 from filer.models import File
 
 from intern import ejabberd, folders
-from intern.app_settings import get_config_bool, get_map_center
+from intern.app_settings import get_map_center, is_ejabberd_configured
 
 from ..forms import MitgliedAddForm, UserEditForm
 from ..models import Abstimmung, Artikel, Mitteilung, PRIVACY_FIELDS, User, Zusage
@@ -240,7 +240,7 @@ def mitglied_passwd(request, id):
         target_user.save()
 
         # Sync password to ejabberd if user has an XMPP account
-        if get_config_bool("EJABBERD_ENABLED") and target_user.xmpp:
+        if is_ejabberd_configured() and target_user.xmpp:
             localpart = target_user.xmpp.split("@")[0]
             threading.Thread(
                 target=ejabberd.set_user_password,
@@ -276,7 +276,7 @@ def mitglied_delete(request, id):
         return redirect("mitglied_edit", id=id)
 
     # Unregister from XMPP before any data is cleared
-    if get_config_bool("EJABBERD_ENABLED") and member.xmpp:
+    if is_ejabberd_configured() and member.xmpp:
         try:
             ejabberd.unregister_user(ejabberd.localpart_from_username(member.username))
         except Exception as exc:

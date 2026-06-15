@@ -37,9 +37,8 @@ mv 0003_import.py intern/migrations || true
 ./manage.py thumbnail_files &
 ./manage.py collectstatic --noinput
 
-# XMPP/ejabberd integration — read from DB (set via initial.sh or admin)
-EJABBERD_ENABLED=$(./manage.py shell -c "from intern.app_settings import get_config_bool; print('1' if get_config_bool('EJABBERD_ENABLED') else '0')")
-if [ "${EJABBERD_ENABLED}" = "1" ]; then
+# XMPP/ejabberd integration — active when EJABBERD_HOST and EJABBERD_BOT_JID are set
+if [ -n "${EJABBERD_HOST:-}" ] && [ -n "${EJABBERD_BOT_JID:-}" ]; then
     echo "ejabberd_sync: syncing XMPP state..."
     ./manage.py ejabberd_sync --sync
     echo "ejabberd_bot: starting bot..."

@@ -2,7 +2,7 @@
 Management command: ejabberd_bot
 
 Long-running slixmpp bot that bridges ejabberd MUC rooms <-> CantorHub forum.
-Started as a background process by start.sh when EJABBERD_ENABLED=1.
+Started as a background process by start.sh when EJABBERD_HOST and EJABBERD_BOT_JID are set.
 
 Responsibilities:
 - Joins (and thereby creates) all MUC rooms listed in Forum.xmpp_muc_jid.

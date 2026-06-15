@@ -17,7 +17,7 @@ from intern.ejabberd import (
     set_vcard,
     unregister_user,
 )
-from intern.app_settings import get_config_bool
+from intern.app_settings import is_ejabberd_configured
 from intern.models import Forum, User
 
 
@@ -67,8 +67,8 @@ class Command(BaseCommand):
         sp.add_argument("user", help="Username or numeric user ID")
 
     def handle(self, *args, **options):
-        if not get_config_bool("EJABBERD_ENABLED"):
-            self.stderr.write("EJABBERD_ENABLED is not set.")
+        if not is_ejabberd_configured():
+            self.stderr.write("EJABBERD_HOST and EJABBERD_BOT_JID must be set.")
             return
 
         action = options.get("action")

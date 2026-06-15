@@ -9,7 +9,6 @@ _migrating = threading.local()
 
 _CONFIG_DEFAULTS = [
     # key, default value, description
-    ("EJABBERD_ENABLED",     "0",                              "XMPP-Integration aktiv (1/0)"),
     ("EJABBERD_API_URL",     "http://127.0.0.1:5280",          "ejabberd REST API URL"),
     ("EJABBERD_HOST",        "",                               "ejabberd XMPP-Domain"),
     ("EJABBERD_MUC_SERVICE", "",                               "ejabberd MUC-Service-Domain"),

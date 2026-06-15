@@ -65,7 +65,6 @@ docker run -e DB_HOST=db -e DB_NAME=cantorhub -e DB_USER=cantorhub -e DB_PASSWOR
 | `EMAIL_USE_TLS` | `0` | Set to `1` to enable TLS |
 | `EMAIL_USE_SSL` | `0` | Set to `1` to enable SSL |
 | `DEFAULT_FROM_EMAIL` | `webmaster@example.org` | Default sender address |
-| `EJABBERD_ENABLED` | `0` | Set to `1` to enable XMPP/ejabberd integration |
 | `EJABBERD_API_URL` | `http://127.0.0.1:5280` | ejabberd REST API URL |
 | `EJABBERD_HOST` | `example.net` | ejabberd virtual host |
 | `EJABBERD_MUC_SERVICE` | `conference.example.net` | ejabberd MUC service |
@@ -84,7 +83,6 @@ migrate from `intern/apps.py` (`_CONFIG_DEFAULTS`). Read them in code via
 
 | Key | Default | Description |
 |---|---|---|
-| `EJABBERD_ENABLED` | `0` | XMPP integration on/off |
 | `EJABBERD_API_URL` | `http://127.0.0.1:5280` | ejabberd REST API URL |
 | `EJABBERD_HOST` | — | ejabberd XMPP domain |
 | `EJABBERD_MUC_SERVICE` | — | ejabberd MUC service domain |
@@ -146,7 +144,7 @@ All application logic lives in the `intern/` app; `config/` holds only settings 
 
 | Command | Description |
 |---|---|
-| `ejabberd_sync --sync` | Sync XMPP users/rooms when `EJABBERD_ENABLED=1` |
+| `ejabberd_sync --sync` | Sync XMPP users/rooms when EJABBERD_HOST+EJABBERD_BOT_JID are set |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding |
 | `ejabberd_admin <action>` | Admin ops: delete_forum, delete_user, clear_invites, invite, remove_user, list_rooms, list_users, sync_vcard, sync_password |
 | `import_files --path Avatare` | Import avatars from directory into django-filer |

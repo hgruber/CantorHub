@@ -35,7 +35,7 @@ docker run -p 8000:8000 cantoreub
 **Management commands:**
 | Command | Description |
 |---|---|
-| `ejabberd_sync --sync` | Sync XMPP users/rooms when EJABBERD_ENABLED=1 |
+| `ejabberd_sync --sync` | Sync XMPP users/rooms when EJABBERD_HOST+EJABBERD_BOT_JID are set |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding |
 | `ejabberd_admin <action>` | Admin ops: delete_forum, delete_user, clear_invites, invite, remove_user, list_rooms, list_users, sync_vcard, sync_password |
 | `apply_initial_config [--file PATH]` | Write KEY=VALUE pairs from a shell config file into the `Konfiguration` table. Tries `/app/initial.sh` (Docker) then `<project>/initial.sh` (local) by default; `--file` overrides. `migrate.sh` calls this with `--file migrate.sh` so its exported vars land in the DB. |
@@ -81,7 +81,7 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 ### Forum edit page
 
-`/intern/forum/<id>/edit/` lets admins set `thema`, `bild`, and (when `EJABBERD_ENABLED`) `xmpp_muc_jid`. When EJABBERD is enabled, the MUC JID is auto-derived as `forum-{id}@{EJABBERD_MUC_SERVICE}` if not set; the first invite also persists it to the DB so the bot picks it up. XMPP sections are hidden entirely when `EJABBERD_ENABLED=False` (no fallback). When enabled, shows: a room-info card (exists, persistent, members\_only, public, moderated, anonymous, allow\_user\_invites, lang, title, owners with bot marker, bot presence via `get_room_options`), invited (affiliations `member`/`admin`/`owner`), attending (occupants), without invitation (active users with xmpp not in affiliations), without XMPP account, and **Gäste/Fremde** (occupants whose bare JID matches no active user and is not the bot JID). The invite button calls `ejabberd.set_room_affiliation(..., "member")` silently.
+`/intern/forum/<id>/edit/` lets admins set `thema`, `bild`, and (when ejabberd is configured) `xmpp_muc_jid`. When ejabberd is configured (`is_ejabberd_configured()`), the MUC JID is auto-derived as `forum-{id}@{EJABBERD_MUC_SERVICE}` if not set; the first invite also persists it to the DB so the bot picks it up. XMPP sections are hidden entirely when ejabberd is not configured (no fallback). When enabled, shows: a room-info card (exists, persistent, members\_only, public, moderated, anonymous, allow\_user\_invites, lang, title, owners with bot marker, bot presence via `get_room_options`), invited (affiliations `member`/`admin`/`owner`), attending (occupants), without invitation (active users with xmpp not in affiliations), without XMPP account, and **Gäste/Fremde** (occupants whose bare JID matches no active user and is not the bot JID). The invite button calls `ejabberd.set_room_affiliation(..., "member")` silently.
 
 When `bild` is set or changed, `_sync_forum_avatar(forum_obj)` is called (best-effort) to push the image as MUC room avatar via `ejabberd.set_room_vcard(muc_jid, avatar_file, name)`. This sets the `vcard` room option via `change_room_option` (XEP-0054 vcard-temp XML with `PHOTO/TYPE/BINVAL`). Clients like Conversations fetch the room vCard via IQ and show the avatar. Two quirks found in testing: (1) ejabberd's fxml parser requires **double-quoted** XML namespace attributes — single quotes cause a 500 internal_error; (2) `vcard_xupdate="external"` via `change_room_option` returns 500 — the accepted format is the hex SHA1 hash of the raw image bytes, which ejabberd then includes in the room presence (XEP-0153) so clients like Conversations automatically fetch and display the avatar. Called from `forum_edit` (on every save, idempotent) and `forum_add` (if bild set on creation); no crash if the MUC room doesn't exist yet. The `bild` column also appears in the forum list table (`ForumTabelle`) as a thumbnail in the first column.
 
@@ -92,6 +92,8 @@ When `bild` is set or changed, `_sync_forum_avatar(forum_obj)` is called (best-e
 `ejabberd.configure_room(muc_jid, title=None)` is the single source of truth for room invariants and enforces (overwriting manual changes) on every bot (re)join and on `ejabberd_sync --sync`: `persistent=true`, `anonymous=true`, `public=false`, `members_only=true`, `allow_user_invites=true`, `lang=de`, plus `title` when given (the forum `thema`). Defined as `_ROOM_OPTIONS` in `ejabberd.py`. Called from `ejabberd_bot._configure_room` (on join) and `ejabberd_sync._configure_rooms` (all existing rooms at startup).
 
 Forum→MUC delivery: `forum_send` only writes the `Mitteilung`; the persistent `ejabberd_bot` relays it to the MUC room over its live session (`CantorBot._relay_messages`, a 3 s timer reading `_db_pending_forum_messages`). This replaced a per-message short-lived slixmpp connection that was unreliable (flaky first TLS handshake → random timeouts) and collided on the `CantorBot` nick. The relayed message echoes back under nick `CantorBot` and is skipped by echo prevention.
+
+**Known gap — `_relay_cursor` is not persistent:** the relay cursor is held only in memory and re-baselined to the highest `Mitteilung` id at each bot **process** start (`_db_init_relay_cursor`). In-process reconnects (TLS blip, auth retry, disconnect) keep the cursor, so they lose nothing. But if the bot **process** restarts while the portal keeps accepting posts, every forum message written during that downtime is treated as already-delivered and never reaches the MUC. This is currently masked because `start.sh`/`migrate.sh` wipe the DB on each start (test phase only — see "Database"); once that wipe is gone after the final migration, the gap becomes real. Fix when it matters: persist the last-relayed `Mitteilung` id (DB/file) instead of taking the max at startup, so a bot restart replays the downtime window instead of skipping it. A supervisor/restart policy for the bot (it currently runs as a bare `&` background process in `start.sh` with no auto-restart) reduces the downtime window but does not remove the gap.
 
 `anonymous=true` (semi-anonymous) is deliberate: OMEMO in a MUC technically requires a non-anonymous room, so a semi-anonymous room makes clients (Conversations, Gajim) default to **unencrypted** — required for the Forum⇄MUC bridge to read messages. The bot still resolves real sender JIDs via the admin REST API (`get_room_occupants`), which exposes them regardless of room anonymity; clients/members no longer see each other's real JIDs.
 
@@ -122,7 +124,7 @@ Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. 
 
 ### External integrations
 
-**XMPP/ejabberd** (`EJABBERD_ENABLED=1`): Bidirectional bridge between Forum MUC rooms and ejabberd. Messages sync in both directions. Uses REST API for admin operations and a long-running slixmpp bot for message relay.
+**XMPP/ejabberd** (active when `EJABBERD_HOST` + `EJABBERD_BOT_JID` are set): Bidirectional bridge between Forum MUC rooms and ejabberd. Messages sync in both directions. Uses REST API for admin operations and a long-running slixmpp bot for message relay.
 
 See `xmpp.md` for detailed implementation notes.
 
@@ -185,6 +187,13 @@ Items found during code review, ordered by estimated risk of the fix:
 
 SQLite in development (`db.sqlite3`, excluded from git). MySQL-compatible for production via `pymysql`.
 
+**Hinweis zum DB-Reset:** Der vollständige DB-Wipe in `start.sh` (und `migrate.sh`)
+existiert nur während des aktuellen **Test-Betriebs**. Nach der finalen Migration
+entfällt er — dann wird für das Testsystem lediglich die Prod-DB ins Testsystem
+kopiert, und es gibt eine getrennte Start-Strategie für Prod und Test (kein
+destruktiver Reset mehr beim Start). Bis dahin gilt: jeder `start.sh`-/`migrate.sh`-Lauf
+verwirft alle Daten.
+
 ### Environment variables
 
 Only bootstrap settings (needed before the DB is available) are real env vars:
@@ -201,11 +210,17 @@ without a redeploy. **Read them via `intern.app_settings` helpers** (`get_config
 `get_config_bool`, `get_config_int`) — never `os.environ`/`settings` for these —
 and never call the helpers at settings/import time (the DB may not be ready).
 
+Environment variables take priority over DB values in `get_config()`, so container
+deployments can pass `-e EJABBERD_HOST=... -e EJABBERD_BOT_JID=...` without needing
+`initial.sh` or admin UI access. Use `is_ejabberd_configured()` (not a flag) to check
+whether the XMPP integration is active.
+
 Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py`;
 **add new keys there** (with a German `description`) so fresh installs get them.
-Current keys: the `EJABBERD_*` set, `ICAL_SECRET`, the `EMAIL_*` set,
-`DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`, `MAP_DEFAULT_ZOOM`,
-`PWRESET_MAX_PER_HOUR`, `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`.
+Current keys: `EJABBERD_API_URL`, `EJABBERD_HOST`, `EJABBERD_MUC_SERVICE`,
+`EJABBERD_BOT_JID`, `EJABBERD_BOT_PASSWORD`, `EJABBERD_BOT_PORT`, `ICAL_SECRET`,
+the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
+`MAP_DEFAULT_ZOOM`, `PWRESET_MAX_PER_HOUR`, `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`.
 
 For outgoing mail always pass `get_from_email()` as the sender (resolves
 `DEFAULT_FROM_EMAIL` from the DB, falling back to `settings.DEFAULT_FROM_EMAIL`).

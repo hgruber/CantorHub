@@ -12,7 +12,7 @@ from django_tables2 import RequestConfig
 from filer.models import File
 
 from intern import ejabberd, folders
-from intern.app_settings import get_config, get_config_bool, get_from_email
+from intern.app_settings import get_config, get_from_email, is_ejabberd_configured
 
 from ..forms import ForumEditForm
 from ..models import Forum, Mitteilung, User
@@ -37,7 +37,7 @@ FORUM_SEARCH_LIMIT = 200
 
 def _sync_forum_avatar(forum_obj):
     """Push Forum.bild as MUC room avatar. Best-effort: logs errors, never raises."""
-    if not get_config_bool("EJABBERD_ENABLED"):
+    if not is_ejabberd_configured():
         return
     if not forum_obj.bild:
         return
@@ -68,7 +68,7 @@ def _forum_user_lists(forum_obj):
         "room_info": None,
         "muc_jid": None,
     }
-    if not get_config_bool("EJABBERD_ENABLED"):
+    if not is_ejabberd_configured():
         return empty
 
     muc_jid = _get_muc_jid(forum_obj)
@@ -292,7 +292,7 @@ def forum_edit(request, forum):
         "seitentitel": f"bearbeiten: {forum_obj.thema}",
         "view": "forum_view",
         "id": forum,
-        "ejabberd_enabled": get_config_bool("EJABBERD_ENABLED"),
+        "ejabberd_enabled": is_ejabberd_configured(),
         **user_lists,
     }
     return render(request, "forum_edit.html", context)
@@ -305,7 +305,7 @@ def forum_invite(request, forum, user_id):
     user = get_object_or_404(User, id=user_id)
 
     muc_jid = _get_muc_jid(forum_obj)
-    if get_config_bool("EJABBERD_ENABLED") and muc_jid and user.xmpp:
+    if is_ejabberd_configured() and muc_jid and user.xmpp:
         if not forum_obj.xmpp_muc_jid:
             forum_obj.xmpp_muc_jid = muc_jid
             forum_obj.save(update_fields=["xmpp_muc_jid"])
@@ -318,7 +318,7 @@ def forum_invite(request, forum, user_id):
 @require_POST
 def forum_delete(request, forum):
     forum_obj = get_object_or_404(Forum, id=forum)
-    if get_config_bool("EJABBERD_ENABLED") and forum_obj.xmpp_muc_jid:
+    if is_ejabberd_configured() and forum_obj.xmpp_muc_jid:
         try:
             ejabberd.destroy_room(forum_obj.xmpp_muc_jid)
         except Exception as exc:

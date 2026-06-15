@@ -40,14 +40,15 @@ All ejabberd admin operations (room config, affiliations, invitations) use the R
 Environment variables (see `config/settings.py`):
 
 ```
-EJABBERD_ENABLED          "0" / "1"
 EJABBERD_API_URL          ejabberd REST API URL, e.g. http://10.88.0.8:5280
-EJABBERD_HOST             XMPP domain, e.g. example.net
+EJABBERD_HOST             XMPP domain, e.g. example.net  ← required to enable integration
 EJABBERD_MUC_SERVICE      MUC service domain, e.g. conference.example.net
-EJABBERD_BOT_JID          Bot JID (also used for REST API auth), e.g. forum@example.org
+EJABBERD_BOT_JID          Bot JID (also used for REST API auth), e.g. forum@example.org  ← required to enable integration
 EJABBERD_BOT_PASSWORD
 EJABBERD_BOT_PORT         c2s port (default 5222)
 ```
+
+The integration is enabled when both `EJABBERD_HOST` and `EJABBERD_BOT_JID` are non-empty (`is_ejabberd_configured()`). There is no separate `EJABBERD_ENABLED` flag. Environment variables take priority over DB values so `docker run -e EJABBERD_HOST=... -e EJABBERD_BOT_JID=...` works without `initial.sh`.
 
 ## SASL authentication
 
@@ -165,7 +166,7 @@ slixmpp runs in an async event loop. Django ORM is sync-only. All DB access is w
 
 ## Room assignment (`intern/signals.py`)
 
-`post_save` on `Forum`: assigns `forum-{pk}@{EJABBERD_MUC_SERVICE}` to `xmpp_muc_jid`. Guards: `_migrating` thread-local, `_skip_ejabberd_signal` flag, `EJABBERD_ENABLED` check.
+`post_save` on `Forum`: assigns `forum-{pk}@{EJABBERD_MUC_SERVICE}` to `xmpp_muc_jid`. Guards: `_migrating` thread-local, `_skip_ejabberd_signal` flag, `is_ejabberd_configured()` check.
 
 ## User provisioning (`intern/views.py` — `CantorLoginView`)
 
@@ -188,7 +189,7 @@ The `_provision_xmpp_user` function also uploads the vCard on first login, so bo
 
 ## Startup script (`start.sh`)
 
-When `EJABBERD_ENABLED=1`:
+When `EJABBERD_HOST` and `EJABBERD_BOT_JID` are set as environment variables:
 1. `./manage.py ejabberd_sync --sync` — registers bot account, assigns MUC JIDs
 2. `./manage.py ejabberd_bot &` — starts the bot in background
 
@@ -206,7 +207,7 @@ When `EJABBERD_ENABLED=1`:
 ./manage.py ejabberd_admin sync_password <username_or_id>  # Sync password (prompts for password)
 ```
 
-All sub-commands require `EJABBERD_ENABLED=1`. Destructive operations (`delete_forum`, `delete_user`, `clear_invites`) prompt for confirmation. User identifiers accept either numeric pk or username string.
+All sub-commands require `EJABBERD_HOST` and `EJABBERD_BOT_JID` to be set. Destructive operations (`delete_forum`, `delete_user`, `clear_invites`) prompt for confirmation. User identifiers accept either numeric pk or username string.
 
 `clear_invites` without `--user` removes all members from the room. With `--user`, removes only that user's affiliation.
 
