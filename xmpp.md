@@ -112,6 +112,8 @@ This replaced an earlier per-message short-lived slixmpp connection that was unr
    - `allow_user_invites` = `true` (members may invite others)
    - `lang` = `de`
 
+   After `configure_room`, the bot also calls `set_room_vcard` to push the Forum's `bild` as the MUC room avatar (if set). This ensures newly created rooms get their avatar immediately after the bot joins, without requiring a manual re-save of the forum.
+
    These are re-enforced on every (re)join and by `ejabberd_sync --sync` for all existing rooms (overwriting manual admin changes).
 
    **Why semi-anonymous:** OMEMO in a MUC technically requires a non-anonymous room (clients must know every member's real JID to fetch keys). Making the room semi-anonymous (`anonymous=true`) means Conversations/Gajim won't offer OMEMO and default to **unencrypted**, so the bridge can read messages. The bot still maps senders to users via the admin REST `get_room_occupants`, which returns real JIDs regardless of anonymity (server/moderator privilege) — see `_resolve_sender_jid`. Regular members no longer see each other's real JIDs in their client.

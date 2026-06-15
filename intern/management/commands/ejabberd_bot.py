@@ -301,7 +301,7 @@ class CantorBot:
                 logger.info("ejabberd_bot: joined %s (forum #%s)", muc_jid, forum_pk)
                 # Wait for ejabberd to finish creating the room before configuring it
                 await asyncio.sleep(2)
-                await asyncio.to_thread(self._configure_room, muc_jid, thema)
+                await asyncio.to_thread(self._configure_room, muc_jid, thema, forum_pk)
             except Exception as exc:
                 logger.error("ejabberd_bot: failed to join %s: %s", muc_jid, exc)
 
@@ -309,10 +309,17 @@ class CantorBot:
             self._stdout.write(f"ejabberd_bot: joined {new_count} room(s).")
 
     @staticmethod
-    def _configure_room(muc_jid, title):
+    def _configure_room(muc_jid, title, forum_pk):
         """Apply the standard CantorHub room options (enforced on every join)."""
-        from intern.ejabberd import configure_room
+        from intern.ejabberd import configure_room, set_room_vcard
+        from intern.models import Forum
         configure_room(muc_jid, title)
+        try:
+            forum = Forum.objects.select_related("bild").get(pk=forum_pk)
+            if forum.bild:
+                set_room_vcard(muc_jid, forum.bild, name=title)
+        except Forum.DoesNotExist:
+            pass
 
     def _on_failed_auth(self, event):
         """Handle authentication failure — retry with backoff, then give up."""
