@@ -3,6 +3,13 @@
 set -e
 
 DEBUG="${DEBUG:-}"
+DB_HOST="${DB_HOST:-}"
+
+if [ -n "$DB_HOST" ]; then
+    echo "Detected DB_HOST=$DB_HOST; using MySQL."
+else
+    echo "No DB_HOST set; using SQLite."
+fi
 
 python manage.py migrate
 python manage.py apply_initial_config

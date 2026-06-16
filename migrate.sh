@@ -2,7 +2,7 @@
 
 set -e
 
-DEBUG="${DEBUG:-1}"
+DEBUG="${DEBUG:-}"
 
 DB_HOST="${DB_HOST:-}"
 

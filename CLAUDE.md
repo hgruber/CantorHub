@@ -8,8 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Fresh install — resets DB, imports avatars, starts server (DEV + Container):**
 ```bash
-./migrate.sh              # DEBUG=1 default → runserver
-DEBUG=0 ./migrate.sh      # no DEBUG → collectstatic + nginx + gunicorn
+./migrate.sh              # DEBUG not set → nginx + gunicorn (prod/container)
+DEBUG=1 ./migrate.sh      # DEV: runserver
 ```
 
 **Start with existing DB (no wipe):**
