@@ -53,4 +53,3 @@ coverage.xml
 *.orig
 0002_add_filer.py
 icons.html
-migrate.sh
