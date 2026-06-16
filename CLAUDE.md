@@ -166,7 +166,7 @@ Items found during code review, ordered by estimated risk of the fix:
 
 ### Logging
 
-`settings.py` defines a `LOGGING` dict. The `intern` logger hierarchy is set to `INFO`; root and `django` loggers to `WARNING`. All output goes to stderr via `StreamHandler`, which appears in `podman logs` and `journalctl`. Custom loggers use `logging.getLogger(__name__)` — they all fall under `intern.*` and are therefore visible.
+`settings.py` defines a `LOGGING` dict. The `intern` logger hierarchy is set to `INFO`; root and `django` loggers to `WARNING`. All output goes to stdout via `StreamHandler` (`stream: ext://sys.stdout`), which appears in `podman logs` and `journalctl`. Using stdout ensures systemd assigns the correct `PRIORITY` based on the Python log level, so INFO/WARNING entries are not colored red in journalctl. Custom loggers use `logging.getLogger(__name__)` — they all fall under `intern.*` and are therefore visible.
 
 ### Notable utilities (`intern/`)
 
