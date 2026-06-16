@@ -70,7 +70,8 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `
 | `set_room_affiliation` | `set_room_affiliation` | room, service, user, host, affiliation | `host` is the *user* host |
 | `get_room_occupants` | `get_room_occupants` | room, service | Returns `[{jid, nick, role}]` — admin API returns real JIDs regardless of room anonymity |
 | `get_room_options` | `get_room_options` | room, service | Returns a flat `{option_name: value}` dict (string values), or `None` if room doesn't exist. Use `option_is_true()` to coerce booleans |
-| `change_room_option` | `change_room_option` | room, service, option, value | Low-level option setter; prefer `configure_room()` for the standard option set |
+| `create_room` | `create_room` | room, service, host | Create a MUC room via REST API; used as fallback when `change_room_option` receives 400 "Room not found" |
+| `change_room_option` | `change_room_option` | room, service, option, value | Low-level option setter; auto-recreates the room (via `_ensure_room`) if 400 "Room not found" is returned, then retries once |
 | `configure_room` | (multiple `change_room_option`) | muc_jid, title | Enforces `persistent`, `anonymous=true`, `public=false`, `members_only=true`, `allow_user_invites=true`, `lang=de`, and optional `title`. Called on every bot (re)join and `ejabberd_admin sync` |
 | `send_invitation` | `send_direct_invitation` | room, service, password, reason, users | `users` is a list of JIDs; `reason` and `password` must be non-empty |
 | `unregister_user` | `unregister` | user, host | Delete ejabberd account; returns True/False |

@@ -1,9 +1,12 @@
 """
 ejabberd REST API client for CantorHub.
 
-Used for user account provisioning (register, ensure_bot) and room affiliation
-management (set_room_affiliation). Room creation and message sending are handled
-by the slixmpp bot (ejabberd_bot management command).
+Used for user account provisioning (register, ensure_bot), room affiliation
+management (set_room_affiliation), and room option configuration
+(change_room_option / configure_room). If change_room_option encounters a
+400 "Room not found" error, the room is created via create_room() and
+re-configured with standard options before retrying. Message sending is
+handled by the slixmpp bot (ejabberd_bot management command).
 """
 
 import base64
@@ -23,6 +26,10 @@ _MAX_RETRIES = 3
 _RETRY_CAP = 5  # max seconds between retries
 
 _insecure_url_warned = False
+
+
+class EjabberdRoomNotFoundError(Exception):
+    """Raised by _request when ejabberd responds 400 'Room not found'."""
 
 
 def _is_safe_host(host: str) -> bool:
@@ -52,7 +59,7 @@ def _warn_if_insecure(url):
     )
 
 
-def _request(endpoint, body=None, allow_statuses=None):
+def _request(endpoint, body=None, allow_statuses=None, *, raise_on_room_not_found=False):
     """
     POST to {EJABBERD_API_URL}/api/{endpoint} with JSON body.
     Returns parsed JSON on success, {} on empty response, None on error.
@@ -86,6 +93,8 @@ def _request(endpoint, body=None, allow_statuses=None):
             continue
 
         if not resp.is_success and resp.status_code not in allowed:
+            if raise_on_room_not_found and resp.status_code == 400 and "Room not found" in resp.text:
+                raise EjabberdRoomNotFoundError()
             logger.error(
                 "ejabberd %s -> %s %s", endpoint, resp.status_code, resp.text[:200]
             )
@@ -237,6 +246,28 @@ def destroy_room(muc_jid):
     if result is None:
         return False
     logger.info("ejabberd: destroyed room %s", muc_jid)
+    return True
+
+
+def create_room(muc_jid):
+    """
+    Create a MUC room via ejabberd REST API.
+
+    Returns True on success, False on failure.
+    """
+    room_localpart, service = _split_muc_jid(muc_jid)
+    result = _request(
+        "create_room",
+        {
+            "room": room_localpart,
+            "service": service,
+            "host": get_config("EJABBERD_HOST", ""),
+        },
+    )
+    if result is None:
+        logger.error("ejabberd: create_room %s failed", muc_jid)
+        return False
+    logger.info("ejabberd: created MUC room %s", muc_jid)
     return True
 
 
@@ -461,20 +492,25 @@ def change_room_option(muc_jid, option, value):
     Change a MUC room option via ejabberd REST API.
 
     Common options: 'title' (room name), 'members_only', 'persistent', etc.
+    If the room does not exist (400 "Room not found"), it is created and
+    configured with standard options before the option is retried once.
 
     Returns True on success, False on failure.
     """
     room_localpart, service = _split_muc_jid(muc_jid)
-
-    result = _request(
-        "change_room_option",
-        {
-            "room": room_localpart,
-            "service": service,
-            "option": option,
-            "value": value,
-        },
-    )
+    params = {
+        "room": room_localpart,
+        "service": service,
+        "option": option,
+        "value": value,
+    }
+    try:
+        result = _request("change_room_option", params, raise_on_room_not_found=True)
+    except EjabberdRoomNotFoundError:
+        logger.warning("ejabberd: Raum %s nicht gefunden — wird neu angelegt", muc_jid)
+        if not _ensure_room(muc_jid):
+            return False
+        result = _request("change_room_option", params)
     if result is None:
         return False
     logger.debug("ejabberd: set %s=%s for room %s", option, value, muc_jid)
@@ -515,6 +551,14 @@ def configure_room(muc_jid, title=None):
     for option, value in _ROOM_OPTIONS.items():
         ok &= change_room_option(muc_jid, option, value)
     return ok
+
+
+def _ensure_room(muc_jid):
+    """Create a missing MUC room and apply standard options. Returns True on success."""
+    if not create_room(muc_jid):
+        return False
+    configure_room(muc_jid)
+    return True
 
 
 def assign_muc_jids():
