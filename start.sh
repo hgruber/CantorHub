@@ -7,12 +7,8 @@ DEBUG="${DEBUG:-}"
 python manage.py migrate
 python manage.py apply_initial_config
 
-if [ -n "${EJABBERD_HOST:-}" ] && [ -n "${EJABBERD_BOT_JID:-}" ]; then
-    echo "ejabberd_admin: syncing XMPP state..."
-    python manage.py ejabberd_admin sync
-    echo "ejabberd_bot: starting bot..."
-    python manage.py ejabberd_bot &
-fi
+python manage.py ejabberd_admin sync
+python manage.py ejabberd_bot &
 
 if [ "${DEBUG}" = "1" ]; then
     python manage.py runserver 0.0.0.0:8001

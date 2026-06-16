@@ -2,7 +2,7 @@
 Management command: ejabberd_bot
 
 Long-running slixmpp bot that bridges ejabberd MUC rooms <-> CantorHub forum.
-Started as a background process by start.sh when EJABBERD_HOST and EJABBERD_BOT_JID are set.
+Started as a background process by start.sh/migrate.sh; exits cleanly if ejabberd is not configured.
 
 Responsibilities:
 - Joins (and thereby creates) all MUC rooms listed in Forum.xmpp_muc_jid.
@@ -476,6 +476,11 @@ class Command(BaseCommand):
     help = "Run the ejabberd bot for MUC <-> Forum bridging."
 
     def handle(self, *args, **options):
+        from intern.app_settings import is_ejabberd_configured
+
+        if not is_ejabberd_configured():
+            self.stderr.write("EJABBERD_HOST and EJABBERD_BOT_JID must be set.")
+            return
         try:
             bot = CantorBot(self.stdout)
             bot.run()

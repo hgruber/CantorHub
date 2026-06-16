@@ -38,8 +38,8 @@ docker run -p 8000:8000 cantoreub
 **Management commands:**
 | Command | Description |
 |---|---|
-| `ejabberd_admin sync` | Full startup sync (ensure bot, assign MUC JIDs, configure rooms) when EJABBERD_HOST+EJABBERD_BOT_JID are set |
-| `ejabberd_bot` | Run XMPP bot for MUC message forwarding |
+| `ejabberd_admin sync` | Full startup sync (ensure bot, assign MUC JIDs, configure rooms); no-op if ejabberd is not configured (`is_ejabberd_configured()`) |
+| `ejabberd_bot` | Run XMPP bot for MUC message forwarding; no-op if ejabberd is not configured |
 | `ejabberd_admin <group> <verb>` | Admin ops grouped by noun: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
 | `apply_initial_config [--file PATH]` | Write KEY=VALUE pairs from a shell config file into the `Konfiguration` table. Tries `/app/initial.sh` (Docker) then `<project>/initial.sh` (local) by default; `--file` overrides. `migrate.sh` calls this with `--file migrate.sh` so its exported vars land in the DB. |
 
