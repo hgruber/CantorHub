@@ -2,16 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Language:** This file must be written strictly in English. Do not add German prose; code identifiers and string literals (e.g. filenames, variable names) may remain in their original form.
+
 ## Commands
 
-**Development setup (resets database, imports avatars, starts server):**
+**Fresh install — resets DB, imports avatars, starts server (DEV + Container):**
 ```bash
-./migrate.sh
+./migrate.sh              # DEBUG=1 default → runserver
+DEBUG=0 ./migrate.sh      # no DEBUG → collectstatic + nginx + gunicorn
+```
+
+**Start with existing DB (no wipe):**
+```bash
+./start.sh                # DEBUG not set → nginx + gunicorn (prod/container)
+DEBUG=1 ./start.sh        # DEV: runserver
 ```
 
 **Run dev server only (after migrate.sh has been run):**
 ```bash
-export DEBUG=1
 python manage.py runserver 0.0.0.0:8000
 ```
 
@@ -19,11 +27,6 @@ python manage.py runserver 0.0.0.0:8000
 ```bash
 python manage.py makemigrations intern --name <migration_name>
 python manage.py migrate
-```
-
-**Production start (inside Docker):**
-```bash
-./start.sh  # Resets DB, collects static, starts nginx + gunicorn
 ```
 
 **Build and run Docker container:**
@@ -122,6 +125,8 @@ Forum→MUC delivery: `forum_send` only writes the `Mitteilung`; the persistent 
 
 Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. `FOLDER_AVATARE = 1`, `FOLDER_MUSIK = 5`). The `import_files` management command imports avatars from the `Avatare/` directory into filer on first setup.
 
+`index_files` and `thumbnail_files` run as background jobs after a fresh install in `migrate.sh`, building the search index and pre-generating thumbnails for all files. They are intentionally absent from `start.sh` (existing DB) — files are already indexed there. **Known gap:** files uploaded through the app are not automatically indexed or thumbnailed; that only happens on the next `migrate.sh` run. Fix: add a post-save signal on `filer.File` that calls `index_file()` and triggers thumbnail generation.
+
 ### External integrations
 
 **XMPP/ejabberd** (active when `EJABBERD_HOST` + `EJABBERD_BOT_JID` are set): Bidirectional bridge between Forum MUC rooms and ejabberd. Messages sync in both directions. Uses REST API for admin operations and a long-running slixmpp bot for message relay.
@@ -187,12 +192,7 @@ Items found during code review, ordered by estimated risk of the fix:
 
 SQLite in development (`db.sqlite3`, excluded from git). MySQL-compatible for production via `pymysql`.
 
-**Hinweis zum DB-Reset:** Der vollständige DB-Wipe in `start.sh` (und `migrate.sh`)
-existiert nur während des aktuellen **Test-Betriebs**. Nach der finalen Migration
-entfällt er — dann wird für das Testsystem lediglich die Prod-DB ins Testsystem
-kopiert, und es gibt eine getrennte Start-Strategie für Prod und Test (kein
-destruktiver Reset mehr beim Start). Bis dahin gilt: jeder `start.sh`-/`migrate.sh`-Lauf
-verwirft alle Daten.
+**Note on DB reset:** The full DB wipe in `migrate.sh` exists only during the current **test phase**. After the final migration it will be removed — the test system will simply receive a copy of the prod DB, and prod and test will have separate start strategies (no more destructive reset on start). Until then: every `migrate.sh` run discards all data.
 
 ### Environment variables
 
