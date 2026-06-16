@@ -39,8 +39,8 @@ mv 0003_import.py intern/migrations || true
 
 # XMPP/ejabberd integration — active when EJABBERD_HOST and EJABBERD_BOT_JID are set
 if [ -n "${EJABBERD_HOST:-}" ] && [ -n "${EJABBERD_BOT_JID:-}" ]; then
-    echo "ejabberd_sync: syncing XMPP state..."
-    ./manage.py ejabberd_sync --sync
+    echo "ejabberd_admin: syncing XMPP state..."
+    ./manage.py ejabberd_admin sync
     echo "ejabberd_bot: starting bot..."
     ./manage.py ejabberd_bot &
 fi

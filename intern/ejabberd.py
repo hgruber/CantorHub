@@ -153,7 +153,7 @@ def register_user(username, password):
 
 def ensure_bot():
     """
-    Register the bot account (idempotent). Called at startup via ejabberd_sync --sync.
+    Register the bot account (idempotent). Called at startup via ejabberd_admin sync.
     Returns True on success or if account already exists.
     """
     localpart = get_config("EJABBERD_BOT_JID", "").split("@")[0]
@@ -494,7 +494,7 @@ def configure_room(muc_jid, title=None):
     Semi-anonymous keeps clients from defaulting to OMEMO so the bridge can read
     messages; the bot still resolves real JIDs via the admin REST API, not in the
     client. These options are enforced (overwriting manual changes) on every bot
-    (re)join and on ejabberd_sync. Returns True if all options were set.
+    (re)join and on ejabberd_admin sync. Returns True if all options were set.
     """
     ok = True
     if title:
@@ -502,6 +502,50 @@ def configure_room(muc_jid, title=None):
     for option, value in _ROOM_OPTIONS.items():
         ok &= change_room_option(muc_jid, option, value)
     return ok
+
+
+def assign_muc_jids():
+    """Assign a MUC JID to every forum that doesn't have one yet.
+
+    Derives ``forum-{pk}@{EJABBERD_MUC_SERVICE}`` for forums with a null/empty
+    ``xmpp_muc_jid``. Suppresses the forum ``post_save`` signal via the
+    ``_migrating`` flag while saving. Returns the number of forums assigned.
+    """
+    from intern.apps import _migrating
+    from intern.models import Forum
+
+    _migrating.active = True
+    try:
+        forums_needing_jid = Forum.objects.filter(xmpp_muc_jid=None) | Forum.objects.filter(
+            xmpp_muc_jid=""
+        )
+        count = 0
+        for forum in forums_needing_jid:
+            forum.xmpp_muc_jid = f"forum-{forum.pk}@{get_config('EJABBERD_MUC_SERVICE', '')}"
+            forum.save(update_fields=["xmpp_muc_jid"])
+            count += 1
+            logger.info("ejabberd: assigned %s to forum #%s", forum.xmpp_muc_jid, forum.pk)
+        return count
+    finally:
+        _migrating.active = False
+
+
+def configure_all_rooms():
+    """Re-apply the standard room options to every forum with a MUC JID.
+
+    Rooms that don't exist yet on ejabberd are skipped silently (the bot
+    configures them when it first joins). Returns the number of rooms configured.
+    """
+    from intern.models import Forum
+
+    count = 0
+    for forum in Forum.objects.exclude(xmpp_muc_jid=None).exclude(xmpp_muc_jid=""):
+        if configure_room(forum.xmpp_muc_jid, forum.thema):
+            count += 1
+            logger.info(
+                "ejabberd: configured room %s (forum #%s)", forum.xmpp_muc_jid, forum.pk
+            )
+    return count
 
 
 def option_is_true(options, key):

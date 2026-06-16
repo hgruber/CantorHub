@@ -71,7 +71,7 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `
 | `get_room_occupants` | `get_room_occupants` | room, service | Returns `[{jid, nick, role}]` — admin API returns real JIDs regardless of room anonymity |
 | `get_room_options` | `get_room_options` | room, service | Returns a flat `{option_name: value}` dict (string values), or `None` if room doesn't exist. Use `option_is_true()` to coerce booleans |
 | `change_room_option` | `change_room_option` | room, service, option, value | Low-level option setter; prefer `configure_room()` for the standard option set |
-| `configure_room` | (multiple `change_room_option`) | muc_jid, title | Enforces `persistent`, `anonymous=true`, `public=false`, `members_only=true`, `allow_user_invites=true`, `lang=de`, and optional `title`. Called on every bot (re)join and `ejabberd_sync` |
+| `configure_room` | (multiple `change_room_option`) | muc_jid, title | Enforces `persistent`, `anonymous=true`, `public=false`, `members_only=true`, `allow_user_invites=true`, `lang=de`, and optional `title`. Called on every bot (re)join and `ejabberd_admin sync` |
 | `send_invitation` | `send_direct_invitation` | room, service, password, reason, users | `users` is a list of JIDs; `reason` and `password` must be non-empty |
 | `unregister_user` | `unregister` | user, host | Delete ejabberd account; returns True/False |
 | `destroy_room` | `destroy_room` | room, service | Delete MUC room; returns True/False |
@@ -115,7 +115,7 @@ This replaced an earlier per-message short-lived slixmpp connection that was unr
 
    After `configure_room`, the bot also calls `set_room_vcard` to push the Forum's `bild` as the MUC room avatar (if set). This ensures newly created rooms get their avatar immediately after the bot joins, without requiring a manual re-save of the forum.
 
-   These are re-enforced on every (re)join and by `ejabberd_sync --sync` for all existing rooms (overwriting manual admin changes).
+   These are re-enforced on every (re)join and by `ejabberd_admin sync` for all existing rooms (overwriting manual admin changes).
 
    **Why semi-anonymous:** OMEMO in a MUC technically requires a non-anonymous room (clients must know every member's real JID to fetch keys). Making the room semi-anonymous (`anonymous=true`) means Conversations/Gajim won't offer OMEMO and default to **unencrypted**, so the bridge can read messages. The bot maps senders to users via a presence-based nick→JID cache (primary) and the admin REST `get_room_occupants` as fallback — see `_resolve_sender_jid`. As room owner/moderator the bot receives real JIDs in MUC presence stanzas even in semi-anonymous rooms. Regular members no longer see each other's real JIDs in their client.
 
@@ -190,24 +190,40 @@ The `_provision_xmpp_user` function also uploads the vCard on first login, so bo
 ## Startup script (`start.sh`)
 
 When `EJABBERD_HOST` and `EJABBERD_BOT_JID` are set as environment variables:
-1. `./manage.py ejabberd_sync --sync` — registers bot account, assigns MUC JIDs
+1. `./manage.py ejabberd_admin sync` — registers bot account, assigns MUC JIDs, configures rooms
 2. `./manage.py ejabberd_bot &` — starts the bot in background
 
 ## Admin management command (`manage.py ejabberd_admin`)
 
+Subcommands are grouped by noun (`bot`, `room`, `user`, `invite`, `server`), plus a top-level `sync` action that runs the full startup synchronization (formerly the separate `ejabberd_sync --sync` command, now merged here).
+
 ```
-./manage.py ejabberd_admin delete_forum <forum_id>   # Delete a forum's MUC room (with confirmation)
-./manage.py ejabberd_admin delete_user <username_or_id> # Delete a user's ejabberd account (with confirmation)
-./manage.py ejabberd_admin clear_invites --forum=<id> [--user=<username_or_id>]  # Remove affiliations/invitations
-./manage.py ejabberd_admin invite --forum=<id> --user=<username_or_id>  # Send direct invitation
-./manage.py ejabberd_admin remove_user --forum=<id> --user=<username_or_id>  # Remove user from room
-./manage.py ejabberd_admin list_rooms   # List forums and their MUC JIDs
-./manage.py ejabberd_admin list_users   # List users with XMPP JIDs
-./manage.py ejabberd_admin sync_vcard <username_or_id>  # Re-upload vCard (name + avatar)
-./manage.py ejabberd_admin sync_password <username_or_id>  # Sync password (prompts for password)
+./manage.py ejabberd_admin sync                        # Full sync: ensure bot, assign MUC JIDs, configure rooms
+
+./manage.py ejabberd_admin bot ensure                  # Register/ensure the bot account (idempotent)
+
+./manage.py ejabberd_admin room list                   # List forums and their MUC JIDs
+./manage.py ejabberd_admin room assign-jids            # Assign MUC JIDs to forums missing them
+./manage.py ejabberd_admin room configure [--forum=<id>]  # Enforce standard options on one/all rooms
+./manage.py ejabberd_admin room delete <forum_id>      # Destroy a forum's MUC room (with confirmation)
+./manage.py ejabberd_admin room avatar <forum_id>      # Push the forum image (bild) as MUC room avatar
+./manage.py ejabberd_admin room members <forum_id>     # List a room's affiliations
+./manage.py ejabberd_admin room occupants <forum_id>   # List a room's current occupants
+./manage.py ejabberd_admin room options <forum_id>     # Show a room's options
+
+./manage.py ejabberd_admin user list                   # List users with XMPP JIDs
+./manage.py ejabberd_admin user delete <username_or_id> # Delete a user's ejabberd account (with confirmation)
+./manage.py ejabberd_admin user vcard <username_or_id>  # Re-upload vCard (name + avatar)
+./manage.py ejabberd_admin user password <username_or_id>  # Set ejabberd password (prompts)
+
+./manage.py ejabberd_admin invite add --forum=<id> --user=<username_or_id>     # Send direct invitation
+./manage.py ejabberd_admin invite remove --forum=<id> --user=<username_or_id>  # Remove user from room
+./manage.py ejabberd_admin invite clear --forum=<id> [--user=<username_or_id>] # Remove affiliations/invitations (with confirmation)
+
+./manage.py ejabberd_admin server users                # List all registered ejabberd accounts
 ```
 
-All sub-commands require `EJABBERD_HOST` and `EJABBERD_BOT_JID` to be set. Destructive operations (`delete_forum`, `delete_user`, `clear_invites`) prompt for confirmation. User identifiers accept either numeric pk or username string.
+All sub-commands require `EJABBERD_HOST` and `EJABBERD_BOT_JID` to be set. Destructive operations (`room delete`, `user delete`, `invite clear`) prompt for confirmation. User identifiers accept either numeric pk or username string.
 
 `clear_invites` without `--user` removes all members from the room. With `--user`, removes only that user's affiliation.
 

@@ -144,9 +144,9 @@ All application logic lives in the `intern/` app; `config/` holds only settings 
 
 | Command | Description |
 |---|---|
-| `ejabberd_sync --sync` | Sync XMPP users/rooms when EJABBERD_HOST+EJABBERD_BOT_JID are set |
+| `ejabberd_admin sync` | Full startup sync (ensure bot, assign MUC JIDs, configure rooms) when EJABBERD_HOST+EJABBERD_BOT_JID are set |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding |
-| `ejabberd_admin <action>` | Admin ops: delete_forum, delete_user, clear_invites, invite, remove_user, list_rooms, list_users, sync_vcard, sync_password |
+| `ejabberd_admin <group> <verb>` | Admin ops grouped by noun: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
 | `import_files --path Avatare` | Import avatars from directory into django-filer |
 | `index_files` | Re-index django-filer files |
 

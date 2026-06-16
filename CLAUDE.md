@@ -35,9 +35,9 @@ docker run -p 8000:8000 cantoreub
 **Management commands:**
 | Command | Description |
 |---|---|
-| `ejabberd_sync --sync` | Sync XMPP users/rooms when EJABBERD_HOST+EJABBERD_BOT_JID are set |
+| `ejabberd_admin sync` | Full startup sync (ensure bot, assign MUC JIDs, configure rooms) when EJABBERD_HOST+EJABBERD_BOT_JID are set |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding |
-| `ejabberd_admin <action>` | Admin ops: delete_forum, delete_user, clear_invites, invite, remove_user, list_rooms, list_users, sync_vcard, sync_password |
+| `ejabberd_admin <group> <verb>` | Admin ops grouped by noun: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
 | `apply_initial_config [--file PATH]` | Write KEY=VALUE pairs from a shell config file into the `Konfiguration` table. Tries `/app/initial.sh` (Docker) then `<project>/initial.sh` (local) by default; `--file` overrides. `migrate.sh` calls this with `--file migrate.sh` so its exported vars land in the DB. |
 
 ## Architecture
@@ -89,7 +89,7 @@ When `bild` is set or changed, `_sync_forum_avatar(forum_obj)` is called (best-e
 
 ### MUC room configuration
 
-`ejabberd.configure_room(muc_jid, title=None)` is the single source of truth for room invariants and enforces (overwriting manual changes) on every bot (re)join and on `ejabberd_sync --sync`: `persistent=true`, `anonymous=true`, `public=false`, `members_only=true`, `allow_user_invites=true`, `lang=de`, plus `title` when given (the forum `thema`). Defined as `_ROOM_OPTIONS` in `ejabberd.py`. Called from `ejabberd_bot._configure_room` (on join) and `ejabberd_sync._configure_rooms` (all existing rooms at startup).
+`ejabberd.configure_room(muc_jid, title=None)` is the single source of truth for room invariants and enforces (overwriting manual changes) on every bot (re)join and on `ejabberd_admin sync`: `persistent=true`, `anonymous=true`, `public=false`, `members_only=true`, `allow_user_invites=true`, `lang=de`, plus `title` when given (the forum `thema`). Defined as `_ROOM_OPTIONS` in `ejabberd.py`. Called from `ejabberd_bot._configure_room` (on join) and `ejabberd.configure_all_rooms()` (all existing rooms at startup, invoked by `ejabberd_admin sync`).
 
 Forum→MUC delivery: `forum_send` only writes the `Mitteilung`; the persistent `ejabberd_bot` relays it to the MUC room over its live session (`CantorBot._relay_messages`, a 3 s timer reading `_db_pending_forum_messages`). This replaced a per-message short-lived slixmpp connection that was unreliable (flaky first TLS handshake → random timeouts) and collided on the `CantorBot` nick. The relayed message echoes back under nick `CantorBot` and is skipped by echo prevention.
 
@@ -177,7 +177,7 @@ Items found during code review, ordered by estimated risk of the fix:
 
 **Management commands:**
 - `ejabberd_bot` — slixmpp XMPP bot for MUC message forwarding
-- `ejabberd_sync` — sync XMPP users/rooms at startup
+- `ejabberd_admin` — operator CLI for all ejabberd admin ops; `ejabberd_admin sync` runs the startup user/room sync (was the separate `ejabberd_sync` command, now merged)
 
 ### Migration quirks
 
