@@ -402,6 +402,14 @@ def internal_links(match, request):
         prefix = match.group(2) or ""
         name = match.group(4)
         display = match.group(6) or match.group(4)
+        if request is not None:
+            from intern.models import ArtikelPermission
+            perms = ArtikelPermission.objects.filter(artikel_name=name)
+            if perms.exists():
+                gids = request.user.groups.values_list("id", flat=True)
+                up = perms.filter(group_id__in=gids)
+                if not (up.filter(can_read=True).exists() or up.filter(can_edit=True).exists()):
+                    return display
         return f'<a href="/intern/artikel/{prefix}{name}/">{display}</a>'
 
 

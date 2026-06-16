@@ -282,6 +282,37 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     .perm-group-info { gap: 4px; }
     .perm-group-count { display: none; }
 }
+
+/* Tooltip */
+.perm-tooltip {
+    position: fixed;
+    z-index: 9999;
+    max-width: 300px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--t2);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    white-space: normal;
+}
+.perm-tooltip.visible { opacity: 1; }
+.perm-tooltip-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t4);
+    margin-bottom: 5px;
+}
+[data-theme="dark"] .perm-tooltip {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+}
 </style>
 
 <div class="table-view">
@@ -302,7 +333,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
                 <tr class="perm-label-row">
                     <th class="perm-user-col perm-user-head" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--t3);padding:8px 16px;vertical-align:bottom;">Gruppe</th>
                     {% for cat in categories %}{% for perm in cat.perms %}
-                    <th class="perm-col-head perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}" data-perm="{{ perm.key }}">
+                    <th class="perm-col-head perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}" data-perm="{{ perm.key }}" data-tooltip="{{ perm.description }}">
                         <div class="perm-col-rotate"><span>{{ perm.label }}</span></div>
                     </th>
                     {% endfor %}{% endfor %}
@@ -345,6 +376,11 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     <button type="button" class="btn btn-primary" id="perm-apply-btn">
         Änderungen anwenden (<span id="perm-change-count">0</span>)
     </button>
+</div>
+
+<div id="perm-tooltip" class="perm-tooltip" role="tooltip">
+    <div class="perm-tooltip-title" id="perm-tooltip-title"></div>
+    <div id="perm-tooltip-body"></div>
 </div>
 
 {{ matrix|json_script:"matrix-data" }}
@@ -500,6 +536,46 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     }
 
     document.getElementById('add-group-btn').addEventListener('click', insertNewGroupRow);
+
+    // Tooltip für Spaltenköpfe
+    var tooltip      = document.getElementById('perm-tooltip');
+    var tooltipTitle = document.getElementById('perm-tooltip-title');
+    var tooltipBody  = document.getElementById('perm-tooltip-body');
+    var tooltipTimer = null;
+
+    document.querySelectorAll('th.perm-col-head[data-tooltip]').forEach(function (th) {
+        th.addEventListener('mouseenter', function (e) {
+            var desc = th.dataset.tooltip;
+            if (!desc) return;
+            var label = th.querySelector('span') ? th.querySelector('span').textContent.trim() : '';
+            var catClass = Array.from(th.classList).find(function (c) {
+                return c.startsWith('perm-col-cat-') && c !== 'perm-col-cat-first';
+            });
+            var cat = catClass ? catClass.replace('perm-col-cat-', '') : '';
+            tooltipTitle.textContent = cat ? cat + ' · ' + label : label;
+            tooltipBody.textContent  = desc;
+            positionTooltip(e);
+            clearTimeout(tooltipTimer);
+            tooltipTimer = setTimeout(function () { tooltip.classList.add('visible'); }, 250);
+        });
+        th.addEventListener('mousemove', positionTooltip);
+        th.addEventListener('mouseleave', function () {
+            clearTimeout(tooltipTimer);
+            tooltip.classList.remove('visible');
+        });
+    });
+
+    function positionTooltip(e) {
+        var margin = 12;
+        var x = e.clientX + margin;
+        var y = e.clientY + margin;
+        var w = tooltip.offsetWidth  || 300;
+        var h = tooltip.offsetHeight || 80;
+        if (x + w > window.innerWidth  - margin) { x = e.clientX - w - margin; }
+        if (y + h > window.innerHeight - margin) { y = e.clientY - h - margin; }
+        tooltip.style.left = x + 'px';
+        tooltip.style.top  = y + 'px';
+    }
 
     function getCsrfToken() {
         const match = document.cookie.match(/csrftoken=([^;]+)/);

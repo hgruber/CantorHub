@@ -40,6 +40,68 @@ PERMISSION_DEFS = [
     ("intern.manage_folder_permissions", "Berechtigungen", "Dateien"),
 ]
 
+PERMISSION_DESCRIPTIONS = {
+    "intern.delete_artikel":
+        "Darf Artikel (Neuigkeiten) dauerhaft löschen. "
+        "Achtung: Artikel sind versioniert – das Löschen entfernt alle "
+        "Versionen gleichzeitig und kann nicht rückgängig gemacht werden.",
+    "intern.manage_artikel_permissions":
+        "Darf festlegen, welche Gruppen bestimmte Artikel lesen oder "
+        "bearbeiten dürfen. Ohne diese Berechtigung sind Artikel für alle "
+        "angemeldeten Mitglieder sichtbar.",
+    "intern.add_forum":
+        "Darf neue Diskussionsthemen (Foren) anlegen.",
+    "intern.change_forum":
+        "Darf bestehende Foren bearbeiten – z. B. Titel ändern, das "
+        "Titelbild anpassen oder (sofern XMPP konfiguriert ist) den "
+        "verknüpften Chat-Raum verwalten.",
+    "intern.delete_forum":
+        "Darf Foren dauerhaft löschen. Achtung: Dabei werden auch alle "
+        "darin enthaltenen Nachrichten unwiederbringlich entfernt.",
+    "intern.add_termin":
+        "Darf neue Termine eintragen.",
+    "intern.change_termin":
+        "Darf bestehende Termine bearbeiten – z. B. Datum, Uhrzeit, Ort "
+        "oder Beschreibung anpassen.",
+    "intern.delete_termin":
+        "Darf Termine dauerhaft löschen.",
+    "intern.change_zusage":
+        "Darf die Anwesenheit anderer Mitglieder eintragen oder ändern. "
+        "Hinweis: Jedes Mitglied kann seine eigene Anwesenheit immer selbst "
+        "angeben – diese Berechtigung gilt nur für die Einträge anderer.",
+    "intern.add_lied":
+        "Darf neue Lieder ins Repertoire aufnehmen.",
+    "intern.change_lied":
+        "Darf bestehende Lieder im Repertoire bearbeiten.",
+    "intern.delete_lied":
+        "Darf Lieder dauerhaft aus dem Repertoire entfernen.",
+    "intern.add_user":
+        "Darf neue Mitglieder anlegen.",
+    "intern.change_user":
+        "Darf Mitgliedsdaten bearbeiten – z. B. Name, E-Mail-Adresse, "
+        "Stimmgruppe oder Anschrift ändern.",
+    "intern.delete_user":
+        "Darf Mitgliedskonten dauerhaft löschen.",
+    "intern.manage_user_permissions":
+        "Darf Gruppenberechtigungen verwalten – also diese Seite aufrufen "
+        "und Berechtigungen vergeben oder entziehen. "
+        "Achtung: Diese Berechtigung sollte nur an sehr vertrauenswürdige "
+        "Personen vergeben werden, da sie alle weiteren Berechtigungen "
+        "einschließt.",
+    "intern.add_ort":
+        "Darf neue Orte (Veranstaltungsorte, Proberäume) anlegen.",
+    "intern.change_ort":
+        "Darf bestehende Orte bearbeiten.",
+    "intern.delete_ort":
+        "Darf Orte dauerhaft löschen.",
+    "intern.delete_folder":
+        "Darf Dateiordner dauerhaft löschen.",
+    "intern.manage_folder_permissions":
+        "Darf festlegen, welche Gruppen auf bestimmte Dateiordner zugreifen "
+        "dürfen. Ohne diese Berechtigung gelten die Standard-Zugriffsregeln "
+        "des jeweiligen Ordners.",
+}
+
 # Human-readable label for each permission string, e.g. "intern.add_artikel" → "Artikel anlegen"
 _PERM_LABELS = {
     perm_str: f"{category} {label}"
@@ -163,7 +225,11 @@ def gruppen(request):
         if category not in cat_map:
             cat_map[category] = []
             cat_order.append(category)
-        cat_map[category].append({"key": perm_str, "label": label})
+        cat_map[category].append({
+            "key": perm_str,
+            "label": label,
+            "description": PERMISSION_DESCRIPTIONS.get(perm_str, ""),
+        })
     categories = [{"name": c, "perms": cat_map[c]} for c in cat_order]
 
     # User count per group to guard the delete button
