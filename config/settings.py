@@ -234,7 +234,7 @@ LOGGING = {
     },
     "formatters": {
         "timestamped": {
-            "format": "{asctime} {levelname} {name}: {message}",
+            "format": "{levelname} {name}: {message}",
             "style": "{",
         },
     },
