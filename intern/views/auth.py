@@ -5,8 +5,12 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
-from django.core.mail import send_mail
+from email.mime.image import MIMEImage
+
+from django.contrib.staticfiles import finders
+from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -148,8 +152,22 @@ def register(request):
                     f"Wenn Du das nicht angefordert hast, kannst Du diese E-Mail\n"
                     f"ignorieren — Dein Passwort bleibt unverändert."
                 )
+                html_message = render_to_string(
+                    "emails/password_reset.html",
+                    {"user": user, "link": link},
+                )
+                logo_path = finders.find("intern/images/icon-192.png")
+                with open(logo_path, "rb") as f:
+                    logo_data = f.read()
+                logo_img = MIMEImage(logo_data)
+                logo_img.add_header("Content-ID", "<logo>")
+                logo_img.add_header("Content-Disposition", "inline", filename="logo.png")
+                msg = EmailMultiAlternatives(subject, message, get_from_email(), [user.email])
+                msg.attach_alternative(html_message, "text/html")
+                msg.mixed_subtype = "related"
+                msg.attach(logo_img)
                 try:
-                    send_mail(subject, message, get_from_email(), [user.email])
+                    msg.send()
                 except Exception:
                     logger.exception("Failed to send password reset email to %s", user.email)
                 if not is_email_configured():
