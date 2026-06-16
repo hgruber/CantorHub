@@ -8,6 +8,7 @@ by the slixmpp bot (ejabberd_bot management command).
 
 import base64
 import hashlib
+import ipaddress
 import logging
 import re
 import time
@@ -24,6 +25,15 @@ _RETRY_CAP = 5  # max seconds between retries
 _insecure_url_warned = False
 
 
+def _is_safe_host(host: str) -> bool:
+    if host in ("127.0.0.1", "localhost", "::1"):
+        return True
+    try:
+        return ipaddress.ip_address(host).is_private
+    except ValueError:
+        return False
+
+
 def _warn_if_insecure(url):
     """Einmalige Warnung, wenn Klartext-Passwörter über das Netz gehen würden."""
     global _insecure_url_warned
@@ -32,7 +42,7 @@ def _warn_if_insecure(url):
     if url.startswith("https://"):
         return
     host = url.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0]
-    if host in ("127.0.0.1", "localhost", "::1"):
+    if _is_safe_host(host):
         return
     _insecure_url_warned = True
     logger.warning(
