@@ -31,6 +31,18 @@ PRIVACY_FIELDS = [
 ]
 ADDRESS_TRIGGER_FIELDS = {"strasse", "plz", "ort"}
 
+# MUC-Nickname des XMPP-Brücken-Bots (muss mit ejabberd_bot.join_muc übereinstimmen).
+BOT_NICK = "CantorBot"
+
+
+def fallback_avatar_url(original_filename):
+    """URL eines per ``import_files`` (django-filer) importierten Fallback-Avatars
+    (z. B. ``kein_photo.png`` / ``bot.png``). Leerer String, falls nicht vorhanden."""
+    from filer.models import File
+
+    f = File.objects.filter(original_filename=original_filename).first()
+    return f.url if f else ""
+
 
 class User(AbstractUser):
     # --- Legacy Identity ---
@@ -293,6 +305,31 @@ class Mitteilung(models.Model):
 
     def formatiert(self):
         return apply_replacements(self.mitteilung)
+
+    def is_from_bot(self):
+        """True, wenn diese Nachricht vom XMPP-Brücken-Bot stammt."""
+        if not self.sender or not self.sender.xmpp:
+            return False
+        from .app_settings import get_config
+
+        bot_jid = get_config("EJABBERD_BOT_JID", "")
+        return bool(bot_jid) and self.sender.xmpp.lower() == bot_jid.lower()
+
+    def sender_name(self):
+        """Anzeigename des Absenders, robust gegen fehlende Senderdaten."""
+        if self.is_from_bot():
+            return BOT_NICK
+        if self.sender:
+            return self.sender.first_name or self.sender.get_username()
+        return "Unbekannt"
+
+    def sender_avatar_url(self):
+        """Avatar-URL des Absenders mit Fallback auf bot.png bzw. kein_photo.png."""
+        if self.is_from_bot():
+            return fallback_avatar_url("bot.png")
+        if self.sender and self.sender.avatar:
+            return self.sender.avatar.url
+        return fallback_avatar_url("kein_photo.png")
 
 
 class Ort(models.Model):
