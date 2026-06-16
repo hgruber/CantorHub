@@ -41,7 +41,6 @@ docker run -p 8000:8000 cantoreub
 | `ejabberd_admin sync` | Full startup sync (ensure bot, assign MUC JIDs, configure rooms); no-op if ejabberd is not configured (`is_ejabberd_configured()`) |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding; no-op if ejabberd is not configured |
 | `ejabberd_admin <group> <verb>` | Admin ops grouped by noun: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
-| `apply_initial_config [--file PATH]` | Write KEY=VALUE pairs from a shell config file into the `Konfiguration` table. Tries `/app/initial.sh` (Docker) then `<project>/initial.sh` (local) by default; `--file` overrides. `migrate.sh` calls this with `--file migrate.sh` so its exported vars land in the DB. |
 
 ## Architecture
 
@@ -212,7 +211,7 @@ and never call the helpers at settings/import time (the DB may not be ready).
 
 Environment variables take priority over DB values in `get_config()`, so container
 deployments can pass `-e EJABBERD_HOST=... -e EJABBERD_BOT_JID=...` without needing
-`initial.sh` or admin UI access. Use `is_ejabberd_configured()` (not a flag) to check
+admin UI access. Use `is_ejabberd_configured()` (not a flag) to check
 whether the XMPP integration is active.
 
 Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py`;

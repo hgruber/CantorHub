@@ -34,7 +34,6 @@ python manage.py migrate
 mv /tmp/0003_import.py intern/migrations || true
 python manage.py import_files --path Avatare
 python manage.py migrate
-python manage.py apply_initial_config --file migrate.sh
 python manage.py index_files &
 python manage.py thumbnail_files &
 

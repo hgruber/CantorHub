@@ -12,7 +12,6 @@ else
 fi
 
 python manage.py migrate
-python manage.py apply_initial_config
 
 python manage.py ejabberd_admin sync
 python manage.py ejabberd_bot &
