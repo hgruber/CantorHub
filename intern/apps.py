@@ -33,14 +33,22 @@ _CONFIG_DEFAULTS = [
 
 
 def _seed_config(sender, **kwargs):
+    import os
     import secrets as _secrets
     from intern.models import Konfiguration
 
     for key, value, description in _CONFIG_DEFAULTS:
-        Konfiguration.objects.get_or_create(
-            key=key,
-            defaults={"value": value, "description": description},
-        )
+        env_val = os.environ.get(key)
+        if env_val is not None:
+            Konfiguration.objects.update_or_create(
+                key=key,
+                defaults={"value": env_val, "description": description},
+            )
+        else:
+            Konfiguration.objects.get_or_create(
+                key=key,
+                defaults={"value": value, "description": description},
+            )
 
     obj = Konfiguration.objects.get(key="ICAL_SECRET")
     if not obj.value:

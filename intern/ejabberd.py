@@ -357,6 +357,9 @@ def set_room_vcard(muc_jid, avatar_file, name=None):
             orig = getattr(avatar_file, "original_filename", "") or ""
             ext = orig.rsplit(".", 1)[-1].lower() if "." in orig else ""
             mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif"}.get(ext, "image/jpeg")
+    except FileNotFoundError as exc:
+        logger.warning("ejabberd: avatar file not found, skipping vCard sync: %s", exc)
+        return False
     except Exception as exc:
         logger.error("ejabberd: failed to read forum image for room vCard: %s", exc)
         return False

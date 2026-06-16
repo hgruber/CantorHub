@@ -209,10 +209,12 @@ without a redeploy. **Read them via `intern.app_settings` helpers** (`get_config
 `get_config_bool`, `get_config_int`) — never `os.environ`/`settings` for these —
 and never call the helpers at settings/import time (the DB may not be ready).
 
-Environment variables take priority over DB values in `get_config()`, so container
-deployments can pass `-e EJABBERD_HOST=... -e EJABBERD_BOT_JID=...` without needing
-admin UI access. Use `is_ejabberd_configured()` (not a flag) to check
-whether the XMPP integration is active.
+Environment variables take priority over DB values in `get_config()`, **and are also
+persisted to the DB during `post_migrate`** (`_seed_config` in `intern/apps.py` calls
+`update_or_create` for every key that has a matching ENV var). This means a container
+started with `-e EJABBERD_BOT_JID=...` writes the value into the DB — on subsequent
+starts the ENV var can be dropped and the DB value is used. Use
+`is_ejabberd_configured()` (not a flag) to check whether the XMPP integration is active.
 
 Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py`;
 **add new keys there** (with a German `description`) so fresh installs get them.
