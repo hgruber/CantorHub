@@ -39,6 +39,7 @@
                     </label>
                     {% endfor %}
                 </div>
+                <div id="read-members" class="members-chips" hidden></div>
             </div>
 
             <div class="detail-card">
@@ -65,6 +66,7 @@
                     </label>
                     {% endfor %}
                 </div>
+                <div id="edit-members" class="members-chips" hidden></div>
             </div>
         </div>
 
@@ -96,9 +98,28 @@
     padding-top: 0.5rem;
 }
 .detail-card .group-checkboxes[hidden] { display: none; }
+.members-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+}
+.members-chips[hidden] { display: none; }
+.member-chip {
+    background: var(--bg-row-hover);
+    color: var(--t2);
+    border-radius: 99px;
+    padding: 0.125rem 0.625rem;
+    font-size: 12px;
+    white-space: nowrap;
+}
 </style>
 
+{{ group_members|json_script:"group-members" }}
+
 <script>
+var groupMembers = JSON.parse(document.getElementById('group-members').textContent);
+
 function toggleGroups(section, value) {
     var el = document.getElementById(section + '-groups');
     if (!el) return;
@@ -107,6 +128,38 @@ function toggleGroups(section, value) {
     } else {
         el.setAttribute('hidden', '');
     }
+    updateChips(section, value === 'restricted');
 }
+
+function updateChips(section, show) {
+    var chips = document.getElementById(section + '-members');
+    if (!chips) return;
+    chips.innerHTML = '';
+    if (!show) { chips.setAttribute('hidden', ''); return; }
+    var groupsEl = document.getElementById(section + '-groups');
+    var checked = groupsEl.querySelectorAll('input[type=checkbox]:checked');
+    var names = new Set();
+    checked.forEach(function(cb) {
+        (groupMembers[cb.value] || []).forEach(function(n) { names.add(n); });
+    });
+    if (names.size === 0) { chips.setAttribute('hidden', ''); return; }
+    chips.removeAttribute('hidden');
+    Array.from(names).sort().forEach(function(name) {
+        var span = document.createElement('span');
+        span.className = 'member-chip';
+        span.textContent = name;
+        chips.appendChild(span);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[id$="-groups"]').forEach(function(groupsEl) {
+        var section = groupsEl.id.replace('-groups', '');
+        updateChips(section, !groupsEl.hasAttribute('hidden'));
+        groupsEl.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+            cb.addEventListener('change', function() { updateChips(section, true); });
+        });
+    });
+});
 </script>
 {% endblock %}

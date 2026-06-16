@@ -151,6 +151,13 @@ def folder_permissions(request, pk):
         return redirect("folder_view", pk=folder.pk)
 
     from django.urls import reverse
+    group_members = {
+        g.id: [
+            f"{u.first_name} {u.last_name}".strip() or u.username
+            for u in g.user_set.filter(is_active=True).order_by("first_name", "last_name")
+        ]
+        for g in groups
+    }
     return render(request, "folder_berechtigungen.html", {
         "seitentitel": f"Berechtigungen: {folder.name}",
         "folder": folder,
@@ -161,6 +168,7 @@ def folder_permissions(request, pk):
         "read_group_ids":    read_group_ids,
         "write_group_ids":   write_group_ids,
         "delete_group_ids":  delete_group_ids,
+        "group_members":     group_members,
         "up_url": reverse("folder_view", args=[folder.pk]),
         "id": folder.pk,
     })

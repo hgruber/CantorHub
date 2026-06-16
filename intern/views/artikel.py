@@ -368,6 +368,13 @@ def article_permissions(request, name):
 
         return redirect("article_view", name=name)
 
+    group_members = {
+        g.id: [
+            f"{u.first_name} {u.last_name}".strip() or u.username
+            for u in g.user_set.filter(is_active=True).order_by("first_name", "last_name")
+        ]
+        for g in groups
+    }
     return render(request, "artikel_berechtigungen.html", {
         "seitentitel": f"Berechtigungen: {name}",
         "artikel_name": name,
@@ -376,6 +383,7 @@ def article_permissions(request, name):
         "edit_restricted": edit_restricted,
         "read_group_ids": read_group_ids,
         "edit_group_ids": edit_group_ids,
+        "group_members": group_members,
         "up": "article_list",
         "id": name,
     })
