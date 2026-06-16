@@ -6,9 +6,12 @@ from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
 from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
 
 from django.contrib.staticfiles import finders
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -162,12 +165,24 @@ def register(request):
                 logo_img = MIMEImage(logo_data)
                 logo_img.add_header("Content-ID", "<logo>")
                 logo_img.add_header("Content-Disposition", "inline", filename="logo.png")
-                msg = EmailMultiAlternatives(subject, message, get_from_email(), [user.email])
-                msg.attach_alternative(html_message, "text/html")
-                msg.mixed_subtype = "related"
-                msg.attach(logo_img)
+                related = MIMEMultipart("related")
+                related.attach(MIMEText(html_message, "html", "utf-8"))
+                related.attach(logo_img)
+                mime = MIMEMultipart("alternative")
+                mime["Subject"] = subject
+                mime["From"] = get_from_email()
+                mime["To"] = user.email
+                mime["Date"] = formatdate()
+                mime["Message-ID"] = make_msgid()
+                mime.attach(MIMEText(message, "plain", "utf-8"))
+                mime.attach(related)
+
+                class _Msg(EmailMessage):
+                    def message(self, **_):
+                        return mime
+
                 try:
-                    msg.send()
+                    _Msg(subject, "", get_from_email(), [user.email]).send()
                 except Exception:
                     logger.exception("Failed to send password reset email to %s", user.email)
                 if not is_email_configured():
