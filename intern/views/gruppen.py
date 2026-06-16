@@ -235,6 +235,14 @@ def gruppen(request):
     # User count per group to guard the delete button
     group_user_counts = {g.name: g.user_set.count() for g in all_groups}
 
+    group_members = {
+        g.name: [
+            f"{u.first_name} {u.last_name}".strip() or u.username
+            for u in g.user_set.order_by("first_name", "last_name")
+        ]
+        for g in all_groups
+    }
+
     return render(request, "gruppen.html", {
         "seitentitel": "Gruppen",
         "groups": all_groups,
@@ -242,4 +250,5 @@ def gruppen(request):
         "permission_defs": PERMISSION_DEFS,
         "matrix": matrix,
         "group_user_counts": group_user_counts,
+        "group_members": group_members,
     })

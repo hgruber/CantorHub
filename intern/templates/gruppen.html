@@ -302,6 +302,20 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     white-space: normal;
 }
 .perm-tooltip.visible { opacity: 1; }
+.perm-tooltip .member-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 2px;
+}
+.perm-tooltip .member-chip {
+    background: var(--bg-row-hover);
+    color: var(--t1);
+    border-radius: 99px;
+    padding: 1px 8px;
+    font-size: 11.5px;
+    white-space: nowrap;
+}
 .perm-tooltip-title {
     font-size: 11px;
     font-weight: 700;
@@ -345,7 +359,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
                     <td class="perm-user-col perm-user-name">
                         <div class="perm-group-info">
                             <span class="perm-group-name">{{ group.name }}</span>
-                            <span class="perm-group-count" title="Mitglieder in dieser Gruppe">{{ group.user_set.count }}</span>
+                            <span class="perm-group-count" data-group="{{ group.name }}">{{ group.user_set.count }}</span>
                             <button type="button" class="perm-delete-btn"
                                     data-group="{{ group.name }}"
                                     {% if group.user_set.count > 0 %}disabled title="Gruppe hat noch {{ group.user_set.count }} Mitglied{% if group.user_set.count != 1 %}er{% endif %}"{% else %}title="Gruppe löschen"{% endif %}>
@@ -385,6 +399,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
 
 {{ matrix|json_script:"matrix-data" }}
 {{ group_user_counts|json_script:"user-counts-data" }}
+{{ group_members|json_script:"group-members-data" }}
 <script>
 (function () {
     'use strict';
@@ -560,6 +575,38 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
         });
         th.addEventListener('mousemove', positionTooltip);
         th.addEventListener('mouseleave', function () {
+            clearTimeout(tooltipTimer);
+            tooltip.classList.remove('visible');
+        });
+    });
+
+    // Tooltip für Mitglieder-Anzahl-Badge
+    var groupMembers = JSON.parse(document.getElementById('group-members-data').textContent);
+
+    document.querySelectorAll('.perm-group-count[data-group]').forEach(function(badge) {
+        badge.addEventListener('mouseenter', function(e) {
+            var members = groupMembers[badge.dataset.group] || [];
+            tooltipTitle.textContent = badge.dataset.group + ' · Mitglieder';
+            tooltipBody.innerHTML = '';
+            if (members.length === 0) {
+                tooltipBody.textContent = 'Keine Mitglieder';
+            } else {
+                var chips = document.createElement('div');
+                chips.className = 'member-chips';
+                members.forEach(function(name) {
+                    var span = document.createElement('span');
+                    span.className = 'member-chip';
+                    span.textContent = name;
+                    chips.appendChild(span);
+                });
+                tooltipBody.appendChild(chips);
+            }
+            positionTooltip(e);
+            clearTimeout(tooltipTimer);
+            tooltipTimer = setTimeout(function() { tooltip.classList.add('visible'); }, 250);
+        });
+        badge.addEventListener('mousemove', positionTooltip);
+        badge.addEventListener('mouseleave', function() {
             clearTimeout(tooltipTimer);
             tooltip.classList.remove('visible');
         });
