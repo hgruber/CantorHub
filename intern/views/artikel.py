@@ -33,19 +33,21 @@ __all__ = [
 def _artikel_access(user, artikel_name):
     """Returns (can_read, can_edit).
 
-    Superusers always get True, True.
-    No ArtikelPermission rows for this name → True, True (open wiki default).
+    No ArtikelPermission rows → True, True (open wiki default).
+    No row with can_read=True → read is open to everyone.
+    No row with can_edit=True → edit is open to everyone.
     Otherwise: user must be in a group with the respective flag.
     """
     perms = ArtikelPermission.objects.filter(artikel_name=artikel_name)
     if not perms.exists():
         return True, True
+    read_restricted = perms.filter(can_read=True).exists()
+    edit_restricted = perms.filter(can_edit=True).exists()
     gids = user.groups.values_list("id", flat=True)
     up = perms.filter(group_id__in=gids)
-    return (
-        up.filter(can_read=True).exists(),
-        up.filter(can_edit=True).exists(),
-    )
+    can_read = not read_restricted or up.filter(can_read=True).exists()
+    can_edit = not edit_restricted or up.filter(can_edit=True).exists()
+    return can_read, can_edit
 
 
 @login_required
@@ -61,9 +63,11 @@ def article_list(request):
         .annotate(size=Length("text"))
     )
 
-    # Filter out articles restricted to groups the user isn't in
+    # Filter out articles where reading is restricted to groups the user isn't in
     restricted_names = set(
-        ArtikelPermission.objects.values_list("artikel_name", flat=True).distinct()
+        ArtikelPermission.objects.filter(can_read=True)
+        .values_list("artikel_name", flat=True)
+        .distinct()
     )
     if request.user.has_perm("intern.manage_artikel_permissions"):
         readable_restricted = restricted_names
