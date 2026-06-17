@@ -679,7 +679,7 @@ class MitgliederTabelle(tables.Table):
     avatar = tables.Column()
     first_name = tables.Column()
     last_name = tables.Column()
-    stimme = tables.Column(order_by=("stimme_pos", "last_name", "first_name"))
+    stimme = tables.Column(order_by=("_stimme_pos", "last_name", "first_name"))
     email = tables.EmailColumn()
     xmpp = tables.EmailColumn()
     geburtstag = tables.DateColumn()

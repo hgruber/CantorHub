@@ -19,6 +19,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from ._pagination import paginate_ordered
 
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
@@ -319,10 +320,8 @@ def folder_view(request, pk):
     q = (request.GET.get("q") or "").strip()
     if len(q) >= 2:
         all_files = _folder_search_records(original_pk, q, user=request.user)
-        page_items = all_files[offset : offset + _FOLDER_PAGE_SIZE + 1]
-        has_more = len(page_items) > _FOLDER_PAGE_SIZE
-        if has_more:
-            page_items = page_items[:_FOLDER_PAGE_SIZE]
+        probe = OrdnerTabelle(all_files)
+        page_items, has_more = paginate_ordered(request, probe, offset, _FOLDER_PAGE_SIZE)
         table = OrdnerTabelle(page_items)
         RequestConfig(request, paginate=False).configure(table)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -471,7 +470,7 @@ def folder_view(request, pk):
 
     # Sort the full datasets before pagination so ordering is correct across pages.
     # Folders always come first; the sort key is applied within each group separately.
-    _ALLOWED_SORT_FIELDS = {"name", "besitzer", "created", "modified", "size"}
+    _ALLOWED_SORT_FIELDS = {"name", "besitzer", "created", "modified", "size", "type"}
     raw_sort = request.GET.get("sort", "name")
     if raw_sort.startswith("-"):
         sort_field, sort_reverse = raw_sort[1:], True

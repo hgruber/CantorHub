@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from ._pagination import paginate_ordered
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -162,11 +163,9 @@ def termin_list(request):
         offset = max(0, int(request.GET.get("offset", 0)))
     except (ValueError, TypeError):
         offset = 0
-    rows = list(termin_queryset[offset : offset + _PAGE_SIZE + 1])
-    has_more = len(rows) > _PAGE_SIZE
-    if has_more:
-        rows = rows[:_PAGE_SIZE]
 
+    probe = TerminTabelle(termin_queryset)
+    rows, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
     table = TerminTabelle(rows)
     RequestConfig(request, paginate=False).configure(table)
 

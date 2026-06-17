@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from ._pagination import paginate_ordered
 
 from filer.models import File
 
@@ -46,7 +47,8 @@ def mitglied_list(request):
             mitteilungen=Mitteilung.objects.filter(sender=OuterRef("pk"))
             .values("sender")
             .annotate(cnt=Count("*"))
-            .values("cnt")
+            .values("cnt"),
+            _stimme_pos=User.stimme_order_case(),
         )
         .prefetch_related("groups")
         .order_by("last_name", "first_name")
@@ -67,11 +69,8 @@ def mitglied_list(request):
     except (ValueError, TypeError):
         offset = 0
 
-    page = list(mitglieder_filter.qs[offset : offset + _PAGE_SIZE + 1])
-    has_more = len(page) > _PAGE_SIZE
-    if has_more:
-        page = page[:_PAGE_SIZE]
-
+    probe = MitgliederTabelle(mitglieder_filter.qs, visible_fields=fields, viewer=None)
+    page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
     table = MitgliederTabelle(page, visible_fields=fields, viewer=request.user, counter_offset=offset)
     RequestConfig(request, paginate=False).configure(table)
 

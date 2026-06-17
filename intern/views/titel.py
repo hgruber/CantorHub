@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from ._pagination import paginate_ordered
 
 from filer.models import File
 
@@ -116,11 +117,8 @@ def titel_list(request):
     except (ValueError, TypeError):
         offset = 0
 
-    page = list(qs[offset : offset + _PAGE_SIZE + 1])
-    has_more = len(page) > _PAGE_SIZE
-    if has_more:
-        page = page[:_PAGE_SIZE]
-
+    probe = RepertoireTabelle(qs, visible_fields=fields)
+    page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
     table = RepertoireTabelle(page, visible_fields=fields, counter_offset=offset)
     RequestConfig(request, paginate=False).configure(table)
 

@@ -7,6 +7,7 @@ from django_tables2 import RequestConfig
 from ..forms import OrtForm
 from ..models import Ort
 from ..tables import OrtTabelle
+from ._pagination import paginate_ordered
 
 __all__ = [
     "ort_list",
@@ -27,11 +28,8 @@ def ort_list(request):
     except (ValueError, TypeError):
         offset = 0
 
-    page = list(qs[offset : offset + _PAGE_SIZE + 1])
-    has_more = len(page) > _PAGE_SIZE
-    if has_more:
-        page = page[:_PAGE_SIZE]
-
+    probe = OrtTabelle(qs)
+    page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
     table = OrtTabelle(page)
     RequestConfig(request, paginate=False).configure(table)
 
