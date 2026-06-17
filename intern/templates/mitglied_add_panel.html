@@ -1,0 +1,73 @@
+{# Off-Canvas zum Einladen oder manuellen Anlegen eines Mitglieds. #}
+{# Wird via {% include %} aus table.html eingebunden; das „+" in der Topbar toggelt #AddPanel. #}
+<div class="add-panel offcanvas" id="AddPanel">
+
+    {# ── Schritt 1: Einladung per E-Mail ──────────────────────── #}
+    <div id="invite-step">
+        <div class="add-panel-header">
+            <strong>Neues Mitglied einladen</strong>
+            <button type="button" class="add-panel-close" onclick="toggle('AddPanel')" aria-label="Schließen">&#x2715;</button>
+        </div>
+        <form method="post" action="{% url 'mitglied_invite' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ invite_form.email.id_for_label }}">{{ invite_form.email.label }}</label>
+                {{ invite_form.email }}
+                {% if invite_form.email.errors %}<div class="invalid-feedback">{{ invite_form.email.errors }}</div>{% endif %}
+                {% if invite_form.email.help_text %}<small class="form-text text-muted">{{ invite_form.email.help_text }}</small>{% endif %}
+            </div>
+            <div class="add-panel-actions">
+                <button type="submit" class="btn btn-primary">Senden</button>
+                <button type="button" class="btn btn-secondary" onclick="toggle('AddPanel')">Abbrechen</button>
+            </div>
+        </form>
+        <button type="button" class="btn btn-secondary add-panel-alt" id="show-manual">Stattdessen manuell anlegen</button>
+    </div>
+
+    {# ── Schritt 2: Manuelles Anlegen ─────────────────────────── #}
+    <div id="manual-step" style="display:none">
+        <div class="add-panel-header">
+            <strong>Mitglied manuell anlegen</strong>
+            <button type="button" class="add-panel-close" onclick="toggle('AddPanel')" aria-label="Schließen">&#x2715;</button>
+        </div>
+        <form method="post" action="{% url add %}">
+            {% csrf_token %}
+            {% for field in add_form %}
+            <div class="form-group">
+                {% if field.field.widget.input_type == 'checkbox' %}
+                <label class="checkbox-label">{{ field }} {{ field.label }}</label>
+                {% else %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% endif %}
+                {% if field.errors %}<div class="invalid-feedback">{{ field.errors }}</div>{% endif %}
+                {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+            </div>
+            {% endfor %}
+            <div class="add-panel-actions">
+                <button type="submit" class="btn btn-primary">Speichern</button>
+                <button type="button" class="btn btn-secondary" id="show-invite">Zurück</button>
+            </div>
+        </form>
+    </div>
+
+    {# Vanilla-JS-Umschalter zwischen den beiden Schritten. #}
+    <script>
+    (function () {
+        var panel = document.getElementById('AddPanel');
+        if (!panel) return;
+        var inviteStep = panel.querySelector('#invite-step');
+        var manualStep = panel.querySelector('#manual-step');
+        var toManual   = panel.querySelector('#show-manual');
+        var toInvite   = panel.querySelector('#show-invite');
+        if (toManual) toManual.addEventListener('click', function () {
+            inviteStep.style.display = 'none';
+            manualStep.style.display = '';
+        });
+        if (toInvite) toInvite.addEventListener('click', function () {
+            manualStep.style.display = 'none';
+            inviteStep.style.display = '';
+        });
+    })();
+    </script>
+</div>

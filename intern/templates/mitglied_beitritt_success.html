@@ -1,0 +1,17 @@
+{% extends 'mitglied_public_base.html' %}
+{% block title %}Antrag eingegangen – Just Gospel Frankfurt{% endblock %}
+
+{% block header %}
+    <div class="join-status-icon join-status-ok" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <h1>Antrag eingegangen</h1>
+{% endblock %}
+
+{% block body %}
+    <div class="join-message">
+        <p>Vielen Dank{% if user.first_name %}, {{ user.first_name }}{% endif %}! Dein Mitgliedsantrag ist bei uns eingegangen.</p>
+        <p>Über die Aufnahme entscheidet der Vorstand. Sobald darüber entschieden wurde, erhältst Du eine weitere Nachricht per E-Mail.</p>
+        <p class="join-message-muted">Du musst nichts weiter tun.</p>
+    </div>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends 'mitglied_public_base.html' %}
+{% block title %}Mitglied werden – Just Gospel Frankfurt{% endblock %}
+{% block wrap_modifier %} join-wide{% endblock %}
+
+{% block header %}
+    <h1>Mitglied werden</h1>
+    <p class="join-intro">
+        Schön, dass Du bei Just Gospel Frankfurt mitsingen möchtest! Bitte fülle das
+        folgende Formular aus. Über die Aufnahme entscheidet anschließend der Vorstand.
+    </p>
+    <span class="join-email" title="Deine eingeladene E-Mail-Adresse">{{ email }}</span>
+{% endblock %}
+
+{% block body %}
+<form method="post" class="join-form" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    {# ── Person ──────────────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Person</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.first_name.id_for_label }}">Vorname{% if form.first_name.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}<div class="invalid-feedback">{{ form.first_name.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.last_name.id_for_label }}">Nachname{% if form.last_name.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}<div class="invalid-feedback">{{ form.last_name.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.geburtstag.id_for_label }}">Geburtsdatum{% if form.geburtstag.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.geburtstag }}
+                {% if form.geburtstag.errors %}<div class="invalid-feedback">{{ form.geburtstag.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.stimme.id_for_label }}">Stimme{% if form.stimme.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.stimme }}
+                {% if form.stimme.errors %}<div class="invalid-feedback">{{ form.stimme.errors }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Adresse ─────────────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Adresse</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.strasse.id_for_label }}">Straße{% if form.strasse.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.strasse }}
+                {% if form.strasse.errors %}<div class="invalid-feedback">{{ form.strasse.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.plz.id_for_label }}">PLZ{% if form.plz.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.plz }}
+                {% if form.plz.errors %}<div class="invalid-feedback">{{ form.plz.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.ort.id_for_label }}">Ort{% if form.ort.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.ort }}
+                {% if form.ort.errors %}<div class="invalid-feedback">{{ form.ort.errors }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Kontakt ─────────────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Kontakt</h3>
+        <p class="join-hint">Bitte gib mindestens eine Telefonnummer an.</p>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.telefon.id_for_label }}">Telefon</label>
+                {{ form.telefon }}
+                {% if form.telefon.errors %}<div class="invalid-feedback">{{ form.telefon.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.telefon_mobil.id_for_label }}">Mobiltelefon</label>
+                {{ form.telefon_mobil }}
+                {% if form.telefon_mobil.errors %}<div class="invalid-feedback">{{ form.telefon_mobil.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.telefon_job.id_for_label }}">Telefon (Arbeit)</label>
+                {{ form.telefon_job }}
+                {% if form.telefon_job.errors %}<div class="invalid-feedback">{{ form.telefon_job.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.telefon_job_mobil.id_for_label }}">Mobiltelefon (Arbeit)</label>
+                {{ form.telefon_job_mobil }}
+                {% if form.telefon_job_mobil.errors %}<div class="invalid-feedback">{{ form.telefon_job_mobil.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.fax.id_for_label }}">Fax</label>
+                {{ form.fax }}
+                {% if form.fax.errors %}<div class="invalid-feedback">{{ form.fax.errors }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Zugang ──────────────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Zugang</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">Benutzername{% if form.username.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="invalid-feedback">{{ form.username.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}">Passwort{% if form.password1.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}<div class="invalid-feedback">{{ form.password1.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}">Passwort wiederholen{% if form.password2.field.required %} <span class="req">*</span>{% endif %}</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}<div class="invalid-feedback">{{ form.password2.errors }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Einwilligungen ──────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Einwilligungen</h3>
+        <div class="join-consents">
+            <label class="checkbox-label join-consent">{{ form.zustimmung_datenschutz }} <span>{{ form.zustimmung_datenschutz.label }}</span></label>
+            {% if form.zustimmung_datenschutz.errors %}<div class="invalid-feedback">{{ form.zustimmung_datenschutz.errors }}</div>{% endif %}
+
+            <label class="checkbox-label join-consent">{{ form.zustimmung_datenverarbeitung }} <span>{{ form.zustimmung_datenverarbeitung.label }}</span></label>
+            {% if form.zustimmung_datenverarbeitung.errors %}<div class="invalid-feedback">{{ form.zustimmung_datenverarbeitung.errors }}</div>{% endif %}
+
+            <label class="checkbox-label join-consent">{{ form.anerkennung_satzung }} <span>{{ form.anerkennung_satzung.label }}</span></label>
+            {% if form.anerkennung_satzung.errors %}<div class="invalid-feedback">{{ form.anerkennung_satzung.errors }}</div>{% endif %}
+
+            <label class="checkbox-label join-consent">{{ form.zusage_beitrag }} <span>{{ form.zusage_beitrag.label }}</span></label>
+            {% if form.zusage_beitrag.errors %}<div class="invalid-feedback">{{ form.zusage_beitrag.errors }}</div>{% endif %}
+        </div>
+    </div>
+
+    <p class="join-required-note"><span class="req">*</span> Pflichtfeld</p>
+
+    <div class="join-actions">
+        <button type="submit" class="btn btn-primary">Antrag absenden</button>
+    </div>
+</form>
+{% endblock %}

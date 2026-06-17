@@ -553,12 +553,14 @@ class ChangeLog(models.Model):
     ACTION_DELETE = "delete"
     ACTION_LOGIN = "login"
     ACTION_LOGOUT = "logout"
+    ACTION_APPLICATION = "apply"
     ACTION_CHOICES = [
         (ACTION_CREATE, "Erstellt"),
         (ACTION_UPDATE, "Geändert"),
         (ACTION_DELETE, "Gelöscht"),
         (ACTION_LOGIN, "eingeloggt"),
         (ACTION_LOGOUT, "ausgeloggt"),
+        (ACTION_APPLICATION, "Neuer Mitgliedsantrag"),
     ]
 
     timestamp = models.DateTimeField(default=datetime.now)

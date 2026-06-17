@@ -105,6 +105,42 @@ Forum→MUC delivery: `forum_send` only writes the `Mitteilung`; the persistent 
 
 `article_view` shows the latest version by default, or a specific one via `?version=<n>`. When viewing an outdated version it renders the `.version-banner` — a warning plus a version stepper with previous/next links (`prev_version` / `next_version`, computed via DB queries so gaps in the version sequence are skipped) and an "Aktuelle Version" button. History and unified/side-by-side diffs live at `/intern/artikel/<name>/history/` and `/diff/`.
 
+### Member application flow (Mitglieds-Beitritt)
+
+Two ways to add a member, both behind the `+` in `/intern/mitglied/` (perm `intern.add_user`).
+The off-canvas panel (`templates/mitglied_add_panel.html`, included via the
+`add_panel_include` context var in `table.html`) is two-step:
+
+1. **Invite** (default step): an admin enters only an e-mail and submits to
+   `mitglied_invite` (`views/mitglieder.py`). This sends a branded e-mail with a
+   non-guessable link to the public join form. No user is created yet. The link
+   carries the e-mail in a `TimestampSigner` token (salt `intern.mitglied_invite`,
+   **7-day** validity) — `make_invite_token()` / `_read_invite_token()` in
+   `views/auth.py`. Stateless: no DB model, no placeholder user.
+2. **Manuell anlegen** (JS-revealed): the existing `MitgliedAddForm` posting to
+   `mitglied_add`, which creates an **active** member immediately (unchanged).
+
+The public join form lives at `/intern/beitritt/<token>/` (`mitglied_beitritt` in
+`views/auth.py`, **no** `login_required`). `MitgliedBeitrittForm` (`forms.py`) validates
+all member fields — required: first/last name, all address fields, `geburtstag`,
+`username` (regex `^[A-Za-z0-9._-]{3,30}$` + case-insensitive uniqueness via
+`username__iexact`), at least one phone, two matching passwords (`validate_password`),
+and four mandatory consent checkboxes (Datenschutz, Datenverarbeitung, Satzung,
+Beitrag — links are dummy `#`). On success the member is created with
+`is_active=False`, a confirmation mail goes to the applicant, and a notification mail
+goes to all active members with `intern.change_user` (`_member_managers()`). The public
+pages (`mitglied_beitritt.html`, `_success.html`, `_invalid.html`) extend the standalone
+`mitglied_public_base.html` shell (no sidebar), not `base.html`.
+
+The application is logged in the ChangeLog as a distinct action
+`ChangeLog.ACTION_APPLICATION` (`"apply"` → "Neuer Mitgliedsantrag"): the view sets
+`user._audit_application = True` before saving and `signals._write_audit_log` maps that
+to the application action (the action code is ≤8 chars to fit `action`'s `max_length`).
+
+All three new e-mails (`templates/emails/mitglied_invite.html`,
+`mitglied_beitritt_success.html`, `mitglied_antrag_admin.html`) and the password-reset
+mail go through `intern.mail.send_branded_mail()` (branded card with `cid:logo`).
+
 ### Key models (`intern/models.py`)
 
 | Model | Purpose |
@@ -170,6 +206,7 @@ Items found during code review, ordered by estimated risk of the fix:
 
 ### Notable utilities (`intern/`)
 
+- `mail.py` — `send_branded_mail(subject, to, template, context, text_body=None)`: renders an HTML template into a branded `multipart/alternative` mail with the embedded logo (`cid:logo`) and a plain-text fallback; resolves the sender via `get_from_email()`; never raises. Used by the password-reset and member-application mails.
 - `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file links)
 - `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings
 - `fuzzy.py` — fuzzy song title matching used in article references

@@ -14,6 +14,7 @@ urlpatterns = [
     ),
     path("register/", views.register, name="register"),
     path("register_success/", views.register_success, name="register_success"),
+    path("beitritt/<str:token>/", views.mitglied_beitritt, name="mitglied_beitritt"),
     path(
         "reset/<uidb64>/<token>/",
         views.CantorPasswordResetConfirmView.as_view(),
@@ -102,6 +103,7 @@ urlpatterns = [
     path("mitglied/", views.mitglied_list, name="mitglied_list"),
     path("mitglied/emails/", views.mitglied_emails, name="mitglied_emails"),
     path("mitglied/add/", views.mitglied_add, name="mitglied_add"),
+    path("mitglied/invite/", views.mitglied_invite, name="mitglied_invite"),
     path("mitglied/<int:id>/", views.mitglied_view, name="mitglied_view"),
     path("mitglied/<int:id>/edit/", views.mitglied_edit, name="mitglied_edit"),
     path("mitglied/<int:id>/passwd/", views.mitglied_passwd, name="mitglied_passwd"),

@@ -139,7 +139,9 @@
             </form>
         </div>
     {% endif %}
-    {% if add_form %}
+    {% if add_panel_include %}
+    {% include add_panel_include %}
+    {% elif add_form %}
     <div class="add-panel offcanvas" id="AddPanel">
         <div class="add-panel-header">
             <strong>{{ add_label|default:"Neu anlegen" }}</strong>

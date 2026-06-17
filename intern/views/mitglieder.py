@@ -8,6 +8,7 @@ from django.db.models import Count, OuterRef
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from ._pagination import paginate_ordered
@@ -16,10 +17,12 @@ from filer.models import File
 
 from intern import ejabberd, folders
 from intern.app_settings import get_map_center, is_ejabberd_configured
+from intern.mail import send_branded_mail
 
-from ..forms import MitgliedAddForm, UserEditForm
+from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..models import Abstimmung, Artikel, Mitteilung, PRIVACY_FIELDS, User, Zusage
 from ..tables import MitgliederFilter, MitgliederTabelle
+from .auth import make_invite_token
 from .files import _get_file_extension
 
 logger = logging.getLogger(__name__)
@@ -33,6 +36,7 @@ __all__ = [
     "mitglied_edit",
     "mitglied_passwd",
     "mitglied_add",
+    "mitglied_invite",
     "mitglied_delete",
 ]
 
@@ -104,6 +108,8 @@ def mitglied_list(request):
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
             "add": "mitglied_add" if request.user.has_perm("intern.add_user") else None,
             "add_form": MitgliedAddForm() if request.user.has_perm("intern.add_user") else None,
+            "invite_form": MitgliedInviteForm() if request.user.has_perm("intern.add_user") else None,
+            "add_panel_include": "mitglied_add_panel.html" if request.user.has_perm("intern.add_user") else None,
             "add_label": "Neues Mitglied",
             "has_more": has_more,
             "next_offset": offset + _PAGE_SIZE,
@@ -358,6 +364,40 @@ def mitglied_emails(request):
             name = f"{user.first_name} {user.last_name}".strip()
             entries.append(f"{name} <{user.email}>")
     return JsonResponse({"emails": entries})
+
+
+@permission_required("intern.add_user", raise_exception=True)
+@require_POST
+def mitglied_invite(request):
+    """Verschickt eine Einladung mit signiertem Beitritts-Link an eine E-Mail."""
+    form = MitgliedInviteForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Bitte gib eine gültige E-Mail-Adresse ein.")
+        return redirect("mitglied_list")
+
+    email = form.cleaned_data["email"]
+    if User.objects.filter(email__iexact=email).exists():
+        messages.warning(
+            request, f"Es existiert bereits ein Mitglied mit der E-Mail {email}."
+        )
+
+    token = make_invite_token(email)
+    link = request.build_absolute_uri(reverse("mitglied_beitritt", args=[token]))
+    send_branded_mail(
+        "Einladung zu Just Gospel Frankfurt",
+        email,
+        "emails/mitglied_invite.html",
+        {"link": link},
+        text_body=(
+            "Hallo,\n\n"
+            "Du wurdest eingeladen, Mitglied bei Just Gospel Frankfurt zu werden.\n"
+            "Über diesen Link kannst Du Deinen Antrag ausfüllen "
+            "(7 Tage gültig):\n\n"
+            f"{link}"
+        ),
+    )
+    messages.success(request, f"Einladung an {email} verschickt.")
+    return redirect("mitglied_list")
 
 
 @permission_required("intern.add_user", raise_exception=True)

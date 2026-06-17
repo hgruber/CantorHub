@@ -5665,3 +5665,169 @@ tr.row-fresh td {
 .uc-status.ok  { color: #16a34a; }
 .uc-status.err { color: var(--brand); }
 [data-theme="dark"] .uc-status.ok { color: #4ade80; }
+
+/* =================================================== */
+/* Öffentliches Beitritts-Formular (join pages)        */
+/* =================================================== */
+
+/* Standalone-Seiten laden intern.css ohne App-Shell — den globalen
+   no-scroll/flex-Reset von html,body wieder aufheben, damit die Seite
+   normal scrollt und der Inhalt zentriert. */
+html.join-page,
+body.join-page {
+    height: auto;
+    min-height: 100%;
+    overflow: auto;
+}
+body.join-page {
+    display: block;
+    background: var(--bg-app);
+}
+
+.join-wrap {
+    max-width: 480px;            /* schmal: Erfolg / ungültig */
+    margin: 0 auto;
+    padding: 32px 16px 48px;
+}
+.join-wrap.join-wide {
+    max-width: 720px;            /* breit: Beitritts-Formular */
+}
+
+.join-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 28px 28px 24px;
+}
+
+.join-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+.join-logo {
+    width: 84px;
+    height: auto;
+    margin-bottom: 16px;
+}
+.join-header h1 {
+    margin: 0 0 8px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--t1);
+}
+.join-intro {
+    margin: 0 auto;
+    max-width: 48ch;
+    color: var(--t3);
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+.join-email {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 6px 14px;
+    border-radius: var(--r-sm);
+    background: var(--brand-light);
+    color: var(--brand);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Form: Karten untereinander statt im 2-Spalten-Raster */
+.join-form .detail-card {
+    margin-bottom: 16px;
+}
+.join-hint {
+    margin: -4px 0 10px;
+    font-size: 0.8rem;
+    color: var(--t3);
+}
+/* Fehlermeldungen über die volle Rasterbreite, damit sie das
+   display:contents-Raster nicht verschieben (vgl. .pw-strength). */
+.join-form .form-grid .invalid-feedback {
+    grid-column: 1 / -1;
+}
+.req {
+    color: var(--brand);
+    margin-left: 2px;
+}
+.join-required-note {
+    margin: 4px 2px 0;
+    font-size: 0.8rem;
+    color: var(--t3);
+}
+
+/* Einwilligungen */
+.join-consents {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 4px;
+}
+.join-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    font-weight: 400;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--t2);
+    cursor: pointer;
+}
+.join-consent input[type="checkbox"] {
+    width: auto;
+    margin: 2px 0 0;
+    flex-shrink: 0;
+}
+.join-consent a {
+    color: var(--brand);
+    text-decoration: underline;
+}
+
+.join-actions {
+    margin-top: 20px;
+}
+.join-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 11px 14px;
+    font-size: 14px;
+}
+
+/* Status-Seiten (Erfolg / ungültig) */
+.join-status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+}
+.join-status-icon svg {
+    width: 28px;
+    height: 28px;
+}
+.join-status-ok {
+    background: var(--brand-light);
+    color: var(--brand);
+}
+.join-status-warn {
+    background: var(--warn-bg);
+    color: var(--warn-icon);
+}
+.join-message {
+    color: var(--t2);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    text-align: center;
+}
+.join-message p {
+    margin: 0 0 14px;
+}
+.join-message-muted {
+    color: var(--t4);
+    font-size: 0.85rem;
+}

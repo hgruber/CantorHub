@@ -5,15 +5,9 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
-from email.mime.image import MIMEImage
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import formatdate, make_msgid
-
-from django.contrib.staticfiles import finders
-from django.core.mail import EmailMessage
+from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
+from django.db.models import Q
 from django.shortcuts import redirect, render
-from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -21,12 +15,11 @@ from django.utils.http import urlsafe_base64_encode
 from intern import ejabberd
 from intern.app_settings import (
     get_config_int,
-    get_from_email,
     is_ejabberd_configured,
-    is_email_configured,
 )
+from intern.mail import send_branded_mail
 
-from ..forms import RegisterForm
+from ..forms import MitgliedBeitrittForm, RegisterForm
 from ..models import User
 
 __all__ = [
@@ -37,6 +30,8 @@ __all__ = [
     "custom_404",
     "custom_500",
     "home",
+    "make_invite_token",
+    "mitglied_beitritt",
     "register",
     "register_success",
 ]
@@ -155,40 +150,13 @@ def register(request):
                     f"Wenn Du das nicht angefordert hast, kannst Du diese E-Mail\n"
                     f"ignorieren — Dein Passwort bleibt unverändert."
                 )
-                html_message = render_to_string(
+                send_branded_mail(
+                    subject,
+                    user.email,
                     "emails/password_reset.html",
                     {"user": user, "link": link},
+                    text_body=message,
                 )
-                logo_path = finders.find("intern/images/icon-192.png")
-                with open(logo_path, "rb") as f:
-                    logo_data = f.read()
-                logo_img = MIMEImage(logo_data)
-                logo_img.add_header("Content-ID", "<logo>")
-                logo_img.add_header("Content-Disposition", "inline", filename="logo.png")
-                related = MIMEMultipart("related")
-                related.attach(MIMEText(html_message, "html", "utf-8"))
-                related.attach(logo_img)
-                mime = MIMEMultipart("alternative")
-                mime["Subject"] = subject
-                mime["From"] = get_from_email()
-                mime["To"] = user.email
-                mime["Date"] = formatdate()
-                mime["Message-ID"] = make_msgid()
-                mime.attach(MIMEText(message, "plain", "utf-8"))
-                mime.attach(related)
-
-                class _Msg(EmailMessage):
-                    def message(self, **_):
-                        return mime
-
-                try:
-                    _Msg(subject, "", get_from_email(), [user.email]).send()
-                except Exception:
-                    logger.exception("Failed to send password reset email to %s", user.email)
-                if not is_email_configured():
-                    logger.warning(
-                        "EMAIL_HOST is not set in Konfiguration — email was written to console, not sent."
-                    )
                 logger.info("Password reset link sent to %s for user %s", user.email, user.username)
             # Immer dieselbe Antwort — kein Rückschluss auf existierende Konten.
             return redirect("register_success")
@@ -232,6 +200,96 @@ class CantorPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
 
 def register_success(request):
     return render(request, "register_success.html")
+
+
+# ---------------------------------------------------------------------------
+# Mitglieds-Beitritt (öffentliches Antragsformular hinter signiertem Link)
+# ---------------------------------------------------------------------------
+
+INVITE_MAX_AGE = 7 * 24 * 3600  # 7 Tage
+_invite_signer = TimestampSigner(salt="intern.mitglied_invite")
+
+
+def make_invite_token(email):
+    """Signierter, 7 Tage gültiger Token, der die eingeladene E-Mail trägt."""
+    return _invite_signer.sign(email)
+
+
+def _read_invite_token(token):
+    """E-Mail aus einem gültigen Token, sonst None (ungültig/abgelaufen)."""
+    try:
+        return _invite_signer.unsign(token, max_age=INVITE_MAX_AGE)
+    except (BadSignature, SignatureExpired):
+        return None
+
+
+def _member_managers():
+    """Aktive Benutzer mit der Berechtigung, Mitglieder zu verwalten."""
+    return User.objects.filter(
+        Q(is_superuser=True)
+        | Q(groups__permissions__codename="change_user")
+        | Q(user_permissions__codename="change_user"),
+        is_active=True,
+    ).distinct()
+
+
+def mitglied_beitritt(request, token):
+    """Öffentliches Beitritts-Formular hinter einem signierten Einladungs-Link.
+
+    Legt bei erfolgreichem Absenden ein *inaktives* Mitglied an, schickt eine
+    Bestätigung an den Antragsteller, benachrichtigt die Mitglieder-Verwalter
+    und protokolliert den Vorgang als „Neuer Mitgliedsantrag".
+    """
+    email = _read_invite_token(token)
+    if not email:
+        return render(request, "mitglied_beitritt_invalid.html", status=400)
+
+    if request.method == "POST":
+        form = MitgliedBeitrittForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.email = email
+            user.is_active = False
+            user._audit_user = user
+            user._audit_application = True
+            user.save()
+            form.save_m2m()
+
+            send_branded_mail(
+                "Dein Mitgliedsantrag bei Just Gospel Frankfurt",
+                email,
+                "emails/mitglied_beitritt_success.html",
+                {"user": user},
+                text_body=(
+                    f"Hallo {user.first_name},\n\n"
+                    f"vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
+                    f"Über die Aufnahme entscheidet der Vorstand — Du erhältst dann\n"
+                    f"eine weitere Nachricht.\n\n"
+                    f"Dein gewünschter Benutzername: {user.username}"
+                ),
+            )
+
+            managers = [u.email for u in _member_managers() if u.email]
+            if managers:
+                link = request.build_absolute_uri(
+                    reverse("mitglied_view", args=[user.id])
+                )
+                send_branded_mail(
+                    "Neuer Mitgliedsantrag",
+                    managers,
+                    "emails/mitglied_antrag_admin.html",
+                    {"applicant": user, "link": link},
+                    text_body=(
+                        f"Es liegt ein neuer Mitgliedsantrag vor:\n\n"
+                        f"{user.first_name} {user.last_name} ({email})\n\n"
+                        f"Details: {link}"
+                    ),
+                )
+            return render(request, "mitglied_beitritt_success.html", {"user": user})
+    else:
+        form = MitgliedBeitrittForm()
+
+    return render(request, "mitglied_beitritt.html", {"form": form, "email": email})
 
 
 def custom_400(request, exception):

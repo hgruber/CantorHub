@@ -192,7 +192,7 @@ def _log_change(instance, user, action, old_values=None):
                         str(old) if old is not None else None,
                         str(new) if new is not None else None,
                     ]
-        elif action == ChangeLog.ACTION_CREATE:
+        elif action in (ChangeLog.ACTION_CREATE, ChangeLog.ACTION_APPLICATION):
             for field in allowed:
                 val = getattr(instance, field, None)
                 if val is not None and val != "" and val is not False:
@@ -238,6 +238,8 @@ def _write_audit_log(instance, created, model_key):
     user = getattr(instance, "_audit_user", None)
     if getattr(instance, "_audit_is_login", False):
         action = ChangeLog.ACTION_LOGIN
+    elif created and getattr(instance, "_audit_application", False):
+        action = ChangeLog.ACTION_APPLICATION
     else:
         action = ChangeLog.ACTION_CREATE if created else ChangeLog.ACTION_UPDATE
     _log_change(
