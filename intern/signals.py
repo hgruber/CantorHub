@@ -161,7 +161,10 @@ def _send_activation_mail(user):
     """Send welcome or reactivation mail after a user is activated. Never raises."""
     try:
         from django.utils import timezone
-        from .app_settings import get_config, get_vereinsname
+        from .app_settings import get_config, get_config_bool, get_vereinsname
+
+        if not get_config_bool("ACTIVATION_EMAIL"):
+            return
         from .mail import send_branded_mail
         from .models import User
 

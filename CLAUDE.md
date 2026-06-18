@@ -310,7 +310,8 @@ the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
 `ANTRAG_MAIL_TEXT` (applicant confirmation email body; placeholders `{vorname}`, `{username}`),
 `SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms),
 `WILLKOMMEN_MAIL_TEXT` (welcome email on first activation; placeholders `{vorname}`, `{vereinsname}`),
-`REAKTIVIERT_MAIL_TEXT` (email on reactivation of a previously active member; placeholders `{vorname}`, `{vereinsname}`).
+`REAKTIVIERT_MAIL_TEXT` (email on reactivation of a previously active member; placeholders `{vorname}`, `{vereinsname}`),
+`ACTIVATION_EMAIL` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing).
 
 `VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into
 every template context by `config/context_processors.py` (`{{ vereinsname }}`), and
