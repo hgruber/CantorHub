@@ -126,9 +126,11 @@ The public join form lives at `/intern/beitritt/<token>/` (`mitglied_beitritt` i
 all member fields — required: first/last name, all address fields, `geburtstag`,
 `username` (regex `^[A-Za-z0-9._-]{3,30}$` + case-insensitive uniqueness via
 `username__iexact`), at least one phone, two matching passwords (`validate_password`),
-and four mandatory consent checkboxes (Datenschutz, Datenverarbeitung, Satzung,
-Beitrag — links are dummy `#`). On success the member is created with
-`is_active=False`, a confirmation mail goes to the applicant, and a notification mail
+and four mandatory consent checkboxes (Datenschutz — links to `/datenschutz/`, Datenverarbeitung, Satzung,
+Beitrag). On success the member is created with `is_active=False`, a PDF of the completed
+application is saved to the filer folder **„Mitgliederverwaltung"** (Vorstand-only,
+via `_save_antrag_pdf` in `views/auth.py` using reportlab; best-effort, never blocks
+registration), a confirmation mail goes to the applicant, and a notification mail
 goes to all active members with `intern.change_user` (`_member_managers()`). The public
 pages (`mitglied_beitritt.html`, `_success.html`, `_invalid.html`) extend the standalone
 `mitglied_public_base.html` shell (no sidebar), not `base.html`.
@@ -207,7 +209,7 @@ Items found during code review, ordered by estimated risk of the fix:
 
 ### Notable utilities (`intern/`)
 
-- `mail.py` — `send_branded_mail(subject, to, template, context, text_body=None)`: renders an HTML template into a branded `multipart/alternative` mail with the embedded logo (`cid:logo`) and a plain-text fallback; resolves the sender via `get_from_email()`; never raises. Used by the password-reset and member-application mails.
+- `mail.py` — `send_branded_mail(subject, to, template, context, text_body=None, attachments=None)`: renders an HTML template into a branded mail with the embedded logo (`cid:logo`) and a plain-text fallback; resolves the sender via `get_from_email()`; never raises. `attachments` is an optional list of `(filename, bytes, content_type)` tuples — when present the outer MIME type is `multipart/mixed`. Used by the password-reset and member-application mails (the beitritt confirmation includes the application PDF as attachment).
 - `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file links)
 - `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings
 - `fuzzy.py` — fuzzy song title matching used in article references

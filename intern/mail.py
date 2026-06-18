@@ -7,6 +7,8 @@ carries a plain-text fallback. The sender address is resolved at send time via
 """
 
 import logging
+from email import encoders
+from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -23,12 +25,13 @@ logger = logging.getLogger(__name__)
 _LOGO_STATIC = "intern/images/icon-192.png"
 
 
-def send_branded_mail(subject, to, template, context, text_body=None):
+def send_branded_mail(subject, to, template, context, text_body=None, attachments=None):
     """Render ``template`` to HTML and send it as a branded email.
 
     ``to`` may be a single address or an iterable of addresses (all placed in
     the To header). ``text_body`` is the plain-text fallback; a generic notice
-    is used when omitted.
+    is used when omitted. ``attachments`` is an optional list of
+    ``(filename, bytes, content_type)`` tuples added as file attachments.
     """
     recipients = [to] if isinstance(to, str) else [a for a in to if a]
     if not recipients:
@@ -49,14 +52,28 @@ def send_branded_mail(subject, to, template, context, text_body=None):
         logo_img.add_header("Content-Disposition", "inline", filename="logo.png")
         related.attach(logo_img)
 
-    mime = MIMEMultipart("alternative")
+    alternative = MIMEMultipart("alternative")
+    alternative.attach(MIMEText(plain, "plain", "utf-8"))
+    alternative.attach(related)
+
+    if attachments:
+        mime = MIMEMultipart("mixed")
+        mime.attach(alternative)
+        for fname, data, ctype in attachments:
+            main, sub = ctype.split("/", 1)
+            part = MIMEBase(main, sub)
+            part.set_payload(data)
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", "attachment", filename=fname)
+            mime.attach(part)
+    else:
+        mime = alternative
+
     mime["Subject"] = subject
     mime["From"] = get_from_email()
     mime["To"] = ", ".join(recipients)
     mime["Date"] = formatdate()
     mime["Message-ID"] = make_msgid()
-    mime.attach(MIMEText(plain, "plain", "utf-8"))
-    mime.attach(related)
 
     class _Msg(EmailMessage):
         def message(self, **_):
