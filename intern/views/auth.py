@@ -333,6 +333,7 @@ def mitglied_beitritt(request, token):
             user = form.save(commit=False)
             user.email = email
             user.is_active = False
+            user.date_joined = None
             user._audit_user = user
             user._audit_application = True
             user.save()

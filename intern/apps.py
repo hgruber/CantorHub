@@ -42,6 +42,16 @@ _CONFIG_DEFAULTS = [
      "Dein gewünschter Benutzername: {username}",
      "Bestätigungsmail an Antragsteller (Platzhalter: {vorname}, {username})"),
     ("SATZUNG_FILE_ID",        "",                               "Filer-Datei-ID der aktuellen Satzung (leer → kein Link in Formularen)"),
+    ("WILLKOMMEN_MAIL_TEXT",
+     "Liebe/r {vorname},\n\nwir freuen uns sehr, Dich als neues Mitglied bei {vereinsname} begrüßen zu dürfen!\n\n"
+     "Dein Benutzerkonto ist jetzt freigeschaltet. Du kannst Dich ab sofort im Mitgliederportal anmelden.\n\n"
+     "Herzliche Grüße\nDein Vorstand von {vereinsname}",
+     "Willkommens-Mail bei erster Aktivierung (Platzhalter: {vorname}, {vereinsname})"),
+    ("REAKTIVIERT_MAIL_TEXT",
+     "Liebe/r {vorname},\n\nDein Mitgliedskonto bei {vereinsname} wurde wieder aktiviert.\n\n"
+     "Du kannst Dich ab sofort wieder im Mitgliederportal anmelden.\n\n"
+     "Herzliche Grüße\nDein Vorstand von {vereinsname}",
+     "Mail bei Reaktivierung eines Mitglieds (Platzhalter: {vorname}, {vereinsname})"),
 ]
 
 

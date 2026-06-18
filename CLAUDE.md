@@ -145,9 +145,19 @@ The application is logged in the ChangeLog as a distinct action
 `user._audit_application = True` before saving and `signals._write_audit_log` maps that
 to the application action (the action code is ≤8 chars to fit `action`'s `max_length`).
 
-All three new e-mails (`templates/emails/mitglied_invite.html`,
+All e-mails in this flow (`templates/emails/mitglied_invite.html`,
 `mitglied_beitritt_success.html`, `mitglied_antrag_admin.html`) and the password-reset
 mail go through `intern.mail.send_branded_mail()` (branded card with `cid:logo`).
+
+**Applicants are created with `date_joined=None`** (the field is overridden on `User` to be
+nullable). This is the discriminator for the activation mail: when an admin later sets
+`is_active=True`, `signals._send_activation_mail()` checks `user.date_joined is None` →
+first-time activation → sends `emails/mitglied_willkommen.html` and stamps `date_joined`
+via `User.objects.filter(pk=...).update(date_joined=timezone.now())` (avoids recursive
+signal). If `date_joined` is already set → reactivation → sends `emails/mitglied_reaktiviert.html`.
+Both mail texts are configurable via `WILLKOMMEN_MAIL_TEXT` / `REAKTIVIERT_MAIL_TEXT` in
+`Konfiguration` (placeholders `{vorname}`, `{vereinsname}`). No mail is sent if the user
+has no email address.
 
 ### Member re-confirmation flow (Datenbestätigung)
 
@@ -298,7 +308,9 @@ the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
 `VEREINSNAME` (choir display name, default `"Join us singing the Gospel"`),
 `BESTAETIGUNG_MAIL_TEXT` (re-confirmation invitation email body; placeholders `{vorname}`, `{link}`, `{vereinsname}`),
 `ANTRAG_MAIL_TEXT` (applicant confirmation email body; placeholders `{vorname}`, `{username}`),
-`SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms).
+`SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms),
+`WILLKOMMEN_MAIL_TEXT` (welcome email on first activation; placeholders `{vorname}`, `{vereinsname}`),
+`REAKTIVIERT_MAIL_TEXT` (email on reactivation of a previously active member; placeholders `{vorname}`, `{vereinsname}`).
 
 `VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into
 every template context by `config/context_processors.py` (`{{ vereinsname }}`), and

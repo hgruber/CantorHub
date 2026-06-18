@@ -45,6 +45,15 @@ def fallback_avatar_url(original_filename):
 
 
 class User(AbstractUser):
+    # Override AbstractUser.date_joined: nullable so applications start with None,
+    # and the signal sets it on first activation (= Eintrittsdatum).
+    date_joined = models.DateTimeField(
+        verbose_name="Eintrittsdatum",
+        null=True,
+        blank=True,
+        default=None,
+    )
+
     # --- Legacy Identity ---
     legacy_id = models.PositiveSmallIntegerField(unique=True, null=True)
 

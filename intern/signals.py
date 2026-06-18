@@ -146,6 +146,49 @@ def sync_xmpp_on_user_save(sender, instance, created, **kwargs):
 
     _write_audit_log(instance, created, "User")
 
+    # Welcome / reactivation mail when admin activates a user
+    old_vals = getattr(instance, "_audit_old", None) or {}
+    if (
+        not created
+        and old_vals.get("is_active") is False
+        and instance.is_active
+        and instance.email
+    ):
+        _send_activation_mail(instance)
+
+
+def _send_activation_mail(user):
+    """Send welcome or reactivation mail after a user is activated. Never raises."""
+    try:
+        from django.utils import timezone
+        from .app_settings import get_config, get_vereinsname
+        from .mail import send_branded_mail
+        from .models import User
+
+        vereinsname = get_vereinsname()
+        first_activation = user.date_joined is None
+        if first_activation:
+            User.objects.filter(pk=user.pk).update(date_joined=timezone.now())
+            template = "emails/mitglied_willkommen.html"
+            text_key = "WILLKOMMEN_MAIL_TEXT"
+            subject = f"Willkommen bei {vereinsname}"
+        else:
+            template = "emails/mitglied_reaktiviert.html"
+            text_key = "REAKTIVIERT_MAIL_TEXT"
+            subject = f"Dein Konto bei {vereinsname} wurde wieder aktiviert"
+
+        raw_text = get_config(text_key)
+        text_body = raw_text.format(vorname=user.first_name, vereinsname=vereinsname) if raw_text else None
+        send_branded_mail(
+            subject=subject,
+            to=user.email,
+            template=template,
+            context={"user": user, "vereinsname": vereinsname},
+            text_body=text_body,
+        )
+    except Exception:
+        logger.exception("mail: failed to send activation mail to user %s", user.pk)
+
 
 @receiver(post_delete, sender="intern.User")
 def _audit_user_delete(sender, instance, **kwargs):
