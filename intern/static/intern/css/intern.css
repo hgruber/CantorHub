@@ -1494,6 +1494,15 @@ time {
     justify-content: flex-end;
 }
 
+/* ─── File ID column in Ordner table ────────────────── */
+.file-id-cell {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    width: 1%;
+    user-select: all;
+}
+
 /* ─── Inline new-folder row ─────────────────────────── */
 .nf-row td { padding-top: 6px; padding-bottom: 6px; }
 .nf-name-cell { display: flex; align-items: center; gap: 6px; }

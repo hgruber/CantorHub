@@ -75,6 +75,17 @@ class OrdnerTabelle(tables.Table):
     besitzer = tables.Column(verbose_name="Besitzer")
     created = tables.DateTimeColumn(verbose_name="Hochgeladen")
     modified = tables.DateTimeColumn(verbose_name="Geändert")
+    file_id = tables.Column(
+        verbose_name="ID",
+        accessor="id",
+        orderable=False,
+        attrs={"td": {"class": "file-id-cell"}, "th": {"class": "file-id-cell"}},
+    )
+
+    def render_file_id(self, record):
+        if record["type"] == "Folder":
+            return ""
+        return format_html("#{}", record["id"])
 
     def render_name(self, record):
         if "original_filename" in record:
