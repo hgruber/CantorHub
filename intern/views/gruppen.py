@@ -10,13 +10,14 @@ from ..models import ChangeLog
 __all__ = ["gruppen"]
 
 PERMISSION_DEFS = [
-    # Aktuell (Artikel)
-    ("intern.delete_artikel",             "löschen",        "Artikel"),
-    ("intern.manage_artikel_permissions", "Berechtigungen", "Artikel"),
-    # Forum
-    ("intern.add_forum",                  "anlegen",        "Forum"),
-    ("intern.change_forum",               "bearbeiten",     "Forum"),
-    ("intern.delete_forum",               "löschen",        "Forum"),
+    # Mitglieder
+    ("intern.add_user",                    "anlegen",        "Mitglieder"),
+    ("intern.change_user",                 "bearbeiten",     "Mitglieder"),
+    ("intern.delete_user",                 "löschen",        "Mitglieder"),
+    ("intern.manage_user_permissions",     "Berechtigungen", "Mitglieder"),
+    # Dateien
+    ("intern.delete_folder",             "löschen",        "Dateien"),
+    ("intern.manage_folder_permissions", "Berechtigungen", "Dateien"),
     # Termine
     ("intern.add_termin",                 "anlegen",        "Termine"),
     ("intern.change_termin",              "bearbeiten",     "Termine"),
@@ -26,18 +27,17 @@ PERMISSION_DEFS = [
     ("intern.add_lied",                   "anlegen",        "Repertoire"),
     ("intern.change_lied",                "bearbeiten",     "Repertoire"),
     ("intern.delete_lied",                "löschen",        "Repertoire"),
-    # Mitglieder
-    ("intern.add_user",                    "anlegen",        "Mitglieder"),
-    ("intern.change_user",                 "bearbeiten",     "Mitglieder"),
-    ("intern.delete_user",                 "löschen",        "Mitglieder"),
-    ("intern.manage_user_permissions",     "Berechtigungen", "Mitglieder"),
+    # Aktuell (Artikel)
+    ("intern.delete_artikel",             "löschen",        "Artikel"),
+    ("intern.manage_artikel_permissions", "Berechtigungen", "Artikel"),
+    # Forum
+    ("intern.add_forum",                  "anlegen",        "Forum"),
+    ("intern.change_forum",               "bearbeiten",     "Forum"),
+    ("intern.delete_forum",               "löschen",        "Forum"),
     # Orte
     ("intern.add_ort",                    "anlegen",        "Orte"),
     ("intern.change_ort",                 "bearbeiten",     "Orte"),
     ("intern.delete_ort",                 "löschen",        "Orte"),
-    # Dateien
-    ("intern.delete_folder",             "löschen",        "Dateien"),
-    ("intern.manage_folder_permissions", "Berechtigungen", "Dateien"),
 ]
 
 PERMISSION_DESCRIPTIONS = {
