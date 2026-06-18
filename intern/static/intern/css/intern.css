@@ -1327,6 +1327,7 @@ time {
 .add-panel-checkboxes label { display: flex; align-items: center; gap: 6px; font-weight: normal; font-size: 0.875rem; }
 .add-panel-actions { display: flex; gap: 10px; margin-top: 20px; }
 .add-panel-actions .btn { flex: 1; }
+.add-panel-hint { font-size: 0.8rem; color: var(--t3); margin: 8px 0 16px; line-height: 1.4; }
 
 /* Dropzone fields in AddPanel */
 .dropzone-field {

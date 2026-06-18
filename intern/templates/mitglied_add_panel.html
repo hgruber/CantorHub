@@ -8,6 +8,7 @@
             <strong>Neues Mitglied einladen</strong>
             <button type="button" class="add-panel-close" onclick="toggle('AddPanel')" aria-label="Schließen">&#x2715;</button>
         </div>
+        <p class="add-panel-hint">Eine E-Mail mit einem persönlichen Registrierungslink wird verschickt. Das neue Mitglied füllt das Beitrittsformular selbst aus und wird danach von einem Admin freigeschaltet.</p>
         <form method="post" action="{% url 'mitglied_invite' %}">
             {% csrf_token %}
             <div class="form-group">
