@@ -9,6 +9,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django_tables2.data import TableListData
 
+from intern.app_settings import get_vereinsname_kurz
 from .models import Artikel, ChangeLog, Lied, Ort, PRIVACY_FIELDS, Termin, User
 from .forms import TriStateToggle
 from .replacements import format_bytes, format_datetime
@@ -450,7 +451,7 @@ def _chip_icon(svg, label, extra_cls=""):
 
 def _audio_button_html(url, song_id, title, kind):
     """Render a single play button. kind is 'original' or 'jg'."""
-    type_label = "Original" if kind == "original" else "JG Aufnahme"
+    type_label = "Original" if kind == "original" else f"{get_vereinsname_kurz()} Aufnahme"
     if kind == "jg":
         inner = format_html(
             '{play}<img src="{logo}" class="audio-btn-logo" alt="JG" />',

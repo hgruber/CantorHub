@@ -579,7 +579,7 @@ document.addEventListener("DOMContentLoaded", function () {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: item.title || "",
           artist: item.composer || item.type || "",
-          album: "Just Gospel Frankfurt",
+          album: document.body.dataset.vereinsnameLang || "",
           artwork: ARTWORK,
         });
       } catch (_) {}

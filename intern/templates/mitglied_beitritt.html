@@ -1,11 +1,11 @@
 {% extends 'mitglied_public_base.html' %}
-{% block title %}Mitglied werden – Just Gospel Frankfurt{% endblock %}
+{% block title %}Mitglied werden – {{ vereinsname_lang }}{% endblock %}
 {% block wrap_modifier %} join-wide{% endblock %}
 
 {% block header %}
     <h1>Mitglied werden</h1>
     <p class="join-intro">
-        Schön, dass Du bei Just Gospel Frankfurt mitsingen möchtest! Bitte fülle das
+        Schön, dass Du bei {{ vereinsname_lang }} mitsingen möchtest! Bitte fülle das
         folgende Formular aus. Über die Aufnahme entscheidet anschließend der Vorstand.
     </p>
     <span class="join-email" title="Deine eingeladene E-Mail-Adresse">{{ email }}</span>

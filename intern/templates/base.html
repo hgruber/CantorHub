@@ -9,7 +9,7 @@
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <title>Just Gospel Intern – {{ seitentitel }}</title>
+        <title>{{ vereinsname_kurz }} Intern – {{ seitentitel }}</title>
         <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
         <link rel="apple-touch-icon" href="{% static 'intern/images/icon-192.png' %}">
         <link rel="preconnect" href="https://unpkg.com">
@@ -28,7 +28,7 @@
         <script src="{% static 'intern/js/intern.js' %}" defer></script>
         <script src="{% static 'intern/js/upload-progress.js' %}" defer></script>
     </head>
-    <body{% if request.user.is_authenticated %} data-latest-changelog-id="{{ latest_changelog_id|default:0 }}" data-current-forum="{{ forum|default:'' }}" data-notify-enabled="{{ notify_enabled|yesno:'1,0' }}" data-notify-poll-ms="{{ notify_poll_ms|default:10000 }}" data-notify-dismiss-ms="{{ notify_dismiss_ms|default:6000 }}"{% endif %}>
+    <body data-vereinsname-lang="{{ vereinsname_lang }}"{% if request.user.is_authenticated %} data-latest-changelog-id="{{ latest_changelog_id|default:0 }}" data-current-forum="{{ forum|default:'' }}" data-notify-enabled="{{ notify_enabled|yesno:'1,0' }}" data-notify-poll-ms="{{ notify_poll_ms|default:10000 }}" data-notify-dismiss-ms="{{ notify_dismiss_ms|default:6000 }}"{% endif %}>
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             {% include "sidebar.html" %}

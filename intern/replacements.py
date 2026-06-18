@@ -4,6 +4,8 @@ import re
 from datetime import date, datetime, timedelta
 from typing import Union
 
+from intern.app_settings import get_vereinsname_kurz
+
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File
 
@@ -528,7 +530,7 @@ def apply_replacements(text, request=None):
     result.append(boxed_processor.close())
     if request is not None:
         result.append(
-            '<p id="footer"><img src="/static/intern/images/JG-Frankfurt-wG-color.svg" style="width: 14px;">&nbsp;Just Gospel!</p>'
+            f'<p id="footer"><img src="/static/intern/images/JG-Frankfurt-wG-color.svg" style="width: 14px;">&nbsp;{get_vereinsname_kurz()}!</p>'
         )
     output = "\n".join(result)
     for key, value in placeholders.items():

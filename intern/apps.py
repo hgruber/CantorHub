@@ -30,6 +30,8 @@ _CONFIG_DEFAULTS = [
     ("NOTIFY_POLL_MS",       "10000",                          "Abfrageintervall für Benachrichtigungen (ms)"),
     ("NOTIFY_DISMISS_MS",    "6000",                           "Anzeigedauer einer Benachrichtigung (ms)"),
     ("VEREINSNAME",          "Join us singing the Gospel",     "Name des Chors"),
+    ("VEREINSNAME_LANG",     "Just Gospel! Frankfurt",         "Langer Vereinsname mit Ort (für E-Mail-Header, Seitentitel)"),
+    ("VEREINSNAME_KURZ",     "Just Gospel",                    "Kurzer Vereinsname (für Sidebar, Alt-Texte)"),
     ("MAIL_BESTAETIGUNG",
      "Liebe/r {vorname},\n\nwir bitten Dich, Deine im Mitgliederportal gespeicherten Daten zu prüfen "
      "und zu bestätigen, dass sie korrekt und aktuell sind.\n\nGleichzeitig bitten wir Dich, unsere "

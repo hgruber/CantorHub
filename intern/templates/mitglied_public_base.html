@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" id="meta-theme-color" content="#ffffff">
-    <title>{% block title %}Mitglied werden – Just Gospel Frankfurt{% endblock %}</title>
+    <title>{% block title %}Mitglied werden – {{ vereinsname_lang }}{% endblock %}</title>
     <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
     <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
     {# Dark-Mode vor dem ersten Paint setzen (FOUC vermeiden) – identisch zu base.html. #}
@@ -15,7 +15,7 @@
     <div class="join-wrap{% block wrap_modifier %}{% endblock %}">
         <div class="join-card">
             <div class="join-header">
-                <a href="/"><img class="join-logo" src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" alt="Just Gospel Frankfurt" /></a>
+                <a href="/"><img class="join-logo" src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" alt="{{ vereinsname_lang }}" /></a>
                 {% block header %}{% endblock %}
             </div>
             {% block body %}{% endblock %}

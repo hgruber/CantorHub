@@ -66,6 +66,14 @@ def get_vereinsname():
     return get_config("VEREINSNAME", "Join us singing the Gospel")
 
 
+def get_vereinsname_lang():
+    return get_config("VEREINSNAME_LANG", "Just Gospel! Frankfurt")
+
+
+def get_vereinsname_kurz():
+    return get_config("VEREINSNAME_KURZ", "Just Gospel")
+
+
 def get_document_url(config_key):
     """Gibt die HMAC-Token-URL für ein öffentliches Dokument zurück, oder '#' wenn nicht konfiguriert."""
     from filer.models import File as FilerFile

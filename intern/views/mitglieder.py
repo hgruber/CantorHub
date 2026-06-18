@@ -16,7 +16,7 @@ from ._pagination import paginate_ordered
 from filer.models import File
 
 from intern import ejabberd, folders
-from intern.app_settings import get_map_center, is_ejabberd_configured
+from intern.app_settings import get_map_center, get_vereinsname_lang, is_ejabberd_configured
 from intern.mail import send_branded_mail
 
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
@@ -384,13 +384,13 @@ def mitglied_invite(request):
     token = make_invite_token(email)
     link = request.build_absolute_uri(reverse("mitglied_beitritt", args=[token]))
     send_branded_mail(
-        "Einladung zu Just Gospel Frankfurt",
+        f"Einladung zu {get_vereinsname_lang()}",
         email,
         "emails/mitglied_invite.html",
         {"link": link},
         text_body=(
             "Hallo,\n\n"
-            "Du wurdest eingeladen, Mitglied bei Just Gospel Frankfurt zu werden.\n"
+            f"Du wurdest eingeladen, Mitglied bei {get_vereinsname_lang()} zu werden.\n"
             "Über diesen Link kannst Du Deinen Antrag ausfüllen "
             "(7 Tage gültig):\n\n"
             f"{link}"

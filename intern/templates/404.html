@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Just Gospel Intern – Seite nicht gefunden</title>
+    <title>{{ vereinsname_kurz|default:"Portal" }} Intern – Seite nicht gefunden</title>
     <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
     <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
     <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark")})()</script>
@@ -13,8 +13,8 @@
 <div class="error-standalone">
     <div class="error-card">
         <a href="/" class="error-brand">
-            <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" alt="Just Gospel" />
-            <span>Just Gospel</span>
+            <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" alt="{{ vereinsname_kurz|default:'Portal' }}" />
+            <span>{{ vereinsname_kurz|default:"Portal" }}</span>
         </a>
 
         <div class="error-note">
