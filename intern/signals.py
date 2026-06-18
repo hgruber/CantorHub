@@ -163,7 +163,7 @@ def _send_activation_mail(user):
         from django.utils import timezone
         from .app_settings import get_config, get_config_bool, get_vereinsname
 
-        if not get_config_bool("ACTIVATION_EMAIL"):
+        if not get_config_bool("MAIL_BEI_AKTIVIERUNG"):
             return
         from .mail import send_branded_mail
         from .models import User
@@ -173,11 +173,11 @@ def _send_activation_mail(user):
         if first_activation:
             User.objects.filter(pk=user.pk).update(date_joined=timezone.now())
             template = "emails/mitglied_willkommen.html"
-            text_key = "WILLKOMMEN_MAIL_TEXT"
+            text_key = "MAIL_WILLKOMMEN"
             subject = f"Willkommen bei {vereinsname}"
         else:
             template = "emails/mitglied_reaktiviert.html"
-            text_key = "REAKTIVIERT_MAIL_TEXT"
+            text_key = "MAIL_REAKTIVIERT"
             subject = f"Dein Konto bei {vereinsname} wurde wieder aktiviert"
 
         raw_text = get_config(text_key)

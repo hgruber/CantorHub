@@ -155,7 +155,7 @@ nullable). This is the discriminator for the activation mail: when an admin late
 first-time activation → sends `emails/mitglied_willkommen.html` and stamps `date_joined`
 via `User.objects.filter(pk=...).update(date_joined=timezone.now())` (avoids recursive
 signal). If `date_joined` is already set → reactivation → sends `emails/mitglied_reaktiviert.html`.
-Both mail texts are configurable via `WILLKOMMEN_MAIL_TEXT` / `REAKTIVIERT_MAIL_TEXT` in
+Both mail texts are configurable via `MAIL_WILLKOMMEN` / `MAIL_REAKTIVIERT` in
 `Konfiguration` (placeholders `{vorname}`, `{vereinsname}`). No mail is sent if the user
 has no email address.
 
@@ -168,7 +168,7 @@ re-acknowledge the privacy policy, bylaws, and membership fee schedule.
 (e.g. `--base-url https://portal.example.com`). The command calls
 `send_bestaetigung_mail(user, base_url)` in `views/auth.py`, which:
 1. Creates a `TimestampSigner` token (salt `"intern.mitglied_bestaetigung"`, **30-day** validity) encoding the user PK.
-2. Reads the email body text from the `Konfiguration` key **`BESTAETIGUNG_MAIL_TEXT`** —
+2. Reads the email body text from the `Konfiguration` key **`MAIL_BESTAETIGUNG`** —
    editable via `/intern/konfiguration/` without code changes.
    Placeholders: `{vorname}`, `{link}`, `{vereinsname}`. Falls back to `None` (generic HTML only) if
    the key is empty.
@@ -185,7 +185,7 @@ to the quittance mail (`emails/mitglied_bestaetigung_bestaetigt.html`) sent to t
 No Vorstand notification. Three public templates extend `mitglied_public_base.html`:
 `mitglied_bestaetigung.html`, `_success.html`, `_invalid.html`.
 
-`BESTAETIGUNG_MAIL_TEXT` and `ANTRAG_MAIL_TEXT` are seeded by `0003_import.py` during the initial migration and listed in `_CONFIG_DEFAULTS` in `intern/apps.py` as fallback for fresh installs.
+`MAIL_BESTAETIGUNG` and `MAIL_ANTRAG` are seeded by `0003_import.py` during the initial migration and listed in `_CONFIG_DEFAULTS` in `intern/apps.py` as fallback for fresh installs.
 
 ### Key models (`intern/models.py`)
 
@@ -306,12 +306,12 @@ Current keys: `EJABBERD_API_URL`, `EJABBERD_HOST`, `EJABBERD_MUC_SERVICE`,
 the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
 `MAP_DEFAULT_ZOOM`, `PWRESET_MAX_PER_HOUR`, `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`,
 `VEREINSNAME` (choir display name, default `"Join us singing the Gospel"`),
-`BESTAETIGUNG_MAIL_TEXT` (re-confirmation invitation email body; placeholders `{vorname}`, `{link}`, `{vereinsname}`),
-`ANTRAG_MAIL_TEXT` (applicant confirmation email body; placeholders `{vorname}`, `{username}`),
+`MAIL_BESTAETIGUNG` (re-confirmation invitation email body; placeholders `{vorname}`, `{link}`, `{vereinsname}`),
+`MAIL_ANTRAG` (applicant confirmation email body; placeholders `{vorname}`, `{username}`),
 `SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms),
-`WILLKOMMEN_MAIL_TEXT` (welcome email on first activation; placeholders `{vorname}`, `{vereinsname}`),
-`REAKTIVIERT_MAIL_TEXT` (email on reactivation of a previously active member; placeholders `{vorname}`, `{vereinsname}`),
-`ACTIVATION_EMAIL` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing).
+`MAIL_WILLKOMMEN` (welcome email on first activation; placeholders `{vorname}`, `{vereinsname}`),
+`MAIL_REAKTIVIERT` (email on reactivation of a previously active member; placeholders `{vorname}`, `{vereinsname}`),
+`MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing).
 
 `VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into
 every template context by `config/context_processors.py` (`{{ vereinsname }}`), and

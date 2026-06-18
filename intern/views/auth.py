@@ -346,7 +346,7 @@ def mitglied_beitritt(request, token):
             except Exception:
                 logger.exception("Antrag-PDF konnte nicht erstellt werden fuer %s", user.username)
 
-            _antrag_tmpl = get_config("ANTRAG_MAIL_TEXT") or (
+            _antrag_tmpl = get_config("MAIL_ANTRAG") or (
                 "Hallo {vorname},\n\n"
                 "vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
                 "Über die Aufnahme entscheidet der Vorstand — Du erhältst dann\n"
@@ -415,7 +415,7 @@ def make_bestaetigung_url(user, base_url):
 
 def _get_bestaetigung_text(user, link):
     try:
-        template_text = get_config("BESTAETIGUNG_MAIL_TEXT")
+        template_text = get_config("MAIL_BESTAETIGUNG")
         if not template_text:
             return None
         return template_text.format(
@@ -424,7 +424,7 @@ def _get_bestaetigung_text(user, link):
             vereinsname=get_vereinsname(),
         )
     except Exception:
-        logger.warning("BESTAETIGUNG_MAIL_TEXT nicht konfiguriert oder fehlerhaft")
+        logger.warning("MAIL_BESTAETIGUNG nicht konfiguriert oder fehlerhaft")
         return None
 
 
