@@ -1,0 +1,184 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de" class="join-page">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" id="meta-theme-color" content="#ffffff">
+    <title>Datenschutzerklärung – Join us singing the Gospel</title>
+    <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
+    <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
+    <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark");var m=document.getElementById("meta-theme-color");if(m)m.setAttribute("content",t==="dark"?"#1a1a2e":"#ffffff")})()</script>
+</head>
+<body class="join-page">
+<div class="join-wrap join-wide">
+    <div class="join-card">
+        <div class="join-header">
+            <a href="/"><img class="join-logo" src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" alt="Join us singing the Gospel" /></a>
+            <h1>Datenschutzerklärung</h1>
+            <p class="join-intro">Join us singing the Gospel</p>
+        </div>
+
+        <div class="wiki">
+            <h2>1. Verantwortliche</h2>
+            <p>
+                Für die Verarbeitung personenbezogener Daten im Rahmen des Gospelchors
+                <strong>„Join us singing the Gospel"</strong> sind folgende Personen gemeinsam
+                verantwortlich (Art. 26 DSGVO):
+            </p>
+            <ul>
+                {% for person in vorstand %}
+                <li>{{ person.first_name }} {{ person.last_name }}, {{ person.strasse }}, {{ person.plz }} {{ person.ort }}</li>
+                {% endfor %}
+            </ul>
+            <p>
+                Anfragen zum Datenschutz richten Sie bitte an:
+                <a href="mailto:{{ kontakt_email }}">{{ kontakt_email }}</a>
+            </p>
+
+            <h2>2. Erhobene Daten</h2>
+            <p>Im Rahmen der Mitgliedschaft und der Nutzung des internen Mitgliederportals
+            verarbeiten wir folgende personenbezogene Daten:</p>
+            <ul>
+                <li><strong>Stammdaten:</strong> Vor- und Nachname, Anschrift, Geburtsdatum</li>
+                <li><strong>Kontaktdaten:</strong> E-Mail-Adresse, Telefonnummern (privat, geschäftlich, mobil)</li>
+                <li><strong>Chorbezogene Daten:</strong> Stimmlage, Benutzername im Portal</li>
+                <li><strong>Optionale Angaben:</strong> Profiltext, Profilfoto (Avatar)</li>
+                <li><strong>Technische Zugangsdaten:</strong> Passwort (ausschließlich verschlüsselt gespeichert),
+                    XMPP-Kennung für den internen Chat</li>
+                <li><strong>Aktivitätsdaten:</strong> Forum-Beiträge, Terminzusagen und -absagen,
+                    Datei-Uploads, Abstimmungsergebnisse</li>
+                <li><strong>Systemdaten:</strong> Sitzungs-ID, Zeitpunkt der letzten Anmeldung,
+                    Änderungsprotokoll (nachvollziehbar wer welche Daten wann geändert hat)</li>
+            </ul>
+
+            <h2>3. Zwecke und Rechtsgrundlagen</h2>
+            <p>Wir verarbeiten Ihre Daten ausschließlich für folgende Zwecke:</p>
+            <ul>
+                <li>
+                    <strong>Mitgliederverwaltung</strong> – Führung der Mitgliederliste,
+                    interne Kommunikation, Verwaltung von Mitgliedsbeiträgen.<br>
+                    Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Erfüllung des Mitgliedschaftsvertrags)
+                </li>
+                <li>
+                    <strong>Proben- und Auftrittorganisation</strong> – Verwaltung von Terminen,
+                    Zu- und Absagen, Repertoire- und Konzertplanung.<br>
+                    Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
+                </li>
+                <li>
+                    <strong>Interne Kommunikation</strong> – Betrieb des Forums und
+                    (sofern aktiviert) des XMPP-Chat-Systems.<br>
+                    Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
+                </li>
+                <li>
+                    <strong>Technischer Betrieb</strong> – Authentifizierung, Sitzungsverwaltung,
+                    Änderungsprotokoll zur Nachvollziehbarkeit von Datenänderungen.<br>
+                    Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse
+                    am sicheren und nachvollziehbaren Betrieb des Portals)
+                </li>
+                <li>
+                    <strong>Profilfoto und Freitext</strong> – nur bei freiwilliger Angabe.<br>
+                    Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO (Einwilligung durch freiwillige Eingabe)
+                </li>
+            </ul>
+
+            <h2>4. Sichtbarkeit Ihrer Daten im Portal</h2>
+            <p>
+                Das Mitgliederportal ist ausschließlich für aktive Mitglieder zugänglich.
+                Alle Mitglieder können Profilseiten anderer Mitglieder einsehen.
+            </p>
+            <p>
+                <strong>Datenschutz-Einstellungen:</strong> Sie können folgende Felder Ihres Profils
+                eigenständig vor Mitgliedern ohne Verwaltungsfunktion verbergen:
+                E-Mail-Adresse, XMPP-Kennung, alle Telefonnummern, Geburtsdatum sowie Anschrift.
+                Wenn Sie Ihre Anschrift verbergen, werden automatisch auch Ihre gespeicherten
+                Kartenkoordinaten gelöscht, um eine Rekonstruktion der Adresse zu verhindern.
+            </p>
+            <p>
+                Mitglieder des Vorstands und Personen mit Verwaltungsrechten haben stets vollständigen
+                Zugriff auf alle Mitgliedsdaten, soweit dies zur Verwaltung des Chors erforderlich ist.
+            </p>
+
+            <h2>5. Weitergabe an Dritte</h2>
+            <p>
+                Wir geben Ihre personenbezogenen Daten nicht an Dritte weiter.
+                Eine Übermittlung in Länder außerhalb der EU bzw. des EWR findet nicht statt.
+            </p>
+
+            <h2>6. Hosting und technischer Betrieb</h2>
+            <p>
+                Das Mitgliederportal wird auf einem dedizierten Server betrieben.
+                Mit dem Hosting-Anbieter besteht ein Vertrag zur Auftragsverarbeitung
+                gemäß Art. 28 DSGVO, der den Schutz Ihrer Daten sicherstellt.
+            </p>
+
+            <h2>7. Cookies und Tracking</h2>
+            <p>
+                Das Portal verwendet ausschließlich technisch notwendige Session-Cookies zur
+                Authentifizierung. Tracking- oder Analyse-Cookies werden nicht eingesetzt.
+                Es findet kein Web-Tracking statt.
+            </p>
+
+            <h2>8. Speicherdauer</h2>
+            <p>
+                Ihre Mitgliedsdaten werden für die Dauer Ihrer Mitgliedschaft gespeichert.
+                Nach Beendigung der Mitgliedschaft werden personenbezogene Daten gelöscht,
+                sobald keine gesetzlichen Aufbewahrungspflichten mehr entgegenstehen.
+                Für Buchführungs- und Vereinsunterlagen gilt eine gesetzliche
+                Aufbewahrungsfrist von bis zu 10 Jahren (§ 257 HGB, § 147 AO).
+            </p>
+
+            <h2>9. Ihre Rechte</h2>
+            <p>Als betroffene Person stehen Ihnen folgende Rechte zu:</p>
+            <ul>
+                <li>
+                    <strong>Auskunft</strong> (Art. 15 DSGVO) –
+                    Sie können Auskunft über die zu Ihrer Person gespeicherten Daten verlangen.
+                </li>
+                <li>
+                    <strong>Berichtigung</strong> (Art. 16 DSGVO) –
+                    Sie können die Berichtigung unrichtiger Daten verlangen.
+                    Viele Angaben können Sie selbst im Portal unter „Mein Profil" ändern.
+                </li>
+                <li>
+                    <strong>Löschung</strong> (Art. 17 DSGVO) –
+                    Sie können die Löschung Ihrer Daten verlangen, soweit dem keine
+                    gesetzlichen Aufbewahrungspflichten entgegenstehen.
+                </li>
+                <li>
+                    <strong>Einschränkung der Verarbeitung</strong> (Art. 18 DSGVO) –
+                    Sie können in bestimmten Fällen die Einschränkung der Verarbeitung verlangen.
+                </li>
+                <li>
+                    <strong>Datenübertragbarkeit</strong> (Art. 20 DSGVO) –
+                    Sie können Ihre Daten in einem strukturierten, maschinenlesbaren Format erhalten.
+                </li>
+                <li>
+                    <strong>Widerspruch</strong> (Art. 21 DSGVO) –
+                    Sie können der Verarbeitung auf Grundlage berechtigter Interessen widersprechen.
+                </li>
+                <li>
+                    <strong>Widerruf einer Einwilligung</strong> (Art. 7 Abs. 3 DSGVO) –
+                    Eine erteilte Einwilligung (z. B. zur Speicherung eines Profilfotos) können
+                    Sie jederzeit mit Wirkung für die Zukunft widerrufen.
+                </li>
+            </ul>
+            <p>
+                Zur Ausübung dieser Rechte wenden Sie sich bitte an die oben genannten Verantwortlichen.
+            </p>
+
+            <h2>10. Beschwerderecht bei der Aufsichtsbehörde</h2>
+            <p>
+                Sie haben das Recht, sich bei der zuständigen Datenschutz-Aufsichtsbehörde zu beschweren:
+            </p>
+            <address>
+                Der Hessische Beauftragte für Datenschutz und Informationsfreiheit (HBDI)<br>
+                Gustav-Stresemann-Ring 1<br>
+                65189 Wiesbaden<br>
+                <a href="https://www.datenschutz.hessen.de" target="_blank" rel="noopener">www.datenschutz.hessen.de</a>
+            </address>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -57,6 +57,7 @@ Nginx serves `/static/` and `/media/` directly; everything else is proxied to gu
 ### URL structure
 
 - `/` — public homepage (`templates/index.html`)
+- `/datenschutz/` — public privacy policy (`templates/datenschutz.html`, no login required, `TemplateView` in `config/urls.py`)
 - `/admin/` — Django admin
 - `/intern/*` — all authenticated views (`intern/urls.py`)
 

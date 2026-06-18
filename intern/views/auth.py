@@ -15,6 +15,7 @@ from django.utils.http import urlsafe_base64_encode
 from intern import ejabberd
 from intern.app_settings import (
     get_config_int,
+    get_from_email,
     is_ejabberd_configured,
 )
 from intern.mail import send_branded_mail
@@ -29,6 +30,7 @@ __all__ = [
     "custom_403",
     "custom_404",
     "custom_500",
+    "datenschutz",
     "home",
     "make_invite_token",
     "mitglied_beitritt",
@@ -78,6 +80,17 @@ class CantorLoginView(auth_views.LoginView):
 
 def home(request):
     return render(request, "index.html")
+
+
+def datenschutz(request):
+    vorstand = (
+        User.objects.filter(groups__name="Vorstand", is_active=True)
+        .order_by("last_name", "first_name")
+    )
+    return render(request, "datenschutz.html", {
+        "vorstand": vorstand,
+        "kontakt_email": get_from_email(),
+    })
 
 
 def _find_user(username, email, first_name, last_name):

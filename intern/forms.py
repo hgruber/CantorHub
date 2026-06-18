@@ -118,7 +118,7 @@ class MitgliedBeitrittForm(forms.ModelForm):
     zustimmung_datenschutz = forms.BooleanField(
         required=True,
         label=mark_safe(
-            'Ich habe die <a href="#" target="_blank" rel="noopener">'
+            'Ich habe die <a href="/datenschutz/" target="_blank" rel="noopener">'
             "Datenschutzerklärung</a> gelesen und stimme ihr zu."
         ),
     )
