@@ -62,6 +62,10 @@ def get_from_email():
     return get_config("DEFAULT_FROM_EMAIL") or settings.DEFAULT_FROM_EMAIL
 
 
+def get_vereinsname():
+    return get_config("VEREINSNAME", "Join us singing the Gospel")
+
+
 def get_map_center():
     """Return (lat, lng) from the Ort configured as MAP_CENTER_ID."""
     from intern.models import Ort

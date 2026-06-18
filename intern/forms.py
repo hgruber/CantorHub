@@ -233,6 +233,35 @@ class MitgliedBeitrittForm(forms.ModelForm):
         return user
 
 
+class MitgliedBestaetigungForm(forms.Form):
+    bestaetigung_daten = forms.BooleanField(
+        required=True,
+        label="Meine gespeicherten Daten sind korrekt und aktuell.",
+    )
+    zustimmung_datenschutz = forms.BooleanField(
+        required=True,
+        label=mark_safe(
+            'Ich habe die <a href="/datenschutz/" target="_blank" rel="noopener">'
+            "Datenschutzerklärung</a> gelesen und stimme ihr zu."
+        ),
+    )
+    anerkennung_satzung = forms.BooleanField(
+        required=True,
+        label=mark_safe(
+            'Ich erkenne die <a href="#" target="_blank" rel="noopener">'
+            "Satzung</a> des Vereins an."
+        ),
+    )
+    zusage_beitrag = forms.BooleanField(
+        required=True,
+        label=mark_safe(
+            "Ich verpflichte mich, meinen Mitgliedsbeitrag gemäß "
+            '<a href="#" target="_blank" rel="noopener">Beitragsordnung</a> '
+            "pünktlich zu überweisen."
+        ),
+    )
+
+
 class TerminForm(forms.ModelForm):
     uhrzeit = forms.TimeField(
         required=False,

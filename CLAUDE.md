@@ -41,6 +41,11 @@ docker run -p 8000:8000 cantoreub
 | `ejabberd_admin sync` | Full startup sync (ensure bot, assign MUC JIDs, configure rooms); no-op if ejabberd is not configured (`is_ejabberd_configured()`) |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding; no-op if ejabberd is not configured |
 | `ejabberd_admin <group> <verb>` | Admin ops grouped by noun: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
+| `send_reconfirmation --user USERNAME --base-url URL` | Send data-reconfirmation mail to one active member |
+| `send_reconfirmation --all --base-url URL` | Send data-reconfirmation mail to all active members with an email address |
+| `send_reconfirmation --user USERNAME --print-url` | Print the confirmation URL for one member without sending mail (for testing) |
+| `send_reconfirmation --all --print-url` | Print confirmation URLs for all members (tab-separated `username<TAB>url`) without sending mail |
+| `make_invite_url EMAIL --base-url URL` | Print a signed 7-day invite link for the Neuantrag form (`/intern/beitritt/<token>/`) without sending mail |
 
 ## Architecture
 
@@ -143,6 +148,35 @@ to the application action (the action code is ≤8 chars to fit `action`'s `max_
 All three new e-mails (`templates/emails/mitglied_invite.html`,
 `mitglied_beitritt_success.html`, `mitglied_antrag_admin.html`) and the password-reset
 mail go through `intern.mail.send_branded_mail()` (branded card with `cid:logo`).
+
+### Member re-confirmation flow (Datenbestätigung)
+
+Allows the board to request that existing members re-confirm their stored data and
+re-acknowledge the privacy policy, bylaws, and membership fee schedule.
+
+**Trigger:** `manage.py send_reconfirmation --user <username>|--all --base-url <URL>`
+(e.g. `--base-url https://portal.example.com`). The command calls
+`send_bestaetigung_mail(user, base_url)` in `views/auth.py`, which:
+1. Creates a `TimestampSigner` token (salt `"intern.mitglied_bestaetigung"`, **30-day** validity) encoding the user PK.
+2. Reads the email body text from the `Konfiguration` key **`BESTAETIGUNG_MAIL_TEXT`** —
+   editable via `/intern/konfiguration/` without code changes.
+   Placeholders: `{vorname}`, `{link}`, `{vereinsname}`. Falls back to `None` (generic HTML only) if
+   the key is empty.
+3. Sends the branded mail (`emails/mitglied_bestaetigung_aufforderung.html`) with the text as
+   `text_body`.
+
+**Public form:** `/intern/bestaetigung/<token>/` (`mitglied_bestaetigung` in `views/auth.py`,
+no `login_required`). Shows the member's current data (read-only) plus four mandatory
+checkboxes (`MitgliedBestaetigungForm` in `forms.py`): data correct, Datenschutz, Satzung,
+Beitrag.
+
+**On submit:** `_save_bestaetigung_pdf(user)` generates a PDF (reportlab) with all stored
+data + confirmed checkboxes, saves it to **„Mitgliederverwaltung"** in filer, and attaches it
+to the quittance mail (`emails/mitglied_bestaetigung_bestaetigt.html`) sent to the member.
+No Vorstand notification. Three public templates extend `mitglied_public_base.html`:
+`mitglied_bestaetigung.html`, `_success.html`, `_invalid.html`.
+
+`BESTAETIGUNG_MAIL_TEXT` and `ANTRAG_MAIL_TEXT` are seeded by `0003_import.py` during the initial migration and listed in `_CONFIG_DEFAULTS` in `intern/apps.py` as fallback for fresh installs.
 
 ### Key models (`intern/models.py`)
 
@@ -261,7 +295,14 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 Current keys: `EJABBERD_API_URL`, `EJABBERD_HOST`, `EJABBERD_MUC_SERVICE`,
 `EJABBERD_BOT_JID`, `EJABBERD_BOT_PASSWORD`, `EJABBERD_BOT_PORT`, `ICAL_SECRET`,
 the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
-`MAP_DEFAULT_ZOOM`, `PWRESET_MAX_PER_HOUR`, `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`.
+`MAP_DEFAULT_ZOOM`, `PWRESET_MAX_PER_HOUR`, `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`,
+`VEREINSNAME` (choir display name, default `"Join us singing the Gospel"`),
+`BESTAETIGUNG_MAIL_TEXT` (re-confirmation invitation email body; placeholders `{vorname}`, `{link}`, `{vereinsname}`),
+`ANTRAG_MAIL_TEXT` (applicant confirmation email body; placeholders `{vorname}`, `{username}`).
+
+`VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into
+every template context by `config/context_processors.py` (`{{ vereinsname }}`), and
+into every email render in `mail.py`.
 
 For outgoing mail always pass `get_from_email()` as the sender (resolves
 `DEFAULT_FROM_EMAIL` from the DB, falling back to `settings.DEFAULT_FROM_EMAIL`).

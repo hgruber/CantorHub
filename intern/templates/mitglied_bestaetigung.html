@@ -1,0 +1,122 @@
+{% extends 'mitglied_public_base.html' %}
+{% block title %}Daten bestätigen – {{ vereinsname }}{% endblock %}
+{% block wrap_modifier %} join-wide{% endblock %}
+
+{% block header %}
+    <h1>Daten bestätigen</h1>
+    <p class="join-intro">
+        Bitte prüfe Deine gespeicherten Daten und bestätige anschließend, dass sie
+        korrekt und aktuell sind.
+    </p>
+{% endblock %}
+
+{% block body %}
+<form method="post" class="join-form" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    {# ── Aktuelle Daten (nur Anzeige) ──────────────────────────── #}
+    <div class="detail-card">
+        <h3>Deine gespeicherten Daten</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Vorname</label>
+                <div class="form-static">{{ user.first_name }}</div>
+            </div>
+            <div class="form-group">
+                <label>Nachname</label>
+                <div class="form-static">{{ user.last_name }}</div>
+            </div>
+            <div class="form-group">
+                <label>Benutzername</label>
+                <div class="form-static">{{ user.username }}</div>
+            </div>
+            <div class="form-group">
+                <label>E-Mail</label>
+                <div class="form-static">{{ user.email }}</div>
+            </div>
+            {% if user.geburtstag %}
+            <div class="form-group">
+                <label>Geburtsdatum</label>
+                <div class="form-static">{{ user.geburtstag }}</div>
+            </div>
+            {% endif %}
+            <div class="form-group">
+                <label>Stimmlage</label>
+                <div class="form-static">{{ user.stimme }}</div>
+            </div>
+            {% if user.strasse %}
+            <div class="form-group">
+                <label>Straße</label>
+                <div class="form-static">{{ user.strasse }}</div>
+            </div>
+            {% endif %}
+            {% if user.plz or user.ort %}
+            <div class="form-group">
+                <label>PLZ / Ort</label>
+                <div class="form-static">{{ user.plz }} {{ user.ort }}</div>
+            </div>
+            {% endif %}
+            {% if user.telefon %}
+            <div class="form-group">
+                <label>Telefon</label>
+                <div class="form-static">{{ user.telefon }}</div>
+            </div>
+            {% endif %}
+            {% if user.telefon_mobil %}
+            <div class="form-group">
+                <label>Mobil</label>
+                <div class="form-static">{{ user.telefon_mobil }}</div>
+            </div>
+            {% endif %}
+        </div>
+        <p class="join-hint" style="margin-top:0.75rem">
+            Wenn Deine Daten nicht korrekt sind, melde Dich bitte beim Vorstand
+            oder melde Dich im Portal an und ändere sie selbst unter
+            „Profil bearbeiten".
+        </p>
+    </div>
+
+    {# ── Bestätigungen ───────────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Bestätigungen</h3>
+        <div class="join-consents">
+            <label class="checkbox-label join-consent">
+                {{ form.bestaetigung_daten }}
+                <span>{{ form.bestaetigung_daten.label }}</span>
+            </label>
+            {% if form.bestaetigung_daten.errors %}
+                <div class="invalid-feedback">{{ form.bestaetigung_daten.errors }}</div>
+            {% endif %}
+
+            <label class="checkbox-label join-consent">
+                {{ form.zustimmung_datenschutz }}
+                <span>{{ form.zustimmung_datenschutz.label }}</span>
+            </label>
+            {% if form.zustimmung_datenschutz.errors %}
+                <div class="invalid-feedback">{{ form.zustimmung_datenschutz.errors }}</div>
+            {% endif %}
+
+            <label class="checkbox-label join-consent">
+                {{ form.anerkennung_satzung }}
+                <span>{{ form.anerkennung_satzung.label }}</span>
+            </label>
+            {% if form.anerkennung_satzung.errors %}
+                <div class="invalid-feedback">{{ form.anerkennung_satzung.errors }}</div>
+            {% endif %}
+
+            <label class="checkbox-label join-consent">
+                {{ form.zusage_beitrag }}
+                <span>{{ form.zusage_beitrag.label }}</span>
+            </label>
+            {% if form.zusage_beitrag.errors %}
+                <div class="invalid-feedback">{{ form.zusage_beitrag.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="join-actions">
+        <button type="submit" class="btn btn-primary">Bestätigung absenden</button>
+    </div>
+</form>
+{% endblock %}

@@ -2,11 +2,12 @@ from django.conf import settings
 
 
 def project_meta(request):
-    from intern.app_settings import get_config_int
+    from intern.app_settings import get_config_int, get_vereinsname
     result = {
         "VERSION": settings.VERSION,
         "offen_termine": 0,
         "upload_max_mb": get_config_int("UPLOAD_MAX_MB", 50),
+        "vereinsname": get_vereinsname(),
     }
     if request.user.is_authenticated:
         from django.utils.timezone import now

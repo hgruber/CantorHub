@@ -29,6 +29,18 @@ _CONFIG_DEFAULTS = [
     ("PWRESET_MAX_PER_HOUR", "5",                              "Maximale Passwort-Reset-Anfragen pro IP und Stunde"),
     ("NOTIFY_POLL_MS",       "10000",                          "Abfrageintervall für Benachrichtigungen (ms)"),
     ("NOTIFY_DISMISS_MS",    "6000",                           "Anzeigedauer einer Benachrichtigung (ms)"),
+    ("VEREINSNAME",          "Join us singing the Gospel",     "Name des Chors"),
+    ("BESTAETIGUNG_MAIL_TEXT",
+     "Liebe/r {vorname},\n\nwir bitten Dich, Deine im Mitgliederportal gespeicherten Daten zu prüfen "
+     "und zu bestätigen, dass sie korrekt und aktuell sind.\n\nGleichzeitig bitten wir Dich, unsere "
+     "Datenschutzerklärung, die Satzung sowie die Beitragsordnung des Chors erneut zu bestätigen.\n\n"
+     "Bitte klicke auf folgenden Link (gültig 30 Tage):\n{link}\n\nHerzliche Grüße\nDein Vorstand von {vereinsname}",
+     "Text der Datenbestätigungs-Mail (Platzhalter: {vorname}, {link}, {vereinsname})"),
+    ("ANTRAG_MAIL_TEXT",
+     "Hallo {vorname},\n\nvielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
+     "Über die Aufnahme entscheidet der Vorstand — Du erhältst dann\neine weitere Nachricht.\n\n"
+     "Dein gewünschter Benutzername: {username}",
+     "Bestätigungsmail an Antragsteller (Platzhalter: {vorname}, {username})"),
 ]
 
 

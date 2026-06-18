@@ -18,7 +18,7 @@ from django.contrib.staticfiles import finders
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
-from intern.app_settings import get_from_email, is_email_configured
+from intern.app_settings import get_from_email, get_vereinsname, is_email_configured
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
     if not recipients:
         return
 
-    html_message = render_to_string(template, context)
+    html_message = render_to_string(template, {"vereinsname": get_vereinsname(), **context})
     plain = text_body or (
         "Bitte öffne diese Nachricht in einem HTML-fähigen E-Mail-Programm."
     )

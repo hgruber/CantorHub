@@ -21,13 +21,15 @@ from reportlab.pdfgen import canvas as rl_canvas
 
 from intern import ejabberd
 from intern.app_settings import (
+    get_config,
     get_config_int,
     get_from_email,
+    get_vereinsname,
     is_ejabberd_configured,
 )
 from intern.mail import send_branded_mail
 
-from ..forms import MitgliedBeitrittForm, RegisterForm
+from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
 from ..models import User
 
 __all__ = [
@@ -41,8 +43,10 @@ __all__ = [
     "home",
     "make_invite_token",
     "mitglied_beitritt",
+    "mitglied_bestaetigung",
     "register",
     "register_success",
+    "send_bestaetigung_mail",
 ]
 
 logger = logging.getLogger(__name__)
@@ -91,7 +95,7 @@ def _save_antrag_pdf(user, email):
     _, h = A4
 
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(2 * cm, h - 2 * cm, "Mitgliedsantrag - Join us singing the Gospel")
+    c.drawString(2 * cm, h - 2 * cm, f"Mitgliedsantrag - {get_vereinsname()}")
     c.setFont("Helvetica", 10)
     c.drawString(2 * cm, h - 2.8 * cm, f"Eingereicht am: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
@@ -340,18 +344,22 @@ def mitglied_beitritt(request, token):
             except Exception:
                 logger.exception("Antrag-PDF konnte nicht erstellt werden fuer %s", user.username)
 
+            _antrag_tmpl = get_config("ANTRAG_MAIL_TEXT") or (
+                "Hallo {vorname},\n\n"
+                "vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
+                "Über die Aufnahme entscheidet der Vorstand — Du erhältst dann\n"
+                "eine weitere Nachricht.\n\n"
+                "Dein gewünschter Benutzername: {username}"
+            )
             send_branded_mail(
-                "Dein Mitgliedsantrag bei Just Gospel Frankfurt",
+                f"Dein Mitgliedsantrag bei {get_vereinsname()}",
                 email,
                 "emails/mitglied_beitritt_success.html",
                 {"user": user},
                 attachments=pdf_attachment,
-                text_body=(
-                    f"Hallo {user.first_name},\n\n"
-                    f"vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
-                    f"Über die Aufnahme entscheidet der Vorstand — Du erhältst dann\n"
-                    f"eine weitere Nachricht.\n\n"
-                    f"Dein gewünschter Benutzername: {user.username}"
+                text_body=_antrag_tmpl.format(
+                    vorname=user.first_name,
+                    username=user.username,
                 ),
             )
 
@@ -376,6 +384,175 @@ def mitglied_beitritt(request, token):
         form = MitgliedBeitrittForm()
 
     return render(request, "mitglied_beitritt.html", {"form": form, "email": email})
+
+
+# ---------------------------------------------------------------------------
+# Mitglieds-Bestätigung (Daten + Datenschutz / Satzung / Beitrag)
+# ---------------------------------------------------------------------------
+
+BESTAETIGUNG_MAX_AGE = 30 * 24 * 3600  # 30 Tage
+_bestaetigung_signer = TimestampSigner(salt="intern.mitglied_bestaetigung")
+
+
+def _make_bestaetigung_token(user_pk):
+    return _bestaetigung_signer.sign(str(user_pk))
+
+
+def _read_bestaetigung_token(token):
+    try:
+        return int(_bestaetigung_signer.unsign(token, max_age=BESTAETIGUNG_MAX_AGE))
+    except (BadSignature, SignatureExpired, ValueError):
+        return None
+
+
+def make_bestaetigung_url(user, base_url):
+    """Gibt den signierten Bestätigungs-Link für *user* zurück, ohne Mail zu senden."""
+    token = _make_bestaetigung_token(user.pk)
+    return f"{base_url.rstrip('/')}/intern/bestaetigung/{token}/"
+
+
+def _get_bestaetigung_text(user, link):
+    try:
+        template_text = get_config("BESTAETIGUNG_MAIL_TEXT")
+        if not template_text:
+            return None
+        return template_text.format(
+            vorname=user.first_name or user.username,
+            link=link,
+            vereinsname=get_vereinsname(),
+        )
+    except Exception:
+        logger.warning("BESTAETIGUNG_MAIL_TEXT nicht konfiguriert oder fehlerhaft")
+        return None
+
+
+def _save_bestaetigung_pdf(user):
+    buf = BytesIO()
+    c = rl_canvas.Canvas(buf, pagesize=A4)
+    _, h = A4
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(2 * cm, h - 2 * cm, f"Datenbestätigung - {get_vereinsname()}")
+    c.setFont("Helvetica", 10)
+    c.drawString(2 * cm, h - 2.8 * cm, f"Bestätigt am: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+
+    felder = [
+        ("Vorname",      user.first_name),
+        ("Nachname",     user.last_name),
+        ("Benutzername", user.username),
+        ("E-Mail",       user.email or ""),
+        ("Geburtsdatum", str(user.geburtstag) if user.geburtstag else ""),
+        ("Stimmlage",    user.stimme),
+        ("Strasse",      user.strasse or ""),
+        ("PLZ / Ort",    f"{user.plz or ''} {user.ort or ''}".strip()),
+        ("Telefon",      user.telefon or ""),
+        ("Mobil",        user.telefon_mobil or ""),
+    ]
+
+    y = h - 4 * cm
+    for label, wert in felder:
+        if not wert:
+            continue
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(2 * cm, y, f"{label}:")
+        c.setFont("Helvetica", 10)
+        c.drawString(6 * cm, y, wert)
+        y -= 0.65 * cm
+
+    y -= 0.4 * cm
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(2 * cm, y, "Bestätigungen (alle bestätigt):")
+    y -= 0.65 * cm
+    c.setFont("Helvetica", 10)
+    for text in [
+        "Daten korrekt und aktuell",
+        "Datenschutzerklaerung",
+        "Satzung",
+        "Beitragsordnung",
+    ]:
+        c.drawString(2 * cm, y, f"[X]  {text}")
+        y -= 0.65 * cm
+
+    c.save()
+
+    pdf_bytes = buf.getvalue()
+    fname = f"bestaetigung_{user.username}_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+    folder, _ = Folder.objects.get_or_create(name="Mitgliederverwaltung", parent=None)
+    FilerFile.objects.create(
+        file=ContentFile(pdf_bytes, name=fname),
+        original_filename=fname,
+        name=fname,
+        owner=user,
+        folder=folder,
+        mime_type="application/pdf",
+    )
+    return pdf_bytes, fname
+
+
+def send_bestaetigung_mail(user, base_url):
+    """Schickt die Bestätigungs-Aufforderungs-Mail.
+
+    Wird vom Management-Command ``send_reconfirmation`` aufgerufen.
+    ``base_url`` muss Schema + Host enthalten, z. B. ``https://portal.example.com``.
+    """
+    token = _make_bestaetigung_token(user.pk)
+    link = f"{base_url.rstrip('/')}/intern/bestaetigung/{token}/"
+    text_body = _get_bestaetigung_text(user, link)
+    send_branded_mail(
+        "Bitte bestätige Deine Mitgliedsdaten",
+        user.email,
+        "emails/mitglied_bestaetigung_aufforderung.html",
+        {"user": user, "link": link},
+        text_body=text_body,
+    )
+
+
+def mitglied_bestaetigung(request, token):
+    """Öffentliches Bestätigungsformular hinter einem signierten Link.
+
+    Zeigt die aktuellen Mitgliedsdaten und vier Bestätigungs-Checkboxen.
+    Bei Absenden wird ein PDF gespeichert und per Mail als Quittung versandt.
+    Kein Login erforderlich, kein Vorstand-Notify.
+    """
+    user_pk = _read_bestaetigung_token(token)
+    if user_pk is None:
+        return render(request, "mitglied_bestaetigung_invalid.html", status=400)
+
+    try:
+        user = User.objects.get(pk=user_pk, is_active=True)
+    except User.DoesNotExist:
+        return render(request, "mitglied_bestaetigung_invalid.html", status=400)
+
+    if request.method == "POST":
+        form = MitgliedBestaetigungForm(request.POST)
+        if form.is_valid():
+            pdf_attachment = None
+            try:
+                pdf_bytes, pdf_fname = _save_bestaetigung_pdf(user)
+                pdf_attachment = [(pdf_fname, pdf_bytes, "application/pdf")]
+            except Exception:
+                logger.exception(
+                    "Bestätigung-PDF konnte nicht erstellt werden fuer %s", user.username
+                )
+
+            send_branded_mail(
+                f"Deine Datenbestätigung – {get_vereinsname()}",
+                user.email,
+                "emails/mitglied_bestaetigung_bestaetigt.html",
+                {"user": user},
+                attachments=pdf_attachment,
+                text_body=(
+                    f"Hallo {user.first_name},\n\n"
+                    f"vielen Dank für Deine Bestätigung! Anbei findest Du eine Kopie als PDF.\n\n"
+                    f"Herzliche Grüße\n"
+                    f"Dein Vorstand von {get_vereinsname()}"
+                ),
+            )
+            return render(request, "mitglied_bestaetigung_success.html", {"user": user})
+    else:
+        form = MitgliedBestaetigungForm()
+
+    return render(request, "mitglied_bestaetigung.html", {"form": form, "user": user})
 
 
 def custom_400(request, exception):
