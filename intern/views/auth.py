@@ -127,15 +127,16 @@ def _save_antrag_pdf(user, email):
     c.drawString(2 * cm, y, "Einwilligungen (alle bestaetigt):")
     y -= 0.65 * cm
     c.setFont("Helvetica", 10)
-    for text in ["Datenschutzerklaerung", "Datenverarbeitung", "Satzung", "Beitragsordnung"]:
+    for text in ["Datenschutzerklaerung", "Datenverarbeitung", "Satzung"]:
         c.drawString(2 * cm, y, f"[X]  {text}")
         y -= 0.65 * cm
 
     c.save()
 
     pdf_bytes = buf.getvalue()
-    fname = f"antrag_{user.username}_{datetime.now().strftime('%Y-%m-%d')}.pdf"
-    folder, _ = Folder.objects.get_or_create(name="Mitgliederverwaltung", parent=None)
+    fname = f"antrag_{user.first_name}_{user.last_name}_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+    verwaltung, _ = Folder.objects.get_or_create(name="Verwaltung", parent=None)
+    folder, _ = Folder.objects.get_or_create(name="Mitglieder", parent=verwaltung)
     FilerFile.objects.create(
         file=ContentFile(pdf_bytes, name=fname),
         original_filename=fname,
@@ -468,7 +469,6 @@ def _save_bestaetigung_pdf(user):
         "Daten korrekt und aktuell",
         "Datenschutzerklaerung",
         "Satzung",
-        "Beitragsordnung",
     ]:
         c.drawString(2 * cm, y, f"[X]  {text}")
         y -= 0.65 * cm
@@ -476,8 +476,9 @@ def _save_bestaetigung_pdf(user):
     c.save()
 
     pdf_bytes = buf.getvalue()
-    fname = f"bestaetigung_{user.username}_{datetime.now().strftime('%Y-%m-%d')}.pdf"
-    folder, _ = Folder.objects.get_or_create(name="Mitgliederverwaltung", parent=None)
+    fname = f"bestaetigung_{user.first_name}_{user.last_name}_{datetime.now().strftime('%Y-%m-%d')}.pdf"
+    verwaltung, _ = Folder.objects.get_or_create(name="Verwaltung", parent=None)
+    folder, _ = Folder.objects.get_or_create(name="Mitglieder", parent=verwaltung)
     FilerFile.objects.create(
         file=ContentFile(pdf_bytes, name=fname),
         original_filename=fname,

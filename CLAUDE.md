@@ -131,9 +131,9 @@ The public join form lives at `/intern/beitritt/<token>/` (`mitglied_beitritt` i
 all member fields — required: first/last name, all address fields, `geburtstag`,
 `username` (regex `^[A-Za-z0-9._-]{3,30}$` + case-insensitive uniqueness via
 `username__iexact`), at least one phone, two matching passwords (`validate_password`),
-and four mandatory consent checkboxes (Datenschutz — links to `/datenschutz/`, Datenverarbeitung, Satzung,
-Beitrag). On success the member is created with `is_active=False`, a PDF of the completed
-application is saved to the filer folder **„Mitgliederverwaltung"** (Vorstand-only,
+and three mandatory consent checkboxes (Datenschutz — links to `/datenschutz/`, Datenverarbeitung, Satzung —
+links to the PDF configured via `SATZUNG_FILE_ID`). On success the member is created with `is_active=False`, a PDF of the completed
+application is saved to the filer folder **„Verwaltung/Mitglieder"** (Vorstand-only,
 via `_save_antrag_pdf` in `views/auth.py` using reportlab; best-effort, never blocks
 registration), a confirmation mail goes to the applicant, and a notification mail
 goes to all active members with `intern.change_user` (`_member_managers()`). The public
@@ -166,12 +166,11 @@ re-acknowledge the privacy policy, bylaws, and membership fee schedule.
    `text_body`.
 
 **Public form:** `/intern/bestaetigung/<token>/` (`mitglied_bestaetigung` in `views/auth.py`,
-no `login_required`). Shows the member's current data (read-only) plus four mandatory
-checkboxes (`MitgliedBestaetigungForm` in `forms.py`): data correct, Datenschutz, Satzung,
-Beitrag.
+no `login_required`). Shows the member's current data (read-only) plus three mandatory
+checkboxes (`MitgliedBestaetigungForm` in `forms.py`): data correct, Datenschutz, Satzung.
 
 **On submit:** `_save_bestaetigung_pdf(user)` generates a PDF (reportlab) with all stored
-data + confirmed checkboxes, saves it to **„Mitgliederverwaltung"** in filer, and attaches it
+data + confirmed checkboxes, saves it to **„Verwaltung/Mitglieder"** in filer, and attaches it
 to the quittance mail (`emails/mitglied_bestaetigung_bestaetigt.html`) sent to the member.
 No Vorstand notification. Three public templates extend `mitglied_public_base.html`:
 `mitglied_bestaetigung.html`, `_success.html`, `_invalid.html`.
@@ -248,7 +247,7 @@ Items found during code review, ordered by estimated risk of the fix:
 - `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings
 - `fuzzy.py` — fuzzy song title matching used in article references
 - `context_processors.py` — injects global template context (`VERSION`, `upload_max_mb`, notify poll/dismiss intervals)
-- `app_settings.py` — runtime config helpers (`get_config`, `get_config_bool`, `get_config_int`, `get_from_email`, `get_map_center`) backed by the `Konfiguration` table; see "Runtime configuration" below
+- `app_settings.py` — runtime config helpers (`get_config`, `get_config_bool`, `get_config_int`, `get_from_email`, `get_map_center`, `get_document_url`) backed by the `Konfiguration` table; see "Runtime configuration" below. `get_document_url(key)` resolves a Filer file ID stored in `Konfiguration` to a public HMAC token URL (`/intern/datei/<pk>/<token>/<filename>`), returning `"#"` when unconfigured.
 
 **External integrations:**
 - `ejabberd.py` — REST API client for ejabberd admin API (room config, affiliations, invitations, vCards). Message sending is done by the bot over its live session, not here.
@@ -298,7 +297,8 @@ the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
 `MAP_DEFAULT_ZOOM`, `PWRESET_MAX_PER_HOUR`, `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`,
 `VEREINSNAME` (choir display name, default `"Join us singing the Gospel"`),
 `BESTAETIGUNG_MAIL_TEXT` (re-confirmation invitation email body; placeholders `{vorname}`, `{link}`, `{vereinsname}`),
-`ANTRAG_MAIL_TEXT` (applicant confirmation email body; placeholders `{vorname}`, `{username}`).
+`ANTRAG_MAIL_TEXT` (applicant confirmation email body; placeholders `{vorname}`, `{username}`),
+`SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms).
 
 `VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into
 every template context by `config/context_processors.py` (`{{ vereinsname }}`), and

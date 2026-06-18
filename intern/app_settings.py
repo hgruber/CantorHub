@@ -66,6 +66,20 @@ def get_vereinsname():
     return get_config("VEREINSNAME", "Join us singing the Gospel")
 
 
+def get_document_url(config_key):
+    """Gibt die HMAC-Token-URL für ein öffentliches Dokument zurück, oder '#' wenn nicht konfiguriert."""
+    from filer.models import File as FilerFile
+    from intern.views.media import file_token
+    file_id = get_config_int(config_key)
+    if not file_id:
+        return "#"
+    try:
+        f = FilerFile.objects.get(pk=file_id)
+        return f"/intern/datei/{file_id}/{file_token(file_id)}/{f.original_filename}"
+    except FilerFile.DoesNotExist:
+        return "#"
+
+
 def get_map_center():
     """Return (lat, lng) from the Ort configured as MAP_CENTER_ID."""
     from intern.models import Ort

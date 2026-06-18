@@ -134,14 +134,14 @@ class MitgliedBeitrittForm(forms.ModelForm):
             "Satzung</a> des Vereins an."
         ),
     )
-    zusage_beitrag = forms.BooleanField(
-        required=True,
-        label=mark_safe(
-            "Ich verpflichte mich, meinen Mitgliedsbeitrag gemäß "
-            '<a href="#" target="_blank" rel="noopener">Beitragsordnung</a> '
-            "pünktlich zu überweisen."
-        ),
-    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from intern.app_settings import get_document_url
+        satzung_url = get_document_url("SATZUNG_FILE_ID")
+        self.fields["anerkennung_satzung"].label = mark_safe(
+            f'Ich erkenne die <a href="{satzung_url}" target="_blank" rel="noopener">'
+            "Satzung</a> des Vereins an."
+        )
 
     class Meta:
         model = User
@@ -252,14 +252,14 @@ class MitgliedBestaetigungForm(forms.Form):
             "Satzung</a> des Vereins an."
         ),
     )
-    zusage_beitrag = forms.BooleanField(
-        required=True,
-        label=mark_safe(
-            "Ich verpflichte mich, meinen Mitgliedsbeitrag gemäß "
-            '<a href="#" target="_blank" rel="noopener">Beitragsordnung</a> '
-            "pünktlich zu überweisen."
-        ),
-    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from intern.app_settings import get_document_url
+        satzung_url = get_document_url("SATZUNG_FILE_ID")
+        self.fields["anerkennung_satzung"].label = mark_safe(
+            f'Ich erkenne die <a href="{satzung_url}" target="_blank" rel="noopener">'
+            "Satzung</a> des Vereins an."
+        )
 
 
 class TerminForm(forms.ModelForm):
