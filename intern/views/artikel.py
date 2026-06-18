@@ -7,6 +7,7 @@ from django.db.models import OuterRef, Subquery
 from django.db.models.functions import Length
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.timezone import now
 from django_tables2 import RequestConfig
@@ -216,46 +217,71 @@ def dummy(request, *args, **kwargs):
     return render(request, "dummy.html", context)
 
 
-@login_required
+_HISTORY_PAGE_SIZE = 25
+
+
+def _history_rows(all_versions, offset):
+    """Return (rows, has_more, next_offset) for one page of article history."""
+    total = len(all_versions)
+    end_idx = max(0, total - offset)
+    # Fetch PAGE_SIZE items plus one extra predecessor for diff computation.
+    start_idx = max(0, end_idx - _HISTORY_PAGE_SIZE - 1)
+    slice_versions = all_versions[start_idx:end_idx]
+
+    rows = []
+    for i, v in enumerate(slice_versions):
+        actual_idx = start_idx + i
+        if actual_idx == 0:
+            lines_added = len(v.text.splitlines())
+            lines_removed = 0
+        else:
+            prev = slice_versions[i - 1]
+            diff = list(difflib.unified_diff(
+                prev.text.splitlines(), v.text.splitlines(), lineterm=""
+            ))
+            lines_added = sum(1 for ln in diff if ln.startswith("+") and not ln.startswith("+++"))
+            lines_removed = sum(1 for ln in diff if ln.startswith("-") and not ln.startswith("---"))
+        if i == 0 and start_idx > 0:
+            continue  # predecessor fetched for diff context only
+        rows.append({"version": v, "lines_added": lines_added, "lines_removed": lines_removed})
+
+    rows.reverse()
+    next_offset = offset + len(rows)
+    return rows, next_offset < total, next_offset
+
+
 def article_history(request, name):
     can_read, can_edit = _artikel_access(request.user, name)
     if not can_read:
         raise PermissionDenied
-    versions = list(Artikel.objects.filter(name=name).order_by("version"))
-    if not versions:
+    all_versions = list(Artikel.objects.filter(name=name).order_by("version"))
+    if not all_versions:
         return redirect("article_list")
 
-    rows = []
-    for i, v in enumerate(versions):
-        if i == 0:
-            lines_added = len(v.text.splitlines())
-            lines_removed = 0
-        else:
-            prev = versions[i - 1]
-            diff = list(
-                difflib.unified_diff(
-                    prev.text.splitlines(), v.text.splitlines(), lineterm=""
-                )
-            )
-            lines_added = sum(
-                1 for l in diff if l.startswith("+") and not l.startswith("+++")
-            )
-            lines_removed = sum(
-                1 for l in diff if l.startswith("-") and not l.startswith("---")
-            )
-        rows.append(
-            {
-                "version": v,
-                "lines_added": lines_added,
-                "lines_removed": lines_removed,
-            }
+    total = len(all_versions)
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+
+    rows, has_more, next_offset = _history_rows(all_versions, offset)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string(
+            "_artikel_history_rows.html",
+            {"rows": rows, "name": name, "total": total, "offset": offset},
+            request=request,
         )
-    rows.reverse()
+        return JsonResponse({"html": html, "has_more": has_more, "next_offset": next_offset})
 
     context = {
         "seitentitel": f"Versionen: {name}",
         "name": name,
         "rows": rows,
+        "total": total,
+        "offset": offset,
+        "has_more": has_more,
+        "next_offset": next_offset,
         "up": "article_list",
         "view": "article_view",
         "edit": "article_edit" if can_edit else None,
