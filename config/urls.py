@@ -13,7 +13,7 @@ handler500 = "intern.views.custom_500"
 
 urlpatterns = [
     path("favicon.ico", RedirectView.as_view(url="/static/intern/images/JG-Frankfurt-wG-color.svg", permanent=True)),
-    path("datenschutz/", views.datenschutz),
+    path("datenschutz/", views.datenschutz, name="datenschutz"),
     path("", views.home),
     path("intern/", include("intern.urls")),
     path("admin/", admin.site.urls),
