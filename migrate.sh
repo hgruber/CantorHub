@@ -35,7 +35,7 @@ mv /tmp/0003_import.py intern/migrations || true
 python manage.py import_files --path Avatare
 python manage.py migrate
 python manage.py index_files &
-python manage.py thumbnail_files &
+(python manage.py thumbnail_files && python manage.py filer_check --delete-orphans --noinput) &
 
 python manage.py ejabberd_admin sync
 python manage.py ejabberd_bot &
