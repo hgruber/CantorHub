@@ -44,6 +44,7 @@ _CONFIG_DEFAULTS = [
      "Dein gewünschter Benutzername: {username}",
      "Bestätigungsmail an Antragsteller (Platzhalter: {vorname}, {username})"),
     ("SATZUNG_FILE_ID",        "",                               "Filer-Datei-ID der aktuellen Satzung (leer → kein Link in Formularen)"),
+    ("PORTAL_URL",             "",                               "Basis-URL des Portals für Links in E-Mails (z.B. https://portal.example.com)"),
     ("MAIL_BEI_AKTIVIERUNG", "1",                              "Aktivierungsmails versenden (0 = deaktiviert, z.B. während Tests)"),
     ("MAIL_WILLKOMMEN",
      "Liebe/r {vorname},\n\nwir freuen uns sehr, Dich als neues Mitglied bei {vereinsname} begrüßen zu dürfen!\n\n"

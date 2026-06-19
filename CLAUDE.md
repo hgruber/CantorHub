@@ -41,11 +41,11 @@ docker run -p 8000:8000 cantoreub
 | `ejabberd_admin sync` | Full startup sync (ensure bot, assign MUC JIDs, configure rooms); no-op if ejabberd is not configured (`is_ejabberd_configured()`) |
 | `ejabberd_bot` | Run XMPP bot for MUC message forwarding; no-op if ejabberd is not configured |
 | `ejabberd_admin <group> <verb>` | Admin ops grouped by noun: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
-| `send_reconfirmation --user USERNAME --base-url URL` | Send data-reconfirmation mail to one active member |
-| `send_reconfirmation --all --base-url URL` | Send data-reconfirmation mail to all active members with an email address |
+| `send_reconfirmation --user USERNAME` | Send data-reconfirmation mail to one active member |
+| `send_reconfirmation --all` | Send data-reconfirmation mail to all active members with an email address |
 | `send_reconfirmation --user USERNAME --print-url` | Print the confirmation URL for one member without sending mail (for testing) |
 | `send_reconfirmation --all --print-url` | Print confirmation URLs for all members (tab-separated `username<TAB>url`) without sending mail |
-| `make_invite_url EMAIL --base-url URL` | Print a signed 7-day invite link for the Neuantrag form (`/intern/beitritt/<token>/`) without sending mail |
+| `make_invite_url EMAIL` | Print a signed 7-day invite link for the Neuantrag form (`/intern/beitritt/<token>/`) without sending mail |
 
 ## Architecture
 
@@ -164,7 +164,7 @@ has no email address.
 Allows the board to request that existing members re-confirm their stored data and
 re-acknowledge the privacy policy, bylaws, and membership fee schedule.
 
-**Trigger:** `manage.py send_reconfirmation --user <username>|--all --base-url <URL>`
+**Trigger:** `manage.py send_reconfirmation --user <username>|--all` (uses `PORTAL_URL` from config; override with `--base-url URL`)
 (e.g. `--base-url https://portal.example.com`). The command calls
 `send_bestaetigung_mail(user, base_url)` in `views/auth.py`, which:
 1. Creates a `TimestampSigner` token (salt `"intern.mitglied_bestaetigung"`, **30-day** validity) encoding the user PK.
@@ -311,8 +311,9 @@ the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
 `MAIL_BESTAETIGUNG` (re-confirmation invitation email body; placeholders `{vorname}`, `{link}`, `{vereinsname}`),
 `MAIL_ANTRAG` (applicant confirmation email body; placeholders `{vorname}`, `{username}`),
 `SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms),
-`MAIL_WILLKOMMEN` (welcome email on first activation; placeholders `{vorname}`, `{vereinsname}`),
-`MAIL_REAKTIVIERT` (email on reactivation of a previously active member; placeholders `{vorname}`, `{vereinsname}`),
+`PORTAL_URL` (base URL of the portal, e.g. `https://portal.example.com`; when set, a login button is added to activation mails; empty → no button),
+`MAIL_WILLKOMMEN` (welcome email on first activation; placeholders `{vorname}`, `{vereinsname}`, `{link}` (login URL, empty string if `PORTAL_URL` not set)),
+`MAIL_REAKTIVIERT` (email on reactivation of a previously active member; placeholders `{vorname}`, `{vereinsname}`, `{link}` (login URL, empty string if `PORTAL_URL` not set)),
 `MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing).
 
 `VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into

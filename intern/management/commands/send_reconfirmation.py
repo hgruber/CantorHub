@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from intern.app_settings import get_config
 from intern.models import User
 from intern.views.auth import make_bestaetigung_url, send_bestaetigung_mail
 
@@ -26,11 +27,11 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--base-url",
-            default="http://localhost:8000",
+            default=None,
             metavar="URL",
             help=(
                 "Basis-URL des Portals (Schema + Host), z. B. https://portal.example.com. "
-                "Standard: http://localhost:8000"
+                "Standard: PORTAL_URL aus der Konfiguration, sonst http://localhost:8000"
             ),
         )
         parser.add_argument(
@@ -41,7 +42,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        base_url = options["base_url"]
+        base_url = (options["base_url"] or get_config("PORTAL_URL", "") or "http://localhost:8000").rstrip("/")
         print_url = options["print_url"]
 
         if options["user"]:

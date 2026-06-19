@@ -180,13 +180,15 @@ def _send_activation_mail(user):
             text_key = "MAIL_REAKTIVIERT"
             subject = f"Dein Konto bei {vereinsname} wurde wieder aktiviert"
 
+        portal_url = get_config("PORTAL_URL", "").rstrip("/")
+        login_url = f"{portal_url}/intern/login/" if portal_url else None
         raw_text = get_config(text_key)
-        text_body = raw_text.format(vorname=user.first_name, vereinsname=vereinsname) if raw_text else None
+        text_body = raw_text.format(vorname=user.first_name, vereinsname=vereinsname, link=login_url or "") if raw_text else None
         send_branded_mail(
             subject=subject,
             to=user.email,
             template=template,
-            context={"user": user, "vereinsname": vereinsname},
+            context={"user": user, "vereinsname": vereinsname, "login_url": login_url},
             text_body=text_body,
         )
     except Exception:

@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from intern.app_settings import get_config
 from intern.views.auth import make_invite_token
 
 
@@ -17,16 +18,16 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--base-url",
-            default="http://localhost:8000",
+            default=None,
             metavar="URL",
             help=(
                 "Basis-URL des Portals (Schema + Host), z. B. https://portal.example.com. "
-                "Standard: http://localhost:8000"
+                "Standard: PORTAL_URL aus der Konfiguration, sonst http://localhost:8000"
             ),
         )
 
     def handle(self, *args, **options):
         email = options["email"]
-        base_url = options["base_url"].rstrip("/")
+        base_url = (options["base_url"] or get_config("PORTAL_URL", "") or "http://localhost:8000").rstrip("/")
         token = make_invite_token(email)
         self.stdout.write(f"{base_url}/intern/beitritt/{token}/")
