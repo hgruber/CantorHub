@@ -32,6 +32,13 @@
                 {% endfor %}
             </ul>
             <p>
+                Da der Verein nach außen durch jedes Vorstandsmitglied vertreten wird,
+                können Sie Ihre datenschutzrechtlichen Rechte gegenüber jedem der oben
+                genannten Verantwortlichen geltend machen. Jedes Vorstandsmitglied ist
+                im Rahmen der gemeinsamen Verantwortlichkeit nach Art. 26 DSGVO berechtigt
+                und verpflichtet, entsprechende Anfragen entgegenzunehmen und zu beantworten.
+            </p>
+            <p>
                 Anfragen zum Datenschutz richten Sie bitte an:
                 <a href="mailto:{{ kontakt_email }}">{{ kontakt_email }}</a>
             </p>
@@ -50,6 +57,14 @@
                     Datei-Uploads, Abstimmungsergebnisse</li>
                 <li><strong>Systemdaten:</strong> Sitzungs-ID, Zeitpunkt der letzten Anmeldung,
                     Änderungsprotokoll (nachvollziehbar wer welche Daten wann geändert hat)</li>
+                <li><strong>Geokoordinaten:</strong> Werden automatisch aus der gespeicherten
+                    Anschrift berechnet und dienen ausschließlich der Kartendarstellung im Portal.
+                    Sie werden gelöscht, wenn die Anschrift im Profil verborgen oder die
+                    Mitgliedschaft beendet wird.</li>
+                <li><strong>Server-Logdaten:</strong> Bei jedem Seitenaufruf verarbeitet der
+                    Webserver technische Verbindungsdaten (IP-Adresse, Zeitstempel, aufgerufene
+                    URL, HTTP-Statuscode). Diese Daten werden ausschließlich zur Gewährleistung
+                    der Systemsicherheit verarbeitet und nach spätestens 90&nbsp;Tagen gelöscht.</li>
             </ul>
 
             <h2>3. Zwecke und Rechtsgrundlagen</h2>
@@ -66,8 +81,19 @@
                     Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
                 </li>
                 <li>
-                    <strong>Interne Kommunikation</strong> – Betrieb des Forums und
-                    (sofern aktiviert) des XMPP-Chat-Systems.<br>
+                    <strong>Interne Kommunikation</strong> – Betrieb des Forums und des
+                    XMPP-Chat-Systems. Forum-Beiträge werden automatisch in die verknüpften
+                    XMPP-Gruppenchats synchronisiert; umgekehrt werden Nachrichten aus den
+                    XMPP-Chats dauerhaft im Forum gespeichert. Auch nach Beendigung der
+                    Mitgliedschaft bleiben Beiträge im Forum erhalten (s. Abschnitt&nbsp;8).<br>
+                    Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
+                </li>
+                <li>
+                    <strong>E-Mail-Kommunikation</strong> – Zur Kommunikation mit Mitgliedern
+                    (z.&nbsp;B. Terminerinnerungen, Einladungen, Bestätigungen) verwenden wir
+                    die im Portal hinterlegte E-Mail-Adresse. Darüber hinaus kann die
+                    Kommunikation auch über private E-Mail-Adressen der Vorstandsmitglieder
+                    erfolgen.<br>
                     Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
                 </li>
                 <li>
@@ -107,9 +133,16 @@
 
             <h2>6. Hosting und technischer Betrieb</h2>
             <p>
-                Das Mitgliederportal wird auf einem dedizierten Server betrieben.
-                Mit dem Hosting-Anbieter besteht ein Vertrag zur Auftragsverarbeitung
-                gemäß Art. 28 DSGVO, der den Schutz Ihrer Daten sicherstellt.
+                Das Mitgliederportal wird auf einem virtuellen Server (vServer) bei
+                <strong>Hetzner Online GmbH</strong>, Industriestr. 25, 91710 Gunzenhausen,
+                Deutschland betrieben. Der Server steht in Deutschland. Hetzner stellt
+                lediglich die Infrastruktur bereit und hat keinen Zugriff auf die darauf
+                gespeicherten Vereinsdaten. Eine Auftragsverarbeitung nach Art. 28 DSGVO
+                liegt für den Betrieb der Serverinfrastruktur vor.
+            </p>
+            <p>
+                Im Rahmen des Serverbetriebs fallen technische Logdateien an
+                (s. Abschnitt&nbsp;2), die nach spätestens 90&nbsp;Tagen gelöscht werden.
             </p>
 
             <h2>7. Cookies und Tracking</h2>
@@ -125,7 +158,26 @@
                 Nach Beendigung der Mitgliedschaft werden personenbezogene Daten gelöscht,
                 sobald keine gesetzlichen Aufbewahrungspflichten mehr entgegenstehen.
                 Für Buchführungs- und Vereinsunterlagen gilt eine gesetzliche
-                Aufbewahrungsfrist von bis zu 10 Jahren (§ 257 HGB, § 147 AO).
+                Aufbewahrungsfrist von bis zu 10&nbsp;Jahren (§&nbsp;257 HGB, §&nbsp;147 AO).
+            </p>
+            <p>
+                <strong>Forum-Beiträge und XMPP-Nachrichten:</strong>
+                Beiträge, die Sie im Forum oder über den verknüpften XMPP-Gruppenchat
+                verfasst haben, bleiben nach Beendigung der Mitgliedschaft erhalten, um
+                die Kontinuität der Vereinskommunikation zu wahren. Als Verknüpfung
+                bleiben ausschließlich Ihr Vor- und Nachname erhalten. Auf Wunsch können
+                diese durch einen anonymen Platzhalter ersetzt werden; wenden Sie sich
+                dazu an die oben genannten Verantwortlichen.
+            </p>
+            <p>
+                <strong>Änderungsprotokolle:</strong>
+                Das interne Änderungsprotokoll, das nachvollziehbar macht, wer welche
+                Daten wann geändert hat, wird aus Revisionsgründen für 10&nbsp;Jahre
+                aufbewahrt und anschließend gelöscht.
+            </p>
+            <p>
+                <strong>Server-Logdateien:</strong>
+                Technische Server-Logdateien werden nach spätestens 90&nbsp;Tagen gelöscht.
             </p>
 
             <h2>9. Ihre Rechte</h2>
