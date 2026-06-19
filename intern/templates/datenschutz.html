@@ -22,9 +22,11 @@
         <div class="wiki">
             <h2>1. Verantwortliche</h2>
             <p>
-                Für die Verarbeitung personenbezogener Daten im Rahmen des Gospelchors
-                <strong>„{{ vereinsname }}"</strong> sind folgende Personen gemeinsam
-                verantwortlich (Art. 26 DSGVO):
+                Für die Verarbeitung personenbezogener Daten im Rahmen des Vereins
+                <strong>„{{ vereinsname }}"</strong> sind die jeweils amtierenden Mitglieder
+                des Vorstands gemeinsam verantwortlich (Art. 26 DSGVO). Der Vorstand entscheidet
+                gemeinsam über Zwecke und Mittel der Datenverarbeitung und nimmt die
+                datenschutzrechtlichen Pflichten des Vereins wahr.
             </p>
             <ul>
                 {% for person in vorstand %}
@@ -33,13 +35,13 @@
             </ul>
             <p>
                 Da der Verein nach außen durch jedes Vorstandsmitglied vertreten wird,
-                können Sie Ihre datenschutzrechtlichen Rechte gegenüber jedem der oben
+                kannst Du Deine datenschutzrechtlichen Rechte gegenüber jedem der oben
                 genannten Verantwortlichen geltend machen. Jedes Vorstandsmitglied ist
                 im Rahmen der gemeinsamen Verantwortlichkeit nach Art. 26 DSGVO berechtigt
                 und verpflichtet, entsprechende Anfragen entgegenzunehmen und zu beantworten.
             </p>
             <p>
-                Anfragen zum Datenschutz richten Sie bitte an:
+                Anfragen zum Datenschutz richte bitte an:
                 <a href="mailto:{{ kontakt_email }}">{{ kontakt_email }}</a>
             </p>
 
@@ -49,9 +51,10 @@
             <ul>
                 <li><strong>Stammdaten:</strong> Vor- und Nachname, Anschrift, Geburtsdatum</li>
                 <li><strong>Kontaktdaten:</strong> E-Mail-Adresse, Telefonnummern (privat, geschäftlich, mobil)</li>
-                <li><strong>Chorbezogene Daten:</strong> Stimmlage, Benutzername im Portal</li>
+                <li><strong>Vereinsbezogene Daten:</strong> Stimmlage, Benutzername im Portal</li>
                 <li><strong>Optionale Angaben:</strong> Profiltext, Profilfoto (Avatar)</li>
-                <li><strong>Technische Zugangsdaten:</strong> Passwort (ausschließlich verschlüsselt gespeichert),
+                <li><strong>Technische Zugangsdaten:</strong> Passwort (ausschließlich als
+                    kryptografischer Hashwert gespeichert, niemals im Klartext),
                     XMPP-Kennung für den internen Chat</li>
                 <li><strong>Aktivitätsdaten:</strong> Forum-Beiträge, Terminzusagen und -absagen,
                     Datei-Uploads, Abstimmungsergebnisse</li>
@@ -59,7 +62,7 @@
                     Änderungsprotokoll (nachvollziehbar wer welche Daten wann geändert hat)</li>
                 <li><strong>Geokoordinaten:</strong> Werden automatisch aus der gespeicherten
                     Anschrift berechnet und dienen ausschließlich der Kartendarstellung im Portal.
-                    Sie werden gelöscht, wenn die Anschrift im Profil verborgen oder die
+                    Diese werden gelöscht, wenn die Anschrift im Profil verborgen oder die
                     Mitgliedschaft beendet wird.</li>
                 <li><strong>Server-Logdaten:</strong> Bei jedem Seitenaufruf verarbeitet der
                     Webserver technische Verbindungsdaten (IP-Adresse, Zeitstempel, aufgerufene
@@ -68,7 +71,7 @@
             </ul>
 
             <h2>3. Zwecke und Rechtsgrundlagen</h2>
-            <p>Wir verarbeiten Ihre Daten ausschließlich für folgende Zwecke:</p>
+            <p>Wir verarbeiten Deine Daten ausschließlich für folgende Zwecke:</p>
             <ul>
                 <li>
                     <strong>Mitgliederverwaltung</strong> – Führung der Mitgliederliste,
@@ -85,7 +88,7 @@
                     XMPP-Chat-Systems. Forum-Beiträge werden automatisch in die verknüpften
                     XMPP-Gruppenchats synchronisiert; umgekehrt werden Nachrichten aus den
                     XMPP-Chats dauerhaft im Forum gespeichert. Auch nach Beendigung der
-                    Mitgliedschaft bleiben Beiträge im Forum erhalten (s. Abschnitt&nbsp;8).<br>
+                    Mitgliedschaft bleiben Beiträge im Forum erhalten (s. Abschnitt&nbsp;9).<br>
                     Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
                 </li>
                 <li>
@@ -108,30 +111,41 @@
                 </li>
             </ul>
 
-            <h2>4. Sichtbarkeit Ihrer Daten im Portal</h2>
+            <h2>4. Veranstaltungsfotos und Bildmaterial</h2>
+            <p>
+                Im Rahmen von Proben, Auftritten und sonstigen Vereinsveranstaltungen können
+                Fotoaufnahmen angefertigt werden. Soweit diese ausschließlich vereinsintern im
+                geschlossenen Mitgliederportal zur Dokumentation des Vereinslebens veröffentlicht
+                werden, erfolgt die Verarbeitung auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO.
+                Mitglieder können einer solchen Verwendung ihrer Abbildungen jederzeit
+                widersprechen. Im Falle eines Widerspruchs werden betroffene Aufnahmen, soweit
+                technisch und organisatorisch möglich, nicht weiter verwendet oder entfernt.
+            </p>
+
+            <h2>5. Sichtbarkeit Deiner Daten im Portal</h2>
             <p>
                 Das Mitgliederportal ist ausschließlich für aktive Mitglieder zugänglich.
                 Alle Mitglieder können Profilseiten anderer Mitglieder einsehen.
             </p>
             <p>
-                <strong>Datenschutz-Einstellungen:</strong> Sie können folgende Felder Ihres Profils
+                <strong>Datenschutz-Einstellungen:</strong> Du kannst folgende Felder Deines Profils
                 eigenständig vor Mitgliedern ohne Verwaltungsfunktion verbergen:
                 E-Mail-Adresse, XMPP-Kennung, alle Telefonnummern, Geburtsdatum sowie Anschrift.
-                Wenn Sie Ihre Anschrift verbergen, werden automatisch auch Ihre gespeicherten
+                Wenn Du Deine Anschrift verbirgst, werden automatisch auch Deine gespeicherten
                 Kartenkoordinaten gelöscht, um eine Rekonstruktion der Adresse zu verhindern.
             </p>
             <p>
                 Mitglieder des Vorstands und Personen mit Verwaltungsrechten haben stets vollständigen
-                Zugriff auf alle Mitgliedsdaten, soweit dies zur Verwaltung des Chors erforderlich ist.
+                Zugriff auf alle Mitgliedsdaten, soweit dies zur Verwaltung des Vereins erforderlich ist.
             </p>
 
-            <h2>5. Weitergabe an Dritte</h2>
+            <h2>6. Weitergabe an Dritte</h2>
             <p>
-                Wir geben Ihre personenbezogenen Daten nicht an Dritte weiter.
+                Wir geben Deine personenbezogenen Daten nicht an Dritte weiter.
                 Eine Übermittlung in Länder außerhalb der EU bzw. des EWR findet nicht statt.
             </p>
 
-            <h2>6. Hosting und technischer Betrieb</h2>
+            <h2>7. Hosting und technischer Betrieb</h2>
             <p>
                 Das Mitgliederportal wird auf einem virtuellen Server (vServer) bei
                 <strong>Hetzner Online GmbH</strong>, Industriestr. 25, 91710 Gunzenhausen,
@@ -145,16 +159,16 @@
                 (s. Abschnitt&nbsp;2), die nach spätestens 90&nbsp;Tagen gelöscht werden.
             </p>
 
-            <h2>7. Cookies und Tracking</h2>
+            <h2>8. Cookies und Tracking</h2>
             <p>
                 Das Portal verwendet ausschließlich technisch notwendige Session-Cookies zur
                 Authentifizierung. Tracking- oder Analyse-Cookies werden nicht eingesetzt.
                 Es findet kein Web-Tracking statt.
             </p>
 
-            <h2>8. Speicherdauer</h2>
+            <h2>9. Speicherdauer</h2>
             <p>
-                Ihre Mitgliedsdaten werden für die Dauer Ihrer Mitgliedschaft gespeichert.
+                Deine Mitgliedsdaten werden für die Dauer Deiner Mitgliedschaft gespeichert.
                 Nach Beendigung der Mitgliedschaft werden personenbezogene Daten gelöscht,
                 sobald keine gesetzlichen Aufbewahrungspflichten mehr entgegenstehen.
                 Für Buchführungs- und Vereinsunterlagen gilt eine gesetzliche
@@ -162,11 +176,11 @@
             </p>
             <p>
                 <strong>Forum-Beiträge und XMPP-Nachrichten:</strong>
-                Beiträge, die Sie im Forum oder über den verknüpften XMPP-Gruppenchat
-                verfasst haben, bleiben nach Beendigung der Mitgliedschaft erhalten, um
+                Beiträge, die Du im Forum oder über den verknüpften XMPP-Gruppenchat
+                verfasst hast, bleiben nach Beendigung der Mitgliedschaft erhalten, um
                 die Kontinuität der Vereinskommunikation zu wahren. Als Verknüpfung
-                bleiben ausschließlich Ihr Vor- und Nachname erhalten. Auf Wunsch können
-                diese durch einen anonymen Platzhalter ersetzt werden; wenden Sie sich
+                bleiben ausschließlich Dein Vor- und Nachname erhalten. Auf Wunsch können
+                diese durch einen anonymen Platzhalter ersetzt werden; wende Dich
                 dazu an die oben genannten Verantwortlichen.
             </p>
             <p>
@@ -180,48 +194,48 @@
                 Technische Server-Logdateien werden nach spätestens 90&nbsp;Tagen gelöscht.
             </p>
 
-            <h2>9. Ihre Rechte</h2>
-            <p>Als betroffene Person stehen Ihnen folgende Rechte zu:</p>
+            <h2>10. Deine Rechte</h2>
+            <p>Als betroffene Person stehen Dir folgende Rechte zu:</p>
             <ul>
                 <li>
                     <strong>Auskunft</strong> (Art. 15 DSGVO) –
-                    Sie können Auskunft über die zu Ihrer Person gespeicherten Daten verlangen.
+                    Du kannst Auskunft über die zu Deiner Person gespeicherten Daten verlangen.
                 </li>
                 <li>
                     <strong>Berichtigung</strong> (Art. 16 DSGVO) –
-                    Sie können die Berichtigung unrichtiger Daten verlangen.
-                    Viele Angaben können Sie selbst im Portal unter „Mein Profil" ändern.
+                    Du kannst die Berichtigung unrichtiger Daten verlangen.
+                    Viele Angaben kannst Du selbst im Portal unter „Mein Profil" ändern.
                 </li>
                 <li>
                     <strong>Löschung</strong> (Art. 17 DSGVO) –
-                    Sie können die Löschung Ihrer Daten verlangen, soweit dem keine
+                    Du kannst die Löschung Deiner Daten verlangen, soweit dem keine
                     gesetzlichen Aufbewahrungspflichten entgegenstehen.
                 </li>
                 <li>
                     <strong>Einschränkung der Verarbeitung</strong> (Art. 18 DSGVO) –
-                    Sie können in bestimmten Fällen die Einschränkung der Verarbeitung verlangen.
+                    Du kannst in bestimmten Fällen die Einschränkung der Verarbeitung verlangen.
                 </li>
                 <li>
                     <strong>Datenübertragbarkeit</strong> (Art. 20 DSGVO) –
-                    Sie können Ihre Daten in einem strukturierten, maschinenlesbaren Format erhalten.
+                    Du kannst Deine Daten in einem strukturierten, maschinenlesbaren Format erhalten.
                 </li>
                 <li>
                     <strong>Widerspruch</strong> (Art. 21 DSGVO) –
-                    Sie können der Verarbeitung auf Grundlage berechtigter Interessen widersprechen.
+                    Du kannst der Verarbeitung auf Grundlage berechtigter Interessen widersprechen.
                 </li>
                 <li>
                     <strong>Widerruf einer Einwilligung</strong> (Art. 7 Abs. 3 DSGVO) –
-                    Eine erteilte Einwilligung (z. B. zur Speicherung eines Profilfotos) können
-                    Sie jederzeit mit Wirkung für die Zukunft widerrufen.
+                    Eine erteilte Einwilligung (z. B. zur Speicherung eines Profilfotos) kannst
+                    Du jederzeit mit Wirkung für die Zukunft widerrufen.
                 </li>
             </ul>
             <p>
-                Zur Ausübung dieser Rechte wenden Sie sich bitte an die oben genannten Verantwortlichen.
+                Zur Ausübung dieser Rechte wende Dich bitte an die oben genannten Verantwortlichen.
             </p>
 
-            <h2>10. Beschwerderecht bei der Aufsichtsbehörde</h2>
+            <h2>11. Beschwerderecht bei der Aufsichtsbehörde</h2>
             <p>
-                Sie haben das Recht, sich bei der zuständigen Datenschutz-Aufsichtsbehörde zu beschweren:
+                Du hast das Recht, Dich bei der zuständigen Datenschutz-Aufsichtsbehörde zu beschweren:
             </p>
             <address>
                 Der Hessische Beauftragte für Datenschutz und Informationsfreiheit (HBDI)<br>
