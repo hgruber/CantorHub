@@ -186,7 +186,7 @@ quittance mail body is configurable via `MAIL_BESTAETIGUNG_BESTAETIGT` in `Konfi
 No Vorstand notification. Three public templates extend `mitglied_public_base.html`:
 `mitglied_bestaetigung.html`, `_success.html`, `_invalid.html`.
 
-`MAIL_BESTAETIGUNG` and `MAIL_ANTRAG` are seeded by `0003_import.py` during the initial migration. Their `_CONFIG_DEFAULTS` entries in `intern/apps.py` have an empty default (the migration always runs first and populates them via `get_or_create`).
+`MAIL_BESTAETIGUNG` and `MAIL_ANTRAG` are seeded by `_CONFIG_DEFAULTS` in `intern/apps.py` on `post_migrate`, like all other `MAIL_*` keys.
 
 ### Key models (`intern/models.py`)
 
@@ -309,10 +309,10 @@ the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
 `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`),
 `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form),
 `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title),
-`MAIL_ANTRAG` (applicant confirmation email body; seeded by `0003_import.py`),
+`MAIL_ANTRAG` (applicant confirmation email body),
 `MAIL_ANTRAG_ADMIN` (admin notification on new application; `{vorname}`, `{nachname}`, `{email}`, `{link}`),
 `MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing),
-`MAIL_BESTAETIGUNG` (re-confirmation invitation email body; seeded by `0003_import.py`),
+`MAIL_BESTAETIGUNG` (re-confirmation invitation email body),
 `MAIL_BESTAETIGUNG_BESTAETIGT` (quittance mail after member confirms data; `{vorname}`, `{vereinsname}`),
 `MAIL_EINLADUNG` (invite email sent to an email address before registration; `{link}`, `{vereinsname}`, `{vereinsname_lang}` — no user object, use `format_config_text()`),
 `MAIL_NEUES_PASSWORT` (password reset email body),
