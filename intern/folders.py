@@ -36,6 +36,7 @@ def _get(name: str, parent_name: str | None = None) -> int | None:
     return None
 
 
+def verwaltung() -> int | None: return _get("Verwaltung")
 def avatare()    -> int | None: return _get("Avatare")
 def unsortiert() -> int | None: return _get("Unsortiert")
 def forum()      -> int | None: return _get("Forum")

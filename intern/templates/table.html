@@ -5,6 +5,13 @@
 {% if filter %}{% filter_chips filter request chips_skip %}{% endif %}
 {% endblock %}
 {% block topbar_actions_extra %}
+{% if notify_url %}
+<a href="{{ notify_url }}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" title="Mitglieder per E-Mail benachrichtigen">
+  <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+  </svg>
+</a>
+{% endif %}
 {% if show_email_copy %}
 <a href="#" id="copy-emails-btn" data-url="{% url 'mitglied_emails' %}" title="E-Mail-Programm öffnen (BCC)" onclick="(function(btn){
   var url = btn.dataset.url + window.location.search;

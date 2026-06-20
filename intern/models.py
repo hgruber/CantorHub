@@ -117,6 +117,7 @@ class User(AbstractUser):
         verbose_name_plural = "Mitglieder"
         permissions = [
             ("manage_user_permissions", "Kann Mitglieder-Berechtigungen verwalten"),
+            ("notify_user", "Kann Mitglieder per E-Mail benachrichtigen"),
         ]
 
     def __str__(self):

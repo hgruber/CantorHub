@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>{% endblock %}
+{% block content %}
+<div class="detail-page">
+
+  {% if errors %}
+  <div class="error" role="alert" style="margin-bottom:16px;">
+    <strong>Bitte behebe folgende Fehler:</strong>
+    <ul style="margin:6px 0 0;padding-left:18px;">
+      {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Section 1: Recipients -->
+  <div class="detail-cards" style="grid-template-columns:1fr;margin-bottom:16px;">
+    <div class="detail-card">
+      <h3>Empfänger ({{ recipients|length }})</h3>
+      <div class="tag-list">
+        {% for r in recipients %}
+          <span class="tag tag-active" title="{{ r.email }}">{{ r.name }}</span>
+        {% empty %}
+          <span class="tag">Keine Empfänger mit E-Mail-Adresse</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Compose form -->
+  <form method="post">
+    {% csrf_token %}
+    <!-- Pass filter params back so cancel returns to the filtered list -->
+    {% if filter_params %}
+    <input type="hidden" name="filter_params" value="{{ filter_params }}">
+    {% endif %}
+
+    <!-- Section 2: Message -->
+    <div class="detail-cards" style="grid-template-columns:1fr;margin-bottom:16px;">
+      <div class="detail-card">
+        <h3>Nachricht</h3>
+        <div class="form-group">
+          <label for="id_subject">Betreff</label>
+          <input type="text" id="id_subject" name="subject"
+                 value="{{ subject }}" required autocomplete="off">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="id_body">Nachricht</label>
+          <textarea id="id_body" name="body" rows="12"
+                    required style="resize:vertical;">{{ body }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Signatur -->
+    <div class="detail-cards" style="grid-template-columns:1fr;margin-bottom:16px;">
+      <div class="detail-card">
+        <h3>Signatur</h3>
+        {% if not notify_groups %}
+          <p style="margin:0;color:var(--t3);font-size:13px;font-style:italic;">(nicht unterschrieben)</p>
+        {% elif notify_groups|length == 1 %}
+          <input type="hidden" name="group_id" value="{{ notify_groups.0.id }}">
+          <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:var(--brand);">{{ notify_groups.0.name }}</p>
+          <div class="tag-list">
+            {% for u in notify_groups.0.user_set.all %}
+              {% if u.is_active %}<span class="tag">{{ u.first_name }} {{ u.last_name }}</span>{% endif %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="id_group_id">Gruppe</label>
+            <select id="id_group_id" name="group_id" required>
+              <option value="">– Gruppe wählen –</option>
+              {% for g in notify_groups %}
+              <option value="{{ g.id }}"{% if selected_group_id == g.id|stringformat:"i" %} selected{% endif %}>{{ g.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div id="sig-members" class="tag-list" style="min-height:10px;"></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Section 4: Attachments -->
+    <div class="detail-cards" style="grid-template-columns:1fr;margin-bottom:16px;">
+      <div class="detail-card">
+        <h3>Anhänge</h3>
+
+        <!-- Chips showing already-selected attachments -->
+        <div id="attach-chips" class="tag-list" style="margin-bottom:10px;min-height:10px;"></div>
+
+        <!-- Picker trigger -->
+        <div style="position:relative;display:inline-block;">
+          <button type="button" id="attach-btn" class="btn btn-secondary"
+                  aria-expanded="false" aria-controls="attach-picker">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="toolicon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+            Anhang hinzufügen
+          </button>
+
+          <!-- Dropdown tree panel -->
+          <div id="attach-picker" role="tree" aria-label="Dateien"
+               style="display:none;position:absolute;top:calc(100% + 6px);left:0;
+                      z-index:200;min-width:280px;max-width:380px;
+                      background:var(--bg-card);border:1px solid var(--border-dark);
+                      border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.12);
+                      max-height:320px;overflow-y:auto;padding:8px 0;">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="toolicon"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        Senden
+      </button>
+      <a href="{% url 'mitglied_list' %}{% if filter_params %}?{{ filter_params }}{% endif %}"
+         class="btn btn-secondary">Abbrechen</a>
+    </div>
+
+  </form>
+</div>
+
+{{ verwaltung_tree|json_script:"verwaltung-tree-data" }}
+{{ attachment_ids_init|json_script:"initial-attachment-ids" }}
+{{ notify_groups_data|json_script:"notify-groups-data" }}
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------ *
+   * State                                                               *
+   * ------------------------------------------------------------------ */
+  // Map of filer PK (number) → {id, name} for every currently selected attachment
+  const selected = new Map();
+
+  /* ------------------------------------------------------------------ *
+   * DOM refs                                                            *
+   * ------------------------------------------------------------------ */
+  const btn    = document.getElementById('attach-btn');
+  const picker = document.getElementById('attach-picker');
+  const chips  = document.getElementById('attach-chips');
+  const form   = chips.closest('form');
+
+  /* ------------------------------------------------------------------ *
+   * Build the folder/file tree                                          *
+   * ------------------------------------------------------------------ */
+  let treeData = [];
+  try {
+    treeData = JSON.parse(document.getElementById('verwaltung-tree-data').textContent);
+  } catch (e) {
+    /* malformed JSON — tree stays empty */
+  }
+
+  /**
+   * Render one node (folder or file) into a <div> and return it.
+   * Folders are collapsible; files are clickable selectors.
+   */
+  function buildNode(node) {
+    const wrap = document.createElement('div');
+
+    if (node.type === 'folder') {
+      /* ---- Folder row ---- */
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.setAttribute('role', 'treeitem');
+      row.setAttribute('aria-expanded', 'false');
+      row.style.cssText =
+        'display:flex;align-items:center;gap:6px;width:100%;text-align:left;' +
+        'background:none;border:none;cursor:pointer;padding:6px 14px;' +
+        'font-size:13px;color:var(--t2);font-family:inherit;' +
+        'transition:background var(--ease);';
+      row.innerHTML =
+        '<svg width="14" height="14" class="folder-chevron" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
+        'style="flex-shrink:0;transition:transform .15s ease;">' +
+        '<polyline points="9 18 15 12 9 6"/></svg>' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
+        'style="flex-shrink:0;color:var(--brand);">' +
+        '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
+        '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+        escHtml(node.name) + '</span>';
+      row.addEventListener('mouseenter', () => { row.style.background = 'var(--bg-app)'; });
+      row.addEventListener('mouseleave', () => { row.style.background = 'none'; });
+
+      /* Children container (collapsed by default) */
+      const children = document.createElement('div');
+      children.style.cssText = 'display:none;padding-left:14px;';
+      (node.children || []).forEach(child => children.appendChild(buildNode(child)));
+
+      row.addEventListener('click', () => {
+        const open = children.style.display !== 'none';
+        children.style.display = open ? 'none' : 'block';
+        row.setAttribute('aria-expanded', open ? 'false' : 'true');
+        const chevron = row.querySelector('.folder-chevron');
+        if (chevron) chevron.style.transform = open ? '' : 'rotate(90deg)';
+      });
+
+      wrap.appendChild(row);
+      wrap.appendChild(children);
+
+    } else {
+      /* ---- File row ---- */
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.setAttribute('role', 'treeitem');
+      row.dataset.fileId   = node.id;
+      row.dataset.fileName = node.name;
+      row.style.cssText =
+        'display:flex;align-items:center;gap:6px;width:100%;text-align:left;' +
+        'background:none;border:none;cursor:pointer;padding:6px 14px;' +
+        'font-size:13px;color:var(--t1);font-family:inherit;' +
+        'transition:background var(--ease);';
+      row.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
+        'style="flex-shrink:0;color:var(--t3);">' +
+        '<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>' +
+        '<polyline points="13 2 13 9 20 9"/></svg>' +
+        '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+        escHtml(node.name) + '</span>' +
+        '<svg class="file-check" width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" ' +
+        'style="flex-shrink:0;color:var(--brand);display:none;">' +
+        '<polyline points="20 6 9 17 4 12"/></svg>';
+      row.addEventListener('mouseenter', () => { row.style.background = 'var(--bg-app)'; });
+      row.addEventListener('mouseleave', () => { row.style.background = 'none'; });
+
+      row.addEventListener('click', () => {
+        const id = parseInt(row.dataset.fileId, 10);
+        if (selected.has(id)) {
+          removeAttachment(id);
+        } else {
+          addAttachment(id, row.dataset.fileName);
+        }
+        syncFileRow(row, id);
+      });
+
+      wrap.appendChild(row);
+    }
+
+    return wrap;
+  }
+
+  /** Update the visual state of a file row to reflect current selection. */
+  function syncFileRow(row, id) {
+    const check = row.querySelector('.file-check');
+    const isSelected = selected.has(id);
+    if (check) check.style.display = isSelected ? 'inline-block' : 'none';
+    row.style.background = isSelected ? 'var(--brand-light)' : 'none';
+    row.style.color      = isSelected ? 'var(--brand)' : 'var(--t1)';
+  }
+
+  /** Sync all file rows in the tree (needed after pre-populating from POST data). */
+  function syncAllFileRows() {
+    picker.querySelectorAll('[data-file-id]').forEach(row => {
+      syncFileRow(row, parseInt(row.dataset.fileId, 10));
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Attachment chip management                                          *
+   * ------------------------------------------------------------------ */
+  function addAttachment(id, name) {
+    if (selected.has(id)) return;
+    selected.set(id, name);
+    renderChip(id, name);
+    syncHiddenInputs();
+  }
+
+  function removeAttachment(id) {
+    selected.delete(id);
+    const chip = chips.querySelector(`[data-chip-id="${id}"]`);
+    if (chip) chip.remove();
+    syncHiddenInputs();
+    /* Update tree row visual if tree is built */
+    picker.querySelectorAll(`[data-file-id="${id}"]`).forEach(row => {
+      syncFileRow(row, id);
+    });
+  }
+
+  function renderChip(id, name) {
+    const chip = document.createElement('span');
+    chip.className = 'tag tag-active';
+    chip.dataset.chipId = id;
+    chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding-right:6px;';
+    chip.innerHTML =
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
+      'style="flex-shrink:0;">' +
+      '<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>' +
+      '<polyline points="13 2 13 9 20 9"/></svg>' +
+      '<span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+      escHtml(name) + '</span>' +
+      '<button type="button" aria-label="Entfernen" ' +
+      'style="display:inline-flex;align-items:center;justify-content:center;' +
+      'width:16px;height:16px;padding:0;border:none;background:none;cursor:pointer;' +
+      'color:var(--brand);opacity:.7;font-size:14px;line-height:1;">&times;</button>';
+    chip.querySelector('button').addEventListener('click', () => removeAttachment(id));
+    chips.appendChild(chip);
+  }
+
+  /** Keep hidden inputs in sync so the form POSTs the right PKs. */
+  function syncHiddenInputs() {
+    /* Remove all existing attachment hidden inputs */
+    form.querySelectorAll('input[name="attachment_ids"]').forEach(el => el.remove());
+    /* Re-create one per selected file */
+    selected.forEach((name, id) => {
+      const inp = document.createElement('input');
+      inp.type  = 'hidden';
+      inp.name  = 'attachment_ids';
+      inp.value = id;
+      form.appendChild(inp);
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Picker open / close                                                 *
+   * ------------------------------------------------------------------ */
+  let treeBuilt = false;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = picker.style.display !== 'none';
+    if (open) {
+      closePicker();
+    } else {
+      /* Build tree lazily on first open */
+      if (!treeBuilt) {
+        treeData.forEach(node => picker.appendChild(buildNode(node)));
+        syncAllFileRows();
+        treeBuilt = true;
+      }
+      picker.style.display = 'block';
+      btn.setAttribute('aria-expanded', 'true');
+    }
+  });
+
+  function closePicker() {
+    picker.style.display = 'none';
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  /* Close on outside click */
+  document.addEventListener('click', (e) => {
+    if (!picker.contains(e.target) && e.target !== btn) {
+      closePicker();
+    }
+  });
+
+  /* Close on Escape */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePicker();
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Pre-populate from POST (validation error re-render)                 *
+   * ------------------------------------------------------------------ */
+  let initialIds = [];
+  try {
+    initialIds = JSON.parse(
+      document.getElementById('initial-attachment-ids').textContent
+    );
+  } catch (e) { /* ignore */ }
+
+  if (Array.isArray(initialIds) && initialIds.length > 0) {
+    /*
+     * We only have the PKs at this point — we need to find names from the
+     * tree data. Walk the tree recursively to build an id→name lookup.
+     */
+    const idToName = {};
+    function walkTree(nodes) {
+      (nodes || []).forEach(n => {
+        if (n.type === 'file') {
+          idToName[n.id] = n.name;
+        } else {
+          walkTree(n.children);
+        }
+      });
+    }
+    walkTree(treeData);
+
+    initialIds.forEach(id => {
+      const numId = parseInt(id, 10);
+      if (!isNaN(numId) && idToName[numId]) {
+        addAttachment(numId, idToName[numId]);
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Utility                                                             *
+   * ------------------------------------------------------------------ */
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+})();
+</script>
+{% if notify_groups|length > 1 %}
+<script>
+(function () {
+  'use strict';
+  let groups = [];
+  try {
+    groups = JSON.parse(document.getElementById('notify-groups-data').textContent);
+  } catch (e) {}
+
+  const sel     = document.getElementById('id_group_id');
+  const display = document.getElementById('sig-members');
+  if (!sel || !display) return;
+
+  function renderMembers(groupId) {
+    display.innerHTML = '';
+    const g = groups.find(x => x.id === groupId);
+    if (!g) return;
+    (g.members || []).forEach(name => {
+      const span = document.createElement('span');
+      span.className = 'tag';
+      span.textContent = name;
+      display.appendChild(span);
+    });
+  }
+
+  sel.addEventListener('change', () => {
+    const id = parseInt(sel.value, 10);
+    renderMembers(isNaN(id) ? null : id);
+  });
+
+  const initId = parseInt(sel.value, 10);
+  if (!isNaN(initId)) renderMembers(initId);
+})();
+</script>
+{% endif %}
+{% endblock %}

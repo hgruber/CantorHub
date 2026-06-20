@@ -1,3 +1,4 @@
+import json
 import logging
 import threading
 
@@ -5,7 +6,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.db.models import Count, OuterRef
-from django.http import JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -13,7 +14,7 @@ from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from ._pagination import paginate_ordered
 
-from filer.models import File
+from filer.models import File, Folder
 
 from intern import ejabberd, folders
 from intern.app_settings import get_map_center, get_vereinsname_lang, is_ejabberd_configured
@@ -38,6 +39,8 @@ __all__ = [
     "mitglied_add",
     "mitglied_invite",
     "mitglied_delete",
+    "mitglied_benachrichtigen",
+    "mitglied_benachrichtigen_files",
 ]
 
 
@@ -114,6 +117,7 @@ def mitglied_list(request):
             "has_more": has_more,
             "next_offset": offset + _PAGE_SIZE,
             "show_email_copy": "email" in fields,
+            "notify_url": reverse("mitglied_benachrichtigen") if request.user.has_perm("intern.notify_user") else None,
         },
     )
 
@@ -416,3 +420,178 @@ def mitglied_add(request):
         "seitentitel": "Neues Mitglied",
     }
     return render(request, "mitglied_add.html", context)
+
+
+def _notify_groups(user):
+    """Gruppen des Users, die ihm intern.notify_user verleihen."""
+    from django.contrib.auth.models import Permission
+    try:
+        perm = Permission.objects.get(codename="notify_user", content_type__app_label="intern")
+    except Permission.DoesNotExist:
+        return []
+    return list(
+        user.groups.filter(permissions=perm).prefetch_related("user_set").order_by("name")
+    )
+
+
+def _notify_groups_data(groups):
+    return [
+        {
+            "id": g.pk,
+            "name": g.name,
+            "members": [
+                f"{u.first_name} {u.last_name}".strip()
+                for u in g.user_set.filter(is_active=True).order_by("last_name", "first_name")
+            ],
+        }
+        for g in groups
+    ]
+
+
+def _verwaltung_tree(folder_id):
+    """Rekursive Ordnerstruktur unterhalb eines Filer-Ordners als verschachtelte Liste."""
+    result = []
+    for sub in Folder.objects.filter(parent_id=folder_id).order_by("name"):
+        children = _verwaltung_tree(sub.pk)
+        result.append({"id": sub.pk, "name": sub.name, "type": "folder", "children": children})
+    for f in File.objects.filter(folder_id=folder_id).order_by("original_filename", "name"):
+        fname = f.original_filename or f.name or f"Datei {f.pk}"
+        result.append({"id": f.pk, "name": fname, "type": "file", "mime": f.mime_type or ""})
+    return result
+
+
+@permission_required("intern.notify_user", raise_exception=True)
+def mitglied_benachrichtigen(request):
+    can_manage = request.user.has_perm("intern.change_user")
+    base_qs = User.objects.all() if can_manage else User.objects.filter(is_active=True)
+    queryset = (
+        base_qs
+        .annotate(_stimme_pos=User.stimme_order_case())
+        .order_by("_stimme_pos", "last_name", "first_name")
+    )
+    if request.method == "POST":
+        filter_params = request.POST.get("filter_params", "")
+        filter_data = QueryDict(filter_params)
+    else:
+        filter_params = request.GET.urlencode()
+        filter_data = request.GET
+
+    if can_manage and "aktiv" not in filter_data:
+        filter_data = filter_data.copy()
+        filter_data["aktiv"] = "true"
+    mitglieder_filter = MitgliederFilter(filter_data, queryset=queryset, can_manage=can_manage)
+
+    recipients = [
+        {"pk": u.pk, "name": f"{u.first_name} {u.last_name}".strip(), "email": u.email}
+        for u in mitglieder_filter.qs
+        if u.email
+    ]
+
+    notify_groups = _notify_groups(request.user)
+    notify_groups_data = _notify_groups_data(notify_groups)
+    valid_group_ids = {g.pk for g in notify_groups}
+
+    if request.method == "POST":
+        subject = request.POST.get("subject", "").strip()
+        body = request.POST.get("body", "").strip()
+        attachment_ids = request.POST.getlist("attachment_ids")
+        selected_group_id = request.POST.get("group_id", "").strip()
+        errors = []
+        if not subject:
+            errors.append("Bitte einen Betreff eingeben.")
+        if not body:
+            errors.append("Bitte einen Text eingeben.")
+        if not recipients:
+            errors.append("Keine Empfänger mit E-Mail-Adresse gefunden.")
+        if len(notify_groups) > 1 and not selected_group_id:
+            errors.append("Bitte eine Gruppe für die Signatur wählen.")
+
+        signature_group_name = ""
+        signature_members = []
+        if selected_group_id and selected_group_id.isdigit():
+            gid = int(selected_group_id)
+            if gid in valid_group_ids:
+                for gd in notify_groups_data:
+                    if gd["id"] == gid:
+                        signature_group_name = gd["name"]
+                        signature_members = gd["members"]
+                        break
+        elif len(notify_groups) == 1:
+            signature_group_name = notify_groups_data[0]["name"]
+            signature_members = notify_groups_data[0]["members"]
+
+        attachments = []
+        for fid in attachment_ids:
+            try:
+                fobj = File.objects.get(pk=int(fid))
+                with fobj.file.open("rb") as fh:
+                    fbytes = fh.read()
+                fname = fobj.original_filename or fobj.name or f"anhang_{fid}"
+                attachments.append((fname, fbytes, fobj.mime_type or "application/octet-stream"))
+            except (File.DoesNotExist, ValueError, Exception) as e:
+                logger.warning("Anhang %s konnte nicht geladen werden: %s", fid, e)
+
+        if not errors:
+            sent = 0
+            for r in recipients:
+                send_branded_mail(
+                    subject,
+                    r["email"],
+                    "emails/mitglied_benachrichtigung.html",
+                    {
+                        "vorname": r["name"].split()[0] if r["name"] else "",
+                        "body": body,
+                        "signature_group_name": signature_group_name,
+                        "signature_members": signature_members,
+                    },
+                    text_body=body,
+                    attachments=attachments if attachments else None,
+                )
+                sent += 1
+            messages.success(request, f"E-Mail an {sent} Mitglied(er) gesendet.")
+            list_url = reverse("mitglied_list")
+            if filter_params:
+                list_url += f"?{filter_params}"
+            return redirect(list_url)
+
+        vw_id = folders.verwaltung()
+        verwaltung_tree = _verwaltung_tree(vw_id) if vw_id else []
+        safe_ids = [int(x) for x in attachment_ids if str(x).strip().isdigit()]
+        return render(request, "mitglied_benachrichtigen.html", {
+            "seitentitel": "E-Mail verfassen",
+            "recipients": recipients,
+            "filter_params": filter_params,
+            "subject": subject,
+            "body": body,
+            "attachment_ids_init": safe_ids,
+            "verwaltung_tree": verwaltung_tree,
+            "notify_groups": notify_groups,
+            "notify_groups_data": notify_groups_data,
+            "selected_group_id": selected_group_id,
+            "errors": errors,
+        })
+
+    vw_id = folders.verwaltung()
+    verwaltung_tree = _verwaltung_tree(vw_id) if vw_id else []
+    return render(request, "mitglied_benachrichtigen.html", {
+        "seitentitel": "E-Mail verfassen",
+        "recipients": recipients,
+        "filter_params": filter_params,
+        "subject": "",
+        "body": "",
+        "attachment_ids_init": [],
+        "verwaltung_tree": verwaltung_tree,
+        "notify_groups": notify_groups,
+        "notify_groups_data": notify_groups_data,
+        "selected_group_id": "",
+        "errors": [],
+    })
+
+
+@login_required
+def mitglied_benachrichtigen_files(request):
+    if not request.user.has_perm("intern.notify_user"):
+        return HttpResponseForbidden()
+    vw_id = folders.verwaltung()
+    tree = _verwaltung_tree(vw_id) if vw_id else []
+    return JsonResponse({"tree": tree})

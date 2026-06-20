@@ -15,6 +15,7 @@ PERMISSION_DEFS = [
     ("intern.change_user",                 "bearbeiten",     "Mitglieder"),
     ("intern.delete_user",                 "löschen",        "Mitglieder"),
     ("intern.manage_user_permissions",     "Berechtigungen", "Mitglieder"),
+    ("intern.notify_user",                 "benachrichtigen","Mitglieder"),
     # Dateien
     ("intern.delete_folder",             "löschen",        "Dateien"),
     ("intern.manage_folder_permissions", "Berechtigungen", "Dateien"),
@@ -88,6 +89,9 @@ PERMISSION_DESCRIPTIONS = {
         "Achtung: Diese Berechtigung sollte nur an sehr vertrauenswürdige "
         "Personen vergeben werden, da sie alle weiteren Berechtigungen "
         "einschließt.",
+    "intern.notify_user":
+        "Darf Mitglieder direkt aus der Mitgliederliste heraus per E-Mail "
+        "benachrichtigen. Die Empfänger ergeben sich aus dem aktiven Filter.",
     "intern.add_ort":
         "Darf neue Orte (Veranstaltungsorte, Proberäume) anlegen.",
     "intern.change_ort":

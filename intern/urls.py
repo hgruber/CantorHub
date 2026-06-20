@@ -103,6 +103,8 @@ urlpatterns = [
     # Mitglieder URLs
     path("mitglied/", views.mitglied_list, name="mitglied_list"),
     path("mitglied/emails/", views.mitglied_emails, name="mitglied_emails"),
+    path("mitglied/benachrichtigen/", views.mitglied_benachrichtigen, name="mitglied_benachrichtigen"),
+    path("mitglied/benachrichtigen/dateien/", views.mitglied_benachrichtigen_files, name="mitglied_benachrichtigen_files"),
     path("mitglied/add/", views.mitglied_add, name="mitglied_add"),
     path("mitglied/invite/", views.mitglied_invite, name="mitglied_invite"),
     path("mitglied/<int:id>/", views.mitglied_view, name="mitglied_view"),
