@@ -26,6 +26,12 @@ __all__ = [
 
 # Human-readable field labels for display
 FIELD_LABELS = {
+    # Benachrichtigung
+    "betreff": "Betreff",
+    "empfaenger": "Empfänger",
+    "text": "Text",
+    "anhaenge": "Anhänge",
+    "gruppe": "Signatur",
     # User
     "first_name": "Vorname",
     "last_name": "Nachname",
@@ -107,6 +113,7 @@ MODEL_LABELS = {
     "Mitteilung": "Nachricht",
     "Group": "Gruppe",
     "Artikel": "Artikel",
+    "Benachrichtigung": "E-Mail",
 }
 
 # model_name → URL name used to build a detail-page link (only for non-delete actions)

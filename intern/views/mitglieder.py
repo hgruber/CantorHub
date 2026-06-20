@@ -448,6 +448,30 @@ def _notify_groups_data(groups):
     ]
 
 
+def _log_notify(user, subject, body, sent, attachments, signature_group_name):
+    from ..models import ChangeLog
+    try:
+        changes = {
+            "betreff": [None, subject],
+            "empfaenger": [None, str(sent)],
+            "text": [None, body],
+        }
+        if attachments:
+            changes["anhaenge"] = [None, ", ".join(a[0] for a in attachments)]
+        if signature_group_name:
+            changes["gruppe"] = [None, signature_group_name]
+        ChangeLog.objects.create(
+            user=user,
+            action=ChangeLog.ACTION_NOTIFY,
+            model_name="Benachrichtigung",
+            object_id=0,
+            object_repr=subject[:200],
+            changes=changes,
+        )
+    except Exception:
+        logger.warning("ChangeLog für Benachrichtigung konnte nicht geschrieben werden.")
+
+
 def _verwaltung_tree(folder_id):
     """Rekursive Ordnerstruktur unterhalb eines Filer-Ordners als verschachtelte Liste."""
     result = []
@@ -548,6 +572,7 @@ def mitglied_benachrichtigen(request):
                     attachments=attachments if attachments else None,
                 )
                 sent += 1
+            _log_notify(request.user, subject, body, sent, attachments, signature_group_name)
             messages.success(request, f"E-Mail an {sent} Mitglied(er) gesendet.")
             list_url = reverse("mitglied_list")
             if filter_params:

@@ -829,6 +829,7 @@ _CHANGELOG_MODEL_LABELS = {
     "Forum": "Forum",
     "Ort": "Ort",
     "Group": "Gruppe",
+    "Benachrichtigung": "E-Mail",
 }
 
 _CHANGELOG_MODEL_CHOICES = [("", "Alle"), ("__gruppe__", "Gruppenzuordnung")] + [

@@ -564,6 +564,7 @@ class ChangeLog(models.Model):
     ACTION_LOGIN = "login"
     ACTION_LOGOUT = "logout"
     ACTION_APPLICATION = "apply"
+    ACTION_NOTIFY = "notify"
     ACTION_CHOICES = [
         (ACTION_CREATE, "Erstellt"),
         (ACTION_UPDATE, "Geändert"),
@@ -571,6 +572,7 @@ class ChangeLog(models.Model):
         (ACTION_LOGIN, "eingeloggt"),
         (ACTION_LOGOUT, "ausgeloggt"),
         (ACTION_APPLICATION, "Neuer Mitgliedsantrag"),
+        (ACTION_NOTIFY, "E-Mail gesendet"),
     ]
 
     timestamp = models.DateTimeField(default=datetime.now)
