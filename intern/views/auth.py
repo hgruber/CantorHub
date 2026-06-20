@@ -21,13 +21,12 @@ from reportlab.pdfgen import canvas as rl_canvas
 
 from intern import ejabberd
 from intern.app_settings import (
-    get_config,
     get_config_int,
     get_from_email,
     get_vereinsname,
     is_ejabberd_configured,
 )
-from intern.mail import send_branded_mail
+from intern.mail import format_config_mail, send_branded_mail
 
 from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
 from ..models import User
@@ -226,19 +225,12 @@ def register(request):
                     reverse("password_reset_confirm", args=[uidb64, token])
                 )
                 subject = "Passwort zurücksetzen"
-                message = (
-                    f"Hallo {user.first_name},\n\n"
-                    f"über diesen Link kannst Du ein neues Passwort für Deinen\n"
-                    f"Benutzer '{user.username}' setzen:\n\n{link}\n\n"
-                    f"Wenn Du das nicht angefordert hast, kannst Du diese E-Mail\n"
-                    f"ignorieren — Dein Passwort bleibt unverändert."
-                )
                 send_branded_mail(
                     subject,
                     user.email,
                     "emails/password_reset.html",
                     {"user": user, "link": link},
-                    text_body=message,
+                    text_body=format_config_mail("MAIL_NEUES_PASSWORT", user, link=link),
                 )
                 logger.info("Password reset link sent to %s for user %s", user.email, user.username)
             # Immer dieselbe Antwort — kein Rückschluss auf existierende Konten.
@@ -346,23 +338,13 @@ def mitglied_beitritt(request, token):
             except Exception:
                 logger.exception("Antrag-PDF konnte nicht erstellt werden fuer %s", user.username)
 
-            _antrag_tmpl = get_config("MAIL_ANTRAG") or (
-                "Hallo {vorname},\n\n"
-                "vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
-                "Über die Aufnahme entscheidet der Vorstand — Du erhältst dann\n"
-                "eine weitere Nachricht.\n\n"
-                "Dein gewünschter Benutzername: {username}"
-            )
             send_branded_mail(
                 f"Dein Mitgliedsantrag bei {get_vereinsname()}",
                 email,
                 "emails/mitglied_beitritt_success.html",
                 {"user": user},
                 attachments=pdf_attachment,
-                text_body=_antrag_tmpl.format(
-                    vorname=user.first_name,
-                    username=user.username,
-                ),
+                text_body=format_config_mail("MAIL_ANTRAG", user),
             )
 
             managers = [u.email for u in _member_managers() if u.email]
@@ -415,14 +397,7 @@ def make_bestaetigung_url(user, base_url):
 
 def _get_bestaetigung_text(user, link):
     try:
-        template_text = get_config("MAIL_BESTAETIGUNG")
-        if not template_text:
-            return None
-        return template_text.format(
-            vorname=user.first_name or user.username,
-            link=link,
-            vereinsname=get_vereinsname(),
-        )
+        return format_config_mail("MAIL_BESTAETIGUNG", user, link=link)
     except Exception:
         logger.warning("MAIL_BESTAETIGUNG nicht konfiguriert oder fehlerhaft")
         return None

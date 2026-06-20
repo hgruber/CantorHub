@@ -182,8 +182,8 @@ def _send_activation_mail(user):
 
         portal_url = get_config("PORTAL_URL", "").rstrip("/")
         login_url = f"{portal_url}/intern/login/" if portal_url else None
-        raw_text = get_config(text_key)
-        text_body = raw_text.format(vorname=user.first_name, vereinsname=vereinsname, link=login_url or "") if raw_text else None
+        from .mail import format_config_mail
+        text_body = format_config_mail(text_key, user, link=login_url or "")
         send_branded_mail(
             subject=subject,
             to=user.email,

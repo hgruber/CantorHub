@@ -37,25 +37,30 @@ _CONFIG_DEFAULTS = [
      "und zu bestätigen, dass sie korrekt und aktuell sind.\n\nGleichzeitig bitten wir Dich, unsere "
      "Datenschutzerklärung sowie die Satzung des Chors erneut zu bestätigen.\n\n"
      "Bitte klicke auf folgenden Link (gültig 30 Tage):\n{link}\n\nHerzliche Grüße\nDein Vorstand von {vereinsname}",
-     "Text der Datenbestätigungs-Mail (Platzhalter: {vorname}, {link}, {vereinsname})"),
+     "Text der Datenbestätigungs-Mail (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})"),
     ("MAIL_ANTRAG",
      "Hallo {vorname},\n\nvielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
      "Über die Aufnahme entscheidet der Vorstand — Du erhältst dann\neine weitere Nachricht.\n\n"
      "Dein gewünschter Benutzername: {username}",
-     "Bestätigungsmail an Antragsteller (Platzhalter: {vorname}, {username})"),
+     "Bestätigungsmail an Antragsteller (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {username}, {stimme}, {vereinsname})"),
     ("SATZUNG_FILE_ID",        "",                               "Filer-Datei-ID der aktuellen Satzung (leer → kein Link in Formularen)"),
     ("PORTAL_URL",             "",                               "Basis-URL des Portals für Links in E-Mails (z.B. https://portal.example.com)"),
     ("MAIL_BEI_AKTIVIERUNG", "1",                              "Aktivierungsmails versenden (0 = deaktiviert, z.B. während Tests)"),
+    ("MAIL_NEUES_PASSWORT",
+     "Hallo {vorname},\n\nüber diesen Link kannst Du ein neues Passwort für Deinen "
+     "Benutzer '{user}' setzen:\n\n{link}\n\nWenn Du das nicht angefordert hast, kannst "
+     "Du diese E-Mail ignorieren — Dein Passwort bleibt unverändert.",
+     "Passwort-zurücksetzen-Mail (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})"),
     ("MAIL_WILLKOMMEN",
      "Liebe/r {vorname},\n\nwir freuen uns sehr, Dich als neues Mitglied bei {vereinsname} begrüßen zu dürfen!\n\n"
      "Dein Benutzerkonto ist jetzt freigeschaltet. Du kannst Dich ab sofort im Mitgliederportal anmelden.\n\n"
      "Herzliche Grüße\nDein Vorstand von {vereinsname}",
-     "Willkommens-Mail bei erster Aktivierung (Platzhalter: {vorname}, {vereinsname})"),
+     "Willkommens-Mail bei erster Aktivierung (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})"),
     ("MAIL_REAKTIVIERT",
      "Liebe/r {vorname},\n\nDein Mitgliedskonto bei {vereinsname} wurde wieder aktiviert.\n\n"
      "Du kannst Dich ab sofort wieder im Mitgliederportal anmelden.\n\n"
      "Herzliche Grüße\nDein Vorstand von {vereinsname}",
-     "Mail bei Reaktivierung eines Mitglieds (Platzhalter: {vorname}, {vereinsname})"),
+     "Mail bei Reaktivierung eines Mitglieds (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})"),
 ]
 
 

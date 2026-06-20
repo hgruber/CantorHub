@@ -156,7 +156,7 @@ first-time activation → sends `emails/mitglied_willkommen.html` and stamps `da
 via `User.objects.filter(pk=...).update(date_joined=timezone.now())` (avoids recursive
 signal). If `date_joined` is already set → reactivation → sends `emails/mitglied_reaktiviert.html`.
 Both mail texts are configurable via `MAIL_WILLKOMMEN` / `MAIL_REAKTIVIERT` in
-`Konfiguration` (placeholders `{vorname}`, `{vereinsname}`). No mail is sent if the user
+`Konfiguration` (all standard placeholders available; see `mail.format_config_mail()`). No mail is sent if the user
 has no email address.
 
 ### Member re-confirmation flow (Datenbestätigung)
@@ -170,7 +170,7 @@ re-acknowledge the privacy policy, bylaws, and membership fee schedule.
 1. Creates a `TimestampSigner` token (salt `"intern.mitglied_bestaetigung"`, **30-day** validity) encoding the user PK.
 2. Reads the email body text from the `Konfiguration` key **`MAIL_BESTAETIGUNG`** —
    editable via `/intern/konfiguration/` without code changes.
-   Placeholders: `{vorname}`, `{link}`, `{vereinsname}`. Falls back to `None` (generic HTML only) if
+   All standard placeholders available plus `{link}`; falls back to `None` (generic HTML only) if
    the key is empty.
 3. Sends the branded mail (`emails/mitglied_bestaetigung_aufforderung.html`) with the text as
    `text_body`.
@@ -308,13 +308,16 @@ the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
 `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`),
 `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form),
 `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title),
-`MAIL_BESTAETIGUNG` (re-confirmation invitation email body; placeholders `{vorname}`, `{link}`, `{vereinsname}`),
-`MAIL_ANTRAG` (applicant confirmation email body; placeholders `{vorname}`, `{username}`),
+`MAIL_BESTAETIGUNG` (re-confirmation invitation email body),
+`MAIL_ANTRAG` (applicant confirmation email body),
 `SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms),
 `PORTAL_URL` (base URL of the portal, e.g. `https://portal.example.com`; when set, a login button is added to activation mails; empty → no button),
-`MAIL_WILLKOMMEN` (welcome email on first activation; placeholders `{vorname}`, `{vereinsname}`, `{link}` (login URL, empty string if `PORTAL_URL` not set)),
-`MAIL_REAKTIVIERT` (email on reactivation of a previously active member; placeholders `{vorname}`, `{vereinsname}`, `{link}` (login URL, empty string if `PORTAL_URL` not set)),
+`MAIL_NEUES_PASSWORT` (password reset email body),
+`MAIL_WILLKOMMEN` (welcome email on first activation; `{link}` = login URL, empty string if `PORTAL_URL` not set),
+`MAIL_REAKTIVIERT` (email on reactivation of a previously active member; `{link}` = login URL, empty string if `PORTAL_URL` not set),
 `MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing).
+
+All `MAIL_*` body texts support these placeholders via `mail.format_config_mail()`: `{vorname}`, `{nachname}`, `{email}`, `{xmpp}`, `{user}` (username), `{username}` (alias), `{stimme}` (voice type written out), `{vereinsname}`, plus mail-specific ones like `{link}`. Unknown placeholders are left as-is. To add a new automated email: add the key to `_CONFIG_DEFAULTS` in `apps.py`, call `format_config_mail(key, user, ...)` as `text_body`.
 
 `VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into
 every template context by `config/context_processors.py` (`{{ vereinsname }}`), and

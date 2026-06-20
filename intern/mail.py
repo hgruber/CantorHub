@@ -18,7 +18,7 @@ from django.contrib.staticfiles import finders
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
-from intern.app_settings import get_from_email, get_vereinsname, get_vereinsname_lang, get_vereinsname_kurz, is_email_configured
+from intern.app_settings import get_config, get_from_email, get_vereinsname, get_vereinsname_lang, get_vereinsname_kurz, is_email_configured
 
 logger = logging.getLogger(__name__)
 
@@ -95,3 +95,40 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
             "EMAIL_HOST is not set in Konfiguration — email was written to console, not sent."
         )
     logger.info("Sent mail '%s' to %s", subject, recipients)
+
+
+class _SafeFormatDict(dict):
+    """Lässt unbekannte {Platzhalter} unverändert statt KeyError zu werfen."""
+    def __missing__(self, key):
+        return f"{{{key}}}"
+
+
+def build_mail_placeholders(user, **extra):
+    """Standardplatzhalter-Dict für alle MAIL_*-Konfigurationstexte.
+
+    Enthält: {vorname}, {nachname}, {email}, {xmpp}, {user}, {username},
+    {stimme} (ausgeschrieben), {vereinsname} — plus alle extra-Schlüssel
+    (z.B. {link}).
+    """
+    from intern.models import User  # lazy: vermeidet zirkulären Import
+    stimme_display = dict(User.STIMMEN).get(user.stimme, "") if user.stimme else ""
+    return _SafeFormatDict({
+        "vorname":     user.first_name or user.username,
+        "nachname":    user.last_name or "",
+        "email":       user.email or "",
+        "xmpp":        user.xmpp or "",
+        "user":        user.username,
+        "username":    user.username,   # Rückwärtskompatibilität zu MAIL_ANTRAG
+        "stimme":      stimme_display,
+        "vereinsname": get_vereinsname(),
+        **extra,
+    })
+
+
+def format_config_mail(key, user, **extra):
+    """Liest einen MAIL_*-Konfigurationsschlüssel und füllt Platzhalter ein.
+
+    Gibt None zurück wenn der Schlüssel leer oder nicht gesetzt ist.
+    """
+    raw = get_config(key)
+    return raw.format_map(build_mail_placeholders(user, **extra)) if raw else None
