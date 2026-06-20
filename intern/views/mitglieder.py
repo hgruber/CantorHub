@@ -18,7 +18,7 @@ from filer.models import File, Folder
 
 from intern import ejabberd, folders
 from intern.app_settings import get_map_center, get_vereinsname_lang, is_ejabberd_configured
-from intern.mail import send_branded_mail
+from intern.mail import format_config_text, send_branded_mail
 
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..models import Abstimmung, Artikel, Mitteilung, PRIVACY_FIELDS, User, Zusage
@@ -392,13 +392,7 @@ def mitglied_invite(request):
         email,
         "emails/mitglied_invite.html",
         {"link": link},
-        text_body=(
-            "Hallo,\n\n"
-            f"Du wurdest eingeladen, Mitglied bei {get_vereinsname_lang()} zu werden.\n"
-            "Über diesen Link kannst Du Deinen Antrag ausfüllen "
-            "(7 Tage gültig):\n\n"
-            f"{link}"
-        ),
+        text_body=format_config_text("MAIL_EINLADUNG", link=link),
     )
     messages.success(request, f"Einladung an {email} verschickt.")
     return redirect("mitglied_list")

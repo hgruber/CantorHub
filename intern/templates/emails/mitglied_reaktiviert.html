@@ -45,23 +45,6 @@
 
               {% if text_body %}
                 <p style="margin:0;color:#111827;font-size:15px;line-height:1.6;white-space:pre-line;">{{ text_body }}</p>
-              {% else %}
-                <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                  Liebe/r {{ user.first_name }},
-                </p>
-
-                <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                  Dein Mitgliedskonto bei {{ vereinsname }} wurde wieder aktiviert.
-                </p>
-
-                <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                  Du kannst Dich ab sofort wieder im Mitgliederportal anmelden.
-                </p>
-
-                <p style="margin:0 0 0 0;color:#111827;font-size:15px;line-height:1.6;">
-                  Herzliche Grüße<br>
-                  Dein Vorstand von {{ vereinsname }}
-                </p>
               {% endif %}
 
             </td>

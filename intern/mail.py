@@ -41,6 +41,7 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
         "vereinsname":      get_vereinsname(),
         "vereinsname_lang": get_vereinsname_lang(),
         "vereinsname_kurz": get_vereinsname_kurz(),
+        "text_body":        text_body,
         **context,
     })
     plain = text_body or (
@@ -132,3 +133,17 @@ def format_config_mail(key, user, **extra):
     """
     raw = get_config(key)
     return raw.format_map(build_mail_placeholders(user, **extra)) if raw else None
+
+
+def format_config_text(key, **kwargs):
+    """Wie format_config_mail, aber ohne User-Objekt (für Mails ohne eingeloggten Empfänger).
+
+    Verfügbare Platzhalter: {vereinsname}, {vereinsname_lang} — plus alle kwargs.
+    Gibt None zurück wenn der Schlüssel leer oder nicht gesetzt ist.
+    """
+    raw = get_config(key)
+    return raw.format_map(_SafeFormatDict({
+        "vereinsname":      get_vereinsname(),
+        "vereinsname_lang": get_vereinsname_lang(),
+        **kwargs,
+    })) if raw else None

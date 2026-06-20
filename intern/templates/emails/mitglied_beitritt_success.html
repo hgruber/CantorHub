@@ -43,24 +43,9 @@
           <tr>
             <td style="background-color:#ffffff;padding:32px;">
 
-              <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                Hallo {{ user.first_name }},
-              </p>
-
-              <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                vielen Dank für Deinen Mitgliedsantrag — wir haben ihn erhalten.
-              </p>
-
-              <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                Über die Aufnahme entscheidet der Vorstand. Du bist also noch kein
-                Mitglied; sobald darüber entschieden wurde, erhältst Du eine weitere
-                Nachricht.
-              </p>
-
-              <p style="margin:0 0 28px 0;color:#111827;font-size:15px;line-height:1.6;">
-                Dein gewünschter Benutzername:
-                <strong style="font-weight:600;">&#8203;'{{ user.username }}'</strong>
-              </p>
+              {% if text_body %}
+              <p style="margin:0;color:#111827;font-size:15px;line-height:1.6;white-space:pre-line;">{{ text_body }}</p>
+              {% endif %}
 
             </td>
           </tr>

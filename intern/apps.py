@@ -32,20 +32,26 @@ _CONFIG_DEFAULTS = [
     ("VEREINSNAME",          "Join us singing the Gospel",     "Name des Chors"),
     ("VEREINSNAME_LANG",     "Just Gospel! Frankfurt",         "Langer Vereinsname mit Ort (für E-Mail-Header, Seitentitel)"),
     ("VEREINSNAME_KURZ",     "Just Gospel",                    "Kurzer Vereinsname (für Sidebar, Alt-Texte)"),
-    ("MAIL_BESTAETIGUNG",
-     "Liebe/r {vorname},\n\nwir bitten Dich, Deine im Mitgliederportal gespeicherten Daten zu prüfen "
-     "und zu bestätigen, dass sie korrekt und aktuell sind.\n\nGleichzeitig bitten wir Dich, unsere "
-     "Datenschutzerklärung sowie die Satzung des Chors erneut zu bestätigen.\n\n"
-     "Bitte klicke auf folgenden Link (gültig 30 Tage):\n{link}\n\nHerzliche Grüße\nDein Vorstand von {vereinsname}",
-     "Text der Datenbestätigungs-Mail (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})"),
     ("MAIL_ANTRAG",
-     "Hallo {vorname},\n\nvielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
-     "Über die Aufnahme entscheidet der Vorstand — Du erhältst dann\neine weitere Nachricht.\n\n"
-     "Dein gewünschter Benutzername: {username}",
+     "",
      "Bestätigungsmail an Antragsteller (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {username}, {stimme}, {vereinsname})"),
+    ("MAIL_ANTRAG_ADMIN",
+     "Es liegt ein neuer Mitgliedsantrag vor:\n\n{vorname} {nachname} ({email})\n\nDetails: {link}",
+     "Admin-Benachrichtigung bei neuem Antrag (Platzhalter: {vorname}, {nachname}, {email}, {link}, {vereinsname})"),
     ("SATZUNG_FILE_ID",        "",                               "Filer-Datei-ID der aktuellen Satzung (leer → kein Link in Formularen)"),
     ("PORTAL_URL",             "",                               "Basis-URL des Portals für Links in E-Mails (z.B. https://portal.example.com)"),
     ("MAIL_BEI_AKTIVIERUNG", "1",                              "Aktivierungsmails versenden (0 = deaktiviert, z.B. während Tests)"),
+    ("MAIL_BESTAETIGUNG",
+     "",
+     "Text der Datenbestätigungs-Mail (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})"),
+    ("MAIL_BESTAETIGUNG_BESTAETIGT",
+     "Hallo {vorname},\n\nvielen Dank für Deine Bestätigung! Anbei findest Du eine Kopie als PDF.\n\n"
+     "Herzliche Grüße\nDein Vorstand von {vereinsname}",
+     "Quittung an Mitglied nach Datenbestätigung (Platzhalter: {vorname}, {vereinsname})"),
+    ("MAIL_EINLADUNG",
+     "Hallo,\n\nDu wurdest eingeladen, Mitglied bei {vereinsname_lang} zu werden.\n"
+     "Über diesen Link kannst Du Deinen Antrag ausfüllen (7 Tage gültig):\n\n{link}",
+     "Einladungs-Mail (Platzhalter: {link}, {vereinsname}, {vereinsname_lang})"),
     ("MAIL_NEUES_PASSWORT",
      "Hallo {vorname},\n\nüber diesen Link kannst Du ein neues Passwort für Deinen "
      "Benutzer '{user}' setzen:\n\n{link}\n\nWenn Du das nicht angefordert hast, kannst "

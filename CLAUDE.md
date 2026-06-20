@@ -181,11 +181,12 @@ checkboxes (`MitgliedBestaetigungForm` in `forms.py`): data correct, Datenschutz
 
 **On submit:** `_save_bestaetigung_pdf(user)` generates a PDF (reportlab) with all stored
 data + confirmed checkboxes, saves it to **„Verwaltung/Mitglieder"** in filer, and attaches it
-to the quittance mail (`emails/mitglied_bestaetigung_bestaetigt.html`) sent to the member.
+to the quittance mail (`emails/mitglied_bestaetigung_bestaetigt.html`) sent to the member. The
+quittance mail body is configurable via `MAIL_BESTAETIGUNG_BESTAETIGT` in `Konfiguration`.
 No Vorstand notification. Three public templates extend `mitglied_public_base.html`:
 `mitglied_bestaetigung.html`, `_success.html`, `_invalid.html`.
 
-`MAIL_BESTAETIGUNG` and `MAIL_ANTRAG` are seeded by `0003_import.py` during the initial migration and listed in `_CONFIG_DEFAULTS` in `intern/apps.py` as fallback for fresh installs.
+`MAIL_BESTAETIGUNG` and `MAIL_ANTRAG` are seeded by `0003_import.py` during the initial migration. Their `_CONFIG_DEFAULTS` entries in `intern/apps.py` have an empty default (the migration always runs first and populates them via `get_or_create`).
 
 ### Key models (`intern/models.py`)
 
@@ -308,16 +309,19 @@ the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
 `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`),
 `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form),
 `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title),
-`MAIL_BESTAETIGUNG` (re-confirmation invitation email body),
-`MAIL_ANTRAG` (applicant confirmation email body),
-`SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms),
-`PORTAL_URL` (base URL of the portal, e.g. `https://portal.example.com`; when set, a login button is added to activation mails; empty → no button),
+`MAIL_ANTRAG` (applicant confirmation email body; seeded by `0003_import.py`),
+`MAIL_ANTRAG_ADMIN` (admin notification on new application; `{vorname}`, `{nachname}`, `{email}`, `{link}`),
+`MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing),
+`MAIL_BESTAETIGUNG` (re-confirmation invitation email body; seeded by `0003_import.py`),
+`MAIL_BESTAETIGUNG_BESTAETIGT` (quittance mail after member confirms data; `{vorname}`, `{vereinsname}`),
+`MAIL_EINLADUNG` (invite email sent to an email address before registration; `{link}`, `{vereinsname}`, `{vereinsname_lang}` — no user object, use `format_config_text()`),
 `MAIL_NEUES_PASSWORT` (password reset email body),
-`MAIL_WILLKOMMEN` (welcome email on first activation; `{link}` = login URL, empty string if `PORTAL_URL` not set),
 `MAIL_REAKTIVIERT` (email on reactivation of a previously active member; `{link}` = login URL, empty string if `PORTAL_URL` not set),
-`MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing).
+`MAIL_WILLKOMMEN` (welcome email on first activation; `{link}` = login URL, empty string if `PORTAL_URL` not set),
+`SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms),
+`PORTAL_URL` (base URL of the portal, e.g. `https://portal.example.com`; when set, a login button is added to activation mails; empty → no button).
 
-All `MAIL_*` body texts support these placeholders via `mail.format_config_mail()`: `{vorname}`, `{nachname}`, `{email}`, `{xmpp}`, `{user}` (username), `{username}` (alias), `{stimme}` (voice type written out), `{vereinsname}`, plus mail-specific ones like `{link}`. Unknown placeholders are left as-is. To add a new automated email: add the key to `_CONFIG_DEFAULTS` in `apps.py`, call `format_config_mail(key, user, ...)` as `text_body`.
+All `MAIL_*` body texts are rendered in both the HTML email body and the plain-text fallback via `send_branded_mail()` (which now passes `text_body` into the template context). Standard placeholders via `mail.format_config_mail(key, user, ...)`: `{vorname}`, `{nachname}`, `{email}`, `{xmpp}`, `{user}` (username), `{username}` (alias), `{stimme}` (voice type written out), `{vereinsname}`, plus mail-specific ones like `{link}`. Unknown placeholders are left as-is. For mails without a user object (e.g. invite), use `mail.format_config_text(key, **kwargs)` instead — only `{vereinsname}`, `{vereinsname_lang}`, and explicit kwargs are available. To add a new automated email: add the key to `_CONFIG_DEFAULTS` in `apps.py`, call the appropriate formatter as `text_body`.
 
 `VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into
 every template context by `config/context_processors.py` (`{{ vereinsname }}`), and

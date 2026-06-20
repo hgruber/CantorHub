@@ -45,24 +45,6 @@
 
               {% if text_body %}
                 <p style="margin:0;color:#111827;font-size:15px;line-height:1.6;white-space:pre-line;">{{ text_body }}</p>
-              {% else %}
-                <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                  Liebe/r {{ user.first_name }},
-                </p>
-
-                <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                  wir freuen uns sehr, Dich als neues Mitglied bei {{ vereinsname }} begrüßen zu dürfen!
-                </p>
-
-                <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                  Dein Benutzerkonto ist jetzt freigeschaltet. Du kannst Dich ab sofort
-                  im Mitgliederportal anmelden.
-                </p>
-
-                <p style="margin:0 0 0 0;color:#111827;font-size:15px;line-height:1.6;">
-                  Herzliche Grüße<br>
-                  Dein Vorstand von {{ vereinsname }}
-                </p>
               {% endif %}
 
               {% if login_url %}

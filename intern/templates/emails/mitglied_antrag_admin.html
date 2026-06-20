@@ -43,18 +43,9 @@
           <tr>
             <td style="background-color:#ffffff;padding:32px;">
 
-              <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                Hallo,
-              </p>
-
-              <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                es liegt ein neuer Mitgliedsantrag vor:
-              </p>
-
-              <p style="margin:0 0 28px 0;color:#111827;font-size:15px;line-height:1.6;">
-                <strong style="font-weight:600;">{{ applicant.first_name }} {{ applicant.last_name }}</strong><br>
-                <span style="color:#6b7280;">{{ applicant.email }}</span>
-              </p>
+              {% if text_body %}
+              <p style="margin:0 0 28px 0;color:#111827;font-size:15px;line-height:1.6;white-space:pre-line;">{{ text_body }}</p>
+              {% endif %}
 
               <!-- Button -->
               <table role="presentation" cellpadding="0" cellspacing="0" border="0"

@@ -41,17 +41,9 @@
           <tr>
             <td style="background-color:#ffffff;padding:32px;">
 
-              <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                Hallo {{ user.first_name }},
-              </p>
-
-              <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                vielen Dank für Deine Bestätigung! Wir haben sie erhalten.
-              </p>
-
-              <p style="margin:0 0 28px 0;color:#111827;font-size:15px;line-height:1.6;">
-                Anbei findest Du eine Kopie Deiner Bestätigung als PDF-Dokument.
-              </p>
+              {% if text_body %}
+              <p style="margin:0;color:#111827;font-size:15px;line-height:1.6;white-space:pre-line;">{{ text_body }}</p>
+              {% endif %}
 
             </td>
           </tr>

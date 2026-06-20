@@ -357,11 +357,7 @@ def mitglied_beitritt(request, token):
                     managers,
                     "emails/mitglied_antrag_admin.html",
                     {"applicant": user, "link": link},
-                    text_body=(
-                        f"Es liegt ein neuer Mitgliedsantrag vor:\n\n"
-                        f"{user.first_name} {user.last_name} ({email})\n\n"
-                        f"Details: {link}"
-                    ),
+                    text_body=format_config_mail("MAIL_ANTRAG_ADMIN", user, link=link),
                 )
             return render(request, "mitglied_beitritt_success.html", {"user": user})
     else:
@@ -518,12 +514,7 @@ def mitglied_bestaetigung(request, token):
                 "emails/mitglied_bestaetigung_bestaetigt.html",
                 {"user": user},
                 attachments=pdf_attachment,
-                text_body=(
-                    f"Hallo {user.first_name},\n\n"
-                    f"vielen Dank für Deine Bestätigung! Anbei findest Du eine Kopie als PDF.\n\n"
-                    f"Herzliche Grüße\n"
-                    f"Dein Vorstand von {get_vereinsname()}"
-                ),
+                text_body=format_config_mail("MAIL_BESTAETIGUNG_BESTAETIGT", user),
             )
             return render(request, "mitglied_bestaetigung_success.html", {"user": user})
     else:
