@@ -42,7 +42,15 @@ _CONFIG_DEFAULTS = [
     ("PORTAL_URL",             "",                               "Basis-URL des Portals für Links in E-Mails (z.B. https://portal.example.com)"),
     ("MAIL_BEI_AKTIVIERUNG", "1",                              "Aktivierungsmails versenden (0 = deaktiviert, z.B. während Tests)"),
     ("MAIL_BESTAETIGUNG",
-     "",
+     "Liebe/r {vorname},\n\n"
+     "wir bitten Dich, Deine im Mitgliederportal gespeicherten Daten zu prüfen "
+     "und zu bestätigen, dass sie korrekt und aktuell sind.\n\n"
+     "Gleichzeitig bitten wir Dich, unsere Datenschutzerklärung, die Satzung "
+     "sowie die Beitragsordnung des Chors erneut zu bestätigen.\n\n"
+     "Bitte klicke auf den folgenden Link (gültig 30 Tage):\n"
+     "{link}\n\n"
+     "Herzliche Grüße\n"
+     "Dein Vorstand von {vereinsname}",
      "Text der Datenbestätigungs-Mail (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})"),
     ("MAIL_BESTAETIGUNG_BESTAETIGT",
      "Hallo {vorname},\n\nvielen Dank für Deine Bestätigung! Anbei findest Du eine Kopie als PDF.\n\n"
