@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 
 from ..forms import OrtForm
@@ -14,6 +15,7 @@ __all__ = [
     "ort_view",
     "ort_add",
     "ort_edit",
+    "ort_delete",
 ]
 
 _PAGE_SIZE = 50
@@ -105,5 +107,15 @@ def ort_edit(request, id):
         "seitentitel": f"bearbeiten: {ort.name}",
         "view": "ort_view",
         "id": id,
+        "can_delete": request.user.has_perm("intern.delete_ort"),
     }
     return render(request, "ort_edit.html", context)
+
+
+@permission_required("intern.delete_ort", raise_exception=True)
+@require_POST
+def ort_delete(request, id):
+    ort = get_object_or_404(Ort, id=id)
+    ort._audit_user = request.user
+    ort.delete()
+    return redirect("ort_list")

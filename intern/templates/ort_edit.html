@@ -75,7 +75,22 @@
             {% else %}
             <a href="{% url 'ort_list' %}" class="btn btn-secondary">Abbrechen</a>
             {% endif %}
+            {% if id and can_delete %}
+            <button type="button" class="btn btn-danger" onclick="document.getElementById('delete-dialog').showModal()">Ort löschen</button>
+            {% endif %}
         </div>
     </form>
+
+    {% if id and can_delete %}
+    <dialog id="delete-dialog">
+        <h3>Ort löschen</h3>
+        <p>Möchtest du &bdquo;{{ ort.name }}&ldquo; wirklich löschen?</p>
+        <form method="post" action="{% url 'ort_delete' id=id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Ja, löschen</button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('delete-dialog').close()">Abbrechen</button>
+        </form>
+    </dialog>
+    {% endif %}
 </div>
 {% endblock %}

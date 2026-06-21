@@ -92,6 +92,7 @@ urlpatterns = [
     path("ort/add/", views.ort_add, name="ort_add"),
     path("ort/<int:id>/", views.ort_view, name="ort_view"),
     path("ort/<int:id>/edit/", views.ort_edit, name="ort_edit"),
+    path("ort/<int:id>/delete/", views.ort_delete, name="ort_delete"),
     path("ort/<int:id>/aenderungen/", views.ort_aenderungen, name="ort_aenderungen"),
     # Karte
     path("karte/", views.karte_view, name="karte_view"),
