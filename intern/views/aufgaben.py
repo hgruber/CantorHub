@@ -21,7 +21,7 @@ def aufgaben(request):
     if not (request.user.is_superuser or request.user.has_perm("intern.manage_user_permissions")):
         return redirect("article_view", name="Aktuell")
 
-    groups = list(Group.objects.order_by("name"))
+    groups = list(Group.objects.order_by("id"))
     users = (
         User.objects.filter(is_active=True)
         .annotate(stimme_order=User.stimme_order_case())
@@ -110,7 +110,7 @@ def folder_permissions(request, pk):
 
     folder = get_object_or_404(Folder, pk=pk)
 
-    groups = Group.objects.all().order_by("name")
+    groups = Group.objects.all().order_by("id")
     existing = {
         fp.group_id: fp
         for fp in FolderPermission.objects.filter(folder=folder)

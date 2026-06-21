@@ -653,13 +653,13 @@ class MitgliederFilter(filters.FilterSet):
     aktiv = filters.BooleanFilter(field_name="is_active", label="Aktiv")
     gruppen = filters.ModelMultipleChoiceFilter(
         field_name="groups",
-        queryset=Group.objects.order_by("name"),
+        queryset=Group.objects.order_by("id"),
         widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
         label="Gruppen",
     )
     gruppen_nicht = filters.ModelMultipleChoiceFilter(
         field_name="groups",
-        queryset=Group.objects.order_by("name"),
+        queryset=Group.objects.order_by("id"),
         widget=forms.CheckboxSelectMultiple(
             attrs={"class": "filter-checks filter-checks--exclude"}
         ),

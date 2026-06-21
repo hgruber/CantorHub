@@ -210,7 +210,7 @@ def gruppen(request):
         return JsonResponse({"ok": True})
 
     all_groups = list(
-        Group.objects.order_by("name").prefetch_related("permissions__content_type")
+        Group.objects.order_by("id").prefetch_related("permissions__content_type")
     )
 
     # Build permission matrix: {group_name: [perm_strings]}
