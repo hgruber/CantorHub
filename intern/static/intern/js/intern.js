@@ -1185,7 +1185,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
       let h = `<div class="dl-menu-header">${esc(titel)}</div>`;
 
-      if (originalUrl || aufnahmeUrl) {
+      // Show play section only when Audio column is hidden (buttons not already in row)
+      const audioColumnHidden = !tr.querySelector(".audio-btn");
+      if (audioColumnHidden && (originalUrl || aufnahmeUrl)) {
         h += '<div class="dl-group-label">Abspielen</div>';
         if (originalUrl) {
           h += `<a href="#" class="dl-item"
