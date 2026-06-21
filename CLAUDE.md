@@ -207,7 +207,7 @@ No Vorstand notification. Three public templates extend `mitglied_public_base.ht
 
 Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. `FOLDER_AVATARE = 1`, `FOLDER_MUSIK = 5`). The `import_files` management command imports avatars from the `Avatare/` directory into filer on first setup.
 
-`index_files` and `thumbnail_files` run as background jobs after a fresh install in `migrate.sh`, building the search index and pre-generating thumbnails for all files. They are intentionally absent from `start.sh` (existing DB) — files are already indexed there. **Known gap:** files uploaded through the app are not automatically indexed or thumbnailed; that only happens on the next `migrate.sh` run. Fix: add a post-save signal on `filer.File` that calls `index_file()` and triggers thumbnail generation.
+`index_files` and `thumbnail_files` run as background jobs after a fresh install in `migrate.sh`, building the search index and pre-generating thumbnails for all files. They are intentionally absent from `start.sh` (existing DB) — files are already indexed there. Files uploaded through the app are indexed and thumbnailed immediately via a `post_save` signal on `filer.File` (`on_filer_file_saved` in `signals.py`): a daemon thread calls `index_file()` and pre-generates all three thumbnail sizes so the upload response is not delayed.
 
 ### External integrations
 

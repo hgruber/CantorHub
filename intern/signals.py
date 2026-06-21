@@ -223,6 +223,43 @@ _AUDIT_FIELDS = {
 }
 
 
+_THUMBNAIL_SIZES = [
+    {"size": (32, 32), "crop": True, "quality": 85},
+    {"size": (120, 120), "crop": True, "quality": 85},
+    {"size": (200, 200), "quality": 85},
+]
+
+
+def _process_filer_file(file_pk):
+    """Index and pre-generate thumbnails for a newly uploaded filer File.
+    Runs in a daemon thread so the upload response is not delayed.
+    """
+    try:
+        from easy_thumbnails.files import get_thumbnailer
+        from filer.models import File as FilerFile
+
+        from .fileindex import index_file
+
+        f = FilerFile.objects.get(pk=file_pk)
+        index_file(f)
+        for opts in _THUMBNAIL_SIZES:
+            try:
+                get_thumbnailer(f.file).get_thumbnail(opts)
+            except Exception:
+                pass
+    except Exception:
+        logger.exception("filer post-save: index/thumbnail failed for file pk=%s", file_pk)
+
+
+@receiver(post_save, sender="filer.File")
+def on_filer_file_saved(sender, instance, created, **kwargs):
+    if not created or getattr(_migrating, "active", False):
+        return
+    threading.Thread(
+        target=_process_filer_file, args=(instance.pk,), daemon=True
+    ).start()
+
+
 def _log_change(instance, user, action, old_values=None):
     """Write a ChangeLog row. Never raises — audit failures must not block saves."""
     from .models import ChangeLog
