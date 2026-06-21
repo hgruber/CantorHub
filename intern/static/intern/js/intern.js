@@ -1188,7 +1188,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (originalUrl || aufnahmeUrl) {
         h += '<div class="dl-group-label">Abspielen</div>';
         if (originalUrl) {
-          h += `<button type="button" class="dl-item"
+          h += `<a href="#" class="dl-item"
             data-ctx-url="${esc(originalUrl)}" data-ctx-id="${esc(liedId)}"
             data-ctx-kind="original" data-ctx-title="${esc(titel)}"
             data-ctx-composer="${esc(komponist)}">
@@ -1196,10 +1196,10 @@ document.addEventListener("DOMContentLoaded", function () {
             <span class="dl-item-body">
               <span class="dl-item-title">Original abspielen</span>
               <span class="dl-item-sub">MP3</span>
-            </span></button>`;
+            </span></a>`;
         }
         if (aufnahmeUrl) {
-          h += `<button type="button" class="dl-item"
+          h += `<a href="#" class="dl-item"
             data-ctx-url="${esc(aufnahmeUrl)}" data-ctx-id="r${esc(liedId)}"
             data-ctx-kind="jg" data-ctx-title="${esc(titel)}"
             data-ctx-composer="${esc(komponist)}">
@@ -1207,7 +1207,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <span class="dl-item-body">
               <span class="dl-item-title">JG Aufnahme abspielen</span>
               <span class="dl-item-sub">MP3</span>
-            </span></button>`;
+            </span></a>`;
         }
       }
 
@@ -1273,6 +1273,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function closeMenu() { menu.classList.remove("open"); }
 
+    let suppressNextClose = false;
+
     document.addEventListener("contextmenu", function(e) {
       const tr = e.target.closest("tr[data-lied-id]");
       if (!tr) { closeMenu(); return; }
@@ -1280,6 +1282,10 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!buildMenu(tr)) return;
       e.preventDefault();
       show(e.clientX, e.clientY);
+      // Guard: some OS/browser combos fire click after contextmenu on interactive
+      // elements (e.g. audio-btn). That click would immediately close the menu.
+      suppressNextClose = true;
+      setTimeout(function() { suppressNextClose = false; }, 300);
     });
 
     menu.addEventListener("click", function(e) {
@@ -1292,6 +1298,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.addEventListener("click", function(e) {
+      if (suppressNextClose) return;
       if (!menu.contains(e.target)) closeMenu();
     });
 
