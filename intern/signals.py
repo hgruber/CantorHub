@@ -213,7 +213,7 @@ _AUDIT_FIELDS = {
         "geburtstag", "avatar_id", "private_fields", "notify_enabled",
     ],
     "Termin": ["kurz", "datum", "datum_bis", "lang", "ort_id", "anwesenheit", "repertoire"],
-    "Lied": ["titel", "aktiv", "tempo", "beats", "hymne", "acapella", "weihnacht", "komponist",
+    "Lied": ["titel", "aktiv", "tempo", "tonart", "beats", "hymne", "acapella", "weihnacht", "komponist",
              "original_id", "aufnahme_id", "pdf_id", "noten_id"],
     "Zusage": ["option"],
     "Forum": ["thema", "aktiv", "bild_id"],

@@ -59,6 +59,7 @@ FIELD_LABELS = {
     "titel": "Titel",
     "aktiv": "Aktiv",
     "tempo": "Tempo",
+    "tonart": "Tonart",
     "beats": "Beats",
     "hymne": "Hymne",
     "acapella": "A cappella",
