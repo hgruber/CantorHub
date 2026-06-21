@@ -483,7 +483,7 @@ def _chip_icon(svg, label, extra_cls=""):
     )
 
 
-def _audio_button_html(url, song_id, title, kind):
+def _audio_button_html(url, song_id, title, kind, composer=""):
     """Render a single play button. kind is 'original' or 'jg'."""
     type_label = "Original" if kind == "original" else f"{get_vereinsname_kurz()} Aufnahme"
     if kind == "jg":
@@ -494,10 +494,11 @@ def _audio_button_html(url, song_id, title, kind):
         )
     else:
         inner = mark_safe(_PLAY_ICON_SVG)
+    composer_attr = format_html(' data-composer="{}"', composer) if composer else ""
     return format_html(
         '<button type="button" class="audio-btn audio-btn--{kind}" '
         'data-audio-url="{url}" data-song-id="{sid}" '
-        'data-title="{title}" data-type="{type}" '
+        'data-title="{title}" data-type="{type}"{composer} '
         'title="{type} abspielen" aria-label="{type} – {title} abspielen">'
         "{inner}</button>",
         kind=kind,
@@ -505,6 +506,7 @@ def _audio_button_html(url, song_id, title, kind):
         sid=song_id,
         title=title,
         type=type_label,
+        composer=mark_safe(composer_attr),
         inner=inner,
     )
 
@@ -592,13 +594,14 @@ class RepertoireTabelle(tables.Table):
 
     def render_original(self, record):
         parts = []
+        composer = getattr(record, "komponist", "") or ""
         if getattr(record, "original", None):
             parts.append(_audio_button_html(
-                record.original.url, record.id, record.titel, "original"
+                record.original.url, record.id, record.titel, "original", composer
             ))
         if getattr(record, "aufnahme", None):
             parts.append(_audio_button_html(
-                record.aufnahme.url, f"r{record.id}", record.titel, "jg"
+                record.aufnahme.url, f"r{record.id}", record.titel, "jg", composer
             ))
         if not parts:
             return ""
