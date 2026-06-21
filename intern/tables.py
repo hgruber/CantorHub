@@ -657,6 +657,15 @@ class MitgliederFilter(filters.FilterSet):
         widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
         label="Gruppen",
     )
+    gruppen_nicht = filters.ModelMultipleChoiceFilter(
+        field_name="groups",
+        queryset=Group.objects.order_by("name"),
+        widget=forms.CheckboxSelectMultiple(
+            attrs={"class": "filter-checks filter-checks--exclude"}
+        ),
+        label="Nicht in Gruppen",
+        exclude=True,
+    )
 
     status = filters.ChoiceFilter(
         label="Status",
@@ -696,7 +705,7 @@ class MitgliederFilter(filters.FilterSet):
         ]
 
     BOOLEAN_FILTER_FIELDS = ["aktiv"]
-    MANAGE_ONLY_FIELDS = ["aktiv", "gruppen"]
+    MANAGE_ONLY_FIELDS = ["aktiv", "gruppen", "gruppen_nicht"]
 
     def __init__(self, *args, can_manage=False, **kwargs):
         super().__init__(*args, **kwargs)

@@ -1678,6 +1678,34 @@ div.filter-checks input[type="checkbox"] {
     flex-shrink: 0;
 }
 
+/* ── Ausschluss-Checkbox-Liste (Nicht in Gruppen) ── */
+div.filter-checks--exclude > div > label:hover {
+    background: rgba(239, 68, 68, 0.08);
+}
+
+div.filter-checks--exclude > div:has(input:checked) > label {
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 500;
+}
+
+div.filter-checks--exclude input[type="checkbox"] {
+    accent-color: #dc2626;
+}
+
+[data-theme="dark"] div.filter-checks--exclude > div > label:hover {
+    background: rgba(239, 68, 68, 0.12);
+}
+
+[data-theme="dark"] div.filter-checks--exclude > div:has(input:checked) > label {
+    background: rgba(239, 68, 68, 0.20);
+    color: #fca5a5;
+}
+
+[data-theme="dark"] div.filter-checks--exclude input[type="checkbox"] {
+    accent-color: #ef4444;
+}
+
 /* ── Tri-state sliding toggle switch ── */
 .tri-toggle-select { display: none !important; }
 

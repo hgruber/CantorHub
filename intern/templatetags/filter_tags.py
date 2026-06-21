@@ -52,6 +52,8 @@ def filter_chips(filter_obj, request, skip=None):
             else:
                 chip_type = "true"
         elif isinstance(filter_field, (ModelChoiceFilter, ModelMultipleChoiceFilter)):
+            if getattr(filter_field, "exclude", False):
+                chip_type = "false"
             # Resolve PKs to human-readable names via the filter's queryset,
             # with fallback to the model's full manager in case the filtered
             # queryset excludes the selected object (e.g. inactive user).
