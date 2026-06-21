@@ -114,6 +114,11 @@ class OrdnerTabelle(tables.Table):
             media = record["thumb_url"]
         elif record["mime"].endswith("pdf"):
             media = static("filer/icons/file-pdf.svg")
+        elif record.get("mime") in (
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ):
+            media = static("intern/images/file-word.svg")
         url = f"/media/{record['link']}"
         return format_html('<a href="{}" target="_blank" rel="noopener"><img src="{}" /></a>', url, media)
 

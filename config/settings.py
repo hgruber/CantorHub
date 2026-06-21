@@ -194,6 +194,7 @@ DEFAULT_FROM_EMAIL = "webmaster@example.org"
 THUMBNAIL_SOURCE_GENERATORS = (
     "easy_thumbnails.source_generators.pil_image",
     "intern.thumbnails.pdf_source",
+    "intern.thumbnails.docx_source",
 )
 
 # File type routing for uploads — folder_name is resolved at runtime via

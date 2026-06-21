@@ -15,10 +15,13 @@ _SIZES = [
 ]
 
 
+_DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
 def _is_thumbnailable(mime):
     if not mime:
         return False
-    return mime.startswith("image") or mime.endswith("pdf")
+    return mime.startswith("image") or mime.endswith("pdf") or mime == _DOCX_MIME
 
 
 class Command(BaseCommand):

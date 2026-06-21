@@ -229,12 +229,15 @@ def _folder_path_map(user=None):
     return {f["id"]: f["path"] for f in _build_folder_flat(user=user)}
 
 
+_DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
 def _attach_thumbnails(files_list):
     """Annotate file record dicts in place with a thumb_url for image/PDF files."""
 
     def _is_thumbnailable(mime):
         mime = mime or ""
-        return mime.startswith("image") or mime.endswith("pdf")
+        return mime.startswith("image") or mime.endswith("pdf") or mime == _DOCX_MIME
 
     thumb_ids = [r["id"] for r in files_list if _is_thumbnailable(r.get("mime"))]
     if not thumb_ids:
