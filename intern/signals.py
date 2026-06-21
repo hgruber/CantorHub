@@ -255,9 +255,13 @@ def _process_filer_file(file_pk):
 def on_filer_file_saved(sender, instance, created, **kwargs):
     if not created or getattr(_migrating, "active", False):
         return
-    threading.Thread(
-        target=_process_filer_file, args=(instance.pk,), daemon=True
-    ).start()
+    file_pk = instance.pk
+
+    def _start():
+        threading.Thread(target=_process_filer_file, args=(file_pk,), daemon=True).start()
+
+    from django.db import transaction
+    transaction.on_commit(_start)
 
 
 def _log_change(instance, user, action, old_values=None):
