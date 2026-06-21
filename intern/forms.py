@@ -320,7 +320,7 @@ class LiedEditForm(forms.ModelForm):
     class Meta:
         model = Lied
         fields = [
-            "titel", "aktiv", "tempo", "beats", "hymne", "acapella", "weihnacht",
+            "titel", "aktiv", "tempo", "tonart", "beats", "hymne", "acapella", "weihnacht",
             "original", "aufnahme", "pdf", "noten", "komponist", "bearbeiter",
             "solist", "dirigent",
         ]
@@ -328,6 +328,7 @@ class LiedEditForm(forms.ModelForm):
             "titel": forms.TextInput(attrs={"class": "form-control"}),
             "aktiv": forms.CheckboxInput(),
             "tempo": forms.Select(attrs={"class": "form-control"}),
+            "tonart": forms.Select(attrs={"class": "form-control"}),
             "beats": forms.NumberInput(attrs={"class": "form-control"}),
             "hymne": forms.CheckboxInput(),
             "acapella": forms.CheckboxInput(),

@@ -396,8 +396,35 @@ class Lied(models.Model):
     solist = models.ManyToManyField("User", related_name="solist")
     dirigent = models.ManyToManyField("User", related_name="dirigent")
     CHOICES = [("l", "l"), ("m", "m"), ("s", "s")]
+    TONART_CHOICES = [
+        ("A",   "A"),
+        ("Ab",  "A♭"),
+        ("B",   "B"),
+        ("Bb",  "B♭"),
+        ("C",   "C"),
+        ("D",   "D"),
+        ("Db",  "D♭"),
+        ("E",   "E"),
+        ("Eb",  "E♭"),
+        ("F",   "F"),
+        ("Fs",  "F♯"),
+        ("G",   "G"),
+        ("Am",  "Am"),
+        ("Abm", "A♭m"),
+        ("Bm",  "Bm"),
+        ("Bbm", "B♭m"),
+        ("Cm",  "Cm"),
+        ("Csm", "C♯m"),
+        ("Dm",  "Dm"),
+        ("Ebm", "E♭m"),
+        ("Em",  "Em"),
+        ("Fm",  "Fm"),
+        ("Fsm", "F♯m"),
+        ("Gm",  "Gm"),
+    ]
     tempo = models.CharField(max_length=1, choices=CHOICES, default="m")
     beats = models.SmallIntegerField(blank=True, null=True)
+    tonart = models.CharField(max_length=4, choices=TONART_CHOICES, blank=True, default="")
     hymne = models.BooleanField(default=False)
     acapella = models.BooleanField(default=False)
     weihnacht = models.BooleanField(default=False)

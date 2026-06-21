@@ -3774,6 +3774,17 @@ span.not_found {
     padding-right: 2px;  /* compensate negative letter-spacing on last glyph */
 }
 
+/* Tonart: plain text label — no border/background */
+.eig-tonart {
+    display: inline-block;
+    font: 600 11px var(--font-sans);
+    color: var(--t2);
+    line-height: 22px;
+    vertical-align: middle;
+}
+.eig-cell .eig-chip + .eig-tonart,
+.eig-cell .eig-tonart + .eig-chip { margin-left: 4px; }
+
 /* Dark-mode tweaks */
 [data-theme="dark"] .eig-dot--on  { background: #34d399; }
 [data-theme="dark"] .eig-beats    { border-color: rgba(255,255,255,0.18); color: var(--t1); }

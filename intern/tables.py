@@ -298,6 +298,12 @@ class RepertoireFilter(filters.FilterSet):
         field_name="tempo", choices=Lied.CHOICES, label="Tempo",
         widget=forms.Select(attrs={"class": "filter-inline"}),
     )
+    tonart = filters.ChoiceFilter(
+        field_name="tonart",
+        choices=Lied.TONART_CHOICES,
+        label="Tonart",
+        widget=forms.Select(attrs={"class": "filter-inline"}),
+    )
     aktiv = filters.BooleanFilter(field_name="aktiv", label="Aktiv")
     hymne = filters.BooleanFilter(field_name="hymne", label="Hymne")
     acapella = filters.BooleanFilter(field_name="acapella", label="A cappella")
@@ -367,6 +373,7 @@ class RepertoireFilter(filters.FilterSet):
             "acapella",
             "weihnacht",
             "tempo",
+            "tonart",
             "original",
             "aufnahme",
             "notensatz",
@@ -473,6 +480,14 @@ def _chip_tempo(value):
         'title="Tempo: {label}" aria-label="Tempo {label}">'
         '<span class="eig-tempo">{chev}</span></span>',
         level=level, label=label, chev=chevrons,
+    )
+
+
+def _tonart_label(tonart):
+    display = dict(Lied.TONART_CHOICES).get(tonart, tonart)
+    return format_html(
+        '<span class="eig-tonart" title="Tonart: {d}" aria-label="Tonart {d}">{d}</span>',
+        d=display,
     )
 
 
@@ -647,6 +662,8 @@ class RepertoireTabelle(tables.Table):
         tempo_chip = _chip_tempo(record.tempo)
         if tempo_chip:
             parts.append(tempo_chip)
+        if record.tonart:
+            parts.append(_tonart_label(record.tonart))
         if record.beats:
             parts.append(_chip_beats(record.beats))
         if record.hymne:

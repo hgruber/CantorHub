@@ -18,6 +18,9 @@
                 {% elif lied.tempo == 's' %}
                 <span class="eig-chip eig-chip--tempo" title="Tempo: Schnell" aria-label="Tempo Schnell"><span class="eig-tempo">›››</span></span>
                 {% endif %}
+                {% if lied.tonart %}
+                <span class="eig-tonart" title="Tonart: {{ lied.get_tonart_display }}" aria-label="Tonart {{ lied.get_tonart_display }}">{{ lied.get_tonart_display }}</span>
+                {% endif %}
                 {% if lied.beats %}
                 <span class="eig-chip eig-chip--beats" title="{{ lied.beats }} Beats per Minute" aria-label="{{ lied.beats }} BPM"><span class="eig-beats">{{ lied.beats }}</span></span>
                 {% endif %}
