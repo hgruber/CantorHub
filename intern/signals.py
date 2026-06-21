@@ -229,26 +229,37 @@ _THUMBNAIL_SIZES = [
     {"size": (200, 200), "quality": 85},
 ]
 
+# Cap concurrent thumbnail threads so bulk imports don't exhaust MySQL connections.
+_thumb_semaphore = threading.Semaphore(4)
+
 
 def _process_filer_file(file_pk):
     """Index and pre-generate thumbnails for a newly uploaded filer File.
     Runs in a daemon thread so the upload response is not delayed.
     """
-    try:
-        from easy_thumbnails.files import get_thumbnailer
-        from filer.models import File as FilerFile
+    with _thumb_semaphore:
+        try:
+            from django.db import connection
+            from easy_thumbnails.files import get_thumbnailer
+            from filer.models import File as FilerFile
 
-        from .fileindex import index_file
+            from .fileindex import index_file
 
-        f = FilerFile.objects.get(pk=file_pk)
-        index_file(f)
-        for opts in _THUMBNAIL_SIZES:
+            f = FilerFile.objects.get(pk=file_pk)
+            index_file(f)
+            for opts in _THUMBNAIL_SIZES:
+                try:
+                    get_thumbnailer(f.file).get_thumbnail(opts)
+                except Exception:
+                    pass
+        except Exception:
+            logger.exception("filer post-save: index/thumbnail failed for file pk=%s", file_pk)
+        finally:
             try:
-                get_thumbnailer(f.file).get_thumbnail(opts)
+                from django.db import connection
+                connection.close()
             except Exception:
                 pass
-    except Exception:
-        logger.exception("filer post-save: index/thumbnail failed for file pk=%s", file_pk)
 
 
 @receiver(post_save, sender="filer.File")
