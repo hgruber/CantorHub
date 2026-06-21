@@ -577,7 +577,16 @@ class RepertoireTabelle(tables.Table):
     bearbeiter = tables.Column(attrs={"td": {"style": "font-size: 0.8em;"}})
 
     class Meta:
-        row_attrs = {"data-href": lambda record: reverse("titel_view", args=[record.id])}
+        row_attrs = {
+            "data-href":         lambda record: reverse("titel_view", args=[record.id]),
+            "data-lied-id":      lambda record: record.id,
+            "data-titel":        lambda record: record.titel,
+            "data-komponist":    lambda record: record.komponist or "",
+            "data-original-url": lambda record: record.original.url if getattr(record, "original", None) else "",
+            "data-aufnahme-url": lambda record: record.aufnahme.url if getattr(record, "aufnahme", None) else "",
+            "data-pdf-url":      lambda record: record.pdf.url if getattr(record, "pdf", None) else "",
+            "data-noten-url":    lambda record: record.noten.url if getattr(record, "noten", None) else "",
+        }
 
     def __init__(self, *args, visible_fields=None, counter_offset=0, **kwargs):
         super().__init__(*args, **kwargs)

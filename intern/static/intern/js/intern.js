@@ -1151,6 +1151,158 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener("resize", closeMenu);
   })();
 
+  // ── Repertoire-Zeile: Rechtsklick-Download-Menü ──────────
+  (function initRepertoireContextMenu() {
+    const S = 'xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+    const SVG_PLAY  = `<svg ${S}><circle cx="12" cy="12" r="9"/><polygon points="10 8 18 12 10 16" fill="currentColor" stroke="none"/></svg>`;
+    const SVG_DL    = `<svg ${S}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+    const SVG_PDF   = `<svg ${S}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>`;
+    const SVG_NOTEN = `<svg ${S}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+    const jgLogoEl  = document.querySelector(".audio-btn-logo");
+    const JG_ICON   = jgLogoEl
+      ? `<img src="${jgLogoEl.src}" width="18" height="18" alt="" aria-hidden="true"/>`
+      : SVG_NOTEN;
+
+    const menu = document.createElement("div");
+    menu.className = "dl-menu dl-context-menu";
+    menu.setAttribute("role", "menu");
+    document.body.appendChild(menu);
+
+    function esc(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    function buildMenu(tr) {
+      const titel       = tr.dataset.titel       || "";
+      const komponist   = tr.dataset.komponist   || "";
+      const liedId      = tr.dataset.liedId      || "";
+      const originalUrl = tr.dataset.originalUrl || "";
+      const aufnahmeUrl = tr.dataset.aufnahmeUrl || "";
+      const pdfUrl      = tr.dataset.pdfUrl      || "";
+      const notenUrl    = tr.dataset.notenUrl    || "";
+
+      if (!originalUrl && !aufnahmeUrl && !pdfUrl && !notenUrl) return false;
+
+      let h = `<div class="dl-menu-header">${esc(titel)}</div>`;
+
+      if (originalUrl || aufnahmeUrl) {
+        h += '<div class="dl-group-label">Abspielen</div>';
+        if (originalUrl) {
+          h += `<button type="button" class="dl-item"
+            data-ctx-url="${esc(originalUrl)}" data-ctx-id="${esc(liedId)}"
+            data-ctx-kind="original" data-ctx-title="${esc(titel)}"
+            data-ctx-composer="${esc(komponist)}">
+            <span class="dl-item-icon dl-icon-audio">${SVG_PLAY}</span>
+            <span class="dl-item-body">
+              <span class="dl-item-title">Original abspielen</span>
+              <span class="dl-item-sub">MP3</span>
+            </span></button>`;
+        }
+        if (aufnahmeUrl) {
+          h += `<button type="button" class="dl-item"
+            data-ctx-url="${esc(aufnahmeUrl)}" data-ctx-id="r${esc(liedId)}"
+            data-ctx-kind="jg" data-ctx-title="${esc(titel)}"
+            data-ctx-composer="${esc(komponist)}">
+            <span class="dl-item-icon dl-icon-jg-rec">${JG_ICON}</span>
+            <span class="dl-item-body">
+              <span class="dl-item-title">JG Aufnahme abspielen</span>
+              <span class="dl-item-sub">MP3</span>
+            </span></button>`;
+        }
+      }
+
+      h += '<div class="dl-group-label">Herunterladen</div>';
+      if (originalUrl) {
+        h += `<a href="${esc(originalUrl)}" download class="dl-item">
+          <span class="dl-item-icon dl-icon-audio">${SVG_DL}</span>
+          <span class="dl-item-body">
+            <span class="dl-item-title">Original</span>
+            <span class="dl-item-sub">MP3</span>
+          </span></a>`;
+      }
+      if (aufnahmeUrl) {
+        h += `<a href="${esc(aufnahmeUrl)}" download class="dl-item">
+          <span class="dl-item-icon dl-icon-jg-rec">${JG_ICON}</span>
+          <span class="dl-item-body">
+            <span class="dl-item-title">JG Aufnahme</span>
+            <span class="dl-item-sub">MP3</span>
+          </span></a>`;
+      }
+      if (pdfUrl) {
+        h += `<a href="${esc(pdfUrl)}" download class="dl-item">
+          <span class="dl-item-icon dl-icon-pdf">${SVG_PDF}</span>
+          <span class="dl-item-body">
+            <span class="dl-item-title">Notenblatt</span>
+            <span class="dl-item-sub">PDF</span>
+          </span></a>`;
+      }
+      if (notenUrl) {
+        h += `<a href="${esc(notenUrl)}" download class="dl-item">
+          <span class="dl-item-icon dl-icon-noten">${SVG_NOTEN}</span>
+          <span class="dl-item-body">
+            <span class="dl-item-title">Notensatz</span>
+            <span class="dl-item-sub">Noten</span>
+          </span></a>`;
+      }
+
+      menu.innerHTML = h;
+      return true;
+    }
+
+    function triggerPlay(btn) {
+      const tmp = document.createElement("button");
+      tmp.className = "audio-btn audio-btn--" + btn.dataset.ctxKind;
+      tmp.dataset.audioUrl = btn.dataset.ctxUrl;
+      tmp.dataset.songId   = btn.dataset.ctxId;
+      tmp.dataset.title    = btn.dataset.ctxTitle;
+      tmp.dataset.type     = btn.dataset.ctxKind === "jg" ? "JG Aufnahme" : "Original";
+      tmp.dataset.composer = btn.dataset.ctxComposer || "";
+      tmp.style.cssText    = "position:fixed;opacity:0;pointer-events:none;top:-9999px;left:-9999px;";
+      document.body.appendChild(tmp);
+      tmp.click();
+      document.body.removeChild(tmp);
+    }
+
+    function show(x, y) {
+      const w = menu.offsetWidth, h = menu.offsetHeight;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      menu.style.left = Math.min(x, Math.max(0, vw - w - 8)) + "px";
+      menu.style.top  = Math.min(y, Math.max(0, vh - h - 8)) + "px";
+      menu.classList.add("open");
+    }
+
+    function closeMenu() { menu.classList.remove("open"); }
+
+    document.addEventListener("contextmenu", function(e) {
+      const tr = e.target.closest("tr[data-lied-id]");
+      if (!tr) { closeMenu(); return; }
+      closeMenu();
+      if (!buildMenu(tr)) return;
+      e.preventDefault();
+      show(e.clientX, e.clientY);
+    });
+
+    menu.addEventListener("click", function(e) {
+      const playBtn = e.target.closest("[data-ctx-kind]");
+      if (playBtn) {
+        e.preventDefault();
+        triggerPlay(playBtn);
+      }
+      closeMenu();
+    });
+
+    document.addEventListener("click", function(e) {
+      if (!menu.contains(e.target)) closeMenu();
+    });
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape") closeMenu();
+    });
+
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("resize", closeMenu);
+  })();
+
   // Add event listener for save order button
   const saveOrderButton = document.getElementById("saveOrderButton");
   if (saveOrderButton) {

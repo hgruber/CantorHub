@@ -5301,6 +5301,7 @@ span.not_found {
 .dl-icon-word  { background: #eff6ff; color: #2563eb; }
 .dl-icon-pdf   { background: #fef2f2; color: #dc2626; }
 .dl-icon-noten { background: #f0fdf4; color: #16a34a; }
+.dl-icon-audio { background: var(--brand-light); color: var(--brand); }
 .dl-item-body {
     display: flex;
     flex-direction: column;
@@ -5318,6 +5319,16 @@ span.not_found {
 }
 [data-theme="dark"] .dl-icon-word  { background: rgba(37,99,235,0.15);  color: #60a5fa; }
 [data-theme="dark"] .dl-icon-pdf   { background: rgba(220,38,38,0.15);  color: #f87171; }
+[data-theme="dark"] .dl-icon-audio { background: rgba(193,68,104,0.15); color: var(--brand); }
+
+.dl-context-menu {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: auto;
+    min-width: 250px;
+    z-index: 1001;
+}
 
 /* === 404 Error Page === */
 .error-standalone {
