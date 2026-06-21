@@ -39,6 +39,27 @@ def _extract_pdf(data):
         return ""
 
 
+def _extract_docx(data):
+    try:
+        from io import BytesIO
+
+        from docx import Document
+
+        doc = Document(BytesIO(data))
+        parts = []
+        total = 0
+        for para in doc.paragraphs:
+            txt = para.text
+            if txt:
+                parts.append(txt)
+                total += len(txt)
+                if total >= _MAX_CHARS:
+                    break
+        return "\n".join(parts)[:_MAX_CHARS]
+    except Exception:
+        return ""
+
+
 def extract_text(filer_file):
     """Return extracted text for a filer File, or "" if unsupported/unreadable.
 
@@ -54,6 +75,8 @@ def extract_text(filer_file):
 
     if data[:5] == b"%PDF-" or ext == ".pdf":
         return _extract_pdf(data)
+    if data[:4] == b"PK\x03\x04" and ext == ".docx":
+        return _extract_docx(data)
     if ext in _TEXT_EXTENSIONS:
         try:
             return data.decode("utf-8", errors="ignore")[:_MAX_CHARS]

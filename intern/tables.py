@@ -110,15 +110,44 @@ class OrdnerTabelle(tables.Table):
                 media = static("filer/icons/folder.svg")
                 url = reverse("folder_view", args=[record["id"]])
             return format_html('<a href="{}"><img src="{}" /></a>', url, media)
-        elif record.get("thumb_url"):
+
+        name = record.get("original_filename") or record.get("name", "")
+        ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+        mime = record.get("mime") or ""
+
+        if record.get("thumb_url"):
             media = record["thumb_url"]
-        elif record["mime"].endswith("pdf"):
+        elif ext in ("msc", "mscz", "cap"):
+            media = static("intern/images/file-music.svg")
+        elif mime.endswith("pdf"):
             media = static("filer/icons/file-pdf.svg")
-        elif record.get("mime") in (
+        elif mime in (
             "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         ):
             media = static("intern/images/file-word.svg")
+        elif mime in (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.oasis.opendocument.spreadsheet",
+            "application/vnd.ms-excel",
+        ):
+            media = static("intern/images/file-table.svg")
+        elif mime.startswith("audio/"):
+            media = static("filer/icons/file-audio.svg")
+        elif mime.startswith("video/"):
+            media = static("filer/icons/file-video.svg")
+        elif mime.startswith("image/"):
+            media = static("filer/icons/file-picture.svg")
+        elif mime in (
+            "application/zip",
+            "application/x-zip-compressed",
+            "application/x-rar-compressed",
+            "application/x-7z-compressed",
+            "application/x-tar",
+            "application/gzip",
+        ):
+            media = static("filer/icons/file-zip.svg")
+
         url = f"/media/{record['link']}"
         return format_html('<a href="{}" target="_blank" rel="noopener"><img src="{}" /></a>', url, media)
 
