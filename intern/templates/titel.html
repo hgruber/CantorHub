@@ -58,52 +58,80 @@
             {% if lied.original %}
             <div class="media-row">
                 <span class="media-label">Original</span>
-                <button type="button" class="audio-btn audio-btn--original"
-                        data-audio-url="{{ lied.original.url }}"
-                        data-song-id="{{ lied.id }}"
-                        data-title="{{ lied.titel }}"
-                        data-type="Original"
-                        {% if lied.komponist %}data-composer="{{ lied.komponist }}"{% endif %}
-                        aria-label="Original – {{ lied.titel }} abspielen">
-                    <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-                </button>
+                <div class="media-actions">
+                    <button type="button" class="audio-btn audio-btn--original"
+                            data-audio-url="{{ lied.original.url }}"
+                            data-song-id="{{ lied.id }}"
+                            data-title="{{ lied.titel }}"
+                            data-type="Original"
+                            {% if lied.komponist %}data-composer="{{ lied.komponist }}"{% endif %}
+                            aria-label="Original – {{ lied.titel }} abspielen">
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <a href="{{ lied.original.url }}" download class="file-icon-btn"
+                       title="Original herunterladen"
+                       aria-label="Original – {{ lied.titel }} herunterladen">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </a>
+                </div>
             </div>
             {% endif %}
             {% if lied.aufnahme %}
             <div class="media-row">
                 <span class="media-label">JG Aufnahme</span>
-                <button type="button" class="audio-btn audio-btn--jg"
-                        data-audio-url="{{ lied.aufnahme.url }}"
-                        data-song-id="r{{ lied.id }}"
-                        data-title="{{ lied.titel }}"
-                        data-type="JG Aufnahme"
-                        {% if lied.komponist %}data-composer="{{ lied.komponist }}"{% endif %}
-                        aria-label="JG Aufnahme – {{ lied.titel }} abspielen">
-                    <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-                    <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" class="audio-btn-logo" alt="JG" />
-                </button>
+                <div class="media-actions">
+                    <button type="button" class="audio-btn audio-btn--jg"
+                            data-audio-url="{{ lied.aufnahme.url }}"
+                            data-song-id="r{{ lied.id }}"
+                            data-title="{{ lied.titel }}"
+                            data-type="JG Aufnahme"
+                            {% if lied.komponist %}data-composer="{{ lied.komponist }}"{% endif %}
+                            aria-label="JG Aufnahme – {{ lied.titel }} abspielen">
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                        <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" class="audio-btn-logo" alt="JG" />
+                    </button>
+                    <a href="{{ lied.aufnahme.url }}" download class="file-icon-btn"
+                       title="JG Aufnahme herunterladen"
+                       aria-label="JG Aufnahme – {{ lied.titel }} herunterladen">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </a>
+                </div>
             </div>
             {% endif %}
             {% if lied.pdf %}
             <div class="media-row">
                 <span class="media-label">Notenblatt</span>
-                <a href="{{ lied.pdf.url }}" target="_blank" rel="noopener"
-                   class="file-icon-btn file-icon-btn--pdf"
-                   title="Notenblatt: {{ lied.titel }}"
-                   aria-label="Notenblatt {{ lied.titel }} öffnen">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
-                </a>
+                <div class="media-actions">
+                    <a href="{{ lied.pdf.url }}" target="_blank" rel="noopener"
+                       class="file-icon-btn file-icon-btn--pdf"
+                       title="Notenblatt öffnen"
+                       aria-label="Notenblatt {{ lied.titel }} öffnen">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                    </a>
+                    <a href="{{ lied.pdf.url }}" download class="file-icon-btn file-icon-btn--pdf"
+                       title="Notenblatt herunterladen"
+                       aria-label="Notenblatt {{ lied.titel }} herunterladen">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </a>
+                </div>
             </div>
             {% endif %}
             {% if lied.noten %}
             <div class="media-row">
                 <span class="media-label">Notensatz</span>
-                <a href="{{ lied.noten.url }}" target="_blank" rel="noopener"
-                   class="file-icon-btn file-icon-btn--notes"
-                   title="Notensatz: {{ lied.titel }}"
-                   aria-label="Notensatz {{ lied.titel }} öffnen">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                </a>
+                <div class="media-actions">
+                    <a href="{{ lied.noten.url }}" target="_blank" rel="noopener"
+                       class="file-icon-btn file-icon-btn--notes"
+                       title="Notensatz öffnen"
+                       aria-label="Notensatz {{ lied.titel }} öffnen">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                    </a>
+                    <a href="{{ lied.noten.url }}" download class="file-icon-btn file-icon-btn--notes"
+                       title="Notensatz herunterladen"
+                       aria-label="Notensatz {{ lied.titel }} herunterladen">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </a>
+                </div>
             </div>
             {% endif %}
         </div>

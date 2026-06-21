@@ -2397,6 +2397,11 @@ table.mitglied-table tr.stimme-group-start td {
     border-bottom: 1px solid var(--bg-row-hover);
 }
 .media-row:last-child { border-bottom: none; }
+.media-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 .media-label {
     font-size: 13px;
     font-weight: 500;
