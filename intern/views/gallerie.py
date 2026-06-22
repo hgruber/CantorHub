@@ -24,31 +24,45 @@ def gallerie_view(request, ordner_id):
     if not can_read:
         raise Http404
 
-    images = File.objects.filter(
+    files = File.objects.filter(
         folder=folder,
-        mime_type__startswith="image/",
     ).select_related("owner").order_by("original_filename")
 
     items = []
-    for img in images:
-        try:
-            thumb = get_thumbnailer(img.file).get_thumbnail(
-                {"size": (400, 400), "crop": True, "quality": 85}
-            )
-        except Exception:
-            logger.debug("Thumbnail für Datei %s fehlgeschlagen", img.pk)
-            continue
+    lb_idx = 0
+    for f in files:
+        mime = f.mime_type or ""
+        is_image = mime.startswith("image/")
+        is_thumbnailable = is_image or mime.endswith("pdf")
+
+        thumb_url = None
+        if is_thumbnailable:
+            try:
+                thumb = get_thumbnailer(f.file).get_thumbnail(
+                    {"size": (400, 400), "crop": True, "quality": 85}
+                )
+                thumb_url = thumb.url
+            except Exception:
+                logger.debug("Thumbnail für Datei %s fehlgeschlagen", f.pk)
+                if is_image:
+                    continue
+
         owner_name = ""
-        if img.owner:
-            owner_name = img.owner.get_full_name() or img.owner.username
+        if f.owner:
+            owner_name = f.owner.get_full_name() or f.owner.username
+
         items.append({
-            "thumb": thumb.url,
-            "url": img.url,
-            "name": img.name or img.original_filename,
-            "description": img.description or "",
+            "is_image": is_image,
+            "lb_index": lb_idx if is_image else None,
+            "thumb": thumb_url,
+            "url": f.url,
+            "name": f.name or f.original_filename,
+            "description": f.description or "",
             "owner": owner_name,
-            "pk": img.pk,
+            "pk": f.pk,
         })
+        if is_image:
+            lb_idx += 1
 
     return render(request, "gallerie.html", {
         "folder": folder,

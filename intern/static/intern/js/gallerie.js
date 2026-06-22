@@ -13,7 +13,8 @@
   // Guard: nothing to do when the page has no gallery cells
   // -------------------------------------------------------------------------
 
-  const cells = Array.from(document.querySelectorAll('.gallery-cell'));
+  // Only image cells carry data-index; file-download cells are excluded from the lightbox
+  const cells = Array.from(document.querySelectorAll('.gallery-cell[data-index]'));
   if (cells.length === 0) return;
 
   // -------------------------------------------------------------------------

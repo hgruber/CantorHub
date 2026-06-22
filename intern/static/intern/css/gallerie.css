@@ -79,6 +79,30 @@
 }
 
 /* --------------------------------------------------------------------------
+   File download cell (non-image) — same hover as button cell
+   -------------------------------------------------------------------------- */
+
+.gallery-cell--file {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   Placeholder for files without a thumbnail
+   -------------------------------------------------------------------------- */
+
+.gallery-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface2);
+  color: var(--t3);
+}
+
+/* --------------------------------------------------------------------------
    Empty state
    -------------------------------------------------------------------------- */
 
