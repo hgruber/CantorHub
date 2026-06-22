@@ -16,6 +16,7 @@ from django.db.models import (
 from django.db.models.functions import Coalesce, Concat
 from django.http import Http404, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
@@ -515,11 +516,15 @@ def folder_view(request, pk):
     path_str = " / ".join(c["name"] for c in breadcrumb) if breadcrumb else "/"
     permissions_url = None
     if current is not None and request.user.has_perm("intern.manage_folder_permissions"):
-        from django.urls import reverse
         permissions_url = reverse("folder_permissions", args=[current.pk])
 
     _, can_write_here, can_delete_perm = folder_access(request.user, current)
     can_delete_here = can_delete_perm or request.user.has_perm("intern.delete_folder")
+
+    has_images = current is not None and any(
+        (r.get("mime") or "").startswith("image/") for r in files_list
+    )
+    gallery_url = reverse("gallerie_view", args=[original_pk]) if has_images else None
 
     return render(
         request,
@@ -542,6 +547,7 @@ def folder_view(request, pk):
             "has_more": has_more,
             "next_offset": offset + _FOLDER_PAGE_SIZE,
             "permissions_url": permissions_url,
+            "gallery_url": gallery_url,
         },
     )
 
