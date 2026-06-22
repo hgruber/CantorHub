@@ -15,7 +15,6 @@
 
   // Only image cells carry data-index; file-download cells are excluded from the lightbox
   const cells = Array.from(document.querySelectorAll('.gallery-cell[data-index]'));
-  if (cells.length === 0) return;
 
   // -------------------------------------------------------------------------
   // Build item list from data attributes
@@ -191,6 +190,24 @@
       show(current - 1); // swipe right → prev
     }
   }, { passive: true });
+
+  // -------------------------------------------------------------------------
+  // Infinite scroll hook — called by the sentinel script after each page load
+  // -------------------------------------------------------------------------
+
+  window.galleryAddCells = function (newCells) {
+    newCells.forEach(cell => {
+      const idx = parseInt(cell.dataset.index, 10);
+      items.push({
+        pk:          cell.dataset.pk,
+        url:         cell.dataset.url,
+        name:        cell.dataset.name        || '',
+        description: cell.dataset.description || '',
+        owner:       cell.dataset.owner       || '',
+      });
+      cell.addEventListener('click', () => open(idx));
+    });
+  };
 
   // -------------------------------------------------------------------------
   // Auto-open: ?bild=<pk> — navigating here from the folder view

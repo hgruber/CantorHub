@@ -1,8 +1,9 @@
 import logging
 
 from django.contrib.auth.decorators import login_required
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
@@ -12,6 +13,8 @@ from intern.views.folders import _folder_breadcrumb
 logger = logging.getLogger(__name__)
 
 __all__ = ["gallerie_view"]
+
+_GALLERY_PAGE_SIZE = 48
 
 
 @login_required
@@ -28,7 +31,7 @@ def gallerie_view(request, ordner_id):
         folder=folder,
     ).select_related("owner").order_by("original_filename")
 
-    items = []
+    all_items = []
     lb_idx = 0
     for f in files:
         mime = f.mime_type or ""
@@ -54,7 +57,7 @@ def gallerie_view(request, ordner_id):
         if f.owner:
             owner_name = f.owner.get_full_name() or f.owner.username
 
-        items.append({
+        all_items.append({
             "is_image": is_image,
             "lb_index": lb_idx if is_image else None,
             "thumb": thumb_url,
@@ -67,9 +70,28 @@ def gallerie_view(request, ordner_id):
         if is_image:
             lb_idx += 1
 
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+
+    window = all_items[offset: offset + _GALLERY_PAGE_SIZE + 1]
+    has_more = len(window) > _GALLERY_PAGE_SIZE
+    page_items = window[:_GALLERY_PAGE_SIZE] if has_more else window
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string("gallerie_cells.html", {"items": page_items})
+        return JsonResponse({
+            "html": html,
+            "has_more": has_more,
+            "next_offset": offset + _GALLERY_PAGE_SIZE,
+        })
+
     return render(request, "gallerie.html", {
         "folder": folder,
-        "items": items,
+        "items": page_items,
+        "has_more": has_more,
+        "next_offset": offset + _GALLERY_PAGE_SIZE,
         "breadcrumb": _folder_breadcrumb(folder, user=request.user),
         "seitentitel": folder.name,
         "edit": None,

@@ -20,57 +20,55 @@
   <p class="gallery-empty">Keine Dateien in diesem Ordner.</p>
   {% else %}
   <div class="gallery-grid" id="gallery-grid">
-    {% for item in items %}
-    {% if item.is_image %}
-    <button class="gallery-cell"
-            data-index="{{ item.lb_index }}"
-            data-pk="{{ item.pk }}"
-            data-url="{{ item.url }}"
-            data-name="{{ item.name }}"
-            data-description="{{ item.description }}"
-            data-owner="{{ item.owner }}"
-            aria-label="{{ item.name }}">
-      <img class="gallery-thumb"
-           src="{{ item.thumb }}"
-           alt="{{ item.name }}"
-           loading="lazy">
-      <span class="gallery-overlay" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
-        </svg>
-      </span>
-      <span class="gallery-name" aria-hidden="true">{{ item.name }}</span>
-    </button>
-    {% else %}
-    <a class="gallery-cell gallery-cell--file"
-       href="{{ item.url }}"
-       aria-label="{{ item.name }}">
-      {% if item.thumb %}
-      <img class="gallery-thumb gallery-thumb--contain"
-           src="{{ item.thumb }}"
-           alt="{{ item.name }}"
-           loading="lazy">
-      {% else %}
-      <div class="gallery-placeholder" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-          <polyline points="13 2 13 9 20 9"/>
-        </svg>
-      </div>
-      {% endif %}
-      <span class="gallery-overlay" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-      </span>
-      <span class="gallery-name" aria-hidden="true">{{ item.name }}</span>
-    </a>
-    {% endif %}
-    {% endfor %}
+    {% include "gallerie_cells.html" %}
   </div>
+  {% if has_more %}
+  <div id="gallery-sentinel" class="table-sentinel" data-next-offset="{{ next_offset }}"></div>
+  <script>
+  (function () {
+    var sentinel = document.getElementById('gallery-sentinel');
+    var grid = document.getElementById('gallery-grid');
+    if (!sentinel || !grid) return;
+    var loading = false, done = false;
+    function buildUrl(offset) {
+      var p = new URLSearchParams(window.location.search);
+      p.set('offset', offset);
+      return window.location.pathname + '?' + p.toString();
+    }
+    function loadMore() {
+      if (loading || done) return;
+      var offset = parseInt(sentinel.dataset.nextOffset, 10);
+      loading = true;
+      sentinel.classList.add('loading');
+      fetch(buildUrl(offset), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (data) {
+          var tpl = document.createElement('template');
+          tpl.innerHTML = data.html;
+          var newImageCells = Array.from(tpl.content.querySelectorAll('.gallery-cell[data-index]'));
+          grid.appendChild(tpl.content);
+          if (window.galleryAddCells) window.galleryAddCells(newImageCells);
+          if (data.has_more) {
+            sentinel.dataset.nextOffset = data.next_offset;
+          } else {
+            done = true;
+            observer.disconnect();
+            sentinel.remove();
+          }
+        })
+        .catch(function (e) { console.error('Gallery scroll error:', e); })
+        .finally(function () {
+          loading = false;
+          if (!done) sentinel.classList.remove('loading');
+        });
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) loadMore();
+    }, { rootMargin: '200px' });
+    observer.observe(sentinel);
+  })();
+  </script>
+  {% endif %}
   {% endif %}
 </div>
 
