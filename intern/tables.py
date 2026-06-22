@@ -179,6 +179,7 @@ class OrdnerTabelle(tables.Table):
                 "" if record.get("name") == ".."
                 else (record.get("original_filename") or record.get("name") or "")
             ),
+            "data-mime": lambda record: "" if record.get("name") == ".." else (record.get("mime") or ""),
         }
 
 

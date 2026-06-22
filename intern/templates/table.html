@@ -452,4 +452,19 @@
     }());
     </script>
 </div>
+{% if gallery_url %}
+<script>
+(function () {
+  var galleryUrl = "{{ gallery_url }}";
+  document.addEventListener("click", function (e) {
+    var tr = e.target.closest("tr[data-type='File']");
+    if (!tr) return;
+    if (!(tr.dataset.mime || "").startsWith("image/")) return;
+    if (e.target.closest("a, button, input, select, textarea, label")) return;
+    e.stopImmediatePropagation();
+    window.location.href = galleryUrl + "?bild=" + tr.dataset.id;
+  }, true);
+}());
+</script>
+{% endif %}
 {% endblock %}

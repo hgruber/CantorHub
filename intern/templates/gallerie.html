@@ -23,6 +23,7 @@
     {% for item in items %}
     <button class="gallery-cell"
             data-index="{{ forloop.counter0 }}"
+            data-pk="{{ item.pk }}"
             data-url="{{ item.url }}"
             data-name="{{ item.name }}"
             data-description="{{ item.description }}"

@@ -21,6 +21,7 @@
   // -------------------------------------------------------------------------
 
   const items = cells.map(el => ({
+    pk:          el.dataset.pk,
     url:         el.dataset.url,
     name:        el.dataset.name        || '',
     description: el.dataset.description || '',
@@ -189,5 +190,15 @@
       show(current - 1); // swipe right → prev
     }
   }, { passive: true });
+
+  // -------------------------------------------------------------------------
+  // Auto-open: ?bild=<pk> — navigating here from the folder view
+  // -------------------------------------------------------------------------
+
+  const targetPk = new URLSearchParams(location.search).get('bild');
+  if (targetPk) {
+    const idx = items.findIndex(item => item.pk === targetPk);
+    if (idx >= 0) open(idx);
+  }
 
 })();
