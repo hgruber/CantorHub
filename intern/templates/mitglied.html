@@ -21,6 +21,16 @@
                     <span class="label">Stimme:</span>
                     <span class="value">{{ user.get_stimme_display }}</span>
                 </div>
+                {% if member_groups %}
+                <div class="contact-item">
+                    <span class="label">Gruppen:</span>
+                    <span class="value">
+                        <span class="tag-list">
+                            {% for group in member_groups %}<span class="tag">{{ group.name }}</span>{% endfor %}
+                        </span>
+                    </span>
+                </div>
+                {% endif %}
             </div>
         </div>
         <div class="profile-content">

@@ -124,7 +124,7 @@ def mitglied_list(request):
 
 @login_required
 def mitglied_view(request, id):
-    user = get_object_or_404(User.objects.prefetch_related("solist", "dirigent"), id=id)
+    user = get_object_or_404(User.objects.prefetch_related("solist", "dirigent", "groups"), id=id)
     can_edit = (
         request.user.id == id
         or request.user.has_perm("intern.change_user")
@@ -144,6 +144,7 @@ def mitglied_view(request, id):
         "visible": visible,
         "map_center_lat": str(map_center[0]),
         "map_center_lng": str(map_center[1]),
+        "member_groups": list(user.groups.order_by("name")),
     }
     return render(request, "mitglied.html", context)
 
@@ -155,7 +156,7 @@ def mitglied_edit(request, id):
         and not request.user.has_perm("intern.change_user")
     ):
         return redirect("mitglied_view", id=id)
-    user = get_object_or_404(User, id=id)
+    user = get_object_or_404(User.objects.prefetch_related("groups"), id=id)
 
     if request.method == "POST":
         if request.POST.get("action") == "deactivate" and request.user.has_perm("intern.change_user"):
@@ -212,6 +213,7 @@ def mitglied_edit(request, id):
         "can_manage": request.user.has_perm("intern.change_user"),
         "can_set_privacy": request.user.id == id,
         "privacy_fields": PRIVACY_FIELDS,
+        "member_groups": list(user.groups.order_by("name")),
     }
     return render(request, "mitglied_edit.html", context)
 

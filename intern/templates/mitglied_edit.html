@@ -46,6 +46,14 @@
                         {{ form.stimme }}
                         {% if form.stimme.errors %}<div class="invalid-feedback">{{ form.stimme.errors }}</div>{% endif %}
                     </div>
+                    {% if member_groups %}
+                    <div class="form-group">
+                        <label>Gruppen</label>
+                        <div class="tag-list">
+                            {% for group in member_groups %}<span class="tag">{{ group.name }}</span>{% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
