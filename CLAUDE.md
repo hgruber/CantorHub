@@ -49,7 +49,7 @@ docker run -p 8000:8000 cantoreub
 
 ## Architecture
 
-CantorHub is a Django 6 member portal for "Just Gospel Frankfurt", a gospel choir. All application logic lives in the `intern/` app; `config/` holds only settings and URL routing. Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`, `forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`). The package's `__init__.py` re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
+CantorHub is a Django 6 member portal for "Just Gospel Frankfurt", a gospel choir. All application logic lives in the `intern/` app; `config/` holds only settings and URL routing. Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`, `forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`, `gallerie.py`). The package's `__init__.py` re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
 
 ### Request flow
 
@@ -80,6 +80,7 @@ All list views use django-tables2 with clickable rows (`data-href` on `<tr>`). E
 | `/intern/titel/<id>/edit/` | `titel_edit` | `titel_edit.html` |
 | `/intern/mitglied/<id>/` | `member_view` | `mitglied.html` |
 | `/intern/mitglied/<id>/edit/` | `member_edit` | `member_edit.html` |
+| `/intern/gallerie/<ordner_id>/` | `gallerie_view` | `gallerie.html` |
 
 Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card grid, single column on mobile). Edit pages use the `.wiki` container with `.form-grid`.
 

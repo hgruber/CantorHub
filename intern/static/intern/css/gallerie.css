@@ -1,0 +1,309 @@
+/* ==========================================================================
+   gallerie.css — Image gallery grid + lightbox
+   All surface colours come from design-system tokens in intern.css.
+   rgba(0,0,0,…) / rgba(255,255,255,…) overlays are intentionally
+   colour-neutral and need no CSS variable.  No dark-mode block needed:
+   --shadow-*, --r-*, --brand tokens already carry dark values.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Grid container
+   -------------------------------------------------------------------------- */
+
+.gallery-root {
+  padding: 24px;
+  max-width: 1400px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Individual cell (square thumbnail button)
+   -------------------------------------------------------------------------- */
+
+.gallery-cell {
+  position: relative;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  aspect-ratio: 1;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--ease), box-shadow var(--ease);
+}
+
+.gallery-cell:hover,
+.gallery-cell:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.gallery-cell:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.gallery-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   Zoom overlay (shown on hover / focus)
+   -------------------------------------------------------------------------- */
+
+.gallery-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0);
+  color: white;
+  opacity: 0;
+  transition: background var(--ease), opacity var(--ease);
+}
+
+.gallery-cell:hover .gallery-overlay,
+.gallery-cell:focus-visible .gallery-overlay {
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Empty state
+   -------------------------------------------------------------------------- */
+
+.gallery-empty {
+  color: var(--t3);
+  padding: 48px;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive — tighten minimum column width on small screens
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+/* ==========================================================================
+   Lightbox
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Backdrop — full-screen overlay; hidden by default, shown via .lb-open
+   -------------------------------------------------------------------------- */
+
+.lb-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(12px);
+  /* hidden state */
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+
+.lb-backdrop.lb-open {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+/* --------------------------------------------------------------------------
+   Stage — centres the image; clicking empty stage area closes the lightbox
+   -------------------------------------------------------------------------- */
+
+.lb-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 90vw;
+  max-height: 85vh;
+}
+
+/* --------------------------------------------------------------------------
+   Image — fades and scales during transitions via .lb-fading
+   -------------------------------------------------------------------------- */
+
+.lb-img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: var(--r);
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.6);
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.lb-img.lb-fading {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+/* --------------------------------------------------------------------------
+   Close button
+   -------------------------------------------------------------------------- */
+
+.lb-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--ease);
+}
+
+.lb-close:hover,
+.lb-close:focus-visible {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.lb-close:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Navigation arrows
+   -------------------------------------------------------------------------- */
+
+.lb-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.10);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  color: white;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--ease);
+}
+
+.lb-arrow:hover,
+.lb-arrow:focus-visible {
+  background: rgba(255, 255, 255, 0.20);
+}
+
+.lb-arrow:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+.lb-prev { left: 16px; }
+.lb-next { right: 16px; }
+
+/* --------------------------------------------------------------------------
+   Info bar — counter + caption, pinned to bottom of backdrop
+   -------------------------------------------------------------------------- */
+
+.lb-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 24px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+  color: white;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lb-counter {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.lb-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lb-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.lb-description {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Hide description element when its text content is empty */
+.lb-description:empty {
+  display: none;
+}
+
+.lb-owner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* JS adds this class when owner is an empty string */
+.lb-owner--hidden {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile adjustments
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 600px) {
+  .lb-arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .lb-info {
+    padding: 12px 16px;
+  }
+
+  .lb-name {
+    font-size: 13px;
+  }
+}

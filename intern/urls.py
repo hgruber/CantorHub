@@ -41,6 +41,7 @@ urlpatterns = [
     path("upload/", views.upload, name="upload"),
     path("file-search/", views.file_search, name="file_search"),
     path("article-search/", views.article_search, name="article_search"),
+    path("gallerie/<int:ordner_id>/", views.gallerie_view, name="gallerie_view"),
     path("ordner/<int:pk>/", views.folder_view, name="folder_view"),
     path("ordner/<int:pk>/berechtigungen/", views.folder_permissions, name="folder_permissions"),
     path("ordner/<int:pk>/neu/", views.folder_create, name="folder_create"),

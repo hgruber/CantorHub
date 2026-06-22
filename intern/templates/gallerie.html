@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_js %}
+<link rel="stylesheet" href="{% static 'intern/css/gallerie.css' %}">
+<script src="{% static 'intern/js/gallerie.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="gallery-root">
+  {% if not items %}
+  <p class="gallery-empty">Keine Bilder in diesem Ordner.</p>
+  {% else %}
+  <div class="gallery-grid" id="gallery-grid">
+    {% for item in items %}
+    <button class="gallery-cell"
+            data-index="{{ forloop.counter0 }}"
+            data-url="{{ item.url }}"
+            data-name="{{ item.name }}"
+            data-description="{{ item.description }}"
+            data-owner="{{ item.owner }}"
+            aria-label="{{ item.name }}">
+      <img class="gallery-thumb"
+           src="{{ item.thumb }}"
+           alt="{{ item.name }}"
+           loading="lazy">
+      <span class="gallery-overlay" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      </span>
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Lightbox -->
+<div class="lb-backdrop" id="lb-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Bildvorschau">
+  <button class="lb-close" id="lb-close" aria-label="Schließen">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+  <button class="lb-arrow lb-prev" id="lb-prev" aria-label="Vorheriges Bild">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+  </button>
+  <button class="lb-arrow lb-next" id="lb-next" aria-label="Nächstes Bild">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </svg>
+  </button>
+  <div class="lb-stage" id="lb-stage">
+    <img class="lb-img" id="lb-img" alt="">
+  </div>
+  <div class="lb-info" id="lb-info">
+    <div class="lb-counter" id="lb-counter"></div>
+    <div class="lb-caption">
+      <span class="lb-name" id="lb-name"></span>
+      <span class="lb-description" id="lb-description"></span>
+      <span class="lb-owner" id="lb-owner">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span id="lb-owner-text"></span>
+      </span>
+    </div>
+  </div>
+</div>
+{% endblock %}
