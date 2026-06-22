@@ -37,10 +37,13 @@ def gallerie_view(request, ordner_id):
 
         thumb_url = None
         if is_thumbnailable:
+            thumb_opts = (
+                {"size": (400, 400), "crop": True, "quality": 85}
+                if is_image
+                else {"size": (400, 566), "crop": False, "quality": 85}
+            )
             try:
-                thumb = get_thumbnailer(f.file).get_thumbnail(
-                    {"size": (400, 400), "crop": True, "quality": 85}
-                )
+                thumb = get_thumbnailer(f.file).get_thumbnail(thumb_opts)
                 thumb_url = thumb.url
             except Exception:
                 logger.debug("Thumbnail für Datei %s fehlgeschlagen", f.pk)
