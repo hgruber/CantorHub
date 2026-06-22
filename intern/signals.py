@@ -227,6 +227,7 @@ _THUMBNAIL_SIZES = [
     {"size": (32, 32), "crop": True, "quality": 85},
     {"size": (120, 120), "crop": True, "quality": 85},
     {"size": (200, 200), "quality": 85},
+    {"size": (400, 400), "crop": True, "quality": 85},
 ]
 
 # Cap concurrent thumbnail threads so bulk imports don't exhaust MySQL connections.
