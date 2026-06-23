@@ -243,8 +243,12 @@ with; until then the policy over-promises:
   `ChangeLog` entries older than the retention period (default 3 years); it runs in the
   background on every `start.sh`. The in-process `default=datetime.now` timestamp is naive
   and `USE_TZ=False`, so the `timezone.now()`-based cutoff matches.
-- **Server-log retention (90 days)** stated in §2/§7 — verify nginx logrotate actually
-  enforces it.
+- ~~**Server-log retention (90 days)** stated in §2/§7 — verify nginx logrotate actually
+  enforces it.~~ **Done.** haproxy and the CantorHub container run under systemd, so their
+  logs go to the journal; `journald.conf` sets `MaxRetentionSec=90d` (plus `SystemMaxUse=4G`
+  as a size cap that can only delete earlier, never later), enforcing the "deleted after at
+  most 90 days" claim. The §7 prose mentions "nginx log files" as the mechanism, which is now
+  imprecise (it is journald), but the stated 90-day deadline is correct.
 - **§3 legal basis lit. b vs. lit. f for forum/chat** — membership admin and event
   organisation on Art. 6(1)(b) is fine, but forum + XMPP chat are hard to justify as
   "necessary for performance of the membership contract"; they are better grounded on
