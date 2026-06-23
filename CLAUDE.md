@@ -232,6 +232,21 @@ Items found during code review, ordered by estimated risk of the fix:
   templates, `replacements.py`, `tables.py`, and static SVGs. Blocks open-sourcing
   as a white-label app. Full extraction plan in `branding.md`.
 
+**Privacy-policy claims not yet enforced in code** — the `/datenschutz/` text
+(`templates/datenschutz.html`) now makes statements the implementation must catch up
+with; until then the policy over-promises:
+- **Map tile / geocoding proxy not in place.** §6/§7 claim no data goes to external
+  map services, but the Leaflet maps still load tiles directly from
+  `*.tile.openstreetmap.org` (`karte.html`, `mitglied.html`, `termin.html`,
+  `ort_detail.html`) and the place editor geocodes via `nominatim.openstreetmap.org`
+  (`karte.html:591`). Route both through a self-hosted proxy before the claim holds
+  (mind Nominatim's rate limits / self-hosting recommendation).
+- **No audit-log cleanup.** §9 promises the ChangeLog is deleted after 3 years, but
+  no deletion/cron mechanism exists — the log grows unbounded. Add a cleanup
+  management command.
+- **Server-log retention (90 days)** stated in §2/§7 — verify nginx logrotate actually
+  enforces it.
+
 **Medium risk (15-30%)** — need testing after fixing:
 - `Zusage.option` is `CharField(max_length=255)` but only uses `"1"`, `"2"`, `"3"`, `""`. Should be a choices field with a migration.
 - `Mitteilung.mitteilung` allows `null=True` but `formatiert()` calls `apply_replacements()` which may crash on `None`. Guard the method or remove `null=True`.
