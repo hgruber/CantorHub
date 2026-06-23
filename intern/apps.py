@@ -37,6 +37,12 @@ _CONFIG_DEFAULTS = [
     ),
     ("VEREINSNAME_KURZ", "Just Gospel", "Kurzer Vereinsname (für Sidebar, Alt-Texte)"),
     (
+        "VEREINSADRESSE",
+        "",
+        "Ladungsfähige Kontaktanschrift des Vereins (Datenschutzerklärung §1, "
+        "mehrzeilig erlaubt; leer → es werden nur die Vorstandsnamen genannt)",
+    ),
+    (
         "MAIL_ANTRAG",
         "Hallo {vorname},\n\n"
         "vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"

@@ -21,6 +21,7 @@ from reportlab.pdfgen import canvas as rl_canvas
 
 from intern import ejabberd
 from intern.app_settings import (
+    get_config,
     get_config_int,
     get_from_email,
     get_vereinsname,
@@ -159,6 +160,7 @@ def datenschutz(request):
     return render(request, "datenschutz.html", {
         "vorstand": vorstand,
         "kontakt_email": get_from_email(),
+        "vereinsadresse": get_config("VEREINSADRESSE"),
     })
 
 

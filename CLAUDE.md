@@ -46,6 +46,7 @@ docker run -p 8000:8000 cantoreub
 | `send_reconfirmation --user USERNAME --print-url` | Print the confirmation URL for one member without sending mail (for testing) |
 | `send_reconfirmation --all --print-url` | Print confirmation URLs for all members (tab-separated `username<TAB>url`) without sending mail |
 | `make_invite_url EMAIL` | Print a signed 7-day invite link for the Neuantrag form (`/intern/beitritt/<token>/`) without sending mail |
+| `cleanup_changelog [--days N] [--dry-run]` | Delete `ChangeLog` entries older than the retention period (default 3 years = 1095 days), enforcing the privacy-policy §9 claim. Runs in the background on every `start.sh` |
 
 ## Architecture
 
@@ -238,9 +239,10 @@ Items found during code review, ordered by estimated risk of the fix:
 (`templates/datenschutz.html`) now makes statements the implementation must catch up
 with; until then the policy over-promises:
 - ~~**Map tile / geocoding proxy not in place.**~~ **Done.** Tiles are now served via `/tiles/` (nginx disk-cache, 7-day TTL, proxied to `tile.openstreetmap.org` server-side; Django `tiles_proxy` fallback for dev). Nominatim geocoding goes through `/intern/karte/geocode/` (`geocode_proxy`, login required). Neither browser request reaches an external server.
-- **No audit-log cleanup.** §9 promises the ChangeLog is deleted after 3 years, but
-  no deletion/cron mechanism exists — the log grows unbounded. Add a cleanup
-  management command.
+- ~~**No audit-log cleanup.**~~ **Done.** `cleanup_changelog` management command deletes
+  `ChangeLog` entries older than the retention period (default 3 years); it runs in the
+  background on every `start.sh`. The in-process `default=datetime.now` timestamp is naive
+  and `USE_TZ=False`, so the `timezone.now()`-based cutoff matches.
 - **Server-log retention (90 days)** stated in §2/§7 — verify nginx logrotate actually
   enforces it.
 
@@ -322,6 +324,7 @@ the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
 `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`),
 `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form),
 `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title),
+`VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in privacy-policy §1; multi-line, empty → only board member names are listed, no addresses),
 `MAIL_ANTRAG` (applicant confirmation email body),
 `MAIL_ANTRAG_ADMIN` (admin notification on new application; `{vorname}`, `{nachname}`, `{email}`, `{link}`),
 `MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing),

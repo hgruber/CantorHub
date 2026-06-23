@@ -31,9 +31,13 @@
             </p>
             <ul>
                 {% for person in vorstand %}
-                <li>{{ person.first_name }} {{ person.last_name }}, {{ person.strasse }}, {{ person.plz }} {{ person.ort }}</li>
+                <li>{{ person.first_name }} {{ person.last_name }}</li>
                 {% endfor %}
             </ul>
+            {% if vereinsadresse %}
+            <p>Ladungsfähige Anschrift des Vereins:</p>
+            <address>{{ vereinsadresse|linebreaksbr }}</address>
+            {% endif %}
             <p>
                 Da der Verein nach außen durch jedes Vorstandsmitglied vertreten wird,
                 kannst Du Deine datenschutzrechtlichen Rechte gegenüber jedem der oben
