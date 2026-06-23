@@ -245,6 +245,20 @@ with; until then the policy over-promises:
   and `USE_TZ=False`, so the `timezone.now()`-based cutoff matches.
 - **Server-log retention (90 days)** stated in §2/§7 — verify nginx logrotate actually
   enforces it.
+- **§3 legal basis lit. b vs. lit. f for forum/chat** — membership admin and event
+  organisation on Art. 6(1)(b) is fine, but forum + XMPP chat are hard to justify as
+  "necessary for performance of the membership contract"; they are better grounded on
+  Art. 6(1)(f) (legitimate interest in internal communication).
+- **§3 implied photo consent "by uploading"** — consent for avatar/profile text is taken
+  as the act of uploading. Art. 7 wants an informed, documented, unambiguous action; a
+  conscious checkbox at upload time with a logged timestamp would be cleaner.
+- **§5 privacy not by default (Art. 25(2))** — by default all members see every other
+  member's address, birthday and phone numbers; hiding is opt-out via `private_fields`.
+  Privacy-by-default would mean at least birthday/address hidden by default (changing the
+  default of `User.private_fields` + a data migration for existing rows).
+- **§10 ex-member anonymisation not the default** — forum posts keep the full real name
+  after a member leaves; anonymisation to a placeholder is offered only on request. The
+  milder (and preferable) default after departure would be to anonymise the display name.
 
 **Medium risk (15-30%)** — need testing after fixing:
 - `Zusage.option` is `CharField(max_length=255)` but only uses `"1"`, `"2"`, `"3"`, `""`. Should be a choices field with a migration.
