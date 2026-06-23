@@ -22,11 +22,12 @@
         <div class="wiki">
             <h2>1. Verantwortliche</h2>
             <p>
-                Für die Verarbeitung personenbezogener Daten im Rahmen des Vereins
-                <strong>„{{ vereinsname }}"</strong> sind die jeweils amtierenden Mitglieder
-                des Vorstands gemeinsam verantwortlich (Art. 26 DSGVO). Der Vorstand entscheidet
-                gemeinsam über Zwecke und Mittel der Datenverarbeitung und nimmt die
-                datenschutzrechtlichen Pflichten des Vereins wahr.
+                Verantwortlicher im Sinne der Datenschutz-Grundverordnung ist der
+                (nicht eingetragene) Verein <strong>„{{ vereinsname }}"</strong>,
+                gesetzlich vertreten durch seinen Vorstand. Der Vorstand entscheidet
+                über Zwecke und Mittel der Datenverarbeitung und nimmt die
+                datenschutzrechtlichen Pflichten des Vereins wahr. Dem Vorstand
+                gehören derzeit an:
             </p>
             <ul>
                 {% for person in vorstand %}
@@ -36,9 +37,15 @@
             <p>
                 Da der Verein nach außen durch jedes Vorstandsmitglied vertreten wird,
                 kannst Du Deine datenschutzrechtlichen Rechte gegenüber jedem der oben
-                genannten Verantwortlichen geltend machen. Jedes Vorstandsmitglied ist
-                im Rahmen der gemeinsamen Verantwortlichkeit nach Art. 26 DSGVO berechtigt
-                und verpflichtet, entsprechende Anfragen entgegenzunehmen und zu beantworten.
+                genannten Vorstandsmitglieder geltend machen. Jedes Vorstandsmitglied
+                ist berechtigt und verpflichtet, entsprechende Anfragen entgegenzunehmen
+                und zu beantworten.
+            </p>
+            <p>
+                Ein Datenschutzbeauftragter ist nicht bestellt, da die gesetzlichen
+                Voraussetzungen hierfür (§ 38 BDSG, insbesondere die ständige
+                Beschäftigung von mindestens 20 Personen mit der automatisierten
+                Verarbeitung personenbezogener Daten) nicht vorliegen.
             </p>
             <p>
                 Anfragen zum Datenschutz richte bitte an:
@@ -60,15 +67,22 @@
                     Datei-Uploads, Abstimmungsergebnisse</li>
                 <li><strong>Systemdaten:</strong> Sitzungs-ID, Zeitpunkt der letzten Anmeldung,
                     Änderungsprotokoll (nachvollziehbar wer welche Daten wann geändert hat)</li>
-                <li><strong>Geokoordinaten:</strong> Werden automatisch aus der gespeicherten
-                    Anschrift berechnet und dienen ausschließlich der Kartendarstellung im Portal.
-                    Diese werden gelöscht, wenn die Anschrift im Profil verborgen oder die
-                    Mitgliedschaft beendet wird.</li>
+                <li><strong>Geokoordinaten:</strong> Zu Deiner Anschrift können
+                    Koordinaten gespeichert werden, die ausschließlich der Kartendarstellung
+                    im Portal dienen. Diese werden gelöscht, wenn die Anschrift im Profil
+                    verborgen oder die Mitgliedschaft beendet wird.</li>
                 <li><strong>Server-Logdaten:</strong> Bei jedem Seitenaufruf verarbeitet der
                     Webserver technische Verbindungsdaten (IP-Adresse, Zeitstempel, aufgerufene
                     URL, HTTP-Statuscode). Diese Daten werden ausschließlich zur Gewährleistung
                     der Systemsicherheit verarbeitet und nach spätestens 90&nbsp;Tagen gelöscht.</li>
             </ul>
+            <p>
+                <strong>Pflicht zur Bereitstellung:</strong> Die Angabe von Name, Anschrift,
+                Geburtsdatum und mindestens einer Kontaktmöglichkeit ist für die Begründung
+                und Durchführung der Mitgliedschaft erforderlich; ohne diese Daten kann die
+                Mitgliedschaft nicht ordnungsgemäß verwaltet werden. Die übrigen Angaben
+                (insbesondere Profilfoto und Profiltext) sind freiwillig.
+            </p>
 
             <h2>3. Zwecke und Rechtsgrundlagen</h2>
             <p>Wir verarbeiten Deine Daten ausschließlich für folgende Zwecke:</p>
@@ -106,8 +120,11 @@
                     am sicheren und nachvollziehbaren Betrieb des Portals)
                 </li>
                 <li>
-                    <strong>Profilfoto und Freitext</strong> – nur bei freiwilliger Angabe.<br>
-                    Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO (Einwilligung durch freiwillige Eingabe)
+                    <strong>Profilfoto und Freitext</strong> – nur bei freiwilliger Angabe.
+                    Die Einwilligung erteilst Du durch das eigenständige Hochladen bzw. Eingeben
+                    im Profil; Du kannst sie jederzeit durch eigenständiges Löschen im Profil
+                    mit Wirkung für die Zukunft widerrufen (Art. 7 Abs. 3 DSGVO).<br>
+                    Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)
                 </li>
             </ul>
 
@@ -120,6 +137,12 @@
                 Mitglieder können einer solchen Verwendung ihrer Abbildungen jederzeit
                 widersprechen. Im Falle eines Widerspruchs werden betroffene Aufnahmen, soweit
                 technisch und organisatorisch möglich, nicht weiter verwendet oder entfernt.
+            </p>
+            <p>
+                Für eine Veröffentlichung von Bildmaterial außerhalb des internen
+                Mitgliederportals – etwa auf der öffentlichen Webseite des Vereins oder in
+                sozialen Medien – holen wir stets die vorherige Einwilligung aller
+                abgebildeten Personen ein (Art. 6 Abs. 1 lit. a DSGVO).
             </p>
 
             <h2>5. Sichtbarkeit Deiner Daten im Portal</h2>
@@ -144,6 +167,13 @@
                 Wir geben Deine personenbezogenen Daten nicht an Dritte weiter.
                 Eine Übermittlung in Länder außerhalb der EU bzw. des EWR findet nicht statt.
             </p>
+            <p>
+                <strong>Kartendarstellung:</strong> Die im Portal angezeigten Karten beruhen
+                auf Kartenmaterial von OpenStreetMap. Die Kartenkacheln sowie die Adresssuche
+                (Geocoding) werden über einen vom Verein selbst betriebenen Proxy-Server
+                ausgeliefert. Deine IP-Adresse und Adressdaten werden dabei nicht unmittelbar
+                an externe Kartendienste übermittelt.
+            </p>
 
             <h2>7. Hosting und technischer Betrieb</h2>
             <p>
@@ -157,6 +187,12 @@
             <p>
                 Im Rahmen des Serverbetriebs fallen technische Logdateien an
                 (s. Abschnitt&nbsp;2), die nach spätestens 90&nbsp;Tagen gelöscht werden.
+            </p>
+            <p>
+                Der Versand von E-Mails (z.&nbsp;B. Terminerinnerungen, Einladungen,
+                Bestätigungen) erfolgt über denselben Server; ein zusätzlicher externer
+                E-Mail-Dienstleister wird nicht eingesetzt. Auch der Proxy für die
+                Kartendarstellung (s. Abschnitt&nbsp;6) wird vom Verein selbst betrieben.
             </p>
 
             <h2>8. Cookies und Tracking</h2>
@@ -178,16 +214,21 @@
                 <strong>Forum-Beiträge und XMPP-Nachrichten:</strong>
                 Beiträge, die Du im Forum oder über den verknüpften XMPP-Gruppenchat
                 verfasst hast, bleiben nach Beendigung der Mitgliedschaft erhalten, um
-                die Kontinuität der Vereinskommunikation zu wahren. Als Verknüpfung
-                bleiben ausschließlich Dein Vor- und Nachname erhalten. Auf Wunsch können
-                diese durch einen anonymen Platzhalter ersetzt werden; wende Dich
-                dazu an die oben genannten Verantwortlichen.
+                die Kontinuität der Vereinskommunikation zu wahren (Rechtsgrundlage:
+                Art. 6 Abs. 1 lit. f DSGVO). Als Verknüpfung bleiben ausschließlich Dein
+                Vor- und Nachname erhalten. Eine vollständige Löschung Deiner Beiträge ist
+                technisch möglich und erfolgt auf Wunsch; standardmäßig unterbleibt sie zur
+                Wahrung des Gesprächszusammenhangs. Als milderes Mittel können Deine Beiträge
+                auf Wunsch durch einen anonymen Platzhalter ersetzt werden; wende Dich dazu an
+                die oben genannten Verantwortlichen.
             </p>
             <p>
                 <strong>Änderungsprotokolle:</strong>
                 Das interne Änderungsprotokoll, das nachvollziehbar macht, wer welche
-                Daten wann geändert hat, wird aus Revisionsgründen für 10&nbsp;Jahre
-                aufbewahrt und anschließend gelöscht.
+                Daten wann geändert hat, wird für 3&nbsp;Jahre aufbewahrt und anschließend
+                gelöscht. Diese Frist orientiert sich an der Amtszeit des Vorstands
+                (2&nbsp;Jahre) zuzüglich eines Puffers bis zur Entlastung und entspricht der
+                regelmäßigen Verjährungsfrist (§ 195 BGB).
             </p>
             <p>
                 <strong>Server-Logdateien:</strong>
@@ -233,7 +274,21 @@
                 Zur Ausübung dieser Rechte wende Dich bitte an die oben genannten Verantwortlichen.
             </p>
 
-            <h2>11. Beschwerderecht bei der Aufsichtsbehörde</h2>
+            <h2>11. Keine automatisierte Entscheidungsfindung</h2>
+            <p>
+                Eine ausschließlich auf einer automatisierten Verarbeitung – einschließlich
+                Profiling – beruhende Entscheidung im Sinne des Art. 22 DSGVO findet nicht statt.
+            </p>
+
+            <h2>12. Minderjährige</h2>
+            <p>
+                Die Mitgliedschaft richtet sich in aller Regel an volljährige Personen.
+                Sollte ausnahmsweise eine minderjährige Person aufgenommen werden, holen wir
+                vor der Aufnahme die erforderliche Einwilligung der Erziehungsberechtigten
+                ein (Art. 8 DSGVO).
+            </p>
+
+            <h2>13. Beschwerderecht bei der Aufsichtsbehörde</h2>
             <p>
                 Du hast das Recht, Dich bei der zuständigen Datenschutz-Aufsichtsbehörde zu beschweren:
             </p>
@@ -243,6 +298,8 @@
                 65189 Wiesbaden<br>
                 <a href="https://www.datenschutz.hessen.de" target="_blank" rel="noopener">www.datenschutz.hessen.de</a>
             </address>
+
+            <p class="datenschutz-stand"><em>Stand: Juni 2026</em></p>
         </div>
     </div>
 </div>
