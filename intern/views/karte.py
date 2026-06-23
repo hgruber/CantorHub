@@ -1,5 +1,6 @@
+import httpx
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
@@ -12,7 +13,37 @@ __all__ = [
     "karte_ort_create",
     "karte_ort_detail",
     "karte_standort",
+    "tiles_proxy",
+    "geocode_proxy",
 ]
+
+_PROXY_UA = "CantorHub/1.0 (self-hosted member portal)"
+
+
+def tiles_proxy(request, z, x, y):
+    """Fallback für den Dev-Betrieb (runserver). In Produktion greift die nginx-Location /tiles/ zuerst."""
+    url = f"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    try:
+        resp = httpx.get(url, headers={"User-Agent": _PROXY_UA}, timeout=10)
+    except httpx.TimeoutException:
+        raise Http404
+    if resp.status_code != 200:
+        raise Http404
+    return HttpResponse(resp.content, content_type="image/png")
+
+
+@login_required
+def geocode_proxy(request):
+    """Serverseitiger Nominatim-Proxy: Browser-IP bleibt intern."""
+    try:
+        resp = httpx.get(
+            f"https://nominatim.openstreetmap.org/search?{request.GET.urlencode()}",
+            headers={"User-Agent": _PROXY_UA},
+            timeout=10,
+        )
+    except httpx.TimeoutException:
+        return JsonResponse([], safe=False)
+    return HttpResponse(resp.content, content_type="application/json")
 
 
 def _standorte_data(current_user):

@@ -57,14 +57,16 @@ CantorHub is a Django 6 member portal for "Just Gospel Frankfurt", a gospel choi
 Browser → nginx (port 8000) → gunicorn (port 8001) → Django
 ```
 
-Nginx serves `/static/` and `/media/` directly; everything else is proxied to gunicorn. In development, `manage.py runserver` handles everything.
+Nginx serves `/static/`, `/media/`, and `/tiles/` directly; everything else is proxied to gunicorn. In development, `manage.py runserver` handles everything.
 
 ### URL structure
 
 - `/` — public homepage (`templates/index.html`)
 - `/datenschutz/` — public privacy policy (`templates/datenschutz.html`, no login required, `TemplateView` in `config/urls.py`)
+- `/tiles/<z>/<x>/<y>.png` — OSM tile proxy (no login required). In production nginx intercepts this and serves from its disk cache (`/app/tiles/`, 7-day TTL) without hitting Django. In dev, `tiles_proxy` in `karte.py` fetches from OSM server-side so the user's IP is never sent to OSM.
 - `/admin/` — Django admin
 - `/intern/*` — all authenticated views (`intern/urls.py`)
+- `/intern/karte/geocode/` — Nominatim geocoding proxy (`geocode_proxy` in `karte.py`, login required); passes query params server-side so the user's IP is never sent to Nominatim.
 
 ### Detail pages
 
@@ -235,12 +237,7 @@ Items found during code review, ordered by estimated risk of the fix:
 **Privacy-policy claims not yet enforced in code** — the `/datenschutz/` text
 (`templates/datenschutz.html`) now makes statements the implementation must catch up
 with; until then the policy over-promises:
-- **Map tile / geocoding proxy not in place.** §6/§7 claim no data goes to external
-  map services, but the Leaflet maps still load tiles directly from
-  `*.tile.openstreetmap.org` (`karte.html`, `mitglied.html`, `termin.html`,
-  `ort_detail.html`) and the place editor geocodes via `nominatim.openstreetmap.org`
-  (`karte.html:591`). Route both through a self-hosted proxy before the claim holds
-  (mind Nominatim's rate limits / self-hosting recommendation).
+- ~~**Map tile / geocoding proxy not in place.**~~ **Done.** Tiles are now served via `/tiles/` (nginx disk-cache, 7-day TTL, proxied to `tile.openstreetmap.org` server-side; Django `tiles_proxy` fallback for dev). Nominatim geocoding goes through `/intern/karte/geocode/` (`geocode_proxy`, login required). Neither browser request reaches an external server.
 - **No audit-log cleanup.** §9 promises the ChangeLog is deleted after 3 years, but
   no deletion/cron mechanism exists — the log grows unbounded. Add a cleanup
   management command.

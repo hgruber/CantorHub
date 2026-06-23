@@ -21,6 +21,7 @@ instance/
 
 # Media and static files
 media/
+/tiles/
 portrait/
 Avatare/
 /static/
