@@ -152,7 +152,7 @@ has no email address.
 Allows the board to request that existing members re-confirm their stored data and
 re-acknowledge the privacy policy, bylaws, and membership fee schedule.
 
-**Trigger:** `manage.py send_reconfirmation --user <username>|--all` (uses `PORTAL_URL` from config; override with `--base-url URL`)
+**Trigger:** `manage.py send_reconfirmation --user <username>|--all` (uses `VEREINS_URL` from config; override with `--base-url URL`)
 (e.g. `--base-url https://portal.example.com`). The command calls
 `send_bestaetigung_mail(user, base_url)` in `views/auth.py`, which:
 1. Creates a `TimestampSigner` token (salt `"intern.mitglied_bestaetigung"`, **30-day** validity) encoding the user PK.

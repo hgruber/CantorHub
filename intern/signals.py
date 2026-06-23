@@ -180,7 +180,7 @@ def _send_activation_mail(user):
             text_key = "MAIL_REAKTIVIERT"
             subject = f"Dein Konto bei {vereinsname} wurde wieder aktiviert"
 
-        portal_url = get_config("PORTAL_URL", "").rstrip("/")
+        portal_url = get_config("VEREINS_URL", "").rstrip("/")
         login_url = f"{portal_url}/intern/login/" if portal_url else None
         from .mail import format_config_mail
         text_body = format_config_mail(text_key, user, link=login_url or "")

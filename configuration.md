@@ -28,10 +28,10 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `MAIL_BESTAETIGUNG_BESTAETIGT` (quittance mail after member confirms data; `{vorname}`, `{vereinsname}`)
 - `MAIL_EINLADUNG` (invite email sent to an email address before registration; `{link}`, `{vereinsname}`, `{vereinsname_lang}` — no user object, use `format_config_text()`)
 - `MAIL_NEUES_PASSWORT` (password reset email body)
-- `MAIL_REAKTIVIERT` (email on reactivation of a previously active member; `{link}` = login URL, empty string if `PORTAL_URL` not set)
-- `MAIL_WILLKOMMEN` (welcome email on first activation; `{link}` = login URL, empty string if `PORTAL_URL` not set)
+- `MAIL_REAKTIVIERT` (email on reactivation of a previously active member; `{link}` = login URL, empty string if `VEREINS_URL` not set)
+- `MAIL_WILLKOMMEN` (welcome email on first activation; `{link}` = login URL, empty string if `VEREINS_URL` not set)
 - `SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms)
-- `PORTAL_URL` (base URL of the portal, e.g. `https://portal.example.com`; when set, a login button is added to activation mails; empty → no button)
+- `VEREINS_URL` (base URL of the portal, e.g. `https://portal.example.com`; when set, a login button is added to activation mails; empty → no button)
 
 ## Mail placeholders
 

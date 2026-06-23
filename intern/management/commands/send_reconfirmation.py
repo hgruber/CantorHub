@@ -31,7 +31,7 @@ class Command(BaseCommand):
             metavar="URL",
             help=(
                 "Basis-URL des Portals (Schema + Host), z. B. https://portal.example.com. "
-                "Standard: PORTAL_URL aus der Konfiguration, sonst http://localhost:8000"
+                "Standard: VEREINS_URL aus der Konfiguration, sonst http://localhost:8000"
             ),
         )
         parser.add_argument(
@@ -42,7 +42,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        base_url = (options["base_url"] or get_config("PORTAL_URL", "") or "http://localhost:8000").rstrip("/")
+        base_url = (options["base_url"] or get_config("VEREINS_URL", "") or "http://localhost:8000").rstrip("/")
         print_url = options["print_url"]
 
         if options["user"]:

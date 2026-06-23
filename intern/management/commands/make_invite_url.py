@@ -22,12 +22,12 @@ class Command(BaseCommand):
             metavar="URL",
             help=(
                 "Basis-URL des Portals (Schema + Host), z. B. https://portal.example.com. "
-                "Standard: PORTAL_URL aus der Konfiguration, sonst http://localhost:8000"
+                "Standard: VEREINS_URL aus der Konfiguration, sonst http://localhost:8000"
             ),
         )
 
     def handle(self, *args, **options):
         email = options["email"]
-        base_url = (options["base_url"] or get_config("PORTAL_URL", "") or "http://localhost:8000").rstrip("/")
+        base_url = (options["base_url"] or get_config("VEREINS_URL", "") or "http://localhost:8000").rstrip("/")
         token = make_invite_token(email)
         self.stdout.write(f"{base_url}/intern/beitritt/{token}/")

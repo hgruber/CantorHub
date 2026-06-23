@@ -61,7 +61,7 @@ _CONFIG_DEFAULTS = [
         "Filer-Datei-ID der aktuellen Satzung (leer → kein Link in Formularen)",
     ),
     (
-        "PORTAL_URL",
+        "VEREINS_URL",
         "",
         "Basis-URL des Portals für Links in E-Mails (z.B. https://portal.example.com)",
     ),
