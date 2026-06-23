@@ -91,23 +91,7 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 `Zusage.option` values: `"1"` = Zusage, `"2"` = Absage, `"3"` = Eventuell, empty/missing = Keine Angabe. The attendance table on the termin detail page groups users by `Stimme` (S, A, T, B, C, M) and splits into two tables on mobile.
 
-### Forum edit page
-
-`/intern/forum/<id>/edit/` lets admins set `thema`, `bild`, and (when ejabberd is configured) `xmpp_muc_jid`. When ejabberd is configured (`is_ejabberd_configured()`), the MUC JID is auto-derived as `forum-{id}@{EJABBERD_MUC_SERVICE}` if not set; the first invite also persists it to the DB so the bot picks it up. XMPP sections are hidden entirely when ejabberd is not configured (no fallback). When enabled, shows: a room-info card (exists, persistent, members\_only, public, moderated, anonymous, allow\_user\_invites, lang, title, owners with bot marker, bot presence via `get_room_options`), invited (affiliations `member`/`admin`/`owner`), attending (occupants), without invitation (active users with xmpp not in affiliations), without XMPP account, and **Gäste/Fremde** (occupants whose bare JID matches no active user and is not the bot JID). The invite button calls `ejabberd.set_room_affiliation(..., "member")` silently.
-
-When `bild` is set or changed, `_sync_forum_avatar(forum_obj)` is called (best-effort) to push the image as MUC room avatar via `ejabberd.set_room_vcard(muc_jid, avatar_file, name)`. This sets the `vcard` room option via `change_room_option` (XEP-0054 vcard-temp XML with `PHOTO/TYPE/BINVAL`). Clients like Conversations fetch the room vCard via IQ and show the avatar. Two quirks found in testing: (1) ejabberd's fxml parser requires **double-quoted** XML namespace attributes — single quotes cause a 500 internal_error; (2) `vcard_xupdate="external"` via `change_room_option` returns 500 — the accepted format is the hex SHA1 hash of the raw image bytes, which ejabberd then includes in the room presence (XEP-0153) so clients like Conversations automatically fetch and display the avatar. Called from `forum_edit` (on every save, idempotent) and `forum_add` (if bild set on creation); no crash if the MUC room doesn't exist yet.
-
-`get_room_options` returns a flat `{option_name: value}` dict (all values are strings, e.g. `"true"`); `ejabberd.option_is_true(options, key)` coerces them to bool (handles string/JSON-bool/list-of-objects formats across ejabberd versions). The "Besitzer" of a bot-created room is the bot JID itself (it created the room by joining first); `owner_is_bot` flags this in the UI.
-
-### MUC room configuration
-
-`ejabberd.configure_room(muc_jid, title=None)` is the single source of truth for room invariants and enforces (overwriting manual changes) on every bot (re)join and on `ejabberd_admin sync`: `persistent=true`, `anonymous=true`, `public=false`, `members_only=true`, `allow_user_invites=true`, `lang=de`, plus `title` when given (the forum `thema`). Defined as `_ROOM_OPTIONS` in `ejabberd.py`. Called from `ejabberd_bot._configure_room` (on join) and `ejabberd.configure_all_rooms()` (all existing rooms at startup, invoked by `ejabberd_admin sync`).
-
-Forum→MUC delivery: `forum_send` only writes the `Mitteilung`; the persistent `ejabberd_bot` relays it to the MUC room over its live session (`CantorBot._relay_messages`, a 3 s timer reading `_db_pending_forum_messages`). This replaced a per-message short-lived slixmpp connection that was unreliable (flaky first TLS handshake → random timeouts) and collided on the `CantorBot` nick. The relayed message echoes back under nick `CantorBot` and is skipped by echo prevention.
-
-**Known gap — `_relay_cursor` is not persistent:** the relay cursor is held only in memory and re-baselined to the highest `Mitteilung` id at each bot **process** start (`_db_init_relay_cursor`). In-process reconnects (TLS blip, auth retry, disconnect) keep the cursor, so they lose nothing. But if the bot **process** restarts while the portal keeps accepting posts, every forum message written during that downtime is treated as already-delivered and never reaches the MUC. This is currently masked because `start.sh`/`migrate.sh` wipe the DB on each start (test phase only — see "Database"); once that wipe is gone after the final migration, the gap becomes real. Fix when it matters: persist the last-relayed `Mitteilung` id (DB/file) instead of taking the max at startup, so a bot restart replays the downtime window instead of skipping it. A supervisor/restart policy for the bot (it currently runs as a bare `&` background process in `start.sh` with no auto-restart) reduces the downtime window but does not remove the gap.
-
-`anonymous=true` (semi-anonymous) is deliberate: OMEMO in a MUC technically requires a non-anonymous room, so a semi-anonymous room makes clients (Conversations, Gajim) default to **unencrypted** — required for the Forum⇄MUC bridge to read messages. The bot still resolves real sender JIDs via the admin REST API (`get_room_occupants`), which exposes them regardless of room anonymity; clients/members no longer see each other's real JIDs.
+The forum edit page (`/intern/forum/<id>/edit/`) and its XMPP behaviour — room-info card, invite flow, avatar sync (`_sync_forum_avatar`), MUC room invariants (`configure_room`), the Forum→MUC relay and the `_relay_cursor` restart gap — are documented in `xmpp.md`.
 
 ### Article editor & versioning
 
@@ -229,66 +213,8 @@ Map pages use Leaflet. `intern/static/intern/js/osm-map.js` patches `L.TileLayer
 
 ### Known technical debt
 
-Items found during code review, ordered by estimated risk of the fix:
-
-- **Branding is hardcoded** ("Just Gospel Frankfurt", logos, domain) across
-  templates, `replacements.py`, `tables.py`, and static SVGs. Blocks open-sourcing
-  as a white-label app. Full extraction plan in `branding.md`.
-
-**Privacy-policy claims not yet enforced in code** — the `/datenschutz/` text
-(`templates/datenschutz.html`) now makes statements the implementation must catch up
-with; until then the policy over-promises:
-- ~~**Map tile / geocoding proxy not in place.**~~ **Done.** Tiles are now served via `/tiles/` (nginx disk-cache, 7-day TTL, proxied to `tile.openstreetmap.org` server-side; Django `tiles_proxy` fallback for dev). Nominatim geocoding goes through `/intern/karte/geocode/` (`geocode_proxy`, login required). Neither browser request reaches an external server.
-- ~~**No audit-log cleanup.**~~ **Done.** `cleanup_changelog` management command deletes
-  `ChangeLog` entries older than the retention period (default 3 years); it runs in the
-  background on every `start.sh`. The in-process `default=datetime.now` timestamp is naive
-  and `USE_TZ=False`, so the `timezone.now()`-based cutoff matches.
-- ~~**Server-log retention (90 days)** stated in §2/§7 — verify nginx logrotate actually
-  enforces it.~~ **Done.** haproxy and the CantorHub container run under systemd, so their
-  logs go to the journal; `journald.conf` sets `MaxRetentionSec=90d` (plus `SystemMaxUse=4G`
-  as a size cap that can only delete earlier, never later), enforcing the "deleted after at
-  most 90 days" claim. The §7 prose mentions "nginx log files" as the mechanism, which is now
-  imprecise (it is journald), but the stated 90-day deadline is correct.
-- **§3 legal basis lit. b vs. lit. f for forum/chat** — membership admin and event
-  organisation on Art. 6(1)(b) is fine, but forum + XMPP chat are hard to justify as
-  "necessary for performance of the membership contract"; they are better grounded on
-  Art. 6(1)(f) (legitimate interest in internal communication).
-- **§3 implied photo consent "by uploading"** — consent for avatar/profile text is taken
-  as the act of uploading. Art. 7 wants an informed, documented, unambiguous action; a
-  conscious checkbox at upload time with a logged timestamp would be cleaner.
-- **§5 privacy not by default (Art. 25(2))** — by default all members see every other
-  member's address, birthday and phone numbers; hiding is opt-out via `private_fields`.
-  Privacy-by-default would mean at least birthday/address hidden by default (changing the
-  default of `User.private_fields` + a data migration for existing rows).
-- **§10 ex-member anonymisation is deliberately opt-out** (not a defect) — after a member
-  leaves, forum posts keep the full real name by default; deletion **and** the milder
-  placeholder anonymisation are both offered on request (Art. 17 / Art. 21). This is a
-  conscious design decision, not an oversight: the membership wants the real name retained
-  by default for the historical/archival integrity of the discussion record. It rests on
-  Art. 6 Abs. 1 lit. f (legitimate interest in continuity and attributability of the
-  communication history); the balancing test holds because only first/last name is kept,
-  the portal is closed (not public), members are informed in advance via §10, and the
-  opt-out (deletion or anonymisation) is unconditional and low-friction. The "majority
-  wants it" is *not* itself the legal basis — lit. f + the easy opt-out is. **Action item:**
-  reinforce this by actively pointing it out again at departure (e.g. in the leave/
-  deactivation confirmation), turning the silent default into an informed, documented
-  choice; until that exists the position relies on the §10 text alone.
-
-**Medium risk (15-30%)** — need testing after fixing:
-- `Zusage.option` is `CharField(max_length=255)` but only uses `"1"`, `"2"`, `"3"`, `""`. Should be a choices field with a migration.
-- `Mitteilung.mitteilung` allows `null=True` but `formatiert()` calls `apply_replacements()` which may crash on `None`. Guard the method or remove `null=True`.
-- `intern.js` (1022 lines) puts all JS in one file with global namespace pollution (`appMainDz`, `toggle()`, `fileAction()`, `saveOrder()`). Should be split into modules.
-- Dropzone, Sortable, Leaflet, and `osm-map.js` are loaded unconditionally in `base.html` on every page. Should be page-specific `<script>` loads.
-- `sortablejs@latest` in `base.html` is unpinned — a breaking upstream update could break the app.
-- Inline `<script>` blocks in 6 templates (`karte.html`, `termin.html`, `termin_edit.html`, `mitglied.html`, `artikel_history.html`, `ort_detail.html`) should be extracted to separate JS files. The shared OSM tile-referer patch has already been pulled out into `osm-map.js`; the map-init scripts themselves remain inline.
-- Inline `style=` attributes in templates bypass the design system and lack dark mode support.
-
-**Higher risk (35-55%)** — need careful planning:
-- Many hardcoded hex colors in `intern.css` (attendance badges, diff views, wiki code block, toasts) lack CSS variables and some lack dark-mode overrides. The version banner now uses `--warn-*` tokens with dark-mode values.
-- `main.css` (public homepage) defines `.content` with different properties than `intern.css` — potential clash if both load on the same page.
-- `alert()`/`confirm()` in `intern.js` for UX feedback should be replaced with toast/modal components, but `confirm()` gates destructive actions so control flow changes.
-- `visible_fields()` in `views/files.py` has dual behavior: returns column list on GET, saves and redirects on POST. Splitting it requires touching call sites in `titel.py` and `mitglieder.py`.
-- URL parameter naming is inconsistent across views (`id` vs `pk` vs `forum` vs `titel`). Standardizing requires updating URL patterns, view signatures, templates, and `reverse()` calls.
+Tracked in separate files: general code/UX debt (branding, risk-ranked items) in
+`technical-debt.md`; privacy-policy compliance items in `datenschutz.md`.
 
 ### Logging
 
@@ -345,27 +271,9 @@ starts the ENV var can be dropped and the DB value is used. Use
 
 Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py`;
 **add new keys there** (with a German `description`) so fresh installs get them.
-Current keys: `EJABBERD_API_URL`, `EJABBERD_HOST`, `EJABBERD_MUC_SERVICE`,
-`EJABBERD_BOT_JID`, `EJABBERD_BOT_PASSWORD`, `EJABBERD_BOT_PORT`, `ICAL_SECRET`,
-the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`, `UPLOAD_MAX_MB`, `MAP_CENTER_ID`,
-`MAP_DEFAULT_ZOOM`, `PWRESET_MAX_PER_HOUR`, `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`,
-`VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`),
-`VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form),
-`VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title),
-`VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in privacy-policy §1; multi-line, empty → only board member names are listed, no addresses),
-`MAIL_ANTRAG` (applicant confirmation email body),
-`MAIL_ANTRAG_ADMIN` (admin notification on new application; `{vorname}`, `{nachname}`, `{email}`, `{link}`),
-`MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing),
-`MAIL_BESTAETIGUNG` (re-confirmation invitation email body),
-`MAIL_BESTAETIGUNG_BESTAETIGT` (quittance mail after member confirms data; `{vorname}`, `{vereinsname}`),
-`MAIL_EINLADUNG` (invite email sent to an email address before registration; `{link}`, `{vereinsname}`, `{vereinsname_lang}` — no user object, use `format_config_text()`),
-`MAIL_NEUES_PASSWORT` (password reset email body),
-`MAIL_REAKTIVIERT` (email on reactivation of a previously active member; `{link}` = login URL, empty string if `PORTAL_URL` not set),
-`MAIL_WILLKOMMEN` (welcome email on first activation; `{link}` = login URL, empty string if `PORTAL_URL` not set),
-`SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms),
-`PORTAL_URL` (base URL of the portal, e.g. `https://portal.example.com`; when set, a login button is added to activation mails; empty → no button).
-
-All `MAIL_*` body texts are rendered in both the HTML email body and the plain-text fallback via `send_branded_mail()` (which now passes `text_body` into the template context). Standard placeholders via `mail.format_config_mail(key, user, ...)`: `{vorname}`, `{nachname}`, `{email}`, `{xmpp}`, `{user}` (username), `{username}` (alias), `{stimme}` (voice type written out), `{vereinsname}`, plus mail-specific ones like `{link}`. Unknown placeholders are left as-is. For mails without a user object (e.g. invite), use `mail.format_config_text(key, **kwargs)` instead — only `{vereinsname}`, `{vereinsname_lang}`, and explicit kwargs are available. To add a new automated email: add the key to `_CONFIG_DEFAULTS` in `apps.py`, call the appropriate formatter as `text_body`.
+The full key catalog and the mail-placeholder reference (`format_config_mail` /
+`format_config_text`, the standard `{vorname}`/`{vereinsname}`/… placeholders, and the
+"to add a new automated email" recipe) live in `configuration.md`.
 
 `VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into
 every template context by `config/context_processors.py` (`{{ vereinsname }}`), and

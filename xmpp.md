@@ -99,6 +99,8 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `
 
 This replaced an earlier per-message short-lived slixmpp connection that was unreliable (flaky first TLS handshake → random timeouts) and collided on the `CantorBot` nick.
 
+**Known gap — `_relay_cursor` is not persistent:** the relay cursor is held only in memory and re-baselined to the highest `Mitteilung` id at each bot **process** start (`_db_init_relay_cursor`). In-process reconnects (TLS blip, auth retry, disconnect) keep the cursor, so they lose nothing. But if the bot **process** restarts while the portal keeps accepting posts, every forum message written during that downtime is treated as already-delivered and never reaches the MUC. This is currently masked because `start.sh`/`migrate.sh` wipe the DB on each start (test phase only). Once that wipe is gone after the final migration, the gap becomes real. Fix when it matters: persist the last-relayed `Mitteilung` id (DB/file) instead of taking the max at startup, so a bot restart replays the downtime window instead of skipping it. A supervisor/restart policy for the bot (it currently runs as a bare `&` background process in `start.sh` with no auto-restart) reduces the downtime window but does not remove the gap.
+
 ## MUC → Forum forwarding (`intern/management/commands/ejabberd_bot.py`)
 
 ### Bot startup
@@ -164,6 +166,21 @@ The bot never exits under normal operation:
 ### Async/sync boundary
 
 slixmpp runs in an async event loop. Django ORM is sync-only. All DB access is wrapped in `asyncio.to_thread()`. REST API calls (httpx) are also sync, so they run inside `asyncio.to_thread()` too.
+
+## Forum edit page (`forum_edit`)
+
+`/intern/forum/<id>/edit/` lets admins set `thema`, `bild`, and (when ejabberd is configured) `xmpp_muc_jid`. When ejabberd is configured (`is_ejabberd_configured()`), the MUC JID is auto-derived as `forum-{id}@{EJABBERD_MUC_SERVICE}` if not set; the first invite also persists it to the DB so the bot picks it up. XMPP sections are hidden entirely when ejabberd is not configured (no fallback). When enabled, the page shows: a room-info card (exists, persistent, members\_only, public, moderated, anonymous, allow\_user\_invites, lang, title, owners with bot marker, bot presence via `get_room_options`), invited (affiliations `member`/`admin`/`owner`), attending (occupants), without invitation (active users with xmpp not in affiliations), without XMPP account, and **Gäste/Fremde** (occupants whose bare JID matches no active user and is not the bot JID). The invite button calls `ejabberd.set_room_affiliation(..., "member")` silently.
+
+`get_room_options` returns a flat `{option_name: value}` dict (all values are strings, e.g. `"true"`); `ejabberd.option_is_true(options, key)` coerces them to bool (handles string/JSON-bool/list-of-objects formats across ejabberd versions). The "Besitzer" of a bot-created room is the bot JID itself (it created the room by joining first); `owner_is_bot` flags this in the UI.
+
+### Room avatar sync (`_sync_forum_avatar`)
+
+When `bild` is set or changed, `_sync_forum_avatar(forum_obj)` is called (best-effort) to push the image as MUC room avatar via `ejabberd.set_room_vcard(muc_jid, avatar_file, name)`. This sets the `vcard` room option via `change_room_option` (XEP-0054 vcard-temp XML with `PHOTO/TYPE/BINVAL`). Clients like Conversations fetch the room vCard via IQ and show the avatar. Two quirks found in testing:
+
+1. ejabberd's fxml parser requires **double-quoted** XML namespace attributes — single quotes cause a 500 internal_error.
+2. `vcard_xupdate="external"` via `change_room_option` returns 500 — the accepted format is the hex SHA1 hash of the raw image bytes, which ejabberd then includes in the room presence (XEP-0153) so clients like Conversations automatically fetch and display the avatar.
+
+Called from `forum_edit` (on every save, idempotent) and `forum_add` (if bild set on creation); no crash if the MUC room doesn't exist yet.
 
 ## Room assignment (`intern/signals.py`)
 
