@@ -35,11 +35,6 @@
                 {{ form.geburtstag }}
                 {% if form.geburtstag.errors %}<div class="invalid-feedback">{{ form.geburtstag.errors }}</div>{% endif %}
             </div>
-            <div class="form-group">
-                <label for="{{ form.stimme.id_for_label }}">Stimme{% if form.stimme.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.stimme }}
-                {% if form.stimme.errors %}<div class="invalid-feedback">{{ form.stimme.errors }}</div>{% endif %}
-            </div>
         </div>
     </div>
 
@@ -68,7 +63,6 @@
     {# ── Kontakt ─────────────────────────────────────────────── #}
     <div class="detail-card">
         <h3>Kontakt</h3>
-        <p class="join-hint">Bitte gib mindestens eine Telefonnummer an.</p>
         <div class="form-grid">
             <div class="form-group">
                 <label for="{{ form.telefon.id_for_label }}">Telefon</label>

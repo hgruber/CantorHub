@@ -134,7 +134,7 @@ The public join form lives at `/intern/beitritt/<token>/` (`mitglied_beitritt` i
 `views/auth.py`, **no** `login_required`). `MitgliedBeitrittForm` (`forms.py`) validates
 all member fields — required: first/last name, all address fields, `geburtstag`,
 `username` (regex `^[A-Za-z0-9._-]{3,30}$` + case-insensitive uniqueness via
-`username__iexact`), at least one phone, two matching passwords (`validate_password`),
+`username__iexact`), two matching passwords (`validate_password`),
 and three mandatory consent checkboxes (Datenschutz — links to `/datenschutz/`, Datenverarbeitung, Satzung —
 links to the PDF configured via `SATZUNG_FILE_ID`). On success the member is created with `is_active=False`, a PDF of the completed
 application is saved to the filer folder **„Verwaltung/Mitglieder"** (Vorstand-only,

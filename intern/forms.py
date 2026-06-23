@@ -134,14 +134,6 @@ class MitgliedBeitrittForm(forms.ModelForm):
             "Satzung</a> des Vereins an."
         ),
     )
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        from intern.app_settings import get_document_url
-        satzung_url = get_document_url("SATZUNG_FILE_ID")
-        self.fields["anerkennung_satzung"].label = mark_safe(
-            f'Ich erkenne die <a href="{satzung_url}" target="_blank" rel="noopener">'
-            "Satzung</a> des Vereins an."
-        )
 
     class Meta:
         model = User
@@ -149,7 +141,6 @@ class MitgliedBeitrittForm(forms.ModelForm):
             "first_name",
             "last_name",
             "username",
-            "stimme",
             "geburtstag",
             "strasse",
             "plz",
@@ -164,7 +155,6 @@ class MitgliedBeitrittForm(forms.ModelForm):
             "first_name": forms.TextInput(attrs={"class": "form-control"}),
             "last_name": forms.TextInput(attrs={"class": "form-control"}),
             "username": forms.TextInput(attrs={"class": "form-control"}),
-            "stimme": forms.Select(attrs={"class": "form-control"}),
             "geburtstag": forms.DateInput(
                 format="%Y-%m-%d", attrs={"class": "form-control", "type": "date"}
             ),
@@ -180,17 +170,17 @@ class MitgliedBeitrittForm(forms.ModelForm):
 
     # Pflichtfelder, die im Modell eigentlich optional (blank/null) sind.
     REQUIRED = ["geburtstag", "strasse", "plz", "ort"]
-    PHONE_FIELDS = ["telefon", "telefon_mobil", "telefon_job", "telefon_job_mobil"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name in self.REQUIRED:
             self.fields[name].required = True
-        # stimme nie als „None" zur Auswahl anbieten.
-        self.fields["stimme"].required = True
-        self.fields["stimme"].choices = [
-            (k, v) for k, v in User.STIMMEN if k != "N"
-        ]
+        from intern.app_settings import get_document_url
+        satzung_url = get_document_url("SATZUNG_FILE_ID")
+        self.fields["anerkennung_satzung"].label = mark_safe(
+            f'Ich erkenne die <a href="{satzung_url}" target="_blank" rel="noopener">'
+            "Satzung</a> des Vereins an."
+        )
 
     def clean_username(self):
         username = (self.cleaned_data.get("username") or "").strip()
@@ -205,11 +195,6 @@ class MitgliedBeitrittForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-
-        if not any(cleaned.get(f) for f in self.PHONE_FIELDS):
-            self.add_error(
-                "telefon", "Bitte gib mindestens eine Telefonnummer an."
-            )
 
         p1 = cleaned.get("password1")
         p2 = cleaned.get("password2")
