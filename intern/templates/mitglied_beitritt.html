@@ -118,13 +118,13 @@
     <div class="detail-card">
         <h3>Einwilligungen</h3>
         <div class="join-consents">
-            <label class="checkbox-label join-consent">{{ form.zustimmung_datenschutz }} <span>{{ form.zustimmung_datenschutz.label }}</span></label>
+            <label class="checkbox-label join-consent">{{ form.zustimmung_datenschutz }} <span>{{ form.zustimmung_datenschutz.label }}{% if form.zustimmung_datenschutz.field.required %} <span class="req">*</span>{% endif %}</span></label>
             {% if form.zustimmung_datenschutz.errors %}<div class="invalid-feedback">{{ form.zustimmung_datenschutz.errors }}</div>{% endif %}
 
-            <label class="checkbox-label join-consent">{{ form.zustimmung_datenverarbeitung }} <span>{{ form.zustimmung_datenverarbeitung.label }}</span></label>
+            <label class="checkbox-label join-consent">{{ form.zustimmung_datenverarbeitung }} <span>{{ form.zustimmung_datenverarbeitung.label }}{% if form.zustimmung_datenverarbeitung.field.required %} <span class="req">*</span>{% endif %}</span></label>
             {% if form.zustimmung_datenverarbeitung.errors %}<div class="invalid-feedback">{{ form.zustimmung_datenverarbeitung.errors }}</div>{% endif %}
 
-            <label class="checkbox-label join-consent">{{ form.anerkennung_satzung }} <span>{{ form.anerkennung_satzung.label }}</span></label>
+            <label class="checkbox-label join-consent">{{ form.anerkennung_satzung }} <span>{{ form.anerkennung_satzung.label }}{% if form.anerkennung_satzung.field.required %} <span class="req">*</span>{% endif %}</span></label>
             {% if form.anerkennung_satzung.errors %}<div class="invalid-feedback">{{ form.anerkennung_satzung.errors }}</div>{% endif %}
         </div>
     </div>
