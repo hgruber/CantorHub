@@ -136,6 +136,17 @@ def sync_xmpp_on_user_save(sender, instance, created, **kwargs):
                 daemon=True,
             ).start()
 
+    # Django's automatic password hash upgrade during authentication:
+    # check_password() calls user.save(update_fields=["password"]) when the stored
+    # hash uses a weaker algorithm (e.g. php_sha256 → PBKDF2). Treat this as a
+    # password change initiated by the user themselves.
+    update_fields = kwargs.get("update_fields")
+    if update_fields is not None and set(update_fields) == {"password"}:
+        if not getattr(instance, "_audit_password_changed", False):
+            instance._audit_password_changed = True
+            if not getattr(instance, "_audit_user", None):
+                instance._audit_user = instance
+
     # Detect login: Django updates only last_login when a user logs in.
     # The instance itself is the acting user, so set _audit_user if not already set.
     old_last_login = getattr(instance, "_old_last_login", None)
