@@ -50,7 +50,7 @@
                 <div class="concert-list">
                     {% for t in termine %}
                     <div class="concert-item">
-                        <span class="date">{{ t.datum|date:"D, d.m.Y H:i" }} Uhr</span>
+                        <span class="date">{{ t.datum|date:"D, d.m.Y" }}{% if t.datum|time:"H:i" != "00:00" %}, {{ t.datum|time:"H:i" }} Uhr{% endif %}</span>
                         <h3>{{ t.kurz }}</h3>
                         {% if t.ort %}<p class="location">{{ t.ort.name }}</p>{% endif %}
                     </div>
