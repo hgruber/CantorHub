@@ -3,6 +3,8 @@
 from io import BytesIO
 
 from django.contrib.staticfiles import finders
+
+from intern.app_settings import get_config
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
@@ -25,30 +27,40 @@ VALUE_X  = MARGIN + 5.0 * cm
 _LOGO_STATIC = "intern/brand/JG-Frankfurt-transparent.png"
 
 
+_ADDR_LINE_H = 0.46 * cm
+_BOTTOM_PAD  = 0.30 * cm   # Abstand Unterkante beider Elemente zur Trennlinie
+
+
 def _draw_header(c, vereinsname, vereinsadresse):
-    # Logo: farbig, oben links, etwas kleiner
+    portal_url = get_config("VEREINS_URL", "")
+
+    # Alle Textzeilen sammeln: Name + Adresszeilen + Portal-URL
+    addr_lines = [l.strip() for l in (vereinsadresse or "").strip().splitlines() if l.strip()]
+    all_lines = [vereinsname] + addr_lines + ([portal_url] if portal_url else [])
+    n = len(all_lines)
+
+    # Gemeinsame Unterkante: Trennlinie + kleiner Puffer
+    bottom_y = PAGE_H - HEADER_H + _BOTTOM_PAD
+
+    # Logo: Unterkante bündig mit Textblock
     logo_path = finders.find(_LOGO_STATIC)
     if logo_path:
         img = ImageReader(logo_path)
         iw, ih = img.getSize()
         logo_w = 5.5 * cm
         logo_h = logo_w * ih / iw
-        logo_x = MARGIN
-        logo_y = PAGE_H - HEADER_H + (HEADER_H - logo_h) / 2
-        c.drawImage(img, logo_x, logo_y, width=logo_w, height=logo_h, mask="auto")
+        c.drawImage(img, MARGIN, bottom_y, width=logo_w, height=logo_h, mask="auto")
 
-    # Vereinsname + Adresse rechts, oben bündig, schwarz
-    text_y = PAGE_H - 1.0 * cm
+    # Textblock: von unten aufgebaut, damit Unterkante auf bottom_y liegt
+    text_y = bottom_y + (n - 1) * _ADDR_LINE_H
     c.setFillColorRGB(*BLACK)
     c.setFont("Helvetica-Bold", 10)
-    c.drawRightString(PAGE_W - MARGIN, text_y, vereinsname)
+    c.drawRightString(PAGE_W - MARGIN, text_y, all_lines[0])
 
     c.setFont("Helvetica", 8.5)
-    for line in (vereinsadresse or "").strip().splitlines():
-        line = line.strip()
-        if line:
-            text_y -= 0.46 * cm
-            c.drawRightString(PAGE_W - MARGIN, text_y, line)
+    for line in all_lines[1:]:
+        text_y -= _ADDR_LINE_H
+        c.drawRightString(PAGE_W - MARGIN, text_y, line)
 
     # Dünne farbige Zierlinie unter dem Briefkopf
     c.setStrokeColorRGB(*BRAND)
@@ -62,10 +74,8 @@ def _draw_footer(c, vereinsname, vereinsadresse):
     c.setLineWidth(0.8)
     c.line(MARGIN, FOOTER_Y, PAGE_W - MARGIN, FOOTER_Y)
 
-    footer_left = vereinsname
-    if vereinsadresse:
-        first_line = vereinsadresse.strip().splitlines()[0].strip()
-        footer_left = f"{vereinsname} · {first_line}"
+    addr_lines = [l.strip() for l in (vereinsadresse or "").strip().splitlines() if l.strip()]
+    footer_left = " · ".join([vereinsname] + addr_lines)
 
     c.setFillColorRGB(*BLACK)
     c.setFont("Helvetica", 7.5)
