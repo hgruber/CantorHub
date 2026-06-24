@@ -506,7 +506,7 @@ def _audio_button_html(url, song_id, title, kind, composer=""):
         inner = format_html(
             '{play}<img src="{logo}" class="audio-btn-logo" alt="JG" />',
             play=mark_safe(_PLAY_ICON_SVG),
-            logo=static("intern/images/JG-Frankfurt-wG-color.svg"),
+            logo=static("intern/brand/logo.svg"),
         )
     else:
         inner = mark_safe(_PLAY_ICON_SVG)

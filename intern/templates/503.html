@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ vereinsname_kurz|default:"Portal" }} Intern – Wartung</title>
-    <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
+    <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
     <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
     <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark")})()</script>
 </head>
@@ -13,7 +13,7 @@
 <div class="error-standalone">
     <div class="error-card">
         <a href="/" class="error-brand">
-            <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" alt="{{ vereinsname_kurz|default:'Portal' }}" />
+            <img src="{% static 'intern/brand/logo.svg' %}" alt="{{ vereinsname_kurz|default:'Portal' }}" />
             <span>{{ vereinsname_kurz|default:"Portal" }}</span>
         </a>
 

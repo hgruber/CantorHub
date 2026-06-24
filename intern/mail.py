@@ -22,7 +22,7 @@ from intern.app_settings import get_config, get_from_email, get_vereinsname, get
 
 logger = logging.getLogger(__name__)
 
-_LOGO_STATIC = "intern/images/icon-192.png"
+_LOGO_STATIC = "intern/brand/icon-192.png"
 
 
 def send_branded_mail(subject, to, template, context, text_body=None, attachments=None):

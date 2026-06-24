@@ -91,7 +91,7 @@
                             {% if lied.komponist %}data-composer="{{ lied.komponist }}"{% endif %}
                             aria-label="JG Aufnahme – {{ lied.titel }} abspielen">
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-                        <img src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" class="audio-btn-logo" alt="JG" />
+                        <img src="{% static 'intern/brand/logo.svg' %}" class="audio-btn-logo" alt="JG" />
                     </button>
                     <a href="{{ lied.aufnahme.url }}" download class="file-icon-btn"
                        title="JG Aufnahme herunterladen"

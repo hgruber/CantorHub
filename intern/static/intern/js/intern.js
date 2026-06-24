@@ -558,8 +558,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // ── Media Session (lock screen / OS media controls) ──────
     const HAS_MS = "mediaSession" in navigator;
     const ARTWORK = [
-      { src: "/static/intern/images/icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/static/intern/images/icon-512.png", sizes: "512x512", type: "image/png" },
+      { src: "/static/intern/brand/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/static/intern/brand/icon-512.png", sizes: "512x512", type: "image/png" },
     ];
     function msState(state) {
       if (HAS_MS) { try { navigator.mediaSession.playbackState = state; } catch (_) {} }

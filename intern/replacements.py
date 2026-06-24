@@ -530,7 +530,7 @@ def apply_replacements(text, request=None):
     result.append(boxed_processor.close())
     if request is not None:
         result.append(
-            f'<p id="footer"><img src="/static/intern/images/JG-Frankfurt-wG-color.svg" style="width: 14px;">&nbsp;{get_vereinsname_kurz()}!</p>'
+            f'<p id="footer"><img src="/static/intern/brand/logo.svg" style="width: 14px;">&nbsp;{get_vereinsname_kurz()}!</p>'
         )
     output = "\n".join(result)
     for key, value in placeholders.items():

@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="de">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="manifest" href="/static/intern/manifest.json">
+        <link rel="manifest" href="{% static 'intern/manifest.json' %}">
         <meta name="theme-color" content="#c14468">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,15 +12,15 @@
         <title>
             {% block title %}{% endblock %}
         </title>
-        <link rel="stylesheet" href="/static/intern/css/login-style.css" />
-        <link rel="icon" href="/static/intern/images/JG-Frankfurt-wG-color.svg" />
+        <link rel="stylesheet" href="{% static 'intern/css/login-style.css' %}" />
+        <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
     </head>
     <body>
         <div class="login-container">
             <div class="login-card">
                 <div class="logo">
                     <a href="/">
-                        <img src="/static/intern/images/JG-Frankfurt-wG-color.svg"
+                        <img src="{% static 'intern/brand/logo.svg' %}"
                              style="width: 96px" />
                     </a>
                 </div>
