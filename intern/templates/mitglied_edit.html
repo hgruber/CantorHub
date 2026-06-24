@@ -154,23 +154,49 @@
         </div>
     </form>
 
-    {% if id and can_manage %}
-    <form method="post" class="form-actions">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="deactivate">
-        {% if user.is_active %}
-        <button type="submit" class="btn btn-danger">Ruhende Mitgliedschaft</button>
-        {% else %}
-        <button type="submit" class="btn btn-primary">Mitgliedschaft aktivieren</button>
-        {% endif %}
-    </form>
-    {% endif %}
+    {% if id and can_manage or id and perms.intern.delete_user and id != request.user.id %}
+    <div class="detail-cards detail-cards-spaced">
+        <div class="detail-card">
+            <h3>Weitere Aktionen</h3>
 
-    {% if id and perms.intern.delete_user and id != request.user.id %}
-    <form method="post" action="{% url 'mitglied_delete' id=id %}" class="form-actions">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Mitglied unwiderruflich löschen oder anonymisieren?')">Mitglied löschen</button>
-    </form>
+            {% if id and can_manage %}
+            <div>
+                <p style="display:flex;align-items:center;gap:8px;margin:0 0 8px;">
+                    <strong>Mitgliedschaft</strong>
+                    {% if user.is_active %}
+                    <span class="badge badge-primary">Aktiv</span>
+                    {% else %}
+                    <span class="badge">Ruhend</span>
+                    {% endif %}
+                </p>
+                <p class="text-muted">Sperrt die Anmeldung, ohne Daten zu löschen. Das Mitglied ist für andere nicht mehr sichtbar. Die Aktion ist jederzeit umkehrbar — alle Daten bleiben vollständig erhalten.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="deactivate">
+                    <div class="form-actions">
+                        {% if user.is_active %}
+                        <button type="submit" class="btn btn-danger">Ruhende Mitgliedschaft</button>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary">Mitgliedschaft aktivieren</button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            {% if id and perms.intern.delete_user and id != request.user.id %}
+            <div{% if id and can_manage %} style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);"{% endif %}>
+                <p class="text-muted">Unwiderruflich. Hat das Mitglied Forenbeiträge, Artikel, Dateien oder Abstimmungen, werden alle persönlichen Daten gelöscht (E-Mail, Telefon, Adresse, Geburtstag), Name und Benutzerzeile bleiben jedoch für die Verlaufsanzeige erhalten. Ohne solche Verknüpfungen wird der Eintrag vollständig aus der Datenbank entfernt.</p>
+                <form method="post" action="{% url 'mitglied_delete' id=id %}">
+                    {% csrf_token %}
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Mitglied unwiderruflich löschen oder anonymisieren?')">Mitglied löschen</button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
     {% endif %}
 </div>
 {% endblock %}
