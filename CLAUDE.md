@@ -115,6 +115,12 @@ can't be bypassed in an XMPP client: saving permissions runs `_reconcile_forum_m
 `_db_invite_missing_users` only invites permitted readers, and `forum_invite` refuses
 non-readers. See `xmpp.md`.
 
+Permission changes are recorded in the audit log: `_audit_forum_permissions`
+(`views/forums.py`) writes a `ChangeLog` row under `model_name="Forum"` with a
+`berechtigungen` change (group-name labels, or "Alle Mitglieder" when open), so it shows
+up in `forum_aenderungen` next to the regular forum-field edits. The forum's audited
+fields are `thema`, `aktiv`, `bild_id`, `xmpp_muc_jid` (`_AUDIT_FIELDS` in `signals.py`).
+
 ### Article editor & versioning
 
 `Artikel` rows are immutable versions keyed by `(name, version)` — articles are addressed by `name`, not `id`. Saving an edit at `/intern/artikel/<name>/edit/` creates a new `Artikel` row with `version + 1` rather than mutating the existing one. The editor (`artikel.html`, edit branch) renders the `.article-editor` shell: an identity bar, a collapsible `.ae-help` syntax cheat-sheet, the textarea inside a `.wiki` container (kept so `abstimmung.js`'s `{abstimmung:...}` helper still binds), and a footer action bar.

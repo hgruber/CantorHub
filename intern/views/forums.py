@@ -17,7 +17,7 @@ from intern import ejabberd, folders
 from intern.app_settings import get_config, get_from_email, is_ejabberd_configured
 
 from ..forms import ForumEditForm
-from ..models import Forum, ForumPermission, Mitteilung, User
+from ..models import ChangeLog, Forum, ForumPermission, Mitteilung, User
 from ..tables import ForumTabelle
 
 __all__ = [
@@ -470,6 +470,32 @@ def _reconcile_forum_muc(forum_obj):
             logger.error("ejabberd: failed to add %s to %s: %s", jid, muc_jid, exc)
 
 
+def _audit_forum_permissions(forum_obj, user, old_ids, new_ids, groups):
+    """Write a ChangeLog entry under the Forum when its read groups change, so it
+    surfaces in forum_aenderungen alongside thema/bild changes. Never raises."""
+    old_ids, new_ids = set(old_ids), set(new_ids)
+    if old_ids == new_ids:
+        return
+    names = {g.id: g.name for g in groups}
+
+    def label(ids):
+        if not ids:
+            return "Alle Mitglieder"
+        return ", ".join(sorted(names.get(i, str(i)) for i in ids))
+
+    try:
+        ChangeLog.objects.create(
+            user=user,
+            action=ChangeLog.ACTION_UPDATE,
+            model_name="Forum",
+            object_id=forum_obj.pk,
+            object_repr=str(forum_obj)[:200],
+            changes={"berechtigungen": [label(old_ids), label(new_ids)]},
+        )
+    except Exception:
+        logger.exception("audit: failed to log forum permission change for #%s", forum_obj.pk)
+
+
 @login_required
 def forum_permissions(request, forum):
     if not request.user.has_perm("intern.manage_forum_permissions"):
@@ -487,13 +513,17 @@ def forum_permissions(request, forum):
 
     if request.method == "POST":
         read_mode = request.POST.get("read_mode")  # "all" or "restricted"
-        read_groups = {int(x) for x in request.POST.getlist("read_groups")}
+        valid_ids = {g.id for g in groups}
+        read_groups = {int(x) for x in request.POST.getlist("read_groups")} & valid_ids
 
         ForumPermission.objects.filter(forum=forum_obj).delete()
-        if read_mode == "restricted":
-            for gid in read_groups:
-                ForumPermission.objects.create(forum=forum_obj, group_id=gid)
+        new_group_ids = read_groups if read_mode == "restricted" else set()
+        for gid in new_group_ids:
+            ForumPermission.objects.create(forum=forum_obj, group_id=gid)
 
+        _audit_forum_permissions(
+            forum_obj, request.user, existing_group_ids, new_group_ids, groups
+        )
         _reconcile_forum_muc(forum_obj)
         return redirect("forum_view", forum=forum)
 

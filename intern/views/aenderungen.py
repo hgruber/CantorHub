@@ -76,6 +76,7 @@ FIELD_LABELS = {
     # Forum
     "thema": "Thema",
     "bild_id": "Bild",
+    "xmpp_muc_jid": "Chat-Raum (XMPP)",
     # Konzert
     "setlist": "Ablauf",
     # Ort
