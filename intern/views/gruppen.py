@@ -35,7 +35,7 @@ PERMISSION_DEFS = [
     ("intern.add_forum",                  "anlegen",        "Forum"),
     ("intern.change_forum",               "bearbeiten",     "Forum"),
     ("intern.delete_forum",               "löschen",        "Forum"),
-    ("intern.manage_forum_permissions",   "Berechtigungen", "Forum"),
+    ("intern.manage_forum_permissions",   "Zugriff",        "Forum"),
     # Orte
     ("intern.add_ort",                    "anlegen",        "Orte"),
     ("intern.change_ort",                 "bearbeiten",     "Orte"),

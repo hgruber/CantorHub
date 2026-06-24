@@ -945,7 +945,7 @@ _CHANGELOG_FIELD_LABELS = {
     "is_superuser": "Admin-Status",
     "gruppe": "Gruppe",
     "berechtigung": "Berechtigung",
-    "berechtigungen": "Berechtigungen",
+    "berechtigungen": "Zugriff",
     "private_fields": "Privatsphäre",
 }
 

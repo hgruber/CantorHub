@@ -534,8 +534,8 @@ def forum_permissions(request, forum):
         ]
         for g in groups
     }
-    return render(request, "forum_berechtigungen.html", {
-        "seitentitel": f"Berechtigungen: {forum_obj.thema}",
+    return render(request, "forum_zugriff.html", {
+        "seitentitel": f"Zugriffskontrolle: {forum_obj.thema}",
         "forum_obj": forum_obj,
         "groups": groups,
         "read_restricted": read_restricted,

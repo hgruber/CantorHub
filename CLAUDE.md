@@ -97,8 +97,8 @@ The forum edit page (`/intern/forum/<id>/edit/`) and its XMPP behaviour — room
 
 Forums are open to every logged-in member by default. Holders of
 `intern.manage_forum_permissions` can restrict a forum to specific groups via the
-lock button on the forum detail page (`/intern/forum/<id>/berechtigungen/`,
-`forum_permissions` view, `forum_berechtigungen.html`) — analogous to the article
+lock button on the forum detail page (`/intern/forum/<id>/zugriff/`,
+`forum_permissions` view, `forum_zugriff.html`) — analogous to the article
 permissions, but **read-only**: there is no separate write right. Whoever may read a
 forum may also post; whoever may not read it doesn't see it at all.
 

@@ -65,7 +65,7 @@ urlpatterns = [
     path("forum/<int:forum>/invite/<int:user_id>/", views.forum_invite, name="forum_invite"),
     path("forum/<int:forum>/more/", views.forum_more, name="forum_more"),
     path("forum/<int:forum>/send/", views.forum_send, name="forum_send"),
-    path("forum/<int:forum>/berechtigungen/", views.forum_permissions, name="forum_permissions"),
+    path("forum/<int:forum>/zugriff/", views.forum_permissions, name="forum_permissions"),
     path("forum/<int:id>/aenderungen/", views.forum_aenderungen, name="forum_aenderungen"),
     # Repertoire URLs
     path("titel/", views.titel_list, name="titel_list"),
