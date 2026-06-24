@@ -1,8 +1,6 @@
 import logging
 import threading
 from datetime import datetime
-from io import BytesIO
-
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.tokens import default_token_generator
@@ -16,17 +14,21 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils.timezone import now as tz_now
 from filer.models import File as FilerFile, Folder
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import cm
-from reportlab.pdfgen import canvas as rl_canvas
-
 from intern import ejabberd
 from intern.app_settings import (
     get_config,
     get_config_int,
     get_from_email,
     get_vereinsname,
+    get_vereinsname_lang,
     is_ejabberd_configured,
+)
+from intern.pdf import (
+    draw_checkbox,
+    draw_field,
+    draw_section,
+    draw_signature,
+    new_letterhead_pdf,
 )
 from intern.mail import format_config_mail, send_branded_mail
 
@@ -91,46 +93,37 @@ class CantorLoginView(auth_views.LoginView):
 
 
 def _save_antrag_pdf(user, email):
-    buf = BytesIO()
-    c = rl_canvas.Canvas(buf, pagesize=A4)
-    _, h = A4
-
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(2 * cm, h - 2 * cm, f"Mitgliedsantrag - {get_vereinsname()}")
-    c.setFont("Helvetica", 10)
-    c.drawString(2 * cm, h - 2.8 * cm, f"Eingereicht am: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+    buf, c, y = new_letterhead_pdf(
+        title="Mitgliedsantrag",
+        subtitle=f"Eingereicht am: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}",
+        vereinsname=get_vereinsname(),
+        vereinsname_lang=get_vereinsname_lang(),
+        vereinsadresse=get_config("VEREINSADRESSE", ""),
+    )
 
     felder = [
-        ("Vorname",      user.first_name),
-        ("Nachname",     user.last_name),
-        ("Benutzername", user.username),
-        ("E-Mail",       email),
-        ("Geburtsdatum", str(user.geburtstag) if user.geburtstag else ""),
-        ("Stimmlage",    user.stimme),
-        ("Strasse",      user.strasse or ""),
-        ("PLZ / Ort",    f"{user.plz or ''} {user.ort or ''}".strip()),
-        ("Telefon",      user.telefon or ""),
-        ("Mobil",        user.telefon_mobil or ""),
+        ("Vorname:",      user.first_name),
+        ("Nachname:",     user.last_name),
+        ("Benutzername:", user.username),
+        ("E-Mail:",       email),
+        ("Geburtsdatum:", str(user.geburtstag) if user.geburtstag else ""),
+        ("Stimmlage:",    user.stimme),
+        ("Straße:",       user.strasse or ""),
+        ("PLZ / Ort:",    f"{user.plz or ''} {user.ort or ''}".strip()),
+        ("Telefon:",      user.telefon or ""),
+        ("Mobil:",        user.telefon_mobil or ""),
     ]
 
-    y = h - 4 * cm
+    y = draw_section(c, y, "Persönliche Daten")
     for label, wert in felder:
-        if not wert:
-            continue
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(2 * cm, y, f"{label}:")
-        c.setFont("Helvetica", 10)
-        c.drawString(6 * cm, y, wert)
-        y -= 0.65 * cm
+        if wert:
+            y = draw_field(c, y, label, wert)
 
-    y -= 0.4 * cm
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(2 * cm, y, "Einwilligungen (alle bestaetigt):")
-    y -= 0.65 * cm
-    c.setFont("Helvetica", 10)
-    for text in ["Datenschutzerklaerung", "Datenverarbeitung", "Satzung"]:
-        c.drawString(2 * cm, y, f"[X]  {text}")
-        y -= 0.65 * cm
+    y = draw_section(c, y, "Einwilligungen (alle bestätigt)")
+    y = draw_checkbox(c, y, "Datenschutzerklärung gelesen und akzeptiert")
+    y = draw_checkbox(c, y, "Datenverarbeitung durch den Verein akzeptiert")
+    y = draw_checkbox(c, y, "Satzung gelesen und akzeptiert")
+    draw_signature(c, y, f"{user.first_name} {user.last_name}")
 
     c.save()
 
@@ -416,50 +409,37 @@ def _get_bestaetigung_text(user, link):
 
 
 def _save_bestaetigung_pdf(user):
-    buf = BytesIO()
-    c = rl_canvas.Canvas(buf, pagesize=A4)
-    _, h = A4
-
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(2 * cm, h - 2 * cm, f"Datenbestätigung - {get_vereinsname()}")
-    c.setFont("Helvetica", 10)
-    c.drawString(2 * cm, h - 2.8 * cm, f"Bestätigt am: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+    buf, c, y = new_letterhead_pdf(
+        title="Datenbestätigung",
+        subtitle=f"Bestätigt am: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}",
+        vereinsname=get_vereinsname(),
+        vereinsname_lang=get_vereinsname_lang(),
+        vereinsadresse=get_config("VEREINSADRESSE", ""),
+    )
 
     felder = [
-        ("Vorname",      user.first_name),
-        ("Nachname",     user.last_name),
-        ("Benutzername", user.username),
-        ("E-Mail",       user.email or ""),
-        ("Geburtsdatum", str(user.geburtstag) if user.geburtstag else ""),
-        ("Stimmlage",    user.stimme),
-        ("Strasse",      user.strasse or ""),
-        ("PLZ / Ort",    f"{user.plz or ''} {user.ort or ''}".strip()),
-        ("Telefon",      user.telefon or ""),
-        ("Mobil",        user.telefon_mobil or ""),
+        ("Vorname:",      user.first_name),
+        ("Nachname:",     user.last_name),
+        ("Benutzername:", user.username),
+        ("E-Mail:",       user.email or ""),
+        ("Geburtsdatum:", str(user.geburtstag) if user.geburtstag else ""),
+        ("Stimmlage:",    user.stimme),
+        ("Straße:",       user.strasse or ""),
+        ("PLZ / Ort:",    f"{user.plz or ''} {user.ort or ''}".strip()),
+        ("Telefon:",      user.telefon or ""),
+        ("Mobil:",        user.telefon_mobil or ""),
     ]
 
-    y = h - 4 * cm
+    y = draw_section(c, y, "Gespeicherte Mitgliedsdaten")
     for label, wert in felder:
-        if not wert:
-            continue
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(2 * cm, y, f"{label}:")
-        c.setFont("Helvetica", 10)
-        c.drawString(6 * cm, y, wert)
-        y -= 0.65 * cm
+        if wert:
+            y = draw_field(c, y, label, wert)
 
-    y -= 0.4 * cm
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(2 * cm, y, "Bestätigungen (alle bestätigt):")
-    y -= 0.65 * cm
-    c.setFont("Helvetica", 10)
-    for text in [
-        "Daten korrekt und aktuell",
-        "Datenschutzerklaerung",
-        "Satzung",
-    ]:
-        c.drawString(2 * cm, y, f"[X]  {text}")
-        y -= 0.65 * cm
+    y = draw_section(c, y, "Bestätigungen (alle bestätigt)")
+    y = draw_checkbox(c, y, "Daten korrekt und aktuell")
+    y = draw_checkbox(c, y, "Datenschutzerklärung gelesen und akzeptiert")
+    y = draw_checkbox(c, y, "Satzung gelesen und akzeptiert")
+    draw_signature(c, y, f"{user.first_name} {user.last_name}")
 
     c.save()
 

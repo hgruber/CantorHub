@@ -222,6 +222,7 @@ Tracked in separate files: general code/UX debt (branding, risk-ranked items) in
 
 ### Notable utilities (`intern/`)
 
+- `pdf.py` — `new_letterhead_pdf(title, subtitle, vereinsname, vereinsname_lang, vereinsadresse)` returns `(buf, canvas, content_y)`; draws branded letterhead (logo from `intern/brand/JG-Frankfurt-transparent.png`, thin `#c14468` accent lines) and footer. Helper functions `draw_section`, `draw_field`, `draw_checkbox`, `draw_signature` build the content area. Used by `_save_antrag_pdf` and `_save_bestaetigung_pdf` in `views/auth.py`.
 - `mail.py` — `send_branded_mail(subject, to, template, context, text_body=None, attachments=None)`: renders an HTML template into a branded mail with the embedded logo (`cid:logo`) and a plain-text fallback; resolves the sender via `get_from_email()`; never raises. `attachments` is an optional list of `(filename, bytes, content_type)` tuples — when present the outer MIME type is `multipart/mixed`. Used by the password-reset and member-application mails (the beitritt confirmation includes the application PDF as attachment).
 - `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file links)
 - `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings
