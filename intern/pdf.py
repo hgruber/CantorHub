@@ -16,7 +16,7 @@ GRAY  = (0.35, 0.35, 0.35)           # Untertitel / Metaangaben
 # ── Layout ────────────────────────────────────────────────────────────────────
 PAGE_W, PAGE_H = A4
 MARGIN   = 2.0 * cm
-HEADER_H = 3.0 * cm    # Höhe des Briefkopfbereichs
+HEADER_H = 4.5 * cm    # Höhe des Briefkopfbereichs (DIN 5008 Form B: 45 mm)
 FOOTER_Y = 1.8 * cm
 LINE_H   = 0.65 * cm
 LABEL_X  = MARGIN
@@ -34,11 +34,11 @@ def _draw_header(c, vereinsname_lang, vereinsadresse):
         logo_w = 5.5 * cm
         logo_h = logo_w * ih / iw
         logo_x = MARGIN
-        logo_y = PAGE_H - logo_h - 0.35 * cm
+        logo_y = PAGE_H - HEADER_H + (HEADER_H - logo_h) / 2
         c.drawImage(img, logo_x, logo_y, width=logo_w, height=logo_h, mask="auto")
 
     # Vereinsname + Adresse rechts, oben bündig, schwarz
-    text_y = PAGE_H - 0.65 * cm
+    text_y = PAGE_H - 1.0 * cm
     c.setFillColorRGB(*BLACK)
     c.setFont("Helvetica-Bold", 10)
     c.drawRightString(PAGE_W - MARGIN, text_y, vereinsname_lang)
