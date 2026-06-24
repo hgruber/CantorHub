@@ -247,6 +247,8 @@ def mitglied_passwd(request, id):
             return render(request, "mitglied_passwd.html", form_context)
 
         # Setze neues Passwort
+        target_user._audit_user = request.user
+        target_user._audit_password_changed = True
         target_user.set_password(new_password1)
         target_user.save()
 

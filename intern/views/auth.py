@@ -263,6 +263,8 @@ class CantorPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     form_class = PasswordResetForm
 
     def form_valid(self, form):
+        form.user._audit_user = form.user
+        form.user._audit_password_changed = True
         response = super().form_valid(form)
         user = form.user
         if is_ejabberd_configured() and user.xmpp:

@@ -47,6 +47,8 @@ FIELD_LABELS = {
     "geburtstag": "Geburtstag",
     "avatar_id": "Avatar",
     "private_fields": "Privatsphäre",
+    "password": "Passwort",
+    "notify_enabled": "Benachrichtigungen",
     # Termin
     "kurz": "Kurzbezeichnung",
     "datum": "Datum",

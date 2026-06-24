@@ -303,6 +303,8 @@ def _log_change(instance, user, action, old_values=None):
                 val = getattr(instance, field, None)
                 if val is not None and val != "" and val is not False:
                     changes[field] = [str(val), None]
+        if getattr(instance, "_audit_password_changed", False):
+            changes["password"] = [None, "geändert"]
         ChangeLog.objects.create(
             timestamp=datetime.now(),
             user=user,
