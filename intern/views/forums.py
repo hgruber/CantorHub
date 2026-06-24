@@ -2,6 +2,8 @@ import logging
 from django.utils.timezone import now as timezone_now
 
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import Group
+from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
@@ -15,7 +17,7 @@ from intern import ejabberd, folders
 from intern.app_settings import get_config, get_from_email, is_ejabberd_configured
 
 from ..forms import ForumEditForm
-from ..models import Forum, Mitteilung, User
+from ..models import Forum, ForumPermission, Mitteilung, User
 from ..tables import ForumTabelle
 
 __all__ = [
@@ -28,11 +30,63 @@ __all__ = [
     "forum_invite",
     "forum_add",
     "forum_delete",
+    "forum_permissions",
 ]
 
 logger = logging.getLogger(__name__)
 
 FORUM_SEARCH_LIMIT = 200
+
+
+def _forum_access(user, forum_id):
+    """True if the user may read this forum.
+
+    No ForumPermission row for the forum → open to everyone (default).
+    Holders of manage_forum_permissions always have access.
+    Otherwise the user must be in one of the permitted groups.
+    """
+    perms = ForumPermission.objects.filter(forum_id=forum_id)
+    if not perms.exists():
+        return True
+    if user.has_perm("intern.manage_forum_permissions"):
+        return True
+    gids = user.groups.values_list("id", flat=True)
+    return perms.filter(group_id__in=gids).exists()
+
+
+def _hidden_forum_ids(user):
+    """Set of forum IDs the user may NOT read due to group restrictions."""
+    restricted = set(
+        ForumPermission.objects.values_list("forum_id", flat=True).distinct()
+    )
+    if not restricted or user.has_perm("intern.manage_forum_permissions"):
+        return set()
+    gids = user.groups.values_list("id", flat=True)
+    readable = set(
+        ForumPermission.objects.filter(group_id__in=gids)
+        .values_list("forum_id", flat=True)
+    )
+    return restricted - readable
+
+
+def _allowed_reader_jids(forum_obj):
+    """Lowercased XMPP JIDs of active users allowed to read this forum.
+
+    Returns None when the forum is unrestricted (everyone allowed)."""
+    group_ids = list(
+        ForumPermission.objects.filter(forum=forum_obj).values_list(
+            "group_id", flat=True
+        )
+    )
+    if not group_ids:
+        return None
+    users = (
+        User.objects.filter(is_active=True, groups__id__in=group_ids)
+        .exclude(xmpp=None)
+        .exclude(xmpp="")
+        .distinct()
+    )
+    return {u.xmpp.lower() for u in users}
 
 
 def _sync_forum_avatar(forum_obj):
@@ -131,10 +185,12 @@ def _forum_user_lists(forum_obj):
 def forum_list(request):
     q = (request.GET.get("q") or "").strip()
     add = "forum_add" if request.user.has_perm("intern.add_forum") else None
+    hidden = _hidden_forum_ids(request.user)
 
     if len(q) >= 2:
         messages = (
             Mitteilung.objects.filter(mitteilung__icontains=q)
+            .exclude(forum_id__in=hidden)
             .select_related("forum", "sender")
             .order_by("-datum")[:FORUM_SEARCH_LIMIT]
         )
@@ -150,7 +206,7 @@ def forum_list(request):
             },
         )
 
-    foren = Forum.objects.extra_data().order_by("-zugriff")
+    foren = Forum.objects.extra_data().exclude(id__in=hidden).order_by("-zugriff")
     table = ForumTabelle(foren)
     RequestConfig(request, paginate=False).configure(table)
     return render(
@@ -174,9 +230,16 @@ def forum_list(request):
 
 @login_required
 def forum_view(request, forum):
+    if not _forum_access(request.user, forum):
+        raise PermissionDenied
     messages = Mitteilung.objects.filter(forum_id=forum)[:25]
     last_id = max((msg.id for msg in messages), default=0)
     oldest_id = min((msg.id for msg in messages), default=0)
+    permissions_url = (
+        reverse("forum_permissions", args=[forum])
+        if request.user.has_perm("intern.manage_forum_permissions")
+        else None
+    )
     return render(
         request,
         "forum.html",
@@ -191,6 +254,7 @@ def forum_view(request, forum):
             "up": "forum_list",
             "edit": "forum_edit" if request.user.has_perm("intern.change_forum") else None,
             "history": "forum_aenderungen" if request.user.has_perm("intern.change_forum") else None,
+            "permissions_url": permissions_url,
             "id": forum,
         },
     )
@@ -198,6 +262,8 @@ def forum_view(request, forum):
 
 @login_required
 def forum_get(request, forum, last_id=0):
+    if not _forum_access(request.user, forum):
+        raise PermissionDenied
     if last_id == 0:
         last_id = request.GET.get("last_id", 0)
     last_id = int(last_id or 0)
@@ -218,6 +284,8 @@ FORUM_MORE_BATCH = 20
 @login_required
 def forum_more(request, forum):
     """Return älterer Nachrichten (20 Stück) als HTML-Snippet mit neuem Sentinel."""
+    if not _forum_access(request.user, forum):
+        raise PermissionDenied
     oldest_id = request.GET.get("oldest_id", 0)
     messages = list(
         Mitteilung.objects.filter(forum_id=forum, id__lt=oldest_id)[:FORUM_MORE_BATCH]
@@ -242,6 +310,8 @@ def forum_more(request, forum):
 @login_required
 @require_POST
 def forum_send(request, forum):
+    if not _forum_access(request.user, forum):
+        raise PermissionDenied
     mitteilung = request.POST.get("mitteilung", "").strip()
     last_id = request.POST.get("last_id", 0)
     if mitteilung:
@@ -304,6 +374,11 @@ def forum_invite(request, forum, user_id):
     forum_obj = get_object_or_404(Forum, id=forum)
     user = get_object_or_404(User, id=user_id)
 
+    # Don't invite a non-reader into a restricted forum — that would contradict
+    # the read restriction the moment they joined the linked MUC room.
+    if not _forum_access(user, forum):
+        return redirect("forum_edit", forum=forum)
+
     muc_jid = _get_muc_jid(forum_obj)
     if is_ejabberd_configured() and muc_jid and user.xmpp:
         if not forum_obj.xmpp_muc_jid:
@@ -356,3 +431,86 @@ def forum_add(request):
         "seitentitel": "Neues Forum",
     }
     return render(request, "forum_edit.html", context)
+
+
+def _reconcile_forum_muc(forum_obj):
+    """Sync MUC affiliations with the forum's read restriction. Best-effort:
+    logs errors, never raises. Unrestricted forums are left untouched."""
+    if not is_ejabberd_configured():
+        return
+    muc_jid = _get_muc_jid(forum_obj)
+    if not muc_jid:
+        return
+    allowed = _allowed_reader_jids(forum_obj)
+    if allowed is None:
+        # Forum is open again — don't strip anyone; the bot re-invites everyone.
+        return
+    bot_jid = get_config("EJABBERD_BOT_JID", "").lower()
+    try:
+        members = ejabberd.get_room_members(muc_jid)
+    except Exception as exc:
+        logger.error("ejabberd: failed to read members of %s: %s", muc_jid, exc)
+        return
+    current = {jid.lower() for jid, _aff in members}
+    # Remove members who may no longer read (keep the bot).
+    for jid in current:
+        if jid == bot_jid or jid in allowed:
+            continue
+        try:
+            ejabberd.set_room_affiliation(muc_jid, jid, "none")
+        except Exception as exc:
+            logger.error("ejabberd: failed to remove %s from %s: %s", jid, muc_jid, exc)
+    # Ensure permitted readers are members.
+    for jid in allowed:
+        if jid in current:
+            continue
+        try:
+            ejabberd.set_room_affiliation(muc_jid, jid, "member")
+        except Exception as exc:
+            logger.error("ejabberd: failed to add %s to %s: %s", jid, muc_jid, exc)
+
+
+@login_required
+def forum_permissions(request, forum):
+    if not request.user.has_perm("intern.manage_forum_permissions"):
+        raise PermissionDenied
+
+    forum_obj = get_object_or_404(Forum, id=forum)
+
+    groups = Group.objects.all().order_by("name")
+    existing_group_ids = set(
+        ForumPermission.objects.filter(forum=forum_obj).values_list(
+            "group_id", flat=True
+        )
+    )
+    read_restricted = bool(existing_group_ids)
+
+    if request.method == "POST":
+        read_mode = request.POST.get("read_mode")  # "all" or "restricted"
+        read_groups = {int(x) for x in request.POST.getlist("read_groups")}
+
+        ForumPermission.objects.filter(forum=forum_obj).delete()
+        if read_mode == "restricted":
+            for gid in read_groups:
+                ForumPermission.objects.create(forum=forum_obj, group_id=gid)
+
+        _reconcile_forum_muc(forum_obj)
+        return redirect("forum_view", forum=forum)
+
+    group_members = {
+        g.id: [
+            f"{u.first_name} {u.last_name}".strip() or u.username
+            for u in g.user_set.filter(is_active=True).order_by("first_name", "last_name")
+        ]
+        for g in groups
+    }
+    return render(request, "forum_berechtigungen.html", {
+        "seitentitel": f"Berechtigungen: {forum_obj.thema}",
+        "forum_obj": forum_obj,
+        "groups": groups,
+        "read_restricted": read_restricted,
+        "read_group_ids": existing_group_ids,
+        "group_members": group_members,
+        "up": "forum_view",
+        "id": forum,
+    })

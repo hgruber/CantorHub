@@ -144,11 +144,25 @@ def _db_store_message(room_jid, body, sender_jid, stanza_id):
 
 
 def _db_invite_missing_users(room_jid):
-    """Synchronous: invite active XMPP users who aren't in this room yet."""
-    from intern.models import User
+    """Synchronous: invite active XMPP users who aren't in this room yet.
+
+    Respects the forum's read restriction: for a restricted forum only members
+    of the permitted groups are invited."""
+    from intern.models import Forum, ForumPermission, User
     from intern.ejabberd import get_room_members, send_invitation, set_room_affiliation
 
     users = User.objects.filter(is_active=True).exclude(xmpp=None).exclude(xmpp="")
+
+    forum = Forum.objects.filter(xmpp_muc_jid=room_jid).first()
+    if forum is not None:
+        group_ids = list(
+            ForumPermission.objects.filter(forum=forum).values_list(
+                "group_id", flat=True
+            )
+        )
+        if group_ids:
+            users = users.filter(groups__id__in=group_ids).distinct()
+
     if not users.exists():
         return
 

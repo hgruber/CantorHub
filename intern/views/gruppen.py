@@ -35,6 +35,7 @@ PERMISSION_DEFS = [
     ("intern.add_forum",                  "anlegen",        "Forum"),
     ("intern.change_forum",               "bearbeiten",     "Forum"),
     ("intern.delete_forum",               "löschen",        "Forum"),
+    ("intern.manage_forum_permissions",   "Berechtigungen", "Forum"),
     # Orte
     ("intern.add_ort",                    "anlegen",        "Orte"),
     ("intern.change_ort",                 "bearbeiten",     "Orte"),
@@ -59,6 +60,11 @@ PERMISSION_DESCRIPTIONS = {
     "intern.delete_forum":
         "Darf Foren dauerhaft löschen. Achtung: Dabei werden auch alle "
         "darin enthaltenen Nachrichten unwiederbringlich entfernt.",
+    "intern.manage_forum_permissions":
+        "Darf festlegen, welche Gruppen ein Forum lesen dürfen. Ohne "
+        "Einschränkung ist jedes Forum für alle angemeldeten Mitglieder "
+        "sichtbar. Bei eingeschränkten Foren wird auch der verknüpfte "
+        "Chat-Raum entsprechend synchronisiert.",
     "intern.add_termin":
         "Darf neue Termine eintragen.",
     "intern.change_termin":

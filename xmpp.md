@@ -182,6 +182,24 @@ When `bild` is set or changed, `_sync_forum_avatar(forum_obj)` is called (best-e
 
 Called from `forum_edit` (on every save, idempotent) and `forum_add` (if bild set on creation); no crash if the MUC room doesn't exist yet.
 
+## Forum read permissions → MUC affiliations
+
+A forum can be restricted to specific groups (model `ForumPermission`, view
+`forum_permissions` at `/intern/forum/<id>/berechtigungen/`, perm
+`intern.manage_forum_permissions`). Because the forum is mirrored to a MUC room, the read
+restriction must be enforced in ejabberd too, otherwise a removed reader could still read
+in their XMPP client. Three sync points (all best-effort, guarded by
+`is_ejabberd_configured()`):
+
+1. **On save** — `_reconcile_forum_muc(forum_obj)` (`views/forums.py`): for a restricted
+   forum it computes the permitted readers' JIDs (`_allowed_reader_jids`), sets every
+   current member that isn't permitted (and isn't the bot) to affiliation `none`, and
+   ensures permitted readers are `member`. An unrestricted forum is left untouched.
+2. **Bot auto-invite** — `_db_invite_missing_users(room_jid)` (`ejabberd_bot.py`) filters
+   its candidate users to the permitted groups when the forum has `ForumPermission` rows.
+3. **Manual invite** — `forum_invite` refuses to invite a user who may not read a
+   restricted forum.
+
 ## Room assignment (`intern/signals.py`)
 
 `post_save` on `Forum`: assigns `forum-{pk}@{EJABBERD_MUC_SERVICE}` to `xmpp_muc_jid`. Guards: `_migrating` thread-local, `_skip_ejabberd_signal` flag, `is_ejabberd_configured()` check.

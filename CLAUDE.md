@@ -93,6 +93,28 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 The forum edit page (`/intern/forum/<id>/edit/`) and its XMPP behaviour — room-info card, invite flow, avatar sync (`_sync_forum_avatar`), MUC room invariants (`configure_room`), the Forum→MUC relay and the `_relay_cursor` restart gap — are documented in `xmpp.md`.
 
+### Forum read permissions
+
+Forums are open to every logged-in member by default. Holders of
+`intern.manage_forum_permissions` can restrict a forum to specific groups via the
+lock button on the forum detail page (`/intern/forum/<id>/berechtigungen/`,
+`forum_permissions` view, `forum_berechtigungen.html`) — analogous to the article
+permissions, but **read-only**: there is no separate write right. Whoever may read a
+forum may also post; whoever may not read it doesn't see it at all.
+
+Model `ForumPermission(forum, group)` (`intern/models.py`): the **presence** of any row
+for a forum marks it restricted to the listed groups; no row = open. `_forum_access(user,
+forum_id)` and `_hidden_forum_ids(user)` in `views/forums.py` mirror `_artikel_access` —
+holders of `manage_forum_permissions` always have access. Enforcement covers the forum
+list/search, detail/poll/more/send views (403 for non-readers), and the notification
+bubbles in `views/notify.py` (restricted Forum/Mitteilung entries are dropped per user).
+
+Because each forum is also an XMPP MUC room, the restriction is synced to ejabberd so it
+can't be bypassed in an XMPP client: saving permissions runs `_reconcile_forum_muc`
+(removes non-reader affiliations, ensures readers are `member`), the bot's
+`_db_invite_missing_users` only invites permitted readers, and `forum_invite` refuses
+non-readers. See `xmpp.md`.
+
 ### Article editor & versioning
 
 `Artikel` rows are immutable versions keyed by `(name, version)` — articles are addressed by `name`, not `id`. Saving an edit at `/intern/artikel/<name>/edit/` creates a new `Artikel` row with `version + 1` rather than mutating the existing one. The editor (`artikel.html`, edit branch) renders the `.article-editor` shell: an identity bar, a collapsible `.ae-help` syntax cheat-sheet, the textarea inside a `.wiki` container (kept so `abstimmung.js`'s `{abstimmung:...}` helper still binds), and a footer action bar.
@@ -183,6 +205,7 @@ No Vorstand notification. Three public templates extend `mitglied_public_base.ht
 | `User` | Extended `AbstractUser` — adds voice type, address, XMPP JID, coordinates |
 | `Artikel` | Versioned articles/news items |
 | `Forum` | Discussion threads; `bild` (FilerFileField), `aktiv` (Boolean), `xmpp_muc_jid` for XMPP bridge |
+| `ForumPermission` | Read restriction `(forum, group)`; presence of rows = forum restricted to those groups, no row = open (see "Forum read permissions") |
 | `Mitteilung` | Forum messages; adds `xmpp_stanza_id` for bridge deduplication. Display helpers `sender_name()` / `sender_avatar_url()` / `is_from_bot()` fall back to "Unbekannt"+`kein_photo.png` for `sender=None` and to nick `CantorBot`+`bot.png` for the bot JID |
 | `Termin` / `Ort` | Events and locations |
 | `Lied` | Songs in the repertoire |

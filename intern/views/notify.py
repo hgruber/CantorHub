@@ -70,6 +70,24 @@ def site_notify(request):
     entries = [e for e in entries
                if e.model_name != "User" or e.action in _NOTIFY_USER_ACTIONS]
 
+    # Don't leak restricted forums: drop Forum/Mitteilung bubbles the user
+    # isn't allowed to read.
+    from .forums import _hidden_forum_ids
+    hidden = _hidden_forum_ids(request.user)
+    if hidden:
+        msg_forum = dict(
+            Mitteilung.objects.filter(
+                pk__in=[e.object_id for e in entries if e.model_name == "Mitteilung"]
+            ).values_list("pk", "forum_id")
+        )
+        entries = [
+            e for e in entries
+            if not (
+                (e.model_name == "Forum" and e.object_id in hidden)
+                or (e.model_name == "Mitteilung" and msg_forum.get(e.object_id) in hidden)
+            )
+        ]
+
     data = []
     for e in entries:
         item = {

@@ -283,6 +283,9 @@ class Forum(models.Model):
 
     class Meta:
         verbose_name_plural = "Foren"
+        permissions = [
+            ("manage_forum_permissions", "Forum-Berechtigungen bearbeiten"),
+        ]
 
     def __str__(self):
         return self.thema
@@ -340,6 +343,28 @@ class Mitteilung(models.Model):
         if self.sender and self.sender.avatar:
             return self.sender.avatar.url
         return fallback_avatar_url("kein_photo.png")
+
+
+class ForumPermission(models.Model):
+    """Read restriction for a forum. The presence of a row means the forum is
+    restricted to the listed groups; no row for a forum = open to everyone.
+    There is no write dimension — readers may post, non-readers don't see the
+    forum at all."""
+
+    forum = models.ForeignKey(
+        "Forum", on_delete=models.CASCADE, related_name="forum_permissions"
+    )
+    group = models.ForeignKey(
+        "auth.Group", on_delete=models.CASCADE, related_name="forum_permissions"
+    )
+
+    class Meta:
+        unique_together = [("forum", "group")]
+        verbose_name = "Forenberechtigung"
+        verbose_name_plural = "Forenberechtigungen"
+
+    def __str__(self):
+        return f"{self.forum} → {self.group}"
 
 
 class Ort(models.Model):

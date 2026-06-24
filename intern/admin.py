@@ -51,6 +51,12 @@ class ArtikelAdmin(admin.ModelAdmin):
     ]
 
 
+class ForumPermissionInline(admin.TabularInline):
+    model = ForumPermission
+    extra = 0
+    fields = ("group",)
+
+
 @admin.register(Forum)
 class ForumAdmin(admin.ModelAdmin):
     list_display = [
@@ -59,6 +65,7 @@ class ForumAdmin(admin.ModelAdmin):
         "sender",
         "zugriff",
     ]
+    inlines = [ForumPermissionInline]
 
     def get_queryset(self, request):
         return Forum.objects.extra_data().order_by("-zugriff")
