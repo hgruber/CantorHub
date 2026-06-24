@@ -32,11 +32,17 @@ _BOTTOM_PAD  = 0.30 * cm   # Abstand Unterkante beider Elemente zur Trennlinie
 
 
 def _draw_header(c, vereinsname, vereinsadresse):
-    portal_url = get_config("VEREINS_URL", "")
+    from_email  = get_config("DEFAULT_FROM_EMAIL", "")
+    portal_url  = get_config("VEREINS_URL", "")
 
-    # Alle Textzeilen sammeln: Name + Adresszeilen + Portal-URL
+    # Alle Textzeilen sammeln: Name → Adresse → E-Mail → Portal-URL
     addr_lines = [l.strip() for l in (vereinsadresse or "").strip().splitlines() if l.strip()]
-    all_lines = [vereinsname] + addr_lines + ([portal_url] if portal_url else [])
+    all_lines = (
+        [vereinsname]
+        + addr_lines
+        + ([from_email] if from_email else [])
+        + ([portal_url] if portal_url else [])
+    )
     n = len(all_lines)
 
     # Gemeinsame Unterkante: Trennlinie + kleiner Puffer
