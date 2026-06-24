@@ -25,7 +25,7 @@ VALUE_X  = MARGIN + 5.0 * cm
 _LOGO_STATIC = "intern/brand/JG-Frankfurt-transparent.png"
 
 
-def _draw_header(c, vereinsname_lang, vereinsadresse):
+def _draw_header(c, vereinsname, vereinsadresse):
     # Logo: farbig, oben links, etwas kleiner
     logo_path = finders.find(_LOGO_STATIC)
     if logo_path:
@@ -41,7 +41,7 @@ def _draw_header(c, vereinsname_lang, vereinsadresse):
     text_y = PAGE_H - 1.0 * cm
     c.setFillColorRGB(*BLACK)
     c.setFont("Helvetica-Bold", 10)
-    c.drawRightString(PAGE_W - MARGIN, text_y, vereinsname_lang)
+    c.drawRightString(PAGE_W - MARGIN, text_y, vereinsname)
 
     c.setFont("Helvetica", 8.5)
     for line in (vereinsadresse or "").strip().splitlines():
@@ -56,16 +56,16 @@ def _draw_header(c, vereinsname_lang, vereinsadresse):
     c.line(MARGIN, PAGE_H - HEADER_H, PAGE_W - MARGIN, PAGE_H - HEADER_H)
 
 
-def _draw_footer(c, vereinsname_lang, vereinsadresse):
+def _draw_footer(c, vereinsname, vereinsadresse):
     # Dünne farbige Linie
     c.setStrokeColorRGB(*BRAND)
     c.setLineWidth(0.8)
     c.line(MARGIN, FOOTER_Y, PAGE_W - MARGIN, FOOTER_Y)
 
-    footer_left = vereinsname_lang
+    footer_left = vereinsname
     if vereinsadresse:
         first_line = vereinsadresse.strip().splitlines()[0].strip()
-        footer_left = f"{vereinsname_lang} · {first_line}"
+        footer_left = f"{vereinsname} · {first_line}"
 
     c.setFillColorRGB(*BLACK)
     c.setFont("Helvetica", 7.5)
@@ -73,7 +73,7 @@ def _draw_footer(c, vereinsname_lang, vereinsadresse):
     c.drawRightString(PAGE_W - MARGIN, FOOTER_Y - 0.5 * cm, "Seite 1")
 
 
-def new_letterhead_pdf(title, subtitle, vereinsname_lang, vereinsadresse):
+def new_letterhead_pdf(title, subtitle, vereinsname, vereinsadresse):
     """Create a Canvas with letterhead already drawn.
 
     Returns (buf, canvas, content_y) — content_y is the first free line
@@ -82,8 +82,8 @@ def new_letterhead_pdf(title, subtitle, vereinsname_lang, vereinsadresse):
     buf = BytesIO()
     c = rl_canvas.Canvas(buf, pagesize=A4)
 
-    _draw_header(c, vereinsname_lang, vereinsadresse)
-    _draw_footer(c, vereinsname_lang, vereinsadresse)
+    _draw_header(c, vereinsname, vereinsadresse)
+    _draw_footer(c, vereinsname, vereinsadresse)
 
     # Dokumenttitel
     title_y = PAGE_H - HEADER_H - 0.9 * cm
