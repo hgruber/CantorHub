@@ -96,7 +96,6 @@ def _save_antrag_pdf(user, email):
     buf, c, y = new_letterhead_pdf(
         title="Mitgliedsantrag",
         subtitle=f"Eingereicht am: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}",
-        vereinsname=get_vereinsname(),
         vereinsname_lang=get_vereinsname_lang(),
         vereinsadresse=get_config("VEREINSADRESSE", ""),
     )
@@ -412,7 +411,6 @@ def _save_bestaetigung_pdf(user):
     buf, c, y = new_letterhead_pdf(
         title="Datenbestätigung",
         subtitle=f"Bestätigt am: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}",
-        vereinsname=get_vereinsname(),
         vereinsname_lang=get_vereinsname_lang(),
         vereinsadresse=get_config("VEREINSADRESSE", ""),
     )
