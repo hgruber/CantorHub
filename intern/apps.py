@@ -50,13 +50,13 @@ _CONFIG_DEFAULTS = [
         "moderner Gospel mit viel Gefühl und Groove. Auch traditionelle Stücke finden "
         "ihren Platz, mal frisch und neu interpretiert. Live wird JustGospel! Frankfurt "
         "von einer energiegeladenen Band mit Schlagzeug, E-Gitarre, Bass und Klavier begleitet.",
-        "„Über uns"-Abschnitt der öffentlichen Startseite (mehrzeilig erlaubt)",
+        "Über-uns-Text der öffentlichen Startseite (mehrzeilig erlaubt)",
     ),
     (
         "HOMEPAGE_AUFNAHME",
         "Du bist dem modernen Gospel zugewandt und bist ein Sopran oder Bass? "
         "Dann melde Dich bei uns!",
-        "„Wir suchen"-Abschnitt der öffentlichen Startseite (mehrzeilig erlaubt)",
+        "Wir-suchen-Text der öffentlichen Startseite (mehrzeilig erlaubt)",
     ),
     (
         "MAIL_ANTRAG",
