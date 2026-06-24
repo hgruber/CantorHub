@@ -511,6 +511,6 @@ def forum_permissions(request, forum):
         "read_restricted": read_restricted,
         "read_group_ids": existing_group_ids,
         "group_members": group_members,
-        "up": "forum_view",
+        "up": "forum_list",
         "id": forum,
     })
