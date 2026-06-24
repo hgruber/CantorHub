@@ -21,6 +21,8 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)
 - `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title)
 - `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in privacy-policy §1; multi-line, empty → only board member names are listed, no addresses)
+- `HOMEPAGE_UEBER_UNS` (body text for the "Über uns" card on the public homepage; multi-line allowed)
+- `HOMEPAGE_AUFNAHME` (body text for the "Wir suchen" card on the public homepage; multi-line allowed; hidden when empty)
 - `MAIL_ANTRAG` (applicant confirmation email body)
 - `MAIL_ANTRAG_ADMIN` (admin notification on new application; `{vorname}`, `{nachname}`, `{email}`, `{link}`)
 - `MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing)

@@ -14,6 +14,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from django.utils.timezone import now as tz_now
 from filer.models import File as FilerFile, Folder
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
@@ -30,7 +31,7 @@ from intern.app_settings import (
 from intern.mail import format_config_mail, send_branded_mail
 
 from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
-from ..models import User
+from ..models import Termin, User
 
 __all__ = [
     "CantorLoginView",
@@ -149,7 +150,18 @@ def _save_antrag_pdf(user, email):
 
 
 def home(request):
-    return render(request, "index.html")
+    termine = (
+        Termin.objects.filter(datum__gte=tz_now())
+        .order_by("datum")
+        .select_related("ort")[:10]
+    )
+    return render(request, "index.html", {
+        "termine": termine,
+        "homepage_ueber_uns": get_config("HOMEPAGE_UEBER_UNS", ""),
+        "homepage_aufnahme": get_config("HOMEPAGE_AUFNAHME", ""),
+        "vereinsadresse": get_config("VEREINSADRESSE", ""),
+        "kontakt_email": get_config("DEFAULT_FROM_EMAIL", ""),
+    })
 
 
 def datenschutz(request):

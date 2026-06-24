@@ -43,6 +43,22 @@ _CONFIG_DEFAULTS = [
         "mehrzeilig erlaubt; leer → es werden nur die Vorstandsnamen genannt)",
     ),
     (
+        "HOMEPAGE_UEBER_UNS",
+        "JustGospel! Frankfurt ist mehr als nur ein Chor – es ist eine Gemeinschaft "
+        "von rund 25 Sängerinnen und Sängern, die ihre Leidenschaft für Gospelmusik "
+        "teilen. Seit 2015, unter der Leitung von Christoph Kuhn, erklingt hier "
+        "moderner Gospel mit viel Gefühl und Groove. Auch traditionelle Stücke finden "
+        "ihren Platz, mal frisch und neu interpretiert. Live wird JustGospel! Frankfurt "
+        "von einer energiegeladenen Band mit Schlagzeug, E-Gitarre, Bass und Klavier begleitet.",
+        "„Über uns"-Abschnitt der öffentlichen Startseite (mehrzeilig erlaubt)",
+    ),
+    (
+        "HOMEPAGE_AUFNAHME",
+        "Du bist dem modernen Gospel zugewandt und bist ein Sopran oder Bass? "
+        "Dann melde Dich bei uns!",
+        "„Wir suchen"-Abschnitt der öffentlichen Startseite (mehrzeilig erlaubt)",
+    ),
+    (
         "MAIL_ANTRAG",
         "Hallo {vorname},\n\n"
         "vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"

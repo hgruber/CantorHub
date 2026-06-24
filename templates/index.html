@@ -23,33 +23,24 @@
             <div class="content">
                 <div class="intro">
                     <h1>{{ vereinsname_lang }}</h1>
-                    <p>Ein Chor mit Seele, Groove und Tiefgang</p>
+                    <p>{{ vereinsname }}</p>
                 </div>
                 <div class="about">
                     <div class="card">
                         <h2>Über uns</h2>
-                        <p>
-                            JustGospel! Frankfurt ist mehr als nur ein Chor – es
-                            ist eine Gemeinschaft von rund 25 Sängerinnen und
-                            Sängern, die ihre Leidenschaft für Gospelmusik
-                            teilen. Seit 2015, unter der Leitung von Christoph
-                            Kuhn, erklingt hier moderner Gospel mit viel Gefühl
-                            und Groove. Auch traditionelle Stücke finden ihren
-                            Platz, mal frisch und neu interpretiert. Live wird
-                            JustGospel! Frankfurt von einer energiegeladenen
-                            Band mit Schlagzeug, E-Gitarre, Bass und Klavier
-                            begleitet.
-                        </p>
-                        <p></p>
+                        <p>{{ homepage_ueber_uns|linebreaksbr }}</p>
                     </div>
+                    {% if homepage_aufnahme %}
                     <div class="card">
                         <h2>Wir suchen Sängerinnen und Sänger</h2>
                         <p>
-                            Du bist dem modernen Gospel zugewandt und bist ein
-                            Sopran oder Bass? Dann melde Dich bei
-                            <a href="mailto:webmaster@example.org">webmaster@example.org</a>.
+                            {{ homepage_aufnahme|linebreaksbr }}
+                            {% if kontakt_email %}
+                            <br /><a href="mailto:{{ kontakt_email }}">{{ kontakt_email }}</a>
+                            {% endif %}
                         </p>
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </section>
@@ -57,10 +48,15 @@
             <div class="content">
                 <h2>Konzerte</h2>
                 <div class="concert-list">
+                    {% for t in termine %}
                     <div class="concert-item">
-                        <span class="date">So, 26.04.2026 18:00</span>
-                        <h3>Konzert in Fechenheim</h3>
+                        <span class="date">{{ t.datum|date:"D, d.m.Y H:i" }} Uhr</span>
+                        <h3>{{ t.kurz }}</h3>
+                        {% if t.ort %}<p class="location">{{ t.ort.name }}</p>{% endif %}
                     </div>
+                    {% empty %}
+                    <p class="no-events">Keine bevorstehenden Termine.</p>
+                    {% endfor %}
                 </div>
             </div>
         </section>
@@ -87,24 +83,24 @@
             <div class="content">
                 <h2>Kontakt</h2>
                 <div class="contact-info">
+                    {% if kontakt_email %}
                     <div class="contact-card">
                         <h3>Kontakt</h3>
                         <p>
-                            <a href="mailto:webmaster@example.org">webmaster@example.org</a>
+                            <a href="mailto:{{ kontakt_email }}">{{ kontakt_email }}</a>
                         </p>
                     </div>
+                    {% endif %}
                     <div class="contact-card">
                         <h3>Impressum</h3>
                         <p>
                             Verantwortlich für den Webauftritt:
                             <br />
-                            Holger Gruber
-                            <br />
-                            Zum Schäferköppel 28
-                            <br />
-                            60437 Frankfurt
-                            <br />
-                            webmaster@example.org
+                            {% if vereinsadresse %}
+                            {{ vereinsadresse|linebreaksbr }}
+                            {% else %}
+                            {{ vereinsname_lang }}
+                            {% endif %}
                         </p>
                     </div>
                 </div>
@@ -117,7 +113,7 @@
                 </div>
                 <div class="copyright">
                     <p>
-                        &copy; 2026 {{ vereinsname_lang }}. Alle Rechte
+                        &copy; {% now "Y" %} {{ vereinsname_lang }}. Alle Rechte
                         vorbehalten.
                     </p>
                 </div>
