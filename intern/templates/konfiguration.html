@@ -14,6 +14,7 @@
     min-height: 0;
     overflow: auto;
     background: var(--bg-card);
+    padding-bottom: 80px;
 }
 .konfig-table {
     border-collapse: collapse;
@@ -236,6 +237,18 @@
         ta.style.height = ta.scrollHeight + 'px';
     }
 
+    function scrollEditingRowIntoView() {
+        const editingRow = document.querySelector('.konfig-row[data-editing]');
+        if (!editingRow) return;
+        const wrap = document.querySelector('.konfig-wrap');
+        const barHeight = 80;
+        const trRect = editingRow.getBoundingClientRect();
+        const wrapRect = wrap.getBoundingClientRect();
+        if (trRect.bottom > wrapRect.bottom - barHeight) {
+            wrap.scrollTop += trRect.bottom - (wrapRect.bottom - barHeight) + 8;
+        }
+    }
+
     function countChanges() {
         let n = changeMap.size + deleteIds.size;
         newRowMap.forEach(function (r) { if (r.key.trim()) n++; });
@@ -244,12 +257,17 @@
 
     function updateApplyBar() {
         const n = countChanges();
+        const bar = document.getElementById('konfig-apply-bar');
+        const wasVisible = bar.classList.contains('visible');
         document.getElementById('konfig-change-count').textContent = n;
-        document.getElementById('konfig-apply-bar').classList.toggle('visible', n > 0);
+        bar.classList.toggle('visible', n > 0);
         document.getElementById('konfig-change-summary').textContent =
             n === 1 ? '1 ungespeicherte Änderung'
             : n > 1 ? n + ' ungespeicherte Änderungen'
             : '';
+        if (!wasVisible && n > 0) {
+            setTimeout(scrollEditingRowIntoView, 260);
+        }
     }
 
     function getCsrfToken() {
@@ -262,6 +280,9 @@
         tr.dataset.editing = '1';
         const ta = tr.querySelector('textarea.inline-input');
         if (ta) { autoGrow(ta); ta.focus(); }
+        if (document.getElementById('konfig-apply-bar').classList.contains('visible')) {
+            scrollEditingRowIntoView();
+        }
     }
 
     function exitEditMode(tr) {
