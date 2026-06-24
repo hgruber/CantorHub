@@ -151,7 +151,7 @@ def _save_antrag_pdf(user, email):
 
 def home(request):
     termine = (
-        Termin.objects.filter(datum__gte=tz_now())
+        Termin.objects.filter(datum__gte=tz_now(), repertoire=True)
         .order_by("datum")
         .select_related("ort")[:10]
     )
