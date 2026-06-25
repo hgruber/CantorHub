@@ -24,22 +24,6 @@
             </form>
         </div>
     </div>
-    {% if xmpp_aktiv %}
-    <div class="forum-optout">
-        {% if opted_out %}
-            <span class="forum-optout-note">Du nimmst an diesem Raum in XMPP nicht teil.</span>
-            <form method="post" action="{% url 'forum_rejoin' forum=forum %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-secondary btn-sm">Wieder beitreten</button>
-            </form>
-        {% else %}
-            <form method="post" action="{% url 'forum_leave' forum=forum %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-secondary btn-sm">Forum in XMPP verlassen</button>
-            </form>
-        {% endif %}
-    </div>
-    {% endif %}
     <div id="messages"
          class="messages"
          hx-get="{% url 'forum_get' forum=forum %}"

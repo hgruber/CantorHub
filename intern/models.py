@@ -367,28 +367,6 @@ class ForumPermission(models.Model):
         return f"{self.forum} → {self.group}"
 
 
-class ForumOptOut(models.Model):
-    """Per-user XMPP opt-out for a forum's MUC room. The presence of a row means
-    the user does not want to be (re-)invited into this forum's MUC room and their
-    affiliation is kept at 'none'. Web access is unaffected — readers may rejoin
-    any time from the forum detail page."""
-
-    forum = models.ForeignKey(
-        "Forum", on_delete=models.CASCADE, related_name="optouts"
-    )
-    user = models.ForeignKey(
-        "User", on_delete=models.CASCADE, related_name="forum_optouts"
-    )
-
-    class Meta:
-        unique_together = [("forum", "user")]
-        verbose_name = "Forum-Abmeldung"
-        verbose_name_plural = "Forum-Abmeldungen"
-
-    def __str__(self):
-        return f"{self.user} ⊘ {self.forum}"
-
-
 class Ort(models.Model):
     name = models.CharField(max_length=48)
     beschreibung = models.TextField(blank=True, null=True)
