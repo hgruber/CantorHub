@@ -1,9 +1,9 @@
 {% extends 'mitglied_public_base.html' %}
-{% block title %}Mitglied werden – {{ vereinsname_lang }}{% endblock %}
+{% block title %}Mitgliedsantrag – {{ vereinsname_lang }}{% endblock %}
 {% block wrap_modifier %} join-wide{% endblock %}
 
 {% block header %}
-    <h1>Mitglied werden</h1>
+    <h1>Mitgliedsantrag</h1>
     <p class="join-intro">
         Schön, dass Du bei {{ vereinsname_lang }} mitsingen möchtest! Bitte fülle das
         folgende Formular aus. Über die Aufnahme entscheidet anschließend der Vorstand.
@@ -118,6 +118,9 @@
     <div class="detail-card">
         <h3>Einwilligungen</h3>
         <div class="join-consents">
+            <label class="checkbox-label join-consent">{{ form.bestaetigung_richtigkeit }} <span>{{ form.bestaetigung_richtigkeit.label }}{% if form.bestaetigung_richtigkeit.field.required %} <span class="req">*</span>{% endif %}</span></label>
+            {% if form.bestaetigung_richtigkeit.errors %}<div class="invalid-feedback">{{ form.bestaetigung_richtigkeit.errors }}</div>{% endif %}
+
             <label class="checkbox-label join-consent">{{ form.zustimmung_datenschutz }} <span>{{ form.zustimmung_datenschutz.label }}{% if form.zustimmung_datenschutz.field.required %} <span class="req">*</span>{% endif %}</span></label>
             {% if form.zustimmung_datenschutz.errors %}<div class="invalid-feedback">{{ form.zustimmung_datenschutz.errors }}</div>{% endif %}
 
@@ -126,6 +129,28 @@
 
             <label class="checkbox-label join-consent">{{ form.anerkennung_satzung }} <span>{{ form.anerkennung_satzung.label }}{% if form.anerkennung_satzung.field.required %} <span class="req">*</span>{% endif %}</span></label>
             {% if form.anerkennung_satzung.errors %}<div class="invalid-feedback">{{ form.anerkennung_satzung.errors }}</div>{% endif %}
+
+            <label class="checkbox-label join-consent">{{ form.anerkennung_beitragsordnung }} <span>{{ form.anerkennung_beitragsordnung.label }}{% if form.anerkennung_beitragsordnung.field.required %} <span class="req">*</span>{% endif %}</span></label>
+            {% if form.anerkennung_beitragsordnung.errors %}<div class="invalid-feedback">{{ form.anerkennung_beitragsordnung.errors }}</div>{% endif %}
+
+            <label class="checkbox-label join-consent">{{ form.einwilligung_fotos }} <span>{{ form.einwilligung_fotos.label }}</span></label>
+            {% if form.einwilligung_fotos.errors %}<div class="invalid-feedback">{{ form.einwilligung_fotos.errors }}</div>{% endif %}
+        </div>
+    </div>
+
+    {# ── Förderndes Mitglied ──────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Förderndes Mitglied</h3>
+        <p class="join-foerder-info">
+            Fördernde Mitglieder unterstützen {{ vereinsname_kurz }} finanziell, ohne
+            aktiv am Probenbetrieb oder an Auftritten teilzunehmen. Wer förderndes
+            Mitglied wird, verzichtet damit auf das aktive Mitsingen. Die Höhe des
+            Förderbeitrags ist in der Beitragsordnung geregelt. Das Ankreuzen ist
+            freiwillig und hat keinen Einfluss auf die Bearbeitung des Antrags.
+        </p>
+        <div class="join-consents">
+            <label class="checkbox-label join-consent">{{ form.foerdermitglied }} <span>{{ form.foerdermitglied.label }}</span></label>
+            {% if form.foerdermitglied.errors %}<div class="invalid-feedback">{{ form.foerdermitglied.errors }}</div>{% endif %}
         </div>
     </div>
 
@@ -135,4 +160,53 @@
         <button type="submit" class="btn btn-primary">Antrag absenden</button>
     </div>
 </form>
+
+<dialog id="minderjaehrig-dialog" class="app-dialog">
+    <h3>Hinweis: Minderjährigkeit</h3>
+    <p>Da du noch nicht 18 Jahre alt bist, benötigen wir vor der Aufnahme die schriftliche <strong>Einwilligung deiner Erziehungsberechtigten</strong>. Der Vorstand wird dich nach Eingang des Antrags kontaktieren.<br><br>Du kannst den Antrag jetzt trotzdem absenden.</p>
+    <div class="dialog-actions">
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('minderjaehrig-dialog').close()">Verstanden, weiter</button>
+    </div>
+</dialog>
+
+<dialog id="foerder-dialog" class="app-dialog">
+    <h3>Förderndes Mitglied werden?</h3>
+    <p>Als förderndes Mitglied verzichtest du auf das aktive Mitsingen im Chor.<br>Bist du sicher, dass du <strong>nicht mitsingen</strong> möchtest?</p>
+    <div class="dialog-actions">
+        <button type="button" class="btn btn-primary" id="foerder-confirm">Ja, ich möchte nur fördern</button>
+        <button type="button" class="btn btn-secondary" id="foerder-cancel">Nein, ich möchte mitsingen</button>
+    </div>
+</dialog>
+
+<script>
+(function () {
+    var geb = document.getElementById('{{ form.geburtstag.id_for_label }}');
+    var minDlg = document.getElementById('minderjaehrig-dialog');
+    geb.addEventListener('change', function () {
+        var val = geb.value;
+        if (!val) return;
+        var birth = new Date(val);
+        var now = new Date();
+        var age = now.getFullYear() - birth.getFullYear();
+        var m = now.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+        if (age < 18) minDlg.showModal();
+    });
+
+    var cb = document.getElementById('{{ form.foerdermitglied.id_for_label }}');
+    var dlg = document.getElementById('foerder-dialog');
+    cb.addEventListener('change', function () {
+        if (cb.checked) {
+            dlg.showModal();
+        }
+    });
+    document.getElementById('foerder-confirm').addEventListener('click', function () {
+        dlg.close();
+    });
+    document.getElementById('foerder-cancel').addEventListener('click', function () {
+        cb.checked = false;
+        dlg.close();
+    });
+})();
+</script>
 {% endblock %}

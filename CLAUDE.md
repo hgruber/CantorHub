@@ -147,12 +147,10 @@ The public join form lives at `/intern/beitritt/<token>/` (`mitglied_beitritt` i
 all member fields — required: first/last name, all address fields, `geburtstag`,
 `username` (regex `^[A-Za-z0-9._-]{3,30}$` + case-insensitive uniqueness via
 `username__iexact`), two matching passwords (`validate_password`),
-and three mandatory consent checkboxes (Datenschutz — links to `/datenschutz/`, Datenverarbeitung, Satzung —
-links to the PDF configured via `SATZUNG_FILE_ID`). On success the member is created with `is_active=False`, a PDF of the completed
+five mandatory consent checkboxes (Richtigkeit der Angaben; Datenschutz — links to `/datenschutz/`; Datenverarbeitung; Satzung — links to the PDF configured via `SATZUNG_FILE_ID`; Beitragsordnung — links to the PDF configured via `BEITRAGSORDNUNG_FILE_ID`), and two optional fields (`einwilligung_fotos` for photo consent at public events, `foerdermitglied` for supporting membership). On success the member is created with `is_active=False`, a PDF of the completed
 application is saved to the filer folder **„Verwaltung/Mitglieder"** (Vorstand-only,
 via `_save_antrag_pdf` in `views/auth.py` using reportlab; best-effort, never blocks
-registration), a confirmation mail goes to the applicant, and a notification mail
-goes to all active members with `intern.change_user` (`_member_managers()`). The public
+registration), a confirmation mail goes to the applicant, and a notification mail goes to the address configured via `ANTRAG_EMAIL` (falls back to members with `intern.change_user` via `_member_managers()` if empty). If the applicant is a minor at submission time, the admin notification contains a warning. If `foerdermitglied` is checked, the user is immediately added to the `"Fördermitglied"` group (created by `0003_import.py`). The public
 pages (`mitglied_beitritt.html`, `_success.html`, `_invalid.html`) extend the standalone
 `mitglied_public_base.html` shell (no sidebar), not `base.html`.
 

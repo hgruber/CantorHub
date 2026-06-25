@@ -77,6 +77,16 @@ _CONFIG_DEFAULTS = [
         "Filer-Datei-ID der aktuellen Satzung (leer → kein Link in Formularen)",
     ),
     (
+        "BEITRAGSORDNUNG_FILE_ID",
+        "",
+        "Filer-Datei-ID der aktuellen Beitragsordnung (leer → kein Link in Formularen)",
+    ),
+    (
+        "ANTRAG_EMAIL",
+        "",
+        "E-Mail-Adresse für Eingang neuer Mitgliedsanträge (leer → Mitglieder mit change_user-Recht)",
+    ),
+    (
         "VEREINS_URL",
         "",
         "Basis-URL des Portals für Links in E-Mails (z.B. https://portal.example.com)",

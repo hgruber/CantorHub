@@ -115,6 +115,10 @@ class MitgliedBeitrittForm(forms.ModelForm):
         widget=forms.PasswordInput(attrs={"class": "form-control"}),
     )
 
+    bestaetigung_richtigkeit = forms.BooleanField(
+        required=True,
+        label="Ich versichere, dass alle meine Angaben der Wahrheit entsprechen und vollständig sind.",
+    )
     zustimmung_datenschutz = forms.BooleanField(
         required=True,
         label=mark_safe(
@@ -133,6 +137,23 @@ class MitgliedBeitrittForm(forms.ModelForm):
             'Ich erkenne die <a href="#" target="_blank" rel="noopener">'
             "Satzung</a> des Vereins an."
         ),
+    )
+    anerkennung_beitragsordnung = forms.BooleanField(
+        required=True,
+        label=mark_safe(
+            'Ich nehme die <a href="#" target="_blank" rel="noopener">'
+            "Beitragsordnung</a> des Vereins zur Kenntnis und erkenne sie an."
+        ),
+    )
+    einwilligung_fotos = forms.BooleanField(
+        required=False,
+        label="Ich willige ein, dass Fotos meiner Person bei öffentlichen Auftritten "
+        "des Chors veröffentlicht werden dürfen. Diese Einwilligung ist freiwillig "
+        "und kann jederzeit widerrufen werden.",
+    )
+    foerdermitglied = forms.BooleanField(
+        required=False,
+        label="Ich möchte förderndes Mitglied werden.",
     )
 
     class Meta:
@@ -180,6 +201,11 @@ class MitgliedBeitrittForm(forms.ModelForm):
         self.fields["anerkennung_satzung"].label = mark_safe(
             f'Ich erkenne die <a href="{satzung_url}" target="_blank" rel="noopener">'
             "Satzung</a> des Vereins an."
+        )
+        beitragsordnung_url = get_document_url("BEITRAGSORDNUNG_FILE_ID")
+        self.fields["anerkennung_beitragsordnung"].label = mark_safe(
+            f'Ich nehme die <a href="{beitragsordnung_url}" target="_blank" rel="noopener">'
+            "Beitragsordnung</a> des Vereins zur Kenntnis und erkenne sie an."
         )
 
     def clean_username(self):

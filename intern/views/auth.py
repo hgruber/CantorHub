@@ -91,7 +91,7 @@ class CantorLoginView(auth_views.LoginView):
         return response
 
 
-def _save_antrag_pdf(user, email):
+def _save_antrag_pdf(user, email, einwilligung_fotos=False, foerdermitglied=False):
     buf, c, y = new_letterhead_pdf(
         title="Mitgliedsantrag",
         subtitle=f"Eingereicht am: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}",
@@ -117,10 +117,18 @@ def _save_antrag_pdf(user, email):
         if wert:
             y = draw_field(c, y, label, wert)
 
-    y = draw_section(c, y, "Einwilligungen (alle bestätigt)")
+    y = draw_section(c, y, "Einwilligungen (Pflichtfelder alle bestätigt)")
+    y = draw_checkbox(c, y, "Angaben sind wahrheitsgemäß und vollständig")
     y = draw_checkbox(c, y, "Datenschutzerklärung gelesen und akzeptiert")
     y = draw_checkbox(c, y, "Datenverarbeitung durch den Verein akzeptiert")
     y = draw_checkbox(c, y, "Satzung gelesen und akzeptiert")
+    y = draw_checkbox(c, y, "Beitragsordnung zur Kenntnis genommen und anerkannt")
+    y = draw_checkbox(c, y, "Einwilligung zur Veröffentlichung von Fotos bei Auftritten",
+                     checked=einwilligung_fotos)
+
+    y = draw_section(c, y, "Fördermitgliedschaft")
+    y = draw_checkbox(c, y, "Ich möchte förderndes Mitglied werden", checked=foerdermitglied)
+
     draw_signature(c, y, f"{user.first_name} {user.last_name}")
 
     c.save()
@@ -338,9 +346,30 @@ def mitglied_beitritt(request, token):
             user.save()
             form.save_m2m()
 
+            foerdermitglied = form.cleaned_data.get("foerdermitglied", False)
+            if foerdermitglied:
+                from django.contrib.auth.models import Group as AuthGroup
+                try:
+                    user.groups.add(AuthGroup.objects.get(name="Fördermitglied"))
+                except AuthGroup.DoesNotExist:
+                    logger.warning("Gruppe 'Fördermitglied' nicht gefunden")
+
+            minderjaehrig = False
+            if user.geburtstag:
+                from datetime import date as _date
+                today = _date.today()
+                age = today.year - user.geburtstag.year
+                if (today.month, today.day) < (user.geburtstag.month, user.geburtstag.day):
+                    age -= 1
+                minderjaehrig = age < 18
+
             pdf_attachment = None
             try:
-                pdf_bytes, pdf_fname = _save_antrag_pdf(user, email)
+                pdf_bytes, pdf_fname = _save_antrag_pdf(
+                    user, email,
+                    einwilligung_fotos=form.cleaned_data.get("einwilligung_fotos", False),
+                    foerdermitglied=foerdermitglied,
+                )
                 pdf_attachment = [(pdf_fname, pdf_bytes, "application/pdf")]
             except Exception:
                 logger.exception("Antrag-PDF konnte nicht erstellt werden fuer %s", user.username)
@@ -354,16 +383,18 @@ def mitglied_beitritt(request, token):
                 text_body=format_config_mail("MAIL_ANTRAG", user),
             )
 
-            managers = [u.email for u in _member_managers() if u.email]
-            if managers:
+            antrag_email = get_config("ANTRAG_EMAIL", "").strip()
+            empfaenger = [antrag_email] if antrag_email else [u.email for u in _member_managers() if u.email]
+            if empfaenger:
                 link = request.build_absolute_uri(
                     reverse("mitglied_view", args=[user.id])
                 )
                 send_branded_mail(
                     "Neuer Mitgliedsantrag",
-                    managers,
+                    empfaenger,
                     "emails/mitglied_antrag_admin.html",
-                    {"applicant": user, "link": link},
+                    {"applicant": user, "link": link,
+                     "minderjaehrig": minderjaehrig, "foerdermitglied": foerdermitglied},
                     text_body=format_config_mail("MAIL_ANTRAG_ADMIN", user, link=link),
                 )
             return render(request, "mitglied_beitritt_success.html", {"user": user})
