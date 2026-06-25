@@ -299,6 +299,10 @@ starts the ENV var can be dropped and the DB value is used. Use
 
 Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py`;
 **add new keys there** (with a German `description`) so fresh installs get them.
+Choir-specific initial values (e.g. `VEREINSNAME`, `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`,
+`HOMEPAGE_AUFNAHME`) live in `seed_konfiguration` in `intern/migrations/0003_import.py` — those
+keys carry an empty-string default in `apps.py` and get their real content only via the data
+migration, so the codebase stays deployable for other organisations without pre-filled choir text.
 The full key catalog and the mail-placeholder reference (`format_config_mail` /
 `format_config_text`, the standard `{vorname}`/`{vereinsname}`/… placeholders, and the
 "to add a new automated email" recipe) live in `configuration.md`.

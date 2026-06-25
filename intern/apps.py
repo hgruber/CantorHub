@@ -29,13 +29,13 @@ _CONFIG_DEFAULTS = [
     ("PWRESET_MAX_PER_HOUR", "5", "Maximale Passwort-Reset-Anfragen pro IP und Stunde"),
     ("NOTIFY_POLL_MS", "10000", "Abfrageintervall für Benachrichtigungen (ms)"),
     ("NOTIFY_DISMISS_MS", "6000", "Anzeigedauer einer Benachrichtigung (ms)"),
-    ("VEREINSNAME", "Join us singing the Gospel", "Name des Chors"),
+    ("VEREINSNAME", "", "Name des Chors"),
     (
         "VEREINSNAME_LANG",
         "Just Gospel! Frankfurt",
         "Langer Vereinsname mit Ort (für E-Mail-Header, Seitentitel)",
     ),
-    ("VEREINSNAME_KURZ", "Just Gospel", "Kurzer Vereinsname (für Sidebar, Alt-Texte)"),
+    ("VEREINSNAME_KURZ", "", "Kurzer Vereinsname (für Sidebar, Alt-Texte)"),
     (
         "VEREINSADRESSE",
         "",
@@ -44,18 +44,12 @@ _CONFIG_DEFAULTS = [
     ),
     (
         "HOMEPAGE_UEBER_UNS",
-        "JustGospel! Frankfurt ist mehr als nur ein Chor – es ist eine Gemeinschaft "
-        "von rund 25 Sängerinnen und Sängern, die ihre Leidenschaft für Gospelmusik "
-        "teilen. Seit 2015, unter der Leitung von Christoph Kuhn, erklingt hier "
-        "moderner Gospel mit viel Gefühl und Groove. Auch traditionelle Stücke finden "
-        "ihren Platz, mal frisch und neu interpretiert. Live wird JustGospel! Frankfurt "
-        "von einer energiegeladenen Band mit Schlagzeug, E-Gitarre, Bass und Klavier begleitet.",
+        "",
         "Über-uns-Text der öffentlichen Startseite (mehrzeilig erlaubt)",
     ),
     (
         "HOMEPAGE_AUFNAHME",
-        "Du bist dem modernen Gospel zugewandt und bist ein Sopran oder Bass? "
-        "Dann melde Dich bei uns!",
+        "",
         "Wir-suchen-Text der öffentlichen Startseite (mehrzeilig erlaubt)",
     ),
     (
