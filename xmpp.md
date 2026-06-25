@@ -146,6 +146,27 @@ On the first **live** message in a room (including CantorBot-relayed Forum messa
 
 This avoids mass invitations on startup — invitations only fire when a live message actually arrives, never from imported history.
 
+### Per-user opt-out
+
+A member can opt out of a forum's MUC room (the `ForumOptOut(forum, user)` model —
+presence of a row = opted out). Opt-out is **XMPP-only**: the web forum stays fully
+visible and usable, and the user can rejoin any time. It exists because leaving a room
+in an XMPP client cannot be detected reliably — both "going offline" and "leaving the
+room" send the same `<presence type="unavailable"/>` (XEP-0045), so the explicit
+web button is the only unambiguous signal.
+
+- **Self-service:** `forum_leave` / `forum_rejoin` (`views/forums.py`, both
+  `@login_required` + `@require_POST`, reader-only) toggle the opt-out row and set the
+  user's affiliation to `none` / `member`. Surfaced as a button on the forum detail page
+  (`forum.html`, only when ejabberd is configured and the user has an XMPP JID).
+- **Bot auto-invite** — `_db_invite_missing_users` (`ejabberd_bot.py`) excludes
+  opted-out users (`.exclude(forum_optouts__forum=forum)`).
+- **MUC reconcile** — `_reconcile_forum_muc` (`views/forums.py`) skips opted-out JIDs
+  (`_opted_out_jids`) when re-adding permitted readers, so saving access rights never
+  re-affiliates an opted-out reader.
+- **Manual invite** — `forum_invite` deletes any opt-out row before re-affiliating, so
+  an explicit admin invite overrides a prior opt-out.
+
 ### Room history
 
 The bot joins rooms with `maxhistory="20"` to receive recent messages on join. This allows it to:

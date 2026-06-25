@@ -17,7 +17,7 @@ from intern import ejabberd, folders
 from intern.app_settings import get_config, get_from_email, is_ejabberd_configured
 
 from ..forms import ForumEditForm
-from ..models import ChangeLog, Forum, ForumPermission, Mitteilung, User
+from ..models import ChangeLog, Forum, ForumOptOut, ForumPermission, Mitteilung, User
 from ..tables import ForumTabelle
 
 __all__ = [
@@ -28,6 +28,8 @@ __all__ = [
     "forum_send",
     "forum_edit",
     "forum_invite",
+    "forum_leave",
+    "forum_rejoin",
     "forum_add",
     "forum_delete",
     "forum_permissions",
@@ -87,6 +89,16 @@ def _allowed_reader_jids(forum_obj):
         .distinct()
     )
     return {u.xmpp.lower() for u in users}
+
+
+def _opted_out_jids(forum_obj):
+    """Lowercased XMPP JIDs of users who opted out of this forum's MUC room."""
+    return {
+        u.xmpp.lower()
+        for u in User.objects.filter(forum_optouts__forum=forum_obj)
+        .exclude(xmpp=None)
+        .exclude(xmpp="")
+    }
 
 
 def _sync_forum_avatar(forum_obj):
@@ -240,6 +252,11 @@ def forum_view(request, forum):
         if request.user.has_perm("intern.manage_forum_permissions")
         else None
     )
+    xmpp_aktiv = is_ejabberd_configured() and bool(request.user.xmpp)
+    opted_out = (
+        xmpp_aktiv
+        and ForumOptOut.objects.filter(forum_id=forum, user=request.user).exists()
+    )
     return render(
         request,
         "forum.html",
@@ -255,6 +272,8 @@ def forum_view(request, forum):
             "edit": "forum_edit" if request.user.has_perm("intern.change_forum") else None,
             "history": "forum_aenderungen" if request.user.has_perm("intern.change_forum") else None,
             "permissions_url": permissions_url,
+            "xmpp_aktiv": xmpp_aktiv,
+            "opted_out": opted_out,
             "id": forum,
         },
     )
@@ -379,6 +398,10 @@ def forum_invite(request, forum, user_id):
     if not _forum_access(user, forum):
         return redirect("forum_edit", forum=forum)
 
+    # An explicit invite overrides a prior opt-out — otherwise the bot would
+    # remove the user again on its next run.
+    ForumOptOut.objects.filter(forum=forum_obj, user=user).delete()
+
     muc_jid = _get_muc_jid(forum_obj)
     if is_ejabberd_configured() and muc_jid and user.xmpp:
         if not forum_obj.xmpp_muc_jid:
@@ -387,6 +410,51 @@ def forum_invite(request, forum, user_id):
         ejabberd.set_room_affiliation(muc_jid, user.xmpp, "member")
 
     return redirect("forum_edit", forum=forum)
+
+
+@login_required
+@require_POST
+def forum_leave(request, forum):
+    """Self-service XMPP opt-out: stop the bot from (re-)inviting the user into
+    this forum's MUC room and remove their affiliation. Web access is unaffected."""
+    if not _forum_access(request.user, forum):
+        raise PermissionDenied
+    forum_obj = get_object_or_404(Forum, id=forum)
+    ForumOptOut.objects.get_or_create(forum=forum_obj, user=request.user)
+
+    muc_jid = _get_muc_jid(forum_obj)
+    if is_ejabberd_configured() and muc_jid and request.user.xmpp:
+        try:
+            ejabberd.set_room_affiliation(muc_jid, request.user.xmpp, "none")
+        except Exception as exc:
+            logger.error(
+                "ejabberd: failed to remove %s from %s: %s",
+                request.user.xmpp, muc_jid, exc,
+            )
+
+    return redirect("forum_view", forum=forum)
+
+
+@login_required
+@require_POST
+def forum_rejoin(request, forum):
+    """Reverse a self-service opt-out: re-affiliate the user as MUC member."""
+    if not _forum_access(request.user, forum):
+        raise PermissionDenied
+    forum_obj = get_object_or_404(Forum, id=forum)
+    ForumOptOut.objects.filter(forum=forum_obj, user=request.user).delete()
+
+    muc_jid = _get_muc_jid(forum_obj)
+    if is_ejabberd_configured() and muc_jid and request.user.xmpp:
+        try:
+            ejabberd.set_room_affiliation(muc_jid, request.user.xmpp, "member")
+        except Exception as exc:
+            logger.error(
+                "ejabberd: failed to add %s to %s: %s",
+                request.user.xmpp, muc_jid, exc,
+            )
+
+    return redirect("forum_view", forum=forum)
 
 
 @permission_required("intern.delete_forum", raise_exception=True)
@@ -460,9 +528,10 @@ def _reconcile_forum_muc(forum_obj):
             ejabberd.set_room_affiliation(muc_jid, jid, "none")
         except Exception as exc:
             logger.error("ejabberd: failed to remove %s from %s: %s", jid, muc_jid, exc)
-    # Ensure permitted readers are members.
+    # Ensure permitted readers are members — except those who opted out.
+    opted_out = _opted_out_jids(forum_obj)
     for jid in allowed:
-        if jid in current:
+        if jid in current or jid in opted_out:
             continue
         try:
             ejabberd.set_room_affiliation(muc_jid, jid, "member")

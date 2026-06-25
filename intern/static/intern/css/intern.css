@@ -1831,6 +1831,22 @@ div.filter-checks--exclude input[type="checkbox"] {
     gap: 8px;
 }
 
+.forum-optout {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.forum-optout-note {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
 .forum-entry form {
     display: flex;
     flex: 1;

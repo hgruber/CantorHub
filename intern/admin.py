@@ -57,6 +57,13 @@ class ForumPermissionInline(admin.TabularInline):
     fields = ("group",)
 
 
+class ForumOptOutInline(admin.TabularInline):
+    model = ForumOptOut
+    extra = 0
+    fields = ("user",)
+    raw_id_fields = ("user",)
+
+
 @admin.register(Forum)
 class ForumAdmin(admin.ModelAdmin):
     list_display = [
@@ -65,7 +72,7 @@ class ForumAdmin(admin.ModelAdmin):
         "sender",
         "zugriff",
     ]
-    inlines = [ForumPermissionInline]
+    inlines = [ForumPermissionInline, ForumOptOutInline]
 
     def get_queryset(self, request):
         return Forum.objects.extra_data().order_by("-zugriff")

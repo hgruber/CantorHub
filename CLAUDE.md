@@ -121,6 +121,15 @@ Permission changes are recorded in the audit log: `_audit_forum_permissions`
 up in `forum_aenderungen` next to the regular forum-field edits. The forum's audited
 fields are `thema`, `aktiv`, `bild_id`, `xmpp_muc_jid` (`_AUDIT_FIELDS` in `signals.py`).
 
+**Per-user XMPP opt-out (`ForumOptOut`)** is a separate, orthogonal concept: a member can
+leave a forum's MUC room via a self-service button on the forum detail page
+(`forum_leave` / `forum_rejoin`, `forum.html`). The presence of a `ForumOptOut(forum,
+user)` row means the bot never (re-)invites them and their affiliation is kept at `none`.
+It only affects XMPP — web read/post access is unchanged. `_db_invite_missing_users`,
+`_reconcile_forum_muc`, and `forum_invite` all honour it. Presence-based detection is
+intentionally not used (offline vs. leaving are indistinguishable in XEP-0045). See
+`xmpp.md`.
+
 ### Article editor & versioning
 
 `Artikel` rows are immutable versions keyed by `(name, version)` — articles are addressed by `name`, not `id`. Saving an edit at `/intern/artikel/<name>/edit/` creates a new `Artikel` row with `version + 1` rather than mutating the existing one. The editor (`artikel.html`, edit branch) renders the `.article-editor` shell: an identity bar, a collapsible `.ae-help` syntax cheat-sheet, the textarea inside a `.wiki` container (kept so `abstimmung.js`'s `{abstimmung:...}` helper still binds), and a footer action bar.
@@ -210,6 +219,7 @@ No Vorstand notification. Three public templates extend `mitglied_public_base.ht
 | `Artikel` | Versioned articles/news items |
 | `Forum` | Discussion threads; `bild` (FilerFileField), `aktiv` (Boolean), `xmpp_muc_jid` for XMPP bridge |
 | `ForumPermission` | Read restriction `(forum, group)`; presence of rows = forum restricted to those groups, no row = open (see "Forum read permissions") |
+| `ForumOptOut` | Per-user XMPP opt-out `(forum, user)`; presence of a row = user not (re-)invited into the forum's MUC room. XMPP-only, web access unaffected (see "Forum read permissions" / `xmpp.md`) |
 | `Mitteilung` | Forum messages; adds `xmpp_stanza_id` for bridge deduplication. Display helpers `sender_name()` / `sender_avatar_url()` / `is_from_bot()` fall back to "Unbekannt"+`kein_photo.png` for `sender=None` and to nick `CantorBot`+`bot.png` for the bot JID |
 | `Termin` / `Ort` | Events and locations |
 | `Lied` | Songs in the repertoire |

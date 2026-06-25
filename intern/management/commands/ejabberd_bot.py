@@ -155,6 +155,8 @@ def _db_invite_missing_users(room_jid):
 
     forum = Forum.objects.filter(xmpp_muc_jid=room_jid).first()
     if forum is not None:
+        # Users who opted out of this forum's MUC room are never (re-)invited.
+        users = users.exclude(forum_optouts__forum=forum)
         group_ids = list(
             ForumPermission.objects.filter(forum=forum).values_list(
                 "group_id", flat=True
