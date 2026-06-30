@@ -212,6 +212,13 @@ as a single `CantorBot` reaction set (the union). XMPP→Web and Web→Web are p
 only Web→XMPP collapses this way. `origin="xmpp"` reactions are excluded from the union, so
 native XMPP reactions are never rebroadcast.
 
+Surfacing the *number* of web approvals in XMPP (e.g. a `👍 5` chip) was considered and
+**deliberately rejected**: XEP-0444 encodes *who* reacted, not *how many*, and the bot is a
+single JID. Embedding the count in the reaction text (`👍 5`) is technically sendable
+(slixmpp's `is_emoji` is a permissive `True` stub, so nothing is stripped) but (a) does not
+merge with native `👍` reactions — it shows as a separate chip — and (b) may be filtered by
+strict clients. The plain-emoji union is kept; exact per-person counts live in the web UI.
+
 **Restart gap:** like the `_relay_cursor` gap, stanza-ids for messages relayed while the bot
 **process** is down aren't captured, so reactions to those specific messages don't round-trip.
 Acceptable during the DB-wipe test phase; improvable later via MAM.
