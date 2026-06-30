@@ -251,17 +251,22 @@ def _db_dirty_reaction_candidates():
     )
 
 
-def _db_clear_and_get_union(mitteilung_id):
+def _db_clear_and_get_ranked(mitteilung_id):
     """Clear the dirty flag and return the union of web-origin reaction emojis for
-    a message. Clearing before the send means a concurrent toggle at worst causes a
+    a message, ranked by frequency (most-reacted first, ties broken by earliest
+    reaction). Clearing before the send means a concurrent toggle at worst causes a
     harmless idempotent re-send next cycle, never a lost update."""
+    from django.db.models import Count, Min
+
     from intern.models import Mitteilung, Reaktion
 
     Mitteilung.objects.filter(pk=mitteilung_id).update(reactions_dirty=False)
     return list(
         Reaktion.objects.filter(mitteilung_id=mitteilung_id, origin="web")
+        .values("emoji")
+        .annotate(cnt=Count("id"), erste=Min("datum"))
+        .order_by("-cnt", "erste")
         .values_list("emoji", flat=True)
-        .distinct()
     )
 
 
@@ -454,14 +459,15 @@ class CantorBot:
 
     async def _relay_reactions(self):
         """Send web-originated reaction changes to MUC. All web reactions on a
-        message are sent as the bot's own reaction set (their union), since XEP-0444
-        attributes a reaction to the sending JID — see xmpp.md."""
+        message are sent as the bot's own reaction set (their union, ranked by
+        frequency — most-reacted emoji first), since XEP-0444 attributes a reaction
+        to the sending JID — see xmpp.md."""
         candidates = await asyncio.to_thread(_db_dirty_reaction_candidates)
         for mid, muc_jid, to_id in candidates:
             if muc_jid not in self._joined_rooms:
                 # Not joined yet — leave dirty, retry next cycle.
                 continue
-            emojis = await asyncio.to_thread(_db_clear_and_get_union, mid)
+            emojis = await asyncio.to_thread(_db_clear_and_get_ranked, mid)
             outgoing = self._client.make_message(mto=muc_jid, mtype="groupchat")
             self._client["xep_0444"].set_reactions(outgoing, to_id=to_id, reactions=emojis)
             outgoing.send()

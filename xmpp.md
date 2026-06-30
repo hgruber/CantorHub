@@ -202,7 +202,10 @@ does **not** set `reactions_dirty` (no rebroadcast).
 `forum_react` toggles the user's `origin="web"` reaction and sets `Mitteilung.reactions_dirty`.
 The bot's `_relay_reactions` task (3 s, like the message relay) takes dirty messages that have
 a known stanza-id and room, and sends the **union** of their `origin="web"` emojis as the
-bot's own reaction set (`xep_0444.set_reactions`). The dirty flag is cleared *before*
+bot's own reaction set (`xep_0444.set_reactions`), **ranked by frequency** — the most-reacted
+emoji first, ties broken by the earliest reaction (`_db_clear_and_get_ranked`). slixmpp's
+`set_reactions` preserves the list order in the stanza, so clients that honour it show the
+web consensus first. The dirty flag is cleared *before*
 computing/sending so a concurrent toggle at worst triggers a harmless idempotent re-send,
 never a lost update; a message whose stanza-id isn't captured yet stays dirty and is retried.
 
