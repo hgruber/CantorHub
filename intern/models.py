@@ -16,6 +16,7 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Concat
+from django.utils import timezone
 from django.utils.html import format_html
 from filer.fields.file import FilerFileField
 
@@ -308,6 +309,9 @@ class Mitteilung(models.Model):
     xmpp_stanza_id = models.CharField(
         max_length=255, null=True, blank=True, unique=True, db_index=True
     )
+    # Set by forum_react when a web user's reaction set changed; the bot relays
+    # the new web-reaction union to the MUC and clears the flag (see ejabberd_bot).
+    reactions_dirty = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "Mitteilungen"
@@ -365,6 +369,34 @@ class ForumPermission(models.Model):
 
     def __str__(self):
         return f"{self.forum} → {self.group}"
+
+
+class Reaktion(models.Model):
+    """An emoji reaction (XEP-0444) on a single Mitteilung.
+
+    Per XEP-0444 the latest reaction stanza from a reactor fully replaces that
+    reactor's previous set, so uniqueness is enforced in application code via
+    delete-then-insert (see views.forums / ejabberd_bot), not a DB constraint:
+    the reactor identity is ``sender`` for web reactions and ``reactor_jid`` for
+    XMPP ones (where ``sender`` may be None for an unmapped JID).
+    """
+
+    REACTION_EMOJIS = ["👍", "❤️", "😂", "🎉", "😮", "😢", "🙏", "👏"]
+
+    mitteilung = models.ForeignKey(
+        "Mitteilung", on_delete=models.CASCADE, related_name="reaktionen", db_index=True
+    )
+    sender = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL)
+    reactor_jid = models.CharField(max_length=255, null=True, blank=True)
+    emoji = models.CharField(max_length=64)
+    origin = models.CharField(max_length=8, default="web")  # "web" | "xmpp"
+    datum = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name_plural = "Reaktionen"
+
+    def __str__(self):
+        return f"{self.emoji} on #{self.mitteilung_id}"
 
 
 class Ort(models.Model):

@@ -13,6 +13,9 @@
     <div class="{% if message.sender == user %}content_me{% else %}content{% endif %}">
         {{ message.formatiert|highlight:hq }}
         <time>{{ message.datum|date:"d.M Y H:i" }}</time>
+        <div class="reactions" data-message-id="{{ message.id }}"></div>
     </div>
+    <button type="button" class="reaction-add" data-message-id="{{ message.id }}"
+            title="Reaktion hinzufügen" aria-label="Reaktion hinzufügen">+</button>
 </div>
 {% endwith %}

@@ -121,6 +121,22 @@ Permission changes are recorded in the audit log: `_audit_forum_permissions`
 up in `forum_aenderungen` next to the regular forum-field edits. The forum's audited
 fields are `thema`, `aktiv`, `bild_id`, `xmpp_muc_jid` (`_AUDIT_FIELDS` in `signals.py`).
 
+### Forum reactions
+
+Members can react to individual forum messages with emoji (XEP-0444), synced both ways
+with the linked MUC room. A reaction bar renders under each message bubble
+(`_message.html` → `.reactions` container, populated by `forum.js`); a `+` opens a small
+picker (fixed quick set **plus** a free-emoji input). `forum.js` polls
+`forum_reactions` (JSON) every 5 s and re-renders all bars, so XMPP-originated reactions
+appear too; clicks POST to `forum_react` (`X-CSRFToken` via `getCsrfToken()`). Both views
+(`views/forums.py`) are gated by `_forum_access` — whoever may read a forum may react.
+
+Model `Reaktion` stores one row per (message, reactor, emoji) with `origin`
+(`"web"`/`"xmpp"`). XEP-0444 replace semantics (a reactor's stanza restates their full
+set) are implemented as delete-then-insert per reactor. The Forum↔MUC relay, the
+bot-attribution limitation (web reactions appear in XMPP clients bundled under
+`CantorBot`), and the origin-id stanza-id capture are documented in `xmpp.md`.
+
 ### Article editor & versioning
 
 `Artikel` rows are immutable versions keyed by `(name, version)` — articles are addressed by `name`, not `id`. Saving an edit at `/intern/artikel/<name>/edit/` creates a new `Artikel` row with `version + 1` rather than mutating the existing one. The editor (`artikel.html`, edit branch) renders the `.article-editor` shell: an identity bar, a collapsible `.ae-help` syntax cheat-sheet, the textarea inside a `.wiki` container (kept so `abstimmung.js`'s `{abstimmung:...}` helper still binds), and a footer action bar.
@@ -210,7 +226,8 @@ No Vorstand notification. Three public templates extend `mitglied_public_base.ht
 | `Artikel` | Versioned articles/news items |
 | `Forum` | Discussion threads; `bild` (FilerFileField), `aktiv` (Boolean), `xmpp_muc_jid` for XMPP bridge |
 | `ForumPermission` | Read restriction `(forum, group)`; presence of rows = forum restricted to those groups, no row = open (see "Forum read permissions") |
-| `Mitteilung` | Forum messages; adds `xmpp_stanza_id` for bridge deduplication. Display helpers `sender_name()` / `sender_avatar_url()` / `is_from_bot()` fall back to "Unbekannt"+`kein_photo.png` for `sender=None` and to nick `CantorBot`+`bot.png` for the bot JID |
+| `Mitteilung` | Forum messages; adds `xmpp_stanza_id` for bridge deduplication and `reactions_dirty` (web-reaction relay flag). Display helpers `sender_name()` / `sender_avatar_url()` / `is_from_bot()` fall back to "Unbekannt"+`kein_photo.png` for `sender=None` and to nick `CantorBot`+`bot.png` for the bot JID |
+| `Reaktion` | Emoji reaction (XEP-0444) on a `Mitteilung`; `origin` (`"web"`/`"xmpp"`), `sender` for display, `reactor_jid` for XMPP-origin. Per-reactor uniqueness is enforced in code (delete-then-insert), not a DB constraint. See "Forum reactions" and `xmpp.md` |
 | `Termin` / `Ort` | Events and locations |
 | `Lied` | Songs in the repertoire |
 | `Konzert` | Ordered song list for a specific event (links `Lied` ↔ `Termin`) |

@@ -1957,6 +1957,92 @@ div.avatar { cursor: pointer; }
     text-align: right;
 }
 
+/* ── Reaktionen (XEP-0444) ───────────────────────────────── */
+.reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 5px;
+}
+.reactions:empty { display: none; }
+
+.reaction-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 11px;
+    cursor: pointer;
+    background: var(--bg-card);
+    border: 1px solid var(--msg-border);
+    color: var(--t3);
+    transition: border-color .12s, background .12s;
+}
+.reaction-chip:hover { border-color: var(--brand); }
+.reaction-chip.mine {
+    background: color-mix(in srgb, var(--brand) 12%, var(--bg-card));
+    border-color: var(--brand);
+    color: var(--brand);
+}
+
+/* Dezenter "+"-Auslöser, erscheint beim Hover über der Nachricht. */
+.reaction-add {
+    align-self: center;
+    margin: 0 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--msg-border);
+    background: var(--bg-card);
+    color: var(--t3);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .12s, border-color .12s, color .12s;
+}
+.message:hover .reaction-add,
+.message_me:hover .reaction-add,
+.reaction-add:focus-visible { opacity: 1; }
+.reaction-add:hover { border-color: var(--brand); color: var(--brand); }
+
+.reaction-picker {
+    position: absolute;
+    z-index: 1000;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    max-width: 230px;
+    padding: 6px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.18));
+}
+.reaction-pick {
+    border: 0;
+    background: transparent;
+    font-size: 19px;
+    line-height: 1;
+    padding: 4px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+.reaction-pick:hover { background: var(--msg-border); }
+.reaction-input {
+    width: 46px;
+    margin-left: 4px;
+    padding: 4px 6px;
+    font-size: 15px;
+    border-radius: 7px;
+    border: 1px solid var(--msg-border);
+    background: var(--bg-card);
+    color: var(--t2, var(--t3));
+}
+
 .message_me img,
 .message img,
 .message_me video,

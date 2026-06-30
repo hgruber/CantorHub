@@ -167,6 +167,55 @@ The bot never exits under normal operation:
 
 slixmpp runs in an async event loop. Django ORM is sync-only. All DB access is wrapped in `asyncio.to_thread()`. REST API calls (httpx) are also sync, so they run inside `asyncio.to_thread()` too.
 
+## Message reactions (XEP-0444)
+
+Emoji reactions on individual forum messages sync both ways. The bot registers
+`xep_0444` (reactions) and `xep_0359` (stanza-id / origin-id). Reactions are stored in the
+`Reaktion` model (`mitteilung`, `sender`, `reactor_jid`, `emoji`, `origin`). Per XEP-0444 a
+reactor's stanza restates that reactor's **full** set for a message, so all paths use
+*delete-then-insert per reactor* (reactor identity = `sender` for web, `reactor_jid` for
+XMPP).
+
+### Stanza-id capture for forum-originated messages (prerequisite)
+
+Reactions target a message's MUC stanza-id (XEP-0359). Inbound MUC messages already store
+it in `Mitteilung.xmpp_stanza_id`. Forum-originated messages relayed by the bot previously
+had **no** stanza-id (the CantorBot echo is dropped). So `_relay_messages` now builds the
+outgoing groupchat message with an **origin-id** `cantorhub-<mitteilung_id>`; when the echo
+arrives, `_capture_forum_stanza_id` reads that origin-id and writes the room-assigned
+`<stanza-id>` back onto the Mitteilung (only when still NULL). Body storage stays suppressed
+— only the id is backfilled. `_db_pending_forum_messages` is unaffected: its discriminator
+is `xmpp_stanza_id IS NULL` **and** `id > _relay_cursor`, and the cursor has already advanced
+past a relayed message, so the late id-set never causes a re-send.
+
+### XMPP → Web (inbound)
+
+Reaction stanzas carry no `<body>`, so `_on_muc_message` checks for the reactions plugin
+**before** the `if not body` return. CantorBot's own reaction echoes are skipped (no
+re-import → no loop). Otherwise `_handle_reaction` resolves the reactor JID (presence cache →
+REST) and `_db_store_xmpp_reaction` finds the Mitteilung by `xmpp_stanza_id == reactions.id`,
+replaces that reactor's `origin="xmpp"` set, and maps the JID to a `User` for display. It
+does **not** set `reactions_dirty` (no rebroadcast).
+
+### Web → XMPP (outbound, bot-union)
+
+`forum_react` toggles the user's `origin="web"` reaction and sets `Mitteilung.reactions_dirty`.
+The bot's `_relay_reactions` task (3 s, like the message relay) takes dirty messages that have
+a known stanza-id and room, and sends the **union** of their `origin="web"` emojis as the
+bot's own reaction set (`xep_0444.set_reactions`). The dirty flag is cleared *before*
+computing/sending so a concurrent toggle at worst triggers a harmless idempotent re-send,
+never a lost update; a message whose stanza-id isn't captured yet stays dirty and is retried.
+
+**Bot-attribution limitation:** XEP-0444 attributes a reaction to the sending JID. Since the
+bridge sends web reactions under the bot JID, XMPP clients show **all** web reactions bundled
+as a single `CantorBot` reaction set (the union). XMPP→Web and Web→Web are per-person correct;
+only Web→XMPP collapses this way. `origin="xmpp"` reactions are excluded from the union, so
+native XMPP reactions are never rebroadcast.
+
+**Restart gap:** like the `_relay_cursor` gap, stanza-ids for messages relayed while the bot
+**process** is down aren't captured, so reactions to those specific messages don't round-trip.
+Acceptable during the DB-wipe test phase; improvable later via MAM.
+
 ## Forum edit page (`forum_edit`)
 
 `/intern/forum/<id>/edit/` lets admins set `thema`, `bild`, and (when ejabberd is configured) `xmpp_muc_jid`. When ejabberd is configured (`is_ejabberd_configured()`), the MUC JID is auto-derived as `forum-{id}@{EJABBERD_MUC_SERVICE}` if not set; the first invite also persists it to the DB so the bot picks it up. XMPP sections are hidden entirely when ejabberd is not configured (no fallback). When enabled, the page shows: a room-info card (exists, persistent, members\_only, public, moderated, anonymous, allow\_user\_invites, lang, title, owners with bot marker, bot presence via `get_room_options`), invited (affiliations `member`/`admin`/`owner`), attending (occupants), without invitation (active users with xmpp not in affiliations), without XMPP account, and **Gäste/Fremde** (occupants whose bare JID matches no active user and is not the bot JID). The invite button calls `ejabberd.set_room_affiliation(..., "member")` silently.

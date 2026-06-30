@@ -186,6 +186,85 @@ def _db_invite_missing_users(room_jid):
         )
 
 
+def _db_capture_stanza_id(mitteilung_id, stanza_id):
+    """Backfill the MUC-assigned stanza-id on a forum-originated Mitteilung once
+    its CantorBot echo arrives, so reactions can target it. Only sets it when
+    still NULL (never overwrites an inbound id)."""
+    from intern.models import Mitteilung
+
+    try:
+        Mitteilung.objects.filter(
+            pk=mitteilung_id, xmpp_stanza_id__isnull=True
+        ).update(xmpp_stanza_id=stanza_id)
+    except Exception:
+        logger.exception("ejabberd_bot: failed to capture stanza_id for #%s", mitteilung_id)
+
+
+def _db_store_xmpp_reaction(to_id, reactor_jid, emojis):
+    """Apply an inbound XMPP reaction set to the Mitteilung whose stanza-id is
+    ``to_id``. XEP-0444 replace semantics: the reactor's previous XMPP set for
+    this message is fully replaced. Never marks reactions_dirty (no rebroadcast)."""
+    from intern.models import Mitteilung, Reaktion, User
+
+    mitteilung = Mitteilung.objects.filter(xmpp_stanza_id=to_id).first()
+    if mitteilung is None:
+        logger.debug("ejabberd_bot: reaction for unknown stanza_id %s, skipping", to_id)
+        return
+
+    sender_user = User.objects.filter(xmpp__iexact=reactor_jid).first()
+    Reaktion.objects.filter(
+        mitteilung=mitteilung, reactor_jid=reactor_jid, origin="xmpp"
+    ).delete()
+    if emojis:
+        Reaktion.objects.bulk_create(
+            [
+                Reaktion(
+                    mitteilung=mitteilung,
+                    sender=sender_user,
+                    reactor_jid=reactor_jid,
+                    emoji=e,
+                    origin="xmpp",
+                )
+                for e in emojis
+            ]
+        )
+    logger.info(
+        "ejabberd_bot: stored %d reaction(s) on #%s from %s",
+        len(emojis),
+        mitteilung.pk,
+        reactor_jid,
+    )
+
+
+def _db_dirty_reaction_candidates():
+    """Forum messages whose web-reaction set changed and that have a known MUC
+    stanza-id and room. Returns (mitteilung_id, muc_jid, to_id) tuples."""
+    from intern.models import Mitteilung
+
+    return list(
+        Mitteilung.objects.filter(reactions_dirty=True)
+        .exclude(xmpp_stanza_id__isnull=True)
+        .exclude(xmpp_stanza_id="")
+        .exclude(forum__xmpp_muc_jid__isnull=True)
+        .exclude(forum__xmpp_muc_jid="")
+        .values_list("id", "forum__xmpp_muc_jid", "xmpp_stanza_id")
+    )
+
+
+def _db_clear_and_get_union(mitteilung_id):
+    """Clear the dirty flag and return the union of web-origin reaction emojis for
+    a message. Clearing before the send means a concurrent toggle at worst causes a
+    harmless idempotent re-send next cycle, never a lost update."""
+    from intern.models import Mitteilung, Reaktion
+
+    Mitteilung.objects.filter(pk=mitteilung_id).update(reactions_dirty=False)
+    return list(
+        Reaktion.objects.filter(mitteilung_id=mitteilung_id, origin="web")
+        .values_list("emoji", flat=True)
+        .distinct()
+    )
+
+
 class CantorBot:
     """slixmpp-based MUC listener and room manager."""
 
@@ -207,7 +286,8 @@ class CantorBot:
         )
         self._client.register_plugin("xep_0045")  # MUC
         self._client.register_plugin("xep_0199")  # Keepalive ping
-        self._client.register_plugin("xep_0359")  # Stanza IDs
+        self._client.register_plugin("xep_0359")  # Stanza IDs / origin-id
+        self._client.register_plugin("xep_0444")  # Message Reactions
 
         self._client.add_event_handler("session_start", self._on_session_start)
         self._client.add_event_handler("groupchat_message", self._on_muc_message)
@@ -324,6 +404,12 @@ class CantorBot:
         # than opening a fresh (TLS-flaky) connection per message.
         self._client.schedule("relay_check", 3, self._relay_check_sync, repeat=True)
 
+        # Relay web-originated reaction changes (union under the bot identity) to
+        # their MUC room every 3 s.
+        self._client.schedule(
+            "reaction_relay_check", 3, self._relay_reactions_sync, repeat=True
+        )
+
         self._stdout.write("ejabberd_bot: ready.")
 
     def _ensure_rooms_sync(self):
@@ -333,6 +419,10 @@ class CantorBot:
     def _relay_check_sync(self):
         """Sync wrapper called by slixmpp scheduler."""
         asyncio.ensure_future(self._relay_messages())
+
+    def _relay_reactions_sync(self):
+        """Sync wrapper called by slixmpp scheduler."""
+        asyncio.ensure_future(self._relay_reactions())
 
     async def _relay_messages(self):
         """Send new Forum-originated messages to their MUC room via the bot's
@@ -350,10 +440,36 @@ class CantorBot:
             if muc_jid not in self._joined_rooms:
                 # Not joined yet — stop so the message isn't skipped; retry later.
                 break
-            self._client.send_message(mto=muc_jid, mbody=body, mtype="groupchat")
+            # Tag with an origin-id so the CantorBot echo can be correlated back to
+            # this Mitteilung and its MUC stanza-id captured (for reaction targeting).
+            outgoing = self._client.make_message(
+                mto=muc_jid, mbody=body, mtype="groupchat"
+            )
+            outgoing["origin_id"]["id"] = f"cantorhub-{msg_id}"
+            outgoing.send()
             self._relay_cursor = msg_id
             logger.info(
                 "ejabberd_bot: relayed forum message #%s to %s", msg_id, muc_jid
+            )
+
+    async def _relay_reactions(self):
+        """Send web-originated reaction changes to MUC. All web reactions on a
+        message are sent as the bot's own reaction set (their union), since XEP-0444
+        attributes a reaction to the sending JID — see xmpp.md."""
+        candidates = await asyncio.to_thread(_db_dirty_reaction_candidates)
+        for mid, muc_jid, to_id in candidates:
+            if muc_jid not in self._joined_rooms:
+                # Not joined yet — leave dirty, retry next cycle.
+                continue
+            emojis = await asyncio.to_thread(_db_clear_and_get_union, mid)
+            outgoing = self._client.make_message(mto=muc_jid, mtype="groupchat")
+            self._client["xep_0444"].set_reactions(outgoing, to_id=to_id, reactions=emojis)
+            outgoing.send()
+            logger.info(
+                "ejabberd_bot: relayed %d reaction(s) for #%s to %s",
+                len(emojis),
+                mid,
+                muc_jid,
             )
 
     async def _ensure_rooms(self):
@@ -421,10 +537,6 @@ class CantorBot:
         """Handle inbound groupchat messages from MUC."""
         room_jid = str(msg["from"].bare)
 
-        body = (msg["body"] or "").strip()
-        if not body:
-            return
-
         # Messages with <delay/> are replayed room history on join — these are
         # messages sent before the bot joined. We DO want to import them, relying
         # on stanza_id dedup so re-joins don't create duplicates.
@@ -433,11 +545,25 @@ class CantorBot:
         # Echo prevention: in MUC, from = room@service/nickname,
         # so check the resource (nickname) not the bare JID.
         sender_nickname = msg["from"].resource
+
+        # Reaction stanzas (XEP-0444) carry no <body>, so handle them first.
+        if msg.get_plugin("reactions", check=True) is not None:
+            if sender_nickname == "CantorBot":
+                return  # our own relayed reaction echo — never re-import
+            await self._handle_reaction(msg, room_jid, sender_nickname)
+            return
+
+        body = (msg["body"] or "").strip()
+
         if sender_nickname == "CantorBot":
-            # Trigger invitations only for live Forum-relayed messages, not for
-            # replayed history (which would mass-invite on startup).
             if not is_history:
+                # Backfill the room stanza-id onto the forum-originated Mitteilung
+                # this echo belongs to, then trigger invitations.
+                await self._capture_forum_stanza_id(msg)
                 await self._maybe_invite(room_jid)
+            return
+
+        if not body:
             return
 
         stanza_id = msg["id"]
@@ -469,6 +595,34 @@ class CantorBot:
         if room_jid not in self._invitation_done:
             self._invitation_done.add(room_jid)
             await asyncio.to_thread(_db_invite_missing_users, room_jid)
+
+    async def _handle_reaction(self, msg, room_jid, sender_nickname):
+        """Store an inbound XMPP reaction (XEP-0444) against the targeted message."""
+        to_id = msg["reactions"]["id"]
+        if not to_id:
+            return
+        emojis = set(msg["reactions"]["values"])
+        reactor_jid = await asyncio.to_thread(
+            self._resolve_sender_jid, room_jid, sender_nickname
+        )
+        if not reactor_jid:
+            return
+        await asyncio.to_thread(_db_store_xmpp_reaction, to_id, reactor_jid, emojis)
+
+    async def _capture_forum_stanza_id(self, msg):
+        """For a CantorBot echo of a relayed forum message, map its origin-id back
+        to the Mitteilung and store the room-assigned stanza-id (for reactions)."""
+        origin_id = msg["origin_id"]["id"]
+        if not origin_id or not origin_id.startswith("cantorhub-"):
+            return
+        try:
+            mitteilung_id = int(origin_id.split("cantorhub-", 1)[1])
+        except (ValueError, IndexError):
+            return
+        stanza_id = msg["stanza_id"]["id"]
+        if not stanza_id:
+            return
+        await asyncio.to_thread(_db_capture_stanza_id, mitteilung_id, stanza_id)
 
     def _on_disconnected(self, event):
         """Reconnect on disconnection."""

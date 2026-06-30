@@ -6,6 +6,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db.models import Count
+from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -17,7 +18,7 @@ from intern import ejabberd, folders
 from intern.app_settings import get_config, get_from_email, is_ejabberd_configured
 
 from ..forms import ForumEditForm
-from ..models import ChangeLog, Forum, ForumPermission, Mitteilung, User
+from ..models import ChangeLog, Forum, ForumPermission, Mitteilung, Reaktion, User
 from ..tables import ForumTabelle
 
 __all__ = [
@@ -26,6 +27,8 @@ __all__ = [
     "forum_get",
     "forum_more",
     "forum_send",
+    "forum_react",
+    "forum_reactions",
     "forum_edit",
     "forum_invite",
     "forum_add",
@@ -324,6 +327,78 @@ def forum_send(request, forum):
         # The persistent ejabberd_bot picks this up and relays it to the MUC room
         # over its live session (see CantorBot._relay_messages).
     return forum_get(request, forum, last_id)
+
+
+def _reactions_payload(forum_id, user, message_ids=None):
+    """Aggregate reactions per message for a forum into a JSON-serialisable dict
+    ``{message_id: [{emoji, count, mine, who}]}``. ``mine`` flags the requesting
+    user's own (web) reaction so the UI can highlight it."""
+    qs = Reaktion.objects.filter(mitteilung__forum_id=forum_id).select_related("sender")
+    if message_ids is not None:
+        qs = qs.filter(mitteilung_id__in=message_ids)
+
+    data: dict[str, dict[str, dict]] = {}
+    for r in qs:
+        bucket = data.setdefault(str(r.mitteilung_id), {})
+        entry = bucket.setdefault(
+            r.emoji, {"emoji": r.emoji, "count": 0, "mine": False, "who": []}
+        )
+        entry["count"] += 1
+        if r.sender:
+            name = f"{r.sender.first_name} {r.sender.last_name}".strip() or r.sender.username
+        else:
+            name = r.reactor_jid or "Unbekannt"
+        entry["who"].append(name)
+        if r.sender_id == user.id:
+            entry["mine"] = True
+
+    return {mid: list(buckets.values()) for mid, buckets in data.items()}
+
+
+@login_required
+@require_POST
+def forum_react(request, forum):
+    """Toggle the current user's web reaction on a message and return the updated
+    reaction state for that message as JSON."""
+    if not _forum_access(request.user, forum):
+        raise PermissionDenied
+
+    try:
+        message_id = int(request.POST.get("message_id", ""))
+    except (TypeError, ValueError):
+        return HttpResponseBadRequest("invalid message_id")
+    emoji = (request.POST.get("emoji") or "").strip()
+    if not emoji or len(emoji) > 64:
+        return HttpResponseBadRequest("invalid emoji")
+
+    if not Mitteilung.objects.filter(pk=message_id, forum_id=forum).exists():
+        return HttpResponseBadRequest("unknown message")
+
+    existing = Reaktion.objects.filter(
+        mitteilung_id=message_id, sender=request.user, emoji=emoji, origin="web"
+    )
+    if existing.exists():
+        existing.delete()
+    else:
+        Reaktion.objects.create(
+            mitteilung_id=message_id,
+            sender=request.user,
+            emoji=emoji,
+            origin="web",
+        )
+    # The persistent ejabberd_bot relays the new web-reaction union to the MUC.
+    Mitteilung.objects.filter(pk=message_id).update(reactions_dirty=True)
+
+    payload = _reactions_payload(forum, request.user, [message_id])
+    return JsonResponse({"reactions": payload.get(str(message_id), [])})
+
+
+@login_required
+def forum_reactions(request, forum):
+    """Return all reactions for the forum's messages as JSON for the live poll."""
+    if not _forum_access(request.user, forum):
+        raise PermissionDenied
+    return JsonResponse({"reactions": _reactions_payload(forum, request.user)})
 
 
 @permission_required("intern.change_forum", raise_exception=True)
