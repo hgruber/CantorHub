@@ -1594,7 +1594,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 })();
 
-// Next-event banner: dismiss (per termin) + hide on that termin's detail page
+// Next-event banner: dismiss (per login session) + hide on that termin's detail page
 (function initTerminBanner() {
   const KEY = "termin-banner-dismissed";
 
@@ -1608,15 +1608,18 @@ document.addEventListener("DOMContentLoaded", function () {
       banner.remove();
       return;
     }
-    if (localStorage.getItem(KEY) === id) banner.remove();
+    // Dismissed for the current login session (anchored to user.last_login):
+    // reappears after the next login, when the stored timestamp no longer matches.
+    const login = banner.dataset.login;
+    if (login && localStorage.getItem(KEY) === login) banner.remove();
   }
 
   document.addEventListener("click", (e) => {
     const btn = e.target.closest(".termin-banner-dismiss");
     if (!btn) return;
     const banner = btn.closest(".termin-banner");
-    if (banner && banner.dataset.terminId) {
-      localStorage.setItem(KEY, banner.dataset.terminId);
+    if (banner && banner.dataset.login) {
+      localStorage.setItem(KEY, banner.dataset.login);
     }
     if (banner) banner.remove();
   });
