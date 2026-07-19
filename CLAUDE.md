@@ -91,6 +91,8 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 `Zusage.option` values: `"1"` = Zusage, `"2"` = Absage, `"3"` = Eventuell, empty/missing = Keine Angabe. The attendance table on the termin detail page groups users by `Stimme` (S, A, T, B, C, M) and splits into two tables on mobile.
 
+**Next-event banner:** a slim banner is shown site-wide at the top of `<main class="content">` in `base.html` (`_termin_banner.html`), highlighting the next upcoming event (`banner_termin` / `banner_my_option`, computed in `config/context_processors.py`'s `project_meta`) with a `timeuntil` countdown, location and — when `anwesenheit=True` — the same quick Zusage buttons (governed by `ZUSAGE_TRANSITIONS`). The buttons POST to `termin_zusage` with a hidden `source=banner` field, which makes that view render `_termin_banner.html` instead of the detail widget (htmx swaps `#termin-banner`). `intern.js` (`initTerminBanner`) removes the banner on that termin's own detail page (avoids a duplicate widget) and lets the user dismiss it per-termin via `localStorage["termin-banner-dismissed"]`.
+
 The forum edit page (`/intern/forum/<id>/edit/`) and its XMPP behaviour — room-info card, invite flow, avatar sync (`_sync_forum_avatar`), MUC room invariants (`configure_room`), the Forum→MUC relay and the `_relay_cursor` restart gap — are documented in `xmpp.md`.
 
 ### Forum read permissions

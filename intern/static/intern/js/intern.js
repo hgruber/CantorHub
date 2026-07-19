@@ -1593,3 +1593,35 @@ document.addEventListener("DOMContentLoaded", function () {
     pre.appendChild(btn);
   });
 })();
+
+// Next-event banner: dismiss (per termin) + hide on that termin's detail page
+(function initTerminBanner() {
+  const KEY = "termin-banner-dismissed";
+
+  function apply() {
+    const banner = document.getElementById("termin-banner");
+    if (!banner) return;
+    const id = banner.dataset.terminId;
+    if (!id) return;
+    // Hide on the detail page of exactly this termin (avoids a duplicate widget)
+    if (location.pathname === "/intern/termin/" + id + "/") {
+      banner.remove();
+      return;
+    }
+    if (localStorage.getItem(KEY) === id) banner.remove();
+  }
+
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".termin-banner-dismiss");
+    if (!btn) return;
+    const banner = btn.closest(".termin-banner");
+    if (banner && banner.dataset.terminId) {
+      localStorage.setItem(KEY, banner.dataset.terminId);
+    }
+    if (banner) banner.remove();
+  });
+
+  document.addEventListener("DOMContentLoaded", apply);
+  document.body.addEventListener("htmx:afterSwap", apply);
+  apply();
+})();

@@ -2793,6 +2793,102 @@ table.mitglied-table tr.stimme-group-start td {
 [data-theme="dark"] .zusage-btn-no    { background: rgba(153,27,27,.20);  color: #fca5a5; border-color: rgba(153,27,27,.35); }
 [data-theme="dark"] .zusage-btn-no:hover    { background: #dc2626; color: #fff; border-color: #dc2626; }
 
+/* Next-event banner */
+.termin-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+    background: var(--brand-light);
+    border: 1px solid var(--brand-ring);
+    border-left: 4px solid var(--brand);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-sm);
+}
+.termin-banner-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1 1 auto;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+}
+.termin-banner-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    color: var(--brand);
+}
+.termin-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.termin-banner-line1 {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.termin-banner-countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brand);
+    white-space: nowrap;
+}
+.termin-banner-titel {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--t1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.termin-banner-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--brand);
+    color: #fff;
+    white-space: nowrap;
+}
+.termin-banner-line2 {
+    font-size: 12px;
+    color: var(--t3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.termin-banner-main:hover .termin-banner-titel { text-decoration: underline; }
+.termin-banner-zusage { flex: 0 0 auto; }
+.termin-banner-dismiss {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: var(--t4);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: background var(--ease), color var(--ease);
+}
+.termin-banner-dismiss:hover { background: var(--bg-row-hover); color: var(--t2); }
+
+@media (max-width: 640px) {
+    .termin-banner { flex-wrap: wrap; gap: 10px; }
+    .termin-banner-main { flex: 1 1 100%; order: 1; }
+    .termin-banner-zusage { order: 3; flex: 1 1 100%; }
+    .termin-banner-dismiss { order: 2; }
+}
+
 /* Invite list */
 .invite-list {
     display: flex;

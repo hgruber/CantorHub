@@ -378,6 +378,12 @@ def termin_zusage(request, id):
     if not request.headers.get("HX-Request"):
         return redirect("termin_view", id=id)
 
+    if request.POST.get("source") == "banner":
+        return render(request, "_termin_banner.html", {
+            "banner_termin": termin,
+            "banner_my_option": current_option,
+        })
+
     return render(request, "_termin_zusage.html", {
         "termin": termin,
         "my_option": current_option,

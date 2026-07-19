@@ -340,6 +340,7 @@
 
             <!-- Page Content -->
             <main class="content">
+                {% if banner_termin %}{% include "_termin_banner.html" %}{% endif %}
                 {% block content %}{% endblock %}
             </main>
         </div>

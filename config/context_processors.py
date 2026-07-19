@@ -22,6 +22,21 @@ def project_meta(request):
         result["offen_termine"] = Termin.objects.filter(
             datum__gt=now(), anwesenheit=True,
         ).exclude(id__in=answered).count()
+        banner_termin = (
+            Termin.objects.filter(datum__gt=now())
+            .select_related("ort")
+            .order_by("datum")
+            .first()
+        )
+        result["banner_termin"] = banner_termin
+        if banner_termin is not None:
+            zusage = (
+                Zusage.objects.filter(person=request.user, termin=banner_termin)
+                .order_by("-id")
+                .values_list("option", flat=True)
+                .first()
+            )
+            result["banner_my_option"] = zusage or ""
         result["latest_changelog_id"] = (
             ChangeLog.objects.order_by("-id").values_list("id", flat=True).first() or 0
         )
