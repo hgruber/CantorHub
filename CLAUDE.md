@@ -93,6 +93,26 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 **Next-event banner:** a slim banner is shown site-wide at the top of `<main class="content">` in `base.html` (`_termin_banner.html`), highlighting the next upcoming event (`banner_termin` / `banner_my_option`, computed in `config/context_processors.py`'s `project_meta`) with a `timeuntil` countdown, location and — when `anwesenheit=True` — the same quick Zusage buttons (governed by `ZUSAGE_TRANSITIONS`). The buttons POST to `termin_zusage` with a hidden `source=banner` field, which makes that view render `_termin_banner.html` instead of the detail widget (htmx swaps `#termin-banner`). `intern.js` (`initTerminBanner`) removes the banner on that termin's own detail page (avoids a duplicate widget) and lets the user dismiss it for the current login session: the dismiss button stores `user.last_login` (exposed as `data-login`) in `localStorage["termin-banner-dismissed"]`, so the banner reappears after the next login when that timestamp changes.
 
+### Calendar (month view)
+
+`/intern/kalender/` (`termin_kalender` in `views/termine.py`, name `termin_kalender`, sidebar
+entry right after "Termine") is a classic month grid (7 columns Mon–Sun) — not an agenda.
+Month is chosen via `?jahr=&monat=` (defaults to the current month; invalid values fall back
+to it). The grid is built with `calendar.Calendar(firstweekday=0).monthdatescalendar()`; the
+leading/trailing days of neighbouring months are shown dimmed (`.is-outside`). Events in the
+visible range are loaded once (`Termin.objects.filter(datum__date__range=...)`) and grouped by
+day; birthdays are active members with a set `geburtstag` **whose field is not hidden**
+(`"geburtstag" not in user.private_fields`, no viewer/admin bonus — same for everyone) mapped by
+`(month, day)`. Each event chip links to `termin_view`, each birthday chip to `mitglied_view`.
+Prev/next/"Heute" navigate via htmx: the toolbar + grid live in the partial `_kalender_grid.html`
+(wrapped in `#cal-view` by `kalender.html`); an `HX-Request` renders only the partial (swapped
+into `#cal-view`, `hx-push-url` keeps the URL in sync). `kalender.js` only acts on narrow
+screens: there each day collapses to coloured dots (`--brand` = event, `--cal-geb` = birthday)
+and tapping a day expands its detail list. CSS lives under `/* === Kalender === */` in
+`intern.css`; the birthday accent uses the new `--cal-geb` / `--cal-geb-bg` tokens (with dark-mode
+values). Note `USE_TZ = False`, so `datum` is naive — group by `t.datum.date()` directly (do not
+call `localtime()`).
+
 The forum edit page (`/intern/forum/<id>/edit/`) and its XMPP behaviour — room-info card, invite flow, avatar sync (`_sync_forum_avatar`), MUC room invariants (`configure_room`), the Forum→MUC relay and the `_relay_cursor` restart gap — are documented in `xmpp.md`.
 
 ### Forum read permissions

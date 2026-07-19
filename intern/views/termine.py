@@ -1,3 +1,4 @@
+import calendar as _calendar
 import io
 import json
 import os
@@ -29,6 +30,7 @@ from ..tables import TerminTabelle
 
 __all__ = [
     "termin_list",
+    "termin_kalender",
     "termin_view",
     "termin_zusage",
     "termin_anwesenheit_update",
@@ -495,3 +497,91 @@ def termin_add(request):
         "seitentitel": "Neuer Termin",
     }
     return render(request, "termin_edit.html", context)
+
+
+# --- Kalender-Monatsansicht ---
+
+_MONATSNAMEN = [
+    "", "Januar", "Februar", "März", "April", "Mai", "Juni",
+    "Juli", "August", "September", "Oktober", "November", "Dezember",
+]
+_WOCHENTAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+
+
+@login_required
+def termin_kalender(request):
+    """Klassische Monatsansicht: 7-Spalten-Raster (Mo–So) mit Terminen und
+    Geburtstagen. Monatswechsel per ?jahr=&monat=; htmx-Requests erhalten nur
+    das Raster-Partial für einen Swap ohne Full-Reload."""
+    today = timezone_now().date()
+
+    # Monat/Jahr robust aus den GET-Parametern lesen; Default = aktueller Monat.
+    try:
+        jahr = int(request.GET.get("jahr", today.year))
+        monat = int(request.GET.get("monat", today.month))
+        first = date(jahr, monat, 1)  # ValueError bei ungültigem Monat/Jahr
+    except (TypeError, ValueError):
+        jahr, monat, first = today.year, today.month, today.replace(day=1)
+
+    cal = _calendar.Calendar(firstweekday=0)  # 0 = Montag
+    weeks = cal.monthdatescalendar(jahr, monat)  # Liste von Wochen à 7 date-Objekten
+    grid_start, grid_end = weeks[0][0], weeks[-1][-1]
+
+    # Termine im sichtbaren Raster-Bereich (inkl. Rand-Tage) nach Tag gruppieren.
+    termine_by_day = {}
+    for t in (
+        Termin.objects.filter(datum__date__range=(grid_start, grid_end))
+        .select_related("ort")
+        .order_by("datum")
+    ):
+        termine_by_day.setdefault(t.datum.date(), []).append(t)
+
+    # Geburtstage: nur aktive Mitglieder, deren Geburtsdatum nicht verborgen ist.
+    # Nur Monat/Tag zählen (Geburtsjahr irrelevant), daher auf die im Raster
+    # vorkommenden (Monat, Tag)-Paare abbilden.
+    grid_md = {(d.month, d.day) for week in weeks for d in week}
+    geb_by_md = {}
+    for u in User.objects.filter(is_active=True, geburtstag__isnull=False):
+        if "geburtstag" in (u.private_fields or []):
+            continue
+        md = (u.geburtstag.month, u.geburtstag.day)
+        if md in grid_md:
+            geb_by_md.setdefault(md, []).append(u)
+    for lst in geb_by_md.values():
+        lst.sort(key=lambda m: (m.stimme_pos, m.first_name, m.last_name))
+
+    wochen = [
+        [
+            {
+                "tag": d.day,
+                "im_monat": d.month == monat,
+                "ist_heute": d == today,
+                "wochenende": d.weekday() >= 5,
+                "termine": termine_by_day.get(d, []),
+                "geburtstage": geb_by_md.get((d.month, d.day), []),
+            }
+            for d in week
+        ]
+        for week in weeks
+    ]
+
+    prev_first = (first - timedelta(days=1)).replace(day=1)
+    next_first = (weeks[-1][-1] + timedelta(days=1)).replace(day=1)
+
+    context = {
+        "seitentitel": f"Kalender · {_MONATSNAMEN[monat]} {jahr}",
+        "wochen": wochen,
+        "wochentage": _WOCHENTAGE,
+        "monatsname": _MONATSNAMEN[monat],
+        "jahr": jahr,
+        "prev_jahr": prev_first.year,
+        "prev_monat": prev_first.month,
+        "next_jahr": next_first.year,
+        "next_monat": next_first.month,
+        "heute_jahr": today.year,
+        "heute_monat": today.month,
+        "ist_aktueller_monat": (jahr == today.year and monat == today.month),
+    }
+    if request.headers.get("HX-Request"):
+        return render(request, "_kalender_grid.html", context)
+    return render(request, "kalender.html", context)
