@@ -506,6 +506,9 @@ _MONATSNAMEN = [
     "Juli", "August", "September", "Oktober", "November", "Dezember",
 ]
 _WOCHENTAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+_WOCHENTAGE_LANG = [
+    "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag",
+]
 
 
 @login_required
@@ -554,6 +557,7 @@ def termin_kalender(request):
         [
             {
                 "tag": d.day,
+                "label": f"{_WOCHENTAGE_LANG[d.weekday()]}, {d.day}. {_MONATSNAMEN[d.month]} {d.year}",
                 "im_monat": d.month == monat,
                 "ist_heute": d == today,
                 "wochenende": d.weekday() >= 5,

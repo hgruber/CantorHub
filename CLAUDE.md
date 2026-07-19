@@ -106,11 +106,17 @@ day; birthdays are active members with a set `geburtstag` **whose field is not h
 `(month, day)`. Each event chip links to `termin_view`, each birthday chip to `mitglied_view`.
 Prev/next/"Heute" navigate via htmx: the toolbar + grid live in the partial `_kalender_grid.html`
 (wrapped in `#cal-view` by `kalender.html`); an `HX-Request` renders only the partial (swapped
-into `#cal-view`, `hx-push-url` keeps the URL in sync). `kalender.js` only acts on narrow
-screens: there each day collapses to coloured dots (`--brand` = event, `--cal-geb` = birthday)
-and tapping a day expands its detail list. CSS lives under `/* === Kalender === */` in
-`intern.css`; the birthday accent uses the new `--cal-geb` / `--cal-geb-bg` tokens (with dark-mode
-values). Note `USE_TZ = False`, so `datum` is naive — group by `t.datum.date()` directly (do not
+into `#cal-view`, `hx-push-url` keeps the URL in sync). Clicking any day with entries opens a
+large offcanvas detail panel (`#cal-day-panel`, sibling of `#cal-view` so it survives swaps):
+`kalender.js` clones that day's `.cal-day-detail` into the panel and shows its German date label
+(`d.label` → `data-datum`); Esc/overlay/close button dismiss it. On desktop the cells show the
+chips inline; below 768px they collapse to coloured dots (`--brand` = event, `--cal-geb` =
+birthday) and the panel is the readable view. The whole month grid fills the viewport height —
+`.content:has(.cal-page)` becomes a flex column so the grid (with `grid-auto-rows: 1fr`) shares
+the space with the next-event banner without a scrollbar. CSS lives under `/* === Kalender === */`
+in `intern.css`; birthdays use the `--cal-geb` / `--cal-geb-bg` tokens (green, distinct from the
+pink event colour) and weekend day numbers/headers use `--cal-weekend` (red) — all with dark-mode
+values. Note `USE_TZ = False`, so `datum` is naive — group by `t.datum.date()` directly (do not
 call `localtime()`).
 
 The forum edit page (`/intern/forum/<id>/edit/`) and its XMPP behaviour — room-info card, invite flow, avatar sync (`_sync_forum_avatar`), MUC room invariants (`configure_room`), the Forum→MUC relay and the `_relay_cursor` restart gap — are documented in `xmpp.md`.

@@ -32,7 +32,7 @@
   </div>
   <div class="cal-grid">
     {% for woche in wochen %}{% for d in woche %}
-    <div class="cal-day{% if not d.im_monat %} is-outside{% endif %}{% if d.ist_heute %} is-today{% endif %}{% if d.wochenende %} is-weekend{% endif %}{% if d.termine or d.geburtstage %} has-events{% endif %}">
+    <div class="cal-day{% if not d.im_monat %} is-outside{% endif %}{% if d.ist_heute %} is-today{% endif %}{% if d.wochenende %} is-weekend{% endif %}{% if d.termine or d.geburtstage %} has-events{% endif %}" data-datum="{{ d.label }}">
       <div class="cal-daynum">{{ d.tag }}</div>
       {% if d.termine or d.geburtstage %}
       <div class="cal-dots" aria-hidden="true">
