@@ -265,8 +265,7 @@ class PasswordResetForm(SetPasswordForm):
 class CantorPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     """Setzt das Passwort nach Klick auf den E-Mail-Link.
 
-    Synchronisiert das neue Passwort anschließend zu ejabberd, wie es auch
-    mitglied_passwd tut.
+    Synchronisiert das neue Passwort anschließend zu ejabberd.
     """
 
     template_name = "reset_confirm.html"

@@ -272,9 +272,11 @@ On first login, if `user.xmpp` is empty, a daemon thread calls `_provision_xmpp_
 
 This uses a custom `CantorLoginView` that overrides Django's `LoginView.form_valid()` to access the plaintext password from the login form.
 
-## Password sync (`intern/views.py` — `member_passwd`)
+## Password sync (`intern/views/auth.py` — `CantorPasswordResetConfirmView`)
 
-When a user changes their password, `member_passwd` calls `ejabberd.set_user_password()` in a daemon thread to keep the ejabberd password in sync. Only triggers if `user.xmpp` is set.
+Passwords can only be changed via the password-reset link from the login page.
+`CantorPasswordResetConfirmView.form_valid()` calls `ejabberd.set_user_password()` in a
+daemon thread to keep the ejabberd password in sync. Only triggers if `user.xmpp` is set.
 
 ## vCard / avatar sync (`intern/signals.py`)
 

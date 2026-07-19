@@ -1,8 +1,6 @@
 import json
 import logging
-import threading
 
-from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.db.models import Count, OuterRef
@@ -35,7 +33,6 @@ __all__ = [
     "mitglied_emails",
     "mitglied_view",
     "mitglied_edit",
-    "mitglied_passwd",
     "mitglied_add",
     "mitglied_invite",
     "mitglied_delete",
@@ -129,7 +126,6 @@ def mitglied_view(request, id):
         request.user.id == id
         or request.user.has_perm("intern.change_user")
     )
-    can_change_pass = request.user.id == id or request.user.is_superuser
     can_view_history = request.user.has_perm("intern.change_user")
     visible = {f: user.field_visible_to(request.user, f) for f in PRIVACY_FIELDS}
     map_center = get_map_center()
@@ -138,7 +134,6 @@ def mitglied_view(request, id):
         "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
         "up": "mitglied_list",
         "edit": "mitglied_edit" if can_edit else None,
-        "changepass": "mitglied_passwd" if can_change_pass else None,
         "history": "mitglied_aenderungen" if can_view_history else None,
         "id": id,
         "visible": visible,
@@ -205,7 +200,6 @@ def mitglied_edit(request, id):
         "user": user,
         "seitentitel": f"bearbeiten: {user.first_name} {user.last_name}",
         "view": "mitglied_view",
-        "changepass": "mitglied_passwd",
         "upload_folder_id": folders.avatare(),
         "upload_folder_name": "Avatare",
         "upload_rename_to": id,
@@ -216,67 +210,6 @@ def mitglied_edit(request, id):
         "member_groups": list(user.groups.order_by("name")),
     }
     return render(request, "mitglied_edit.html", context)
-
-
-@login_required
-def mitglied_passwd(request, id):
-    target_user = get_object_or_404(User, id=id)
-
-    # Prüfe, ob der aktuelle Benutzer der Zielbenutzer ist oder Superuser
-    if request.user.id != target_user.id and not request.user.is_superuser:
-        return redirect("mitglied_view", id=id)
-
-    # Wer das eigene Passwort ändert, muss das aktuelle kennen — eine
-    # entwendete Session reicht so nicht für eine Kontoübernahme.
-    require_current = request.user.id == target_user.id
-    form_context = {"user": target_user, "require_current": require_current}
-
-    if request.method == "POST":
-        new_password1 = request.POST.get("new_password1")
-        new_password2 = request.POST.get("new_password2")
-
-        if require_current and not request.user.check_password(
-            request.POST.get("old_password") or ""
-        ):
-            messages.error(request, "Das aktuelle Passwort ist nicht korrekt.")
-            return render(request, "mitglied_passwd.html", form_context)
-
-        # Überprüfe, ob die neuen Passwörter übereinstimmen
-        if new_password1 != new_password2:
-            messages.error(request, "Die neuen Passwörter stimmen nicht überein.")
-            return render(request, "mitglied_passwd.html", form_context)
-
-        # Setze neues Passwort
-        target_user._audit_user = request.user
-        target_user._audit_password_changed = True
-        target_user.set_password(new_password1)
-        target_user.save()
-
-        # Sync password to ejabberd if user has an XMPP account
-        if is_ejabberd_configured() and target_user.xmpp:
-            localpart = target_user.xmpp.split("@")[0]
-            threading.Thread(
-                target=ejabberd.set_user_password,
-                args=(localpart, new_password1),
-                daemon=True,
-            ).start()
-
-        messages.success(request, "Das Passwort wurde erfolgreich geändert.")
-
-        # Session gültig halten, ohne das Passwort erneut durch authenticate() zu schicken
-        if request.user.id == target_user.id:
-            update_session_auth_hash(request, target_user)
-
-        return redirect("mitglied_passwd", id=id)
-    else:
-        context = {
-            **form_context,
-            "seitentitel": f"Passwort ändern: {target_user.first_name} {target_user.last_name}",
-            "view": "mitglied_view",
-            "edit": "mitglied_edit",
-            "id": id,
-        }
-        return render(request, "mitglied_passwd.html", context)
 
 
 @permission_required("intern.delete_user", raise_exception=True)

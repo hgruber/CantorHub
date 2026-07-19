@@ -115,7 +115,6 @@ urlpatterns = [
     path("mitglied/invite/", views.mitglied_invite, name="mitglied_invite"),
     path("mitglied/<int:id>/", views.mitglied_view, name="mitglied_view"),
     path("mitglied/<int:id>/edit/", views.mitglied_edit, name="mitglied_edit"),
-    path("mitglied/<int:id>/passwd/", views.mitglied_passwd, name="mitglied_passwd"),
     path("mitglied/<int:id>/delete/", views.mitglied_delete, name="mitglied_delete"),
     path("mitglied/<int:id>/aenderungen/", views.mitglied_aenderungen, name="mitglied_aenderungen"),
     # Artikel URLs

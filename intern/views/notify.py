@@ -132,5 +132,8 @@ def site_notify(request):
 def notify_toggle(request):
     """Toggle the notify_enabled preference for the current user."""
     request.user.notify_enabled = not request.user.notify_enabled
+    # Record the acting user in the audit log; otherwise the ChangeLog entry
+    # falls back to "System".
+    request.user._audit_user = request.user
     request.user.save(update_fields=["notify_enabled"])
     return JsonResponse({"notify_enabled": request.user.notify_enabled})
