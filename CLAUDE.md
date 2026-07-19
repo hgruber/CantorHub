@@ -99,9 +99,14 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 entry right after "Termine") is a classic month grid (7 columns Mon–Sun) — not an agenda.
 Month is chosen via `?jahr=&monat=` (defaults to the current month; invalid values fall back
 to it). The grid is built with `calendar.Calendar(firstweekday=0).monthdatescalendar()`; the
-leading/trailing days of neighbouring months are shown dimmed (`.is-outside`). Events in the
-visible range are loaded once (`Termin.objects.filter(datum__date__range=...)`) and grouped by
-day; birthdays are active members with a set `geburtstag` **whose field is not hidden**
+leading/trailing days of neighbouring months are shown dimmed (`.is-outside`). Events are loaded
+once with an **overlap** query (`datum__date <= grid_end AND (datum_bis >= grid_start OR
+single-day in range)`) so multi-day events (`datum_bis`) that start before or end after the grid
+are caught; each is expanded to one occurrence per covered day (a dict `{t, mehrtaegig, start,
+ende}`), rendered as a connected band (`.is-span` chips bleed into the cell padding, clipped by
+`.cal-day{overflow:hidden}`; only the start/end day is rounded, continuation days show a `‹`
+marker) that wraps correctly across week and month boundaries. Birthdays are active members with
+a set `geburtstag` **whose field is not hidden**
 (`"geburtstag" not in user.private_fields`, no viewer/admin bonus — same for everyone) mapped by
 `(month, day)`. Each event chip links to `termin_view`, each birthday chip to `mitglied_view`.
 Prev/next/"Heute" navigate via htmx: the toolbar + grid live in the partial `_kalender_grid.html`

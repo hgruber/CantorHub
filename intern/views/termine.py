@@ -530,14 +530,31 @@ def termin_kalender(request):
     weeks = cal.monthdatescalendar(jahr, monat)  # Liste von Wochen à 7 date-Objekten
     grid_start, grid_end = weeks[0][0], weeks[-1][-1]
 
-    # Termine im sichtbaren Raster-Bereich (inkl. Rand-Tage) nach Tag gruppieren.
+    # Termine, die den sichtbaren Bereich berühren – auch mehrtägige, die vor dem
+    # Raster beginnen oder nach ihm enden – auf jeden betroffenen Tag verteilen.
     termine_by_day = {}
-    for t in (
-        Termin.objects.filter(datum__date__range=(grid_start, grid_end))
+    termin_qs = (
+        Termin.objects.filter(datum__date__lte=grid_end)
+        .filter(
+            Q(datum_bis__date__gte=grid_start)
+            | Q(datum_bis__isnull=True, datum__date__gte=grid_start)
+        )
         .select_related("ort")
         .order_by("datum")
-    ):
-        termine_by_day.setdefault(t.datum.date(), []).append(t)
+    )
+    for t in termin_qs:
+        start = t.datum.date()
+        ende = t.datum_bis.date() if t.datum_bis else start
+        if ende < start:
+            ende = start
+        mehrtaegig = ende > start
+        tag = max(start, grid_start)
+        letzter = min(ende, grid_end)
+        while tag <= letzter:
+            termine_by_day.setdefault(tag, []).append(
+                {"t": t, "mehrtaegig": mehrtaegig, "start": tag == start, "ende": tag == ende}
+            )
+            tag += timedelta(days=1)
 
     # Geburtstage: nur aktive Mitglieder, deren Geburtsdatum nicht verborgen ist.
     # Nur Monat/Tag zählen (Geburtsjahr irrelevant), daher auf die im Raster

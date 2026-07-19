@@ -6347,6 +6347,40 @@ body.join-page {
     border-left-color: var(--cal-geb);
 }
 
+/* Mehrtägige Termine: durchgehender Balken über alle betroffenen Tage.
+   Die Chips bluten in die Zellränder (padding 8px) und werden vom
+   overflow:hidden der Zelle sauber beschnitten, sodass ein Band entsteht;
+   nur Start-/Endtag werden abgerundet. */
+.cal-chip.is-span {
+    margin-left: -8px;
+    margin-right: -8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-left: none;
+    border-radius: 0;
+}
+.cal-chip.is-span-start {
+    margin-left: 0;
+    border-top-left-radius: var(--r-sm);
+    border-bottom-left-radius: var(--r-sm);
+    border-left: 3px solid var(--brand);
+    padding-left: 7px;
+}
+.cal-chip.is-span-end {
+    margin-right: 0;
+    border-top-right-radius: var(--r-sm);
+    border-bottom-right-radius: var(--r-sm);
+}
+.cal-chip-cont { font-weight: 700; opacity: 0.75; flex: none; }
+
+/* In der Detailleiste keinen Balken/Bleed – dort steht jeder Tag für sich. */
+.cal-panel-body .cal-chip.is-span {
+    margin: 0;
+    border-radius: var(--r);
+    border-left: 3px solid var(--brand);
+    padding-left: 14px;
+}
+
 /* Punkte (nur mobil sichtbar) */
 .cal-dots { display: none; gap: 3px; flex-wrap: wrap; padding: 1px 2px; }
 .cal-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }

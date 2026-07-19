@@ -40,10 +40,11 @@
         {% for g in d.geburtstage %}<span class="cal-dot cal-dot--geb"></span>{% endfor %}
       </div>
       <div class="cal-day-detail">
-        {% for t in d.termine %}
-        <a class="cal-chip cal-chip--termin{% if t.repertoire %} is-konzert{% endif %}" href="{% url 'termin_view' id=t.id %}" title="{{ t.kurz }}">
-          {% if t.datum|time:"H:i" != "00:00" %}<span class="cal-chip-time">{{ t.datum|time:"H:i" }}</span>{% endif %}
-          <span class="cal-chip-text">{{ t.kurz }}</span>
+        {% for occ in d.termine %}
+        <a class="cal-chip cal-chip--termin{% if occ.t.repertoire %} is-konzert{% endif %}{% if occ.mehrtaegig %} is-span{% if occ.start %} is-span-start{% endif %}{% if occ.ende %} is-span-end{% endif %}{% endif %}" href="{% url 'termin_view' id=occ.t.id %}" title="{{ occ.t.kurz }}">
+          {% if occ.start and occ.t.datum|time:"H:i" != "00:00" %}<span class="cal-chip-time">{{ occ.t.datum|time:"H:i" }}</span>{% endif %}
+          {% if occ.mehrtaegig and not occ.start %}<span class="cal-chip-cont" aria-hidden="true">‹</span>{% endif %}
+          <span class="cal-chip-text">{{ occ.t.kurz }}</span>
         </a>
         {% endfor %}
         {% for g in d.geburtstage %}
