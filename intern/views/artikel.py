@@ -86,6 +86,10 @@ def article_list(request):
     context = {
         "seitentitel": "Alle Artikel",
         "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+        # "+" in der Topbar: nur no-arg-Fallback fürs {% url add %}; das JS im
+        # Panel toggelt #AddPanel und fängt den Klick ab (return false).
+        "add": "article_list",
+        "add_panel_include": "artikel_add_panel.html",
         "table": table,
         "upload_folder_id": folders.artikel(),
         "upload_folder_name": "Artikel",

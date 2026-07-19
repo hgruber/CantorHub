@@ -1328,6 +1328,24 @@ time {
 .add-panel-actions { display: flex; gap: 10px; margin-top: 20px; }
 .add-panel-actions .btn { flex: 1; }
 .add-panel-hint { font-size: 0.8rem; color: var(--t3); margin: 8px 0 16px; line-height: 1.4; }
+.artikel-add-label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 6px; color: var(--t2); }
+.artikel-add-input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1.05rem;
+    font-family: var(--font);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--r);
+    background: var(--bg-card);
+    color: var(--t1);
+    outline: none;
+    transition: border-color var(--ease), box-shadow var(--ease);
+}
+.artikel-add-input::placeholder { color: var(--t3); }
+.artikel-add-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+.artikel-add-input.is-invalid { border-color: #c53030; box-shadow: 0 0 0 3px rgba(197, 48, 48, 0.18); }
+.artikel-add-error { display: none; margin-top: 6px; font-size: 0.8rem; color: #c53030; }
+.artikel-add-input.is-invalid ~ .artikel-add-error { display: block; }
 
 /* Dropzone fields in AddPanel */
 .dropzone-field {

@@ -1,0 +1,66 @@
+{# Off-Canvas zum Anlegen einer neuen Artikel-Seite. #}
+{# Wird via {% include %} aus table.html eingebunden; das „+" in der Topbar toggelt #AddPanel. #}
+{# Kein Server-Form: Artikel werden über den Namen in der URL adressiert — wir navigieren #}
+{# client-seitig zu /intern/artikel/<Name>/edit/ (dort entsteht die neue Version). #}
+<div class="add-panel offcanvas" id="AddPanel"
+     data-edit-url="{% url 'article_edit' name='__NAME__' %}">
+    <div class="add-panel-header">
+        <strong>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;color:var(--brand)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            Neue Seite anlegen
+        </strong>
+        <button type="button" class="add-panel-close" onclick="toggle('AddPanel')" aria-label="Schließen">&#x2715;</button>
+    </div>
+    <p class="add-panel-hint">Gib der neuen Artikel-Seite einen Namen. Danach öffnet sich der Editor, in dem du die Seite befüllst und speicherst.</p>
+
+    <label for="artikel-name-input" class="artikel-add-label">Seitenname</label>
+    <input type="text" id="artikel-name-input" class="artikel-add-input"
+           placeholder="z. B. Probenplan" autocomplete="off" spellcheck="false">
+    <div class="artikel-add-error" id="artikel-name-error">Bitte einen Seitennamen eingeben.</div>
+
+    <div class="add-panel-actions">
+        <button type="button" class="btn btn-primary" id="artikel-create-btn">Seite erstellen</button>
+        <button type="button" class="btn btn-secondary" onclick="toggle('AddPanel')">Abbrechen</button>
+    </div>
+
+    <script>
+    (function () {
+        var panel = document.getElementById('AddPanel');
+        if (!panel) return;
+        var input = panel.querySelector('#artikel-name-input');
+        var createBtn = panel.querySelector('#artikel-create-btn');
+        var tpl = panel.dataset.editUrl;
+
+        function clearError() {
+            input.classList.remove('is-invalid');
+        }
+
+        function create() {
+            var name = input.value.trim();
+            if (!name) {
+                input.classList.add('is-invalid');
+                input.focus();
+                return;
+            }
+            window.location.href = tpl.replace('__NAME__', encodeURIComponent(name));
+        }
+
+        createBtn.addEventListener('click', create);
+        input.addEventListener('input', clearError);
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); create(); }
+            else if (e.key === 'Escape') { toggle('AddPanel'); }
+        });
+
+        // Beim Öffnen des Panels das Feld fokussieren — toggle() setzt nur die
+        // .open-Klasse, daher hier per MutationObserver darauf reagieren.
+        new MutationObserver(function () {
+            if (panel.classList.contains('open')) {
+                clearError();
+                input.focus();
+                input.select();
+            }
+        }).observe(panel, { attributes: true, attributeFilter: ['class'] });
+    })();
+    </script>
+</div>

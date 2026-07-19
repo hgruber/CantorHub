@@ -145,6 +145,8 @@ bot-attribution limitation (web reactions appear in XMPP clients bundled under
 
 `article_view` shows the latest version by default, or a specific one via `?version=<n>`. When viewing an outdated version it renders the `.version-banner` — a warning plus a version stepper with previous/next links (`prev_version` / `next_version`, computed via DB queries so gaps in the version sequence are skipped) and an "Aktuelle Version" button. History and unified/side-by-side diffs live at `/intern/artikel/<name>/history/` and `/diff/`.
 
+New articles are created from the `+` in the article-list topbar (`article_list` sets `add`/`add_panel_include`). It opens the off-canvas panel `templates/artikel_add_panel.html`, which has **no** server form — a small vanilla script reads the entered page name and navigates client-side to `/intern/artikel/<name>/edit/` (built from the panel's `data-edit-url` `__NAME__` placeholder + `encodeURIComponent`), where the first save creates version 1. Shown to every logged-in member, matching the open-wiki default (`article_edit` has no permission check for a new name).
+
 ### Member application flow (Mitglieds-Beitritt)
 
 Two ways to add a member, both behind the `+` in `/intern/mitglied/` (perm `intern.add_user`).
