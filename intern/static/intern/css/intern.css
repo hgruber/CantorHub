@@ -6429,18 +6429,20 @@ body.join-page {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+    padding: 0;
     flex: none;
     border: none;
     border-radius: var(--r-sm);
     background: transparent;
-    color: var(--t3);
+    color: var(--t2);
     cursor: pointer;
     transition: background var(--ease), color var(--ease);
 }
 .cal-panel-close:hover { background: var(--hover-bg); color: var(--t1); }
-.cal-panel-close svg { width: 20px; height: 20px; }
+.cal-panel-close svg { width: 26px; height: 26px; flex: none; }
 .cal-panel-body {
     padding: 16px 20px;
     overflow-y: auto;
