@@ -1621,13 +1621,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   document.addEventListener("click", (e) => {
-    const btn = e.target.closest(".termin-banner-dismiss");
-    if (!btn) return;
-    const banner = btn.closest(".termin-banner");
-    if (banner && banner.dataset.login) {
-      localStorage.setItem(KEY, banner.dataset.login);
-    }
-    if (banner) banner.remove();
+    const hit = e.target.closest(".termin-banner-dismiss, .termin-banner-main");
+    if (!hit) return;
+    const banner = hit.closest(".termin-banner");
+    if (!banner) return;
+    // Following the link to the termin counts as dismissing it, too.
+    if (banner.dataset.login) localStorage.setItem(KEY, banner.dataset.login);
+    if (hit.classList.contains("termin-banner-dismiss")) banner.remove();
   });
 
   document.addEventListener("DOMContentLoaded", apply);
