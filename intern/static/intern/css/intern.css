@@ -2819,6 +2819,7 @@ table.mitglied-table tr.stimme-group-start td {
 [data-theme="dark"] .zusage-btn-no:hover    { background: #dc2626; color: #fff; border-color: #dc2626; }
 
 /* Next-event banner */
+.termin-banner[hidden] { display: none; }
 .termin-banner {
     display: flex;
     align-items: center;
@@ -2908,10 +2909,16 @@ table.mitglied-table tr.stimme-group-start td {
 .termin-banner-dismiss:hover { background: var(--bg-row-hover); color: var(--t2); }
 
 @media (max-width: 640px) {
-    .termin-banner { flex-wrap: wrap; gap: 10px; }
-    .termin-banner-main { flex: 1 1 100%; order: 1; }
-    .termin-banner-zusage { order: 3; flex: 1 1 100%; }
-    .termin-banner-dismiss { order: 2; }
+    /* Dismiss button stays pinned to the top right corner instead of flowing
+       into its own row; the text reserves space for it. */
+    .termin-banner { flex-wrap: wrap; gap: 10px; position: relative; }
+    .termin-banner-main { flex: 1 1 100%; order: 1; padding-right: 28px; }
+    .termin-banner-zusage { order: 2; flex: 1 1 100%; }
+    .termin-banner-dismiss {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+    }
 }
 
 /* Invite list */

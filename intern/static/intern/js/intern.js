@@ -1611,7 +1611,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // Dismissed for the current login session (anchored to user.last_login):
     // reappears after the next login, when the stored timestamp no longer matches.
     const login = banner.dataset.login;
-    if (login && localStorage.getItem(KEY) === login) banner.remove();
+    if (login && localStorage.getItem(KEY) === login) {
+      banner.remove();
+      return;
+    }
+    // The banner is rendered with `hidden`; the inline script in _termin_banner.html
+    // normally reveals it before paint. This is only a fallback.
+    banner.hidden = false;
   }
 
   document.addEventListener("click", (e) => {
