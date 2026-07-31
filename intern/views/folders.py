@@ -135,14 +135,46 @@ def _is_descendant_or_self(candidate_id, ancestor_id):
     return False
 
 
-def _copy_folder_deep(src_folder, target_parent_id, owner):
+def _perm_specs(folder):
+    """FolderPermission rows of `folder` as plain (group_id, read, write, delete) tuples."""
+    if folder is None:
+        return []
+    return [
+        (p.group_id, p.can_read, p.can_write, p.can_delete)
+        for p in FolderPermission.objects.filter(folder=folder)
+    ]
+
+
+def _apply_perm_specs(folder, specs):
+    """Create FolderPermission rows on `folder` from `_perm_specs()` tuples."""
+    FolderPermission.objects.bulk_create([
+        FolderPermission(
+            folder=folder,
+            group_id=group_id,
+            can_read=can_read,
+            can_write=can_write,
+            can_delete=can_delete,
+        )
+        for group_id, can_read, can_write, can_delete in specs
+    ])
+
+
+def _copy_folder_deep(src_folder, target_parent_id, owner, inherited_perms=()):
     """Recursively copy a folder and its contents into target_parent_id.
     File records are duplicated, but their underlying storage blob is shared —
-    matches filer's own copy semantics (and how single-file copy already worked)."""
+    matches filer's own copy semantics (and how single-file copy already worked).
+
+    Access rights travel with the copy: a restricted folder keeps its own
+    FolderPermission rows, an unrestricted one inherits `inherited_perms` (the
+    rows of its new parent, as in folder_create). Without this a protected
+    folder copied into an open one would end up readable by everyone, since
+    folder_access() treats a folder without rows as open."""
     new_name = _unique_folder_name(target_parent_id, src_folder.name)
     new_folder = Folder.objects.create(
         name=new_name, parent_id=target_parent_id, owner=owner
     )
+    perms = _perm_specs(src_folder) or list(inherited_perms)
+    _apply_perm_specs(new_folder, perms)
     for f in File.objects.filter(folder=src_folder):
         File.objects.create(
             file=f.file,
@@ -153,7 +185,7 @@ def _copy_folder_deep(src_folder, target_parent_id, owner):
             mime_type=f.mime_type,
         )
     for child in Folder.objects.filter(parent=src_folder):
-        _copy_folder_deep(child, new_folder.pk, owner)
+        _copy_folder_deep(child, new_folder.pk, owner, perms)
     return new_folder
 
 
@@ -578,17 +610,7 @@ def folder_create(request, pk):
         owner=request.user,
     )
     # Copy parent's FolderPermission rows to the new subfolder
-    if parent is not None:
-        FolderPermission.objects.bulk_create([
-            FolderPermission(
-                folder=new_folder,
-                group_id=p.group_id,
-                can_read=p.can_read,
-                can_write=p.can_write,
-                can_delete=p.can_delete,
-            )
-            for p in FolderPermission.objects.filter(folder=parent)
-        ])
+    _apply_perm_specs(new_folder, _perm_specs(parent))
     folders.invalidate()
 
     if is_ajax:
@@ -675,6 +697,7 @@ def folder_copy(request):
     _, target_write, _ = folder_access(request.user, target)
     if not target_write:
         raise PermissionDenied
+    target_perms = _perm_specs(target)
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
             try:
@@ -686,7 +709,7 @@ def folder_copy(request):
             src_read, _, _ = folder_access(request.user, src)
             if not src_read:
                 continue
-            _copy_folder_deep(src, target_id, request.user)
+            _copy_folder_deep(src, target_id, request.user, target_perms)
         elif item_type == "File":
             try:
                 f = File.objects.get(pk=item_id)

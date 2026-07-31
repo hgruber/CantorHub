@@ -297,6 +297,22 @@ Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. 
 
 `index_files` and `thumbnail_files` run as background jobs after a fresh install in `migrate.sh`, building the search index and pre-generating thumbnails for all files. They are intentionally absent from `start.sh` (existing DB) — files are already indexed there. Files uploaded through the app are indexed and thumbnailed immediately via a `post_save` signal on `filer.File` (`on_filer_file_saved` in `signals.py`): a daemon thread calls `index_file()` and pre-generates all three thumbnail sizes so the upload response is not delayed. A semaphore caps concurrent thumbnail threads at 4 to prevent MySQL connection exhaustion; each thread closes its DB connection when done. The signal is suppressed (`_migrating.active`) during management commands that bulk-import files; file-creating functions in `0003_import.py` also set the flag explicitly as a backstop.
 
+**Copy semantics:** copying a file (`folder_copy` in `views/folders.py`) creates a new
+`filer.File` row but reuses the same `file` path — the storage blob is **shared**, not
+duplicated (filer's own semantics). Renaming, moving or deleting a copy therefore never
+touches the original: filer's `File.delete()` removes the blob only when no other row
+references that path, and the delete views call `f.delete()` per instance (never
+`queryset.delete()`) so that check runs. The one exception is the upload-overwrite branch
+in `views/files.py`, which drops the old blob unconditionally.
+
+**Folder permissions:** access is governed by `FolderPermission(folder, group)` rows —
+`folder_access()` in `intern/folder_access.py` treats a folder *without* rows as open for
+read/write. Any code that creates a folder must therefore set rows explicitly, or the new
+folder is world-readable. `folder_create` copies the parent's rows; `_copy_folder_deep`
+gives each copied folder its source folder's own rows and, if the source was unrestricted,
+the rows of its new parent (`_perm_specs` / `_apply_perm_specs`) — otherwise copying a
+protected folder into an open one would expose its contents.
+
 ### External integrations
 
 **XMPP/ejabberd** (active when `EJABBERD_HOST` + `EJABBERD_BOT_JID` are set): Bidirectional bridge between Forum MUC rooms and ejabberd. Messages sync in both directions. Uses REST API for admin operations and a long-running slixmpp bot for message relay.
