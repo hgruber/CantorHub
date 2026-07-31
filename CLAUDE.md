@@ -297,18 +297,52 @@ Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. 
 
 `index_files` and `thumbnail_files` run as background jobs after a fresh install in `migrate.sh`, building the search index and pre-generating thumbnails for all files. They are intentionally absent from `start.sh` (existing DB) — files are already indexed there. Files uploaded through the app are indexed and thumbnailed immediately via a `post_save` signal on `filer.File` (`on_filer_file_saved` in `signals.py`): a daemon thread calls `index_file()` and pre-generates all three thumbnail sizes so the upload response is not delayed. A semaphore caps concurrent thumbnail threads at 4 to prevent MySQL connection exhaustion; each thread closes its DB connection when done. The signal is suppressed (`_migrating.active`) during management commands that bulk-import files; file-creating functions in `0003_import.py` also set the flag explicitly as a backstop.
 
-**Copy semantics:** copying a file (`folder_copy` in `views/folders.py`) creates a new
-`filer.File` row but reuses the same `file` path — the storage blob is **shared**, not
-duplicated (filer's own semantics). Renaming, moving or deleting a copy therefore never
-touches the original: filer's `File.delete()` removes the blob only when no other row
-references that path, and the delete views call `f.delete()` per instance (never
-`queryset.delete()`) so that check runs. The one exception is the upload-overwrite branch
-in `views/files.py`, which drops the old blob unconditionally.
+### Files as links, and file versions
+
+**A file's identity is its storage path.** Two `filer.File` rows pointing at the same
+`file` path are the *same file in two folders* — folders work like tags (one invoice under
+Haus, Versicherung and Finanzamt). This is filer's own semantics: `File.delete()` drops the
+blob only when no other row references that path. Every operation that changes a file's
+path or name therefore has to carry all its rows along, which is what the helpers in
+`views/files.py` are for — use them instead of touching `File.file`/`name` directly:
+
+| Helper | Purpose |
+|---|---|
+| `verknuepfte_dateien(f, inklusive_selbst=True)` | all rows sharing `f`'s blob |
+| `datei_umbenennen(f, name)` | rename everywhere — one file, one name |
+| `version_anlegen(f, autor)` | archive the current revision before it is replaced |
+| `geschwister_nachziehen(alter_pfad, quelle)` | point all rows at the new blob, move the version chain over |
+| `versionen_loeschen(f)` | drop the archived blobs (when the last occurrence goes) |
+
+**Overwriting** an upload with the same name in the same folder (`upload` in
+`views/files.py`) keeps the `File` PK — so `Lied`/`Artikel`/`Forum` references survive —
+archives the old revision as a `DateiVersion` and moves every linked row onto the new blob.
+The update thus appears in *all* folders the file sits in, and nothing is deleted. The
+search index follows by itself (`ensure_indexed` spots a changed `file_size`); the sibling
+rows' `DateiIndex` entries are dropped so a same-size replacement is re-indexed too.
+
+**`DateiVersion`** (`models.py`) records the path and metadata of a superseded revision;
+the blob itself simply stays where it is. `aktuell` holds the path of the *live* revision
+and chains the history — it is rewritten whenever the file moves to a new blob.
+`/intern/datei/<pk>/` (`datei_view`, `datei.html`) shows the places a file is linked into
+(filtered by `visible_folder_ids` — never reveal folders the member cannot see) plus its
+version list; `datei_restore` makes an old revision current again, mirroring the overwrite
+path. Reached from the `#id` badge in the folder listing. `cleanup_dateiversionen`
+(`--keep 10 --days 730`, runs in the background on every `start.sh`) prunes old revisions,
+blobs included.
+
+**Copy vs. duplicate:** `folder_link` (button „Verknüpfen") adds a row sharing the blob —
+the tag case above. `folder_duplicate` („Duplizieren") copies the blob, giving an
+independent file. Both share `_copy_action` / `_copy_folder_deep(…, blob_kopieren)` in
+`views/folders.py`. Deleting goes through `_datei_loeschen`, which removes one occurrence
+and only cleans up versions when it was the last one — pass it a **freshly loaded**
+instance, a stale one would have filer delete a blob that is still in use.
 
 **Folder permissions:** access is governed by `FolderPermission(folder, group)` rows —
 `folder_access()` in `intern/folder_access.py` treats a folder *without* rows as open for
 read/write. Any code that creates a folder must therefore set rows explicitly, or the new
 folder is world-readable. `folder_create` copies the parent's rows; `_copy_folder_deep`
+(used by both `folder_link` and `folder_duplicate`)
 gives each copied folder its source folder's own rows and, if the source was unrestricted,
 the rows of its new parent (`_perm_specs` / `_apply_perm_specs`) — otherwise copying a
 protected folder into an open one would expose its contents.

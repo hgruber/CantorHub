@@ -6485,3 +6485,69 @@ body.join-page {
     .cal-dots { display: flex; justify-content: center; }
     .cal-day-detail { display: none; }
 }
+
+/* === Dateidetail: Ablageorte und Versionen === */
+.datei-vorschau {
+    max-width: 100%;
+    max-height: 64px;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
+.datei-hinweis {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.datei-orte {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.datei-orte li {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+
+.datei-orte li:last-child { border-bottom: none; }
+
+.datei-ort-hier {
+    margin-left: 8px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.datei-version-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.datei-version-tabelle td {
+    padding: 7px 8px 7px 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.datei-version-tabelle tr:last-child td { border-bottom: none; }
+.datei-version-tabelle .ist-aktuell td { font-weight: 600; }
+.datei-version-tabelle .v-nummer { width: 70px; color: var(--text-muted); }
+.datei-version-tabelle .v-groesse { text-align: right; white-space: nowrap; }
+.datei-version-tabelle .v-aktion { text-align: right; width: 1%; }
+.datei-version-tabelle .v-aktion form { margin: 0; }
+.datei-version-tabelle .keine-versionen td { color: var(--text-muted); }
+
+.btn-klein {
+    padding: 3px 10px;
+    font-size: 12px;
+}
+
+@media (max-width: 640px) {
+    .datei-version-tabelle .v-autor { display: none; }
+}

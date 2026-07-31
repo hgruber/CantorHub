@@ -766,13 +766,14 @@ document.addEventListener("DOMContentLoaded", function () {
     msAction("stop", stop);
   })();
 
-  // File actions: delete / move / copy / zip
+  // File actions: delete / move / copy (= link) / duplicate / zip
   window.fileAction = function (action) {
-    const formId = action === "delete" ? "delete-form"
-                 : action === "move"   ? "move-form"
-                 : action === "copy"   ? "copy-form"
-                 : action === "zip"    ? "zip-form"
-                 :                       null;
+    const formId = action === "delete"    ? "delete-form"
+                 : action === "move"      ? "move-form"
+                 : action === "link"       ? "link-form"
+                 : action === "duplicate" ? "duplicate-form"
+                 : action === "zip"       ? "zip-form"
+                 :                          null;
     if (!formId) return;
     const form = document.getElementById(formId);
     if (!form) return;
@@ -787,12 +788,18 @@ document.addEventListener("DOMContentLoaded", function () {
     if (items.length === 0) { alert("Keine Elemente ausgewählt."); return; }
 
     if (action === "delete") {
-      if (!confirm(`${items.length} Element(e) wirklich löschen?`)) return;
+      // Deleting removes the entry here; a file linked into further folders
+      // keeps existing there — filer only drops the blob with the last link.
+      if (!confirm(`${items.length} Element(e) wirklich löschen?\n\n` +
+                   `Dateien, die zusätzlich in anderen Ordnern verknüpft sind, ` +
+                   `bleiben dort erhalten.`)) return;
     } else if (action !== "zip") {
       const targetRadio = document.querySelector('input[name="folder-target"]:checked');
       if (!targetRadio) { alert("Bitte erst einen Zielordner auswählen."); return; }
       const targetInput = document.getElementById(
-        action === "move" ? "move-target" : "copy-target"
+        action === "move" ? "move-target"
+        : action === "duplicate" ? "duplicate-target"
+        : "link-target"
       );
       if (targetInput) targetInput.value = targetRadio.value;
     }

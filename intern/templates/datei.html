@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>{% endblock %}
+{% block content %}
+<div class="detail-page">
+    <div class="detail-header">
+        <div class="detail-icon">
+            {% if thumbnail %}
+            <img src="{{ thumbnail }}" alt="" class="datei-vorschau">
+            {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+            {% endif %}
+        </div>
+        <div class="detail-info">
+            <h1>{{ titel }}</h1>
+            <p class="detail-subtitle">{{ datei.file_size|filesizeformat }}{% if datei.mime_type %} · {{ datei.mime_type }}{% endif %}</p>
+        </div>
+    </div>
+
+    <div class="detail-cards">
+        <div class="detail-card">
+            <h3>Datei</h3>
+            <div class="detail-card-row">
+                <span class="label">Hochgeladen</span>
+                <span class="value">{{ datei.uploaded_at|date:"d.m.Y H:i" }}</span>
+            </div>
+            <div class="detail-card-row">
+                <span class="label">Besitzer</span>
+                <span class="value">{% if datei.owner %}{{ datei.owner.first_name }} {{ datei.owner.last_name }}{% else %}—{% endif %}</span>
+            </div>
+            <div class="detail-card-row">
+                <span class="label">Öffnen</span>
+                <span class="value"><a href="{{ datei.url }}" target="_blank" rel="noopener">Herunterladen</a></span>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <h3>Liegt in {{ orte|length }} Ordner{{ orte|length|pluralize:"n" }}</h3>
+            <div class="detail-card-content">
+                <p class="datei-hinweis">Es ist überall dieselbe Datei — eine neue Fassung erscheint
+                    in allen aufgeführten Ordnern.</p>
+                <ul class="datei-orte">
+                    {% for o in orte %}
+                    <li>
+                        {% if o.url %}<a href="{{ o.url }}">{{ o.pfad }}</a>{% else %}{{ o.pfad }}{% endif %}
+                        {% if o.datei.pk == datei.pk %}<span class="datei-ort-hier">hier</span>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-cards detail-cards-spaced">
+        <div class="detail-card datei-versionen">
+            <h3>Versionen</h3>
+            <div class="detail-card-content">
+                <table class="datei-version-tabelle">
+                    <tr class="ist-aktuell">
+                        <td class="v-nummer">aktuell</td>
+                        <td class="v-datum">{{ datei.modified_at|date:"d.m.Y H:i" }}</td>
+                        <td class="v-autor">{% if datei.owner %}{{ datei.owner.first_name }} {{ datei.owner.last_name }}{% else %}—{% endif %}</td>
+                        <td class="v-groesse">{{ datei.file_size|filesizeformat }}</td>
+                        <td class="v-aktion"></td>
+                    </tr>
+                    {% for v in versionen %}
+                    <tr>
+                        <td class="v-nummer">v{{ v.nummer }}</td>
+                        <td class="v-datum">{{ v.datum|date:"d.m.Y H:i" }}</td>
+                        <td class="v-autor">{% if v.autor %}{{ v.autor.first_name }} {{ v.autor.last_name }}{% else %}—{% endif %}</td>
+                        <td class="v-groesse">{{ v.groesse|filesizeformat }}</td>
+                        <td class="v-aktion">
+                            {% if darf_schreiben %}
+                            <form method="post" action="{% url 'datei_restore' datei.pk v.pk %}"
+                                  onsubmit="return confirm('Version v{{ v.nummer }} wiederherstellen? Die aktuelle Fassung wird als Version gesichert.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary btn-klein">wiederherstellen</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr class="keine-versionen">
+                        <td colspan="5">Diese Datei wurde noch nie überschrieben.</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

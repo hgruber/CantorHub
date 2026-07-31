@@ -37,3 +37,15 @@ been removed once enforced — this file tracks only what is still open.
   reinforce this by actively pointing it out again at departure (e.g. in the leave/
   deactivation confirmation), turning the silent default into an informed, documented
   choice; until that exists the position relies on the §10 text alone.
+
+- **File versions outlive the visible file (to record)** — overwriting an upload no longer
+  destroys the previous revision: `DateiVersion` keeps its blob so the change reaches every
+  folder the file is linked into and can be undone (see "Files as links, and file versions"
+  in `CLAUDE.md`). Two consequences to keep in mind: content a member replaced on purpose
+  remains restorable by anyone with write access to the file, and it survives in storage
+  until pruned. Deletion is handled — `_datei_loeschen` drops all versions with the last
+  occurrence of a file, and `cleanup_dateiversionen` (10 revisions / 2 years, on every
+  `start.sh`) caps the rest — so an erasure request removes the old revisions too. What is
+  **not** covered: the retention period for file versions is not mentioned in
+  `datenschutz.html`; if members upload personal data, §9 should name it alongside the
+  3-year audit-log figure.

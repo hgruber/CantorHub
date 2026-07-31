@@ -63,10 +63,15 @@
             <input type="hidden" name="referer_pk" value="{{ current_pk }}">
             <input type="hidden" id="move-target" name="target_pk" value="">
         </form>
-        <form id="copy-form" method="post" action="{% url 'folder_copy' %}">
+        <form id="link-form" method="post" action="{% url 'folder_link' %}">
             {% csrf_token %}
             <input type="hidden" name="referer_pk" value="{{ current_pk }}">
-            <input type="hidden" id="copy-target" name="target_pk" value="">
+            <input type="hidden" id="link-target" name="target_pk" value="">
+        </form>
+        <form id="duplicate-form" method="post" action="{% url 'folder_duplicate' %}">
+            {% csrf_token %}
+            <input type="hidden" name="referer_pk" value="{{ current_pk }}">
+            <input type="hidden" id="duplicate-target" name="target_pk" value="">
         </form>
 
         {% if can_delete_here %}
@@ -92,7 +97,10 @@
         </div>
         <div class="action-move-btns">
             <button class="btn btn-secondary action-btn" onclick="fileAction('move')">Verschieben</button>
-            <button class="btn btn-primary action-btn" onclick="fileAction('copy')">Kopieren</button>
+            <button class="btn btn-primary action-btn" onclick="fileAction('link')"
+                    title="Dieselbe Datei erscheint zusätzlich im Zielordner — Änderungen wirken überall">Verknüpfen</button>
+            <button class="btn btn-secondary action-btn" onclick="fileAction('duplicate')"
+                    title="Unabhängige Kopie mit eigenem Inhalt">Duplizieren</button>
         </div>
         {% endif %}
         {% endif %}

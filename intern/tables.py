@@ -86,7 +86,11 @@ class OrdnerTabelle(tables.Table):
     def render_file_id(self, record):
         if record["type"] == "Folder":
             return ""
-        return format_html("#{}", record["id"])
+        return format_html(
+            '<a href="{}" title="Ablageorte und Versionen">#{}</a>',
+            reverse("datei_view", args=[record["id"]]),
+            record["id"],
+        )
 
     def render_name(self, record):
         if "original_filename" in record:

@@ -36,6 +36,8 @@ urlpatterns = [
     path("aenderungsprotokoll/", views.aenderungsprotokoll_list, name="aenderungsprotokoll_list"),
     # Media access control
     path("media-auth/", views.media_auth, name="media_auth"),
+    path("datei/<int:pk>/", views.datei_view, name="datei_view"),
+    path("datei/<int:pk>/version/<int:version_id>/", views.datei_restore, name="datei_restore"),
     path("datei/<int:pk>/<str:token>/<path:filename>", views.datei_token, name="datei_token"),
     # Upload and File URLs
     path("upload/", views.upload, name="upload"),
@@ -49,7 +51,8 @@ urlpatterns = [
     path("ordner/zip-auswahl/", views.folder_zip_selection, name="folder_zip_selection"),
     path("ordner/loeschen/", views.folder_delete, name="folder_delete"),
     path("ordner/verschieben/", views.folder_move, name="folder_move"),
-    path("ordner/kopieren/", views.folder_copy, name="folder_copy"),
+    path("ordner/verknuepfen/", views.folder_link, name="folder_link"),
+    path("ordner/duplizieren/", views.folder_duplicate, name="folder_duplicate"),
     path("ordner/umbenennen/", views.folder_rename, name="folder_rename"),
     path("file/", views.dummy, name="file_list"),
     path("file/<int:pk>/entpacken/", views.file_unzip, name="file_unzip"),

@@ -16,6 +16,9 @@ python manage.py migrate
 # Datenschutz: Änderungsprotokoll nach Ablauf der Aufbewahrungsfrist (3 Jahre) löschen.
 python manage.py cleanup_changelog &
 
+# Alte Dateifassungen (überschriebene Uploads) nach Frist bzw. Anzahl abräumen.
+python manage.py cleanup_dateiversionen &
+
 python manage.py ejabberd_admin sync
 python manage.py ejabberd_bot &
 

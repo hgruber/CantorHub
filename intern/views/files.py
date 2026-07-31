@@ -6,23 +6,32 @@ from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
+from django.db.models import Max
 from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
 from intern import folders
+from intern.folder_access import folder_access, visible_folder_ids
 
-from ..models import Lied, TabellenPreferenzen, User
+from ..models import DateiIndex, DateiVersion, Lied, TabellenPreferenzen, User
 
 __all__ = [
     "upload",
     "file_search",
     "visible_fields",
     "file_unzip",
+    "datei_view",
+    "datei_restore",
+    "verknuepfte_dateien",
+    "datei_umbenennen",
+    "versionen_loeschen",
     "_get_file_extension",
     "_get_file_type_config",
     "_get_lied_by_filename",
@@ -31,6 +40,98 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
+
+
+# === Dateiidentität: ein Blob, viele Ordner ==================================
+#
+# Two File rows pointing at the same storage path are the *same* file in two
+# folders — folders work like tags. This is filer's own semantics: File.delete()
+# drops the blob only when no other row references it. Every operation that
+# changes a file's path or name therefore has to carry all its rows along, which
+# is what the helpers below are for.
+
+
+def verknuepfte_dateien(f, inklusive_selbst=True):
+    """All File rows sharing `f`'s blob — the same file in other folders.
+
+    A row without a blob is only ever itself: `file` is nullable in filer, and
+    matching on an empty path would lump all such rows together."""
+    if not f.file or not f.file.name:
+        qs = File.objects.filter(pk=f.pk)
+    else:
+        qs = File.objects.filter(file=f.file.name, is_public=f.is_public)
+    if not inklusive_selbst:
+        qs = qs.exclude(pk=f.pk)
+    return qs
+
+
+def datei_umbenennen(f, neuer_name):
+    """Rename a file everywhere it is linked — one file, one name."""
+    verknuepfte_dateien(f).update(name=neuer_name, original_filename=neuer_name)
+    f.name = neuer_name
+    f.original_filename = neuer_name
+
+
+def version_anlegen(f, autor=None):
+    """Archive `f`'s current revision before its blob is replaced.
+
+    The blob stays where it is; only its path is recorded. Callers must follow
+    up with `geschwister_nachziehen()`, which moves the chain (including this
+    new row) onto the new path."""
+    pfad = f.file.name
+    letzte = DateiVersion.objects.filter(aktuell=pfad).aggregate(Max("nummer"))
+    return DateiVersion.objects.create(
+        aktuell=pfad,
+        pfad=pfad,
+        original_filename=f.original_filename or f.name or "",
+        groesse=f._file_size or 0,
+        sha1=f.sha1 or "",
+        mime_type=f.mime_type or "",
+        autor=autor if (autor and autor.is_authenticated) else None,
+        nummer=(letzte["nummer__max"] or 0) + 1,
+    )
+
+
+def geschwister_nachziehen(alter_pfad, quelle):
+    """Point every other row that shared `alter_pfad` at `quelle`'s new blob, so
+    the update shows up in all folders the file is linked into. Also moves the
+    version chain over to the new path."""
+    pks = list(
+        File.objects.filter(file=alter_pfad, is_public=quelle.is_public)
+        .exclude(pk=quelle.pk)
+        .values_list("pk", flat=True)
+    )
+    if pks:
+        File.objects.filter(pk__in=pks).update(
+            file=quelle.file.name,
+            _file_size=quelle._file_size,
+            sha1=quelle.sha1,
+            mime_type=quelle.mime_type,
+        )
+        # ensure_indexed() spots stale rows by file size; drop the entries so a
+        # replacement of exactly the same size is re-indexed too.
+        DateiIndex.objects.filter(file_id__in=pks).delete()
+    DateiVersion.objects.filter(aktuell=alter_pfad).update(aktuell=quelle.file.name)
+    return pks
+
+
+def versionen_loeschen(f):
+    """Delete the archived blobs of `f`, for when its last row goes.
+
+    Without this the content of a deleted file would survive in storage, which
+    would undercut the deletion promise of the privacy policy."""
+    versionen = list(DateiVersion.objects.filter(aktuell=f.file.name))
+    for v in versionen:
+        try:
+            get_thumbnailer(v.pfad).delete_thumbnails()
+        except Exception:
+            logger.debug("Thumbnails der Version %s nicht löschbar", v.pfad)
+        try:
+            f.file.storage.delete(v.pfad)
+        except Exception:
+            logger.warning("Versions-Blob %s konnte nicht gelöscht werden", v.pfad)
+    DateiVersion.objects.filter(pk__in=[v.pk for v in versionen]).delete()
+    return len(versionen)
 
 
 def _get_file_extension(filename):
@@ -115,8 +216,7 @@ def _route_and_rename_for_lied(lied, filer_file, source_name):
         if field_name == "aufnahme"
         else f"{lied.titel}{extension}"
     )
-    filer_file.original_filename = new_name
-    filer_file.name = new_name
+    datei_umbenennen(filer_file, new_name)
     filer_file.save()
 
     setattr(lied, field_name, filer_file)
@@ -182,19 +282,20 @@ def upload(request):
 
         # Overwrite in-place if a file with the same name already exists here.
         # Replacing the .file field updates content but keeps the same File PK,
-        # so existing Lied/Artikel/Forum references remain intact.
+        # so existing Lied/Artikel/Forum references remain intact. The previous
+        # revision is kept (version_anlegen) instead of being deleted, and every
+        # folder the file is linked into follows along (geschwister_nachziehen).
         existing = File.objects.filter(
             folder_id=folder_id, original_filename=file.name
         ).first()
         overwritten = existing is not None
         if overwritten:
-            try:
-                existing.file.delete(save=False)
-            except Exception:
-                pass
+            alter_pfad = existing.file.name
+            version_anlegen(existing, request.user)
             existing.file = file
             existing.owner = request.user
             existing.save()
+            geschwister_nachziehen(alter_pfad, existing)
             filer_file = existing
         else:
             filer_file = File.objects.create(
@@ -208,10 +309,7 @@ def upload(request):
         # Rename file if requested (e.g. avatar → <user_id>.<ext>)
         if rename_to:
             ext = _get_file_extension(file.name)
-            new_name = f"{rename_to}{ext}"
-            filer_file.original_filename = new_name
-            filer_file.name = new_name
-            filer_file.save(update_fields=["original_filename", "name"])
+            datei_umbenennen(filer_file, f"{rename_to}{ext}")
 
         # Update user avatar if requested
         if avatar_user_id:
@@ -244,10 +342,93 @@ def upload(request):
         return JsonResponse({"status": "success", "id": filer_file.id, "url": url, "thumbnail_url": thumb, "overwritten": overwritten})
 
 
+def _ordner_pfad(folder):
+    """Full path string of a folder, e.g. "Verwaltung / Mitglieder"."""
+    if folder is None:
+        return "/ (Wurzel)"
+    teile, cur, gesehen = [], folder, set()
+    while cur is not None and cur.pk not in gesehen:
+        gesehen.add(cur.pk)
+        teile.append(cur.name)
+        cur = cur.parent
+    return " / ".join(reversed(teile))
+
+
+def _datei_orte(f, user):
+    """Every place `f` is linked into that `user` may see, plus the write flag.
+
+    Only visible folders are listed — otherwise the page would give away the
+    existence of folders the member has no access to."""
+    sichtbar = visible_folder_ids(user)
+    orte, darf_schreiben = [], False
+    for g in verknuepfte_dateien(f).select_related("folder"):
+        if g.folder_id is not None and g.folder_id not in sichtbar:
+            continue
+        _, can_write, _ = folder_access(user, g.folder)
+        darf_schreiben = darf_schreiben or can_write
+        orte.append({
+            "datei": g,
+            "folder": g.folder,
+            "pfad": _ordner_pfad(g.folder),
+            "url": reverse("folder_view", args=[g.folder_id]) if g.folder_id else None,
+        })
+    orte.sort(key=lambda o: o["pfad"])
+    return orte, darf_schreiben
+
+
+@login_required
+def datei_view(request, pk):
+    """Detail page: where a file is linked into, and its version history."""
+    f = get_object_or_404(File, pk=pk)
+    orte, darf_schreiben = _datei_orte(f, request.user)
+    if not orte:
+        raise Http404
+    thumb = ""
+    try:
+        thumb = get_thumbnailer(f.file).get_thumbnail(
+            {"size": (320, 320), "crop": False, "quality": 85}
+        ).url
+    except Exception:
+        pass
+    return render(request, "datei.html", {
+        "datei": f,
+        "orte": orte,
+        "darf_schreiben": darf_schreiben,
+        "versionen": DateiVersion.objects.filter(aktuell=f.file.name),
+        "thumbnail": thumb,
+        "titel": f.original_filename or f.name,
+    })
+
+
+@login_required
+@require_POST
+def datei_restore(request, pk, version_id):
+    """Make an archived revision the current one — everywhere the file is linked.
+
+    Mirrors the overwrite path: the running revision becomes a version itself,
+    all linked rows move onto the restored blob. No blob is copied or deleted."""
+    f = get_object_or_404(File, pk=pk)
+    orte, darf_schreiben = _datei_orte(f, request.user)
+    if not orte:
+        raise Http404
+    if not darf_schreiben:
+        raise PermissionDenied
+    version = get_object_or_404(DateiVersion, pk=version_id, aktuell=f.file.name)
+
+    alter_pfad = f.file.name
+    version_anlegen(f, request.user)
+    f.file = version.pfad
+    f.owner = request.user
+    f.save()
+    geschwister_nachziehen(alter_pfad, f)
+    if version.original_filename:
+        datei_umbenennen(f, version.original_filename)
+    version.delete()
+    return redirect("datei_view", pk=f.pk)
+
+
 @login_required
 def file_search(request):
-    from intern.folder_access import visible_folder_ids
-
     q = request.GET.get("q", "")
     if not q:
         return JsonResponse([], safe=False)

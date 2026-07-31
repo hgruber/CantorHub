@@ -641,6 +641,38 @@ class DateiIndex(models.Model):
         verbose_name_plural = "DateiIndizes"
 
 
+class DateiVersion(models.Model):
+    """A superseded revision of a file, kept when an upload overwrites it.
+
+    The old blob is neither copied nor deleted — it stays where it is and this
+    row records its path. A file's identity is its storage path (`File.file`),
+    the same rule filer uses in `File.delete()` to decide whether a blob may go,
+    so several File rows sharing a path are one file in several folders. When a
+    new revision is stored under a fresh path, every row of the chain is moved
+    over to it via `aktuell`.
+
+    See intern/views/files.py for the helpers that maintain this.
+    """
+
+    aktuell = models.CharField(max_length=255, db_index=True)
+    pfad = models.CharField(max_length=255)
+    original_filename = models.CharField(max_length=255, blank=True)
+    groesse = models.BigIntegerField(default=0)
+    sha1 = models.CharField(max_length=40, blank=True)
+    mime_type = models.CharField(max_length=255, blank=True)
+    autor = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL)
+    datum = models.DateTimeField(auto_now_add=True)
+    nummer = models.IntegerField(default=1)
+
+    class Meta:
+        ordering = ["-nummer"]
+        verbose_name = "Dateiversion"
+        verbose_name_plural = "Dateiversionen"
+
+    def __str__(self):
+        return f"{self.original_filename} v{self.nummer}"
+
+
 class ChangeLog(models.Model):
     ACTION_CREATE = "create"
     ACTION_UPDATE = "update"

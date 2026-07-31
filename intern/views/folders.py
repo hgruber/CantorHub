@@ -13,6 +13,7 @@ from django.db.models import (
     Sum,
     Value,
 )
+from django.core.files.base import ContentFile
 from django.db.models.functions import Coalesce, Concat
 from django.http import Http404, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -34,13 +35,15 @@ from intern.folder_access import (
 
 from ..models import FolderPermission
 from ..tables import OrdnerTabelle
+from .files import datei_umbenennen, verknuepfte_dateien, versionen_loeschen
 
 __all__ = [
     "folder_view",
     "folder_create",
     "folder_delete",
     "folder_move",
-    "folder_copy",
+    "folder_link",
+    "folder_duplicate",
     "folder_rename",
     "folder_zip_download",
     "folder_zip_selection",
@@ -109,11 +112,27 @@ def _parse_items(post):
     return items
 
 
+def _datei_loeschen(f):
+    """Remove one occurrence of a file.
+
+    filer's File.delete() drops the blob only when no other row references it,
+    so a file linked into several folders survives losing one of them. When this
+    *was* the last occurrence, its archived versions go too — otherwise the
+    content of a deleted file would live on in storage.
+
+    Pass a freshly loaded instance: the decision is made on `f.file.name`, and a
+    stale one would have filer delete a blob that is still in use."""
+    if not verknuepfte_dateien(f, inklusive_selbst=False).exists():
+        versionen_loeschen(f)
+    f.delete()
+
+
 def _delete_folder_deep(folder):
-    """Recursively delete a folder and its contents, calling File.delete() on each
-    file so filer's custom delete() also removes the underlying blob from storage."""
+    """Recursively delete a folder and its contents, calling _datei_loeschen() on
+    each file so filer's custom delete() also removes the underlying blob from
+    storage once no other folder links it."""
     for f in File.objects.filter(folder=folder).iterator():
-        f.delete()
+        _datei_loeschen(f)
     for child in Folder.objects.filter(parent=folder):
         _delete_folder_deep(child)
     folder.delete()
@@ -159,10 +178,41 @@ def _apply_perm_specs(folder, specs):
     ])
 
 
-def _copy_folder_deep(src_folder, target_parent_id, owner, inherited_perms=()):
+def _datei_verknuepfen(f, target_folder_id, owner):
+    """Link a file into another folder: a new row, the same blob. Folders work
+    like tags — the file now sits in both places and an update reaches both."""
+    return File.objects.create(
+        file=f.file,
+        original_filename=f.original_filename,
+        name=f.name,
+        owner=owner,
+        folder_id=target_folder_id,
+        mime_type=f.mime_type,
+    )
+
+
+def _datei_duplizieren(f, target_folder_id, owner):
+    """Copy a file including its blob — an independent file that can be changed
+    without touching the original. Versions are not carried over."""
+    with f.file.open("rb") as src:
+        inhalt = ContentFile(src.read(), name=f.original_filename or f.name)
+    return File.objects.create(
+        file=inhalt,
+        original_filename=f.original_filename,
+        name=f.name,
+        owner=owner,
+        folder_id=target_folder_id,
+        mime_type=f.mime_type,
+    )
+
+
+def _copy_folder_deep(src_folder, target_parent_id, owner, inherited_perms=(),
+                      blob_kopieren=False):
     """Recursively copy a folder and its contents into target_parent_id.
-    File records are duplicated, but their underlying storage blob is shared —
-    matches filer's own copy semantics (and how single-file copy already worked).
+
+    By default the files are *linked* (`_datei_verknuepfen`): new rows sharing
+    the storage blob, filer's own copy semantics. With `blob_kopieren` they are
+    truly duplicated instead (`_datei_duplizieren`), yielding independent files.
 
     Access rights travel with the copy: a restricted folder keeps its own
     FolderPermission rows, an unrestricted one inherits `inherited_perms` (the
@@ -175,17 +225,11 @@ def _copy_folder_deep(src_folder, target_parent_id, owner, inherited_perms=()):
     )
     perms = _perm_specs(src_folder) or list(inherited_perms)
     _apply_perm_specs(new_folder, perms)
+    datei_fn = _datei_duplizieren if blob_kopieren else _datei_verknuepfen
     for f in File.objects.filter(folder=src_folder):
-        File.objects.create(
-            file=f.file,
-            original_filename=f.original_filename,
-            name=f.name,
-            owner=owner,
-            folder=new_folder,
-            mime_type=f.mime_type,
-        )
+        datei_fn(f, new_folder.pk, owner)
     for child in Folder.objects.filter(parent=src_folder):
-        _copy_folder_deep(child, new_folder.pk, owner, perms)
+        _copy_folder_deep(child, new_folder.pk, owner, perms, blob_kopieren)
     return new_folder
 
 
@@ -657,7 +701,7 @@ def folder_delete(request):
             _, _, can_del = folder_access(request.user, f.folder)
             if not (global_delete or can_del):
                 continue
-            f.delete()
+            _datei_loeschen(f)
     folders.invalidate()
     return redirect("folder_view", pk=referer_pk)
 
@@ -687,9 +731,9 @@ def folder_move(request):
     return redirect("folder_view", pk=referer_pk)
 
 
-@login_required
-@require_POST
-def folder_copy(request):
+def _copy_action(request, blob_kopieren):
+    """Shared body of folder_link and folder_duplicate — same selection, same
+    permission checks, they differ only in whether the blob is shared or copied."""
     referer_pk = int(request.POST.get("referer_pk", 0))
     raw_target = request.POST.get("target_pk", "")
     target_id = int(raw_target) if raw_target and raw_target != "0" else None
@@ -698,6 +742,7 @@ def folder_copy(request):
     if not target_write:
         raise PermissionDenied
     target_perms = _perm_specs(target)
+    datei_fn = _datei_duplizieren if blob_kopieren else _datei_verknuepfen
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
             try:
@@ -709,7 +754,8 @@ def folder_copy(request):
             src_read, _, _ = folder_access(request.user, src)
             if not src_read:
                 continue
-            _copy_folder_deep(src, target_id, request.user, target_perms)
+            _copy_folder_deep(src, target_id, request.user, target_perms,
+                              blob_kopieren)
         elif item_type == "File":
             try:
                 f = File.objects.get(pk=item_id)
@@ -718,16 +764,25 @@ def folder_copy(request):
             src_read, _, _ = folder_access(request.user, f.folder)
             if not src_read:
                 continue
-            File.objects.create(
-                file=f.file,
-                original_filename=f.original_filename,
-                name=f.name,
-                owner=request.user,
-                folder_id=target_id,
-                mime_type=f.mime_type,
-            )
+            datei_fn(f, target_id, request.user)
     folders.invalidate()
     return redirect("folder_view", pk=referer_pk)
+
+
+@login_required
+@require_POST
+def folder_link(request):
+    """Link the selection into another folder — same file, second place.
+    An update to the file later shows up in every folder it is linked into."""
+    return _copy_action(request, blob_kopieren=False)
+
+
+@login_required
+@require_POST
+def folder_duplicate(request):
+    """Duplicate the selection into another folder — independent copies whose
+    contents can diverge from the original."""
+    return _copy_action(request, blob_kopieren=True)
 
 
 @login_required
@@ -754,9 +809,8 @@ def folder_rename(request):
         _, can_write, _ = folder_access(request.user, f.folder)
         if not can_write:
             raise PermissionDenied
-        f.original_filename = new_name
-        f.name = new_name
-        f.save(update_fields=["original_filename", "name"])
+        # One file, one name — a rename reaches every folder it is linked into.
+        datei_umbenennen(f, new_name)
     else:
         return JsonResponse({"status": "error", "message": "Unbekannter Typ."}, status=400)
     return JsonResponse({"status": "ok", "name": new_name})
