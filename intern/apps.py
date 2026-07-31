@@ -7,6 +7,11 @@ from django.db.models.signals import post_migrate, post_save, pre_migrate
 _migrating = threading.local()
 
 
+_MARKUP_HINT = (
+    "Wiki-Markup erlaubt ('''fett'''; % grauer Hinweis; @ Hinweisbox; "
+    "{button:Label} = Button auf {link})."
+)
+
 _CONFIG_DEFAULTS = [
     # key, default value, description
     ("EJABBERD_API_URL", "http://127.0.0.1:5280", "ejabberd REST API URL"),
@@ -55,15 +60,40 @@ _CONFIG_DEFAULTS = [
     (
         "MAIL_ANTRAG",
         "Hallo {vorname},\n\n"
-        "vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
-        "Du erhältst eine weitere Nachricht, sobald dieser geprüft ist.\n\n"
-        "Dein gewünschter Benutzername: {username}",
-        "Bestätigungsmail an Antragsteller (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {username}, {stimme}, {vereinsname})",
+        "vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten und melden uns, "
+        "sobald er geprüft ist.\n\n"
+        "Dein gewünschter Benutzername: '''{username}'''\n\n"
+        "Eine Kopie Deines Antrags findest Du im Anhang dieser E-Mail.\n\n"
+        "Herzliche Grüße\n"
+        "Dein Vorstand von {vereinsname}",
+        "Bestätigungsmail an Antragsteller. " + _MARKUP_HINT
+        + " Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {username}, "
+        "{stimme}, {vereinsname}",
     ),
     (
         "MAIL_ANTRAG_ADMIN",
-        "Es liegt ein neuer Mitgliedsantrag vor:\n\n{vorname} {nachname} ({email})\n\nDetails: {link}",
-        "Admin-Benachrichtigung bei neuem Antrag (Platzhalter: {vorname}, {nachname}, {email}, {link}, {vereinsname})",
+        "Es liegt ein neuer Mitgliedsantrag vor:\n\n"
+        "'''{vorname} {nachname}''' ({email})\n\n"
+        "{hinweise}\n\n"
+        "{button:Antrag ansehen}\n\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen Browser: {link}",
+        "Admin-Benachrichtigung bei neuem Antrag. " + _MARKUP_HINT
+        + " Platzhalter: {vorname}, {nachname}, {email}, {link}, {vereinsname}, "
+        "{hinweise} (bedingte Hinweise, siehe MAIL_ANTRAG_ADMIN_*)",
+    ),
+    (
+        "MAIL_ANTRAG_ADMIN_MINDERJAEHRIG",
+        "@ '''Hinweis:''' Der Antragsteller war zum Zeitpunkt des Antrags minderjährig. "
+        "Es ist eine schriftliche Einwilligung der Erziehungsberechtigten erforderlich.",
+        "Zusatz zu MAIL_ANTRAG_ADMIN, wenn der Antragsteller minderjährig ist "
+        "(erscheint an der Stelle von {hinweise})",
+    ),
+    (
+        "MAIL_ANTRAG_ADMIN_FOERDER",
+        "@ '''Hinweis:''' Der Antragsteller möchte förderndes Mitglied werden und wurde "
+        "der entsprechenden Gruppe zugeordnet.",
+        "Zusatz zu MAIL_ANTRAG_ADMIN bei Fördermitgliedschaft "
+        "(erscheint an der Stelle von {hinweise})",
     ),
     (
         "SATZUNG_FILE_ID",
@@ -97,46 +127,133 @@ _CONFIG_DEFAULTS = [
         "und zu bestätigen, dass sie korrekt und aktuell sind.\n\n"
         "Gleichzeitig bitten wir Dich, unsere Datenschutzerklärung, die Satzung "
         "sowie die Beitragsordnung des Chors erneut zu bestätigen.\n\n"
+        "{button:Jetzt bestätigen}\n\n"
+        "Herzliche Grüße\n"
+        "Dein Vorstand von {vereinsname}\n\n"
+        "% Der Link ist 30 Tage gültig.\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen Browser: {link}",
+        "Aufforderung zur Datenbestätigung. " + _MARKUP_HINT
+        + " Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, "
+        "{link}, {vereinsname}",
+    ),
+    (
+        "MAIL_BESTAETIGUNG_BESTAETIGT",
+        "Hallo {vorname},\n\n"
+        "vielen Dank für Deine Bestätigung! Anbei findest Du eine Kopie als PDF.\n\n"
+        "Herzliche Grüße\nDein Vorstand von {vereinsname}",
+        "Quittung an Mitglied nach Datenbestätigung. " + _MARKUP_HINT
+        + " Platzhalter: {vorname}, {nachname}, {user}, {stimme}, {vereinsname}",
+    ),
+    (
+        "MAIL_EINLADUNG",
+        "Hallo,\n\n"
+        "Du wurdest eingeladen, Mitglied bei '''{vereinsname_lang}''' zu werden. "
+        "Über den folgenden Button kannst Du Deinen Antrag ausfüllen.\n\n"
+        "{button:Jetzt Mitglied werden}\n\n"
+        "% Dieser Einladungs-Link ist 7 Tage gültig. Wenn Du keine Einladung erwartet "
+        "hast, kannst Du diese E-Mail einfach ignorieren.\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen Browser: {link}",
+        "Einladungs-Mail (ohne Empfängerkonto, daher keine Mitgliedsdaten). "
+        + _MARKUP_HINT + " Platzhalter: {link}, {vereinsname}, {vereinsname_lang}",
+    ),
+    (
+        "MAIL_NEUES_PASSWORT",
+        "Hallo {vorname},\n\n"
+        "über den folgenden Button kannst Du ein neues Passwort für Deinen Benutzer "
+        "'''{user}''' setzen.\n\n"
+        "{button:Passwort zurücksetzen}\n\n"
+        "% Wenn Du das nicht angefordert hast, kannst Du diese E-Mail einfach ignorieren "
+        "— Dein Passwort bleibt unverändert.\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen Browser: {link}",
+        "Passwort-zurücksetzen-Mail. " + _MARKUP_HINT
+        + " Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, "
+        "{link}, {vereinsname}",
+    ),
+    (
+        "MAIL_WILLKOMMEN",
+        "Liebe/r {vorname},\n\n"
+        "wir freuen uns sehr, Dich als neues Mitglied bei {vereinsname} begrüßen zu dürfen!\n\n"
+        "Dein Benutzerkonto ist jetzt freigeschaltet. Du kannst Dich ab sofort mit dem "
+        "Benutzernamen '''{user}''' im Mitgliederportal anmelden.\n\n"
+        "{button:Zum Mitgliederportal}\n\n"
+        "Herzliche Grüße\nDein Vorstand von {vereinsname}",
+        "Willkommens-Mail bei erster Aktivierung. " + _MARKUP_HINT
+        + " Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, "
+        "{link} (Login-Seite, leer ohne VEREINS_URL), {vereinsname}",
+    ),
+    (
+        "MAIL_REAKTIVIERT",
+        "Liebe/r {vorname},\n\n"
+        "Dein Mitgliedskonto bei {vereinsname} wurde wieder aktiviert.\n\n"
+        "Du kannst Dich ab sofort wieder im Mitgliederportal anmelden.\n\n"
+        "{button:Zum Mitgliederportal}\n\n"
+        "Herzliche Grüße\nDein Vorstand von {vereinsname}",
+        "Mail bei Reaktivierung eines Mitglieds. " + _MARKUP_HINT
+        + " Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, "
+        "{link} (Login-Seite, leer ohne VEREINS_URL), {vereinsname}",
+    ),
+    (
+        "MAIL_RUNDMAIL",
+        "Hallo {vorname},\n\n{text}",
+        "Rahmen der Rundmail an Mitglieder; {text} ist der im Formular eingegebene Text. "
+        + _MARKUP_HINT + " Platzhalter: {vorname}, {text}, {vereinsname}",
+    ),
+    (
+        "MAIL_FOOTER",
+        "Bitte antworte nicht auf diese E-Mail. Dies ist eine automatische Nachricht "
+        "aus dem Mitgliederportal von {vereinsname}.",
+        "Fußzeile aller E-Mails (leer = keine Fußzeile). Platzhalter: {vereinsname}, "
+        "{vereinsname_lang}, {vereinsname_kurz}",
+    ),
+]
+
+# Alte Default-Texte: wurde ein Wert nie händisch geändert, hebt _seed_config ihn auf
+# den aktuellen Default (sonst fehlten in bestehenden Installationen die Buttons).
+_LEGACY_MAIL_DEFAULTS = {
+    "MAIL_ANTRAG": [
+        "Hallo {vorname},\n\n"
+        "vielen Dank für Deinen Mitgliedsantrag. Wir haben ihn erhalten.\n"
+        "Du erhältst eine weitere Nachricht, sobald dieser geprüft ist.\n\n"
+        "Dein gewünschter Benutzername: {username}",
+    ],
+    "MAIL_ANTRAG_ADMIN": [
+        "Es liegt ein neuer Mitgliedsantrag vor:\n\n{vorname} {nachname} ({email})\n\nDetails: {link}",
+    ],
+    "MAIL_BESTAETIGUNG": [
+        "Liebe/r {vorname},\n\n"
+        "wir bitten Dich, Deine im Mitgliederportal gespeicherten Daten zu prüfen "
+        "und zu bestätigen, dass sie korrekt und aktuell sind.\n\n"
+        "Gleichzeitig bitten wir Dich, unsere Datenschutzerklärung, die Satzung "
+        "sowie die Beitragsordnung des Chors erneut zu bestätigen.\n\n"
         "Bitte klicke auf den folgenden Link (gültig 30 Tage):\n"
         "{link}\n\n"
         "Herzliche Grüße\n"
         "Dein Vorstand von {vereinsname}",
-        "Text der Datenbestätigungs-Mail (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})",
-    ),
-    (
-        "MAIL_BESTAETIGUNG_BESTAETIGT",
+    ],
+    "MAIL_BESTAETIGUNG_BESTAETIGT": [
         "Hallo {vorname},\n\nvielen Dank für Deine Bestätigung! Anbei findest Du eine Kopie als PDF.\n\n"
         "Herzliche Grüße\nDein Vorstand von {vereinsname}",
-        "Quittung an Mitglied nach Datenbestätigung (Platzhalter: {vorname}, {vereinsname})",
-    ),
-    (
-        "MAIL_EINLADUNG",
+    ],
+    "MAIL_EINLADUNG": [
         "Hallo,\n\nDu wurdest eingeladen, Mitglied bei {vereinsname_lang} zu werden.\n"
         "Über diesen Link kannst Du Deinen Antrag ausfüllen (7 Tage gültig):\n\n{link}",
-        "Einladungs-Mail (Platzhalter: {link}, {vereinsname}, {vereinsname_lang})",
-    ),
-    (
-        "MAIL_NEUES_PASSWORT",
+    ],
+    "MAIL_NEUES_PASSWORT": [
         "Hallo {vorname},\n\nüber diesen Link kannst Du ein neues Passwort für Deinen "
         "Benutzer '{user}' setzen:\n\n{link}\n\nWenn Du das nicht angefordert hast, kannst "
         "Du diese E-Mail ignorieren — Dein Passwort bleibt unverändert.",
-        "Passwort-zurücksetzen-Mail (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})",
-    ),
-    (
-        "MAIL_WILLKOMMEN",
+    ],
+    "MAIL_WILLKOMMEN": [
         "Liebe/r {vorname},\n\nwir freuen uns sehr, Dich als neues Mitglied bei {vereinsname} begrüßen zu dürfen!\n\n"
         "Dein Benutzerkonto ist jetzt freigeschaltet. Du kannst Dich ab sofort im Mitgliederportal anmelden.\n\n"
         "Herzliche Grüße\nDein Vorstand von {vereinsname}",
-        "Willkommens-Mail bei erster Aktivierung (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})",
-    ),
-    (
-        "MAIL_REAKTIVIERT",
+    ],
+    "MAIL_REAKTIVIERT": [
         "Liebe/r {vorname},\n\nDein Mitgliedskonto bei {vereinsname} wurde wieder aktiviert.\n\n"
         "Du kannst Dich ab sofort wieder im Mitgliederportal anmelden.\n\n"
         "Herzliche Grüße\nDein Vorstand von {vereinsname}",
-        "Mail bei Reaktivierung eines Mitglieds (Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, {link}, {vereinsname})",
-    ),
-]
+    ],
+}
 
 
 def _seed_config(sender, **kwargs):
@@ -153,10 +270,16 @@ def _seed_config(sender, **kwargs):
                 defaults={"value": env_val, "description": description},
             )
         else:
-            Konfiguration.objects.get_or_create(
+            obj, created = Konfiguration.objects.get_or_create(
                 key=key,
                 defaults={"value": value, "description": description},
             )
+            # Unveränderte Alt-Texte auf den aktuellen Default heben; händisch
+            # angepasste Texte bleiben unberührt.
+            if not created and obj.value.strip() in _LEGACY_MAIL_DEFAULTS.get(key, ()):
+                obj.value = value
+                obj.description = description
+                obj.save(update_fields=["value", "description"])
 
     obj = Konfiguration.objects.get(key="ICAL_SECRET")
     if not obj.value:

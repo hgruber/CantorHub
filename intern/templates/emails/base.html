@@ -4,15 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Bitte bestätige Deine Mitgliedsdaten – {{ vereinsname }}</title>
+  <title>{% block title %}{{ mail_title|default:vereinsname_lang }}{% endblock %}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f1f3f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
 
+  <!-- Outer wrapper -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
          style="background-color:#f1f3f5;padding:32px 16px;">
     <tr>
       <td align="center">
 
+        <!-- Card -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
                style="max-width:520px;border-radius:6px;overflow:hidden;
                       box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);">
@@ -29,7 +31,7 @@
                   <td style="vertical-align:middle;">
                     <span style="color:#ffffff;font-size:18px;font-weight:700;
                                  letter-spacing:.01em;line-height:1.2;">
-                      {{ vereinsname }}
+                      {{ vereinsname_lang }}
                     </span>
                   </td>
                 </tr>
@@ -40,37 +42,14 @@
           <!-- Body -->
           <tr>
             <td style="background-color:#ffffff;padding:32px;">
-
-              {% if text_body %}
-              <p style="margin:0 0 28px 0;color:#111827;font-size:15px;line-height:1.6;white-space:pre-line;">{{ text_body }}</p>
-              {% endif %}
-
-              <!-- Button -->
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0"
-                     style="margin:0 0 28px 0;">
-                <tr>
-                  <td style="border-radius:5px;background-color:#c14468;">
-                    <a href="{{ link }}"
-                       style="display:inline-block;padding:12px 24px;color:#ffffff;
-                              font-size:15px;font-weight:600;text-decoration:none;
-                              letter-spacing:.01em;">
-                      Jetzt bestätigen
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin:0 0 8px 0;color:#6b7280;font-size:13px;line-height:1.5;">
-                Oder kopiere diesen Link in Deinen Browser:
-              </p>
-              <p style="margin:0 0 0 0;color:#6b7280;font-size:12px;line-height:1.5;word-break:break-all;">
-                {{ link }}
-              </p>
-
+              {% block body %}{{ body_html|safe }}{% endblock %}
             </td>
           </tr>
 
+          {% block after_body %}{% endblock %}
+
           <!-- Footer -->
+          {% if mail_footer %}
           <tr>
             <td style="background-color:#f1f3f5;padding:20px 32px;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
@@ -80,21 +59,21 @@
                          style="display:block;border:0;border-radius:2px;">
                   </td>
                   <td style="vertical-align:middle;">
-                    <span style="color:#6b7280;font-size:12px;line-height:1.5;">
-                      Der Link ist 30 Tage gültig. Bitte antworte nicht auf diese E-Mail —
-                      dies ist eine automatische Nachricht vom CantorHub-Portal.
-                    </span>
+                    <span style="color:#6b7280;font-size:12px;line-height:1.5;">{{ mail_footer }}</span>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
+          {% endif %}
 
         </table>
+        <!-- /Card -->
 
       </td>
     </tr>
   </table>
+  <!-- /Outer wrapper -->
 
 </body>
 </html>

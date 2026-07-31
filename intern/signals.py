@@ -176,31 +176,28 @@ def _send_activation_mail(user):
 
         if not get_config_bool("MAIL_BEI_AKTIVIERUNG"):
             return
-        from .mail import send_branded_mail
+        from .mail import send_config_mail
         from .models import User
 
         vereinsname = get_vereinsname()
         first_activation = user.date_joined is None
         if first_activation:
             User.objects.filter(pk=user.pk).update(date_joined=timezone.now())
-            template = "emails/mitglied_willkommen.html"
             text_key = "MAIL_WILLKOMMEN"
             subject = f"Willkommen bei {vereinsname}"
         else:
-            template = "emails/mitglied_reaktiviert.html"
             text_key = "MAIL_REAKTIVIERT"
             subject = f"Dein Konto bei {vereinsname} wurde wieder aktiviert"
 
         portal_url = get_config("VEREINS_URL", "").rstrip("/")
         login_url = f"{portal_url}/intern/login/" if portal_url else None
-        from .mail import format_config_mail
-        text_body = format_config_mail(text_key, user, link=login_url or "")
-        send_branded_mail(
+        send_config_mail(
             subject=subject,
             to=user.email,
-            template=template,
-            context={"user": user, "vereinsname": vereinsname, "login_url": login_url},
-            text_body=text_body,
+            key=text_key,
+            user=user,
+            link=login_url,
+            context={"mail_title": subject},
         )
     except Exception:
         logger.exception("mail: failed to send activation mail to user %s", user.pk)

@@ -37,16 +37,20 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
     if not recipients:
         return
 
+    footer = render_config_mail("MAIL_FOOTER")[1].strip()
     html_message = render_to_string(template, {
         "vereinsname":      get_vereinsname(),
         "vereinsname_lang": get_vereinsname_lang(),
         "vereinsname_kurz": get_vereinsname_kurz(),
         "text_body":        text_body,
+        "mail_footer":      footer,
         **context,
     })
     plain = text_body or (
         "Bitte öffne diese Nachricht in einem HTML-fähigen E-Mail-Programm."
     )
+    if footer:
+        plain = f"{plain.rstrip()}\n\n-- \n{footer}"
 
     related = MIMEMultipart("related")
     related.attach(MIMEText(html_message, "html", "utf-8"))
@@ -98,52 +102,80 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
     logger.info("Sent mail '%s' to %s", subject, recipients)
 
 
-class _SafeFormatDict(dict):
-    """Lässt unbekannte {Platzhalter} unverändert statt KeyError zu werfen."""
-    def __missing__(self, key):
-        return f"{{{key}}}"
-
-
-def build_mail_placeholders(user, **extra):
+def build_mail_placeholders(user=None, **extra):
     """Standardplatzhalter-Dict für alle MAIL_*-Konfigurationstexte.
 
-    Enthält: {vorname}, {nachname}, {email}, {xmpp}, {user}, {username},
-    {stimme} (ausgeschrieben), {vereinsname} — plus alle extra-Schlüssel
-    (z.B. {link}).
+    Immer verfügbar: {vereinsname}, {vereinsname_lang}, {vereinsname_kurz}.
+    Mit ``user`` zusätzlich: {vorname}, {nachname}, {email}, {xmpp}, {user},
+    {username}, {stimme} (ausgeschrieben). Dazu alle extra-Schlüssel (z.B. {link}).
     """
-    from intern.models import User  # lazy: vermeidet zirkulären Import
-    stimme_display = dict(User.STIMMEN).get(user.stimme, "") if user.stimme else ""
-    return _SafeFormatDict({
-        "vorname":     user.first_name or user.username,
-        "nachname":    user.last_name or "",
-        "email":       user.email or "",
-        "xmpp":        user.xmpp or "",
-        "user":        user.username,
-        "username":    user.username,   # Rückwärtskompatibilität zu MAIL_ANTRAG
-        "stimme":      stimme_display,
-        "vereinsname": get_vereinsname(),
-        **extra,
-    })
-
-
-def format_config_mail(key, user, **extra):
-    """Liest einen MAIL_*-Konfigurationsschlüssel und füllt Platzhalter ein.
-
-    Gibt None zurück wenn der Schlüssel leer oder nicht gesetzt ist.
-    """
-    raw = get_config(key)
-    return raw.format_map(build_mail_placeholders(user, **extra)) if raw else None
-
-
-def format_config_text(key, **kwargs):
-    """Wie format_config_mail, aber ohne User-Objekt (für Mails ohne eingeloggten Empfänger).
-
-    Verfügbare Platzhalter: {vereinsname}, {vereinsname_lang} — plus alle kwargs.
-    Gibt None zurück wenn der Schlüssel leer oder nicht gesetzt ist.
-    """
-    raw = get_config(key)
-    return raw.format_map(_SafeFormatDict({
+    values = {
         "vereinsname":      get_vereinsname(),
         "vereinsname_lang": get_vereinsname_lang(),
-        **kwargs,
-    })) if raw else None
+        "vereinsname_kurz": get_vereinsname_kurz(),
+    }
+    if user is not None:
+        from intern.models import User  # lazy: vermeidet zirkulären Import
+        stimme_display = dict(User.STIMMEN).get(user.stimme, "") if user.stimme else ""
+        values.update({
+            "vorname":  user.first_name or user.username,
+            "nachname": user.last_name or "",
+            "email":    user.email or "",
+            "xmpp":     user.xmpp or "",
+            "user":     user.username,
+            "username": user.username,   # Rückwärtskompatibilität zu MAIL_ANTRAG
+            "stimme":   stimme_display,
+        })
+    values.update(extra)
+    return values
+
+
+def render_mail_text(raw, user=None, link=None, **extra):
+    """Rendert einen Mailtext (Wiki-Markup + Platzhalter) zu ``(html, plain)``.
+
+    ``link`` ist das Ziel für ``{button:Label}`` und steht zusätzlich als
+    Platzhalter ``{link}`` zur Verfügung.
+    """
+    from intern.mail_markup import render_mail_markup
+    extra.setdefault("link", link or "")
+    return render_mail_markup(raw, build_mail_placeholders(user, **extra), link=link)
+
+
+def render_config_mail(key, user=None, link=None, extra_keys=(), **extra):
+    """Wie ``render_mail_text``, liest den Text aber aus der Konfiguration.
+
+    ``extra_keys`` sind weitere Konfigurationsschlüssel mit bedingten Hinweisen.
+    Deren Texte landen im Platzhalter ``{hinweise}`` — enthält der Haupttext ihn
+    nicht, werden sie angehängt, damit ein Hinweis nie stillschweigend verloren
+    geht. Ist kein Text gesetzt, kommt ``("", "")`` zurück.
+    """
+    raw = (get_config(key) or "").strip()
+    hinweise = "\n\n".join(
+        text.strip() for text in (get_config(k) for k in extra_keys) if text and text.strip()
+    )
+    if "{hinweise}" in raw:
+        extra.setdefault("hinweise", hinweise)
+    elif hinweise:
+        raw = f"{raw}\n\n{hinweise}" if raw else hinweise
+    return render_mail_text(raw, user, link, **extra)
+
+
+def send_config_mail(subject, to, key, user=None, link=None, extra_keys=(),
+                     attachments=None, template="emails/generic.html",
+                     context=None, **extra):
+    """Rendert einen MAIL_*-Konfigurationstext und verschickt ihn als Mail.
+
+    Der gerenderte HTML-Teil kommt als ``body_html`` in den Template-Kontext,
+    der Plain-Text-Teil wird zum ``text/plain``-Teil der Mail.
+    """
+    body_html, plain = render_config_mail(
+        key, user=user, link=link, extra_keys=extra_keys, **extra
+    )
+    send_branded_mail(
+        subject,
+        to,
+        template,
+        {"body_html": body_html, **(context or {})},
+        text_body=plain,
+        attachments=attachments,
+    )

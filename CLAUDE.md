@@ -178,6 +178,30 @@ bot-attribution limitation (web reactions appear in XMPP clients bundled under
 
 New articles are created from the `+` in the article-list topbar (`article_list` sets `add`/`add_panel_include`). It opens the off-canvas panel `templates/artikel_add_panel.html`, which has **no** server form — a small vanilla script reads the entered page name and navigates client-side to `/intern/artikel/<name>/edit/` (built from the panel's `data-edit-url` `__NAME__` placeholder + `encodeURIComponent`), where the first save creates version 1. Shown to every logged-in member, matching the open-wiki default (`article_edit` has no permission check for a new name).
 
+### Automated e-mails
+
+Every automated mail carries its **entire** visible body in a `MAIL_*` key of the
+`Konfiguration` table — no sentence lives in a template. The templates only supply the
+branded frame: `templates/emails/base.html` (card, logo header, footer text from
+`MAIL_FOOTER`), `generic.html` (renders `body_html`) and
+`mitglied_benachrichtigung.html` (round mail, adds the signature block via the
+`after_body` block). Subjects remain in Python.
+
+`intern/mail_markup.py` renders one config text into **both** MIME parts (HTML with
+inline styles, plain text) using the wiki syntax of the article editor — `'''fett'''`,
+`''kursiv''`, `== Titel ==`, `*`/`#` lists, `% grauer Hinweis`, `@ Hinweisbox`,
+`: Einrückung`, `[https://… Name]`, `$roh$` — plus the mail-only directive
+`{button:Label}` (links to `{link}`) / `{button:Label:URL}`. A button without a URL
+renders nothing. Placeholder values are HTML-escaped; unknown `{placeholders}` stay
+verbatim. `/intern/konfiguration/` shows a syntax legend while a `MAIL_*` row is edited.
+
+Call sites use `mail.send_config_mail(subject, to, key, user=…, link=…, extra_keys=…,
+attachments=…, template=…, context=…, **placeholders)`; `render_config_mail()` /
+`render_mail_text()` return the `(html, plain)` pair for callers that need it.
+`extra_keys` holds conditional add-on texts (the minor/supporting-member notes of the
+application admin mail) and is rendered at `{hinweise}`. See `configuration.md` for the
+full markup table, the placeholder list and the recipe for adding a new mail.
+
 ### Member application flow (Mitglieds-Beitritt)
 
 Two ways to add a member, both behind the `+` in `/intern/mitglied/` (perm `intern.add_user`).
@@ -210,19 +234,18 @@ The application is logged in the ChangeLog as a distinct action
 `user._audit_application = True` before saving and `signals._write_audit_log` maps that
 to the application action (the action code is ≤8 chars to fit `action`'s `max_length`).
 
-All e-mails in this flow (`templates/emails/mitglied_invite.html`,
-`mitglied_beitritt_success.html`, `mitglied_antrag_admin.html`) and the password-reset
-mail go through `intern.mail.send_branded_mail()` (branded card with `cid:logo`).
+All e-mails in this flow (invite, applicant confirmation, admin notification) and the
+password-reset mail go through `intern.mail.send_config_mail()` — their whole body comes
+from the matching `MAIL_*` key (see "Automated e-mails").
 
 **Applicants are created with `date_joined=None`** (the field is overridden on `User` to be
 nullable). This is the discriminator for the activation mail: when an admin later sets
 `is_active=True`, `signals._send_activation_mail()` checks `user.date_joined is None` →
-first-time activation → sends `emails/mitglied_willkommen.html` and stamps `date_joined`
+first-time activation → sends the `MAIL_WILLKOMMEN` text and stamps `date_joined`
 via `User.objects.filter(pk=...).update(date_joined=timezone.now())` (avoids recursive
-signal). If `date_joined` is already set → reactivation → sends `emails/mitglied_reaktiviert.html`.
-Both mail texts are configurable via `MAIL_WILLKOMMEN` / `MAIL_REAKTIVIERT` in
-`Konfiguration` (all standard placeholders available; see `mail.format_config_mail()`). No mail is sent if the user
-has no email address.
+signal). If `date_joined` is already set → reactivation → sends `MAIL_REAKTIVIERT`.
+Both texts get `{link}` = the login URL derived from `VEREINS_URL`; without it the
+`{button:…}` in the text renders nothing. No mail is sent if the user has no email address.
 
 ### Member re-confirmation flow (Datenbestätigung)
 
@@ -233,12 +256,10 @@ re-acknowledge the privacy policy, bylaws, and membership fee schedule.
 (e.g. `--base-url https://portal.example.com`). The command calls
 `send_bestaetigung_mail(user, base_url)` in `views/auth.py`, which:
 1. Creates a `TimestampSigner` token (salt `"intern.mitglied_bestaetigung"`, **30-day** validity) encoding the user PK.
-2. Reads the email body text from the `Konfiguration` key **`MAIL_BESTAETIGUNG`** —
-   editable via `/intern/konfiguration/` without code changes.
-   All standard placeholders available plus `{link}`; falls back to `None` (generic HTML only) if
-   the key is empty.
-3. Sends the branded mail (`emails/mitglied_bestaetigung_aufforderung.html`) with the text as
-   `text_body`.
+2. Reads the email body from the `Konfiguration` key **`MAIL_BESTAETIGUNG`** —
+   editable via `/intern/konfiguration/` without code changes. All standard placeholders
+   available plus `{link}`; an empty key means an empty mail body.
+3. Sends it via `send_config_mail()` (branded frame `emails/generic.html`).
 
 **Public form:** `/intern/bestaetigung/<token>/` (`mitglied_bestaetigung` in `views/auth.py`,
 no `login_required`). Shows the member's current data (read-only) plus three mandatory
@@ -246,8 +267,8 @@ checkboxes (`MitgliedBestaetigungForm` in `forms.py`): data correct, Datenschutz
 
 **On submit:** `_save_bestaetigung_pdf(user)` generates a PDF (reportlab) with all stored
 data + confirmed checkboxes, saves it to **„Verwaltung/Mitglieder"** in filer, and attaches it
-to the quittance mail (`emails/mitglied_bestaetigung_bestaetigt.html`) sent to the member. The
-quittance mail body is configurable via `MAIL_BESTAETIGUNG_BESTAETIGT` in `Konfiguration`.
+to the quittance mail sent to the member. The quittance mail body is configurable via
+`MAIL_BESTAETIGUNG_BESTAETIGT` in `Konfiguration`.
 No Vorstand notification. Three public templates extend `mitglied_public_base.html`:
 `mitglied_bestaetigung.html`, `_success.html`, `_invalid.html`.
 
@@ -302,7 +323,8 @@ Tracked in separate files: general code/UX debt (branding, risk-ranked items) in
 ### Notable utilities (`intern/`)
 
 - `pdf.py` — `new_letterhead_pdf(title, subtitle, vereinsname, vereinsname_lang, vereinsadresse)` returns `(buf, canvas, content_y)`; draws branded letterhead (logo from `intern/brand/JG-Frankfurt-transparent.png`, thin `#c14468` accent lines) and footer. Helper functions `draw_section`, `draw_field`, `draw_checkbox`, `draw_signature` build the content area. Used by `_save_antrag_pdf` and `_save_bestaetigung_pdf` in `views/auth.py`.
-- `mail.py` — `send_branded_mail(subject, to, template, context, text_body=None, attachments=None)`: renders an HTML template into a branded mail with the embedded logo (`cid:logo`) and a plain-text fallback; resolves the sender via `get_from_email()`; never raises. `attachments` is an optional list of `(filename, bytes, content_type)` tuples — when present the outer MIME type is `multipart/mixed`. Used by the password-reset and member-application mails (the beitritt confirmation includes the application PDF as attachment).
+- `mail.py` — `send_branded_mail(subject, to, template, context, text_body=None, attachments=None)`: renders an HTML template into a branded mail with the embedded logo (`cid:logo`) and a plain-text fallback (both get the `MAIL_FOOTER` line); resolves the sender via `get_from_email()`; never raises. `attachments` is an optional list of `(filename, bytes, content_type)` tuples — when present the outer MIME type is `multipart/mixed`. Callers normally use the wrapper `send_config_mail()`, which renders a `MAIL_*` config text (see "Automated e-mails"); `build_mail_placeholders()` builds the placeholder dict.
+- `mail_markup.py` — `render_mail_markup(raw, placeholders, link)` → `(html, plain)`: wiki-style markup renderer for mail texts, including the `{button:Label}` directive.
 - `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file links)
 - `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings
 - `fuzzy.py` — fuzzy song title matching used in article references

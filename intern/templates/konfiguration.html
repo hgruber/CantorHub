@@ -137,6 +137,44 @@
 .konfig-row[data-editing] .konfig-del-btn,
 .konfig-row.to-delete .konfig-del-btn { display: inline-flex; }
 
+/* Markup-Hilfe für MAIL_*-Texte */
+.konfig-mailhelp {
+    position: fixed;
+    bottom: 0;
+    left: var(--sb-width);
+    right: 0;
+    z-index: 99;
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    align-items: center;
+    padding: 10px 28px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--t3);
+    transition: bottom 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.konfig-mailhelp.visible { display: flex; }
+.konfig-mailhelp.shifted { bottom: 61px; }
+.konfig-mailhelp code {
+    font-family: monospace;
+    font-size: 11px;
+    background: var(--bg-thead);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: var(--t1);
+}
+.konfig-mailhelp .konfig-mailhelp-title {
+    font-weight: 700;
+    color: var(--brand);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+}
+
 /* Apply bar */
 .konfig-apply-bar {
     position: fixed;
@@ -167,6 +205,7 @@
 
 @media (max-width: 768px) {
     .konfig-apply-bar { left: 0; }
+    .konfig-mailhelp { left: 0; }
 }
 </style>
 
@@ -212,6 +251,19 @@
     </div>
 </div>
 
+<div class="konfig-mailhelp" id="konfig-mailhelp">
+    <span class="konfig-mailhelp-title">Mailtext</span>
+    <span><code>'''fett'''</code></span>
+    <span><code>''kursiv''</code></span>
+    <span><code>== Überschrift ==</code></span>
+    <span><code>* Punkt</code> Aufzählung</span>
+    <span><code>% Zeile</code> grauer Hinweis</span>
+    <span><code>@ Zeile</code> Hinweisbox</span>
+    <span><code>[https://… Name]</code> Link</span>
+    <span><code>{button:Label}</code> Button auf <code>{link}</code></span>
+    <span>Platzhalter siehe Beschreibung</span>
+</div>
+
 <div class="konfig-apply-bar" id="konfig-apply-bar">
     <span class="konfig-change-summary" id="konfig-change-summary"></span>
     <button type="button" class="btn btn-primary" id="konfig-apply-btn">
@@ -255,6 +307,23 @@
         return n;
     }
 
+    // Schalter, keine Mailtexte — dafür ist die Markup-Hilfe irreführend
+    const MAIL_NON_TEXT_KEYS = ['MAIL_BEI_AKTIVIERUNG'];
+
+    function updateMailHelp() {
+        let show = false;
+        document.querySelectorAll('.konfig-row[data-editing]').forEach(function (tr) {
+            const el = tr.querySelector('.konfig-edit-key') || tr.querySelector('.konfig-key-input');
+            if (!el) return;
+            const key = (el.value !== undefined ? el.value : el.textContent).trim().toUpperCase();
+            if (key.startsWith('MAIL_') && MAIL_NON_TEXT_KEYS.indexOf(key) === -1) show = true;
+        });
+        const help = document.getElementById('konfig-mailhelp');
+        const barVisible = document.getElementById('konfig-apply-bar').classList.contains('visible');
+        help.classList.toggle('visible', show);
+        help.classList.toggle('shifted', barVisible);
+    }
+
     function updateApplyBar() {
         const n = countChanges();
         const bar = document.getElementById('konfig-apply-bar');
@@ -268,6 +337,7 @@
         if (!wasVisible && n > 0) {
             setTimeout(scrollEditingRowIntoView, 260);
         }
+        updateMailHelp();
     }
 
     function getCsrfToken() {
@@ -283,10 +353,12 @@
         if (document.getElementById('konfig-apply-bar').classList.contains('visible')) {
             scrollEditingRowIntoView();
         }
+        updateMailHelp();
     }
 
     function exitEditMode(tr) {
         delete tr.dataset.editing;
+        updateMailHelp();
     }
 
     function wireExistingRow(tr) {

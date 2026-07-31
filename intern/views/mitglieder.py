@@ -16,7 +16,7 @@ from filer.models import File, Folder
 
 from intern import ejabberd, folders
 from intern.app_settings import get_map_center, get_vereinsname_lang, is_ejabberd_configured
-from intern.mail import format_config_text, send_branded_mail
+from intern.mail import send_config_mail
 
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..models import Abstimmung, Artikel, Mitteilung, PRIVACY_FIELDS, User, Zusage
@@ -324,12 +324,11 @@ def mitglied_invite(request):
 
     token = make_invite_token(email)
     link = request.build_absolute_uri(reverse("mitglied_beitritt", args=[token]))
-    send_branded_mail(
+    send_config_mail(
         f"Einladung zu {get_vereinsname_lang()}",
         email,
-        "emails/mitglied_invite.html",
-        {"link": link},
-        text_body=format_config_text("MAIL_EINLADUNG", link=link),
+        "MAIL_EINLADUNG",
+        link=link,
     )
     messages.success(request, f"Einladung an {email} verschickt.")
     return redirect("mitglied_list")
@@ -489,18 +488,19 @@ def mitglied_benachrichtigen(request):
         if not errors:
             sent = 0
             for r in recipients:
-                send_branded_mail(
+                send_config_mail(
                     subject,
                     r["email"],
-                    "emails/mitglied_benachrichtigung.html",
-                    {
-                        "vorname": r["name"].split()[0] if r["name"] else "",
-                        "body": body,
+                    "MAIL_RUNDMAIL",
+                    template="emails/mitglied_benachrichtigung.html",
+                    context={
+                        "mail_title": subject,
                         "signature_group_name": signature_group_name,
                         "signature_members": signature_members,
                     },
-                    text_body=body,
                     attachments=attachments if attachments else None,
+                    vorname=r["name"].split()[0] if r["name"] else "",
+                    text=body,
                 )
                 sent += 1
             _log_notify(request.user, subject, body, sent, attachments, signature_group_name)

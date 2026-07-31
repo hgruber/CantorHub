@@ -29,7 +29,7 @@ from intern.pdf import (
     draw_signature,
     new_letterhead_pdf,
 )
-from intern.mail import format_config_mail, send_branded_mail
+from intern.mail import send_config_mail
 
 from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
 from ..models import Termin, User
@@ -238,12 +238,13 @@ def register(request):
                     reverse("password_reset_confirm", args=[uidb64, token])
                 )
                 subject = "Passwort zurücksetzen"
-                send_branded_mail(
+                send_config_mail(
                     subject,
                     user.email,
-                    "emails/password_reset.html",
-                    {"user": user, "link": link},
-                    text_body=format_config_mail("MAIL_NEUES_PASSWORT", user, link=link),
+                    "MAIL_NEUES_PASSWORT",
+                    user=user,
+                    link=link,
+                    context={"mail_title": subject},
                 )
                 logger.info("Password reset link sent to %s for user %s", user.email, user.username)
             # Immer dieselbe Antwort — kein Rückschluss auf existierende Konten.
@@ -373,13 +374,12 @@ def mitglied_beitritt(request, token):
             except Exception:
                 logger.exception("Antrag-PDF konnte nicht erstellt werden fuer %s", user.username)
 
-            send_branded_mail(
+            send_config_mail(
                 f"Dein Mitgliedsantrag bei {get_vereinsname()}",
                 email,
-                "emails/mitglied_beitritt_success.html",
-                {"user": user},
+                "MAIL_ANTRAG",
+                user=user,
                 attachments=pdf_attachment,
-                text_body=format_config_mail("MAIL_ANTRAG", user),
             )
 
             antrag_email = get_config("ANTRAG_EMAIL", "").strip()
@@ -388,13 +388,18 @@ def mitglied_beitritt(request, token):
                 link = request.build_absolute_uri(
                     reverse("mitglied_view", args=[user.id])
                 )
-                send_branded_mail(
+                hinweise = []
+                if minderjaehrig:
+                    hinweise.append("MAIL_ANTRAG_ADMIN_MINDERJAEHRIG")
+                if foerdermitglied:
+                    hinweise.append("MAIL_ANTRAG_ADMIN_FOERDER")
+                send_config_mail(
                     "Neuer Mitgliedsantrag",
                     empfaenger,
-                    "emails/mitglied_antrag_admin.html",
-                    {"applicant": user, "link": link,
-                     "minderjaehrig": minderjaehrig, "foerdermitglied": foerdermitglied},
-                    text_body=format_config_mail("MAIL_ANTRAG_ADMIN", user, link=link),
+                    "MAIL_ANTRAG_ADMIN",
+                    user=user,
+                    link=link,
+                    extra_keys=hinweise,
                 )
             return render(request, "mitglied_beitritt_success.html", {"user": user})
     else:
@@ -426,14 +431,6 @@ def make_bestaetigung_url(user, base_url):
     """Gibt den signierten Bestätigungs-Link für *user* zurück, ohne Mail zu senden."""
     token = _make_bestaetigung_token(user.pk)
     return f"{base_url.rstrip('/')}/intern/bestaetigung/{token}/"
-
-
-def _get_bestaetigung_text(user, link):
-    try:
-        return format_config_mail("MAIL_BESTAETIGUNG", user, link=link)
-    except Exception:
-        logger.warning("MAIL_BESTAETIGUNG nicht konfiguriert oder fehlerhaft")
-        return None
 
 
 def _save_bestaetigung_pdf(user):
@@ -493,13 +490,12 @@ def send_bestaetigung_mail(user, base_url):
     """
     token = _make_bestaetigung_token(user.pk)
     link = f"{base_url.rstrip('/')}/intern/bestaetigung/{token}/"
-    text_body = _get_bestaetigung_text(user, link)
-    send_branded_mail(
+    send_config_mail(
         "Bitte bestätige Deine Mitgliedsdaten",
         user.email,
-        "emails/mitglied_bestaetigung_aufforderung.html",
-        {"user": user, "link": link},
-        text_body=text_body,
+        "MAIL_BESTAETIGUNG",
+        user=user,
+        link=link,
     )
 
 
@@ -531,13 +527,12 @@ def mitglied_bestaetigung(request, token):
                     "Bestätigung-PDF konnte nicht erstellt werden fuer %s", user.username
                 )
 
-            send_branded_mail(
+            send_config_mail(
                 f"Deine Datenbestätigung – {get_vereinsname()}",
                 user.email,
-                "emails/mitglied_bestaetigung_bestaetigt.html",
-                {"user": user},
+                "MAIL_BESTAETIGUNG_BESTAETIGT",
+                user=user,
                 attachments=pdf_attachment,
-                text_body=format_config_mail("MAIL_BESTAETIGUNG_BESTAETIGT", user),
             )
             return render(request, "mitglied_bestaetigung_success.html", {"user": user})
     else:

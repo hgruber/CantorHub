@@ -23,29 +23,53 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in privacy-policy §1; multi-line, empty → only board member names are listed, no addresses)
 - `HOMEPAGE_UEBER_UNS` (body text for the "Über uns" card on the public homepage; multi-line allowed)
 - `HOMEPAGE_AUFNAHME` (body text for the "Wir suchen" card on the public homepage; multi-line allowed; hidden when empty)
-- `MAIL_ANTRAG` (applicant confirmation email body)
-- `MAIL_ANTRAG_ADMIN` (admin notification on new application; `{vorname}`, `{nachname}`, `{email}`, `{link}`)
-- `MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing)
-- `MAIL_BESTAETIGUNG` (re-confirmation invitation email body)
-- `MAIL_BESTAETIGUNG_BESTAETIGT` (quittance mail after member confirms data; `{vorname}`, `{vereinsname}`)
-- `MAIL_EINLADUNG` (invite email sent to an email address before registration; `{link}`, `{vereinsname}`, `{vereinsname_lang}` — no user object, use `format_config_text()`)
-- `MAIL_NEUES_PASSWORT` (password reset email body)
-- `MAIL_REAKTIVIERT` (email on reactivation of a previously active member; `{link}` = login URL, empty string if `VEREINS_URL` not set)
-- `MAIL_WILLKOMMEN` (welcome email on first activation; `{link}` = login URL, empty string if `VEREINS_URL` not set)
+- `MAIL_ANTRAG` (applicant confirmation email)
+- `MAIL_ANTRAG_ADMIN` (admin notification on new application; `{vorname}`, `{nachname}`, `{email}`, `{link}`, `{hinweise}`)
+- `MAIL_ANTRAG_ADMIN_MINDERJAEHRIG` / `MAIL_ANTRAG_ADMIN_FOERDER` (conditional notes appended to the admin mail; rendered at `{hinweise}`)
+- `MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing; a switch, not a text)
+- `MAIL_BESTAETIGUNG` (re-confirmation invitation email)
+- `MAIL_BESTAETIGUNG_BESTAETIGT` (quittance mail after member confirms data)
+- `MAIL_EINLADUNG` (invite email sent to an email address before registration; no user object → only `{link}` and the `{vereinsname*}` placeholders)
+- `MAIL_FOOTER` (footer line of **every** email; empty → no footer)
+- `MAIL_NEUES_PASSWORT` (password reset email)
+- `MAIL_REAKTIVIERT` (email on reactivation of a previously active member; `{link}` = login URL, empty if `VEREINS_URL` not set → the button is dropped)
+- `MAIL_RUNDMAIL` (frame around the member round mail; `{text}` = the text entered in the form)
+- `MAIL_WILLKOMMEN` (welcome email on first activation; `{link}` = login URL, empty if `VEREINS_URL` not set → the button is dropped)
 - `SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms)
-- `VEREINS_URL` (base URL of the portal, e.g. `https://portal.example.com`; when set, a login button is added to activation mails; empty → no button)
+- `VEREINS_URL` (base URL of the portal, e.g. `https://portal.example.com`; supplies `{link}` in the activation mails)
 
-## Mail placeholders
+## Mail texts: markup and placeholders
 
-All `MAIL_*` body texts are rendered in both the HTML email body and the plain-text fallback
-via `send_branded_mail()` (which passes `text_body` into the template context). Standard
-placeholders via `mail.format_config_mail(key, user, ...)`: `{vorname}`, `{nachname}`,
+`MAIL_*` texts carry the **complete** visible mail body — greeting, buttons, notes, closing.
+Nothing but the branded frame (logo header, footer line from `MAIL_FOOTER`) comes from the
+templates. `intern/mail_markup.py` renders one text into **both** MIME parts, using the same
+wiki syntax as the article editor (`intern/replacements.py`):
+
+| Markup | Result |
+|---|---|
+| blank line | new paragraph |
+| `== Titel ==` … `======` | heading (5 levels) |
+| `'''fett'''` / `''kursiv''` / `''''beides''''` | bold / italic / both |
+| `* Punkt` / `# Punkt` | bullet / numbered list (nestable via `**`, `##`) |
+| `% Zeile` | small grey note block |
+| `@ Zeile` | highlighted note box |
+| `: Zeile` | indented paragraph |
+| `[https://… Name]` | named link (bare URLs are linked automatically) |
+| `$Text$` | no formatting inside |
+| `{button:Label}` | button linking to `{link}` |
+| `{button:Label:URL}` | button linking to an explicit URL |
+
+A button whose URL is empty renders **nothing** (no dead link). In the plain-text part a
+button becomes `Label: URL`.
+
+Placeholders via `mail.render_config_mail(key, user=…, link=…)`: `{vorname}`, `{nachname}`,
 `{email}`, `{xmpp}`, `{user}` (username), `{username}` (alias), `{stimme}` (voice type written
-out), `{vereinsname}`, plus mail-specific ones like `{link}`. Unknown placeholders are left
-as-is.
+out), `{vereinsname}`, `{vereinsname_lang}`, `{vereinsname_kurz}`, `{link}`, plus mail-specific
+extras. Without a `user` only the `{vereinsname*}` set and the extras are available. Unknown
+placeholders are left as-is; placeholder values are HTML-escaped.
 
-For mails **without** a user object (e.g. invite), use `mail.format_config_text(key, **kwargs)`
-instead — only `{vereinsname}`, `{vereinsname_lang}`, and explicit kwargs are available.
-
-**To add a new automated email:** add the key to `_CONFIG_DEFAULTS` in `apps.py`, then call
-the appropriate formatter as `text_body`.
+**To add a new automated email:** add the key to `_CONFIG_DEFAULTS` in `apps.py` (description
+mentioning the placeholders), then call `mail.send_config_mail(subject, to, key, user=…,
+link=…)` — it renders the text and sends it through `emails/generic.html`. Changing an existing
+default text: also list the previous text in `_LEGACY_MAIL_DEFAULTS` (`apps.py`) so untouched
+installations are lifted to the new wording on the next `migrate`.

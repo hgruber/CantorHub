@@ -1,101 +1,16 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Nachricht – {{ vereinsname_lang }}</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f1f3f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+{% extends "emails/base.html" %}
+{# Rundmail an Mitglieder: Body aus MAIL_RUNDMAIL, darunter die Unterschrift. #}
 
-  <!-- Outer wrapper -->
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-         style="background-color:#f1f3f5;padding:32px 16px;">
-    <tr>
-      <td align="center">
-
-        <!-- Card -->
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-               style="max-width:520px;border-radius:6px;overflow:hidden;
-                      box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);">
-
-          <!-- Header -->
-          <tr>
-            <td style="background-color:#c14468;padding:24px 32px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="padding-right:14px;vertical-align:middle;">
-                    <img src="cid:logo" width="48" height="48" alt=""
-                         style="display:block;border:0;border-radius:4px;">
-                  </td>
-                  <td style="vertical-align:middle;">
-                    <span style="color:#ffffff;font-size:18px;font-weight:700;
-                                 letter-spacing:.01em;line-height:1.2;">
-                      {{ vereinsname_lang }}
-                    </span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="background-color:#ffffff;padding:32px;">
-
-              <p style="margin:0 0 20px 0;color:#111827;font-size:15px;line-height:1.6;">
-                Hallo {{ vorname }},
-              </p>
-
-              <p style="margin:0;color:#111827;font-size:15px;line-height:1.6;">
-                {{ body|linebreaksbr }}
-              </p>
-
-            </td>
-          </tr>
-
-          <!-- Signature -->
-          <tr>
-            <td style="background-color:#ffffff;padding:0 32px 28px;">
-              <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-              {% if signature_group_name %}
-                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#c14468;letter-spacing:.01em;">{{ signature_group_name }}</p>
-                {% for name in signature_members %}
-                <p style="margin:0;font-size:13px;color:#374151;line-height:1.6;">{{ name }}</p>
-                {% endfor %}
-              {% else %}
-                <p style="margin:0;font-size:13px;color:#9ca3af;font-style:italic;">(nicht unterschrieben)</p>
-              {% endif %}
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background-color:#f1f3f5;padding:20px 32px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="padding-right:12px;vertical-align:middle;">
-                    <img src="cid:logo" width="24" height="24" alt=""
-                         style="display:block;border:0;border-radius:2px;">
-                  </td>
-                  <td style="vertical-align:middle;">
-                    <span style="color:#6b7280;font-size:12px;line-height:1.5;">
-                      Bitte antworte nicht auf diese E-Mail. Dies ist eine automatische
-                      Nachricht vom CantorHub-Portal.
-                    </span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-        </table>
-        <!-- /Card -->
-
-      </td>
-    </tr>
-  </table>
-  <!-- /Outer wrapper -->
-
-</body>
-</html>
+{% block after_body %}
+{% if signature_group_name %}
+<tr>
+  <td style="background-color:#ffffff;padding:0 32px 28px;">
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#c14468;letter-spacing:.01em;">{{ signature_group_name }}</p>
+    {% for name in signature_members %}
+    <p style="margin:0;font-size:13px;color:#374151;line-height:1.6;">{{ name }}</p>
+    {% endfor %}
+  </td>
+</tr>
+{% endif %}
+{% endblock %}
