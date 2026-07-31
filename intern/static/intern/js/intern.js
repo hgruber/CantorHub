@@ -766,8 +766,86 @@ document.addEventListener("DOMContentLoaded", function () {
     msAction("stop", stop);
   })();
 
+  // ── Warnung vor brechenden Verweisen ──────────────────────
+  // Wiki-Links zeigen auf den Dateinamen, Lied-/Forum-/Avatar-/Konfigurations-
+  // einträge auf die Datei-ID: beides bricht beim Löschen bzw. Umbenennen.
+  // Der Server sagt, was betroffen ist (datei_verwendung).
+  async function verwendungenAbfragen(items, neuerName) {
+    const body = new URLSearchParams();
+    items.forEach((val) => body.append("item", val));
+    if (neuerName) body.append("neuer_name", neuerName);
+    try {
+      const res = await fetch("/intern/datei/verwendung/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": getCsrfToken(),
+        },
+        body: body.toString(),
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.warnungen || [];
+    } catch (err) {
+      return []; // Prüfung ist Komfort, kein Wächter — nie den Ablauf blockieren
+    }
+  }
+
+  // Kleiner Bestätigungsdialog auf <dialog>-Basis. Liefert den Wert des
+  // geklickten Buttons (oder null bei Abbruch/Esc).
+  function verwendungsDialog({ titel, hinweis, warnungen, buttons }) {
+    return new Promise((resolve) => {
+      const dlg = document.createElement("dialog");
+      dlg.className = "verwendung-dialog";
+
+      const h = document.createElement("h3");
+      h.textContent = titel;
+      dlg.appendChild(h);
+
+      if (hinweis) {
+        const p = document.createElement("p");
+        p.className = "verwendung-hinweis";
+        p.textContent = hinweis;
+        dlg.appendChild(p);
+      }
+
+      (warnungen || []).forEach((w) => {
+        const block = document.createElement("div");
+        block.className = "verwendung-block";
+        const name = document.createElement("strong");
+        name.textContent = w.datei;
+        block.appendChild(name);
+        const ul = document.createElement("ul");
+        (w.verwendungen || []).forEach((label) => {
+          const li = document.createElement("li");
+          li.textContent = label;
+          ul.appendChild(li);
+        });
+        block.appendChild(ul);
+        dlg.appendChild(block);
+      });
+
+      const leiste = document.createElement("div");
+      leiste.className = "verwendung-buttons";
+      buttons.forEach((b) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn " + (b.klasse || "btn-secondary");
+        btn.textContent = b.text;
+        btn.addEventListener("click", () => { dlg.close(); resolve(b.wert); });
+        leiste.appendChild(btn);
+      });
+      dlg.appendChild(leiste);
+
+      dlg.addEventListener("cancel", () => resolve(null));
+      dlg.addEventListener("close", () => dlg.remove());
+      document.body.appendChild(dlg);
+      dlg.showModal();
+    });
+  }
+
   // File actions: delete / move / copy (= link) / duplicate / zip
-  window.fileAction = function (action) {
+  window.fileAction = async function (action) {
     const formId = action === "delete"    ? "delete-form"
                  : action === "move"      ? "move-form"
                  : action === "link"       ? "link-form"
@@ -790,9 +868,23 @@ document.addEventListener("DOMContentLoaded", function () {
     if (action === "delete") {
       // Deleting removes the entry here; a file linked into further folders
       // keeps existing there — filer only drops the blob with the last link.
-      if (!confirm(`${items.length} Element(e) wirklich löschen?\n\n` +
-                   `Dateien, die zusätzlich in anderen Ordnern verknüpft sind, ` +
-                   `bleiben dort erhalten.`)) return;
+      const hinweis = "Dateien, die zusätzlich in anderen Ordnern verknüpft " +
+                      "sind, bleiben dort erhalten.";
+      const warnungen = await verwendungenAbfragen(items);
+      if (warnungen.length) {
+        const wahl = await verwendungsDialog({
+          titel: `${items.length} Element(e) löschen?`,
+          hinweis: "Diese Verweise gehen dabei ins Leere:",
+          warnungen,
+          buttons: [
+            { text: "Abbrechen", wert: null },
+            { text: "Trotzdem löschen", wert: "ok", klasse: "btn-danger" },
+          ],
+        });
+        if (wahl !== "ok") return;
+      } else if (!confirm(`${items.length} Element(e) wirklich löschen?\n\n${hinweis}`)) {
+        return;
+      }
     } else if (action !== "zip") {
       const targetRadio = document.querySelector('input[name="folder-target"]:checked');
       if (!targetRadio) { alert("Bitte erst einen Zielordner auswählen."); return; }
@@ -1068,6 +1160,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       let finished = false;
+      let laeuft = false;   // Enter + blur dürfen commit() nicht zweimal starten
       function restore() {
         if (finished) return;
         finished = true;
@@ -1075,23 +1168,53 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       async function commit() {
-        if (finished) return;
+        if (finished || laeuft) return;
+        laeuft = true;
         const newName = input.value.trim();
         if (!newName || newName === oldName) { restore(); return; }
+
+        // Wiki-Links zeigen auf den Dateinamen — vor dem Umbenennen fragen,
+        // ob sie mitgezogen werden sollen.
+        let mitziehen = false;
+        if (type === "File") {
+          const warnungen = await verwendungenAbfragen([`File:${id}`], newName);
+          if (warnungen.length) {
+            const wahl = await verwendungsDialog({
+              titel: `„${oldName}“ umbenennen in „${newName}“?`,
+              hinweis: "Diese Wiki-Links zeigen auf den bisherigen Dateinamen:",
+              warnungen,
+              buttons: [
+                { text: "Abbrechen", wert: null },
+                { text: "Nur umbenennen", wert: "nur" },
+                { text: "Links mitziehen", wert: "mitziehen", klasse: "btn-primary" },
+              ],
+            });
+            if (wahl === null) { restore(); return; }
+            mitziehen = wahl === "mitziehen";
+          }
+        }
+
         try {
+          const felder = { type, id, name: newName };
+          if (mitziehen) felder.links_mitziehen = "1";
           const res = await fetch("/intern/ordner/umbenennen/", {
             method: "POST",
             headers: {
               "Content-Type": "application/x-www-form-urlencoded",
               "X-CSRFToken": csrfToken(),
             },
-            body: new URLSearchParams({ type, id, name: newName }).toString(),
+            body: new URLSearchParams(felder).toString(),
           });
           const data = await res.json().catch(() => ({}));
           if (!res.ok) {
             alert(data.message || "Umbenennen fehlgeschlagen.");
             restore();
             return;
+          }
+          if (data.links_uebersprungen && data.links_uebersprungen.length) {
+            alert("Diese Artikel durftest du nicht bearbeiten, ihre Links zeigen " +
+                  "weiterhin auf den alten Namen:\n\n" +
+                  data.links_uebersprungen.join("\n"));
           }
           finished = true;
           const newLink = link.cloneNode(false);

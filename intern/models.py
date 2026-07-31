@@ -184,6 +184,14 @@ class Artikel(models.Model):
     def __str__(self):
         return self.name
 
+    DATEI_LINK_RE = re.compile(r"\[\[Datei:([^|\]]+)(?:\|[^\]]+)?\]\]")
+
+    @staticmethod
+    def dateiname_aus_link(roh):
+        """Strip whitespace and quotes around a [[Datei:…]] name, the way
+        replacements.get_references does."""
+        return roh.strip().strip("\"'").strip()
+
     @classmethod
     def datei_referenzen(cls):
         """
@@ -191,11 +199,13 @@ class Artikel(models.Model):
         haben (z. B. [[Datei:Bild.jpg|Beschreibung]]).
         """
         qs = cls.objects.filter(text__contains="[[Datei:")
-        pattern = re.compile(r"\[\[Datei:([^|\]]+)(?:\|[^\]]+)?\]\]")
         dateien = set()
         for artikel in qs:
-            dateien.update(pattern.findall(artikel.text))
-        return sorted(dateien)
+            dateien.update(
+                cls.dateiname_aus_link(n)
+                for n in cls.DATEI_LINK_RE.findall(artikel.text)
+            )
+        return sorted(d for d in dateien if d)
 
     @classmethod
     def aktuelle_datei_referenzen(cls):
@@ -203,17 +213,32 @@ class Artikel(models.Model):
         Gibt alle Dateien zurück, die mindestens einen Dateireferenz‑Link
         in einem aktuellen Artikel haben (z. B. [[Datei:Bild.jpg|Beschreibung]]).
         """
+        return sorted(cls.aktuelle_datei_verweise())
+
+    @classmethod
+    def aktuelle_datei_verweise(cls):
+        """{dateiname: [artikelname, …]} over each article's **latest** version.
+
+        Basis for warning that renaming or deleting a file breaks a wiki link —
+        those links address a file by name (replacements.internal_links)."""
         max_id_sub = (
             Artikel.objects.filter(name=OuterRef("name"))
             .order_by("-version")
             .values("id")[:1]
         )
-        qs = cls.objects.filter(id=Subquery(max_id_sub), text__contains="[[Datei:")
-        pattern = re.compile(r"\[\[Datei:([^|\]]+)(?:\|[^\]]+)?\]\]")
-        dateien = set()
+        qs = cls.objects.filter(
+            id=Subquery(max_id_sub), text__contains="[[Datei:"
+        ).only("name", "text")
+        verweise = {}
         for artikel in qs:
-            dateien.update(pattern.findall(artikel.text))
-        return sorted(dateien)
+            for roh in cls.DATEI_LINK_RE.findall(artikel.text):
+                name = cls.dateiname_aus_link(roh)
+                if not name:
+                    continue
+                artikelnamen = verweise.setdefault(name, [])
+                if artikel.name not in artikelnamen:
+                    artikelnamen.append(artikel.name)
+        return verweise
 
 
 class ArtikelPermission(models.Model):

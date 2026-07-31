@@ -1,4 +1,5 @@
 import posixpath
+import re
 import zipfile
 
 from django.contrib.auth.decorators import login_required
@@ -19,6 +20,7 @@ from django.http import Http404, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.template.loader import render_to_string
+from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from ._pagination import paginate_ordered
@@ -33,7 +35,7 @@ from intern.folder_access import (
     visible_folder_ids,
 )
 
-from ..models import FolderPermission
+from ..models import Artikel, FolderPermission
 from ..tables import OrdnerTabelle
 from .files import datei_umbenennen, verknuepfte_dateien, versionen_loeschen
 
@@ -785,6 +787,49 @@ def folder_duplicate(request):
     return _copy_action(request, blob_kopieren=True)
 
 
+def _wiki_links_umschreiben(alter_name, neuer_name, user):
+    """Point [[Datei:…]] links at the renamed file, in every article that has one.
+
+    Articles are immutable versions, so this writes a *new* version per article
+    (same way as article_edit) — the change shows up in the article history and
+    can be diffed or rolled back. Articles the user may not edit are left alone
+    and reported back. Returns (angepasste Artikel, übersprungene Artikel)."""
+    from .artikel import _artikel_access
+
+    betroffen = Artikel.aktuelle_datei_verweise().get(alter_name, [])
+    angepasst, uebersprungen = [], []
+
+    def ersetze(match):
+        if Artikel.dateiname_aus_link(match.group(1)) != alter_name:
+            return match.group(0)
+        rest = match.group(2) or ""
+        return f"[[Datei:{neuer_name}{rest}]]"
+
+    for artikel_name in betroffen:
+        _, can_edit = _artikel_access(user, artikel_name)
+        if not can_edit:
+            uebersprungen.append(artikel_name)
+            continue
+        letzte = Artikel.objects.filter(name=artikel_name).order_by("-version").first()
+        if letzte is None:
+            continue
+        neuer_text = re.sub(
+            r"\[\[Datei:([^|\]]+)(\|[^\]]+)?\]\]", ersetze, letzte.text
+        )
+        if neuer_text == letzte.text:
+            continue
+        Artikel.objects.create(
+            name=artikel_name,
+            version=letzte.version + 1,
+            datum=now(),
+            autor=user if user and user.is_authenticated else None,
+            kommentar=f"Dateiname geändert: {alter_name} → {neuer_name}",
+            text=neuer_text,
+        )
+        angepasst.append(artikel_name)
+    return angepasst, uebersprungen
+
+
 @login_required
 @require_POST
 def folder_rename(request):
@@ -809,8 +854,19 @@ def folder_rename(request):
         _, can_write, _ = folder_access(request.user, f.folder)
         if not can_write:
             raise PermissionDenied
+        alter_name = f.original_filename or f.name
         # One file, one name — a rename reaches every folder it is linked into.
         datei_umbenennen(f, new_name)
+        if request.POST.get("links_mitziehen"):
+            angepasst, uebersprungen = _wiki_links_umschreiben(
+                alter_name, new_name, request.user
+            )
+            return JsonResponse({
+                "status": "ok",
+                "name": new_name,
+                "links_angepasst": angepasst,
+                "links_uebersprungen": uebersprungen,
+            })
     else:
         return JsonResponse({"status": "error", "message": "Unbekannter Typ."}, status=400)
     return JsonResponse({"status": "ok", "name": new_name})

@@ -36,6 +36,7 @@ urlpatterns = [
     path("aenderungsprotokoll/", views.aenderungsprotokoll_list, name="aenderungsprotokoll_list"),
     # Media access control
     path("media-auth/", views.media_auth, name="media_auth"),
+    path("datei/verwendung/", views.datei_verwendung, name="datei_verwendung"),
     path("datei/<int:pk>/", views.datei_view, name="datei_view"),
     path("datei/<int:pk>/version/<int:version_id>/", views.datei_restore, name="datei_restore"),
     path("datei/<int:pk>/<str:token>/<path:filename>", views.datei_token, name="datei_token"),

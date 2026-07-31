@@ -6551,3 +6551,59 @@ body.join-page {
 @media (max-width: 640px) {
     .datei-version-tabelle .v-autor { display: none; }
 }
+
+/* === Dialog: brechende Verweise beim Löschen/Umbenennen === */
+.verwendung-dialog {
+    max-width: 520px;
+    width: calc(100% - 32px);
+    padding: 20px 22px;
+    border: 1px solid var(--border-dark);
+    border-radius: 10px;
+    background: var(--bg-card);
+    color: var(--text);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.verwendung-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.verwendung-dialog h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+}
+
+.verwendung-hinweis {
+    margin: 0 0 14px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.verwendung-block {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+
+.verwendung-block:last-of-type {
+    border-bottom: none;
+}
+
+.verwendung-block ul {
+    margin: 4px 0 0;
+    padding-left: 20px;
+}
+
+.verwendung-block li {
+    padding: 2px 0;
+    color: var(--text-muted);
+}
+
+.verwendung-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}

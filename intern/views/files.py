@@ -21,6 +21,7 @@ from intern import folders
 from intern.folder_access import folder_access, visible_folder_ids
 
 from ..models import DateiIndex, DateiVersion, Lied, TabellenPreferenzen, User
+from ..verwendung import datei_verwendungen
 
 __all__ = [
     "upload",
@@ -29,6 +30,7 @@ __all__ = [
     "file_unzip",
     "datei_view",
     "datei_restore",
+    "datei_verwendung",
     "verknuepfte_dateien",
     "datei_umbenennen",
     "versionen_loeschen",
@@ -395,6 +397,7 @@ def datei_view(request, pk):
         "orte": orte,
         "darf_schreiben": darf_schreiben,
         "versionen": DateiVersion.objects.filter(aktuell=f.file.name),
+        "verwendungen": datei_verwendungen([f], request.user).get(f.pk, []),
         "thumbnail": thumb,
         "titel": f.original_filename or f.name,
     })
@@ -425,6 +428,52 @@ def datei_restore(request, pk, version_id):
         datei_umbenennen(f, version.original_filename)
     version.delete()
     return redirect("datei_view", pk=f.pk)
+
+
+@login_required
+@require_POST
+def datei_verwendung(request):
+    """Which references would break if the selection were deleted (or renamed)?
+
+    Feeds the confirmation dialogs of the folder browser. Takes the same
+    `item` list (`Type:id`) as the other selection actions; folders are
+    expanded to the files they contain. With `neuer_name` set it answers for
+    the rename case, where only wiki links (name-addressed) are at risk."""
+    from .folders import _iter_folder_tree, _parse_items
+
+    umbenennen = bool(request.POST.get("neuer_name"))
+    sichtbar = visible_folder_ids(request.user)
+    dateien, gesehen = [], set()
+
+    def merken(f):
+        if f.pk not in gesehen:
+            gesehen.add(f.pk)
+            dateien.append(f)
+
+    for item_type, item_id in _parse_items(request.POST):
+        if item_type == "Folder":
+            folder = Folder.objects.filter(pk=item_id).first()
+            if folder is None or folder.pk not in sichtbar:
+                continue
+            for _arcname, f in _iter_folder_tree(folder):
+                merken(f)
+        else:
+            f = File.objects.filter(pk=item_id).first()
+            if f is None or (f.folder_id is not None and f.folder_id not in sichtbar):
+                continue
+            merken(f)
+
+    treffer = datei_verwendungen(dateien, request.user, beim_loeschen=not umbenennen)
+    warnungen = [
+        {
+            "datei": f.original_filename or f.name,
+            "verwendungen": [v["label"] for v in treffer[f.pk]],
+            "wiki": [v["label"] for v in treffer[f.pk] if v["art"] == "wiki"],
+        }
+        for f in dateien
+        if f.pk in treffer
+    ]
+    return JsonResponse({"warnungen": warnungen})
 
 
 @login_required

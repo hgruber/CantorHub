@@ -388,12 +388,23 @@ def auswertung(match, request):
 def internal_links(match, request):
     #    print( f"{match.group(1)}\n{match.group(2)}\n{match.group(3)}\n|{match.group(4)}|\n{match.group(5)}\n" )
     if match.group(2) == "Datei:":
+        # filter().first(), nicht get(): dieselbe Datei kann in mehreren Ordnern
+        # verknüpft sein (mehrere File-Zeilen, ein Blob) — get() würde daran mit
+        # MultipleObjectsReturned scheitern und den Link fälschlich als tot zeigen.
+        from intern.models import Artikel
+
+        name = Artikel.dateiname_aus_link(match.group(4))
+        f = File.objects.filter(original_filename=name).first()
+        if f is None:
+            return (
+                f'<span title="Datei nicht gefunden" class="not_found">'
+                f'⚠️ Datei: {html.escape(name)}</span>'
+            )
         try:
-            f = File.objects.get(original_filename=match.group(4))
             return insert_file_object(f)
         except Exception as e:
             return (
-                f'<span title="{html.escape(str(e))}" class="not_found">⚠️ Datei: {match.group(4)}</span>'
+                f'<span title="{html.escape(str(e))}" class="not_found">⚠️ Datei: {html.escape(name)}</span>'
             )
 
     elif match.group(2) == "Aktion:":

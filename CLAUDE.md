@@ -331,6 +331,35 @@ path. Reached from the `#id` badge in the folder listing. `cleanup_dateiversione
 (`--keep 10 --days 730`, runs in the background on every `start.sh`) prunes old revisions,
 blobs included.
 
+### Breaking references: warn before deleting or renaming
+
+Two kinds of references point at a file, and they break differently:
+
+- **Wiki links** (`[[Datei:name.pdf]]`) address a file by **name**
+  (`replacements.internal_links`). They break on **rename**, and on **delete** only when
+  the *last* row goes — while another folder still links the file, the name resolves.
+  Note `internal_links` must use `filter().first()`, not `get()`: a file linked into
+  several folders has several rows, and `get()` would report a live file as broken.
+- **Everything else** — `Lied` (original/aufnahme/pdf/noten), `Forum.bild`, `User.avatar`
+  and `Konfiguration` keys ending in `_FILE_ID` (Satzung, Beitragsordnung — linked from the
+  public join form) — hangs off the **PK**. Those break when that row is deleted, even if
+  the file survives elsewhere, and are unaffected by a rename.
+
+`intern/verwendung.py` (`datei_verwendungen(dateien, user, beim_loeschen=True)`) collects
+both, honouring that distinction; `Artikel.aktuelle_datei_verweise()` maps file name →
+articles over each article's newest version only. Article names the user may not read
+(`_artikel_access`) are counted, not named. The endpoint `datei_verwendung`
+(`datei/verwendung/`) feeds the confirmation dialogs in `intern.js`
+(`verwendungenAbfragen` / `verwendungsDialog`, a native `<dialog>`), which the folder
+browser opens before deleting and before renaming. The file detail page shows the same
+list under „Verwendet in".
+
+On rename the dialog offers **„Links mitziehen"**: `folder_rename` with
+`links_mitziehen=1` calls `_wiki_links_umschreiben`, which writes a **new article version**
+per affected article (articles are immutable versions, same path as `article_edit`) with
+the comment „Dateiname geändert: alt → neu". Articles the user may not edit are skipped and
+reported back in `links_uebersprungen`.
+
 **Copy vs. duplicate:** `folder_link` (button „Verknüpfen") adds a row sharing the blob —
 the tag case above. `folder_duplicate` („Duplizieren") copies the blob, giving an
 independent file. Both share `_copy_action` / `_copy_folder_deep(…, blob_kopieren)` in

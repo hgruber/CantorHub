@@ -34,6 +34,22 @@
         </div>
 
         <div class="detail-card">
+            <h3>Verwendet in</h3>
+            <div class="detail-card-content">
+                {% if verwendungen %}
+                <p class="datei-hinweis">Umbenennen oder Löschen bricht diese Verweise.</p>
+                <ul class="datei-orte">
+                    {% for v in verwendungen %}
+                    <li>{% if v.url %}<a href="{{ v.url }}">{{ v.label }}</a>{% else %}{{ v.label }}{% endif %}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="datei-hinweis">Kein Wiki-Artikel und kein Eintrag verweist auf diese Datei.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="detail-card">
             <h3>Liegt in {{ orte|length }} Ordner{{ orte|length|pluralize:"n" }}</h3>
             <div class="detail-card-content">
                 <p class="datei-hinweis">Es ist überall dieselbe Datei — eine neue Fassung erscheint
