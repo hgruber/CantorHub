@@ -79,7 +79,7 @@ _CONFIG_DEFAULTS = [
         "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen Browser: {link}",
         "Admin-Benachrichtigung bei neuem Antrag. " + _MARKUP_HINT
         + " Platzhalter: {vorname}, {nachname}, {email}, {link}, {vereinsname}, "
-        "{hinweise} (bedingte Hinweise, siehe MAIL_ANTRAG_ADMIN_*)",
+        "{hinweise} (siehe MAIL_ANTRAG_ADMIN_*)",
     ),
     (
         "MAIL_ANTRAG_ADMIN_MINDERJAEHRIG",
@@ -179,7 +179,7 @@ _CONFIG_DEFAULTS = [
         "Herzliche Grüße\nDein Vorstand von {vereinsname}",
         "Willkommens-Mail bei erster Aktivierung. " + _MARKUP_HINT
         + " Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, "
-        "{link} (Login-Seite, leer ohne VEREINS_URL), {vereinsname}",
+        "{link} (Login-Seite), {vereinsname}",
     ),
     (
         "MAIL_REAKTIVIERT",
@@ -190,7 +190,7 @@ _CONFIG_DEFAULTS = [
         "Herzliche Grüße\nDein Vorstand von {vereinsname}",
         "Mail bei Reaktivierung eines Mitglieds. " + _MARKUP_HINT
         + " Platzhalter: {vorname}, {nachname}, {email}, {xmpp}, {user}, {stimme}, "
-        "{link} (Login-Seite, leer ohne VEREINS_URL), {vereinsname}",
+        "{link} (Login-Seite), {vereinsname}",
     ),
     (
         "MAIL_RUNDMAIL",
@@ -262,7 +262,12 @@ def _seed_config(sender, **kwargs):
 
     from intern.models import Konfiguration
 
-    for key, value, description in _CONFIG_DEFAULTS:
+    # description ist ein CharField — MySQL bricht bei Überlänge hart ab (SQLite nicht),
+    # deshalb hier kappen statt den Start zu riskieren.
+    max_desc = Konfiguration._meta.get_field("description").max_length
+
+    for key, value, raw_description in _CONFIG_DEFAULTS:
+        description = raw_description[:max_desc]
         env_val = os.environ.get(key)
         if env_val is not None:
             Konfiguration.objects.update_or_create(
@@ -274,12 +279,21 @@ def _seed_config(sender, **kwargs):
                 key=key,
                 defaults={"value": value, "description": description},
             )
+            if created:
+                continue
+            fields = []
             # Unveränderte Alt-Texte auf den aktuellen Default heben; händisch
             # angepasste Texte bleiben unberührt.
-            if not created and obj.value.strip() in _LEGACY_MAIL_DEFAULTS.get(key, ()):
+            if obj.value.strip() in _LEGACY_MAIL_DEFAULTS.get(key, ()):
                 obj.value = value
+                fields.append("value")
+            # Die Beschreibung ist Systemdokumentation (Platzhalter, Syntax) und
+            # wird deshalb immer nachgezogen.
+            if obj.description != description:
                 obj.description = description
-                obj.save(update_fields=["value", "description"])
+                fields.append("description")
+            if fields:
+                obj.save(update_fields=fields)
 
     obj = Konfiguration.objects.get(key="ICAL_SECRET")
     if not obj.value:
