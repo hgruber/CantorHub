@@ -6577,6 +6577,18 @@ body.join-page {
 
 .datei-version-tabelle tr:last-child td { border-bottom: none; }
 .datei-version-tabelle .ist-aktuell td { font-weight: 600; }
+.datei-version-tabelle .v-vorschau { width: 44px; padding-right: 12px; }
+
+.datei-version-tabelle .v-vorschau img {
+    display: block;
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--bg-thead);
+}
+
 .datei-version-tabelle .v-nummer { width: 70px; color: var(--text-muted); }
 .datei-version-tabelle .v-groesse { text-align: right; white-space: nowrap; }
 .datei-version-tabelle .v-aktion { text-align: right; width: 1%; }
@@ -6590,6 +6602,8 @@ body.join-page {
 
 @media (max-width: 640px) {
     .datei-version-tabelle .v-autor { display: none; }
+    .datei-version-tabelle .v-vorschau { width: 32px; padding-right: 8px; }
+    .datei-version-tabelle .v-vorschau img { width: 32px; height: 32px; }
 }
 
 /* === Dialog: brechende Verweise beim Löschen/Umbenennen === */

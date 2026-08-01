@@ -378,6 +378,19 @@ def _datei_orte(f, user):
     return orte, darf_schreiben
 
 
+def _vorschau(quelle, **opts):
+    """Thumbnail URL for a file or a bare storage path, "" when none is possible.
+
+    Versions have no `File` row — their blob is addressed by path alone, which
+    `get_thumbnailer()` accepts just as it does in `versionen_loeschen()`."""
+    try:
+        return get_thumbnailer(quelle).get_thumbnail(
+            {"quality": 85, **opts}
+        ).url
+    except Exception:
+        return ""
+
+
 @login_required
 def datei_view(request, pk):
     """Detail page: where a file is linked into, and its version history."""
@@ -385,20 +398,17 @@ def datei_view(request, pk):
     orte, darf_schreiben = _datei_orte(f, request.user)
     if not orte:
         raise Http404
-    thumb = ""
-    try:
-        thumb = get_thumbnailer(f.file).get_thumbnail(
-            {"size": (320, 320), "crop": False, "quality": 85}
-        ).url
-    except Exception:
-        pass
+    versionen = list(DateiVersion.objects.filter(aktuell=f.file.name))
+    for v in versionen:
+        v.vorschau = _vorschau(v.pfad, size=(96, 96), crop=True)
     return render(request, "datei.html", {
         "datei": f,
         "orte": orte,
         "darf_schreiben": darf_schreiben,
-        "versionen": DateiVersion.objects.filter(aktuell=f.file.name),
+        "versionen": versionen,
         "verwendungen": datei_verwendungen([f], request.user).get(f.pk, []),
-        "thumbnail": thumb,
+        "thumbnail": _vorschau(f.file, size=(320, 320), crop=False),
+        "vorschau": _vorschau(f.file, size=(96, 96), crop=True),
         "titel": f.original_filename or f.name,
     })
 

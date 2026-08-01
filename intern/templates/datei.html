@@ -72,6 +72,7 @@
             <div class="detail-card-content">
                 <table class="datei-version-tabelle">
                     <tr class="ist-aktuell">
+                        <td class="v-vorschau">{% if vorschau %}<img src="{{ vorschau }}" alt="" loading="lazy">{% endif %}</td>
                         <td class="v-nummer">aktuell</td>
                         <td class="v-datum">{{ datei.modified_at|date:"d.m.Y H:i" }}</td>
                         <td class="v-autor">{% if datei.owner %}{{ datei.owner.first_name }} {{ datei.owner.last_name }}{% else %}—{% endif %}</td>
@@ -80,6 +81,7 @@
                     </tr>
                     {% for v in versionen %}
                     <tr>
+                        <td class="v-vorschau">{% if v.vorschau %}<img src="{{ v.vorschau }}" alt="" loading="lazy">{% endif %}</td>
                         <td class="v-nummer">v{{ v.nummer }}</td>
                         <td class="v-datum">{{ v.datum|date:"d.m.Y H:i" }}</td>
                         <td class="v-autor">{% if v.autor %}{{ v.autor.first_name }} {{ v.autor.last_name }}{% else %}—{% endif %}</td>
@@ -96,7 +98,7 @@
                     </tr>
                     {% empty %}
                     <tr class="keine-versionen">
-                        <td colspan="5">Diese Datei wurde noch nie überschrieben.</td>
+                        <td colspan="6">Diese Datei wurde noch nie überschrieben.</td>
                     </tr>
                     {% endfor %}
                 </table>

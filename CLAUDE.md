@@ -346,6 +346,17 @@ orphan by filer's reckoning. Never run `filer_check --delete-orphans` on this pr
 walks `filer_public/` and deletes every blob without a matching row, i.e. the entire
 version history. `migrate.sh` therefore only runs `thumbnail_files`.
 
+Every row of the version table carries a preview (`_vorschau()` in `views/files.py`,
+96×96 crop, `.v-vorschau` in `intern.css`); versions are addressed by path, which
+`get_thumbnailer()` takes as readily as a `FieldFile`. Because a bare path carries none of
+filer's storage config, those thumbnails land *next to the source blob* inside
+`filer_public/` instead of under `filer_public_thumbnails/` — harmless, and
+`versionen_loeschen()` / `cleanup_dateiversionen` already clean them up via
+`get_thumbnailer(v.pfad).delete_thumbnails()`. They are one more reason not to run
+`--delete-orphans`. Files with no usable preview (audio, spreadsheets) simply get an empty
+cell; `thumbnail_files` never pre-generates any of this, so the first view of a detail page
+builds them.
+
 ### Breaking references: warn before deleting or renaming
 
 Two kinds of references point at a file, and they break differently:
