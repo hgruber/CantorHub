@@ -69,10 +69,32 @@ a {
         padding 0.3s ease;
 }
 
-.site-header .brand img {
-    width: 46px;
+.site-header .brand {
+    display: flex;
+    align-items: center;
+}
+
+/* über dem Foto die runde Bildmarke, im weissen Zustand der Schriftzug */
+.site-header .brand-word {
+    display: none;
+    width: 132px;
+}
+
+.site-header.is-solid .brand-mark {
+    display: none;
+}
+
+.site-header.is-solid .brand-word {
+    display: block;
+}
+
+.site-header .brand-mark {
+    width: 52px;
     height: auto;
-    transition: width 0.3s ease;
+    filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5));
+    transition:
+        width 0.3s ease,
+        filter 0.3s ease;
 }
 
 .site-nav {
@@ -133,8 +155,9 @@ a {
     padding-bottom: 0.6rem;
 }
 
-.site-header.is-solid .brand img {
-    width: 38px;
+.site-header.is-solid .brand-mark {
+    width: 40px;
+    filter: none;
 }
 
 .site-header.is-solid .site-nav a {
@@ -183,10 +206,10 @@ a {
     inset: 0;
     background:
         linear-gradient(
-            105deg,
-            rgba(12, 10, 14, 0.78) 0%,
-            rgba(12, 10, 14, 0.45) 38%,
-            rgba(12, 10, 14, 0) 68%
+            100deg,
+            rgba(12, 10, 14, 0.9) 0%,
+            rgba(12, 10, 14, 0.62) 40%,
+            rgba(12, 10, 14, 0) 78%
         ),
         linear-gradient(
             to bottom,
@@ -225,6 +248,13 @@ a {
     letter-spacing: -0.01em;
     color: #fff;
     max-width: 16ch;
+}
+
+/* Wortmarke statt gesetzter Headline — der Schriftzug des Logos */
+.hero-wordmark img {
+    width: clamp(240px, 38vw, 480px);
+    height: auto;
+    filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.6));
 }
 
 .hero-sub {
@@ -484,8 +514,8 @@ footer {
 }
 
 .footer-logo img {
-    width: 42px;
-    opacity: 0.9;
+    width: 150px;
+    opacity: 0.85;
 }
 
 .footer-links {
@@ -562,8 +592,16 @@ footer {
 }
 
 @media (max-width: 460px) {
-    .site-header .brand img {
+    .site-header .brand-mark,
+    .site-header.is-solid .brand-mark {
+        display: block;
         width: 38px;
+    }
+
+    /* auf schmalen Displays bleibt es bei der Bildmarke */
+    .site-header .brand-word,
+    .site-header.is-solid .brand-word {
+        display: none;
     }
 
     /* das Logo übernimmt die Home-Funktion */

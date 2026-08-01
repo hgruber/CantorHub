@@ -40,6 +40,16 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
 - `JG-Frankfurt-wG-color.svg` — primary logo, used in ~12 templates
 - `JG-Frankfurt-G-color.svg`, `JG-Frankfurt-test.svg` — variants
 
+  Caveat: these live in the **gitignored** `static/` (STATIC_ROOT) only, i.e. they are
+  not in a checkout. `JG-Frankfurt-wG-color.svg` has been copied to the tracked source
+  dir `intern/static/intern/images/`; the other two still need the same treatment.
+
+### Wordmark (`intern/static/intern/brand/`)
+- `JG-Frankfurt.svg` (black) / `JG-Frankfurt-transparent.svg` (light, for dark grounds) —
+  the "Just Gospel! Frankfurt" lettering, used as headline image on the homepage.
+  The letters are outlines; the original typeface (Showcard Gothic) is not embedded and
+  cannot be licensed as a webfont, so a deployer replacing the branding replaces the SVG.
+
 ### Data convention (NOT pure branding — handle separately)
 - `intern/replacements.py` / `intern/models.py` `datei_referenzen()` build song
   filenames with a literal `JG-` prefix. This is a content/naming convention, not

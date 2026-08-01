@@ -8,13 +8,17 @@
         <meta name="description"
               content="{{ vereinsname_lang }} — {{ vereinsname }}" />
         <link rel="stylesheet" href="{% static 'intern/css/main.css' %}" />
-        <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
+        <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
     </head>
     <body>
         <header class="site-header" id="site-header">
-            <a href="#home" class="brand">
-                <img src="{% static 'intern/brand/logo.svg' %}"
-                     alt="{{ vereinsname_kurz }}" />
+            <a href="#home" class="brand" aria-label="{{ vereinsname_lang }}">
+                <img class="brand-mark"
+                     src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}"
+                     alt="" />
+                <img class="brand-word"
+                     src="{% static 'intern/brand/JG-Frankfurt.svg' %}"
+                     alt="" />
             </a>
             <nav class="site-nav">
                 <a href="#home">Home</a>
@@ -36,7 +40,10 @@
             </div>
             <div class="hero-inner">
                 <span class="eyebrow">{{ vereinsname }}</span>
-                <h1>{{ vereinsname_lang }}</h1>
+                <h1 class="hero-wordmark">
+                    <img src="{% static 'intern/brand/JG-Frankfurt-transparent.svg' %}"
+                         alt="{{ vereinsname_lang }}" />
+                </h1>
                 {% if homepage_intro %}
                 <p class="hero-sub">{{ homepage_intro }}</p>
                 {% endif %}
@@ -143,8 +150,8 @@
         <footer>
             <div class="footer-content">
                 <div class="footer-logo">
-                    <img src="{% static 'intern/brand/logo.svg' %}"
-                         alt="{{ vereinsname_kurz }}" />
+                    <img src="{% static 'intern/brand/JG-Frankfurt-transparent.svg' %}"
+                         alt="{{ vereinsname_lang }}" />
                 </div>
                 <div class="footer-links">
                     <a href="#home">Home</a>

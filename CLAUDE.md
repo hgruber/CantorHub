@@ -496,6 +496,17 @@ hero (transparent at the top, `.is-solid` white after 60 px of scroll — set by
 inline script at the end of the page), then Über uns (cards), Konzerte (date/title/place
 rows), Galerie (single wide photo band) and a dark Kontakt section plus footer.
 
+Logo usage: the header shows the round mark
+(`intern/images/JG-Frankfurt-wG-color.svg`) over the photo and swaps to the black
+wordmark (`intern/brand/JG-Frankfurt.svg`) once the header turns white — below 460 px the
+mark stays. Hero headline and footer use the light wordmark
+(`intern/brand/JG-Frankfurt-transparent.svg`) as an image inside the `<h1>`; its font
+(Showcard Gothic) exists only as outlines in the SVG, so the lettering can only be used as
+an asset, never as a webfont. `JG-Frankfurt-wG-color.svg` previously existed **only** in
+the gitignored `static/` (STATIC_ROOT) — it now has a tracked source copy in
+`intern/static/intern/images/`, which the favicon redirect in `config/urls.py` also relies
+on.
+
 All copy comes from `Konfiguration` (`HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME`,
 `VEREINSNAME*`, `VEREINSADRESSE`, `DEFAULT_FROM_EMAIL`) — `home()` in `views/auth.py`
 additionally passes `homepage_intro`, the first sentence of `HOMEPAGE_UEBER_UNS`, used as
