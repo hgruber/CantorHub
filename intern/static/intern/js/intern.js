@@ -1033,6 +1033,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const canWrite = actionPanel.dataset.canWrite === "true";
     const canDelete = actionPanel.dataset.canDelete === "true";
 
+    // Dieselben Icons wie die Aktions-Buttons im Panel (table.html) — Menü und
+    // Panel benennen und bebildern dieselben Aktionen gleich.
+    const S = 'xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+    const ICON = {
+      umbenennen:  `<svg ${S}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>`,
+      zip:         `<svg ${S}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+      verschieben: `<svg ${S}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
+      verknuepfen: `<svg ${S}><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
+      duplizieren: `<svg ${S}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+      entpacken:   `<svg ${S}><path d="M21 8v13H3V8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`,
+      loeschen:    `<svg ${S}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+    };
+
     function csrfToken() {
       const el = document.querySelector("[name=csrfmiddlewaretoken]");
       return el ? el.value : "";
@@ -1049,6 +1062,18 @@ document.addEventListener("DOMContentLoaded", function () {
       if (menuEl) { menuEl.remove(); menuEl = null; }
     }
 
+    // Zeile markieren und das Auswahl-Panel zeigen. Nicht toggle() — war schon
+    // eine andere Zeile markiert, ist das Panel offen und toggle() würde es
+    // schliessen statt es zu zeigen.
+    function auswahlPanelOeffnen(tr) {
+      const cb = tr.querySelector('input[type="checkbox"][name="select"]');
+      if (cb && !cb.checked) { cb.checked = true; updateSelectionState(); }
+      document.querySelectorAll(".offcanvas.open").forEach((el) => {
+        if (el !== actionPanel) el.classList.remove("open");
+      });
+      actionPanel.classList.add("open");
+    }
+
     function openMenu(tr, x, y) {
       closeMenu();
       const id = tr.dataset.id;
@@ -1062,35 +1087,50 @@ document.addEventListener("DOMContentLoaded", function () {
       const below = [];
 
       if (canWrite) {
-        above.push({ label: "Umbenennen", action: () => startInlineRename(tr, type, id, name) });
+        above.push({ label: "Umbenennen", icon: ICON.umbenennen,
+                     action: () => startInlineRename(tr, type, id, name) });
       }
       if (type === "Folder") {
-        above.push({ label: "Als ZIP herunterladen", action: () => {
+        above.push({ label: "Als ZIP herunterladen", icon: ICON.zip, action: () => {
           window.location.href = "/intern/ordner/" + id + "/zip/";
         }});
       }
       if (canWrite) {
-        above.push({ label: "Verschieben nach…", action: () => {
-          const cb = tr.querySelector('input[type="checkbox"][name="select"]');
-          if (cb && !cb.checked) { cb.checked = true; updateSelectionState(); }
-          toggle("Action");
-        }});
-        above.push({ label: "Kopieren nach…", action: () => {
-          const cb = tr.querySelector('input[type="checkbox"][name="select"]');
-          if (cb && !cb.checked) { cb.checked = true; updateSelectionState(); }
-          toggle("Action");
-        }});
+        above.push({
+          label: "Verschieben nach…", icon: ICON.verschieben,
+          title: "Element wird hier entfernt und liegt danach nur noch im Zielordner",
+          action: () => auswahlPanelOeffnen(tr),
+        });
+        above.push({
+          label: "Verknüpfen nach…", icon: ICON.verknuepfen,
+          title: "Dieselbe Datei erscheint zusätzlich im Zielordner — Änderungen wirken überall",
+          action: () => auswahlPanelOeffnen(tr),
+        });
+        above.push({
+          label: "Duplizieren nach…", icon: ICON.duplizieren,
+          title: "Unabhängige Kopie mit eigenem Inhalt",
+          action: () => auswahlPanelOeffnen(tr),
+        });
         if (isZip) {
-          above.push({ label: "Entpacken", action: () => submitUnzip(id) });
+          above.push({ label: "Entpacken", icon: ICON.entpacken, action: () => submitUnzip(id) });
         }
       }
       if (canDelete) {
-        below.push({ label: "Löschen", danger: true, action: () => submitDelete(type, id, name) });
+        below.push({ label: "Löschen", icon: ICON.loeschen, danger: true,
+                     action: () => submitDelete(type, id, name) });
       }
 
       const allItems = above.length && below.length
         ? [...above, { sep: true }, ...below]
         : [...above, ...below];
+
+      if (!allItems.length) { menuEl = null; return; }
+
+      // Kopfzeile mit dem Namen des Elements — wie das "N ausgewählt" im Panel.
+      const kopf = document.createElement("div");
+      kopf.className = "context-menu-header";
+      kopf.textContent = name || (type === "Folder" ? "Ordner" : "Datei");
+      menuEl.appendChild(kopf);
 
       for (const it of allItems) {
         if (it.sep) {
@@ -1102,12 +1142,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "context-menu-item" + (it.danger ? " danger" : "");
-        b.textContent = it.label;
+        if (it.title) b.title = it.title;
+        if (it.icon) b.insertAdjacentHTML("beforeend", it.icon);
+        b.appendChild(document.createTextNode(it.label));
         b.addEventListener("click", () => { closeMenu(); it.action(); });
         menuEl.appendChild(b);
       }
 
-      if (!menuEl.children.length) return;
       document.body.appendChild(menuEl);
       const rect = menuEl.getBoundingClientRect();
       const maxX = window.innerWidth - rect.width - 4;
