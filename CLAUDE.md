@@ -46,7 +46,8 @@ docker run -p 8000:8000 cantoreub
 | `send_reconfirmation --user USERNAME --print-url` | Print the confirmation URL for one member without sending mail (for testing) |
 | `send_reconfirmation --all --print-url` | Print confirmation URLs for all members (tab-separated `username<TAB>url`) without sending mail |
 | `make_invite_url EMAIL` | Print a signed 7-day invite link for the Neuantrag form (`/intern/beitritt/<token>/`) without sending mail |
-| `cleanup_changelog [--days N] [--dry-run]` | Delete `ChangeLog` entries older than the retention period (default 3 years = 1095 days), enforcing the privacy-policy §9 claim. Runs in the background on every `start.sh` |
+| `cleanup_changelog [--days N] [--dry-run]` | Delete `ChangeLog` entries older than the retention period (default 3 years = 1095 days), enforcing the privacy-policy §10 claim. Runs in the background on every `start.sh` |
+| `cleanup_dateiversionen [--keep N] [--days N] [--dry-run]` | Prune `DateiVersion` rows **and their blobs** (plus the thumbnails generated next to them): everything older than `--days` (default 730 = 2 years) or beyond the newest `--keep` revisions per file (default 10). Runs in the background on every `start.sh`, but with `--keep 25 --days 36500` — see "Retention: what the cleanup jobs actually delete" |
 
 ## Architecture
 
@@ -356,6 +357,43 @@ filer's storage config, those thumbnails land *next to the source blob* inside
 `--delete-orphans`. Files with no usable preview (audio, spreadsheets) simply get an empty
 cell; `thumbnail_files` never pre-generates any of this, so the first view of a detail page
 builds them.
+
+### Retention: what the cleanup jobs actually delete
+
+Two scheduled jobs enforce retention, both started in the background by `start.sh`
+(**not** by `migrate.sh` — that path wipes the DB anyway):
+
+| Job | Deletes | Never touches |
+|---|---|---|
+| `cleanup_changelog` | `ChangeLog` rows older than 3 years (`timestamp__lt`), a plain queryset `delete()`. Backs the §10 promise in `datenschutz.html` | Any file, any content — only the audit trail |
+| `cleanup_dateiversionen` | `DateiVersion` rows **plus** the blob at `v.pfad` via `storage.delete()` and the thumbnails at that path via `get_thumbnailer(v.pfad).delete_thumbnails()` | Live files: a `DateiVersion` blob has no `filer.File` row by construction, so nothing a member can see in a folder is ever a candidate |
+
+`cleanup_dateiversionen` selects by two independent rules, unioned (`_veraltet`):
+`datum__lt=now-days` **or** everything past the newest `--keep` per `aktuell` group
+(`Meta.ordering = ["-nummer"]`, so `[keep:]` is the oldest tail). A row hit by either rule
+goes. `aktuell` is the path of the *live* revision, so grouping by it is grouping by file.
+
+**The defaults are not what runs.** `start.sh` calls it with `--keep 25 --days 36500`
+(≈100 years), which switches the age rule off entirely: in production only the count rule
+bites, i.e. each file keeps its newest 25 revisions forever. That is deliberate — the avatar
+history imported from the legacy system (2012 ff., see `import_avatars`) would otherwise
+vanish on the next server start, since those `DateiVersion` rows carry the original file
+mtime as `datum`. Consequence to keep in mind: **there is currently no time-based deletion
+of superseded file revisions in production.** A revision only disappears when 25 newer ones
+exist, when the last `filer.File` occurrence is deleted (`_datei_loeschen` →
+`versionen_loeschen`), or on an explicit erasure request. If a real time limit is ever
+wanted, the imported avatar versions have to be exempted first — a blanket `--days` would
+take them with it.
+
+Not covered by either job, and worth knowing when answering an Art. 17 request: **deleting a
+file removes one occurrence, not the blob** — the blob survives as long as another `File` row
+points at the same path (see "Files as links, and file versions"). Erasure therefore means
+deleting *every* linked row, which is exactly what `datei_verwendungen` shows in the
+confirmation dialog.
+
+Server logs are the third retention item in §10 (90 days), but they are not this codebase's
+job: nginx logs to stdout (`nginx.conf`) and Django's `LOGGING` uses a `StreamHandler`, so
+both land in journald/`podman logs` and their rotation is a host-side setting.
 
 ### Breaking references: warn before deleting or renaming
 

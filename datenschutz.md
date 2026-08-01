@@ -43,9 +43,14 @@ been removed once enforced — this file tracks only what is still open.
   folder the file is linked into and can be undone (see "Files as links, and file versions"
   in `CLAUDE.md`). Two consequences to keep in mind: content a member replaced on purpose
   remains restorable by anyone with write access to the file, and it survives in storage
-  until pruned. Deletion is handled — `_datei_loeschen` drops all versions with the last
-  occurrence of a file, and `cleanup_dateiversionen` (10 revisions / 2 years, on every
-  `start.sh`) caps the rest — so an erasure request removes the old revisions too. What is
-  **not** covered: the retention period for file versions is not mentioned in
-  `datenschutz.html`; if members upload personal data, §9 should name it alongside the
-  3-year audit-log figure.
+  until pruned. An erasure request is covered — `_datei_loeschen` drops all versions with
+  the last occurrence of a file — but the *automatic* pruning is weaker than the command's
+  defaults suggest: `cleanup_dateiversionen` defaults to 10 revisions / 2 years, yet
+  `start.sh` runs it as `--keep 25 --days 36500`, which disables the age rule so the
+  legacy avatar history (2012 ff.) survives. **In production, superseded file revisions are
+  therefore kept indefinitely** and only fall out once 25 newer ones exist. Two open points:
+  (a) `datenschutz.html` §10 names no retention period for file versions at all — if members
+  upload personal data it should say one, next to the 3-year audit-log figure; (b) if a real
+  period is introduced, the imported avatar versions need exempting first, otherwise a
+  blanket `--days` deletes them. See "Retention: what the cleanup jobs actually delete" in
+  `CLAUDE.md`.
