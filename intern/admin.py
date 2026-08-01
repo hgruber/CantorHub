@@ -163,15 +163,21 @@ class ChangeLogAdmin(admin.ModelAdmin):
 
 @admin.register(Auftrittsabo)
 class AuftrittsaboAdmin(admin.ModelAdmin):
-    list_display = ("email", "name", "bestaetigt", "angemeldet_am", "bestaetigt_am")
-    list_filter = ("bestaetigt",)
+    list_display = ("email", "name", "ist_bestaetigt", "angemeldet_am", "bestaetigt_am")
+    # bestaetigt ist eine Property und damit nicht filterbar; der
+    # EmptyFieldListFilter auf bestaetigt_am liefert dasselbe Ja/Nein.
+    list_filter = (("bestaetigt_am", admin.EmptyFieldListFilter),)
     search_fields = ("email", "name")
     # Nachweisfelder der Einwilligung — nichts davon darf nachträglich geändert
     # werden, sonst verliert der Nachweis nach Art. 7 DSGVO seinen Wert.
     readonly_fields = (
         "angemeldet_am", "bestaetigt_am", "optin_gesendet_am",
-        "angemeldet_ip", "bestaetigt_ip", "einwilligungstext", "abmelde_token",
+        "bestaetigt_ip", "einwilligungstext",
     )
+
+    @admin.display(boolean=True, description="bestätigt")
+    def ist_bestaetigt(self, obj):
+        return obj.bestaetigt
 
     def has_add_permission(self, request):
         # Ein von Hand angelegter Eintrag hätte keine Einwilligung.

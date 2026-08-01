@@ -142,7 +142,9 @@ class Command(BaseCommand):
 
         platzhalter = termin_platzhalter(termin, wochen)
         betreff = f"Erinnerung: {termin.kurz} am {platzhalter['datum']}"
-        empfaenger = Auftrittsabo.objects.filter(bestaetigt=True).order_by("pk")
+        empfaenger = Auftrittsabo.objects.filter(
+            bestaetigt_am__isnull=False
+        ).order_by("pk")
 
         erfolge = 0
         for abo in empfaenger:

@@ -289,7 +289,14 @@ repertoire=True)` — exactly the ones `home()` already shows publicly; no model
 placeholders, sending), views in `intern/views/auftritte.py`, the daemon in
 `intern/management/commands/send_auftritt_erinnerungen.py`. The time-dependent functions take
 `jetzt` as an argument and never call the clock themselves — that is what makes `--now` and
-the DB-free unit tests in `intern/tests.py` possible.
+the unit tests in `intern/tests.py` possible.
+
+Those tests are **all `SimpleTestCase`, and they have to be**: a `TestCase` makes Django build a
+test database, which runs the data migration `0003_import` — and that one talks to the legacy
+MySQL server and expects imported filer files, so it blows up anywhere that environment is
+absent. Every piece of logic worth testing is therefore kept free of DB access and the DB half
+is isolated in a thin wrapper (`lese_abmelde_token()` vs `read_abmelde_token()`). Keep it that
+way until `0003_import` learns to no-op without the legacy DB.
 
 **Double opt-in.** `auftritte_anmeldung` does `get_or_create` and always renders the *same*
 status page, whether the address was new, unconfirmed or already subscribed — anything else
@@ -319,6 +326,15 @@ manual call + a test system on the same DB); there is no process lock and delibe
 SMTP has no business inside an open transaction. Side effect worth keeping: whoever subscribes
 after a reminder was due does not get it retro-fitted. Known gap: a crash mid-batch leaves the
 marker standing and the remaining recipients unserved — recover with `--termin <id> --force`.
+
+**The unsubscribe token is signed, not stored.** `make_abmelde_token()` signs
+`<pk>-<fingerprint>` with a plain `Signer` (no timestamp — the link sits in every mail and must
+stay valid forever). The fingerprint is a short SHA-256 of the address and is **not optional**:
+primary keys get reused after a delete (SQLite hands out `max(rowid)+1` without AUTOINCREMENT),
+so without it an old link from a long-sent mail could unsubscribe a *different* person who
+later inherited that pk. The address itself deliberately stays out of the URL — it would
+otherwise land in server logs, referrers and browser history. `lese_abmelde_token()` is the
+DB-free half, which is what makes it unit-testable (see below).
 
 **The unsubscribe link cannot be configured away.** `send_mailingliste_mail()` welds it into
 the `List-Unsubscribe` header, appends it to the plain-text part *above* the `-- ` signature
@@ -352,7 +368,7 @@ handling) are recorded in `datenschutz.md`.
 | `Zusage` | Per-member attendance response to an event |
 | `Abstimmung` | Voting records |
 | `TabellenPreferenzen` | Per-user table column visibility preferences |
-| `Auftrittsabo` | Subscriber of the public gig-reminder list — **not** a member, no FK to `User`. Carries the Art. 7(1) evidence (sign-up/confirmation timestamp + IP, snapshot of the consent wording) and a stored random `abmelde_token` |
+| `Auftrittsabo` | Subscriber of the public gig-reminder list — **not** a member, no FK to `User`. Carries the Art. 7(1) evidence: `bestaetigt_am`, `bestaetigt_ip` and a snapshot of the consent wording. Deliberately has **no** `bestaetigt` flag (`bestaetigt` is a property over `bestaetigt_am`; filter with `bestaetigt_am__isnull`), no sign-up IP and no stored unsubscribe token |
 | `ErinnerungVersand` | One marker per `(termin, wochen)`; the `UniqueConstraint` is the only protection against double sending |
 
 ### File management

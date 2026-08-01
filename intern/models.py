@@ -1,5 +1,4 @@
 import re
-import secrets
 from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
@@ -461,37 +460,29 @@ class Termin(models.Model):
         return self.kurz + " am " + self.datum.strftime("%d.%m.%y")
 
 
-def neuer_abmelde_token():
-    """Zufalls-Token für den Abmelde-Link.
-
-    Bewusst eine Modul-Funktion und kein Lambda: Feld-Defaults müssen für die
-    Migration serialisierbar sein.
-    """
-    return secrets.token_urlsafe(32)
-
-
 class Auftrittsabo(models.Model):
     """Eintrag in der öffentlichen Auftritts-Mailingliste (Double-Opt-in).
 
     Empfänger sind ausdrücklich keine Mitglieder — es gibt keinen Bezug zu User.
-    Die Nachweisfelder (IP, Zeitpunkte, Einwilligungstext) belegen die
-    Einwilligung nach Art. 7 Abs. 1 DSGVO; der Einwilligungstext wird als
-    Schnappschuss gespeichert, weil er aus der jederzeit editierbaren
-    Konfigurationstabelle stammt.
+    Die Nachweisfelder belegen die Einwilligung nach Art. 7 Abs. 1 DSGVO: *wann*
+    (`bestaetigt_am`), *von wo* (`bestaetigt_ip`) und *wozu* — der
+    Einwilligungstext wird als Schnappschuss gespeichert, weil er aus der
+    jederzeit editierbaren Konfigurationstabelle stammt.
+
+    Bewusst schmal gehalten: es gibt kein eigenes `bestaetigt`-Flag (das wäre
+    Redundanz zu `bestaetigt_am` und könnte dazu inkonsistent werden), keine
+    Anmelde-IP (rechtlich zählt der Bestätigungsklick) und keinen gespeicherten
+    Abmelde-Token — der wird signiert erzeugt, siehe `make_abmelde_token()` in
+    `intern/mailingliste.py`.
     """
 
     email = models.EmailField(max_length=254, unique=True)
     name = models.CharField(max_length=64, blank=True)
-    bestaetigt = models.BooleanField(default=False)
     angemeldet_am = models.DateTimeField(auto_now_add=True)
     bestaetigt_am = models.DateTimeField(null=True, blank=True)
     optin_gesendet_am = models.DateTimeField(null=True, blank=True)
-    angemeldet_ip = models.GenericIPAddressField(null=True, blank=True)
     bestaetigt_ip = models.GenericIPAddressField(null=True, blank=True)
     einwilligungstext = models.TextField(blank=True)
-    abmelde_token = models.CharField(
-        max_length=64, unique=True, default=neuer_abmelde_token, editable=False
-    )
 
     class Meta:
         ordering = ["-angemeldet_am"]
@@ -500,6 +491,15 @@ class Auftrittsabo(models.Model):
 
     def __str__(self):
         return self.email
+
+    @property
+    def bestaetigt(self):
+        """Lesbare Abkürzung für Python und Templates.
+
+        In Abfragen **nicht** verwendbar — dort `bestaetigt_am__isnull=False`
+        bzw. `=True` schreiben.
+        """
+        return self.bestaetigt_am is not None
 
 
 class ErinnerungVersand(models.Model):

@@ -10,10 +10,11 @@ Uhr-Manipulation testbar (und der Command kann ``--now`` anbieten).
 lokale Wanduhrzeit.  ``localtime()`` darf hier nirgends aufgerufen werden.
 """
 
+import hashlib
 import logging
 from datetime import datetime, time, timedelta
 
-from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
+from django.core.signing import BadSignature, SignatureExpired, Signer, TimestampSigner
 from django.utils import timezone
 
 from intern.app_settings import (
@@ -32,6 +33,7 @@ KULANZ_STUNDEN = 24      # nach einem Serverausfall keine sinnlos verspäteten M
 OPTIN_COOLDOWN_MIN = 10  # Bremse gegen Mail-Bombing auf eine fremde Adresse
 
 _optin_signer = TimestampSigner(salt="intern.mailingliste_optin")
+_abmelde_signer = Signer(salt="intern.mailingliste_abmelden")
 
 _WOCHENTAGE = (
     "Montag", "Dienstag", "Mittwoch", "Donnerstag",
@@ -76,13 +78,59 @@ def optin_url(base_url, abo):
     return f"{base_url.rstrip('/')}/auftritte/bestaetigen/{token}/"
 
 
-def abmelde_url(base_url, abo):
-    """Abmelde-Link.
+def _fingerabdruck(email):
+    """Kurzer Hash der Adresse für den Abmelde-Token.
 
-    Trägt ein gespeichertes Zufallstoken, keinen ``TimestampSigner``: der Link
-    steht in jeder Mail und muss unbefristet gültig bleiben.
+    Primärschlüssel werden nach dem Löschen wiederverwendet (SQLite vergibt
+    ohne AUTOINCREMENT schlicht ``max(rowid)+1``). Ohne diesen Zusatz könnte
+    ein alter Abmelde-Link aus einer längst verschickten Mail einen inzwischen
+    neu angelegten, fremden Eintrag treffen.
     """
-    return f"{base_url.rstrip('/')}/auftritte/abmelden/{abo.abmelde_token}/"
+    return hashlib.sha256(email.encode("utf-8")).hexdigest()[:16]
+
+
+def make_abmelde_token(abo):
+    """Signierter Abmelde-Token — bewusst ohne Zeitstempel.
+
+    Der Link steht in jeder Mail und muss unbefristet gültig bleiben. Signiert
+    wird ``<pk>-<fingerabdruck>``; die Adresse selbst gehört nicht in eine URL,
+    sie landete sonst in Server-Logs, Referrern und der Browser-Chronik.
+    """
+    return _abmelde_signer.sign(f"{abo.pk}-{_fingerabdruck(abo.email)}")
+
+
+def lese_abmelde_token(token):
+    """``(pk, fingerabdruck)`` aus einem gültigen Token, sonst None.
+
+    Reine Funktion ohne Datenbankzugriff — dadurch ohne Testdatenbank prüfbar.
+    """
+    try:
+        roh = _abmelde_signer.unsign(token)
+    except BadSignature:
+        return None
+    pk, _, fingerabdruck = roh.partition("-")
+    try:
+        return int(pk), fingerabdruck
+    except (TypeError, ValueError):
+        return None
+
+
+def read_abmelde_token(token):
+    """Das Abo zu einem gültigen Token, sonst None."""
+    from intern.models import Auftrittsabo
+
+    gelesen = lese_abmelde_token(token)
+    if gelesen is None:
+        return None
+    pk, fingerabdruck = gelesen
+    abo = Auftrittsabo.objects.filter(pk=pk).first()
+    if abo is None or _fingerabdruck(abo.email) != fingerabdruck:
+        return None
+    return abo
+
+
+def abmelde_url(base_url, abo):
+    return f"{base_url.rstrip('/')}/auftritte/abmelden/{make_abmelde_token(abo)}/"
 
 
 def basis_url():
@@ -261,7 +309,7 @@ def cleanup_unbestaetigte(jetzt=None):
     jetzt = jetzt or timezone.now()
     grenze = jetzt - timedelta(seconds=optin_max_age())
     anzahl, _ = Auftrittsabo.objects.filter(
-        bestaetigt=False, angemeldet_am__lt=grenze
+        bestaetigt_am__isnull=True, angemeldet_am__lt=grenze
     ).delete()
     if anzahl:
         logger.info("Mailingliste: %d unbestätigte Anmeldungen gelöscht", anzahl)

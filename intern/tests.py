@@ -96,6 +96,57 @@ class FaelligeErinnerungenTest(SimpleTestCase):
                          sorted(f for _, _, f in treffer))
 
 
+class AbmeldeTokenTest(SimpleTestCase):
+    """Der Abmelde-Token ist signiert statt gespeichert.
+
+    Geprüft wird die reine Signatur-/Fingerabdruck-Logik; der Datenbank-Zugriff
+    steckt bewusst allein in ``read_abmelde_token``.
+    """
+
+    def _abo(self, pk=7, email="a@example.org"):
+        from intern.models import Auftrittsabo
+        return Auftrittsabo(pk=pk, email=email)     # nicht gespeichert
+
+    def test_runde(self):
+        from intern.mailingliste import (
+            _fingerabdruck, lese_abmelde_token, make_abmelde_token,
+        )
+        token = make_abmelde_token(self._abo())
+        self.assertEqual(
+            lese_abmelde_token(token), (7, _fingerabdruck("a@example.org"))
+        )
+
+    def test_adresse_steht_nicht_im_token(self):
+        # Sonst landete sie in Server-Logs, Referrern und der Browser-Chronik.
+        from intern.mailingliste import make_abmelde_token
+        self.assertNotIn("a@example.org", make_abmelde_token(self._abo()))
+
+    def test_manipuliertes_token(self):
+        from intern.mailingliste import lese_abmelde_token, make_abmelde_token
+        self.assertIsNone(lese_abmelde_token(make_abmelde_token(self._abo()) + "x"))
+        self.assertIsNone(lese_abmelde_token("unsinn"))
+
+    def test_fingerabdruck_trennt_adressen(self):
+        """Der Schutz gegen wiederverwendete Primärschlüssel.
+
+        Erbt ein neuer Eintrag die PK eines gelöschten, passt der Fingerabdruck
+        des alten Links nicht mehr — read_abmelde_token verwirft ihn dann.
+        """
+        from intern.mailingliste import _fingerabdruck
+        self.assertNotEqual(
+            _fingerabdruck("a@example.org"), _fingerabdruck("fremd@example.org")
+        )
+
+
+class BestaetigtPropertyTest(SimpleTestCase):
+    def test_leitet_sich_aus_dem_zeitstempel_ab(self):
+        from intern.models import Auftrittsabo
+        self.assertFalse(Auftrittsabo(email="x@y.z").bestaetigt)
+        self.assertTrue(
+            Auftrittsabo(email="x@y.z", bestaetigt_am=datetime(2026, 1, 1)).bestaetigt
+        )
+
+
 class GetConfigListTest(SimpleTestCase):
     def test_trennt_und_raeumt_auf(self):
         from intern.app_settings import get_config_list

@@ -17,6 +17,7 @@ from intern.forms import AuftrittsaboForm
 from intern.mailingliste import (
     OPTIN_COOLDOWN_MIN,
     optin_url,
+    read_abmelde_token,
     read_optin_token,
     send_mailingliste_mail,
 )
@@ -89,7 +90,6 @@ def _anmeldung_verarbeiten(request, form):
         email=form.cleaned_data["email"],
         defaults={
             "name": form.cleaned_data.get("name", ""),
-            "angemeldet_ip": _client_ip(request) or None,
             "einwilligungstext": form.einwilligungstext,
         },
     )
@@ -114,7 +114,6 @@ def _anmeldung_verarbeiten(request, form):
         # auffrischen, der Eintrag ist noch nicht wirksam.
         abo.name = form.cleaned_data.get("name", "") or abo.name
         abo.einwilligungstext = form.einwilligungstext
-        abo.angemeldet_ip = _client_ip(request) or abo.angemeldet_ip
 
     link = optin_url(base_url, abo)
     abo.optin_gesendet_am = jetzt
@@ -172,10 +171,9 @@ def auftritte_bestaetigen(request, token):
         return render(request, "auftritte_bestaetigen.html", {"abo": abo})
 
     if not abo.bestaetigt:
-        abo.bestaetigt = True
         abo.bestaetigt_am = timezone.now()
         abo.bestaetigt_ip = _client_ip(request) or None
-        abo.save(update_fields=["bestaetigt", "bestaetigt_am", "bestaetigt_ip"])
+        abo.save(update_fields=["bestaetigt_am", "bestaetigt_ip"])
         send_mailingliste_mail(
             "Willkommen auf unserer Auftritts-Liste",
             abo, "MAIL_MAILINGLISTE_WILLKOMMEN", _base_url(request),
@@ -198,7 +196,7 @@ def auftritte_abmelden(request, token):
     selbst eine Verarbeitung.  Ein unbekanntes Token ist der Normalfall beim
     zweiten Klick und darf deshalb keinen Fehler zeigen.
     """
-    abo = Auftrittsabo.objects.filter(abmelde_token=token).first()
+    abo = read_abmelde_token(token)
     if abo is None:
         return _status(
             request,
