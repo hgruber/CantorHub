@@ -1303,7 +1303,7 @@ time {
 @media (max-width: 480px) {
     #Filter     { width: 100%; max-width: 360px; }
 }
-#Action         { width: 260px; z-index: 502; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+#Action         { width: min(300px, calc(100vw - 24px)); z-index: 502; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
 #AddPanel       { width: 420px; z-index: 504; font-size: 1rem; }
 .add-panel-header {
     display: flex;
@@ -1413,17 +1413,25 @@ time {
     letter-spacing: 0.05em;
 }
 
-.action-btn { width: 100%; }
-
-.action-move-btns {
-    display: flex;
-    gap: 6px;
+/* Aktionen sind eine Liste: volle Breite, Icon links, Text linksbündig —
+   so bleibt jeder Button lesbar, egal wie lang die Beschriftung ist. */
+.action-btn {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    flex-shrink: 0;
 }
 
-.action-move-btns .btn { flex: 1; }
+.action-btn svg { flex: 0 0 auto; }
+
+.action-move-btns {
+    display: grid;
+    gap: 6px;
+    flex: 0 0 auto;   /* auf niedrigen Fenstern schrumpft die Ordnerliste, nicht die Buttons */
+}
 
 .folder-picker {
-    flex: 1;
+    flex: 0 1 auto;   /* wächst nur mit dem Inhalt, gibt bei Platzmangel als Erstes nach */
     min-height: 0;
     max-height: 240px;
     overflow-y: auto;

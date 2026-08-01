@@ -50,7 +50,7 @@
             {% csrf_token %}
         </form>
         <button class="btn btn-secondary action-btn" onclick="fileAction('zip')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Als ZIP herunterladen
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Als ZIP herunterladen
         </button>
 
         {% if can_write_here or can_delete_here %}
@@ -75,7 +75,9 @@
         </form>
 
         {% if can_delete_here %}
-        <button class="btn btn-danger action-btn" onclick="fileAction('delete')">Löschen</button>
+        <button class="btn btn-danger action-btn" onclick="fileAction('delete')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Löschen
+        </button>
         {% endif %}
 
         {% if can_write_here %}
@@ -96,11 +98,18 @@
             {% endfor %}
         </div>
         <div class="action-move-btns">
-            <button class="btn btn-secondary action-btn" onclick="fileAction('move')">Verschieben</button>
+            <button class="btn btn-secondary action-btn" onclick="fileAction('move')"
+                    title="Element wird hier entfernt und liegt danach nur noch im Zielordner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Verschieben
+            </button>
             <button class="btn btn-primary action-btn" onclick="fileAction('link')"
-                    title="Dieselbe Datei erscheint zusätzlich im Zielordner — Änderungen wirken überall">Verknüpfen</button>
+                    title="Dieselbe Datei erscheint zusätzlich im Zielordner — Änderungen wirken überall">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Verknüpfen
+            </button>
             <button class="btn btn-secondary action-btn" onclick="fileAction('duplicate')"
-                    title="Unabhängige Kopie mit eigenem Inhalt">Duplizieren</button>
+                    title="Unabhängige Kopie mit eigenem Inhalt">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Duplizieren
+            </button>
         </div>
         {% endif %}
         {% endif %}
