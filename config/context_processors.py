@@ -29,6 +29,13 @@ def project_meta(request):
             .first()
         )
         result["banner_termin"] = banner_termin
+        # Session key for the banner's dismissed state. Deliberately not read from the
+        # template's `user` — detail views (mitglied_view/-_edit) shadow it with the
+        # member being looked at, which would key the dismissal to a stranger's login.
+        last_login = request.user.last_login
+        result["banner_login"] = "%s-%s" % (
+            request.user.pk, int(last_login.timestamp()) if last_login else 0,
+        )
         if banner_termin is not None:
             zusage = (
                 Zusage.objects.filter(person=request.user, termin=banner_termin)

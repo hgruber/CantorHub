@@ -1779,8 +1779,9 @@ document.addEventListener("DOMContentLoaded", function () {
       banner.remove();
       return;
     }
-    // Dismissed for the current login session (anchored to user.last_login):
-    // reappears after the next login, when the stored timestamp no longer matches.
+    // Dismissed for the current login session (anchored to `banner_login` =
+    // request.user pk + last_login): reappears after the next login, when the
+    // stored value no longer matches.
     const login = banner.dataset.login;
     if (login && localStorage.getItem(KEY) === login) {
       banner.remove();
