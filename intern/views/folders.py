@@ -1,5 +1,6 @@
 import posixpath
 import re
+import unicodedata
 import zipfile
 
 from django.contrib.auth.decorators import login_required
@@ -52,10 +53,18 @@ __all__ = [
 ]
 
 
+def _sort_key(text):
+    """Case- and accent-insensitive sort key ("Ärger" belongs next to "Arbeit")."""
+    text = unicodedata.normalize("NFKD", text.casefold().replace("ß", "ss"))
+    return "".join(c for c in text if not unicodedata.combining(c))
+
+
 def _build_folder_flat(exclude_pk=None, user=None):
     """Return all folders as a flat list with full path strings, for the folder picker.
 
-    When `user` is given, restrict the list to folders the user can read."""
+    The list is sorted by path segment, so parents precede their children and
+    siblings appear alphabetically. When `user` is given, restrict the list to
+    folders the user can read."""
     all_fldrs = list(Folder.objects.order_by("name").values("id", "name", "parent_id"))
     folder_map = {f["id"]: f for f in all_fldrs}
 
@@ -76,9 +85,11 @@ def _build_folder_flat(exclude_pk=None, user=None):
         visible_ids = visible_folder_ids(user)
         all_fldrs = [f for f in all_fldrs if f["id"] in visible_ids]
 
-    return [
+    eintraege = [
         {"id": f["id"], "path": path_of(f)} for f in all_fldrs if f["id"] != exclude_pk
     ]
+    eintraege.sort(key=lambda e: [_sort_key(teil) for teil in e["path"].split(" / ")])
+    return eintraege
 
 
 def _folder_breadcrumb(folder, user=None):
