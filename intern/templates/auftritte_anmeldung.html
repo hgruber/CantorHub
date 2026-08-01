@@ -4,9 +4,11 @@
 {% block header %}
     <h1>Keinen Auftritt verpassen</h1>
     {% if text %}
-    {# Konfigurationstext bewusst nur mit linebreaksbr: mail_markup wuerde
+    {% comment %}
+       Konfigurationstext bewusst nur mit linebreaksbr: mail_markup wuerde
        Inline-Styles mit festen Hex-Farben erzeugen und den Dark Mode brechen.
-       Gleiches Muster wie HOMEPAGE_UEBER_UNS in index.html. #}
+       Gleiches Muster wie HOMEPAGE_UEBER_UNS in index.html.
+    {% endcomment %}
     <p class="join-intro">{{ text|linebreaksbr }}</p>
     {% endif %}
 {% endblock %}
@@ -29,8 +31,10 @@
         </div>
     </div>
 
-    {# Honeypot: fuer Menschen unsichtbar, Bots fuellen ihn aus. Bewusst kein
-       type="hidden" — genau das lassen Bots aus. #}
+    {% comment %}
+       Honeypot: fuer Menschen unsichtbar, Bots fuellen ihn aus. Bewusst kein
+       type="hidden" — genau das lassen Bots aus.
+    {% endcomment %}
     <div class="hp-feld" aria-hidden="true">
         <label for="{{ form.webseite.id_for_label }}">Webseite</label>
         <input type="text" name="webseite" id="{{ form.webseite.id_for_label }}"

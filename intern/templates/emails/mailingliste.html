@@ -1,6 +1,8 @@
 {% extends "emails/base.html" %}
-{# Auftritts-Mailingliste: Body aus MAIL_MAILINGLISTE_*, darunter der Abmelde-Hinweis.
-   Der Link steht hier strukturell im Template und ist damit nicht wegkonfigurierbar. #}
+{% comment %}
+   Auftritts-Mailingliste: Body aus MAIL_MAILINGLISTE_*, darunter der Abmelde-Hinweis.
+   Der Link steht hier strukturell im Template und ist damit nicht wegkonfigurierbar.
+{% endcomment %}
 
 {% block after_body %}
 <tr>

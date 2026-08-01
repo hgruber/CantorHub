@@ -13,9 +13,11 @@
             Erinnerungen an unsere öffentlichen Auftritte. Abmelden kannst Du Dich
             über den Link in jeder E-Mail.</p>
     </div>
-    {# Erst der POST bestaetigt: Outlook SafeLinks und Virenscanner rufen Links
+    {% comment %}
+       Erst der POST bestaetigt: Outlook SafeLinks und Virenscanner rufen Links
        vorab per GET auf und wuerden die Einwilligung ohne menschlichen Klick
-       dokumentieren. #}
+       dokumentieren.
+    {% endcomment %}
     <form method="post" class="join-form">
         {% csrf_token %}
         <div class="join-actions">

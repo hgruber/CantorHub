@@ -13,8 +13,10 @@
             bekommst dann keine Erinnerungen mehr und kannst Dich jederzeit wieder
             eintragen.</p>
     </div>
-    {# Wie beim Bestaetigen: erst der POST wirkt, damit Linkscanner nicht
-       ungefragt abmelden. #}
+    {% comment %}
+       Wie beim Bestaetigen: erst der POST wirkt, damit Linkscanner nicht
+       ungefragt abmelden.
+    {% endcomment %}
     <form method="post" class="join-form">
         {% csrf_token %}
         <div class="join-actions">
