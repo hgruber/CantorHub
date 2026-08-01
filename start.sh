@@ -17,7 +17,9 @@ python manage.py migrate
 python manage.py cleanup_changelog &
 
 # Alte Dateifassungen (überschriebene Uploads) nach Frist bzw. Anzahl abräumen.
-python manage.py cleanup_dateiversionen &
+# Grosszuegige Werte, damit die aus Avatare/ importierten historischen Fassungen
+# (2012 ff.) nicht beim naechsten Serverstart wieder verschwinden.
+python manage.py cleanup_dateiversionen --days 36500 --keep 25 &
 
 python manage.py ejabberd_admin sync
 python manage.py ejabberd_bot &

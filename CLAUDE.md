@@ -295,6 +295,16 @@ No Vorstand notification. Three public templates extend `mitglied_public_base.ht
 
 Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. `FOLDER_AVATARE = 1`, `FOLDER_MUSIK = 5`). The `import_files` management command imports avatars from the `Avatare/` directory into filer on first setup. `intern` overrides the filer-built-in `import_files` command (`intern/management/commands/import_files.py`) to set `_migrating.active = True` during the import, suppressing per-file index/thumbnail threads — otherwise importing a large directory would exhaust MySQL's connection limit. Indexing and thumbnailing are handled by the subsequent batch jobs instead.
 
+`Avatare/` also holds the superseded pictures as `<legacy_id>_<md5-prefix>.jpg`. `import_avatars`
+in `0003_import.py` hangs those off the member's current avatar as `DateiVersion` rows
+(see "Files as links, and file versions"): candidates whose `sha1` equals the current
+picture's are dropped (the legacy system stored the running revision under its hash name
+too), the rest are ordered by **file mtime** — the name carries no chronology — and get
+that mtime as `datum` (written after the fact, `datum` is `auto_now_add`). Their `File`
+rows are then removed with a *queryset* `delete()`, which bypasses `File.delete()` and so
+leaves the blob in place; this has to happen before the `owner is None` sweep, which would
+take the blobs with it. Versions of members who were not imported fall to that sweep.
+
 `index_files` and `thumbnail_files` run as background jobs after a fresh install in `migrate.sh`, building the search index and pre-generating thumbnails for all files. They are intentionally absent from `start.sh` (existing DB) — files are already indexed there. Files uploaded through the app are indexed and thumbnailed immediately via a `post_save` signal on `filer.File` (`on_filer_file_saved` in `signals.py`): a daemon thread calls `index_file()` and pre-generates all three thumbnail sizes so the upload response is not delayed. A semaphore caps concurrent thumbnail threads at 4 to prevent MySQL connection exhaustion; each thread closes its DB connection when done. The signal is suppressed (`_migrating.active`) during management commands that bulk-import files; file-creating functions in `0003_import.py` also set the flag explicitly as a backstop.
 
 ### Files as links, and file versions
@@ -328,8 +338,13 @@ and chains the history — it is rewritten whenever the file moves to a new blob
 (filtered by `visible_folder_ids` — never reveal folders the member cannot see) plus its
 version list; `datei_restore` makes an old revision current again, mirroring the overwrite
 path. Reached from the `#id` badge in the folder listing. `cleanup_dateiversionen`
-(`--keep 10 --days 730`, runs in the background on every `start.sh`) prunes old revisions,
-blobs included.
+(command defaults `--keep 10 --days 730`; `start.sh` calls it with `--keep 25 --days 36500`
+so the imported avatar history below survives) prunes old revisions, blobs included.
+
+A version blob has **no `File` row** — that is the whole point, and it makes the blob an
+orphan by filer's reckoning. Never run `filer_check --delete-orphans` on this project: it
+walks `filer_public/` and deletes every blob without a matching row, i.e. the entire
+version history. `migrate.sh` therefore only runs `thumbnail_files`.
 
 ### Breaking references: warn before deleting or renaming
 

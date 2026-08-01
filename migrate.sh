@@ -35,7 +35,10 @@ mv /tmp/0003_import.py intern/migrations || true
 python manage.py import_files --path Avatare
 python manage.py migrate
 python manage.py index_files &
-(python manage.py thumbnail_files && python manage.py filer_check --delete-orphans --noinput) &
+# Kein "filer_check --delete-orphans": das Kommando loescht jeden Blob ohne
+# File-Zeile — und genau das ist ein DateiVersion-Blob (importierte Avatar-
+# Fassungen). media/ wird oben ohnehin komplett neu angelegt.
+python manage.py thumbnail_files &
 
 python manage.py ejabberd_admin sync
 python manage.py ejabberd_bot &
