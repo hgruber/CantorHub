@@ -342,6 +342,39 @@ path. Reached from the `#id` badge in the folder listing. `cleanup_dateiversione
 (command defaults `--keep 10 --days 730`; `start.sh` calls it with `--keep 25 --days 36500`
 so the imported avatar history below survives) prunes old revisions, blobs included.
 
+### Avatars are write-protected against other members
+
+The `Avatare` folder has no `FolderPermission` rows, so by the rule in `folder_access.py`
+every logged-in member has **write** access to it. Without a second check that means anyone
+could overwrite, rename or `datei_restore` someone else's profile picture — and the imported
+avatar history reaches back to 2012. Folder permissions cannot fix this: restricting the
+folder would also block the self-service upload in `mitglied_edit`, which goes through
+`upload()` and is checked against `folder_access()`.
+
+`intern/avatar_access.py` is therefore a second access axis, orthogonal to folder
+permissions:
+
+- `avatar_mitglied(f)` — the member whose profile picture `f` is, resolved via the
+  **`User.avatar` FK, not the `<id>.jpg` naming convention**, and across *all* linked rows
+  (`verknuepfte_dateien`): a sibling row in another folder shares the blob and the version
+  chain, so acting on it would swap the avatar just the same.
+- `darf_avatar_aendern(user, f)` — `False` when `f` is another member's avatar. Holders of
+  `intern.change_user` (the permission `mitglied_edit` already requires for foreign
+  profiles) and superusers always pass. A file in `Avatare` with no resolvable owner (a
+  leftover `<id>.jpg` of a member who has since cleared their avatar) is administration-only.
+  Everything that is not an avatar returns `True` — normal files are unaffected.
+
+**Every write path on files must call `darf_avatar_aendern()`.** Current call sites:
+`datei_restore` and `upload` (overwrite branch — checked *before* `version_anlegen`, plus
+the `rename_to`/`avatar_user_id` parameters, checked before the `File` row is created so a
+rejection leaves no orphan) in `views/files.py`; `folder_rename`, `folder_move` and
+`folder_delete` in `views/folders.py`. `folder_link`/`folder_duplicate` need no guard — they
+do not change the avatar, and reading is open anyway.
+
+`datei_view` passes `darf_wiederherstellen` (= `darf_schreiben` **and**
+`darf_avatar_aendern`) to `datei.html`, which hides only the restore button. The version
+list itself stays visible to everyone — a deliberate choice, not an oversight.
+
 A version blob has **no `File` row** — that is the whole point, and it makes the blob an
 orphan by filer's reckoning. Never run `filer_check --delete-orphans` on this project: it
 walks `filer_public/` and deletes every blob without a matching row, i.e. the entire

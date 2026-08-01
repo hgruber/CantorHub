@@ -43,7 +43,12 @@ been removed once enforced — this file tracks only what is still open.
   folder the file is linked into and can be undone (see "Files as links, and file versions"
   in `CLAUDE.md`). Two consequences to keep in mind: content a member replaced on purpose
   remains restorable by anyone with write access to the file, and it survives in storage
-  until pruned. An erasure request is covered — `_datei_loeschen` drops all versions with
+  until pruned. **Profile pictures are exempt** since `intern/avatar_access.py`: only the
+  member themselves or a holder of `intern.change_user` may overwrite, rename, move, delete
+  or restore an avatar (see "Avatars are write-protected against other members" in
+  `CLAUDE.md`). Their version list stays *visible* to every member, though — a deliberate
+  decision; if that is ever reconsidered, `datei_view` already computes the flag
+  (`darf_wiederherstellen`) that would gate it. An erasure request is covered — `_datei_loeschen` drops all versions with
   the last occurrence of a file — but the *automatic* pruning is weaker than the command's
   defaults suggest: `cleanup_dateiversionen` defaults to 10 revisions / 2 years, yet
   `start.sh` runs it as `--keep 25 --days 36500`, which disables the age rule so the

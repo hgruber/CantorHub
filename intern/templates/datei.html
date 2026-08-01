@@ -87,7 +87,7 @@
                         <td class="v-autor">{% if v.autor %}{{ v.autor.first_name }} {{ v.autor.last_name }}{% else %}—{% endif %}</td>
                         <td class="v-groesse">{{ v.groesse|filesizeformat }}</td>
                         <td class="v-aktion">
-                            {% if darf_schreiben %}
+                            {% if darf_wiederherstellen %}
                             <form method="post" action="{% url 'datei_restore' datei.pk v.pk %}"
                                   onsubmit="return confirm('Version v{{ v.nummer }} wiederherstellen? Die aktuelle Fassung wird als Version gesichert.');">
                                 {% csrf_token %}

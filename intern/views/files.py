@@ -18,6 +18,7 @@ from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
 from intern import folders
+from intern.avatar_access import darf_avatar_aendern
 from intern.folder_access import folder_access, visible_folder_ids
 
 from ..models import DateiIndex, DateiVersion, Lied, TabellenPreferenzen, User
@@ -282,6 +283,30 @@ def upload(request):
                 status=403,
             )
 
+        # Fremde Mitglieds-IDs nur mit Verwaltungsrecht — vor dem Anlegen der
+        # Datei geprüft, damit eine Ablehnung keine Leiche im Ordner hinterlässt.
+        # Sonst könnte man eine zweite "<id>.jpg" in den Avatare-Ordner schieben
+        # oder das Avatar-FK eines beliebigen Mitglieds umbiegen.
+        fremd_erlaubt = request.user.is_superuser or request.user.has_perm("intern.change_user")
+
+        def _fremde_mitglieds_id(wert):
+            return (
+                str(wert).isdigit()
+                and int(wert) != request.user.pk
+                and User.objects.filter(pk=int(wert)).exists()
+            )
+
+        avatare_id = folders.avatare()
+        ins_avatar_verzeichnis = avatare_id is not None and str(folder_id) == str(avatare_id)
+        if not fremd_erlaubt and (
+            (ins_avatar_verzeichnis and rename_to and _fremde_mitglieds_id(rename_to))
+            or (avatar_user_id and _fremde_mitglieds_id(avatar_user_id))
+        ):
+            return JsonResponse(
+                {"status": "error", "message": "Das ist das Profilbild eines anderen Mitglieds."},
+                status=403,
+            )
+
         # Overwrite in-place if a file with the same name already exists here.
         # Replacing the .file field updates content but keeps the same File PK,
         # so existing Lied/Artikel/Forum references remain intact. The previous
@@ -291,6 +316,13 @@ def upload(request):
             folder_id=folder_id, original_filename=file.name
         ).first()
         overwritten = existing is not None
+        if overwritten and not darf_avatar_aendern(request.user, existing):
+            # Vor version_anlegen prüfen — sonst wäre die fremde Fassung schon
+            # archiviert und das Profilbild ersetzt.
+            return JsonResponse(
+                {"status": "error", "message": "Das ist das Profilbild eines anderen Mitglieds."},
+                status=403,
+            )
         if overwritten:
             alter_pfad = existing.file.name
             version_anlegen(existing, request.user)
@@ -405,6 +437,8 @@ def datei_view(request, pk):
         "datei": f,
         "orte": orte,
         "darf_schreiben": darf_schreiben,
+        # Fremde Profilbilder bleiben einsehbar, aber nicht wiederherstellbar.
+        "darf_wiederherstellen": darf_schreiben and darf_avatar_aendern(request.user, f),
         "versionen": versionen,
         "verwendungen": datei_verwendungen([f], request.user).get(f.pk, []),
         "thumbnail": _vorschau(f.file, size=(320, 320), crop=False),
@@ -425,6 +459,8 @@ def datei_restore(request, pk, version_id):
     if not orte:
         raise Http404
     if not darf_schreiben:
+        raise PermissionDenied
+    if not darf_avatar_aendern(request.user, f):
         raise PermissionDenied
     version = get_object_or_404(DateiVersion, pk=version_id, aktuell=f.file.name)
 

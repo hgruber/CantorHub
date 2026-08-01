@@ -30,6 +30,7 @@ from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
 from intern import folders
+from intern.avatar_access import darf_avatar_aendern
 from intern.folder_access import (
     folder_access,
     is_folder_visible,
@@ -714,6 +715,8 @@ def folder_delete(request):
             _, _, can_del = folder_access(request.user, f.folder)
             if not (global_delete or can_del):
                 continue
+            if not darf_avatar_aendern(request.user, f):
+                continue
             _datei_loeschen(f)
     folders.invalidate()
     return redirect("folder_view", pk=referer_pk)
@@ -739,6 +742,8 @@ def folder_move(request):
                 continue
             _, src_write, _ = folder_access(request.user, f.folder)
             if not src_write:
+                continue
+            if not darf_avatar_aendern(request.user, f):
                 continue
             File.objects.filter(pk=item_id).update(folder_id=target_id)
     return redirect("folder_view", pk=referer_pk)
@@ -864,6 +869,8 @@ def folder_rename(request):
         f = get_object_or_404(File, pk=item_id)
         _, can_write, _ = folder_access(request.user, f.folder)
         if not can_write:
+            raise PermissionDenied
+        if not darf_avatar_aendern(request.user, f):
             raise PermissionDenied
         alter_name = f.original_filename or f.name
         # One file, one name — a rename reaches every folder it is linked into.
