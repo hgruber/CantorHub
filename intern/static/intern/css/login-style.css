@@ -1,199 +1,88 @@
-*, *::before, *::after { box-sizing: border-box; }
+/* ===================================================
+   Auth-Seiten (dialog.html): Login, Passwort anfordern,
+   Reset-Bestaetigung, Anfrage erhalten.
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.6;
-    color: #111827;
-    background: #f1f3f5;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-    padding: 16px;
-}
+   Ergaenzt intern.css und laedt nur dort. Karte, Formularfelder,
+   Labels, Buttons, Fehlerkaesten und die Passwortstaerke-Anzeige
+   kommen aus intern.css (.join-* sowie die generischen Form-Regeln) —
+   hier steht nur, was dort fehlt. Farben ausschliesslich ueber Tokens,
+   damit der Dark Mode greift.
+   =================================================== */
 
-.login-container {
-    width: 100%;
+/* Die Karte ist schmaler als bei den Beitrittsseiten — ein Login
+   braucht keine 480px. */
+.join-wrap {
     max-width: 420px;
 }
 
-.login-card {
-    background: #fff;
-    padding: 32px 28px 28px;
-    border-radius: 14px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.06);
-    text-align: center;
-    border: 1px solid #e5e7eb;
-}
-
-.logo {
-    margin-bottom: 20px;
-}
-
-.logo img { width: 96px; height: auto; }
-
-h1 {
-    color: #111827;
+/* Die Ueberschrift steht im content-Block, also ausserhalb von
+   .join-header, und wird von dessen Regel nicht erfasst. */
+.join-card h1 {
     margin: 0 0 20px;
+    text-align: center;
     font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: -0.01em;
+    color: var(--t1);
 }
 
 .welcome-message {
     margin-bottom: 16px;
-    color: #6b7280;
+    text-align: center;
+    color: var(--t3);
     font-size: 13.5px;
     line-height: 1.5;
 }
 
-/* Errors */
-.login-error,
-ul.errorlist.nonfield {
-    background: #fef2f2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
-    border-radius: 6px;
-    padding: 10px 14px;
-    margin: 0 0 16px;
-    list-style: none;
-    font-size: 13px;
-    text-align: left;
-}
-
-ul.errorlist.nonfield li {
+.welcome-message p {
     margin: 0;
-    padding: 4px 0;
 }
 
-/* Form */
+/* Die Reset-/Anforderungsformulare rendern ueber {{ form.as_div }}; deren
+   Hilfetexte haben sonst die volle Textgroesse. */
+.join-card .helptext {
+    display: block;
+    margin: 2px 0 6px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--t3);
+}
+
 .login-form {
     margin-bottom: 20px;
-    text-align: left;
 }
 
-.form-group {
+.login-form .form-group {
     margin-bottom: 14px;
 }
 
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-    font-size: 13px;
-    color: #374151;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="email"] {
-    width: 100%;
-    padding: 9px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: inherit;
-    color: #111827;
-    background: #fff;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    outline: none;
-}
-
-input:focus {
-    border-color: #c14468;
-    box-shadow: 0 0 0 3px rgba(193, 68, 104, 0.18);
-}
-
-input::placeholder { color: #9ca3af; }
-
-.pw-strength {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 6px;
-}
-
-.pw-strength-track {
-    flex: 1;
-    height: 6px;
-    border-radius: 3px;
-    background: #e5e7eb;
-    overflow: hidden;
-}
-
-.pw-strength-bar {
-    height: 100%;
-    width: 0;
-    border-radius: 3px;
-    background: #dc2626;
-    transition: width 0.25s ease, background 0.25s ease;
-}
-
-.pw-strength-label {
-    font-size: 12px;
-    color: #6b7280;
-    white-space: nowrap;
-}
-
-.pw-strength[data-score="0"] .pw-strength-bar { background: #dc2626; }
-.pw-strength[data-score="1"] .pw-strength-bar { background: #f0ad4e; }
-.pw-strength[data-score="2"] .pw-strength-bar { background: #eab308; }
-.pw-strength[data-score="3"] .pw-strength-bar { background: #84cc16; }
-.pw-strength[data-score="4"] .pw-strength-bar { background: #22c55e; }
-
-.pw-widget {
-    margin: 8px 0 4px;
-}
-
-.pw-match {
-    display: flex;
-    align-items: center;
-    font-size: 12px;
-    margin-top: 5px;
-}
-
-.pw-match[data-match="yes"] { color: #22c55e; }
-.pw-match[data-match="no"]  { color: #dc2626; }
-
+/* Volle Breite statt inline-flex wie die uebrigen Buttons. */
 .login-button {
     width: 100%;
+    justify-content: center;
+    margin-top: 4px;
     padding: 10px;
-    background: #c14468;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
+    border-radius: var(--r);
     font-size: 14px;
     font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.15s ease, box-shadow 0.15s ease;
-    margin-top: 4px;
-}
-
-.login-button:hover {
-    background: #a83a5a;
-    box-shadow: 0 2px 10px rgba(193, 68, 104, 0.28);
 }
 
 .register-link {
     margin-top: 16px;
-    color: #6b7280;
+    text-align: center;
+    color: var(--t3);
     font-size: 13px;
 }
 
-.register-link a {
-    color: #c14468;
-    font-weight: 600;
-    text-decoration: none;
+.register-link p {
+    margin: 0;
 }
 
-.register-link a:hover {
-    color: #a83a5a;
-    text-decoration: underline;
+.register-link a {
+    font-weight: 600;
 }
 
 @media (max-width: 480px) {
-    .login-card { padding: 24px 20px 20px; }
-    h1 { font-size: 1.2rem; }
+    .join-card { padding: 24px 20px 20px; }
+    .join-card h1 { font-size: 1.2rem; }
 }

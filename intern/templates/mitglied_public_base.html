@@ -8,8 +8,7 @@
     <title>{% block title %}Mitglied werden – {{ vereinsname_lang }}{% endblock %}</title>
     <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
     <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
-    {# Dark-Mode vor dem ersten Paint setzen (FOUC vermeiden) – identisch zu base.html. #}
-    <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark");var m=document.getElementById("meta-theme-color");if(m)m.setAttribute("content",t==="dark"?"#1a1a2e":"#ffffff")})()</script>
+    {% include "_theme_boot.html" %}
 </head>
 <body class="join-page">
     <div class="join-wrap{% block wrap_modifier %}{% endblock %}">

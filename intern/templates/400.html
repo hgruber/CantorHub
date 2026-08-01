@@ -7,7 +7,7 @@
     <title>{{ vereinsname_kurz|default:"Portal" }} Intern – Ungültige Anfrage</title>
     <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
     <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
-    <script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark")})()</script>
+    {% include "_theme_boot.html" %}
 </head>
 <body>
 <div class="error-standalone">

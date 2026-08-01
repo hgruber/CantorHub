@@ -481,9 +481,33 @@ See `xmpp.md` for detailed implementation notes.
 
 ### Frontend design system (`intern/static/intern/css/intern.css`)
 
-All colors use CSS custom properties defined in `:root` (light mode). Dark mode is a `[data-theme="dark"]` block that overrides all color tokens. Theme is toggled via a button in the sidebar footer; persisted to `localStorage`; falls back to `prefers-color-scheme`. An inline `<script>` in `base.html` head sets `data-theme` before paint to avoid flash.
+All colors use CSS custom properties defined in `:root` (light mode). Dark mode is a `[data-theme="dark"]` block that overrides all color tokens. Theme is toggled via a button in the sidebar footer; persisted to `localStorage`; falls back to `prefers-color-scheme`.
 
 When adding new colors, always use CSS variables and add dark-mode values to `[data-theme="dark"]`. Avoid hardcoded hex colors in component styles.
+
+**Theme boot script.** The inline `<script>` that sets `data-theme` before paint lives in
+exactly one place: `intern/templates/_theme_boot.html`. Every standalone page includes it
+right after its `intern.css` link and before any visible markup — `base.html`,
+`dialog.html`, `mitglied_public_base.html`, `datenschutz.html` and the five error pages.
+Put it anywhere later and the flash of the wrong theme comes back. The script only
+**reads** `localStorage["theme"]`, falling back to `prefers-color-scheme`; it never writes.
+
+Writing is the toggle's job alone (`initTheme` in `intern.js`, `apply(theme, persist)`):
+the initial call passes `persist = false`, only a click persists. That distinction matters
+— persisting on load would freeze whatever the system happened to prefer on the first
+visit, and a later OS switch would have no effect. While nothing is stored, a
+`prefers-color-scheme` change listener follows the system live.
+
+**Auth pages** (`dialog.html` → `login.html`, `register.html`, `register_success.html`,
+`reset_confirm.html`) are themed like everything else: they load `intern.css`, carry
+`class="join-page"` on `<html>`/`<body>` and reuse the `.join-wrap`/`.join-card`/
+`.join-header` shell of the public join pages. `login-style.css` loads *after* it and holds
+only what `intern.css` does not cover (narrower card, the `<h1>` that sits outside
+`.join-header`, full-width submit button, `helptext` sizing for `{{ form.as_div }}`) —
+tokens only, no hex values. Form fields, labels, buttons, error boxes (`.error`,
+`ul.errorlist`) and the password-strength meter all come from `intern.css`.
+
+The only page deliberately left light-only is the public homepage — see below.
 
 Map pages use Leaflet. `intern/static/intern/js/osm-map.js` patches `L.TileLayer.prototype.createTile` to set `referrerPolicy = "origin"` — OpenStreetMap's tile servers reject requests without a `Referer` header. It is loaded once in `base.html` (right after Leaflet) so every map on the site is covered; the per-page map-init scripts must not re-add this patch.
 
@@ -495,6 +519,11 @@ mode only, own token block in `:root`). Structure: fixed header over a full-blee
 hero (transparent at the top, `.is-solid` white after 60 px of scroll — set by a small
 inline script at the end of the page), then Über uns (cards), Konzerte (date/title/place
 rows), Galerie (single wide photo band) and a dark Kontakt section plus footer.
+
+It is the one page that stays **light only** on purpose, and therefore the one page that
+does *not* include `_theme_boot.html`: the photo hero, the white `.is-solid` header state
+and the already-dark Kontakt section are a composed look, not a token swap. Do not bolt a
+`[data-theme="dark"]` block onto `main.css` without redesigning those three.
 
 Logo usage: the header shows the round mark
 (`intern/images/JG-Frankfurt-wG-color.svg`) over the photo and swaps to the black

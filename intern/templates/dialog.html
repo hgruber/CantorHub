@@ -1,27 +1,29 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="join-page">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="manifest" href="{% static 'intern/manifest.json' %}">
-        <meta name="theme-color" content="#c14468">
+        <meta name="theme-color" id="meta-theme-color" content="#ffffff">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <title>
             {% block title %}{% endblock %}
         </title>
+        <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
+        {% include "_theme_boot.html" %}
         <link rel="stylesheet" href="{% static 'intern/css/login-style.css' %}" />
         <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
     </head>
-    <body>
-        <div class="login-container">
-            <div class="login-card">
-                <div class="logo">
+    <body class="join-page">
+        <div class="join-wrap">
+            <div class="join-card">
+                <div class="join-header">
                     <a href="/">
-                        <img src="{% static 'intern/brand/logo.svg' %}"
-                             style="width: 96px" />
+                        <img class="join-logo" src="{% static 'intern/brand/logo.svg' %}"
+                             alt="{{ vereinsname_lang }}" />
                     </a>
                 </div>
                 {% block content %}{% endblock %}

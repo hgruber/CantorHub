@@ -26,9 +26,12 @@ if (overlay) {
     return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
   }
 
-  function apply(theme) {
+  // persist nur beim ausdruecklichen Klick: sonst wuerde schon der erste
+  // Seitenaufruf die erkannte Systemeinstellung festschreiben und ein
+  // spaeterer Wechsel am Betriebssystem bliebe wirkungslos.
+  function apply(theme, persist) {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
+    if (persist) localStorage.setItem("theme", theme);
     const meta = document.getElementById("meta-theme-color");
     if (meta) meta.setAttribute("content", theme === "dark" ? "#1a1a2e" : "#ffffff");
     const lightIcon = btn.querySelector(".theme-icon-light");
@@ -45,11 +48,21 @@ if (overlay) {
     }
   }
 
-  apply(current());
+  apply(current(), false);
 
   btn.addEventListener("click", () => {
-    apply(current() === "dark" ? "light" : "dark");
+    apply(current() === "dark" ? "light" : "dark", true);
   });
+
+  // Solange nichts gespeichert ist, dem System live folgen.
+  if (window.matchMedia) {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    mq.addEventListener("change", (e) => {
+      if (localStorage.getItem("theme") === null) {
+        apply(e.matches ? "dark" : "light", false);
+      }
+    });
+  }
 })();
 
 // Active navigation state
