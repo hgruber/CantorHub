@@ -98,6 +98,54 @@ class MitgliedInviteForm(forms.Form):
     )
 
 
+class AuftrittsaboForm(forms.Form):
+    """Öffentliche Anmeldung zur Auftritts-Mailingliste.
+
+    Bewusst kein ModelForm: die Zeile wird in der View über ``get_or_create``
+    geholt statt angelegt — bei einer bereits eingetragenen Adresse darf das
+    Formular keinen Unique-Fehler zeigen, der wäre ein Adress-Orakel.
+    """
+
+    email = forms.EmailField(
+        label="E-Mail-Adresse",
+        widget=forms.EmailInput(
+            attrs={"class": "form-control", "placeholder": "name@beispiel.de",
+                   "autocomplete": "email"}
+        ),
+    )
+    name = forms.CharField(
+        label="Name (optional)",
+        required=False,
+        max_length=64,
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "autocomplete": "name"}
+        ),
+    )
+    einwilligung = forms.BooleanField(required=True)
+    # Honeypot: für Menschen unsichtbar (CSS), Bots füllen ihn aus.
+    webseite = forms.CharField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from intern.app_settings import get_config
+        self.einwilligungstext = (get_config("MAILINGLISTE_EINWILLIGUNG") or "").strip()
+        self.fields["einwilligung"].label = self.einwilligungstext
+
+    def clean_email(self):
+        """Auf Kleinschreibung normalisieren.
+
+        MySQL vergleicht mit utf8mb4_general_ci case-insensitiv, SQLite in der
+        Entwicklung nicht — ohne Normalisierung wären Foo@x.de und foo@x.de in
+        Dev zwei Einträge und in Produktion ein Unique-Konflikt.
+        """
+        return self.cleaned_data["email"].strip().lower()
+
+    def clean_webseite(self):
+        if self.cleaned_data.get("webseite"):
+            raise ValidationError("Ungültige Eingabe.")
+        return ""
+
+
 # Erlaubte Zeichen für neue Benutzernamen (3–30: Buchstaben, Ziffern, . _ -).
 USERNAME_RE = re.compile(r"^[A-Za-z0-9._-]{3,30}$")
 

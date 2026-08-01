@@ -198,6 +198,100 @@ _CONFIG_DEFAULTS = [
         "Rahmen der Rundmail an Mitglieder; {text} ist der im Formular eingegebene Text. "
         + _MARKUP_HINT + " Platzhalter: {vorname}, {text}, {vereinsname}",
     ),
+    # --- Öffentliche Auftritts-Mailingliste ---------------------------------
+    (
+        "MAILINGLISTE_WOCHEN",
+        "4,1",
+        "Vorlaufzeiten der Auftritts-Erinnerungen in Wochen, kommagetrennt "
+        "(z.B. '4,1' = vier Wochen und eine Woche vorher)",
+    ),
+    (
+        "MAILINGLISTE_VERSANDZEIT",
+        "18:00",
+        "Uhrzeit HH:MM — nur Fallback für Termine ohne Uhrzeit. Sonst geht die "
+        "Erinnerung zur Uhrzeit des Termins raus, also am selben Wochentag.",
+    ),
+    (
+        "MAILINGLISTE_INTERVALL_MIN",
+        "10",
+        "Prüfintervall des Erinnerungs-Dauerlaufs in Minuten",
+    ),
+    (
+        "MAILINGLISTE_OPTIN_TAGE",
+        "7",
+        "Gültigkeit des Bestätigungslinks in Tagen — dieselbe Zahl ist die Frist, "
+        "nach der unbestätigte Anmeldungen gelöscht werden. Minimum 1 Tag; 0 würde "
+        "jeden Link sofort ungültig machen und wird deshalb auf 1 angehoben.",
+    ),
+    (
+        "MAILINGLISTE_TEXT",
+        "Trag Dich hier ein, wenn wir Dich an unsere öffentlichen Auftritte "
+        "erinnern sollen. Wir schreiben Dir vier Wochen und noch einmal eine "
+        "Woche vor jedem Konzert — also nur ein paar Nachrichten im Jahr.\n\n"
+        "Nach dem Absenden bekommst Du eine E-Mail mit einem Bestätigungslink. "
+        "Erst wenn Du darauf klickst, tragen wir Dich ein.",
+        "Einleitungstext des öffentlichen Anmeldeformulars unter /auftritte/. "
+        "Reiner Text, kein Markup — Absätze werden als Zeilenumbrüche gezeigt.",
+    ),
+    (
+        "MAILINGLISTE_EINWILLIGUNG",
+        "Ich möchte per E-Mail an die öffentlichen Auftritte erinnert werden. "
+        "Meine Adresse wird ausschließlich dafür verwendet und nicht an Dritte "
+        "weitergegeben. Ich kann die Einwilligung jederzeit über den "
+        "Abmelde-Link in jeder E-Mail widerrufen.",
+        "Text der Einwilligungs-Checkbox. Wird bei jeder Anmeldung als "
+        "Schnappschuss mitgespeichert (Nachweispflicht Art. 7 DSGVO).",
+    ),
+    (
+        "MAIL_MAILINGLISTE_OPTIN",
+        "Hallo{name_anrede},\n\n"
+        "Du möchtest an die öffentlichen Auftritte von '''{vereinsname_lang}''' "
+        "erinnert werden. Bitte bestätige das noch mit einem Klick — vorher "
+        "tragen wir Dich nicht ein.\n\n"
+        "{button:Eintrag bestätigen}\n\n"
+        "% Wenn Du das nicht warst, ignoriere diese E-Mail einfach. Ohne "
+        "Bestätigung passiert nichts.\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen "
+        "Browser: {link}",
+        "Bestätigungsmail des Double-Opt-ins. " + _MARKUP_HINT
+        + " Platzhalter: {name}, {name_anrede}, {email}, {link}, {abmelden}, "
+        "{vereinsname}, {vereinsname_lang}",
+    ),
+    (
+        "MAIL_MAILINGLISTE_WILLKOMMEN",
+        "Hallo{name_anrede},\n\n"
+        "Du stehst jetzt auf unserer Auftritts-Liste. Wir melden uns rechtzeitig "
+        "vor jedem öffentlichen Auftritt — und sonst nicht.\n\n"
+        "Wir freuen uns, Dich bei einem Konzert zu sehen!\n\n"
+        "Herzliche Grüße\n{vereinsname_lang}",
+        "Willkommensmail nach bestätigter Anmeldung. " + _MARKUP_HINT
+        + " Platzhalter: {name}, {name_anrede}, {email}, {abmelden}, "
+        "{vereinsname}, {vereinsname_lang}",
+    ),
+    (
+        "MAIL_MAILINGLISTE_BEREITS_ANGEMELDET",
+        "Hallo{name_anrede},\n\n"
+        "Deine Adresse steht bereits auf unserer Auftritts-Liste — Du musst "
+        "nichts weiter tun.\n\n"
+        "% Wenn Du keine Erinnerungen mehr möchtest, kannst Du Dich hier "
+        "austragen: {abmelden}",
+        "Antwort, wenn sich eine bestätigte Adresse erneut einträgt. "
+        + _MARKUP_HINT + " Platzhalter: {name}, {name_anrede}, {email}, "
+        "{abmelden}, {vereinsname_lang}",
+    ),
+    (
+        "MAIL_MAILINGLISTE_ERINNERUNG",
+        "== {titel} ==\n\n"
+        "{wochentag}, {datum}{uhrzeit_text}\n"
+        ": {ort}\n"
+        ": {ort_adresse}\n\n"
+        "In {wochen_text} ist es soweit — wir freuen uns, wenn Du dabei bist.\n\n"
+        "Herzliche Grüße\n{vereinsname_lang}",
+        "Erinnerung an einen Auftritt. Wiki-Markup erlaubt. Platzhalter: {titel}, "
+        "{datum}, {wochentag}, {uhrzeit}, {uhrzeit_text}, {ort}, {ort_adresse}, "
+        "{wochen}, {wochen_text}, {name}, {abmelden}. Die Terminbeschreibung gibt "
+        "es bewusst NICHT.",
+    ),
     (
         "MAIL_FOOTER",
         "Bitte antworte nicht auf diese E-Mail. Dies ist eine automatische Nachricht "

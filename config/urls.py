@@ -15,6 +15,12 @@ urlpatterns = [
     path("favicon.ico", RedirectView.as_view(url="/static/intern/images/JG-Frankfurt-wG-color.svg", permanent=True)),
     path("datenschutz/", views.datenschutz, name="datenschutz"),
     path("tiles/<int:z>/<int:x>/<int:y>.png", views.tiles_proxy, name="tiles_proxy"),
+    # Oeffentliche Auftritts-Mailingliste (kein Login)
+    path("auftritte/", views.auftritte_anmeldung, name="auftritte_anmeldung"),
+    path("auftritte/bestaetigen/<str:token>/", views.auftritte_bestaetigen,
+         name="auftritte_bestaetigen"),
+    path("auftritte/abmelden/<str:token>/", views.auftritte_abmelden,
+         name="auftritte_abmelden"),
     path("", views.home),
     path("intern/", include("intern.urls")),
     path("admin/", admin.site.urls),

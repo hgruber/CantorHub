@@ -159,3 +159,33 @@ class ChangeLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Auftrittsabo)
+class AuftrittsaboAdmin(admin.ModelAdmin):
+    list_display = ("email", "name", "bestaetigt", "angemeldet_am", "bestaetigt_am")
+    list_filter = ("bestaetigt",)
+    search_fields = ("email", "name")
+    # Nachweisfelder der Einwilligung — nichts davon darf nachträglich geändert
+    # werden, sonst verliert der Nachweis nach Art. 7 DSGVO seinen Wert.
+    readonly_fields = (
+        "angemeldet_am", "bestaetigt_am", "optin_gesendet_am",
+        "angemeldet_ip", "bestaetigt_ip", "einwilligungstext", "abmelde_token",
+    )
+
+    def has_add_permission(self, request):
+        # Ein von Hand angelegter Eintrag hätte keine Einwilligung.
+        return False
+
+
+@admin.register(ErinnerungVersand)
+class ErinnerungVersandAdmin(admin.ModelAdmin):
+    list_display = ("termin", "wochen", "faellig_am", "versendet_am", "empfaenger")
+    list_filter = ("wochen",)
+    readonly_fields = ("termin", "wochen", "faellig_am", "versendet_am", "empfaenger")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

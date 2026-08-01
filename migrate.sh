@@ -43,6 +43,10 @@ python manage.py thumbnail_files &
 python manage.py ejabberd_admin sync
 python manage.py ejabberd_bot &
 
+# Erinnerungen an oeffentliche Auftritte (Auftritts-Mailingliste); Dauerloop wie
+# der ejabberd_bot, weil das Projekt keinen Scheduler hat.
+python manage.py send_auftritt_erinnerungen --loop &
+
 if [ "${DEBUG}" = "1" ]; then
     python manage.py runserver 0.0.0.0:8001
 else

@@ -1,6 +1,7 @@
 from .abstimmung import *
 from .aenderungen import *
 from .auth import *
+from .auftritte import *
 from .artikel import *
 from .aufgaben import *
 from .gallerie import *

@@ -48,6 +48,19 @@ def get_config_int(key, default=0):
         return default
 
 
+def get_config_list(key, default=""):
+    """Kommaseparierten Konfigurationswert als Liste von Strings.
+
+    Leere Einträge und umgebende Leerzeichen fallen weg.  Die Umwandlung in
+    Zahlen gehört bewusst nicht hierher — sie ist je nach Schlüssel anders
+    (siehe parse_wochen in intern/mailingliste.py).
+    """
+    raw = get_config(key)
+    if raw is None:
+        raw = default
+    return [teil.strip() for teil in str(raw).split(",") if teil.strip()]
+
+
 def is_email_configured():
     return bool(get_config("EMAIL_HOST"))
 

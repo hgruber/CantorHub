@@ -38,6 +38,19 @@ been removed once enforced — this file tracks only what is still open.
   deactivation confirmation), turning the silent default into an informed, documented
   choice; until that exists the position relies on the §10 text alone.
 
+- **§15 Auftritts-Mailingliste — open operational points (to record)** — the flow itself is
+  compliant (double opt-in with a POST-only confirmation so link scanners cannot manufacture
+  a consent, IP/timestamp/consent-wording snapshot per Art. 7(1), unconfirmed rows deleted
+  after `MAILINGLISTE_OPTIN_TAGE`, unsubscribe deletes the row rather than flagging it, and
+  the unsubscribe link is welded into `send_mailingliste_mail()` so it survives an emptied
+  config text). What is *not* covered: (a) **no bounce handling** — a dead address keeps
+  receiving mail forever, since nothing reads the return path; (b) `MAIL_FOOTER` is global and
+  says "bitte nicht antworten", which is awkward for a public list where replying is the
+  natural reaction — the `mailto:` in `List-Unsubscribe` is the only inbound path; (c)
+  deliverability rests on SPF/DKIM/DMARC of the sending domain, which is host-side and not
+  this codebase's job. None of these break the policy text, but (a) is the one that will
+  bite first as the list grows.
+
 - **File versions outlive the visible file (to record)** — overwriting an upload no longer
   destroys the previous revision: `DateiVersion` keeps its blob so the change reaches every
   folder the file is linked into and can be undone (see "Files as links, and file versions"

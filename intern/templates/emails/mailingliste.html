@@ -1,0 +1,17 @@
+{% extends "emails/base.html" %}
+{# Auftritts-Mailingliste: Body aus MAIL_MAILINGLISTE_*, darunter der Abmelde-Hinweis.
+   Der Link steht hier strukturell im Template und ist damit nicht wegkonfigurierbar. #}
+
+{% block after_body %}
+<tr>
+  <td style="background-color:#ffffff;padding:0 32px 28px;">
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;">
+    <p style="margin:0;font-size:12px;color:#6b7280;line-height:1.6;word-break:break-word;">
+      Du bekommst diese Nachricht, weil Du Dich für Erinnerungen an unsere
+      öffentlichen Auftritte eingetragen hast. Wir verwenden Deine Adresse für
+      nichts anderes.<br>
+      <a href="{{ abmelde_url }}" style="color:#c14468;">Hier kannst Du Dich jederzeit wieder austragen.</a>
+    </p>
+  </td>
+</tr>
+{% endblock %}

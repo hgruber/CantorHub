@@ -23,6 +23,16 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in privacy-policy §1; multi-line, empty → only board member names are listed, no addresses)
 - `HOMEPAGE_UEBER_UNS` (body text for the "Über uns" card on the public homepage; multi-line allowed)
 - `HOMEPAGE_AUFNAHME` (body text for the "Wir suchen" card on the public homepage; multi-line allowed; hidden when empty)
+- `MAILINGLISTE_WOCHEN` (lead times of the public gig reminders in weeks, comma-separated; default `4,1`. Parsed by `parse_wochen()` in `intern/mailingliste.py`, which drops anything unparsable — a hand-edited nonsense value must not kill the daemon)
+- `MAILINGLISTE_VERSANDZEIT` (`HH:MM`; **fallback only**, used when a `Termin` has no time of day (00:00). Otherwise the reminder goes out at the event's own time, hence on the same weekday)
+- `MAILINGLISTE_INTERVALL_MIN` (poll interval of the reminder daemon, re-read every iteration)
+- `MAILINGLISTE_OPTIN_TAGE` (validity of the confirmation link **and** the deletion deadline for unconfirmed sign-ups — one number, two values would drift apart. Clamped to ≥ 1: a `0` would invalidate every link instantly)
+- `MAILINGLISTE_TEXT` (intro text of the public form at `/auftritte/`; plain text, rendered with `linebreaksbr` — **not** through `mail_markup`, whose inline hex colors would break dark mode)
+- `MAILINGLISTE_EINWILLIGUNG` (label of the consent checkbox; stored as a snapshot on every sign-up, see `Auftrittsabo.einwilligungstext`)
+- `MAIL_MAILINGLISTE_OPTIN` (double-opt-in confirmation mail; `{link}` = the confirmation URL)
+- `MAIL_MAILINGLISTE_WILLKOMMEN` (mail after a confirmed sign-up)
+- `MAIL_MAILINGLISTE_BEREITS_ANGEMELDET` (reply when an already-confirmed address signs up again)
+- `MAIL_MAILINGLISTE_ERINNERUNG` (the reminder itself; placeholders below)
 - `MAIL_ANTRAG` (applicant confirmation email)
 - `MAIL_ANTRAG_ADMIN` (admin notification on new application; `{vorname}`, `{nachname}`, `{email}`, `{link}`, `{hinweise}`)
 - `MAIL_ANTRAG_ADMIN_MINDERJAEHRIG` / `MAIL_ANTRAG_ADMIN_FOERDER` (conditional notes appended to the admin mail; rendered at `{hinweise}`)
@@ -67,6 +77,24 @@ Placeholders via `mail.render_config_mail(key, user=…, link=…)`: `{vorname}`
 out), `{vereinsname}`, `{vereinsname_lang}`, `{vereinsname_kurz}`, `{link}`, plus mail-specific
 extras. Without a `user` only the `{vereinsname*}` set and the extras are available. Unknown
 placeholders are left as-is; placeholder values are HTML-escaped.
+
+### Auftritts-Mailingliste placeholders
+
+The four `MAIL_MAILINGLISTE_*` texts go through `send_mailingliste_mail()`
+(`intern/mailingliste.py`) rather than `send_config_mail()`, because the unsubscribe link
+must not be removable by editing the text. They all get `{name}` (may be empty),
+`{name_anrede}` (`" Vorname"` or empty, so `Hallo{name_anrede},` reads correctly either way),
+`{email}` and `{abmelden}`. `MAIL_MAILINGLISTE_OPTIN` additionally gets `{link}` = the
+confirmation URL; in the other three `{link}` falls back to the unsubscribe URL.
+
+`MAIL_MAILINGLISTE_ERINNERUNG` additionally gets: `{titel}` (`Termin.kurz`), `{datum}`,
+`{wochentag}`, `{uhrzeit}` (empty at 00:00), `{uhrzeit_text}` (`" um 20:00 Uhr"` or empty),
+`{ort}`, `{ort_adresse}`, `{wochen}`, `{wochen_text}` (`"vier Wochen"` / `"einer Woche"`).
+
+There is deliberately **no `{beschreibung}`**: `mail_markup._substitute()` runs *before* the
+line parser, so substituted values are HTML-escaped but not markup-neutralised. A multi-line
+`Termin.lang` containing a `{button:…:URL}` line would render as a real button in a mail sent
+to the general public. `Termin.kurz` (single line, max 64) and `Ort.name` are safe.
 
 **To add a new automated email:** add the key to `_CONFIG_DEFAULTS` in `apps.py` (description
 mentioning the placeholders), then call `mail.send_config_mail(subject, to, key, user=…,

@@ -7,7 +7,7 @@ carries a plain-text fallback. The sender address is resolved at send time via
 """
 
 import logging
-from email import encoders
+from email import encoders, policy as _email_policy
 from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -24,18 +24,27 @@ logger = logging.getLogger(__name__)
 
 _LOGO_STATIC = "intern/brand/icon-192.png"
 
+# Zeilenenden fuer den SMTP-Transport (RFC 5321). Bewusst compat32 und nicht
+# email.policy.SMTP: die Nachricht wird mit der alten MIME-API gebaut, ein
+# Wechsel der Policy wuerde auch die Kopfzeilen-Kodierung veraendern.
+_SMTP_POLICY = _email_policy.compat32.clone(linesep="\r\n")
 
-def send_branded_mail(subject, to, template, context, text_body=None, attachments=None):
+
+def send_branded_mail(subject, to, template, context, text_body=None, attachments=None,
+                      headers=None):
     """Render ``template`` to HTML and send it as a branded email.
 
     ``to`` may be a single address or an iterable of addresses (all placed in
     the To header). ``text_body`` is the plain-text fallback; a generic notice
     is used when omitted. ``attachments`` is an optional list of
     ``(filename, bytes, content_type)`` tuples added as file attachments.
+    ``headers`` is an optional dict of extra MIME headers (e.g. List-Unsubscribe).
+
+    Returns True when the message was handed to the mail backend, False otherwise.
     """
     recipients = [to] if isinstance(to, str) else [a for a in to if a]
     if not recipients:
-        return
+        return False
 
     footer = render_config_mail("MAIL_FOOTER")[1].strip()
     html_message = render_to_string(template, {
@@ -84,22 +93,31 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
     mime["To"] = ", ".join(recipients)
     mime["Date"] = formatdate()
     mime["Message-ID"] = make_msgid()
+    for name, value in (headers or {}).items():
+        mime[name] = value
 
     class _Msg(EmailMessage):
-        def message(self, **_):
+        def message(self, policy=None, **_):
+            # Django reicht hier policy=email.policy.SMTP herein. Ohne sie
+            # serialisiert as_bytes() mit blossen LF-Zeilenenden — RFC 5321
+            # verlangt CRLF, und strenge SMTP-Server lehnen die Nachricht dann
+            # als eine einzige zu lange Zeile ab. compat32 mit CRLF statt
+            # policy.SMTP, damit die Kopfzeilen-Kodierung unveraendert bleibt.
+            mime.policy = _SMTP_POLICY
             return mime
 
     try:
         _Msg(subject, "", get_from_email(), recipients).send()
     except Exception:
         logger.exception("Failed to send mail '%s' to %s", subject, recipients)
-        return
+        return False
 
     if not is_email_configured():
         logger.warning(
             "EMAIL_HOST is not set in Konfiguration — email was written to console, not sent."
         )
     logger.info("Sent mail '%s' to %s", subject, recipients)
+    return True
 
 
 def build_mail_placeholders(user=None, **extra):
@@ -171,7 +189,7 @@ def send_config_mail(subject, to, key, user=None, link=None, extra_keys=(),
     body_html, plain = render_config_mail(
         key, user=user, link=link, extra_keys=extra_keys, **extra
     )
-    send_branded_mail(
+    return send_branded_mail(
         subject,
         to,
         template,

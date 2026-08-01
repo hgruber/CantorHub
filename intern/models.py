@@ -1,4 +1,5 @@
 import re
+import secrets
 from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
@@ -458,6 +459,78 @@ class Termin(models.Model):
 
     def __str__(self):
         return self.kurz + " am " + self.datum.strftime("%d.%m.%y")
+
+
+def neuer_abmelde_token():
+    """Zufalls-Token für den Abmelde-Link.
+
+    Bewusst eine Modul-Funktion und kein Lambda: Feld-Defaults müssen für die
+    Migration serialisierbar sein.
+    """
+    return secrets.token_urlsafe(32)
+
+
+class Auftrittsabo(models.Model):
+    """Eintrag in der öffentlichen Auftritts-Mailingliste (Double-Opt-in).
+
+    Empfänger sind ausdrücklich keine Mitglieder — es gibt keinen Bezug zu User.
+    Die Nachweisfelder (IP, Zeitpunkte, Einwilligungstext) belegen die
+    Einwilligung nach Art. 7 Abs. 1 DSGVO; der Einwilligungstext wird als
+    Schnappschuss gespeichert, weil er aus der jederzeit editierbaren
+    Konfigurationstabelle stammt.
+    """
+
+    email = models.EmailField(max_length=254, unique=True)
+    name = models.CharField(max_length=64, blank=True)
+    bestaetigt = models.BooleanField(default=False)
+    angemeldet_am = models.DateTimeField(auto_now_add=True)
+    bestaetigt_am = models.DateTimeField(null=True, blank=True)
+    optin_gesendet_am = models.DateTimeField(null=True, blank=True)
+    angemeldet_ip = models.GenericIPAddressField(null=True, blank=True)
+    bestaetigt_ip = models.GenericIPAddressField(null=True, blank=True)
+    einwilligungstext = models.TextField(blank=True)
+    abmelde_token = models.CharField(
+        max_length=64, unique=True, default=neuer_abmelde_token, editable=False
+    )
+
+    class Meta:
+        ordering = ["-angemeldet_am"]
+        verbose_name = "Auftrittsabo"
+        verbose_name_plural = "Auftrittsabos"
+
+    def __str__(self):
+        return self.email
+
+
+class ErinnerungVersand(models.Model):
+    """Marker: für diesen Termin wurde die Erinnerung mit N Wochen Vorlauf verschickt.
+
+    Der Unique-Constraint ist der einzige Schutz gegen Doppelversand durch
+    parallele Prozesse (Dauerloop, manueller Aufruf, Testsystem auf derselben
+    Datenbank) — es gibt kein Prozess-Lock.  Zweitfunktion: wer sich erst nach
+    der Fälligkeit einträgt, bekommt die Erinnerung nicht nachgereicht.
+    """
+
+    termin = models.ForeignKey(
+        "Termin", on_delete=models.CASCADE, related_name="erinnerungen"
+    )
+    wochen = models.PositiveSmallIntegerField()
+    faellig_am = models.DateTimeField()
+    versendet_am = models.DateTimeField(auto_now_add=True)
+    empfaenger = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-versendet_am"]
+        verbose_name = "Erinnerungsversand"
+        verbose_name_plural = "Erinnerungsversand"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["termin", "wochen"], name="uniq_erinnerung_termin_wochen"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.termin_id} / {self.wochen} Wochen"
 
 
 class Lied(models.Model):

@@ -1,0 +1,24 @@
+{% extends 'mitglied_public_base.html' %}
+{% block title %}Abmelden – {{ vereinsname }}{% endblock %}
+
+{% block header %}
+    <h1>Aus der Auftritts-Liste austragen</h1>
+{% endblock %}
+
+{% block body %}
+    <div class="join-message">
+        <p>Sollen wir <strong>{{ abo.email }}</strong> aus unserer Auftritts-Liste
+            löschen?</p>
+        <p class="join-message-muted">Wir löschen den Eintrag vollständig — Du
+            bekommst dann keine Erinnerungen mehr und kannst Dich jederzeit wieder
+            eintragen.</p>
+    </div>
+    {# Wie beim Bestaetigen: erst der POST wirkt, damit Linkscanner nicht
+       ungefragt abmelden. #}
+    <form method="post" class="join-form">
+        {% csrf_token %}
+        <div class="join-actions">
+            <button type="submit" class="btn btn-primary">Ja, austragen</button>
+        </div>
+    </form>
+{% endblock %}

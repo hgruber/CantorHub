@@ -46,12 +46,13 @@ docker run -p 8000:8000 cantoreub
 | `send_reconfirmation --user USERNAME --print-url` | Print the confirmation URL for one member without sending mail (for testing) |
 | `send_reconfirmation --all --print-url` | Print confirmation URLs for all members (tab-separated `username<TAB>url`) without sending mail |
 | `make_invite_url EMAIL` | Print a signed 7-day invite link for the Neuantrag form (`/intern/beitritt/<token>/`) without sending mail |
+| `send_auftritt_erinnerungen [--loop] [--dry-run] [--now ISO] [--termin ID] [--force]` | Send the public gig reminders of the Auftritts-Mailingliste. **One pass is the default, `--loop` is the daemon** started by `start.sh`. `--now` overrides "now" so the timing can be tested without touching the clock; `--force` ignores existing `ErinnerungVersand` markers |
 | `cleanup_changelog [--days N] [--dry-run]` | Delete `ChangeLog` entries older than the retention period (default 3 years = 1095 days), enforcing the privacy-policy §10 claim. Runs in the background on every `start.sh` |
 | `cleanup_dateiversionen [--keep N] [--days N] [--dry-run]` | Prune `DateiVersion` rows **and their blobs** (plus the thumbnails generated next to them): everything older than `--days` (default 730 = 2 years) or beyond the newest `--keep` revisions per file (default 10). Runs in the background on every `start.sh`, but with `--keep 25 --days 36500` — see "Retention: what the cleanup jobs actually delete" |
 
 ## Architecture
 
-CantorHub is a Django 6 member portal for "Just Gospel Frankfurt", a gospel choir. All application logic lives in the `intern/` app; `config/` holds only settings and URL routing. Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`, `forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`, `gallerie.py`). The package's `__init__.py` re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
+CantorHub is a Django 6 member portal for "Just Gospel Frankfurt", a gospel choir. All application logic lives in the `intern/` app; `config/` holds only settings and URL routing. Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`, `forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`, `gallerie.py`, `auftritte.py`). The package's `__init__.py` re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
 
 ### Request flow
 
@@ -65,6 +66,7 @@ Nginx serves `/static/`, `/media/`, and `/tiles/` directly; everything else is p
 
 - `/` — public homepage (`templates/index.html`)
 - `/datenschutz/` — public privacy policy (`templates/datenschutz.html`, no login required, `TemplateView` in `config/urls.py`)
+- `/auftritte/`, `/auftritte/bestaetigen/<token>/`, `/auftritte/abmelden/<token>/` — public gig-reminder mailing list (no login; see "Auftritts-Mailingliste")
 - `/tiles/<z>/<x>/<y>.png` — OSM tile proxy (no login required). In production nginx intercepts this and serves from its disk cache (`/app/tiles/`, 7-day TTL) without hitting Django. In dev, `tiles_proxy` in `karte.py` fetches from OSM server-side so the user's IP is never sent to OSM.
 - `/admin/` — Django admin
 - `/intern/*` — all authenticated views (`intern/urls.py`)
@@ -275,6 +277,65 @@ No Vorstand notification. Three public templates extend `mitglied_public_base.ht
 
 `MAIL_BESTAETIGUNG` and `MAIL_ANTRAG` are seeded by `_CONFIG_DEFAULTS` in `intern/apps.py` on `post_migrate`, like all other `MAIL_*` keys.
 
+### Auftritts-Mailingliste (public gig reminders)
+
+A public, membership-independent mailing list: visitors sign up at `/auftritte/` and are
+reminded before each public gig. The triggering events are `Termin.objects.filter(
+repertoire=True)` — exactly the ones `home()` already shows publicly; no model change on
+`Termin`. Linked from the homepage in `#concerts` (`.concert-cta`) and as a third
+`.contact-card` in `#contact`.
+
+**Layers:** domain logic in `intern/mailingliste.py` (tokens, URLs, due-date arithmetic,
+placeholders, sending), views in `intern/views/auftritte.py`, the daemon in
+`intern/management/commands/send_auftritt_erinnerungen.py`. The time-dependent functions take
+`jetzt` as an argument and never call the clock themselves — that is what makes `--now` and
+the DB-free unit tests in `intern/tests.py` possible.
+
+**Double opt-in.** `auftritte_anmeldung` does `get_or_create` and always renders the *same*
+status page, whether the address was new, unconfirmed or already subscribed — anything else
+would be an address oracle (same reasoning as `register()`). Only the mail differs. Two
+brakes: an IP throttle via `cache` (LocMemCache, so per gunicorn worker — weak, same caveat as
+the existing pwreset throttle) and the DB-backed cooldown on `optin_gesendet_am`
+(`OPTIN_COOLDOWN_MIN`), which is the one that actually stops mail-bombing a foreign address.
+A honeypot field `webseite` (off-screen via `.hp-feld`, **not** `type="hidden"`) short-circuits
+to the success page.
+
+**Confirmation and unsubscribe are POST-only** — GET renders a page with a button. Outlook
+SafeLinks and virus scanners fetch links ahead of the human and would otherwise document a
+consent nobody gave. Unsubscribing **deletes** the row (a stored address without consent is
+itself a processing operation); an unknown token renders a friendly page with status 200,
+because that is the normal second click.
+
+**Due dates.** `faelligkeit()` = event time minus N weeks, i.e. automatically the same weekday
+and hour; `MAILINGLISTE_VERSANDZEIT` is only a fallback for events with no time of day (00:00).
+`faellige_erinnerungen()` fires within `faellig <= jetzt <= faellig + KULANZ_STUNDEN` (24 h), so
+a long outage does not produce absurdly late mail. `USE_TZ = False` — everything is naive local
+wall-clock time, never call `localtime()`.
+
+**Idempotence.** `ErinnerungVersand.get_or_create()` runs **before** sending and its
+`UniqueConstraint(termin, wochen)` is the only guard against parallel processes (daemon +
+manual call + a test system on the same DB); there is no process lock and deliberately no
+`transaction.atomic()` around the batch — the marker must be visible to others immediately, and
+SMTP has no business inside an open transaction. Side effect worth keeping: whoever subscribes
+after a reminder was due does not get it retro-fitted. Known gap: a crash mid-batch leaves the
+marker standing and the remaining recipients unserved — recover with `--termin <id> --force`.
+
+**The unsubscribe link cannot be configured away.** `send_mailingliste_mail()` welds it into
+the `List-Unsubscribe` header, appends it to the plain-text part *above* the `-- ` signature
+separator, and `emails/mailingliste.html` renders it structurally in the HTML part. Emptying
+`MAIL_MAILINGLISTE_ERINNERUNG` does not remove it. `List-Unsubscribe-Post` is deliberately
+**not** set: providers then send an unauthenticated POST that the CSRF middleware rejects.
+
+**No `{beschreibung}` placeholder** — see `configuration.md`; `mail_markup` substitutes before
+parsing, so a multi-line `Termin.lang` could smuggle a `{button:…:URL}` into a mail to the
+general public.
+
+Without `VEREINS_URL` or `EMAIL_HOST` the daemon **warns and writes no marker** rather than
+sending — a mail with a relative, i.e. dead, unsubscribe link is not defensible. Both are
+re-read every iteration, so fixing the config takes effect without restarting the loop.
+Privacy-policy coverage is §15 in `datenschutz.html`; open operational points (no bounce
+handling) are recorded in `datenschutz.md`.
+
 ### Key models (`intern/models.py`)
 
 | Model | Purpose |
@@ -291,6 +352,8 @@ No Vorstand notification. Three public templates extend `mitglied_public_base.ht
 | `Zusage` | Per-member attendance response to an event |
 | `Abstimmung` | Voting records |
 | `TabellenPreferenzen` | Per-user table column visibility preferences |
+| `Auftrittsabo` | Subscriber of the public gig-reminder list — **not** a member, no FK to `User`. Carries the Art. 7(1) evidence (sign-up/confirmation timestamp + IP, snapshot of the consent wording) and a stored random `abmelde_token` |
+| `ErinnerungVersand` | One marker per `(termin, wochen)`; the `UniqueConstraint` is the only protection against double sending |
 
 ### File management
 
@@ -557,7 +620,7 @@ Tracked in separate files: general code/UX debt (branding, risk-ranked items) in
 ### Notable utilities (`intern/`)
 
 - `pdf.py` — `new_letterhead_pdf(title, subtitle, vereinsname, vereinsname_lang, vereinsadresse)` returns `(buf, canvas, content_y)`; draws branded letterhead (logo from `intern/brand/JG-Frankfurt-transparent.png`, thin `#c14468` accent lines) and footer. Helper functions `draw_section`, `draw_field`, `draw_checkbox`, `draw_signature` build the content area. Used by `_save_antrag_pdf` and `_save_bestaetigung_pdf` in `views/auth.py`.
-- `mail.py` — `send_branded_mail(subject, to, template, context, text_body=None, attachments=None)`: renders an HTML template into a branded mail with the embedded logo (`cid:logo`) and a plain-text fallback (both get the `MAIL_FOOTER` line); resolves the sender via `get_from_email()`; never raises. `attachments` is an optional list of `(filename, bytes, content_type)` tuples — when present the outer MIME type is `multipart/mixed`. Callers normally use the wrapper `send_config_mail()`, which renders a `MAIL_*` config text (see "Automated e-mails"); `build_mail_placeholders()` builds the placeholder dict.
+- `mail.py` — `send_branded_mail(subject, to, template, context, text_body=None, attachments=None, headers=None)`: renders an HTML template into a branded mail with the embedded logo (`cid:logo`) and a plain-text fallback (both get the `MAIL_FOOTER` line); resolves the sender via `get_from_email()`; never raises and returns `True`/`False` so callers can tell whether the message reached the backend. `attachments` is an optional list of `(filename, bytes, content_type)` tuples — when present the outer MIME type is `multipart/mixed`. `headers` adds extra MIME headers (used for `List-Unsubscribe`). The function builds the MIME message itself and hands it to Django through a `_Msg` subclass whose `message()` is overridden; that override must apply `_SMTP_POLICY` (compat32 with CRLF line endings), otherwise `as_bytes()` emits bare LF and strict SMTP servers reject the whole mail as one over-long line (RFC 5321). Callers normally use the wrapper `send_config_mail()`, which renders a `MAIL_*` config text (see "Automated e-mails"); `build_mail_placeholders()` builds the placeholder dict.
 - `mail_markup.py` — `render_mail_markup(raw, placeholders, link)` → `(html, plain)`: wiki-style markup renderer for mail texts, including the `{button:Label}` directive.
 - `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file links)
 - `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings

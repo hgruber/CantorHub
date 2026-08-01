@@ -6116,6 +6116,16 @@ body.join-page {
     color: var(--t3);
 }
 
+/* Honeypot: aus dem Sichtfeld geschoben statt display:none — Bots fuellen
+   sichtbare Felder aus und ueberspringen versteckte. */
+.hp-feld {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
 /* Einwilligungen */
 .join-consents {
     display: flex;

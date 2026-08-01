@@ -1,0 +1,25 @@
+{% extends 'mitglied_public_base.html' %}
+{% block title %}Anmeldung bestätigen – {{ vereinsname }}{% endblock %}
+
+{% block header %}
+    <h1>Anmeldung bestätigen</h1>
+{% endblock %}
+
+{% block body %}
+    <div class="join-message">
+        <p>Bitte bestätige mit einem Klick, dass wir <strong>{{ abo.email }}</strong>
+            in unsere Auftritts-Liste aufnehmen dürfen.</p>
+        <p class="join-message-muted">Wir verwenden Deine Adresse ausschließlich für
+            Erinnerungen an unsere öffentlichen Auftritte. Abmelden kannst Du Dich
+            über den Link in jeder E-Mail.</p>
+    </div>
+    {# Erst der POST bestaetigt: Outlook SafeLinks und Virenscanner rufen Links
+       vorab per GET auf und wuerden die Einwilligung ohne menschlichen Klick
+       dokumentieren. #}
+    <form method="post" class="join-form">
+        {% csrf_token %}
+        <div class="join-actions">
+            <button type="submit" class="btn btn-primary">Ja, eintragen</button>
+        </div>
+    </form>
+{% endblock %}
