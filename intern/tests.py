@@ -153,3 +153,42 @@ class GetConfigListTest(SimpleTestCase):
         # Ohne DB-Zugriff: get_config fängt die Exception ab und liefert None,
         # get_config_list fällt dann auf den übergebenen Default zurück.
         self.assertEqual(get_config_list("GIBT_ES_NICHT", " 4 , ,1 "), ["4", "1"])
+
+
+class ClientIpTest(SimpleTestCase):
+    """_client_ip() trägt die Drosseln und Auftrittsabo.bestaetigt_ip.
+
+    Ein Stellvertreter genügt — die Funktion liest nur ``request.META``.
+    """
+
+    def _ip(self, **meta):
+        from intern.views.auth import _client_ip
+        return _client_ip(SimpleNamespace(META=meta))
+
+    def test_einzelner_eintrag(self):
+        self.assertEqual(self._ip(HTTP_X_FORWARDED_FOR="203.0.113.9"), "203.0.113.9")
+
+    def test_letzter_eintrag_gewinnt(self):
+        # Ein vom Client gefälschter Vorspann steht immer weiter vorn: haproxy
+        # hängt seinen Eintrag an, nginx reicht nur diesen weiter.  Würde hier
+        # der erste Eintrag genommen, könnte sich jeder eine IP aussuchen.
+        self.assertEqual(
+            self._ip(HTTP_X_FORWARDED_FOR="1.2.3.4, 203.0.113.9"), "203.0.113.9"
+        )
+
+    def test_leerraum_wird_entfernt(self):
+        self.assertEqual(self._ip(HTTP_X_FORWARDED_FOR="  203.0.113.9  "), "203.0.113.9")
+
+    def test_ohne_header_remote_addr(self):
+        self.assertEqual(self._ip(REMOTE_ADDR="198.51.100.7"), "198.51.100.7")
+
+    def test_leerer_header_faellt_auf_remote_addr_zurueck(self):
+        self.assertEqual(
+            self._ip(HTTP_X_FORWARDED_FOR="", REMOTE_ADDR="198.51.100.7"),
+            "198.51.100.7",
+        )
+
+    def test_gar_nichts(self):
+        # bestaetigt_ip ist ein GenericIPAddressField — auftritte.py macht aus
+        # dem leeren String per ``or None`` ein NULL.
+        self.assertEqual(self._ip(), "")

@@ -52,5 +52,6 @@ if [ "${DEBUG}" = "1" ]; then
 else
     python manage.py collectstatic --noinput
     /usr/sbin/nginx -g 'daemon on; master_process on;'
-    gunicorn --bind 0.0.0.0:8001 --workers 3 config.wsgi:application
+    # Nur an localhost — Begruendung siehe start.sh.
+    gunicorn --bind 127.0.0.1:8001 --workers 3 config.wsgi:application
 fi

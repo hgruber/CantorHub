@@ -42,8 +42,12 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = ["test.example.org", "narsil", "localhost", "127.0.0.1"]
 
-USE_X_FORWARDED_HOST = True
-USE_X_FORWARDED_PORT = True
+# Weder USE_X_FORWARDED_HOST noch USE_X_FORWARDED_PORT: X-Forwarded-Host und
+# -Port setzt in der Kette haproxy → nginx → gunicorn niemand.  Beide waeren
+# also allein vom Client bestimmt und flossen in request.get_host()/get_port()
+# und damit in jedes build_absolute_uri() ein — etwa in den Link der
+# Passwort-Reset-Mail.  Den echten Host reicht nginx als Host-Header durch;
+# nginx loescht die beiden Header zusaetzlich.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [
     "https://test.example.org",

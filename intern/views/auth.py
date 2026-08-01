@@ -200,8 +200,16 @@ def _find_user(username, email, first_name, last_name):
 
 
 def _client_ip(request):
-    """Client-IP hinter nginx: letzter Eintrag in X-Forwarded-For (von nginx
-    angehängt, nicht spoofbar), sonst REMOTE_ADDR."""
+    """Client-IP am Ende der Proxy-Kette (haproxy → nginx → gunicorn).
+
+    Genommen wird der **letzte** Eintrag in X-Forwarded-For, nicht der erste:
+    was ein Client selbst mitschickt, steht immer weiter vorn und kann so nicht
+    durchschlagen.  Voraussetzung ist, dass nginx per ``set_real_ip_from``
+    (nginx.conf) die echte Client-IP aus dem haproxy-Header übernimmt und als
+    einzigen Eintrag weiterreicht — ohne diese Konfiguration liefert die
+    Funktion die Adresse des vorgelagerten Proxys.  Siehe CLAUDE.md,
+    Abschnitt „Request flow".
+    """
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
     if forwarded:
         return forwarded.split(",")[-1].strip()

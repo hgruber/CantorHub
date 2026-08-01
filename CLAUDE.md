@@ -57,10 +57,49 @@ CantorHub is a Django 6 member portal for "Just Gospel Frankfurt", a gospel choi
 ### Request flow
 
 ```
-Browser → nginx (port 8000) → gunicorn (port 8001) → Django
+Browser → haproxy (TLS) → nginx (port 8000) → gunicorn (127.0.0.1:8001) → Django
 ```
 
 Nginx serves `/static/`, `/media/`, and `/tiles/` directly; everything else is proxied to gunicorn. In development, `manage.py runserver` handles everything.
+
+**Two things the front proxy has to get right**, because Django cannot detect either
+of them going wrong:
+
+- **The client IP.** `_client_ip()` (`views/auth.py`) takes the *last* entry of
+  `X-Forwarded-For` — a client-supplied header always ends up further left and can
+  therefore never win. That only holds because `nginx.conf` runs the realip module
+  (`set_real_ip_from 10.88.0.0/16; real_ip_header X-Forwarded-For;`), which turns
+  `$remote_addr` into the real client address before it is forwarded as the single
+  XFF entry. Without it every visitor arrives as the proxy's address, which silently
+  turns both rate limits (password reset, mailing-list sign-up) into *global* ones —
+  one sender then locks out everybody — and makes `Auftrittsabo.bestaetigt_ip`
+  worthless as Art. 7(1) evidence. The trusted CIDR is the podman network; adjust it
+  if the deployment moves. Getting it wrong is fail-safe: realip simply does not
+  engage and behaviour falls back to what it was.
+- **`X-Forwarded-Proto: https`.** haproxy must set the literal string — `%[ssl_fc]`
+  renders as `1`/`0` (it is a boolean), which never matches
+  `SECURE_PROXY_SSL_HEADER`. When it does not match, `request.is_secure()` is
+  permanently `False` and every `build_absolute_uri()` emits `http://` links: the
+  password-reset mail, and via `_base_url()` the opt-in and unsubscribe links of
+  every mailing-list mail. Use `set-header X-Forwarded-Proto https if { ssl_fc }`
+  (or `%[ssl_fc,iif(https,http)]` from haproxy 2.3 on).
+
+`X-Forwarded-Host` and `X-Forwarded-Port` are **deleted** by nginx (`proxy_set_header
+… "";`) and correspondingly `USE_X_FORWARDED_HOST` / `USE_X_FORWARDED_PORT` are off:
+no hop in this chain sets either header, so whatever arrives is the client's own
+invention — and Django would feed it into `request.get_host()`/`get_port()` and hence
+into every `build_absolute_uri()`. The real host travels in the `Host` header, which
+nginx forwards. Do not switch those settings back on without a proxy that actually
+writes the headers.
+
+gunicorn binds to `127.0.0.1:8001` on purpose — nginx is in the same container, and
+a wildcard bind would be reachable over the podman bridge, bypassing nginx and thus
+realip. The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
+
+Client IPs are not logged anywhere in this stack: `log_format simple` in `nginx.conf`
+has no `$remote_addr`, gunicorn runs without an access log, and Django's `LOGGING`
+carries no request context. The one place they are recorded is the haproxy log
+(`%ci`) — see `datenschutz.md` for what that means for the §10 retention promise.
 
 ### URL structure
 

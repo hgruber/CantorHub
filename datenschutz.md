@@ -5,10 +5,29 @@ implementation must live up to. The items below are the ones where the code does
 fully match the policy text (or where a deliberate design decision needs to be recorded so it
 is not mistaken for a defect). The §-numbers refer to the sections in `datenschutz.html`.
 
-Resolved items (map/geocoding proxy, audit-log cleanup, 90-day server-log retention) have
-been removed once enforced — this file tracks only what is still open.
+Resolved items (map/geocoding proxy, audit-log cleanup) have been removed once enforced —
+this file tracks only what is still open.
 
 ## Open / to record
+
+- **§2/§10 server logs: the 90-day promise is an operator duty, not a code guarantee** —
+  nothing in this repository logs a client IP: `log_format simple` in `nginx.conf` omits
+  `$remote_addr`, gunicorn runs without an access log, and Django's `LOGGING` has no request
+  context. The IPs the policy describes are recorded one hop earlier, by the haproxy in front
+  (`log-format … from:%ci`), whose output goes to the host's syslog/journald. **Action item:**
+  confirm that rotation on that host actually discards entries after at most 90 days — the
+  sentence in §2 (repeated in §7 and §10) is only true as long as it does, and this codebase
+  cannot enforce it. The §2 wording was adjusted to name the reverse proxy as the processing
+  component instead of implying the portal itself logs.
+
+- **§15 stored consent IPs from before the realip fix are the proxy's, not the subscriber's**
+  — until `set_real_ip_from` was added to `nginx.conf`, `_client_ip()` returned the address of
+  the front proxy for every request, so `Auftrittsabo.bestaetigt_ip` holds one and the same
+  internal address for all rows confirmed in that period. No personal data was exposed (the
+  opposite: less was collected than the policy announces), but those rows carry **no**
+  evidentiary value under Art. 7(1) — `bestaetigt_am` plus the `einwilligungstext` snapshot
+  are all that stands behind them. Decided to leave the values in place rather than null them.
+  New confirmations record the real address. See "Request flow" in `CLAUDE.md`.
 
 - **§3 legal basis lit. b vs. lit. f for forum/chat** — membership admin and event
   organisation on Art. 6(1)(b) is fine, but forum + XMPP chat are hard to justify as
