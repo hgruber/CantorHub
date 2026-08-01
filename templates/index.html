@@ -1,30 +1,54 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="de">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{{ vereinsname_lang }}</title>
-        <link rel="stylesheet" href="/static/intern/css/main.css" />
-        <link rel="icon" href="/static/intern/brand/logo.svg" />
+        <meta name="description"
+              content="{{ vereinsname_lang }} — {{ vereinsname }}" />
+        <link rel="stylesheet" href="{% static 'intern/css/main.css' %}" />
+        <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
     </head>
     <body>
-        <header>
-            <nav>
-                <a href="#home">Home</a>
-                <a href="#contact">Kontakt</a>
-                <a href="/intern/login">Login</a>
-            </nav>
-            <a href="#home" class="logo">
-                <img src="/static/intern/brand/logo.svg"
-                     style="width: 120px" />
+        <header class="site-header" id="site-header">
+            <a href="#home" class="brand">
+                <img src="{% static 'intern/brand/logo.svg' %}"
+                     alt="{{ vereinsname_kurz }}" />
             </a>
+            <nav class="site-nav">
+                <a href="#home">Home</a>
+                <a href="#concerts">Konzerte</a>
+                <a href="#contact">Kontakt</a>
+                <a href="/intern/login" class="nav-login">Login</a>
+            </nav>
         </header>
-        <section id="home">
-            <div class="content">
-                <div class="intro">
-                    <h1>{{ vereinsname_lang }}</h1>
-                    <p>{{ vereinsname }}</p>
+
+        <section id="home" class="hero">
+            <div class="hero-media">
+                <img src="{% static 'intern/img/chor-1400.jpg' %}"
+                     srcset="{% static 'intern/img/chor-800.jpg' %} 800w,
+                             {% static 'intern/img/chor-1400.jpg' %} 1400w,
+                             {% static 'intern/img/chor-2000.jpg' %} 2000w"
+                     sizes="100vw"
+                     alt="{{ vereinsname_lang }} auf der Bühne"
+                     fetchpriority="high" />
+            </div>
+            <div class="hero-inner">
+                <span class="eyebrow">{{ vereinsname }}</span>
+                <h1>{{ vereinsname_lang }}</h1>
+                {% if homepage_intro %}
+                <p class="hero-sub">{{ homepage_intro }}</p>
+                {% endif %}
+                <div class="hero-actions">
+                    <a href="#concerts" class="btn btn-primary">Konzerte</a>
+                    <a href="#contact" class="btn btn-ghost">Kontakt</a>
                 </div>
+            </div>
+        </section>
+
+        <section id="about">
+            <div class="content">
                 <div class="about">
                     <div class="card">
                         <h2>Über uns</h2>
@@ -44,13 +68,20 @@
                 </div>
             </div>
         </section>
-        <section id="concerts">
+
+        <section id="concerts" class="section-alt">
             <div class="content">
-                <h2>Konzerte</h2>
+                <div class="section-head">
+                    <span class="eyebrow">Termine</span>
+                    <h2>Konzerte</h2>
+                </div>
                 <div class="concert-list">
                     {% for t in termine %}
                     <div class="concert-item">
-                        <span class="date">{{ t.datum|date:"D, d.m.Y" }}{% if t.datum|time:"H:i" != "00:00" %}, {{ t.datum|time:"H:i" }} Uhr{% endif %}</span>
+                        <span class="date">
+                            <span>{{ t.datum|date:"D, d.m.Y" }}</span>
+                            {% if t.datum|time:"H:i" != "00:00" %}<span>{{ t.datum|time:"H:i" }} Uhr</span>{% endif %}
+                        </span>
                         <h3>{{ t.kurz }}</h3>
                         {% if t.ort %}<p class="location">{{ t.ort.name }}</p>{% endif %}
                     </div>
@@ -60,28 +91,30 @@
                 </div>
             </div>
         </section>
+
         <section id="gallery">
             <div class="content">
-                <h2>Galerie</h2>
-                <div class="gallery-grid">
-                    <div class="gallery-item">
-                        <div class="image-placeholder"></div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="image-placeholder"></div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="image-placeholder"></div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="image-placeholder"></div>
-                    </div>
+                <div class="section-head">
+                    <span class="eyebrow">Der Chor</span>
+                    <h2>Galerie</h2>
                 </div>
+                <figure class="gallery-band">
+                    <img src="{% static 'intern/img/chor-band-1100.jpg' %}"
+                         srcset="{% static 'intern/img/chor-band-1100.jpg' %} 1100w,
+                                 {% static 'intern/img/chor-band-1800.jpg' %} 1800w"
+                         sizes="(max-width: 1160px) 100vw, 1160px"
+                         alt="{{ vereinsname_lang }} — Chorfoto"
+                         loading="lazy" />
+                </figure>
             </div>
         </section>
+
         <section id="contact">
             <div class="content">
-                <h2>Kontakt</h2>
+                <div class="section-head">
+                    <span class="eyebrow">{{ vereinsname_kurz }}</span>
+                    <h2>Kontakt</h2>
+                </div>
                 <div class="contact-info">
                     {% if kontakt_email %}
                     <div class="contact-card">
@@ -106,10 +139,19 @@
                 </div>
             </div>
         </section>
+
         <footer>
             <div class="footer-content">
                 <div class="footer-logo">
-                    <img src="/static/intern/brand/logo.svg" style="width: 50px" />
+                    <img src="{% static 'intern/brand/logo.svg' %}"
+                         alt="{{ vereinsname_kurz }}" />
+                </div>
+                <div class="footer-links">
+                    <a href="#home">Home</a>
+                    <a href="#concerts">Konzerte</a>
+                    <a href="#contact">Kontakt</a>
+                    <a href="/datenschutz/">Datenschutz</a>
+                    <a href="/intern/login">Login</a>
                 </div>
                 <div class="copyright">
                     <p>
@@ -119,5 +161,16 @@
                 </div>
             </div>
         </footer>
+
+        <script>
+            (function () {
+                var header = document.getElementById("site-header");
+                var setState = function () {
+                    header.classList.toggle("is-solid", window.scrollY > 60);
+                };
+                setState();
+                window.addEventListener("scroll", setState, { passive: true });
+            })();
+        </script>
     </body>
 </html>

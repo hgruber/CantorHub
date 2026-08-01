@@ -29,6 +29,13 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
 - `intern/ejabberd.py`, `intern/apps.py` — XMPP host/MUC defaults reference the
   domain (already DB-config keys; just need generic defaults)
 
+### Photo assets (`intern/static/intern/img/`)
+- `chor-{800,1400,2000}.jpg` — choir photo used as homepage hero (`srcset`)
+- `chor-band-{1100,1800}.jpg` — wide crop of the same photo, homepage gallery band
+
+  Choir-specific content, not a logo: a deployer needs a way to supply their own
+  picture (config key with a filer file ID, analogous to `SATZUNG_FILE_ID`, would fit).
+
 ### Logo assets (`intern/static/intern/images/`)
 - `JG-Frankfurt-wG-color.svg` — primary logo, used in ~12 templates
 - `JG-Frankfurt-G-color.svg`, `JG-Frankfurt-test.svg` — variants

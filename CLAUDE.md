@@ -487,6 +487,24 @@ When adding new colors, always use CSS variables and add dark-mode values to `[d
 
 Map pages use Leaflet. `intern/static/intern/js/osm-map.js` patches `L.TileLayer.prototype.createTile` to set `referrerPolicy = "origin"` — OpenStreetMap's tile servers reject requests without a `Referer` header. It is loaded once in `base.html` (right after Leaflet) so every map on the site is covered; the per-page map-init scripts must not re-add this patch.
 
+### Public homepage (`templates/index.html`, `intern/static/intern/css/main.css`)
+
+The public landing page does **not** extend `base.html` and does **not** use
+`intern.css` — it is a standalone one-pager with its own stylesheet (`main.css`, light
+mode only, own token block in `:root`). Structure: fixed header over a full-bleed photo
+hero (transparent at the top, `.is-solid` white after 60 px of scroll — set by a small
+inline script at the end of the page), then Über uns (cards), Konzerte (date/title/place
+rows), Galerie (single wide photo band) and a dark Kontakt section plus footer.
+
+All copy comes from `Konfiguration` (`HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME`,
+`VEREINSNAME*`, `VEREINSADRESSE`, `DEFAULT_FROM_EMAIL`) — `home()` in `views/auth.py`
+additionally passes `homepage_intro`, the first sentence of `HOMEPAGE_UEBER_UNS`, used as
+the hero subline. The hero and gallery images are pre-scaled derivatives of the choir
+photo in `intern/static/intern/img/` (`chor-{800,1400,2000}.jpg` for the hero `srcset`,
+`chor-band-{1100,1800}.jpg` for the gallery band); regenerate them from the original with
+ImageMagick when the photo changes. Assets are referenced via `{% static %}`, so
+`collectstatic` covers them.
+
 ### Known technical debt
 
 Tracked in separate files: general code/UX debt (branding, risk-ranked items) in
