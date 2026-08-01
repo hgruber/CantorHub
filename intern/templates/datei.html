@@ -12,7 +12,7 @@
         </div>
         <div class="detail-info">
             <h1>{{ titel }}</h1>
-            <p class="detail-subtitle">{{ datei.file_size|filesizeformat }}{% if datei.mime_type %} · {{ datei.mime_type }}{% endif %}</p>
+            <p class="detail-subtitle">{{ datei.size|filesizeformat }}{% if datei.mime_type %} · {{ datei.mime_type }}{% endif %}</p>
         </div>
     </div>
 
@@ -75,7 +75,7 @@
                         <td class="v-nummer">aktuell</td>
                         <td class="v-datum">{{ datei.modified_at|date:"d.m.Y H:i" }}</td>
                         <td class="v-autor">{% if datei.owner %}{{ datei.owner.first_name }} {{ datei.owner.last_name }}{% else %}—{% endif %}</td>
-                        <td class="v-groesse">{{ datei.file_size|filesizeformat }}</td>
+                        <td class="v-groesse">{{ datei.size|filesizeformat }}</td>
                         <td class="v-aktion"></td>
                     </tr>
                     {% for v in versionen %}
