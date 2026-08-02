@@ -10,12 +10,11 @@ from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
-from django.http import FileResponse, HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
-from ._pagination import paginate_ordered
+from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -161,23 +160,16 @@ def termin_list(request):
     termin_queryset = qs.annotate(**annotations)
 
     _PAGE_SIZE = 50
-    try:
-        offset = max(0, int(request.GET.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    offset = parse_offset(request)
 
     probe = TerminTabelle(termin_queryset)
     rows, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
     table = TerminTabelle(rows)
     RequestConfig(request, paginate=False).configure(table)
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string("table_rows.html", {"table": table})
-        return JsonResponse({
-            "html": html,
-            "has_more": has_more,
-            "next_offset": offset + _PAGE_SIZE,
-        })
+    if ist_nachladen(request):
+        return nachlade_antwort("table_rows.html", {"table": table},
+                                has_more, offset + _PAGE_SIZE)
 
     from django.urls import reverse
 

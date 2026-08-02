@@ -18,6 +18,7 @@ from django.core.signing import BadSignature, SignatureExpired, Signer, Timestam
 from django.utils import timezone
 
 from intern.app_settings import (
+    get_base_url,
     get_config,
     get_config_int,
     get_config_list,
@@ -139,7 +140,7 @@ def basis_url():
     Ohne sie darf nicht versandt werden — ein relativer und damit toter
     Abmelde-Link wäre rechtlich nicht vertretbar.
     """
-    return (get_config("VEREINS_URL") or "").strip().rstrip("/")
+    return get_base_url()
 
 
 # ---------------------------------------------------------------------------

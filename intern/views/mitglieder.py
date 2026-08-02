@@ -6,11 +6,10 @@ from django.contrib import messages
 from django.db.models import Count, OuterRef
 from django.http import HttpResponseForbidden, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
-from ._pagination import paginate_ordered
+from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 from filer.models import File, Folder
 
@@ -68,23 +67,16 @@ def mitglied_list(request):
     if not can_manage:
         fields = [f for f in fields if f not in ("aktiv", "gruppen")]
 
-    try:
-        offset = max(0, int(request.GET.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    offset = parse_offset(request)
 
     probe = MitgliederTabelle(mitglieder_filter.qs, visible_fields=fields, viewer=None)
     page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
     table = MitgliederTabelle(page, visible_fields=fields, viewer=request.user, counter_offset=offset)
     RequestConfig(request, paginate=False).configure(table)
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string("table_rows.html", {"table": table})
-        return JsonResponse({
-            "html": html,
-            "has_more": has_more,
-            "next_offset": offset + _PAGE_SIZE,
-        })
+    if ist_nachladen(request):
+        return nachlade_antwort("table_rows.html", {"table": table},
+                                has_more, offset + _PAGE_SIZE)
 
     column_choices = [
         {

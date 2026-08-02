@@ -4,11 +4,10 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
-from ._pagination import paginate_ordered
+from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 from filer.models import File
 
@@ -112,23 +111,16 @@ def titel_list(request):
     if konzert_id:
         qs = qs.annotate(position=F("konzert__position")).order_by("position")
 
-    try:
-        offset = max(0, int(request.GET.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    offset = parse_offset(request)
 
     probe = RepertoireTabelle(qs, visible_fields=fields)
     page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
     table = RepertoireTabelle(page, visible_fields=fields, counter_offset=offset)
     RequestConfig(request, paginate=False).configure(table)
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string("table_rows.html", {"table": table})
-        return JsonResponse({
-            "html": html,
-            "has_more": has_more,
-            "next_offset": offset + _PAGE_SIZE,
-        })
+    if ist_nachladen(request):
+        return nachlade_antwort("table_rows.html", {"table": table},
+                                has_more, offset + _PAGE_SIZE)
 
     # Playlists must include every (filtered) song so the player works for any row,
     # not just the first page — build them from the full qs on initial render only.

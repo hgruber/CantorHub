@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from intern.app_settings import get_config
+from intern.app_settings import get_base_url
 from intern.models import User
 from intern.views.auth import make_bestaetigung_url, send_bestaetigung_mail
 
@@ -42,7 +42,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        base_url = (options["base_url"] or get_config("VEREINS_URL", "") or "http://localhost:8000").rstrip("/")
+        base_url = get_base_url(options["base_url"], fallback="http://localhost:8000")
         print_url = options["print_url"]
 
         if options["user"]:

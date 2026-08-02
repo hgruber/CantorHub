@@ -5,22 +5,20 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 
 from filer.models import Folder
 
 from ..models import ChangeLog, FolderPermission, User
+from ._decorators import perm_or_home
+from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
 _PAGE_SIZE = 50
 
 __all__ = ["aufgaben", "folder_permissions"]
 
 
-@login_required
+@perm_or_home("intern.manage_user_permissions")
 def aufgaben(request):
-    if not (request.user.is_superuser or request.user.has_perm("intern.manage_user_permissions")):
-        return redirect("article_view", name="Aktuell")
-
     groups = list(Group.objects.order_by("id"))
     users = (
         User.objects.filter(is_active=True)
@@ -61,10 +59,7 @@ def aufgaben(request):
                 pass
         return JsonResponse({"ok": True})
 
-    try:
-        offset = max(0, int(request.GET.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    offset = parse_offset(request)
 
     page = list(users[offset : offset + _PAGE_SIZE + 1])
     has_more = len(page) > _PAGE_SIZE
@@ -80,17 +75,12 @@ def aufgaben(request):
         for u in page
     }
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string(
+    if ist_nachladen(request):
+        return nachlade_antwort(
             "aufgaben_rows.html",
             {"users": page, "groups": groups, "is_admin": is_admin},
+            has_more, offset + _PAGE_SIZE, matrix=matrix,
         )
-        return JsonResponse({
-            "html": html,
-            "matrix": matrix,
-            "has_more": has_more,
-            "next_offset": offset + _PAGE_SIZE,
-        })
 
     return render(request, "aufgaben.html", {
         "seitentitel": "Aufgaben",

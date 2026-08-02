@@ -87,6 +87,21 @@ def get_vereinsname_kurz():
     return get_config("VEREINSNAME_KURZ", "Just Gospel")
 
 
+def get_base_url(override=None, fallback=""):
+    """Basis-URL des Portals (Schema + Host), garantiert ohne Schrägstrich am Ende.
+
+    Für jede URL, die außerhalb eines Requests gebaut wird — Mails, Management-
+    Kommandos, PDFs. Wo ein Request vorliegt, ist `request.build_absolute_uri()`
+    die bessere Quelle.
+
+    `fallback` bleibt bewusst leer: für den Mailversand ist eine fehlende
+    VEREINS_URL eine Abbruchbedingung (ein relativer Abmelde-Link wäre tot), und
+    ein stillschweigendes http://localhost würde genau das verschleiern. Nur die
+    interaktiven Kommandos, die eine URL bloß ausgeben, setzen einen.
+    """
+    return (override or get_config("VEREINS_URL", "") or fallback).strip().rstrip("/")
+
+
 def get_document_url(config_key):
     """Gibt die HMAC-Token-URL für ein öffentliches Dokument zurück, oder '#' wenn nicht konfiguriert."""
     from filer.models import File as FilerFile

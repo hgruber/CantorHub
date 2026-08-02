@@ -1,14 +1,14 @@
 import logging
 
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, JsonResponse
+from django.http import Http404
 from django.shortcuts import get_object_or_404, render
-from django.template.loader import render_to_string
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
 from intern.folder_access import folder_access, is_folder_visible
 from intern.views.folders import _folder_breadcrumb
+from intern.views._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
 logger = logging.getLogger(__name__)
 
@@ -70,22 +70,15 @@ def gallerie_view(request, ordner_id):
         if is_image:
             lb_idx += 1
 
-    try:
-        offset = max(0, int(request.GET.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    offset = parse_offset(request)
 
     window = all_items[offset: offset + _GALLERY_PAGE_SIZE + 1]
     has_more = len(window) > _GALLERY_PAGE_SIZE
     page_items = window[:_GALLERY_PAGE_SIZE] if has_more else window
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string("gallerie_cells.html", {"items": page_items})
-        return JsonResponse({
-            "html": html,
-            "has_more": has_more,
-            "next_offset": offset + _GALLERY_PAGE_SIZE,
-        })
+    if ist_nachladen(request):
+        return nachlade_antwort("gallerie_cells.html", {"items": page_items},
+                                has_more, offset + _GALLERY_PAGE_SIZE)
 
     return render(request, "gallerie.html", {
         "folder": folder,

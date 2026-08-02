@@ -172,7 +172,7 @@ def _send_activation_mail(user):
     """Send welcome or reactivation mail after a user is activated. Never raises."""
     try:
         from django.utils import timezone
-        from .app_settings import get_config, get_config_bool, get_vereinsname
+        from .app_settings import get_base_url, get_config_bool, get_vereinsname
 
         if not get_config_bool("MAIL_BEI_AKTIVIERUNG"):
             return
@@ -189,7 +189,7 @@ def _send_activation_mail(user):
             text_key = "MAIL_REAKTIVIERT"
             subject = f"Dein Konto bei {vereinsname} wurde wieder aktiviert"
 
-        portal_url = get_config("VEREINS_URL", "").rstrip("/")
+        portal_url = get_base_url()
         login_url = f"{portal_url}/intern/login/" if portal_url else None
         send_config_mail(
             subject=subject,

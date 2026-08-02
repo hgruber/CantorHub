@@ -1,11 +1,11 @@
 import json
 
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group, Permission
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 
 from ..models import ChangeLog
+from ._decorators import perm_or_home
 
 __all__ = ["gruppen"]
 
@@ -119,11 +119,8 @@ _PERM_LABELS = {
 }
 
 
-@login_required
+@perm_or_home("intern.manage_user_permissions")
 def gruppen(request):
-    if not (request.user.is_superuser or request.user.has_perm("intern.manage_user_permissions")):
-        return redirect("article_view", name="Aktuell")
-
     if request.method == "POST":
         try:
             data = json.loads(request.body)

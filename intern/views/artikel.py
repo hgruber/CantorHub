@@ -7,7 +7,6 @@ from django.db.models import OuterRef, Subquery
 from django.db.models.functions import Length
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.timezone import now
 from django_tables2 import RequestConfig
@@ -17,6 +16,7 @@ from intern.replacements import apply_replacements
 
 from ..models import Artikel, ArtikelPermission
 from ..tables import ArtikelTabelle
+from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
 __all__ = [
     "article_list",
@@ -263,20 +263,16 @@ def article_history(request, name):
         return redirect("article_list")
 
     total = len(all_versions)
-    try:
-        offset = max(0, int(request.GET.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    offset = parse_offset(request)
 
     rows, has_more, next_offset = _history_rows(all_versions, offset)
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string(
+    if ist_nachladen(request):
+        return nachlade_antwort(
             "_artikel_history_rows.html",
             {"rows": rows, "name": name, "total": total, "offset": offset},
-            request=request,
+            has_more, next_offset, request=request,
         )
-        return JsonResponse({"html": html, "has_more": has_more, "next_offset": next_offset})
 
     context = {
         "seitentitel": f"Versionen: {name}",

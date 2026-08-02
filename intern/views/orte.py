@@ -1,14 +1,12 @@
 from django.contrib.auth.decorators import login_required, permission_required
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 
 from ..forms import OrtForm
 from ..models import Ort
 from ..tables import OrtTabelle
-from ._pagination import paginate_ordered
+from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 __all__ = [
     "ort_list",
@@ -25,23 +23,16 @@ _PAGE_SIZE = 50
 def ort_list(request):
     qs = Ort.objects.order_by("name")
 
-    try:
-        offset = max(0, int(request.GET.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    offset = parse_offset(request)
 
     probe = OrtTabelle(qs)
     page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
     table = OrtTabelle(page)
     RequestConfig(request, paginate=False).configure(table)
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string("table_rows.html", {"table": table})
-        return JsonResponse({
-            "html": html,
-            "has_more": has_more,
-            "next_offset": offset + _PAGE_SIZE,
-        })
+    if ist_nachladen(request):
+        return nachlade_antwort("table_rows.html", {"table": table},
+                                has_more, offset + _PAGE_SIZE)
 
     add = "ort_add" if request.user.has_perm("intern.add_ort") else None
     return render(request, "table.html", {

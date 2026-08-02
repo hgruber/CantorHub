@@ -54,6 +54,23 @@ docker run -p 8000:8000 cantoreub
 
 CantorHub is a Django 6 member portal for "Just Gospel Frankfurt", a gospel choir. All application logic lives in the `intern/` app; `config/` holds only settings and URL routing. Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`, `forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`, `gallerie.py`, `auftritte.py`). The package's `__init__.py` re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
 
+Two underscore-prefixed modules hold what the view modules share:
+
+- **`views/_pagination.py`** — everything the infinite-scroll lists need.
+  `parse_offset(request)` reads `?offset=` (never negative, never raises, capped at
+  `_MAX_OFFSET` — an offset beyond the DB's 64-bit range is an error, not an empty
+  result, and the value comes from the URL). `ist_nachladen(request)` recognises the
+  `X-Requested-With` fetch. `nachlade_antwort(template, context, has_more, next_offset,
+  request=None, **extra)` renders the row fragment and returns the JSON the sentinel
+  script expects (`html`, `has_more`, `next_offset`, plus any `extra` such as the
+  permission matrix). Pass `request` only when the fragment really needs the context
+  processors — otherwise they (and their termin-banner queries) run on every scroll.
+  `paginate_ordered()` applies `?sort=` before slicing.
+- **`views/_decorators.py`** — `perm_or_home(perm)` guards the three management pages
+  (`aufgaben`, `gruppen`, `aenderungsprotokoll_list`): permission or superuser, else a
+  silent redirect to „Aktuell" rather than a 403, because a member without the right
+  never sees the menu entry. It includes `login_required`.
+
 ### Request flow
 
 ```
@@ -749,7 +766,7 @@ Tracked in separate files: general code/UX debt (branding, risk-ranked items) in
 - `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings
 - `fuzzy.py` — fuzzy song title matching used in article references
 - `context_processors.py` — injects global template context (`VERSION`, `upload_max_mb`, notify poll/dismiss intervals)
-- `app_settings.py` — runtime config helpers (`get_config`, `get_config_bool`, `get_config_int`, `get_from_email`, `get_map_center`, `get_document_url`) backed by the `Konfiguration` table; see "Runtime configuration" below. `get_document_url(key)` resolves a Filer file ID stored in `Konfiguration` to a public HMAC token URL (`/intern/datei/<pk>/<token>/<filename>`), returning `"#"` when unconfigured.
+- `app_settings.py` — runtime config helpers (`get_config`, `get_config_bool`, `get_config_int`, `get_from_email`, `get_map_center`, `get_document_url`, `get_base_url`) backed by the `Konfiguration` table; see "Runtime configuration" below. `get_document_url(key)` resolves a Filer file ID stored in `Konfiguration` to a public HMAC token URL (`/intern/datei/<pk>/<token>/<filename>`), returning `"#"` when unconfigured. `get_base_url(override=None, fallback="")` is the one way to build the portal's base URL outside a request (mails, management commands): `VEREINS_URL`, trimmed of any trailing slash. **Its default `fallback` is deliberately empty** — for mail an unset `VEREINS_URL` is an abort condition (a relative unsubscribe link is a dead one), and a silent `http://localhost` would hide that. Only the two commands that merely print a URL pass one.
 
 **External integrations:**
 - `ejabberd.py` — REST API client for ejabberd admin API (room config, affiliations, invitations, vCards). Message sending is done by the bot over its live session, not here.

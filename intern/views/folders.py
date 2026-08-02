@@ -24,7 +24,7 @@ from django.template.loader import render_to_string
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
-from ._pagination import paginate_ordered
+from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
@@ -406,10 +406,7 @@ def folder_view(request, pk):
 
     original_pk = pk  # 0 means root; keep for URLs
 
-    try:
-        offset = max(0, int(request.GET.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    offset = parse_offset(request)
 
     q = (request.GET.get("q") or "").strip()
     if len(q) >= 2:
@@ -418,13 +415,9 @@ def folder_view(request, pk):
         page_items, has_more = paginate_ordered(request, probe, offset, _FOLDER_PAGE_SIZE)
         table = OrdnerTabelle(page_items)
         RequestConfig(request, paginate=False).configure(table)
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            html = render_to_string("table_rows.html", {"table": table})
-            return JsonResponse({
-                "html": html,
-                "has_more": has_more,
-                "next_offset": offset + _FOLDER_PAGE_SIZE,
-            })
+        if ist_nachladen(request):
+            return nachlade_antwort("table_rows.html", {"table": table},
+                                    has_more, offset + _FOLDER_PAGE_SIZE)
         if original_pk == 0:
             breadcrumb = []
         else:
@@ -595,13 +588,9 @@ def folder_view(request, pk):
     table.columns.hide("pfad")
     RequestConfig(request, paginate=False).configure(table)
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string("table_rows.html", {"table": table})
-        return JsonResponse({
-            "html": html,
-            "has_more": has_more,
-            "next_offset": offset + _FOLDER_PAGE_SIZE,
-        })
+    if ist_nachladen(request):
+        return nachlade_antwort("table_rows.html", {"table": table},
+                                has_more, offset + _FOLDER_PAGE_SIZE)
 
     path_str = " / ".join(c["name"] for c in breadcrumb) if breadcrumb else "/"
     permissions_url = None

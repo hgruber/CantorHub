@@ -6,14 +6,14 @@ from itertools import chain
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import permission_required
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django_tables2 import RequestConfig
 
 from ..models import ChangeLog, Forum, Lied, Ort, Termin, Zusage
 from ..models import User as MitgliedUser
+from ._decorators import perm_or_home
+from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
 __all__ = [
     "aenderungsprotokoll_list",
@@ -291,20 +291,14 @@ _TOPBAR_ICON = (
 )
 
 
-@login_required
+@perm_or_home("intern.manage_user_permissions")
 def aenderungsprotokoll_list(request):
     from ..tables import ChangeLogFilter
-
-    if not (request.user.is_superuser or request.user.has_perm("intern.manage_user_permissions")):
-        return redirect("article_view", name="Aktuell")
 
     qs = ChangeLog.objects.select_related("user").order_by("-timestamp")
     f = ChangeLogFilter(request.GET, queryset=qs)
 
-    try:
-        offset = max(0, int(request.GET.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    offset = parse_offset(request)
 
     page_qs = f.qs.order_by("-timestamp")[offset : offset + PAGE_SIZE + 1]
     entries = list(page_qs)
@@ -313,17 +307,9 @@ def aenderungsprotokoll_list(request):
         entries = entries[:PAGE_SIZE]
     _annotate_entries(entries)
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string(
-            "aenderungsprotokoll_rows.html",
-            {"entries": entries},
-            request=request,
-        )
-        return JsonResponse({
-            "html": html,
-            "has_more": has_more,
-            "next_offset": offset + PAGE_SIZE,
-        })
+    if ist_nachladen(request):
+        return nachlade_antwort("aenderungsprotokoll_rows.html", {"entries": entries},
+                                has_more, offset + PAGE_SIZE, request=request)
 
     return render(request, "aenderungsprotokoll_list.html", {
         "entries": entries,
