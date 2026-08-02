@@ -842,6 +842,8 @@ input[type="text"],
 input[type="password"],
 input[type="email"],
 input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
 input[type="number"],
 input[type="tel"],
 input[type="url"],
@@ -6266,6 +6268,9 @@ body.join-page {
 .cal-day.is-weekend.has-events:hover { background: var(--hover-bg); }
 .cal-day.is-outside { background: var(--bg-app); }
 .cal-day.is-outside .cal-daynum { opacity: 0.5; }
+/* Wer Termine anlegen darf, öffnet jeden Tag – auch den leeren. */
+.cal-can-add .cal-day { cursor: pointer; }
+.cal-can-add .cal-day:hover { background: var(--hover-bg); }
 
 .cal-daynum {
     align-self: flex-start;
@@ -6433,9 +6438,14 @@ body.join-page {
 }
 .cal-panel-close:hover { background: var(--hover-bg); color: var(--t1); }
 .cal-panel-close svg { width: 26px; height: 26px; flex: none; }
+/* Einträge und Anlege-Formular teilen sich einen Scrollbereich. */
+.cal-panel-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
 .cal-panel-body {
     padding: 16px 20px;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 9px;
@@ -6449,6 +6459,23 @@ body.join-page {
 }
 .cal-panel-body .cal-chip-text { white-space: normal; overflow: visible; }
 .cal-panel-body .cal-chip-icon { width: 17px; height: 17px; }
+
+/* Termin anlegen im Tagesdetail */
+.cal-panel-add { padding: 16px 20px 20px; }
+.cal-panel-body:not([hidden]) + .cal-panel-add { border-top: 1px solid var(--border); }
+.cal-add-open {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+/* .btn setzt display, das schlägt sonst das hidden-Attribut, mit dem
+   kalender.js zwischen Button und Formular umschaltet. */
+.cal-add-open[hidden] { display: none; }
+.cal-add-open svg { width: 17px; height: 17px; flex: none; }
+.cal-add-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.cal-add-checks { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 2px; }
 
 /* Mobil: kompaktes Raster mit Punkten, natürliche Höhe (scrollt) */
 @media (max-width: 768px) {

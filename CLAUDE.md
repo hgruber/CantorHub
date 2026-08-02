@@ -253,7 +253,26 @@ Prev/next/"Heute" navigate via htmx: the toolbar + grid live in the partial `_ka
 into `#cal-view`, `hx-push-url` keeps the URL in sync). Clicking any day with entries opens a
 large offcanvas detail panel (`#cal-day-panel`, sibling of `#cal-view` so it survives swaps):
 `kalender.js` clones that day's `.cal-day-detail` into the panel and shows its German date label
-(`d.label` → `data-datum`); Esc/overlay/close button dismiss it. On desktop the cells show the
+(`d.label` → `data-datum`); Esc/overlay/close button dismiss it.
+
+**The panel also creates events.** Holders of `intern.add_termin` get the same `TerminForm` the
+`/intern/termin/` add panel uses, rendered once into `#cal-day-panel` (below `.cal-panel-body`,
+both inside the shared scroll box `.cal-panel-scroll`) — it lives outside `#cal-view` and thus
+survives the htmx month swap, which is why `kalender.js` fills it per day instead of the server:
+`form.reset()`, `datum` = the day's `data-iso`, and `next` = `location.pathname + search`, i.e.
+the month currently shown (`hx-push-url` keeps that URL honest). It sits collapsed behind a
+„Neuer Termin" button and opens by itself on a day with no entries, where creating is the only
+thing left to do. For those users **every** day opens the panel, empty ones included
+(`.cal-can-add` on `.cal-page` supplies the cursor); without the permission the view renders no
+form and only days with entries open, as before.
+
+`termin_add` honours that `next` (POST or GET) and redirects there instead of to `termin_view`,
+guarded by `url_has_allowed_host_and_scheme` so it can't be turned into an open redirect;
+`termin_edit.html` re-emits it as a hidden field so an invalid form keeps the way back.
+The toggle relies on the `hidden` attribute, so `.cal-add-open[hidden]` must state `display:
+none` explicitly — `.btn` sets `display` and would otherwise win over the UA default.
+
+On desktop the cells show the
 chips inline; below 768px they collapse to coloured dots (`--brand` = event, `--cal-geb` =
 birthday) and the panel is the readable view. The whole month grid fills the viewport height —
 `.content:has(.cal-page)` becomes a flex column so the grid (with `grid-auto-rows: 1fr`) shares

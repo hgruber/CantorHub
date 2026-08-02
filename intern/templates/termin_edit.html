@@ -19,6 +19,8 @@
 
     <form method="post">
         {% csrf_token %}
+        {# Rücksprungziel des Kalender-Offcanvas – bleibt erhalten, wenn das Formular hier landet #}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
         <div class="detail-cards">
             <div class="detail-card">
                 <h3>Termin</h3>
@@ -71,6 +73,8 @@
             <button type="submit" class="btn btn-primary">Speichern</button>
             {% if id %}
             <a href="{% url 'termin_view' id=id %}" class="btn btn-secondary">Abbrechen</a>
+            {% elif next %}
+            <a href="{{ next }}" class="btn btn-secondary">Abbrechen</a>
             {% else %}
             <a href="{% url 'termin_list' %}" class="btn btn-secondary">Abbrechen</a>
             {% endif %}

@@ -12,6 +12,7 @@ from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Valu
 from django.db.models.functions import Coalesce
 from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
@@ -488,18 +489,26 @@ def termin_delete(request, id):
 
 @permission_required("intern.add_termin", raise_exception=True)
 def termin_add(request):
+    # Das Kalender-Offcanvas schickt ein "next" mit, damit man nach dem Anlegen
+    # im angezeigten Monat landet statt auf der Detailseite. Nur interne Ziele.
+    weiter = request.POST.get("next") or request.GET.get("next") or ""
+    if weiter and not url_has_allowed_host_and_scheme(
+        weiter, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        weiter = ""
     if request.method == "POST":
         form = TerminForm(request.POST)
         if form.is_valid():
             termin = form.save(commit=False)
             termin._audit_user = request.user
             termin.save()
-            return redirect("termin_view", id=termin.id)
+            return redirect(weiter) if weiter else redirect("termin_view", id=termin.id)
     else:
         form = TerminForm()
     context = {
         "form": form,
         "seitentitel": "Neuer Termin",
+        "next": weiter,
     }
     return render(request, "termin_edit.html", context)
 
@@ -580,6 +589,7 @@ def termin_kalender(request):
             {
                 "tag": d.day,
                 "label": f"{_WOCHENTAGE_LANG[d.weekday()]}, {d.day}. {_MONATSNAMEN[d.month]} {d.year}",
+                "iso": d.isoformat(),  # Vorbelegung des Datumsfelds im Offcanvas
                 "im_monat": d.month == monat,
                 "ist_heute": d == today,
                 "wochenende": d.weekday() >= 5,
@@ -607,6 +617,9 @@ def termin_kalender(request):
         "heute_jahr": today.year,
         "heute_monat": today.month,
         "ist_aktueller_monat": (jahr == today.year and monat == today.month),
+        # Anlege-Formular im Tages-Offcanvas – nur für Berechtigte; das Raster-
+        # Partial braucht es nicht, es lebt im Panel außerhalb von #cal-view.
+        "add_form": TerminForm() if request.user.has_perm("intern.add_termin") else None,
     }
     if request.headers.get("HX-Request"):
         return render(request, "_kalender_grid.html", context)

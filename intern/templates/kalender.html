@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static form_tags %}
 {% block extra_js %}<script src="{% static 'intern/js/kalender.js' %}" defer></script>{% endblock %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>{% endblock %}
 {% block content %}
-<div class="cal-page">
+<div class="cal-page{% if add_form %} cal-can-add{% endif %}">
   <div class="cal-wrap" id="cal-view">
     {% include "_kalender_grid.html" %}
   </div>
@@ -17,6 +17,41 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
-  <div class="cal-panel-body"></div>
+  <div class="cal-panel-scroll">
+    <div class="cal-panel-body"></div>
+    {% if add_form %}
+    {% comment %}
+      Anlegen im Tagesdetail: gleiches TerminForm wie das Offcanvas unter
+      /intern/termin/. Datum und next werden beim Öffnen von kalender.js gesetzt –
+      das Panel liegt außerhalb von #cal-view und überlebt den htmx-Monatswechsel.
+    {% endcomment %}
+    <div class="cal-panel-add add-panel">
+      <button type="button" class="btn btn-secondary cal-add-open" data-cal-add-open>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Neuer Termin
+      </button>
+      <form method="post" action="{% url 'termin_add' %}" class="cal-add-form" data-cal-add-form hidden>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="">
+        {% form_field add_form.kurz "Name" %}
+        <div class="cal-add-row">
+          {% form_field add_form.datum "Datum" %}
+          {% form_field add_form.uhrzeit "Uhrzeit" %}
+        </div>
+        {% form_field add_form.datum_bis "Bis" %}
+        {% form_field add_form.ort "Ort" %}
+        {% form_field add_form.lang "Beschreibung" %}
+        <div class="cal-add-checks">
+          <label class="checkbox-label">{{ add_form.anwesenheit }} Anwesenheit</label>
+          <label class="checkbox-label">{{ add_form.repertoire }} Repertoire</label>
+        </div>
+        <div class="add-panel-actions">
+          <button type="submit" class="btn btn-primary">Speichern</button>
+          <button type="button" class="btn btn-secondary" data-cal-add-cancel>Abbrechen</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
 </aside>
 {% endblock %}
