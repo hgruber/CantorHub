@@ -54,7 +54,7 @@ docker run -p 8000:8000 cantoreub
 
 CantorHub is a Django 6 member portal for "Just Gospel Frankfurt", a gospel choir. All application logic lives in the `intern/` app; `config/` holds only settings and URL routing. Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`, `forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`, `gallerie.py`, `auftritte.py`). The package's `__init__.py` re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
 
-Two underscore-prefixed modules hold what the view modules share:
+Three underscore-prefixed modules hold what the view modules share:
 
 - **`views/_pagination.py`** — everything the infinite-scroll lists need.
   `parse_offset(request)` reads `?offset=` (never negative, never raises, capped at
@@ -70,6 +70,10 @@ Two underscore-prefixed modules hold what the view modules share:
   (`aufgaben`, `gruppen`, `aenderungsprotokoll_list`): permission or superuser, else a
   silent redirect to „Aktuell" rather than a 403, because a member without the right
   never sees the menu entry. It includes `login_required`.
+- **`views/_auswahl.py`** — `chip_eintraege(objekte, ausgewaehlt, label_attr="name")`
+  builds the `{id, label, selected}` list that `_chip_multiselect.html` expects. Only
+  the three permission pages need it; every form gets the same list from the
+  `ChipMultiSelect` widget instead (see "Multiple selection as chips" below).
 
 ### Request flow
 
@@ -177,6 +181,41 @@ All list views use django-tables2 with clickable rows (`data-href` on `<tr>`). E
 Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card grid, single column on mobile). Edit pages use the `.wiki` container with `.form-grid`.
 
 **Form fields are rendered via the `{% form_field %}` inclusion tag** (`intern/templatetags/form_tags.py` → `_form_field.html`): `{% form_field form.feld "Label" %}` emits the standard `form-group` (label, widget, `invalid-feedback` errors). Options: `req=True` shows the `*` marker when the field is required (join form), `privacy=form.priv_x` appends the "verbergen" checkbox when `can_set_privacy` is in the context (member edit), `hilfe=True` renders `help_text` (opt-in so Django's default help texts, e.g. on `username`, don't leak in). Without `label` the form field's own label is used. Non-standard groups (checkbox rows, label-less textareas, the search-select Ort widget, static read-only rows) stay hand-written.
+
+**Multiple selection as chips.** Every multi-select in the project goes through one
+component: the chosen entries sit on top as chips, below them a search box and a
+scrollable pool of what is left. Entries move by click, by drag (SortableJS), or — on
+touch devices — via a target popover opened with a 500 ms long-press.
+
+- **`intern/templates/_chip_multiselect.html`** is the only markup, with two entry
+  points. Forms use the `ChipMultiSelect` widget (`intern/forms.py`, built like
+  `TriStateToggle`), which sets the partial as `template_name` and fills the contract
+  in `get_context()`. Pages without a Django form — the three permission pages —
+  `{% include %}` the same partial and build their `eintraege` with
+  `chip_eintraege()`. Options: `auswahl_label`, `vorrat_label`, `such_platzhalter`,
+  `leer_text`, `suche_ab` (search box only from N entries, default 8) and
+  `variante="exclude"` for the red styling of the „Nicht in Gruppen" filter.
+- **The `<select multiple>` stays the single source of truth.** The server renders
+  only it; `chip-multiselect.js` builds the chips from its `<option>`s and moving an
+  entry does nothing but set `option.selected`. No hidden inputs, no state to
+  synchronise on submit — and a `<select multiple name="read_groups">` posts exactly
+  what same-named checkboxes posted before, which is why the permission views did not
+  change. Whoever reads the selection reads `option:checked` and listens for the
+  `change` event the widget dispatches (see `berechtigungen.js`).
+- **Progressive enhancement is load-bearing, and CSS must not break it.** The JS hides
+  the native field via the `hidden` attribute, so `.chip-ms-native` must never get a
+  `display` rule and `.chip-ms-ui` hangs its `display` on `:not([hidden])`. Without JS
+  a fully usable native multi-select remains.
+- **Drag is limited to `(pointer: fine)`** — on touch SortableJS would fight both page
+  scrolling and the long-press for the same gesture. The popover is `position: fixed`
+  and positioned from raw `getBoundingClientRect()` values (unlike `.att-move-picker`,
+  which uses scroll offsets): the offcanvas panels are `fixed` and scroll internally,
+  so a scroll-offset popover would drift. It is appended to `document.body` because
+  `.offcanvas` establishes a containing block via `transform`.
+- **The JS is loaded globally in `base.html`, deliberately not via `class Media`** —
+  the permission pages have no form at all, and two `.media` calls on one page
+  (`table.html` renders both a filter and an add form) would execute the IIFE twice.
+  It bails out in its first line when the page has no `[data-chip-multiselect]`.
 
 **Deleting is confirmed by `_confirm_delete_dialog.html`** — one `<dialog id="delete-dialog">`
 for `ort_edit.html`, `termin_edit.html` and `titel_edit.html`: `{% include
