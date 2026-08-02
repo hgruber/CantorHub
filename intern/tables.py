@@ -11,7 +11,7 @@ from django_tables2.data import TableListData
 
 from intern.app_settings import get_vereinsname_kurz
 from .models import Artikel, ChangeLog, Lied, Ort, PRIVACY_FIELDS, Termin, User
-from .forms import TriStateToggle
+from .forms import ChipMultiSelect, TriStateToggle
 from .replacements import format_bytes, format_datetime
 
 
@@ -345,7 +345,12 @@ class RepertoireFilter(filters.FilterSet):
     dirigent = filters.ModelMultipleChoiceFilter(
         field_name="dirigent",
         queryset=dirigent_qs,
-        widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
+        widget=ChipMultiSelect(
+            auswahl_label="Gewählte Dirigenten",
+            vorrat_label="Verfügbare Dirigenten",
+            such_platzhalter="Dirigent suchen …",
+            leer_text="Alle Dirigenten",
+        ),
         label="Dirigent",
     )
     solist_qs = (
@@ -356,7 +361,12 @@ class RepertoireFilter(filters.FilterSet):
     solist = filters.ModelMultipleChoiceFilter(
         field_name="solist",
         queryset=solist_qs,
-        widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
+        widget=ChipMultiSelect(
+            auswahl_label="Gewählte Solisten",
+            vorrat_label="Verfügbare Solisten",
+            such_platzhalter="Solist suchen …",
+            leer_text="Alle Solisten",
+        ),
         label="Solist",
     )
     konzert_qs = (
@@ -681,21 +691,38 @@ class RepertoireTabelle(tables.Table):
 
 
 class MitgliederFilter(filters.FilterSet):
-    stimme = filters.MultipleChoiceFilter(field_name="stimme", choices=User.STIMMEN)
+    stimme = filters.MultipleChoiceFilter(
+        field_name="stimme",
+        choices=User.STIMMEN,
+        widget=ChipMultiSelect(
+            auswahl_label="Gewählte Stimmen",
+            vorrat_label="Verfügbare Stimmen",
+            leer_text="Alle Stimmen",
+        ),
+    )
     konzert_qs = Termin.objects.filter(anwesenheit=True).distinct().order_by("-datum")
 
     aktiv = filters.BooleanFilter(field_name="is_active", label="Aktiv")
     gruppen = filters.ModelMultipleChoiceFilter(
         field_name="groups",
         queryset=Group.objects.order_by("id"),
-        widget=forms.CheckboxSelectMultiple(attrs={"class": "filter-checks"}),
+        widget=ChipMultiSelect(
+            auswahl_label="Gewählte Gruppen",
+            vorrat_label="Verfügbare Gruppen",
+            such_platzhalter="Gruppe suchen …",
+            leer_text="Alle Gruppen",
+        ),
         label="Gruppen",
     )
     gruppen_nicht = filters.ModelMultipleChoiceFilter(
         field_name="groups",
         queryset=Group.objects.order_by("id"),
-        widget=forms.CheckboxSelectMultiple(
-            attrs={"class": "filter-checks filter-checks--exclude"}
+        widget=ChipMultiSelect(
+            auswahl_label="Ausgeschlossene Gruppen",
+            vorrat_label="Verfügbare Gruppen",
+            such_platzhalter="Gruppe suchen …",
+            leer_text="Keine Gruppe ausgeschlossen",
+            variante="exclude",
         ),
         label="Nicht in Gruppen",
         exclude=True,

@@ -63,6 +63,54 @@ class TriStateToggle(forms.Select):
         js = ("intern/js/tri-toggle.js",)
 
 
+class ChipMultiSelect(forms.SelectMultiple):
+    """Mehrfachauswahl als Chips (Auswahl oben) + durchsuchbare Vorratsliste.
+
+    Serverseitig entsteht nur ein natives <select multiple>; chip-multiselect.js
+    baut die Oberflaeche daraus auf und blendet das <select> aus. Ohne JS bleibt
+    das Feld sichtbar und voll bedienbar.
+
+    Dasselbe Template binden die Seiten ohne Django-Form (Berechtigungen) per
+    {% include %} ein -- ein Markup, zwei Einstiegspunkte. Das JS laedt base.html
+    global, deshalb hat diese Klasse bewusst kein `class Media`.
+    """
+
+    template_name = "_chip_multiselect.html"
+
+    def __init__(self, attrs=None, choices=(), *, auswahl_label="Ausgewählt",
+                 vorrat_label="Verfügbar", such_platzhalter="Suchen …",
+                 leer_text="Nichts ausgewählt", suche_ab=8, variante=None):
+        super().__init__(attrs, choices)
+        self.auswahl_label = auswahl_label
+        self.vorrat_label = vorrat_label
+        self.such_platzhalter = such_platzhalter
+        self.leer_text = leer_text
+        self.suche_ab = suche_ab
+        self.variante = variante
+
+    def get_context(self, name, value, attrs):
+        # Der Kontext wird bewusst vollstaendig ersetzt: das Template ist keine
+        # Django-Widget-Vorlage mit {{ widget.* }}, sondern der flache Kontrakt,
+        # den auch {% include %} bedient.
+        widget = super().get_context(name, value, attrs)["widget"]
+        return {
+            "name": widget["name"],
+            "eintraege": [
+                {"id": opt["value"], "label": opt["label"], "selected": opt["selected"]}
+                for _gruppe, optionen, _index in widget["optgroups"]
+                for opt in optionen
+            ],
+            "widget_id": widget["attrs"].get("id"),
+            "pflicht": widget["attrs"].get("required", False),
+            "auswahl_label": self.auswahl_label,
+            "vorrat_label": self.vorrat_label,
+            "such_platzhalter": self.such_platzhalter,
+            "leer_text": self.leer_text,
+            "suche_ab": self.suche_ab,
+            "variante": self.variante,
+        }
+
+
 class RegisterForm(forms.Form):
     first_name = forms.CharField(max_length=32, label="Vorname", required=False)
     last_name = forms.CharField(max_length=32, label="Nachname", required=False)
@@ -368,12 +416,22 @@ class LiedEditForm(forms.ModelForm):
     solist = forms.ModelMultipleChoiceField(
         queryset=User.objects.filter(is_active=True).order_by("last_name", "first_name"),
         required=False,
-        widget=forms.SelectMultiple(attrs={"class": "form-control", "size": "8"}),
+        widget=ChipMultiSelect(
+            auswahl_label="Solisten",
+            vorrat_label="Verfügbare Mitglieder",
+            such_platzhalter="Mitglied suchen …",
+            leer_text="Keine Solisten",
+        ),
     )
     dirigent = forms.ModelMultipleChoiceField(
         queryset=User.objects.filter(is_active=True).order_by("last_name", "first_name"),
         required=False,
-        widget=forms.SelectMultiple(attrs={"class": "form-control", "size": "8"}),
+        widget=ChipMultiSelect(
+            auswahl_label="Dirigenten",
+            vorrat_label="Verfügbare Mitglieder",
+            such_platzhalter="Mitglied suchen …",
+            leer_text="Keine Dirigenten",
+        ),
     )
 
     class Meta:

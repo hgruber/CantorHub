@@ -1,0 +1,43 @@
+{% comment %}
+Mehrfachauswahl als Chips: oben die getroffene Auswahl, darunter ein Suchfeld und
+die scrollbare Vorratsliste. Gerendert wird hier nur das native <select multiple> --
+die Oberflaeche baut chip-multiselect.js daraus auf, das base.html ohnehin auf jeder
+Seite laedt. Ohne JavaScript bleibt das <select> sichtbar und voll bedienbar, und es
+bleibt in jedem Fall die einzige Quelle der Wahrheit: verschoben wird, indem das JS
+option.selected setzt, nicht durch versteckte Felder.
+
+Zwei Einstiegspunkte, ein Kontrakt: das Widget ChipMultiSelect (intern/forms.py)
+setzt dieses Template als template_name, Seiten ohne Django-Form binden es per
+{% templatetag openblock %} include {% templatetag closeblock %} ein.
+
+Parameter:
+  name              Feldname; landet auf <select name=...> (Pflicht)
+  eintraege         Liste von {id, label, selected} (Pflicht)
+  widget_id         DOM-id (Vorgabe "id_<name>")
+  auswahl_label     Ueberschrift ueber den Chips (Vorgabe "Ausgewaehlt")
+  vorrat_label      Ueberschrift ueber der Vorratsliste (Vorgabe "Verfuegbar")
+  such_platzhalter  Platzhalter des Suchfelds (Vorgabe "Suchen ...")
+  leer_text         Hinweis, solange nichts gewaehlt ist
+  suche_ab          Suchfeld erst ab so vielen Eintraegen (Vorgabe 8)
+  variante          "exclude" faerbt die Chips rot (Ausschluss-Filter)
+  pflicht           required auf dem <select>
+{% endcomment %}
+<div class="chip-ms{% if variante %} chip-ms--{{ variante }}{% endif %}" data-chip-multiselect
+     data-leer-text="{{ leer_text|default:'Nichts ausgewählt' }}"
+     data-such-platzhalter="{{ such_platzhalter|default:'Suchen …' }}"
+     data-suche-ab="{{ suche_ab|default:8 }}">
+    <select name="{{ name }}" id="{% if widget_id %}{{ widget_id }}{% else %}id_{{ name }}{% endif %}"
+            class="form-control chip-ms-native" multiple size="8"{% if pflicht %} required{% endif %}>
+        {% for e in eintraege %}
+        <option value="{{ e.id }}"{% if e.selected %} selected{% endif %}>{{ e.label }}</option>
+        {% endfor %}
+    </select>
+    {# Die Chips baut das JS: serverseitig waeren sie eine zweite Markup-Wahrheit. #}
+    <div class="chip-ms-ui" hidden>
+        <div class="chip-ms-legend">{{ auswahl_label|default:"Ausgewählt" }}</div>
+        <ul class="chip-ms-list chip-ms-selected" data-rolle="selected"></ul>
+        <input type="search" class="chip-ms-search" autocomplete="off" hidden>
+        <div class="chip-ms-legend">{{ vorrat_label|default:"Verfügbar" }}</div>
+        <ul class="chip-ms-list chip-ms-pool" data-rolle="pool"></ul>
+    </div>
+</div>

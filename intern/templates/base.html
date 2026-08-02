@@ -26,6 +26,7 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
         <script src="{% static 'intern/js/osm-map.js' %}" defer></script>
         <script src="{% static 'intern/js/intern.js' %}" defer></script>
+        <script src="{% static 'intern/js/chip-multiselect.js' %}" defer></script>
         <script src="{% static 'intern/js/upload-progress.js' %}" defer></script>
     </head>
     <body data-vereinsname-lang="{{ vereinsname_lang }}"{% if request.user.is_authenticated %} data-latest-changelog-id="{{ latest_changelog_id|default:0 }}" data-current-forum="{{ forum|default:'' }}" data-notify-enabled="{{ notify_enabled|yesno:'1,0' }}" data-notify-poll-ms="{{ notify_poll_ms|default:10000 }}" data-notify-dismiss-ms="{{ notify_dismiss_ms|default:6000 }}"{% endif %}>
