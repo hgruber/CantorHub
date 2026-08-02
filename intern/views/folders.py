@@ -37,7 +37,7 @@ from intern.folder_access import (
     visible_folder_ids,
 )
 
-from ..models import Artikel, FolderPermission
+from ..models import Artikel, DateiVersion, FolderPermission
 from ..tables import OrdnerTabelle
 from .files import datei_umbenennen, verknuepfte_dateien, versionen_loeschen
 
@@ -399,6 +399,19 @@ def _folder_search_records(pk, q, user=None):
 
 _FOLDER_PAGE_SIZE = 50
 
+# Der Player im Kontextmenü ist ein <audio>-Element — nur was es spielen kann,
+# darf angeboten werden. Der MIME-Typ ist die Hauptquelle; hochgeladene Dateien
+# landen aber gelegentlich als application/octet-stream in filer, daher die
+# Endungsliste als Rückfall.
+_AUDIO_ENDUNGEN = (".mp3", ".m4a", ".ogg", ".oga", ".opus", ".wav", ".flac", ".aac")
+
+
+def _ist_audio(record):
+    if (record.get("mime") or "").startswith("audio/"):
+        return True
+    name = (record.get("original_filename") or record.get("name") or "").lower()
+    return name.endswith(_AUDIO_ENDUNGEN)
+
 
 @login_required
 def folder_view(request, pk):
@@ -523,8 +536,16 @@ def folder_view(request, pk):
         modified=F("modified_at"),
     )
     files_list = list(files)
+    # `aktuell` ist der Pfad der laufenden Fassung — eine Zeile darin heisst,
+    # dass diese Datei eine Versionshistorie hat.
+    pfade = [r["link"] for r in files_list if r.get("link")]
+    mit_versionen = set(
+        DateiVersion.objects.filter(aktuell__in=pfade).values_list("aktuell", flat=True)
+    ) if pfade else set()
     for record in files_list:
         record["groesse"] = record.get("size") or 0
+        record["ist_audio"] = _ist_audio(record)
+        record["hat_versionen"] = record.get("link") in mit_versionen
 
     def _is_thumbnailable(mime):
         mime = mime or ""
@@ -575,6 +596,20 @@ def folder_view(request, pk):
 
     folders_list = _sort_records(folders_list)
     files_list = _sort_records(files_list)
+
+    # Die Ordner-Playlist umfasst den ganzen Ordner, nicht nur die geladene
+    # Seite — nach dem Sortieren gebaut, damit „der Reihe nach" die angezeigte
+    # Reihenfolge ist.
+    ordner_playlist = [
+        {
+            "url": f"/media/{r['link']}",
+            "title": r.get("original_filename") or r.get("name") or "",
+            "type": name,
+            "composer": "",
+        }
+        for r in files_list
+        if r.get("ist_audio") and r.get("link")
+    ]
 
     # Paginate folders + files; folder_up (..) is fixed and always shown on offset=0
     paginatable = folders_list + files_list
@@ -627,6 +662,7 @@ def folder_view(request, pk):
             "next_offset": offset + _FOLDER_PAGE_SIZE,
             "permissions_url": permissions_url,
             "gallery_url": gallery_url,
+            "ordner_playlist": ordner_playlist,
         },
     )
 

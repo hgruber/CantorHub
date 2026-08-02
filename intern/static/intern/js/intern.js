@@ -713,6 +713,11 @@ document.addEventListener("DOMContentLoaded", function () {
       queueIndex = 0;
       loadTrack(queue[0], advance);
     }
+    // Für Aufrufer, die ihre Liste selbst mitbringen (Ordner-Kontextmenü) —
+    // ein einzelner Titel ist einfach eine Warteschlange der Länge 1.
+    window.startPlayQueue = function (items, shuffle) {
+      playQueue(items, shuffle);
+    };
     window.startPlaylist = function (shuffle) {
       const dataEl = document.getElementById("playlist-data");
       let items = [];
@@ -1051,7 +1056,21 @@ document.addEventListener("DOMContentLoaded", function () {
       duplizieren: `<svg ${S}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
       entpacken:   `<svg ${S}><path d="M21 8v13H3V8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`,
       loeschen:    `<svg ${S}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+      abspielen:   `<svg ${S}><circle cx="12" cy="12" r="9"/><polygon points="10 8 17 12 10 16" fill="currentColor" stroke="none"/></svg>`,
+      zufall:      `<svg ${S}><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>`,
+      galerie:     `<svg ${S}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+      historie:    `<svg ${S}><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><polyline points="12 7 12 12 15 14"/></svg>`,
     };
+
+    // Ordnerweite Einträge: die Galerie-URL rendert table.html nur, wenn der
+    // Ordner Bilder enthält, die Playlist nur, wenn er Audios enthält.
+    const tableView = tbody.closest(".table-view");
+    const galerieUrl = (tableView && tableView.dataset.galerieUrl) || "";
+    function ordnerPlaylist() {
+      const el = document.getElementById("ordner-playlist-data");
+      if (!el) return [];
+      try { return JSON.parse(el.textContent) || []; } catch (_) { return []; }
+    }
 
     function rowFrom(target) {
       const tr = target.closest("tr");
@@ -1085,8 +1104,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
       menuEl = document.createElement("div");
       menuEl.className = "context-menu";
-      const above = [];
+      const medien = [];   // was diese Datei betrifft
+      const above = [];    // Verwaltung
+      const ordner = [];   // was den ganzen Ordner betrifft
       const below = [];
+
+      if (tr.dataset.audio === "1" && tr.dataset.url) {
+        medien.push({ label: "Abspielen", icon: ICON.abspielen, action: () => {
+          if (window.startPlayQueue) {
+            window.startPlayQueue([{ url: tr.dataset.url, title: name, type: "", composer: "" }]);
+          }
+        }});
+      }
+      if (tr.dataset.versionen === "1") {
+        medien.push({ label: "Frühere Versionen", icon: ICON.historie,
+                      title: "Versionshistorie dieser Datei anzeigen",
+                      action: () => { window.location.href = "/intern/datei/" + id + "/"; }});
+      }
 
       if (canWrite) {
         above.push({ label: "Umbenennen", icon: ICON.umbenennen,
@@ -1117,14 +1151,29 @@ document.addEventListener("DOMContentLoaded", function () {
           above.push({ label: "Entpacken", icon: ICON.entpacken, action: () => submitUnzip(id) });
         }
       }
+      const liste = ordnerPlaylist();
+      if (liste.length) {
+        ordner.push({ label: `Alle ${liste.length} Audios abspielen`, icon: ICON.abspielen,
+                      action: () => { if (window.startPlayQueue) window.startPlayQueue(liste, false); }});
+        ordner.push({ label: "Alle Audios zufällig abspielen", icon: ICON.zufall,
+                      action: () => { if (window.startPlayQueue) window.startPlayQueue(liste, true); }});
+      }
+      if (galerieUrl) {
+        ordner.push({ label: "Bilder als Galerie anzeigen", icon: ICON.galerie,
+                      action: () => { window.location.href = galerieUrl; }});
+      }
+
       if (canDelete) {
         below.push({ label: "Löschen", icon: ICON.loeschen, danger: true,
                      action: () => submitDelete(type, id, name) });
       }
 
-      const allItems = above.length && below.length
-        ? [...above, { sep: true }, ...below]
-        : [...above, ...below];
+      const allItems = [];
+      for (const gruppe of [medien, above, ordner, below]) {
+        if (!gruppe.length) continue;
+        if (allItems.length) allItems.push({ sep: true });
+        allItems.push(...gruppe);
+      }
 
       if (!allItems.length) { menuEl = null; return; }
 

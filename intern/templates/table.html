@@ -37,7 +37,7 @@
 {% endif %}
 {% endblock %}
 {% block content %}
-<div class="table-view">
+<div class="table-view"{% if gallery_url %} data-galerie-url="{{ gallery_url }}"{% endif %}>
     {% if show_file_actions %}
     <div class="action offcanvas" id="Action"
          data-can-write="{{ can_write_here|yesno:'true,false' }}"
@@ -253,6 +253,9 @@
     {% endif %}
     {% if playlists %}
     {{ playlists|json_script:"playlists-data" }}
+    {% endif %}
+    {% if ordner_playlist %}
+    {{ ordner_playlist|json_script:"ordner-playlist-data" }}
     {% endif %}
     {% if ical_url %}
     <div class="ical-subscribe" id="ical-subscribe">

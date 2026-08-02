@@ -184,6 +184,15 @@ class OrdnerTabelle(tables.Table):
                 else (record.get("original_filename") or record.get("name") or "")
             ),
             "data-mime": lambda record: "" if record.get("name") == ".." else (record.get("mime") or ""),
+            # Für das Kontextmenü: Medien-URL, ob abspielbar, ob Versionen existieren.
+            # Der Suchzweig setzt die beiden Flags nicht — dann bleiben sie leer.
+            "data-url": lambda record: (
+                f"/media/{record['link']}"
+                if record.get("type") == "File" and record.get("link")
+                else ""
+            ),
+            "data-audio": lambda record: "1" if record.get("ist_audio") else "",
+            "data-versionen": lambda record: "1" if record.get("hat_versionen") else "",
         }
 
 

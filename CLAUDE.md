@@ -509,6 +509,29 @@ handling) are recorded in `datenschutz.md`.
 
 ### File management
 
+**The folder browser's row context menu** (`initRowContextMenu` in `intern.js`, right-click
+or 500 ms long-press) mixes three kinds of entries, separated by rules: what applies to the
+clicked file, the management actions (rename/move/link/duplicate/unzip/delete), and what
+applies to the whole folder. It builds them from data the server put on the page, so it
+never has to ask what a file is:
+
+- Row attributes (`OrdnerTabelle.Meta.row_attrs`): `data-url` (the `/media/…` path),
+  `data-audio` (playable → „Abspielen", a one-track queue) and `data-versionen` (a
+  `DateiVersion` row exists → „Frühere Versionen", links to `datei_view`).
+- Folder-wide: `#ordner-playlist-data` (a `json_script` of every audio file in the folder,
+  in the current sort order → play in order or shuffled) and `data-galerie-url` on
+  `.table-view` — the same URL as the gallery button in the topbar.
+- Both folder-wide entries render only when the folder actually has audio / images, and the
+  playlist covers the **whole** folder, not just the loaded page (it is built from
+  `files_list` before pagination).
+
+Playback goes through `window.startPlayQueue(items, shuffle)`, the mini-player's queue
+entry point — the same `playQueue()` that `startPlaylist`/`startPlaylistType` use on
+`/intern/titel/`. `_ist_audio()` in `views/folders.py` decides what is playable: MIME type
+first, a filename-extension list as the fallback for uploads filer typed as
+`application/octet-stream`. The search branch of `folder_view` sets neither flag, and it
+renders no `#Action` panel either, so it has no context menu at all.
+
 Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. `FOLDER_AVATARE = 1`, `FOLDER_MUSIK = 5`). The `import_files` management command imports avatars from the `Avatare/` directory into filer on first setup. `intern` overrides the filer-built-in `import_files` command (`intern/management/commands/import_files.py`) to set `_migrating.active = True` during the import, suppressing per-file index/thumbnail threads — otherwise importing a large directory would exhaust MySQL's connection limit. Indexing and thumbnailing are handled by the subsequent batch jobs instead.
 
 `Avatare/` also holds the superseded pictures as `<legacy_id>_<md5-prefix>.jpg`. `import_avatars`
