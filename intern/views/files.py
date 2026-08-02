@@ -2,6 +2,7 @@ import logging
 import mimetypes
 import os
 import zipfile
+from collections import defaultdict
 from pathlib import PurePosixPath
 
 from django.conf import settings
@@ -35,6 +36,7 @@ __all__ = [
     "verknuepfte_dateien",
     "datei_umbenennen",
     "versionen_loeschen",
+    "besitz_uebertragen",
     "_get_file_extension",
     "_get_file_type_config",
     "_get_lied_by_filename",
@@ -135,6 +137,83 @@ def versionen_loeschen(f):
             logger.warning("Versions-Blob %s konnte nicht gelöscht werden", v.pfad)
     DateiVersion.objects.filter(pk__in=[v.pk for v in versionen]).delete()
     return len(versionen)
+
+
+def _ziel_owner(ordner, ausgeschlossen_pk, fallback_pk, cache):
+    """Walk up from `ordner` to the first folder owned by somebody other than the
+    member that is going away. Nothing found by the root — `fallback_pk`.
+
+    Reads nothing but `pk`, `owner_id` and `parent`, so it can be unit-tested
+    without a database. `cache` maps folder pk → resolved owner: every folder on
+    the way up resolves to the same owner as the one below it, so a whole chain
+    is worth caching after one walk."""
+    kette = []
+    ziel = fallback_pk
+    gesehen = set()
+    while ordner is not None and ordner.pk not in gesehen:
+        gesehen.add(ordner.pk)
+        if ordner.pk in cache:
+            ziel = cache[ordner.pk]
+            break
+        kette.append(ordner.pk)
+        if ordner.owner_id and ordner.owner_id != ausgeschlossen_pk:
+            ziel = ordner.owner_id
+            break
+        ordner = ordner.parent
+    for pk in kette:
+        cache[pk] = ziel
+    return ziel
+
+
+def besitz_uebertragen(member, fallback=None):
+    """Hand a departing member's files and folders to the owner of the folder
+    above them. Returns `(dateien, ordner)` counts.
+
+    Without this, filer's `on_delete=SET_NULL` leaves `owner` empty on a hard
+    delete — no name in the listing, and filer's own permission check loses its
+    owner branch — while an anonymised member goes on owning their files under
+    the placeholder name. `fallback` takes over where the walk runs out of
+    folders: the root level, an unfiled file, or a chain that belongs to the
+    member all the way up."""
+    fallback_pk = getattr(fallback, "pk", None)
+    if fallback_pk == member.pk:
+        fallback_pk = None
+    cache = {}
+
+    def _gruppiert(objekte, start):
+        ziele = defaultdict(list)
+        for obj in objekte:
+            ziele[_ziel_owner(start(obj), member.pk, fallback_pk, cache)].append(obj.pk)
+        return ziele
+
+    dateien = _gruppiert(
+        File.objects.filter(owner=member).select_related("folder"),
+        lambda f: f.folder,
+    )
+    for ziel, pks in dateien.items():
+        # Queryset update, not save(): save() fires on_filer_file_saved, which
+        # spawns an indexing thread plus three thumbnail threads per file —
+        # pointless here, the owner changes neither index nor thumbnail.
+        File.objects.filter(pk__in=pks).update(owner_id=ziel)
+
+    ordner = _gruppiert(
+        Folder.objects.filter(owner=member).select_related("parent"),
+        lambda o: o.parent,
+    )
+    for ziel, pks in ordner.items():
+        Folder.objects.filter(pk__in=pks).update(owner_id=ziel)
+
+    anzahl = (
+        sum(len(pks) for pks in dateien.values()),
+        sum(len(pks) for pks in ordner.values()),
+    )
+    if any(anzahl):
+        logger.info(
+            "Besitz von %s übertragen: %s Dateien, %s Ordner",
+            member.pk,
+            *anzahl,
+        )
+    return anzahl
 
 
 def _get_file_extension(filename):

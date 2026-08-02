@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .models import *
+from .views.files import besitz_uebertragen
 
 
 class TerminLiedInline(admin.TabularInline):
@@ -40,6 +41,20 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ["stimme", "is_active", "is_staff", "is_superuser"]
     search_fields = ["first_name", "last_name", "ort"]
     # ordering_fields = ['first_name']
+
+    # Deleting here bypasses mitglied_delete, so hand the files over explicitly.
+    # Deliberately not a pre_delete signal: Django's deletion collector gathers
+    # its SET_NULL updates before the signal is sent, and would be free to write
+    # owner=NULL over the owners we just set. Before delete() there is no race —
+    # the collector then simply finds no rows left.
+    def delete_model(self, request, obj):
+        besitz_uebertragen(obj, fallback=request.user)
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            besitz_uebertragen(obj, fallback=request.user)
+        super().delete_queryset(request, queryset)
 
 
 @admin.register(Artikel)

@@ -11,6 +11,7 @@ from types import SimpleNamespace
 from django.test import SimpleTestCase
 
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
+from intern.views.files import _ziel_owner
 
 
 def _termin(jahr, monat, tag, stunde=20, minute=0):
@@ -192,3 +193,60 @@ class ClientIpTest(SimpleTestCase):
         # bestaetigt_ip ist ein GenericIPAddressField — auftritte.py macht aus
         # dem leeren String per ``or None`` ein NULL.
         self.assertEqual(self._ip(), "")
+
+
+def _ordner(pk, owner_id=None, parent=None):
+    """Stellvertreter für einen filer-Ordner — ``_ziel_owner`` liest nur diese drei."""
+    return SimpleNamespace(pk=pk, owner_id=owner_id, parent=parent)
+
+
+class ZielOwnerTest(SimpleTestCase):
+    """Die Besitzsuche beim Löschen eines Mitglieds (``besitz_uebertragen``).
+
+    Ohne Datenbank testbar, weil ``_ziel_owner`` von der Ordnerzeile nur ``pk``,
+    ``owner_id`` und ``parent`` anfasst.
+    """
+
+    WEG = 7        # das Mitglied, das verschwindet
+    FALLBACK = 99  # die löschende Person
+
+    def _ziel(self, ordner, cache=None):
+        return _ziel_owner(ordner, self.WEG, self.FALLBACK, cache if cache is not None else {})
+
+    def test_uebergeordneter_ordner_hat_besitzer(self):
+        self.assertEqual(self._ziel(_ordner(1, owner_id=42)), 42)
+
+    def test_besitzloser_ordner_wird_uebersprungen(self):
+        # Ein Ordner ohne owner (etwa nach einer früheren Löschung) ist kein Ziel.
+        self.assertEqual(self._ziel(_ordner(2, owner_id=None, parent=_ordner(1, owner_id=42))), 42)
+
+    def test_vorfahr_gehoert_ebenfalls_dem_mitglied(self):
+        kette = _ordner(3, owner_id=self.WEG, parent=_ordner(2, owner_id=self.WEG, parent=_ordner(1, owner_id=42)))
+        self.assertEqual(self._ziel(kette), 42)
+
+    def test_ganze_kette_gehoert_dem_mitglied(self):
+        kette = _ordner(2, owner_id=self.WEG, parent=_ordner(1, owner_id=self.WEG))
+        self.assertEqual(self._ziel(kette), self.FALLBACK)
+
+    def test_ohne_ordner(self):
+        # Datei auf oberster Ebene: filer erlaubt folder=None.
+        self.assertEqual(self._ziel(None), self.FALLBACK)
+
+    def test_zyklus_terminiert(self):
+        a = _ordner(1, owner_id=self.WEG)
+        b = _ordner(2, owner_id=self.WEG, parent=a)
+        a.parent = b
+        self.assertEqual(self._ziel(a), self.FALLBACK)
+
+    def test_cache_deckt_die_ganze_kette_ab(self):
+        cache = {}
+        kette = _ordner(2, owner_id=None, parent=_ordner(1, owner_id=42))
+        self._ziel(kette, cache)
+        self.assertEqual(cache, {2: 42, 1: 42})
+
+    def test_cache_wird_benutzt(self):
+        # Zweiter Aufruf darf die Kette nicht noch einmal hochlaufen — bei einem
+        # Ordner voller Dateien wäre das je Datei eine Abfrage pro Ebene.
+        cache = {5: 42}
+        gesperrt = SimpleNamespace(pk=5, owner_id=self.WEG)  # kein .parent
+        self.assertEqual(self._ziel(gesperrt, cache), 42)

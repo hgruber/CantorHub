@@ -21,7 +21,7 @@ from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..models import Abstimmung, Artikel, Mitteilung, PRIVACY_FIELDS, User, Zusage
 from ..tables import MitgliederFilter, MitgliederTabelle
 from .auth import make_invite_token
-from .files import _get_file_extension
+from .files import _get_file_extension, besitz_uebertragen
 
 logger = logging.getLogger(__name__)
 
@@ -230,11 +230,15 @@ def mitglied_delete(request, id):
         except Exception:
             pass
 
+    # Files and folders go to the owner of the folder above them, so nothing in
+    # the file area points at the member afterwards — which is also why file
+    # ownership is no longer part of has_history below.
+    besitz_uebertragen(member, fallback=request.user)
+
     # Determine whether history exists that must be preserved
     has_history = (
         Mitteilung.objects.filter(sender=member).exists()
         or Artikel.objects.filter(autor=member).exists()
-        or File.objects.filter(owner=member).exists()
         or Abstimmung.objects.filter(person=member).exists()
     )
 

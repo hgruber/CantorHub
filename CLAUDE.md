@@ -579,6 +579,7 @@ path or name therefore has to carry all its rows along, which is what the helper
 | `version_anlegen(f, autor)` | archive the current revision before it is replaced |
 | `geschwister_nachziehen(alter_pfad, quelle)` | point all rows at the new blob, move the version chain over |
 | `versionen_loeschen(f)` | drop the archived blobs (when the last occurrence goes) |
+| `besitz_uebertragen(member, fallback)` | hand a departing member's files **and** folders to the owner of the folder above them |
 
 **Overwriting** an upload with the same name in the same folder (`upload` in
 `views/files.py`) keeps the `File` PK — so `Lied`/`Artikel`/`Forum` references survive —
@@ -596,6 +597,29 @@ version list; `datei_restore` makes an old revision current again, mirroring the
 path. Reached from the `#id` badge in the folder listing. `cleanup_dateiversionen`
 (command defaults `--keep 10 --days 730`; `start.sh` calls it with `--keep 25 --days 36500`
 so the imported avatar history below survives) prunes old revisions, blobs included.
+
+**When a member goes, their files stay — under a new owner.** `mitglied_delete`
+(`views/mitglieder.py`) calls `besitz_uebertragen(member, fallback=request.user)` before it
+decides between anonymising and hard-deleting: every `filer.File` and `filer.Folder` owned by
+that member is handed to the owner of the folder above it, walking further up whenever an
+ancestor belongs to the same member, and falling back to the deleting person at the root (or
+for an unfiled file). Without it filer's `on_delete=SET_NULL` would leave `owner` empty — no
+name in the listing, and filer's own permission check (`elif user == self.owner`) loses its
+owner branch — while an anonymised member would go on owning files as `geloescht_<id>`.
+
+Two consequences worth knowing:
+
+- **File ownership no longer forces anonymisation.** It used to be part of the `has_history`
+  test; after the transfer nothing in the file area points at the member, so a member whose
+  only trace was owning files is now really deleted. `Mitteilung`, `Artikel` and `Abstimmung`
+  still trigger the anonymising branch.
+- **The transfer is called explicitly, never from a `pre_delete` signal** — in the view and,
+  for the way around it, in `UserAdmin.delete_model`/`delete_queryset` (`intern/admin.py`).
+  Django's deletion collector gathers its `SET_NULL` updates *before* `pre_delete` is sent and
+  may write `owner=NULL` over freshly set owners; called before `delete()` there is no race,
+  because the collector then finds no rows left. The helper writes through queryset `update()`
+  for the same class of reason: `save()` would fire `on_filer_file_saved` and spawn an
+  indexing plus three thumbnail threads per file, for a field that affects neither.
 
 ### Avatars are write-protected against other members
 
