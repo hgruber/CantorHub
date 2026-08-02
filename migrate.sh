@@ -34,6 +34,10 @@ python manage.py migrate
 mv /tmp/0003_import.py intern/migrations || true
 python manage.py import_files --path Avatare
 python manage.py migrate
+
+# Tabelle fuer den DatabaseCache (CACHES in settings.py) — traegt die beiden
+# IP-Drosseln. Reines DDL, keine Migration, und idempotent.
+python manage.py createcachetable
 python manage.py index_files &
 # Kein "filer_check --delete-orphans": das Kommando loescht jeden Blob ohne
 # File-Zeile — und genau das ist ein DateiVersion-Blob (importierte Avatar-

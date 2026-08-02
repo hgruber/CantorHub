@@ -13,6 +13,11 @@ fi
 
 python manage.py migrate
 
+# Tabelle fuer den DatabaseCache (CACHES in settings.py) — traegt die beiden
+# IP-Drosseln. Reines DDL, keine Migration, und idempotent: existiert sie
+# bereits, meldet das Kommando das nur.
+python manage.py createcachetable
+
 # Datenschutz: Änderungsprotokoll nach Ablauf der Aufbewahrungsfrist (3 Jahre) löschen.
 python manage.py cleanup_changelog &
 

@@ -147,6 +147,33 @@ else:
     }
 
 
+# Cache
+# https://docs.djangoproject.com/en/6.0/topics/cache/
+#
+# Traegt ausschliesslich die beiden IP-Drosseln (Passwort-Reset in views/auth.py,
+# Mailinglisten-Anmeldung in views/auftritte.py). Der Django-Default LocMemCache
+# ist prozesslokal — bei drei gunicorn-Workern zaehlt jeder fuer sich, das
+# effektive Limit waere also das Dreifache des konfigurierten Werts, und auf
+# welchem Worker eine Anfrage landet, ist Zufall.
+#
+# MAX_ENTRIES ist hier nicht kosmetisch: der Django-Default ist 300, und bei
+# Ueberschreitung loescht DatabaseCache ein Drittel aller Eintraege
+# (CULL_FREQUENCY 3) — ein Absender koennte ueber viele Adressen genau die
+# Zaehler wegdruecken, die ihn bremsen sollen.
+#
+# Die Tabelle legen start.sh und migrate.sh per "createcachetable" an (reines
+# DDL, keine Migration). Fehlt sie, schlagen die Drosseln laut fehl statt sich
+# still zu deaktivieren — das ist Absicht, deshalb kein try/except an den
+# Aufrufstellen.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "cache_table",
+        "OPTIONS": {"MAX_ENTRIES": 10000},
+    }
+}
+
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 

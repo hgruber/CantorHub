@@ -11,19 +11,33 @@ this file tracks only what is still open.
 ## Open / to record
 
 - **§2/§10 server logs: the 90-day promise is an operator duty, not a code guarantee** —
-  nothing in this repository logs a client IP: `log_format simple` in `nginx.conf` omits
-  `$remote_addr`, gunicorn runs without an access log, and Django's `LOGGING` has no request
-  context. The IPs the policy describes are recorded one hop earlier, by the haproxy in front
+  the *access* path is IP-free (`log_format simple` in `nginx.conf` omits `$remote_addr`,
+  gunicorn runs without an access log, Django's `LOGGING` has no request context), but the
+  **nginx error log does record `client: <IP>`** on every error — 404s under `/static/` and
+  `/media/`, rejected `auth_request` subrequests. It goes to `/dev/stderr` and therefore into
+  the container's journald stream. Until realip actually engaged this was the front proxy's
+  address and thus meaningless; since then it is the visitor's real address. The IPs the
+  policy describes are additionally recorded one hop earlier by the haproxy in front
   (`log-format … from:%ci`), whose output goes to the host's syslog/journald. **Action item:**
-  confirm that rotation on that host actually discards entries after at most 90 days — the
-  sentence in §2 (repeated in §7 and §10) is only true as long as it does, and this codebase
-  cannot enforce it. The §2 wording was adjusted to name the reverse proxy as the processing
-  component instead of implying the portal itself logs.
+  confirm that rotation actually discards entries after at most 90 days — and note this is
+  now **two** places, the haproxy log *and* the container's journald stream
+  (`journalctl --disk-usage`, `MaxRetentionSec`/`MaxFileSec` in `journald.conf`). The
+  sentence in §2 (repeated in §7 and §10) is only true as long as both rotate, and this
+  codebase cannot enforce either. The §2 wording was adjusted to name the reverse proxy as
+  the processing component instead of implying the portal itself logs — with the error log
+  in mind that wording is now slightly *under*-inclusive and should be re-read at the next
+  policy revision.
 
 - **§15 stored consent IPs from before the realip fix are the proxy's, not the subscriber's**
-  — until `set_real_ip_from` was added to `nginx.conf`, `_client_ip()` returned the address of
+  — until `set_real_ip_from` took effect, `_client_ip()` returned the address of
   the front proxy for every request, so `Auftrittsabo.bestaetigt_ip` holds one and the same
-  internal address for all rows confirmed in that period. No personal data was exposed (the
+  internal address for all rows confirmed in that period. **The dividing line is the deploy,
+  not the commit:** `nginx.conf` is baked into the image (`COPY` in the `Dockerfile`, unlike
+  the bind-mounted application code), so the lines added in commit 96c4239 stayed inert until
+  the image was rebuilt and the container restarted on **2026-08-02**. Rows confirmed between
+  that commit and that rebuild carry the proxy address too. Verified after the rebuild: an
+  nginx error line reported the real public client address, so confirmations from 2026-08-02
+  onwards record the subscriber. No personal data was exposed (the
   opposite: less was collected than the policy announces), but those rows carry **no**
   evidentiary value under Art. 7(1) — `bestaetigt_am` plus the `einwilligungstext` snapshot
   are all that stands behind them. Decided to leave the values in place rather than null them.

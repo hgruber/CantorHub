@@ -96,10 +96,40 @@ gunicorn binds to `127.0.0.1:8001` on purpose — nginx is in the same container
 a wildcard bind would be reachable over the podman bridge, bypassing nginx and thus
 realip. The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
 
-Client IPs are not logged anywhere in this stack: `log_format simple` in `nginx.conf`
-has no `$remote_addr`, gunicorn runs without an access log, and Django's `LOGGING`
-carries no request context. The one place they are recorded is the haproxy log
-(`%ci`) — see `datenschutz.md` for what that means for the §10 retention promise.
+**Client IPs are logged in two of the three channels**, and the distinction matters for
+the §10 retention promise (see `datenschutz.md`):
+
+- The **access log is IP-free**: `log_format simple` in `nginx.conf` has no
+  `$remote_addr`, gunicorn runs without an access log, and Django's `LOGGING` carries no
+  request context. A normal request therefore leaves no address behind.
+- The **error log does record it**: nginx writes `client: <IP>` on every error — a 404
+  under `/static/` or `/media/`, a rejected `auth_request` subrequest. It goes to
+  `/dev/stderr` and thus into journald / `podman logs`, the same stream as the access
+  log. Before realip engaged this was the front proxy's own address and therefore
+  worthless; **since it engages, it is the real visitor's address.** Nothing in this
+  repository suppresses it, and a `client:` line is the simplest way to check what nginx
+  actually resolved (see the deploy note below).
+- The **haproxy log** (`%ci`) is the third place, one hop earlier.
+
+**`nginx.conf` lives in the image, not in the mount.** The `Dockerfile` does `COPY
+nginx.conf /etc/nginx/`, while the application code is deliberately *not* copied
+(`#COPY --chown=appuser:appuser . .`) and is bind-mounted instead. Changes to
+`nginx.conf` therefore take effect only after a **`podman build` plus a container
+restart** — a `git pull` alone silently keeps the old config, which is exactly how the
+realip lines above sat inert for a while after they were committed. Verify with:
+
+```bash
+podman exec <container> nginx -T | grep real_ip
+```
+
+and confirm the resolved address by requesting a file that does not exist (no login
+needed, leaves nothing behind) and reading the `client:` field of the resulting error
+line:
+
+```bash
+curl -s -o /dev/null https://<host>/static/proxy-check-gibtsnicht.css
+journalctl -u <unit> -n 30 --no-pager | grep proxy-check
+```
 
 ### URL structure
 
@@ -699,6 +729,29 @@ Tracked in separate files: general code/UX debt (branding, risk-ranked items) in
 SQLite in development (`db.sqlite3`, excluded from git). MySQL-compatible for production via `pymysql`.
 
 **Note on DB reset:** The full DB wipe in `migrate.sh` exists only during the current **test phase**. After the final migration it will be removed — the test system will simply receive a copy of the prod DB, and prod and test will have separate start strategies (no more destructive reset on start). Until then: every `migrate.sh` run discards all data.
+
+### Cache
+
+`CACHES` uses `DatabaseCache` (table `cache_table`), and it carries exactly one thing: the
+two IP rate limits — password reset (`views/auth.py`) and mailing-list sign-up
+(`views/auftritte.py`). Nothing else in the project uses the Django cache; the
+`_nick_jid_cache` in `ejabberd_bot.py` is a plain dict.
+
+The backend has to be shared, not per-process: with the default LocMemCache each of the
+three gunicorn workers counts on its own, so the effective limit is 3× the configured
+value and which worker a request lands on is luck. `OPTIONS.MAX_ENTRIES` is raised to
+10000 for the same reason the limits exist — Django's default of 300 makes
+`DatabaseCache` cull a third of all rows on overflow (`CULL_FREQUENCY` 3), which an
+attacker could use to evict the very counters that throttle them.
+
+The table is created by `python manage.py createcachetable` in **both** `start.sh` and
+`migrate.sh`. That is plain DDL, **not** a migration, so it does not collide with the rule
+that all model changes go into the regenerated `0002`. It is idempotent. If the table is
+missing the throttles fail loudly rather than silently switching themselves off — that is
+deliberate, hence no `try/except` around the cache calls.
+
+Unaffected by all of this: the DB-backed cooldown on `Auftrittsabo.optin_gesendet_am`,
+which is the brake that actually prevents mail-bombing a foreign address.
 
 ### Environment variables
 
