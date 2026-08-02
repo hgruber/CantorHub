@@ -1,0 +1,7 @@
+<div class="form-group">
+    <label for="{{ field.id_for_label }}">{{ label }}{% if req and field.field.required %} <span class="req">*</span>{% endif %}</label>
+    {{ field }}
+    {% if field.errors %}<div class="invalid-feedback">{{ field.errors }}</div>{% endif %}
+    {% if hilfe and field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+    {% if privacy and can_set_privacy %}<label class="form-privacy">{{ privacy }} verbergen</label>{% endif %}
+</div>

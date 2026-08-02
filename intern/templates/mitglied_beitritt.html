@@ -1,4 +1,5 @@
 {% extends 'mitglied_public_base.html' %}
+{% load form_tags %}
 {% block title %}Mitgliedsantrag – {{ vereinsname_lang }}{% endblock %}
 {% block wrap_modifier %} join-wide{% endblock %}
 
@@ -20,21 +21,9 @@
     <div class="detail-card">
         <h3>Person</h3>
         <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.first_name.id_for_label }}">Vorname{% if form.first_name.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.first_name }}
-                {% if form.first_name.errors %}<div class="invalid-feedback">{{ form.first_name.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.last_name.id_for_label }}">Nachname{% if form.last_name.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.last_name }}
-                {% if form.last_name.errors %}<div class="invalid-feedback">{{ form.last_name.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.geburtstag.id_for_label }}">Geburtsdatum{% if form.geburtstag.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.geburtstag }}
-                {% if form.geburtstag.errors %}<div class="invalid-feedback">{{ form.geburtstag.errors }}</div>{% endif %}
-            </div>
+            {% form_field form.first_name "Vorname" req=True %}
+            {% form_field form.last_name "Nachname" req=True %}
+            {% form_field form.geburtstag "Geburtsdatum" req=True %}
         </div>
     </div>
 
@@ -42,21 +31,9 @@
     <div class="detail-card">
         <h3>Adresse</h3>
         <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.strasse.id_for_label }}">Straße{% if form.strasse.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.strasse }}
-                {% if form.strasse.errors %}<div class="invalid-feedback">{{ form.strasse.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.plz.id_for_label }}">PLZ{% if form.plz.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.plz }}
-                {% if form.plz.errors %}<div class="invalid-feedback">{{ form.plz.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.ort.id_for_label }}">Ort{% if form.ort.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.ort }}
-                {% if form.ort.errors %}<div class="invalid-feedback">{{ form.ort.errors }}</div>{% endif %}
-            </div>
+            {% form_field form.strasse "Straße" req=True %}
+            {% form_field form.plz "PLZ" req=True %}
+            {% form_field form.ort "Ort" req=True %}
         </div>
     </div>
 
@@ -64,31 +41,11 @@
     <div class="detail-card">
         <h3>Kontakt</h3>
         <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.telefon.id_for_label }}">Telefon</label>
-                {{ form.telefon }}
-                {% if form.telefon.errors %}<div class="invalid-feedback">{{ form.telefon.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.telefon_mobil.id_for_label }}">Mobiltelefon</label>
-                {{ form.telefon_mobil }}
-                {% if form.telefon_mobil.errors %}<div class="invalid-feedback">{{ form.telefon_mobil.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.telefon_job.id_for_label }}">Telefon (Arbeit)</label>
-                {{ form.telefon_job }}
-                {% if form.telefon_job.errors %}<div class="invalid-feedback">{{ form.telefon_job.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.telefon_job_mobil.id_for_label }}">Mobiltelefon (Arbeit)</label>
-                {{ form.telefon_job_mobil }}
-                {% if form.telefon_job_mobil.errors %}<div class="invalid-feedback">{{ form.telefon_job_mobil.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.fax.id_for_label }}">Fax</label>
-                {{ form.fax }}
-                {% if form.fax.errors %}<div class="invalid-feedback">{{ form.fax.errors }}</div>{% endif %}
-            </div>
+            {% form_field form.telefon "Telefon" req=True %}
+            {% form_field form.telefon_mobil "Mobiltelefon" req=True %}
+            {% form_field form.telefon_job "Telefon (Arbeit)" req=True %}
+            {% form_field form.telefon_job_mobil "Mobiltelefon (Arbeit)" req=True %}
+            {% form_field form.fax "Fax" req=True %}
         </div>
     </div>
 
@@ -96,21 +53,9 @@
     <div class="detail-card">
         <h3>Zugang</h3>
         <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.username.id_for_label }}">Benutzername{% if form.username.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.username }}
-                {% if form.username.errors %}<div class="invalid-feedback">{{ form.username.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.password1.id_for_label }}">Passwort{% if form.password1.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.password1 }}
-                {% if form.password1.errors %}<div class="invalid-feedback">{{ form.password1.errors }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.password2.id_for_label }}">Passwort wiederholen{% if form.password2.field.required %} <span class="req">*</span>{% endif %}</label>
-                {{ form.password2 }}
-                {% if form.password2.errors %}<div class="invalid-feedback">{{ form.password2.errors }}</div>{% endif %}
-            </div>
+            {% form_field form.username "Benutzername" req=True %}
+            {% form_field form.password1 "Passwort" req=True %}
+            {% form_field form.password2 "Passwort wiederholen" req=True %}
         </div>
     </div>
 

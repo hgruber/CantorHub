@@ -159,6 +159,8 @@ All list views use django-tables2 with clickable rows (`data-href` on `<tr>`). E
 
 Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card grid, single column on mobile). Edit pages use the `.wiki` container with `.form-grid`.
 
+**Form fields are rendered via the `{% form_field %}` inclusion tag** (`intern/templatetags/form_tags.py` → `_form_field.html`): `{% form_field form.feld "Label" %}` emits the standard `form-group` (label, widget, `invalid-feedback` errors). Options: `req=True` shows the `*` marker when the field is required (join form), `privacy=form.priv_x` appends the "verbergen" checkbox when `can_set_privacy` is in the context (member edit), `hilfe=True` renders `help_text` (opt-in so Django's default help texts, e.g. on `username`, don't leak in). Without `label` the form field's own label is used. Non-standard groups (checkbox rows, label-less textareas, the search-select Ort widget, static read-only rows) stay hand-written.
+
 ### Attendance (Zusage) options
 
 `Zusage.option` values: `"1"` = Zusage, `"2"` = Absage, `"3"` = Eventuell, empty/missing = Keine Angabe. The attendance table on the termin detail page groups users by `Stimme` (S, A, T, B, C, M) and splits into two tables on mobile.

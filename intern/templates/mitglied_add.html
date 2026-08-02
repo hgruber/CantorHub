@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load form_tags %}
 {% block title %}{{ seitentitel }}{% endblock %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{% endblock %}
 {% block content %}
@@ -18,37 +19,12 @@
             <div class="detail-card">
                 <h3>Account</h3>
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label for="{{ form.username.id_for_label }}">Benutzername</label>
-                        {{ form.username }}
-                        {% if form.username.errors %}<div class="invalid-feedback">{{ form.username.errors }}</div>{% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.first_name.id_for_label }}">Vorname</label>
-                        {{ form.first_name }}
-                        {% if form.first_name.errors %}<div class="invalid-feedback">{{ form.first_name.errors }}</div>{% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.last_name.id_for_label }}">Nachname</label>
-                        {{ form.last_name }}
-                        {% if form.last_name.errors %}<div class="invalid-feedback">{{ form.last_name.errors }}</div>{% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.email.id_for_label }}">E-Mail</label>
-                        {{ form.email }}
-                        {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors }}</div>{% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.stimme.id_for_label }}">Stimme</label>
-                        {{ form.stimme }}
-                        {% if form.stimme.errors %}<div class="invalid-feedback">{{ form.stimme.errors }}</div>{% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.password.id_for_label }}">Passwort</label>
-                        {{ form.password }}
-                        {% if form.password.errors %}<div class="invalid-feedback">{{ form.password.errors }}</div>{% endif %}
-                        {% if form.password.help_text %}<small class="form-text text-muted">{{ form.password.help_text }}</small>{% endif %}
-                    </div>
+                    {% form_field form.username "Benutzername" %}
+                    {% form_field form.first_name "Vorname" %}
+                    {% form_field form.last_name "Nachname" %}
+                    {% form_field form.email "E-Mail" %}
+                    {% form_field form.stimme "Stimme" %}
+                    {% form_field form.password "Passwort" hilfe=True %}
                 </div>
             </div>
         </div>

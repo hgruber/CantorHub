@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load form_tags %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{% endblock %}
 {% block content %}
 <div class="detail-page">
@@ -21,31 +22,15 @@
         <div class="detail-cards">
             <div class="detail-card">
                 <h3>Termin</h3>
-                <div class="form-group">
-                    <label for="{{ form.kurz.id_for_label }}">Name</label>
-                    {{ form.kurz }}
-                    {% if form.kurz.errors %}<div class="invalid-feedback">{{ form.kurz.errors }}</div>{% endif %}
-                </div>
+                {% form_field form.kurz "Name" %}
             </div>
 
             <div class="detail-card">
                 <h3>Zeit &amp; Ort</h3>
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label for="{{ form.datum.id_for_label }}">Datum</label>
-                        {{ form.datum }}
-                        {% if form.datum.errors %}<div class="invalid-feedback">{{ form.datum.errors }}</div>{% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.uhrzeit.id_for_label }}">Uhrzeit</label>
-                        {{ form.uhrzeit }}
-                        {% if form.uhrzeit.errors %}<div class="invalid-feedback">{{ form.uhrzeit.errors }}</div>{% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.datum_bis.id_for_label }}">Bis</label>
-                        {{ form.datum_bis }}
-                        {% if form.datum_bis.errors %}<div class="invalid-feedback">{{ form.datum_bis.errors }}</div>{% endif %}
-                    </div>
+                    {% form_field form.datum "Datum" %}
+                    {% form_field form.uhrzeit "Uhrzeit" %}
+                    {% form_field form.datum_bis "Bis" %}
                 </div>
                 <div class="form-group">
                     <label for="{{ form.ort.id_for_label }}">Ort</label>

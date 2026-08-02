@@ -1,3 +1,4 @@
+{% load form_tags %}
 {# Off-Canvas zum Einladen oder manuellen Anlegen eines Mitglieds. #}
 {# Wird via {% include %} aus table.html eingebunden; das „+" in der Topbar toggelt #AddPanel. #}
 <div class="add-panel offcanvas" id="AddPanel">
@@ -11,12 +12,7 @@
         <p class="add-panel-hint">Eine E-Mail mit einem persönlichen Registrierungslink wird verschickt. Das neue Mitglied füllt das Beitrittsformular selbst aus und wird danach von einem Admin freigeschaltet.</p>
         <form method="post" action="{% url 'mitglied_invite' %}">
             {% csrf_token %}
-            <div class="form-group">
-                <label for="{{ invite_form.email.id_for_label }}">{{ invite_form.email.label }}</label>
-                {{ invite_form.email }}
-                {% if invite_form.email.errors %}<div class="invalid-feedback">{{ invite_form.email.errors }}</div>{% endif %}
-                {% if invite_form.email.help_text %}<small class="form-text text-muted">{{ invite_form.email.help_text }}</small>{% endif %}
-            </div>
+            {% form_field invite_form.email hilfe=True %}
             <div class="add-panel-actions">
                 <button type="submit" class="btn btn-primary">Senden</button>
                 <button type="button" class="btn btn-secondary" onclick="toggle('AddPanel')">Abbrechen</button>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load form_tags %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>{% endblock %}
 {% block content %}
 <div class="detail-page">
@@ -20,21 +21,10 @@
         <div class="detail-cards">
             <div class="detail-card">
                 <h3>Forum</h3>
-                <div class="form-group">
-                    <label for="{{ form.thema.id_for_label }}">Thema</label>
-                    {{ form.thema }}
-                    {% if form.thema.errors %}<div class="invalid-feedback">{{ form.thema.errors }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.bild.id_for_label }}">Bild</label>
-                    {{ form.bild }}
-                </div>
+                {% form_field form.thema "Thema" %}
+                {% form_field form.bild "Bild" %}
                 {% if ejabberd_enabled %}
-                <div class="form-group">
-                    <label for="{{ form.xmpp_muc_jid.id_for_label }}">XMPP-Raum (MUC JID)</label>
-                    {{ form.xmpp_muc_jid }}
-                    {% if form.xmpp_muc_jid.errors %}<div class="invalid-feedback">{{ form.xmpp_muc_jid.errors }}</div>{% endif %}
-                </div>
+                {% form_field form.xmpp_muc_jid "XMPP-Raum (MUC JID)" %}
                 {% endif %}
             </div>
         </div>
