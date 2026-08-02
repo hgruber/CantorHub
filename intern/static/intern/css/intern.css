@@ -6884,3 +6884,65 @@ body.join-page {
     font-size: 12px;
     color: var(--t3);
 }
+
+/* === Hilfe-Tooltip ===
+   Info-Icon (_hilfe_icon.html) plus die eine geteilte Blase, die tooltip.js an
+   den Body hängt. Der Text steht als help_text am Model, nie hier. */
+.hilfe-icon {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--t4);
+    cursor: help;
+    line-height: 0;
+}
+.hilfe-icon:hover,
+.hilfe-icon:focus-visible {
+    color: var(--brand);
+}
+.hilfe-icon:focus-visible {
+    outline: 2px solid var(--brand-ring);
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+/* Auslöser, die kein Icon sind (Chips, Spaltenköpfe) */
+[data-hilfe]:not(.hilfe-icon) {
+    cursor: help;
+}
+
+/* position: fixed ist Pflicht – .table-container und .cal-panel-scroll haben
+   overflow-y:auto und würden eine absolut positionierte Blase abschneiden. */
+.hilfe-bubble {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    max-width: 300px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--t2);
+    font-size: 12.5px;
+    line-height: 1.45;
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.hilfe-bubble.visible {
+    opacity: 1;
+}
+
+/* Ohne dies reißt das margin-right der Checkbox-Labels eine Lücke zum Icon. */
+.detail-card .checkbox-group label {
+    margin-right: 0;
+}
+/* .checkbox-row bringt padding-top mit; im Kalender-Panel regelt der Spaltenabstand
+   von .cal-add-checks den Abstand bereits. */
+.cal-add-checks .checkbox-row {
+    padding-top: 0;
+}

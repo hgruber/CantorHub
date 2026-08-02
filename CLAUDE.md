@@ -792,6 +792,38 @@ the dark-mode block redefines the first three, so those components need **no**
 Destructive buttons use `--error-solid` / `--error-solid-hover`; do **not** reach for
 `--error-bg` there, that is a pale surface colour and carries no white text.
 
+**Explanation tooltips** — a small info icon whose bubble explains what an option
+means and what it does. Two rules make it work:
+
+- **The text lives as `help_text` on the model field, never in a template.** The form
+  inherits it for free, and display-only pages read the same string. `Termin.repertoire`
+  and `Termin.anwesenheit` (`intern/models.py`) are the current users — both options have
+  effects a member cannot guess from the word alone, and `repertoire` even publishes to
+  the homepage and mails the external gig list.
+- **One component, two entry points.** `{% hilfe form.repertoire %}` takes a `BoundField`
+  inside a form; `{% hilfe "Termin.repertoire" %}` takes a `"Model.field"` string on a
+  display page (`intern/templatetags/ui_tags.py` → `_hilfe_icon.html`). A wrong field
+  name raises rather than rendering an empty icon.
+
+`tooltip.js` keeps a single `.hilfe-bubble` on the body and hangs **delegated** handlers
+off `document` for `[data-hilfe]` — the calendar day panel is filled by `kalender.js`, the
+termin banner is swapped by htmx and table rows arrive by infinite scroll, so an init-time
+`querySelectorAll` would miss them all. It shows on hover (200 ms), on `:focus-visible`
+(keyboard only — a mouse click would otherwise open and immediately re-close it) and on
+tap, which is the only way touch devices reach it at all; that is why the plain `title`
+attribute used elsewhere was not enough here. The bubble is `position: fixed` because
+`.table-container` and `.cal-panel-scroll` scroll internally and would clip an absolutely
+positioned one.
+
+Two traps when placing the icon: it must stay **outside** a checkbox `<label>` (inside, a
+click on it toggles the checkbox), and where the surrounding template also renders
+`help_text` as `<small>` (`table.html`'s generic add panel) that branch must be limited to
+non-checkbox fields, or the same sentence appears twice. The attribute is `data-hilfe`,
+not `data-tooltip`, because `gruppen.html` still carries its own page-local tooltip on the
+latter — moving it onto this component is an open cleanup (its bubble also references
+`--border-strong`, a token only defined on `.perm-matrix-wrap`, so it renders without a
+border).
+
 **Theme boot script.** The inline `<script>` that sets `data-theme` before paint lives in
 exactly one place: `intern/templates/_theme_boot.html`. Every standalone page includes it
 right after its `intern.css` link and before any visible markup — `base.html`,

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load django_tables2 filter_tags %}
+{% load django_tables2 filter_tags ui_tags %}
 {% block topbar_icon %}{{ topbar_icon|safe }}{% endblock %}
 {% block topbar_after %}
 {% if filter %}{% filter_chips filter request chips_skip %}{% endif %}
@@ -183,13 +183,16 @@
             {% for field in add_form %}
             <div class="form-group">
                 {% if field.field.widget.input_type == 'checkbox' %}
-                <label class="checkbox-label">{{ field }} {{ field.label }}</label>
+                {# Bei Checkboxen steht der help_text im Tooltip statt darunter – sonst zweimal dasselbe. #}
+                <div class="checkbox-row">
+                    <label class="checkbox-label">{{ field }} {{ field.label }}</label>{% if field.help_text %}{% hilfe field %}{% endif %}
+                </div>
                 {% else %}
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
                 {% endif %}
                 {% if field.errors %}<div class="invalid-feedback">{{ field.errors }}</div>{% endif %}
-                {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                {% if field.help_text and field.field.widget.input_type != 'checkbox' %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
             </div>
             {% endfor %}
             <div class="add-panel-actions">

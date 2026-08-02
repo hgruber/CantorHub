@@ -449,8 +449,22 @@ class Termin(models.Model):
     ort = models.ForeignKey("Ort", null=True, blank=True, on_delete=models.SET_NULL)
     extern = models.TextField(blank=True, null=True)
     ctag = models.IntegerField(default=0)
-    repertoire = models.BooleanField(default=False)
-    anwesenheit = models.BooleanField(default=False)
+    # Die beiden help_texts sind die einzige Quelle der Erklärungs-Tooltips:
+    # das Formular erbt sie, die Anzeigeseiten holen sie über {% hilfe %}.
+    repertoire = models.BooleanField(
+        default=False,
+        help_text="Der Termin ist ein öffentlicher Auftritt: Er erscheint auf der "
+        "öffentlichen Startseite unter „Konzerte“ und löst die Erinnerungsmails der "
+        "Auftritts-Mailingliste aus. Außerdem bekommt er auf der Terminseite die "
+        "Karte „Lieder“ für den Ablauf.",
+    )
+    anwesenheit = models.BooleanField(
+        default=False,
+        help_text="Die Mitglieder werden um Zu- oder Absage gebeten: Terminseite und "
+        "Banner zeigen die Zusage-Schaltflächen, die Rückmeldungen werden nach Stimmen "
+        "ausgewertet. Bis zur Antwort zählt der Termin in der Seitenleiste als offener "
+        "Termin.",
+    )
     mitglied = models.ManyToManyField("User", through="Zusage", related_name="termin")
 
     class Meta:

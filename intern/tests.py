@@ -1,4 +1,4 @@
-"""Tests der Auftritts-Mailingliste.
+"""Tests der Auftritts-Mailingliste und kleiner reiner Helfer.
 
 Bewusst ohne Datenbank: die Zeitlogik ist rein, ``jetzt`` wird übergeben.
 Für Termine reicht ein winziges Stellvertreter-Objekt — ``faelligkeit`` und
@@ -8,7 +8,9 @@ Für Termine reicht ein winziges Stellvertreter-Objekt — ``faelligkeit`` und
 from datetime import datetime, time, timedelta
 from types import SimpleNamespace
 
+from django.template import Context, Template
 from django.test import SimpleTestCase
+from django.utils.html import escape
 
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
 from intern.views.files import _ziel_owner
@@ -250,3 +252,45 @@ class ZielOwnerTest(SimpleTestCase):
         cache = {5: 42}
         gesperrt = SimpleNamespace(pk=5, owner_id=self.WEG)  # kein .parent
         self.assertEqual(self._ziel(gesperrt, cache), 42)
+
+
+class HilfeTagTest(SimpleTestCase):
+    """Die Erklärungstexte haben genau eine Quelle: den help_text am Model.
+
+    Schlägt an, sobald jemand einen Text ins Template kopiert — beide Wege des
+    Tags müssen denselben Text liefern.
+    """
+
+    FELDER = ("anwesenheit", "repertoire")
+
+    def _render(self, ausdruck, **kontext):
+        return Template("{% load ui_tags %}" + ausdruck).render(Context(kontext))
+
+    def _help_text(self, feld):
+        from intern.models import Termin
+
+        return str(Termin._meta.get_field(feld).help_text)
+
+    def test_texte_sind_gesetzt(self):
+        for feld in self.FELDER:
+            with self.subTest(feld=feld):
+                self.assertTrue(self._help_text(feld).strip(), feld + " ohne help_text")
+
+    def test_string_ziel_liest_den_help_text(self):
+        for feld in self.FELDER:
+            with self.subTest(feld=feld):
+                html = self._render('{%% hilfe "Termin.%s" %%}' % feld)
+                self.assertIn('data-hilfe="' + escape(self._help_text(feld)) + '"', html)
+
+    def test_bound_field_liest_denselben_text(self):
+        from intern.forms import TerminForm
+
+        form = TerminForm()
+        for feld in self.FELDER:
+            with self.subTest(feld=feld):
+                html = self._render("{%% hilfe form.%s %%}" % feld, form=form)
+                self.assertIn('data-hilfe="' + escape(self._help_text(feld)) + '"', html)
+
+    def test_icon_sendet_das_formular_nicht_ab(self):
+        # Das Icon steht in <form>-Elementen; ohne type="button" waere es ein Submit.
+        self.assertIn('type="button"', self._render('{% hilfe "Termin.repertoire" %}'))
