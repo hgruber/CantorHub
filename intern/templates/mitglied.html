@@ -109,49 +109,7 @@
             {% if visible.strasse and visible.plz and visible.ort and user.breite and user.laenge %}
             <div class="profile-section">
                 <h2>Kartenansicht</h2>
-                <div id="map" style="height: 400px; width: 100%"></div>
-                <script>
-                // Initialisiere die Karte mit den Benutzerkoordinaten
-                document.addEventListener('DOMContentLoaded', function() {
-                    // Prüfe, ob Koordinaten vorhanden sind
-                    var breite = "{{ user.breite|default:map_center_lat }}";
-                    var laenge = "{{ user.laenge|default:map_center_lng }}";
-
-                    // Sicherstellen, dass Koordinaten gültig sind
-                    if (breite && laenge) {
-                        // Konvertiere Kommazahlen in Dezimalzahlen für JavaScript
-                        var lat = parseFloat(breite.toString().replace(',', '.'));
-                        var lng = parseFloat(laenge.toString().replace(',', '.'));
-
-                        // Überprüfe, ob die Konvertierung erfolgreich war
-                        if (!isNaN(lat) && !isNaN(lng)) {
-                            // Erstelle die Karte
-                            var map = L.map('map').setView([lat, lng], 13);
-
-                            // Füge Kartenlayer hinzu
-                            L.tileLayer('/tiles/{z}/{x}/{y}.png', {
-                                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            }).addTo(map);
-
-                            // Füge einen Marker hinzu (gleiche Farbe wie auf /intern/karte/)
-                            var memberIcon = L.divIcon({
-                                className: '',
-                                html: '<div class="karte-pin" style="--pin-color:var(--brand)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>',
-                                iconSize: [28, 36], iconAnchor: [14, 36], popupAnchor: [0, -38],
-                            });
-                            L.marker([lat, lng], {icon: memberIcon}).addTo(map)
-                                .bindPopup('{{ user.first_name }} {{ user.last_name }}')
-                                .openPopup();
-                        } else {
-                            // Zeige eine Meldung an, wenn die Koordinaten nicht konvertiert werden konnten
-                            document.getElementById('map').innerHTML = '<p>Ungültige Koordinaten für diesen Benutzer.</p>';
-                        }
-                    } else {
-                        // Zeige eine Meldung an, wenn keine Koordinaten vorhanden sind
-                        document.getElementById('map').innerHTML = '<p>Keine Koordinaten für diesen Benutzer verfügbar.</p>';
-                    }
-                });
-                </script>
+                {% include "_leaflet_map.html" with lat=user.breite lng=user.laenge zoom=13 pin="mitglied" popup=user.get_full_name hoehe="400px" %}
             </div>
             {% endif %}
             <div class="profile-section">

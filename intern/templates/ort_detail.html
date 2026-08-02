@@ -53,25 +53,10 @@
         {% if ort.breite is not None and ort.laenge is not None %}
         <div class="detail-card">
             <h3>Karte</h3>
-            <div id="map" class="detail-map"></div>
+            {% include "_leaflet_map.html" with lat=ort.breite lng=ort.laenge popup=ort.name %}
         </div>
         {% endif %}
     </div>
 </div>
 
-{% if ort.breite is not None and ort.laenge is not None %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var lat = parseFloat("{{ ort.breite }}".replace(',', '.'));
-    var lng = parseFloat("{{ ort.laenge }}".replace(',', '.'));
-    if (!isNaN(lat) && !isNaN(lng)) {
-        var map = L.map('map').setView([lat, lng], 15);
-        L.tileLayer('/tiles/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-        L.marker([lat, lng]).addTo(map).bindPopup('{{ ort.name|escapejs }}').openPopup();
-    }
-});
-</script>
-{% endif %}
 {% endblock %}

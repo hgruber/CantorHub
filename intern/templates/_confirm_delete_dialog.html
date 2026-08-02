@@ -1,0 +1,24 @@
+{% comment %}
+Bestätigungsdialog vor dem Löschen eines Datensatzes. Geöffnet wird er vom
+Löschen-Knopf in `.form-actions`, der dort stehen bleibt, weil er je nach
+Seite unterschiedlich abgesichert ist (z. B. deaktiviert mit Begründung).
+
+Parameter:
+  titel       Überschrift und Bezeichnung der Aktion, z. B. "Ort löschen"
+  objekt      Name des Datensatzes, erscheint in der Rückfrage
+  action      Ziel-URL des Lösch-POSTs
+  warnungen   Optionale Liste zusätzlicher Warnzeilen (Folgelöschungen)
+  dialog_id   DOM-id (Vorgabe "delete-dialog")
+{% endcomment %}
+<dialog id="{{ dialog_id|default:'delete-dialog' }}">
+    <h3>{{ titel }}</h3>
+    <p>Möchtest du &bdquo;{{ objekt }}&ldquo; wirklich löschen?</p>
+    {% for warnung in warnungen %}
+    <p class="warn">{{ warnung }}</p>
+    {% endfor %}
+    <form method="post" action="{{ action }}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Ja, löschen</button>
+        <button type="button" class="btn btn-secondary" onclick="this.closest('dialog').close()">Abbrechen</button>
+    </form>
+</dialog>

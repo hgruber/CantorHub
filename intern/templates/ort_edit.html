@@ -64,15 +64,8 @@
     </form>
 
     {% if id and can_delete %}
-    <dialog id="delete-dialog">
-        <h3>Ort löschen</h3>
-        <p>Möchtest du &bdquo;{{ ort.name }}&ldquo; wirklich löschen?</p>
-        <form method="post" action="{% url 'ort_delete' id=id %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Ja, löschen</button>
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('delete-dialog').close()">Abbrechen</button>
-        </form>
-    </dialog>
+    {% url 'ort_delete' id=id as loeschen_url %}
+    {% include "_confirm_delete_dialog.html" with titel="Ort löschen" objekt=ort.name action=loeschen_url %}
     {% endif %}
 </div>
 {% endblock %}

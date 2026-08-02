@@ -1,0 +1,19 @@
+{% comment %}
+Karte mit einem Marker, wie sie die Detailseiten zeigen. Gerendert wird nur
+der Container; aufgebaut wird die Karte von `CantorMap.initAll()` in
+osm-map.js, das base.html ohnehin auf jeder Seite laedt.
+
+Parameter:
+  lat, lng    Koordinaten (Pflicht; Dezimalkomma ist erlaubt)
+  zoom        Zoomstufe (Vorgabe 15)
+  popup       Erste Popup-Zeile; ohne sie bekommt der Marker kein Popup
+  popup_ort   Optionaler Ort, dessen Adresse als weitere Popup-Zeilen folgt
+  pin         "ort" | "mitglied" (ohne: Leaflet-Standardmarker)
+  map_id      DOM-id (Vorgabe "map")
+  hoehe       Feste Hoehe, falls die Karte nicht in einer .detail-card sitzt
+{% endcomment %}
+<div id="{{ map_id|default:'map' }}" class="detail-map" data-osm-map
+     data-lat="{{ lat }}" data-lng="{{ lng }}" data-zoom="{{ zoom|default:15 }}"
+     {% if pin %}data-pin="{{ pin }}"{% endif %}
+     {% if hoehe %}style="height: {{ hoehe }}"{% endif %}
+     {% if popup %}data-popup="{{ popup }}{% if popup_ort.strasse %}&#10;{{ popup_ort.strasse }}{% endif %}{% if popup_ort.ort %}&#10;{{ popup_ort.plz }} {{ popup_ort.ort }}{% endif %}"{% endif %}></div>

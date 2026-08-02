@@ -135,26 +135,14 @@ document.addEventListener('DOMContentLoaded', function () {
   const members   = JSON.parse(document.getElementById('members-data').textContent);
   const standorte = JSON.parse(document.getElementById('standorte-data').textContent);
 
-  function escHtml(s) {
-    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+  const escHtml = CantorMap.esc;
 
   // ── Map init ─────────────────────────────────────────
   const map = L.map('map', { zoomControl: false }).setView(FRANKFURT, {{ map_default_zoom }});
   L.control.zoom({ position: 'bottomright' }).addTo(map);
-  L.tileLayer('/tiles/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
-  }).addTo(map);
+  CantorMap.tiles(map, { maxZoom: 19 });
 
   // ── Icons ─────────────────────────────────────────────
-  function pinIcon(color, inner) {
-    return L.divIcon({
-      className: '',
-      html: `<div class="karte-pin" style="--pin-color:${color}">${inner}</div>`,
-      iconSize: [28, 36], iconAnchor: [14, 36], popupAnchor: [0, -38],
-    });
-  }
   function dotIcon(cls) {
     return L.divIcon({
       className: '',
@@ -163,8 +151,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  const ortIcon    = pinIcon('#4b80c0', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>');
-  const memberIcon = pinIcon('var(--brand)', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>');
+  const ortIcon    = CantorMap.pin('ort');
+  const memberIcon = CantorMap.pin('mitglied');
   const liveIcon   = dotIcon('karte-live-dot');           // red   — other users
   const meIcon     = dotIcon('karte-live-dot-me');        // green — myself
 

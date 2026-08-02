@@ -57,7 +57,7 @@
         {% if termin.ort and termin.ort.breite is not None and termin.ort.laenge is not None %}
         <div class="detail-card">
             <h3>Karte</h3>
-            <div id="map" class="detail-map"></div>
+            {% include "_leaflet_map.html" with lat=termin.ort.breite lng=termin.ort.laenge popup=termin.ort.name popup_ort=termin.ort %}
         </div>
         {% endif %}
 
@@ -173,23 +173,5 @@
 
 {% if perms.intern.change_zusage and termin.anwesenheit %}
 <script defer src="{% static 'intern/js/anwesenheit.js' %}"></script>
-{% endif %}
-{% if termin.ort and termin.ort.breite is not None and termin.ort.laenge is not None %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var lat = parseFloat("{{ termin.ort.breite }}".replace(',', '.'));
-    var lng = parseFloat("{{ termin.ort.laenge }}".replace(',', '.'));
-    if (!isNaN(lat) && !isNaN(lng)) {
-        var map = L.map('map').setView([lat, lng], 15);
-        L.tileLayer('/tiles/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-        var popup = '{{ termin.ort.name|escapejs }}';
-        {% if termin.ort.strasse %}popup += '<br>{{ termin.ort.strasse|escapejs }}';{% endif %}
-        {% if termin.ort.ort %}popup += '<br>{{ termin.ort.plz|escapejs }} {{ termin.ort.ort|escapejs }}';{% endif %}
-        L.marker([lat, lng]).addTo(map).bindPopup(popup).openPopup();
-    }
-});
-</script>
 {% endif %}
 {% endblock %}

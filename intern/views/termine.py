@@ -459,14 +459,27 @@ def termin_edit(request, id):
     else:
         form = TerminForm(instance=termin)
 
+    # Was ein Loeschen mitnehmen wuerde — der Bestaetigungsdialog
+    # (_confirm_delete_dialog.html) zeigt die Zeilen unveraendert an.
+    warnungen = []
+    zusagen = Zusage.objects.filter(termin=termin).count()
+    if zusagen:
+        warnungen.append(
+            f"{zusagen} Zusage{'n werden' if zusagen != 1 else ' wird'} ebenfalls gelöscht."
+        )
+    konzerte = Konzert.objects.filter(termin=termin).count()
+    if konzerte:
+        warnungen.append(
+            f"{konzerte} Konzert{'e werden' if konzerte != 1 else ' wird'} ebenfalls gelöscht."
+        )
+
     context = {
         "form": form,
         "termin": termin,
         "seitentitel": f"bearbeiten: {termin.kurz}",
         "view": "termin_view",
         "id": id,
-        "zusagen_count": Zusage.objects.filter(termin=termin).count(),
-        "konzerte_count": Konzert.objects.filter(termin=termin).count(),
+        "loesch_warnungen": warnungen,
         "can_delete": request.user.has_perm("intern.delete_termin"),
     }
     return render(request, "termin_edit.html", context)

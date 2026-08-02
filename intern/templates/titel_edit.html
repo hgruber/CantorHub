@@ -86,15 +86,8 @@
     </form>
 
     {% if id and can_delete %}
-    <dialog id="delete-dialog">
-        <h3>Lied löschen</h3>
-        <p>Möchtest du &bdquo;{{ lied.titel }}&ldquo; wirklich löschen?</p>
-        <form method="post" action="{% url 'titel_delete' titel=id %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Ja, löschen</button>
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('delete-dialog').close()">Abbrechen</button>
-        </form>
-    </dialog>
+    {% url 'titel_delete' titel=id as loeschen_url %}
+    {% include "_confirm_delete_dialog.html" with titel="Lied löschen" objekt=lied.titel action=loeschen_url %}
     {% endif %}
 </div>
 {% endblock %}

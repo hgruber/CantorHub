@@ -161,6 +161,15 @@ Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card g
 
 **Form fields are rendered via the `{% form_field %}` inclusion tag** (`intern/templatetags/form_tags.py` → `_form_field.html`): `{% form_field form.feld "Label" %}` emits the standard `form-group` (label, widget, `invalid-feedback` errors). Options: `req=True` shows the `*` marker when the field is required (join form), `privacy=form.priv_x` appends the "verbergen" checkbox when `can_set_privacy` is in the context (member edit), `hilfe=True` renders `help_text` (opt-in so Django's default help texts, e.g. on `username`, don't leak in). Without `label` the form field's own label is used. Non-standard groups (checkbox rows, label-less textareas, the search-select Ort widget, static read-only rows) stay hand-written.
 
+**Deleting is confirmed by `_confirm_delete_dialog.html`** — one `<dialog id="delete-dialog">`
+for `ort_edit.html`, `termin_edit.html` and `titel_edit.html`: `{% include
+"_confirm_delete_dialog.html" with titel="Ort löschen" objekt=ort.name action=loeschen_url %}`
+(resolve the URL with `{% url … as loeschen_url %}` first). `warnungen` takes a list of extra
+lines naming what a delete would take with it — `termin_edit` passes `loesch_warnungen`, built
+in the view so the pluralisation stays in Python. The opening button stays in each page's
+`.form-actions`, because it is guarded differently per page (`titel_edit` renders it disabled
+with a tooltip when the song is still referenced, and then omits the dialog entirely).
+
 ### Attendance (Zusage) options
 
 `Zusage.option` values: `"1"` = Zusage, `"2"` = Absage, `"3"` = Eventuell, empty/missing = Keine Angabe. The attendance table on the termin detail page groups users by `Stimme` (S, A, T, B, C, M) and splits into two tables on mobile.
@@ -668,7 +677,25 @@ tokens only, no hex values. Form fields, labels, buttons, error boxes (`.error`,
 
 The only page deliberately left light-only is the public homepage — see below.
 
-Map pages use Leaflet. `intern/static/intern/js/osm-map.js` patches `L.TileLayer.prototype.createTile` to set `referrerPolicy = "origin"` — OpenStreetMap's tile servers reject requests without a `Referer` header. It is loaded once in `base.html` (right after Leaflet) so every map on the site is covered; the per-page map-init scripts must not re-add this patch.
+Map pages use Leaflet, and everything they share lives in
+`intern/static/intern/js/osm-map.js`, loaded once in `base.html` right after Leaflet:
+
+- It patches `L.TileLayer.prototype.createTile` to set `referrerPolicy = "origin"` —
+  OpenStreetMap's tile servers reject requests without a `Referer` header. Per-page
+  map code must not re-add this patch.
+- `window.CantorMap` holds the pieces every map needs: `tiles(map, opts)` (the
+  `/tiles/…` layer plus attribution — never call `L.tileLayer` directly, or a server
+  change misses one map), `pin("ort"|"mitglied")` (the `.karte-pin` divIcons, colour
+  and SVG defined once), `esc(s)`, and `init(el)`/`initAll()`.
+- **Detail-page maps are declarative.** `{% include "_leaflet_map.html" with lat=… lng=…
+  popup=… %}` renders only a `[data-osm-map]` container; `initAll()` builds the map from
+  its data attributes on load. Parameters: `lat`, `lng`, `zoom` (default 15), `popup`
+  (first line), `popup_ort` (an `Ort` whose address is appended as further lines), `pin`,
+  `map_id`, `hoehe`. Popup text travels as plain text with `&#10;` line breaks and is
+  escaped in JS — no `escapejs` in a template, no HTML from the DB. Used by
+  `ort_detail.html`, `termin.html` and `mitglied.html`.
+- `karte.html` keeps its own init (layer groups, live locations, search) but takes the
+  tile layer and both pin icons from `CantorMap`.
 
 ### Public homepage (`templates/index.html`, `intern/static/intern/css/main.css`)
 
