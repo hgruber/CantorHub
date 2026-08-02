@@ -178,13 +178,11 @@
         if (opt) changes.push({ person_id: Number(chip.dataset.uid), option: opt });
       });
       if (!changes.length) return;
-      const csrfEl = section.querySelector("[name=csrfmiddlewaretoken]");
-      const csrf = csrfEl ? csrfEl.value : "";
       saveBtn.disabled = true;
       try {
         const resp = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+          headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrfToken() },
           body: JSON.stringify({ changes }),
         });
         if (!resp.ok) throw new Error("save failed");

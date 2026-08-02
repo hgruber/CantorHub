@@ -452,16 +452,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const order = [...konzertList.querySelectorAll(".split-item")].map(
         (item) => item.dataset.id,
       );
-      const csrfTokenElement = document.querySelector(
-        "[name=csrfmiddlewaretoken]",
-      );
-      const csrfToken = csrfTokenElement ? csrfTokenElement.value : "";
-
       fetch("/intern/update-order/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
+          "X-CSRFToken": getCsrfToken(),
         },
         body: JSON.stringify({ order: order, konzert_id: konzertId }),
       });
@@ -1008,14 +1003,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function uploadFilesToFolder(files, targetPk) {
-      const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
       const promises = [...files].map((file) => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("folder_id", targetPk);
         return fetch("/intern/upload/", {
           method: "POST",
-          headers: { "X-CSRFToken": csrfToken },
+          headers: { "X-CSRFToken": getCsrfToken() },
           body: formData,
         });
       });
@@ -1058,11 +1052,6 @@ document.addEventListener("DOMContentLoaded", function () {
       entpacken:   `<svg ${S}><path d="M21 8v13H3V8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`,
       loeschen:    `<svg ${S}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
     };
-
-    function csrfToken() {
-      const el = document.querySelector("[name=csrfmiddlewaretoken]");
-      return el ? el.value : "";
-    }
 
     function rowFrom(target) {
       const tr = target.closest("tr");
@@ -1186,7 +1175,7 @@ document.addEventListener("DOMContentLoaded", function () {
       f.method = "POST";
       f.action = "/intern/file/" + id + "/entpacken/";
       const tok = document.createElement("input");
-      tok.type = "hidden"; tok.name = "csrfmiddlewaretoken"; tok.value = csrfToken();
+      tok.type = "hidden"; tok.name = "csrfmiddlewaretoken"; tok.value = getCsrfToken();
       f.appendChild(tok);
       document.body.appendChild(f);
       f.submit();
@@ -1255,7 +1244,7 @@ document.addEventListener("DOMContentLoaded", function () {
             method: "POST",
             headers: {
               "Content-Type": "application/x-www-form-urlencoded",
-              "X-CSRFToken": csrfToken(),
+              "X-CSRFToken": getCsrfToken(),
             },
             body: new URLSearchParams(felder).toString(),
           });

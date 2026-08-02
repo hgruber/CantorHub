@@ -635,6 +635,15 @@ All colors use CSS custom properties defined in `:root` (light mode). Dark mode 
 
 When adding new colors, always use CSS variables and add dark-mode values to `[data-theme="dark"]`. Avoid hardcoded hex colors in component styles.
 
+**Status ("Ampel") colours** — the green/yellow/red used by the attendance badges
+(`.att-count-*`, `.att-inline-*`) and the Zusage widgets (`.zusage-state-*`,
+`.zusage-btn-*`) come from one token family: `--status-{success,warning,danger}-{bg,text,border,solid}`.
+`bg`/`text`/`border` are the soft surface, `solid` the strong fill used on hover/active;
+the dark-mode block redefines the first three, so those components need **no**
+`[data-theme="dark"]` rules of their own — only the neutral "keine Angabe" state does.
+Destructive buttons use `--error-solid` / `--error-solid-hover`; do **not** reach for
+`--error-bg` there, that is a pale surface colour and carries no white text.
+
 **Theme boot script.** The inline `<script>` that sets `data-theme` before paint lives in
 exactly one place: `intern/templates/_theme_boot.html`. Every standalone page includes it
 right after its `intern.css` link and before any visible markup — `base.html`,

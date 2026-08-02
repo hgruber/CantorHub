@@ -25,7 +25,7 @@
     if (toggleBtn) {
         updateToggleUI();
         toggleBtn.addEventListener("click", function () {
-            fetch("/intern/notify/toggle/", { method: "POST", headers: { "X-CSRFToken": getCSRF() } })
+            fetch("/intern/notify/toggle/", { method: "POST", headers: { "X-CSRFToken": getCsrfToken() } })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     notifyEnabled = data.notify_enabled;
@@ -36,11 +36,6 @@
                 })
                 .catch(function () {});
         });
-    }
-
-    function getCSRF() {
-        var m = document.cookie.match(/csrftoken=([^;]+)/);
-        return m ? m[1] : "";
     }
 
     function updateToggleUI() {
