@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_js %}<script src="{% static 'intern/js/berechtigungen.js' %}" defer></script>{% endblock %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>{% endblock %}
 {% block content %}
 <div class="detail-page">
@@ -29,15 +31,9 @@
                            onchange="toggleGroups('read', this.value)">
                     Nur bestimmte Gruppen
                 </label>
-                <div id="read-groups" class="group-checkboxes"
+                <div id="read-groups" class="gruppen-auswahl"
                      {% if not read_restricted %}hidden{% endif %}>
-                    {% for group in groups %}
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="read_groups" value="{{ group.id }}"
-                               {% if group.id in read_group_ids %}checked{% endif %}>
-                        {{ group.name }}
-                    </label>
-                    {% endfor %}
+                    {% include "_chip_multiselect.html" with name="read_groups" eintraege=read_eintraege auswahl_label="Berechtigte Gruppen" vorrat_label="Verfügbare Gruppen" such_platzhalter="Gruppe suchen …" leer_text="Keine Gruppe gewählt" %}
                 </div>
                 <div id="read-members" class="members-chips" hidden></div>
             </div>
@@ -56,15 +52,9 @@
                            onchange="toggleGroups('edit', this.value)">
                     Nur bestimmte Gruppen
                 </label>
-                <div id="edit-groups" class="group-checkboxes"
+                <div id="edit-groups" class="gruppen-auswahl"
                      {% if not edit_restricted %}hidden{% endif %}>
-                    {% for group in groups %}
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="edit_groups" value="{{ group.id }}"
-                               {% if group.id in edit_group_ids %}checked{% endif %}>
-                        {{ group.name }}
-                    </label>
-                    {% endfor %}
+                    {% include "_chip_multiselect.html" with name="edit_groups" eintraege=edit_eintraege auswahl_label="Bearbeitungsberechtigte Gruppen" vorrat_label="Verfügbare Gruppen" such_platzhalter="Gruppe suchen …" leer_text="Keine Gruppe gewählt" %}
                 </div>
                 <div id="edit-members" class="members-chips" hidden></div>
             </div>
@@ -77,89 +67,5 @@
     </form>
 </div>
 
-<style>
-.detail-card .radio-label,
-.detail-card .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0;
-    cursor: pointer;
-    color: var(--t2);
-    font-size: 14px;
-}
-.detail-card .group-checkboxes {
-    margin-top: 0.5rem;
-    padding-left: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    border-top: 1px solid var(--bg-row-hover);
-    padding-top: 0.5rem;
-}
-.detail-card .group-checkboxes[hidden] { display: none; }
-.members-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-    margin-top: 0.5rem;
-}
-.members-chips[hidden] { display: none; }
-.member-chip {
-    background: var(--bg-row-hover);
-    color: var(--t2);
-    border-radius: 99px;
-    padding: 0.125rem 0.625rem;
-    font-size: 12px;
-    white-space: nowrap;
-}
-</style>
-
 {{ group_members|json_script:"group-members" }}
-
-<script>
-var groupMembers = JSON.parse(document.getElementById('group-members').textContent);
-
-function toggleGroups(section, value) {
-    var el = document.getElementById(section + '-groups');
-    if (!el) return;
-    if (value === 'restricted') {
-        el.removeAttribute('hidden');
-    } else {
-        el.setAttribute('hidden', '');
-    }
-    updateChips(section, value === 'restricted');
-}
-
-function updateChips(section, show) {
-    var chips = document.getElementById(section + '-members');
-    if (!chips) return;
-    chips.innerHTML = '';
-    if (!show) { chips.setAttribute('hidden', ''); return; }
-    var groupsEl = document.getElementById(section + '-groups');
-    var checked = groupsEl.querySelectorAll('input[type=checkbox]:checked');
-    var names = new Set();
-    checked.forEach(function(cb) {
-        (groupMembers[cb.value] || []).forEach(function(n) { names.add(n); });
-    });
-    if (names.size === 0) { chips.setAttribute('hidden', ''); return; }
-    chips.removeAttribute('hidden');
-    Array.from(names).sort().forEach(function(name) {
-        var span = document.createElement('span');
-        span.className = 'member-chip';
-        span.textContent = name;
-        chips.appendChild(span);
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('[id$="-groups"]').forEach(function(groupsEl) {
-        var section = groupsEl.id.replace('-groups', '');
-        updateChips(section, !groupsEl.hasAttribute('hidden'));
-        groupsEl.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
-            cb.addEventListener('change', function() { updateChips(section, true); });
-        });
-    });
-});
-</script>
 {% endblock %}

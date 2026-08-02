@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from filer.models import Folder
 
 from ..models import ChangeLog, FolderPermission, User
+from ._auswahl import chip_eintraege
 from ._decorators import perm_or_home
 from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
@@ -155,9 +156,9 @@ def folder_permissions(request, pk):
         "read_restricted":   read_restricted,
         "write_restricted":  write_restricted,
         "delete_restricted": delete_restricted,
-        "read_group_ids":    read_group_ids,
-        "write_group_ids":   write_group_ids,
-        "delete_group_ids":  delete_group_ids,
+        "read_eintraege":    chip_eintraege(groups, read_group_ids),
+        "write_eintraege":   chip_eintraege(groups, write_group_ids),
+        "delete_eintraege":  chip_eintraege(groups, delete_group_ids),
         "group_members":     group_members,
         "up_url": reverse("folder_view", args=[folder.pk]),
         "id": folder.pk,

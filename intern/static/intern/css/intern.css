@@ -6899,3 +6899,55 @@ body.join-page {
 .chip-ms-pick:hover {
     background: var(--bg-row-hover);
 }
+
+/* =================================================== */
+/* Gruppen-Berechtigungen                              */
+/* =================================================== */
+/* Gemeinsam von folder_berechtigungen, artikel_berechtigungen und
+   forum_zugriff genutzt; Verhalten in berechtigungen.js. */
+
+.detail-card .radio-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    cursor: pointer;
+    color: var(--t2);
+    font-size: 14px;
+}
+
+.detail-card .gruppen-auswahl {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--bg-row-hover);
+}
+
+.detail-card .gruppen-auswahl[hidden] {
+    display: none;
+}
+
+.members-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+}
+
+.members-chips[hidden] {
+    display: none;
+}
+
+.member-chip {
+    padding: 0.125rem 0.625rem;
+    border-radius: 99px;
+    background: var(--bg-row-hover);
+    color: var(--t2);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.detail-hint {
+    margin-top: 0.75rem;
+    font-size: 12px;
+    color: var(--t3);
+}

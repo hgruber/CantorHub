@@ -16,6 +16,7 @@ from intern.replacements import apply_replacements
 
 from ..models import Artikel, ArtikelPermission
 from ..tables import ArtikelTabelle
+from ._auswahl import chip_eintraege
 from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
 __all__ = [
@@ -407,8 +408,8 @@ def article_permissions(request, name):
         "groups": groups,
         "read_restricted": read_restricted,
         "edit_restricted": edit_restricted,
-        "read_group_ids": read_group_ids,
-        "edit_group_ids": edit_group_ids,
+        "read_eintraege": chip_eintraege(groups, read_group_ids),
+        "edit_eintraege": chip_eintraege(groups, edit_group_ids),
         "group_members": group_members,
         "up": "article_list",
         "id": name,

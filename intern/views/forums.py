@@ -20,6 +20,7 @@ from intern.app_settings import get_config, get_from_email, is_ejabberd_configur
 from ..forms import ForumEditForm
 from ..models import ChangeLog, Forum, ForumPermission, Mitteilung, Reaktion, User
 from ..tables import ForumTabelle
+from ._auswahl import chip_eintraege
 
 __all__ = [
     "forum_list",
@@ -614,7 +615,7 @@ def forum_permissions(request, forum):
         "forum_obj": forum_obj,
         "groups": groups,
         "read_restricted": read_restricted,
-        "read_group_ids": existing_group_ids,
+        "read_eintraege": chip_eintraege(groups, existing_group_ids),
         "group_members": group_members,
         "up": "forum_list",
         "id": forum,
