@@ -49,6 +49,7 @@ urlpatterns = [
     path("ordner/<int:pk>/berechtigungen/", views.folder_permissions, name="folder_permissions"),
     path("ordner/<int:pk>/neu/", views.folder_create, name="folder_create"),
     path("ordner/<int:pk>/zip/", views.folder_zip_download, name="folder_zip"),
+    path("ordner/<int:pk>/playlist/", views.folder_playlist, name="folder_playlist"),
     path("ordner/zip-auswahl/", views.folder_zip_selection, name="folder_zip_selection"),
     path("ordner/loeschen/", views.folder_delete, name="folder_delete"),
     path("ordner/verschieben/", views.folder_move, name="folder_move"),

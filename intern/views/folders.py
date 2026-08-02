@@ -43,6 +43,7 @@ from .files import datei_umbenennen, verknuepfte_dateien, versionen_loeschen
 
 __all__ = [
     "folder_view",
+    "folder_playlist",
     "folder_create",
     "folder_delete",
     "folder_move",
@@ -413,6 +414,40 @@ def _ist_audio(record):
     return name.endswith(_AUDIO_ENDUNGEN)
 
 
+def _audio_filter():
+    """Dasselbe Kriterium wie `_ist_audio()`, nur als Q für die Datenbank.
+
+    Die beiden müssen dieselbe Menge treffen — sonst zählt die Ordnerzeile
+    Dateien, die die Playlist danach nicht enthält. Sie stehen deshalb
+    nebeneinander und lesen beide `_AUDIO_ENDUNGEN`. Auch die Rangfolge der
+    Namensfelder muss stimmen: `_ist_audio()` sieht `name` nur an, wenn
+    `original_filename` leer ist (es darf auch NULL sein)."""
+    ohne_original = Q(original_filename__isnull=True) | Q(original_filename="")
+    q = Q(mime_type__startswith="audio/")
+    for endung in _AUDIO_ENDUNGEN:
+        q |= Q(original_filename__iendswith=endung) | (
+            ohne_original & Q(name__iendswith=endung)
+        )
+    return q
+
+
+def _playlist_eintraege(records, ordnername):
+    """Die Audios aus `records` als Warteschlange, wie der Mini-Player sie liest.
+
+    `records` sind `values()`-Dicts mit `link`, `name`, `original_filename` und
+    `mime` — dieselbe Form, die `folder_view` ohnehin baut."""
+    return [
+        {
+            "url": f"/media/{r['link']}",
+            "title": r.get("original_filename") or r.get("name") or "",
+            "type": ordnername,
+            "composer": "",
+        }
+        for r in records
+        if r.get("link") and _ist_audio(r)
+    ]
+
+
 @login_required
 def folder_view(request, pk):
     from .files import _get_file_extension
@@ -576,6 +611,23 @@ def folder_view(request, pk):
     for record in folder_up:
         record["groesse"] = None
 
+    # Womit das Kontextmenü einer Ordnerzeile etwas anfangen kann. Anders als
+    # Größe und Elementzahl oben zählt das nur die direkt enthaltenen Dateien —
+    # so weit reicht auch, was „alle abspielen"/„als Galerie" dann liefert.
+    medien = {
+        r["folder_id"]: r
+        for r in File.objects.filter(folder_id__in=[r["id"] for r in folders_list])
+        .values("folder_id")
+        .annotate(
+            audios=Count("id", filter=_audio_filter()),
+            bilder=Count("id", filter=Q(mime_type__startswith="image/")),
+        )
+    }
+    for record in folders_list:
+        zaehler = medien.get(record["id"])
+        record["audios"] = zaehler["audios"] if zaehler else 0
+        record["bilder"] = zaehler["bilder"] if zaehler else 0
+
     # Sort the full datasets before pagination so ordering is correct across pages.
     # Folders always come first; the sort key is applied within each group separately.
     _ALLOWED_SORT_FIELDS = {"name", "besitzer", "created", "modified", "size", "type"}
@@ -600,16 +652,7 @@ def folder_view(request, pk):
     # Die Ordner-Playlist umfasst den ganzen Ordner, nicht nur die geladene
     # Seite — nach dem Sortieren gebaut, damit „der Reihe nach" die angezeigte
     # Reihenfolge ist.
-    ordner_playlist = [
-        {
-            "url": f"/media/{r['link']}",
-            "title": r.get("original_filename") or r.get("name") or "",
-            "type": name,
-            "composer": "",
-        }
-        for r in files_list
-        if r.get("ist_audio") and r.get("link")
-    ]
+    ordner_playlist = _playlist_eintraege(files_list, name)
 
     # Paginate folders + files; folder_up (..) is fixed and always shown on offset=0
     paginatable = folders_list + files_list
@@ -662,9 +705,39 @@ def folder_view(request, pk):
             "next_offset": offset + _FOLDER_PAGE_SIZE,
             "permissions_url": permissions_url,
             "gallery_url": gallery_url,
-            "ordner_playlist": ordner_playlist,
+            # Der geöffnete Ordner hat keine eigene Zeile und damit kein
+            # Kontextmenü — für ihn übernimmt das Play-Menü der Topbar, das
+            # seine Liste wie /intern/titel/ aus `playlists-data` holt.
+            "play_menu": bool(ordner_playlist),
+            "ordner_playlist_count": len(ordner_playlist),
+            "playlists": {"ordner": ordner_playlist} if ordner_playlist else None,
         },
     )
+
+
+@login_required
+def folder_playlist(request, pk):
+    """Die Audios eines Ordners als Warteschlange für den Mini-Player.
+
+    Das Kontextmenü einer Ordnerzeile holt sie erst beim Klick — die Playlists
+    aller sichtbaren Unterordner mitzurendern, blähte die Ordneransicht auf.
+    Wie `gallerie_view` betrifft das nur die direkt enthaltenen Dateien, und die
+    Reihenfolge ist die der unsortierten Ordneransicht (nach Name)."""
+    folder = get_object_or_404(Folder, pk=pk)
+    if not is_folder_visible(request.user, folder):
+        raise Http404
+    can_read, _, _ = folder_access(request.user, folder)
+    if not can_read:
+        raise Http404
+
+    records = File.objects.filter(folder=folder).values(
+        "name",
+        "original_filename",
+        link=F("file"),
+        mime=F("mime_type"),
+    )
+    geordnet = sorted(records, key=lambda r: (r.get("name") is None, r.get("name") or ""))
+    return JsonResponse({"items": _playlist_eintraege(geordnet, folder.name)})
 
 
 @login_required

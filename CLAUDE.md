@@ -510,27 +510,44 @@ handling) are recorded in `datenschutz.md`.
 ### File management
 
 **The folder browser's row context menu** (`initRowContextMenu` in `intern.js`, right-click
-or 500 ms long-press) mixes three kinds of entries, separated by rules: what applies to the
-clicked file, the management actions (rename/move/link/duplicate/unzip/delete), and what
-applies to the whole folder. It builds them from data the server put on the page, so it
-never has to ask what a file is:
+or 500 ms long-press) groups its entries by *what they act on*, separated by rules. An
+action over every file in a folder belongs to the folder, not to whichever file happened to
+be right-clicked, so the two scopes never share a row:
 
-- Row attributes (`OrdnerTabelle.Meta.row_attrs`): `data-url` (the `/media/…` path),
-  `data-audio` (playable → „Abspielen", a one-track queue) and `data-versionen` (a
-  `DateiVersion` row exists → „Frühere Versionen", links to `datei_view`).
-- Folder-wide: `#ordner-playlist-data` (a `json_script` of every audio file in the folder,
-  in the current sort order → play in order or shuffled) and `data-galerie-url` on
-  `.table-view` — the same URL as the gallery button in the topbar.
-- Both folder-wide entries render only when the folder actually has audio / images, and the
-  playlist covers the **whole** folder, not just the loaded page (it is built from
-  `files_list` before pagination).
+- **On a file row** — `data-url` (the `/media/…` path) plus `data-audio` → „Abspielen" (a
+  one-track queue), and `data-versionen` (a `DateiVersion` row exists) → „Frühere
+  Versionen", linking to `datei_view`.
+- **On a folder row** — `data-audios` / `data-bilder` carry how many audio files and images
+  lie **directly** in that folder, so an entry only appears when there is something to do:
+  play them in order, play them shuffled, or open `gallerie_view`.
+- **For the folder currently open** there is no row, so the topbar takes over: the gallery
+  button (`gallery_url`) was already there, and `folder_view` now also fills the generic
+  play menu in `base.html` (`play_menu`, `ordner_playlist_count`, and `playlists` under the
+  key `ordner`). That menu's handler already reads `data-playlist-type` + `data-shuffle`
+  and pulls its queue from `#playlists-data` — the same path `/intern/titel/` uses, so no
+  new JS was needed. This one queue *is* embedded, because it is a single known folder and
+  it must cover the **whole** folder rather than the loaded page (built from `files_list`
+  after sorting, before pagination).
 
-Playback goes through `window.startPlayQueue(items, shuffle)`, the mini-player's queue
-entry point — the same `playQueue()` that `startPlaylist`/`startPlaylistType` use on
-`/intern/titel/`. `_ist_audio()` in `views/folders.py` decides what is playable: MIME type
-first, a filename-extension list as the fallback for uploads filer typed as
-`application/octet-stream`. The search branch of `folder_view` sets neither flag, and it
-renders no `#Action` panel either, so it has no context menu at all.
+A folder row's playlist is fetched on click from `folder_playlist`
+(`/intern/ordner/<pk>/playlist/`) instead of being embedded — rendering the playlist of
+every visible subfolder would bloat the listing. It guards access exactly like
+`gallerie_view` (`is_folder_visible` **and** `folder_access`, else 404).
+
+Scope is deliberately **not** recursive anywhere here, matching `gallerie_view` — unlike the
+size and item counts in the same table, which do walk the subtree. Playback goes through
+`window.startPlayQueue(items, shuffle)`, the mini-player's queue entry point, i.e. the same
+`playQueue()` behind `startPlaylist`/`startPlaylistType`.
+
+What counts as playable is decided twice and must stay in sync: `_ist_audio()` (Python, for
+records already in memory) and `_audio_filter()` (the same rule as a `Q` for the row
+counts). Both read `_AUDIO_ENDUNGEN` — MIME type first, filename extensions as the fallback
+for uploads filer typed as `application/octet-stream` — and both honour the same field
+precedence, `original_filename` before `name` (which may be NULL). If they drift, a folder
+row promises a count its playlist then does not deliver.
+
+The search branch of `folder_view` sets none of these and renders no `#Action` panel either,
+so it has no context menu at all.
 
 Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. `FOLDER_AVATARE = 1`, `FOLDER_MUSIK = 5`). The `import_files` management command imports avatars from the `Avatare/` directory into filer on first setup. `intern` overrides the filer-built-in `import_files` command (`intern/management/commands/import_files.py`) to set `_migrating.active = True` during the import, suppressing per-file index/thumbnail threads — otherwise importing a large directory would exhaust MySQL's connection limit. Indexing and thumbnailing are handled by the subsequent batch jobs instead.
 

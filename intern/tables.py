@@ -193,6 +193,11 @@ class OrdnerTabelle(tables.Table):
             ),
             "data-audio": lambda record: "1" if record.get("ist_audio") else "",
             "data-versionen": lambda record: "1" if record.get("hat_versionen") else "",
+            # Nur auf Ordnerzeilen belegt: wie viele Audios bzw. Bilder direkt
+            # darin liegen. Das Kontextmenü bietet die ordnerweiten Aktionen nur
+            # an, wenn es dafür etwas zu tun gibt.
+            "data-audios": lambda record: record.get("audios") or "",
+            "data-bilder": lambda record: record.get("bilder") or "",
         }
 
 

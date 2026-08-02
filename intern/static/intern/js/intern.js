@@ -1062,14 +1062,19 @@ document.addEventListener("DOMContentLoaded", function () {
       historie:    `<svg ${S}><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><polyline points="12 7 12 12 15 14"/></svg>`,
     };
 
-    // Ordnerweite Einträge: die Galerie-URL rendert table.html nur, wenn der
-    // Ordner Bilder enthält, die Playlist nur, wenn er Audios enthält.
-    const tableView = tbody.closest(".table-view");
-    const galerieUrl = (tableView && tableView.dataset.galerieUrl) || "";
-    function ordnerPlaylist() {
-      const el = document.getElementById("ordner-playlist-data");
-      if (!el) return [];
-      try { return JSON.parse(el.textContent) || []; } catch (_) { return []; }
+    // Die Playlist eines Ordners wird erst beim Klick geholt — sie für jeden
+    // sichtbaren Unterordner mitzurendern, blähte die Seite unnötig auf.
+    async function ordnerAbspielen(id, shuffle) {
+      try {
+        const res = await fetch("/intern/ordner/" + id + "/playlist/", {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        if (!res.ok) { alert("Playlist konnte nicht geladen werden."); return; }
+        const data = await res.json();
+        if (window.startPlayQueue) window.startPlayQueue(data.items || [], shuffle);
+      } catch (err) {
+        alert("Netzwerkfehler beim Laden der Playlist.");
+      }
     }
 
     function rowFrom(target) {
@@ -1151,16 +1156,22 @@ document.addEventListener("DOMContentLoaded", function () {
           above.push({ label: "Entpacken", icon: ICON.entpacken, action: () => submitUnzip(id) });
         }
       }
-      const liste = ordnerPlaylist();
-      if (liste.length) {
-        ordner.push({ label: `Alle ${liste.length} Audios abspielen`, icon: ICON.abspielen,
-                      action: () => { if (window.startPlayQueue) window.startPlayQueue(liste, false); }});
-        ordner.push({ label: "Alle Audios zufällig abspielen", icon: ICON.zufall,
-                      action: () => { if (window.startPlayQueue) window.startPlayQueue(liste, true); }});
-      }
-      if (galerieUrl) {
-        ordner.push({ label: "Bilder als Galerie anzeigen", icon: ICON.galerie,
-                      action: () => { window.location.href = galerieUrl; }});
+      // Was den ganzen Ordner betrifft, hängt am Ordner — nicht an einer Datei
+      // darin. Der geöffnete Ordner hat keine eigene Zeile; für ihn sind die
+      // beiden Knöpfe in der Topbar zuständig.
+      if (type === "Folder") {
+        const audios = parseInt(tr.dataset.audios, 10) || 0;
+        const bilder = parseInt(tr.dataset.bilder, 10) || 0;
+        if (audios) {
+          ordner.push({ label: `Alle ${audios} Audios abspielen`, icon: ICON.abspielen,
+                        action: () => ordnerAbspielen(id, false) });
+          ordner.push({ label: `Alle ${audios} Audios zufällig abspielen`, icon: ICON.zufall,
+                        action: () => ordnerAbspielen(id, true) });
+        }
+        if (bilder) {
+          ordner.push({ label: `Alle ${bilder} Bilder als Galerie anzeigen`, icon: ICON.galerie,
+                        action: () => { window.location.href = "/intern/gallerie/" + id + "/"; }});
+        }
       }
 
       if (canDelete) {
