@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_js %}<script src="{% static 'intern/js/konfiguration.js' %}" defer></script>{% endblock %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>{% endblock %}
 {% block topbar_actions_extra %}
 <button type="button" id="add-konfig-btn" title="Neue Konfiguration anlegen">
@@ -8,247 +10,46 @@
 </button>
 {% endblock %}
 {% block content %}
-<style>
-.konfig-wrap {
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
-    background: var(--bg-card);
-    padding-bottom: 80px;
-}
-.konfig-table {
-    border-collapse: collapse;
-    width: 100%;
-    font-size: 13px;
-    font-family: var(--font);
-    background: var(--bg-card);
-}
-.konfig-table thead th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: var(--bg-thead);
-    padding: 10px 16px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--t3);
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-}
-.konfig-col-key   { min-width: 180px; width: 18%; }
-.konfig-col-value { min-width: 200px; width: 28%; }
-.konfig-col-desc  { min-width: 200px; }
-.konfig-col-del   { width: 44px; text-align: center; }
-
-.konfig-row { cursor: pointer; }
-.konfig-row[data-editing],
-.konfig-row.to-delete { cursor: default; }
-.konfig-row.to-delete { opacity: 0.45; }
-
-.konfig-row td {
-    padding: 8px 16px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-}
-.konfig-row:last-child td { border-bottom: none; }
-.konfig-row:not([data-editing]):not(.to-delete):hover td { background: var(--bg-row-hover); }
-
-/* Display / edit toggle */
-.konfig-input-wrap { display: none; }
-.konfig-edit-key {
-    display: none;
-    font-size: 12px;
-    font-family: monospace;
-    font-weight: 600;
-    color: var(--t3);
-}
-.konfig-row[data-editing] .konfig-display { display: none; }
-.konfig-row[data-editing] .konfig-input-wrap { display: block; }
-.konfig-row[data-editing] .konfig-edit-key { display: block; }
-
-/* Display spans */
-.konfig-display {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--t1);
-}
-.konfig-col-key .konfig-display {
-    font-size: 12px;
-    font-family: monospace;
-    font-weight: 600;
-}
-.konfig-col-value .konfig-display {
-    white-space: pre-wrap;
-    overflow: visible;
-    text-overflow: unset;
-    word-break: break-word;
-}
-.konfig-col-desc .konfig-display {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
-    word-break: break-word;
-}
-.konfig-row.to-delete .konfig-display { text-decoration: line-through; }
-
-/* Inputs */
-.konfig-table .inline-input {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 5px 9px;
-    border: 1px solid var(--border-dark);
-    border-radius: 5px;
-    background: var(--bg-card);
-    color: var(--t1);
-    font-size: 13px;
-    font-family: var(--font);
-    resize: none;
-    min-height: 32px;
-    line-height: 1.45;
-    transition: border-color var(--ease), box-shadow var(--ease);
-}
-.konfig-table .inline-input:focus {
-    outline: none;
-    border-color: var(--brand);
-    box-shadow: 0 0 0 2px var(--brand-light);
-}
-.konfig-table textarea.inline-input { overflow: hidden; }
-
-/* Delete / cancel button */
-.konfig-del-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--t4);
-    padding: 4px;
-    border-radius: 4px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    transition: color var(--ease), background var(--ease);
-}
-.konfig-del-btn:hover { color: #dc2626; background: rgba(220, 38, 38, 0.08); }
-.konfig-row[data-editing] .konfig-del-btn,
-.konfig-row.to-delete .konfig-del-btn { display: inline-flex; }
-
-/* Markup-Hilfe für MAIL_*-Texte */
-.konfig-mailhelp {
-    position: fixed;
-    bottom: 0;
-    left: var(--sb-width);
-    right: 0;
-    z-index: 99;
-    display: none;
-    flex-wrap: wrap;
-    gap: 6px 14px;
-    align-items: center;
-    padding: 10px 28px;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom));
-    background: var(--bg-card);
-    border-top: 1px solid var(--border);
-    font-size: 12px;
-    color: var(--t3);
-    transition: bottom 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.konfig-mailhelp.visible { display: flex; }
-.konfig-mailhelp.shifted { bottom: 61px; }
-.konfig-mailhelp code {
-    font-family: monospace;
-    font-size: 11px;
-    background: var(--bg-thead);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 1px 5px;
-    color: var(--t1);
-}
-.konfig-mailhelp .konfig-mailhelp-title {
-    font-weight: 700;
-    color: var(--brand);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 11px;
-}
-
-/* Apply bar */
-.konfig-apply-bar {
-    position: fixed;
-    bottom: 0;
-    left: var(--sb-width);
-    right: 0;
-    padding: 14px 28px;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom));
-    background: var(--bg-card);
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 16px;
-    transform: translateY(100%);
-    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 100;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
-}
-.konfig-apply-bar.visible { transform: translateY(0); }
-.konfig-change-summary { font-size: 13px; color: var(--t3); }
-
-[data-theme="dark"] .konfig-table .inline-input {
-    background: var(--bg-page);
-    border-color: rgba(255, 255, 255, 0.12);
-}
-[data-theme="dark"] .konfig-apply-bar { box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.35); }
-
-@media (max-width: 768px) {
-    .konfig-apply-bar { left: 0; }
-    .konfig-mailhelp { left: 0; }
-}
-</style>
-
-<div class="table-view">
-    <div class="konfig-wrap">
-        <table class="konfig-table">
-            <thead>
-                <tr>
-                    <th class="konfig-col-key">Schlüssel</th>
-                    <th class="konfig-col-value">Wert</th>
-                    <th class="konfig-col-desc">Beschreibung</th>
-                    <th class="konfig-col-del"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in rows %}
-                <tr class="konfig-row" data-id="{{ row.id }}">
-                    <td class="konfig-col-key">
-                        <span class="konfig-display">{{ row.key }}</span>
-                        <span class="konfig-edit-key">{{ row.key }}</span>
-                    </td>
-                    <td class="konfig-col-value">
-                        <span class="konfig-display">{{ row.value }}</span>
-                        <span class="konfig-input-wrap">
-                            <textarea class="inline-input konfig-value-input" rows="1">{{ row.value }}</textarea>
-                        </span>
-                    </td>
-                    <td class="konfig-col-desc">
-                        <span class="konfig-display">{{ row.description }}</span>
-                        <span class="konfig-input-wrap">
-                            <input type="text" class="inline-input konfig-desc-input" maxlength="256" value="{{ row.description }}">
-                        </span>
-                    </td>
-                    <td class="konfig-col-del">
-                        <button type="button" class="konfig-del-btn" title="Löschen">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="kf-page">
+    <div class="kf-suche" hidden>
+        <input type="search" id="kf-suchfeld" placeholder="Konfiguration durchsuchen …" autocomplete="off">
     </div>
+
+    <div class="kf-neu" id="kf-neu" hidden></div>
+
+    {% for gruppe in gruppen %}
+    <details class="kf-gruppe" id="kf-g-{{ gruppe.id }}">
+        <summary>
+            <span class="kf-gruppen-titel">{{ gruppe.titel }}</span>
+            <span class="kf-gruppen-count">{{ gruppe.eintraege|length }}</span>
+            <span class="kf-gruppen-hinweis">{{ gruppe.hinweis }}</span>
+        </summary>
+        <div class="kf-gruppe-body">
+            {% for eintrag in gruppe.eintraege %}
+            <div class="kf-eintrag" data-id="{{ eintrag.id }}" data-key="{{ eintrag.key }}">
+                <div class="kf-key">
+                    <code>{{ eintrag.key }}</code>
+                    <button type="button" class="kf-del-btn" title="Löschen" aria-label="Löschen">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                </div>
+                <div class="kf-wert">
+                    <textarea class="inline-input kf-value-input" rows="1">{{ eintrag.value }}</textarea>
+                </div>
+                <div class="kf-desc">
+                    <span class="kf-desc-text" tabindex="0">{{ eintrag.description }}</span>
+                    <button type="button" class="kf-desc-edit" title="Beschreibung bearbeiten" aria-label="Beschreibung bearbeiten">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                    </button>
+                    <input type="text" class="inline-input kf-desc-input" maxlength="256" value="{{ eintrag.description }}" hidden>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endfor %}
+
+    <p class="kf-leer" id="kf-leer" hidden>Keine Einstellung gefunden.</p>
 </div>
 
 <div class="konfig-mailhelp" id="konfig-mailhelp">
@@ -257,8 +58,10 @@
     <span><code>''kursiv''</code></span>
     <span><code>== Überschrift ==</code></span>
     <span><code>* Punkt</code> Aufzählung</span>
+    <span><code># Punkt</code> Nummerierung</span>
     <span><code>% Zeile</code> grauer Hinweis</span>
     <span><code>@ Zeile</code> Hinweisbox</span>
+    <span><code>: Zeile</code> Einrückung</span>
     <span><code>[https://… Name]</code> Link</span>
     <span><code>{button:Label}</code> Button auf <code>{link}</code></span>
     <span>Platzhalter siehe Beschreibung</span>
@@ -270,241 +73,4 @@
         Änderungen anwenden (<span id="konfig-change-count">0</span>)
     </button>
 </div>
-
-{{ rows|json_script:"konfig-rows" }}
-<script>
-(function () {
-    'use strict';
-
-    const changeMap = new Map();
-    const newRowMap = new Map();
-    const deleteIds = new Set();
-    let tempIdCounter = 0;
-
-    const TRASH_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
-    const CANCEL_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-
-    function autoGrow(ta) {
-        ta.style.height = 'auto';
-        ta.style.height = ta.scrollHeight + 'px';
-    }
-
-    function scrollEditingRowIntoView() {
-        const editingRow = document.querySelector('.konfig-row[data-editing]');
-        if (!editingRow) return;
-        const wrap = document.querySelector('.konfig-wrap');
-        const barHeight = 80;
-        const trRect = editingRow.getBoundingClientRect();
-        const wrapRect = wrap.getBoundingClientRect();
-        if (trRect.bottom > wrapRect.bottom - barHeight) {
-            wrap.scrollTop += trRect.bottom - (wrapRect.bottom - barHeight) + 8;
-        }
-    }
-
-    function countChanges() {
-        let n = changeMap.size + deleteIds.size;
-        newRowMap.forEach(function (r) { if (r.key.trim()) n++; });
-        return n;
-    }
-
-    // Schalter, keine Mailtexte — dafür ist die Markup-Hilfe irreführend
-    const MAIL_NON_TEXT_KEYS = ['MAIL_BEI_AKTIVIERUNG'];
-
-    function updateMailHelp() {
-        let show = false;
-        document.querySelectorAll('.konfig-row[data-editing]').forEach(function (tr) {
-            const el = tr.querySelector('.konfig-edit-key') || tr.querySelector('.konfig-key-input');
-            if (!el) return;
-            const key = (el.value !== undefined ? el.value : el.textContent).trim().toUpperCase();
-            if (key.startsWith('MAIL_') && MAIL_NON_TEXT_KEYS.indexOf(key) === -1) show = true;
-        });
-        const help = document.getElementById('konfig-mailhelp');
-        const barVisible = document.getElementById('konfig-apply-bar').classList.contains('visible');
-        help.classList.toggle('visible', show);
-        help.classList.toggle('shifted', barVisible);
-    }
-
-    function updateApplyBar() {
-        const n = countChanges();
-        const bar = document.getElementById('konfig-apply-bar');
-        const wasVisible = bar.classList.contains('visible');
-        document.getElementById('konfig-change-count').textContent = n;
-        bar.classList.toggle('visible', n > 0);
-        document.getElementById('konfig-change-summary').textContent =
-            n === 1 ? '1 ungespeicherte Änderung'
-            : n > 1 ? n + ' ungespeicherte Änderungen'
-            : '';
-        if (!wasVisible && n > 0) {
-            setTimeout(scrollEditingRowIntoView, 260);
-        }
-        updateMailHelp();
-    }
-
-    function getCsrfToken() {
-        const m = document.cookie.match(/csrftoken=([^;]+)/);
-        return m ? m[1] : '';
-    }
-
-    function enterEditMode(tr) {
-        if (tr.classList.contains('to-delete') || tr.dataset.editing) return;
-        tr.dataset.editing = '1';
-        const ta = tr.querySelector('textarea.inline-input');
-        if (ta) { autoGrow(ta); ta.focus(); }
-        if (document.getElementById('konfig-apply-bar').classList.contains('visible')) {
-            scrollEditingRowIntoView();
-        }
-        updateMailHelp();
-    }
-
-    function exitEditMode(tr) {
-        delete tr.dataset.editing;
-        updateMailHelp();
-    }
-
-    function wireExistingRow(tr) {
-        const id = parseInt(tr.dataset.id, 10);
-        const valueInput = tr.querySelector('.konfig-value-input');
-        const descInput = tr.querySelector('.konfig-desc-input');
-        const delBtn = tr.querySelector('.konfig-del-btn');
-
-        tr.addEventListener('click', function (e) {
-            if (e.target.closest('.konfig-del-btn')) return;
-            enterEditMode(tr);
-        });
-
-        function trackChange() {
-            changeMap.set(id, { value: valueInput.value, description: descInput.value });
-            updateApplyBar();
-        }
-
-        valueInput.addEventListener('input', function () { autoGrow(valueInput); trackChange(); });
-        descInput.addEventListener('input', trackChange);
-
-        [valueInput, descInput].forEach(function (inp) {
-            inp.addEventListener('keydown', function (e) { if (e.key === 'Escape') exitEditMode(tr); });
-        });
-
-        delBtn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            if (tr.classList.contains('to-delete')) {
-                deleteIds.delete(id);
-                tr.classList.remove('to-delete');
-            } else {
-                deleteIds.add(id);
-                changeMap.delete(id);
-                exitEditMode(tr);
-                tr.classList.add('to-delete');
-            }
-            updateApplyBar();
-        });
-    }
-
-    document.querySelectorAll('.konfig-row[data-id]').forEach(wireExistingRow);
-
-    function insertNewRow() {
-        const tempId = ++tempIdCounter;
-        const rowData = { key: '', value: '', description: '' };
-        newRowMap.set(tempId, rowData);
-
-        const tr = document.createElement('tr');
-        tr.className = 'konfig-row';
-        tr.dataset.editing = '1';
-        tr.dataset.tempId = String(tempId);
-        tr.innerHTML =
-            '<td class="konfig-col-key">' +
-            '<input type="text" class="inline-input konfig-key-input" placeholder="SCHLUESSEL" maxlength="64">' +
-            '</td>' +
-            '<td class="konfig-col-value">' +
-            '<textarea class="inline-input konfig-value-input" rows="1"></textarea>' +
-            '</td>' +
-            '<td class="konfig-col-desc">' +
-            '<input type="text" class="inline-input konfig-desc-input" maxlength="256">' +
-            '</td>' +
-            '<td class="konfig-col-del">' +
-            '<button type="button" class="konfig-del-btn" title="Abbrechen">' + CANCEL_SVG + '</button>' +
-            '</td>';
-
-        const tbody = document.querySelector('.konfig-table tbody');
-        tbody.insertBefore(tr, tbody.firstChild);
-
-        const keyInput = tr.querySelector('.konfig-key-input');
-        const valueInput = tr.querySelector('.konfig-value-input');
-        const descInput = tr.querySelector('.konfig-desc-input');
-        const cancelBtn = tr.querySelector('.konfig-del-btn');
-
-        function syncRow() {
-            rowData.key = keyInput.value;
-            rowData.value = valueInput.value;
-            rowData.description = descInput.value;
-            updateApplyBar();
-        }
-
-        keyInput.addEventListener('input', syncRow);
-        valueInput.addEventListener('input', function () { autoGrow(valueInput); syncRow(); });
-        descInput.addEventListener('input', syncRow);
-
-        [keyInput, valueInput, descInput].forEach(function (inp) {
-            inp.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') removeNewRow(tr, tempId);
-            });
-        });
-
-        cancelBtn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            removeNewRow(tr, tempId);
-        });
-
-        keyInput.focus();
-        updateApplyBar();
-    }
-
-    function removeNewRow(tr, tempId) {
-        newRowMap.delete(tempId);
-        tr.remove();
-        updateApplyBar();
-    }
-
-    document.getElementById('add-konfig-btn').addEventListener('click', insertNewRow);
-
-    document.getElementById('konfig-apply-btn').addEventListener('click', async function () {
-        const btn = document.getElementById('konfig-apply-btn');
-        btn.disabled = true;
-
-        const payload = {
-            changes: [],
-            new: [],
-            delete: Array.from(deleteIds),
-        };
-
-        changeMap.forEach(function (v, id) {
-            payload.changes.push({ id: id, value: v.value, description: v.description });
-        });
-
-        newRowMap.forEach(function (r) {
-            if (r.key.trim()) {
-                payload.new.push({ key: r.key.trim(), value: r.value, description: r.description });
-            }
-        });
-
-        try {
-            const resp = await fetch(window.location.href, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfToken(),
-                },
-                body: JSON.stringify(payload),
-            });
-            const data = await resp.json();
-            if (data.ok) {
-                location.reload();
-            } else {
-                btn.disabled = false;
-            }
-        } catch (_) {
-            btn.disabled = false;
-        }
-    });
-})();
-</script>
 {% endblock %}

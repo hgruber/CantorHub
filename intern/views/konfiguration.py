@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
+from ..konfig_gruppen import gruppiere
 from ..models import Konfiguration
 
 __all__ = ["konfiguration"]
@@ -51,5 +52,5 @@ def konfiguration(request):
     )
     return render(request, "konfiguration.html", {
         "seitentitel": "Konfiguration",
-        "rows": rows,
+        "gruppen": gruppiere(rows),
     })

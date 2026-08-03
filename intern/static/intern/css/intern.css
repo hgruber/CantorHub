@@ -6946,3 +6946,308 @@ body.join-page {
 .cal-add-checks .checkbox-row {
     padding-top: 0;
 }
+
+/* =================================================== */
+/* Konfiguration                                       */
+/* =================================================== */
+.kf-page {
+    padding: 16px;
+    padding-bottom: calc(var(--kf-bars-h, 0px) + 24px);
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* Suchleiste — sticky oben im .content-Scroller. Geschwister vor den Karten,
+   sonst klebt sie 20 px unter der Topbar. z-index unter Legende (99) / Apply-Bar (100). */
+.kf-suche {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg-card);
+    padding: 10px 16px;
+    margin: -16px -16px 12px;
+    border-bottom: 1px solid var(--border);
+}
+.kf-suche input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 12px;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--r-sm);
+    background: var(--bg-card);
+    color: var(--t1);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color var(--ease), box-shadow var(--ease);
+}
+.kf-suche input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 2px var(--brand-light);
+}
+
+/* Karte für neu angelegte Einträge — immer ganz oben, vor den Gruppen. */
+.kf-neu {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 12px;
+    padding: 4px 16px;
+}
+
+/* Akkordeon-Karten im Stil von .detail-card, Marker-Rezept von .ae-help. */
+.kf-gruppe {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 12px;
+}
+.kf-gruppe > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    border-bottom: 1px solid transparent;
+}
+.kf-gruppe[open] > summary { border-bottom-color: var(--border); }
+.kf-gruppe > summary::-webkit-details-marker { display: none; }
+.kf-gruppe > summary::before {
+    content: "";
+    width: 0;
+    height: 0;
+    border-left: 4px solid var(--t3);
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    transition: transform var(--ease);
+    flex-shrink: 0;
+}
+.kf-gruppe[open] > summary::before { transform: rotate(90deg); }
+.kf-gruppe > summary:hover .kf-gruppen-titel { color: var(--brand); }
+.kf-gruppen-titel {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--brand-dark);
+    transition: color var(--ease);
+}
+.kf-gruppen-count {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--t3);
+    background: var(--bg-thead);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1px 8px;
+    min-width: 22px;
+    text-align: center;
+}
+.kf-gruppen-hinweis {
+    font-size: 12px;
+    color: var(--t4);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.kf-gruppe-body { padding: 4px 16px; }
+
+/* Eintrag als Grid mit benannten Bereichen — DOM-Reihenfolge Key → Wert →
+   Beschreibung stimmt in beiden Layouts, die Media Query schaltet nur um. */
+.kf-eintrag {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(0, 1.5fr);
+    grid-template-areas: "key  wert"
+                         "desc wert";
+    column-gap: 16px;
+    row-gap: 4px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+.kf-eintrag:last-child { border-bottom: none; }
+.kf-key { grid-area: key; align-self: start; display: flex; align-items: center; gap: 8px; }
+.kf-desc { grid-area: desc; align-self: start; }
+.kf-wert { grid-area: wert; }
+
+.kf-key code {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--t3);
+    overflow-wrap: anywhere;
+}
+
+/* Wert steht immer in einem sichtbaren Feld (kein Edit-Modus mehr). */
+.kf-eintrag .inline-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 9px;
+    border: 1px solid var(--border-dark);
+    border-radius: 5px;
+    background: var(--bg-card);
+    color: var(--t1);
+    font-size: 13px;
+    font-family: var(--font);
+    resize: none;
+    min-height: 32px;
+    line-height: 1.45;
+    transition: border-color var(--ease), box-shadow var(--ease);
+}
+.kf-eintrag textarea.inline-input { overflow: hidden; }
+.kf-eintrag .inline-input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 2px var(--brand-light);
+    background: var(--bg-card);
+}
+
+/* Löschen-Button immer sichtbar (kein Edit-Modus, an den er sich hängen könnte),
+   dezent über --t4, rot bei Hover. Auf Touch die einzige erreichbare Variante. */
+.kf-del-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--t4);
+    padding: 4px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--ease), background var(--ease);
+}
+.kf-del-btn:hover { color: var(--error-solid); background: var(--error-bg); }
+.kf-eintrag.to-delete { opacity: 0.45; }
+.kf-eintrag.to-delete .kf-key code,
+.kf-eintrag.to-delete .kf-desc-text { text-decoration: line-through; }
+
+/* Beschreibung: Klick auf Text oder Stift schaltet zum Eingabefeld. */
+.kf-desc { display: flex; align-items: flex-start; gap: 6px; }
+.kf-desc-text {
+    flex: 1;
+    font-size: 12px;
+    color: var(--t3);
+    line-height: 1.4;
+    cursor: pointer;
+    word-break: break-word;
+    min-height: 18px;
+}
+.kf-desc-text:empty::before {
+    content: "Beschreibung hinzufügen";
+    color: var(--t4);
+    font-style: italic;
+}
+.kf-desc-edit {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--t4);
+    padding: 2px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    transition: color var(--ease);
+}
+.kf-desc-edit:hover { color: var(--brand); }
+/* .kf-desc-input darf KEIN eigenes display bekommen — das hidden-Attribut muss
+   wirken, display:grid/flex gewinnt sonst dagegen. */
+.kf-desc-input { width: 100%; box-sizing: border-box; }
+
+.kf-leer { text-align: center; color: var(--t4); padding: 32px 0; font-size: 14px; }
+
+/* Fokus-Freiraum statt gestrichelter Scroll-Nachführung. */
+.kf-eintrag textarea,
+.kf-eintrag input {
+    scroll-margin-bottom: calc(var(--kf-bars-h, 0px) + 24px);
+}
+
+/* hidden braucht überall eine explizite Regel — intern.css hat keine globale
+   [hidden]-Regel, und display:grid/flex gewinnt sonst gegen das Attribut. */
+.kf-eintrag[hidden],
+.kf-gruppe[hidden],
+.kf-neu[hidden],
+.kf-suche[hidden],
+.kf-desc-input[hidden],
+.kf-leer[hidden] { display: none; }
+
+/* Markup-Legende für MAIL_*-Felder — hängt am Fokus, nicht mehr am Edit-Modus. */
+.konfig-mailhelp {
+    position: fixed;
+    bottom: var(--kf-applybar-h, 0px);
+    left: var(--sb-width);
+    right: 0;
+    z-index: 99;
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    align-items: center;
+    padding: 10px 28px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--t3);
+}
+.konfig-mailhelp.visible { display: flex; }
+.konfig-mailhelp code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--bg-thead);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: var(--t1);
+}
+.konfig-mailhelp .konfig-mailhelp-title {
+    font-weight: 700;
+    color: var(--brand);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+}
+
+/* Apply-Bar — IDs bleiben, damit das übernommene JS unverändert greift. */
+.konfig-apply-bar {
+    position: fixed;
+    bottom: 0;
+    left: var(--sb-width);
+    right: 0;
+    padding: 14px 28px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    transform: translateY(100%);
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 100;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+}
+.konfig-apply-bar.visible { transform: translateY(0); }
+.konfig-change-summary { font-size: 13px; color: var(--t3); }
+
+[data-theme="dark"] .kf-eintrag .inline-input {
+    background: var(--bg-app);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] .konfig-apply-bar { box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.35); }
+
+@media (max-width: 768px) {
+    .kf-eintrag {
+        grid-template-columns: 1fr;
+        grid-template-areas: "key" "wert" "desc";
+    }
+    .konfig-apply-bar { left: 0; }
+    .konfig-mailhelp {
+        left: 0;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+}

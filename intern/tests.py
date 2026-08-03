@@ -977,3 +977,108 @@ class CalDavReportTest(SimpleTestCase):
         bericht = dav.parse_report(rumpf)
         self.assertEqual((bericht.art, bericht.komponenten, bericht.zeitraum),
                          ("query", (), None))
+
+
+class KonfigGruppenTest(SimpleTestCase):
+    """Gruppenzuordnung der Konfigurationsschlüssel — DB-frei."""
+
+    def _defaults_keys(self):
+        from intern.apps import _CONFIG_DEFAULTS
+        return {row[0] for row in _CONFIG_DEFAULTS}
+
+    def test_jeder_default_schluessel_hat_eine_gruppe(self):
+        # Der Regressionswächter: ein neuer Schlüssel in apps.py ohne
+        # Gruppeneintrag fällt hier auf, statt still in „Sonstiges" zu landen.
+        from intern.konfig_gruppen import zuordnung
+        for key in self._defaults_keys():
+            self.assertNotEqual(
+                zuordnung(key), "sonstiges",
+                msg=f"Schlüssel {key!r} hat keine Gruppeneintragung",
+            )
+
+    def test_exakte_schluessel_existieren_und_sind_eindeutig(self):
+        from intern.konfig_gruppen import GRUPPEN
+        defaults = self._defaults_keys()
+        gesehen = {}
+        for g in GRUPPEN:
+            for k in g.keys:
+                self.assertIn(
+                    k, defaults,
+                    msg=f"Exakter Schlüssel {k!r} in Gruppe {g.id!r} fehlt in _CONFIG_DEFAULTS",
+                )
+                self.assertNotIn(
+                    k, gesehen,
+                    msg=f"Schlüssel {k!r} steht in zwei Gruppen: {gesehen.get(k)!r} und {g.id!r}",
+                )
+                gesehen[k] = g.id
+
+    def test_exakte_schluessel_in_keiner_zwei_gruppen(self):
+        # Verdoppeltungsschutz auch über die Ableitung (_EXAKT) geprüft.
+        from intern.konfig_gruppen import _EXAKT
+        defaults = self._defaults_keys()
+        for k in _EXAKT:
+            self.assertIn(k, defaults)
+
+    def test_praefix_vorrang(self):
+        from intern.konfig_gruppen import zuordnung
+        self.assertEqual(zuordnung("MAIL_MAILINGLISTE_OPTIN"), "mailingliste")
+        self.assertEqual(zuordnung("MAILINGLISTE_WOCHEN"), "mailingliste")
+        self.assertEqual(zuordnung("MAIL_ANTRAG"), "mailtexte")
+        # Exakt schlägt Präfix: MAIL_BEI_AKTIVIERUNG ist exakt in mailversand,
+        # fiele sonst unter das MAIL_-Präfix von mailtexte.
+        self.assertEqual(zuordnung("MAIL_BEI_AKTIVIERUNG"), "mailversand")
+        self.assertEqual(zuordnung("DEFAULT_FROM_EMAIL"), "mailversand")
+
+    def test_gruppiere_invarianten(self):
+        from intern.konfig_gruppen import GRUPPEN, gruppiere
+        keys = sorted(self._defaults_keys())
+        # Absichtlich gemischte Reihenfolge, damit die Eingabereihenfolge-Erhaltung
+        # geprüft wird, nicht die Sortierung.
+        reihenfolge = list(reversed(keys))
+        rows = [
+            {"id": i, "key": k, "value": "", "description": ""}
+            for i, k in enumerate(reihenfolge)
+        ]
+        ergebnis = gruppiere(rows)
+
+        # Keine leere Gruppe in der Ausgabe.
+        for g in ergebnis:
+            self.assertGreater(len(g["eintraege"]), 0, msg=f"Gruppe {g['id']!r} ist leer")
+
+        # Summe der Einträge == len(rows) — nichts verloren, nichts doppelt.
+        self.assertEqual(sum(len(g["eintraege"]) for g in ergebnis), len(rows))
+
+        # Ausgabereihenfolge == Definitionsreihenfolge: jede definierte Gruppe,
+        # die Einträge hat, erscheint in GRUPPEN-Reihenfolge.
+        belegte = {g["id"] for g in ergebnis}
+        erwartet = [g.id for g in GRUPPEN if g.id in belegte]
+        self.assertEqual([g["id"] for g in ergebnis], erwartet)
+
+        # Eingabereihenfolge innerhalb einer Gruppe erhalten.
+        index = {k: i for i, k in enumerate(reihenfolge)}
+        for g in ergebnis:
+            positions = [index[e["key"]] for e in g["eintraege"]]
+            self.assertEqual(positions, sorted(positions),
+                             msg=f"Reihenfolge in {g['id']!r} nicht erhalten")
+
+    def test_unbekannter_schluessel_landet_in_sonstiges(self):
+        from intern.konfig_gruppen import gruppiere, zuordnung
+        self.assertEqual(zuordnung("FOO_BAR"), "sonstiges")
+
+        # „sonstiges" fehlt in der Ausgabe, wenn es leer ist.
+        rows = [{"id": 1, "key": "VEREINSNAME", "value": "", "description": ""}]
+        ids = [g["id"] for g in gruppiere(rows)]
+        self.assertNotIn("sonstiges", ids)
+
+        # … und erscheint am Ende, wenn es Einträge gibt.
+        rows.append({"id": 2, "key": "FOO_BAR", "value": "", "description": ""})
+        ergebnis = gruppiere(rows)
+        self.assertEqual(ergebnis[-1]["id"], "sonstiges")
+
+    def test_gruppen_ids_sind_html_sicher(self):
+        # Dienen als HTML-id und localStorage-Schlüssel.
+        import re
+        from intern.konfig_gruppen import GRUPPEN
+        pattern = re.compile(r"^[a-z0-9-]+$")
+        for g in GRUPPEN:
+            self.assertRegex(g.id, pattern, msg=f"Gruppen-ID {g.id!r} nicht html-sicher")

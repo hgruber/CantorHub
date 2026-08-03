@@ -353,7 +353,7 @@ inline styles, plain text) using the wiki syntax of the article editor — `'''f
 `: Einrückung`, `[https://… Name]`, `$roh$` — plus the mail-only directive
 `{button:Label}` (links to `{link}`) / `{button:Label:URL}`. A button without a URL
 renders nothing. Placeholder values are HTML-escaped; unknown `{placeholders}` stay
-verbatim. `/intern/konfiguration/` shows a syntax legend while a `MAIL_*` row is edited.
+verbatim. `/intern/konfiguration/` shows a syntax legend while a `MAIL_*` field is focused.
 
 Call sites use `mail.send_config_mail(subject, to, key, user=…, link=…, extra_keys=…,
 attachments=…, template=…, context=…, **placeholders)`; `render_config_mail()` /
@@ -1165,7 +1165,12 @@ starts the ENV var can be dropped and the DB value is used. Use
 `is_ejabberd_configured()` (not a flag) to check whether the XMPP integration is active.
 
 Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py`;
-**add new keys there** (with a German `description`) so fresh installs get them.
+**add new keys there** (with a German `description`) so fresh installs get them. A new key
+**must additionally** be sorted into a group in `intern/konfig_gruppen.py` (exact key or
+prefix) — otherwise `KonfigGruppenTest` in `intern/tests.py` fails, because it asserts that
+every `_CONFIG_DEFAULTS` key lands in a group other than „sonstiges". The page groups the
+67 keys into nine collapsible cards derived from the key name; the grouping is not stored
+in the DB.
 Choir-specific initial values (e.g. `VEREINSNAME`, `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`,
 `HOMEPAGE_AUFNAHME`) live in `seed_konfiguration` in `intern/migrations/0003_import.py` — those
 keys carry an empty-string default in `apps.py` and get their real content only via the data
