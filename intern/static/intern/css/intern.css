@@ -7104,6 +7104,51 @@ body.join-page {
     box-shadow: 0 0 0 2px var(--brand-light);
     background: var(--bg-card);
 }
+/* Number-Input: Spinner bleibt (Port/Zoom/Tage), kein min/max/step — die
+   Wertefunktion wird nicht eingeengt (z.B. leere Datei-ID möglich). */
+.kf-eintrag input[type="number"].inline-input { width: 100%; }
+
+/* Boolean als Toggle-Switch — die Checkbox trägt bewusst nicht .inline-input,
+   sondern wird hier eigens gestylt. Gespeichert bleibt "1"/"0" als Zeichenkette. */
+.kf-bool {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+}
+.kf-bool input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--border-dark);
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+    transition: background var(--ease);
+}
+.kf-bool input::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-xs);
+    transition: transform var(--ease);
+}
+.kf-bool input:checked { background: var(--brand); }
+.kf-bool input:checked::after { transform: translateX(18px); }
+.kf-bool input:focus-visible { outline: 2px solid var(--brand-ring); outline-offset: 2px; }
+.kf-bool-state { font-size: 12px; color: var(--t3); }
+.kf-bool input:not(:checked) ~ .kf-bool-state::before { content: "Aus"; }
+.kf-bool input:checked ~ .kf-bool-state::before { content: "An"; color: var(--brand); }
 
 /* Löschen-Button immer sichtbar (kein Edit-Modus, an den er sich hängen könnte),
    dezent über --t4, rot bei Hover. Auf Touch die einzige erreichbare Variante. */
@@ -7237,6 +7282,8 @@ body.join-page {
     background: var(--bg-app);
     border-color: rgba(255, 255, 255, 0.12);
 }
+[data-theme="dark"] .kf-bool input { background: rgba(255, 255, 255, 0.18); }
+[data-theme="dark"] .kf-bool input::after { background: var(--t1); }
 [data-theme="dark"] .konfig-apply-bar { box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.35); }
 
 @media (max-width: 768px) {

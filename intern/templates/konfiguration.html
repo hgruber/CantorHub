@@ -26,7 +26,7 @@
         </summary>
         <div class="kf-gruppe-body">
             {% for eintrag in gruppe.eintraege %}
-            <div class="kf-eintrag" data-id="{{ eintrag.id }}" data-key="{{ eintrag.key }}">
+            <div class="kf-eintrag" data-id="{{ eintrag.id }}" data-key="{{ eintrag.key }}" data-typ="{{ eintrag.typ }}">
                 <div class="kf-key">
                     <code>{{ eintrag.key }}</code>
                     <button type="button" class="kf-del-btn" title="Löschen" aria-label="Löschen">
@@ -34,7 +34,18 @@
                     </button>
                 </div>
                 <div class="kf-wert">
+                    {% if eintrag.typ == "bool" %}
+                    <label class="kf-bool">
+                        <input type="checkbox" class="kf-value-input kf-bool-input"{% if eintrag.value == "1" %} checked{% endif %}>
+                        <span class="kf-bool-state"></span>
+                    </label>
+                    {% elif eintrag.typ == "int" %}
+                    <input type="number" class="inline-input kf-value-input" value="{{ eintrag.value }}">
+                    {% elif eintrag.typ == "string" %}
+                    <input type="text" class="inline-input kf-value-input" value="{{ eintrag.value }}">
+                    {% else %}
                     <textarea class="inline-input kf-value-input" rows="1">{{ eintrag.value }}</textarea>
+                    {% endif %}
                 </div>
                 <div class="kf-desc">
                     <span class="kf-desc-text" tabindex="0">{{ eintrag.description }}</span>

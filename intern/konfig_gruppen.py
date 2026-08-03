@@ -13,6 +13,97 @@ in der Restgruppe ``"sonstiges"``.
 
 from typing import NamedTuple
 
+# Eingabewidget je Schlüssel — abgeleitet aus der Lese-Verwendung im Code, nicht aus
+# dem Schlüsselnamen: ``get_config_bool`` → "bool", ``get_config_int`` → "int",
+# einzeilige Werte (URL/Host/JID/E-Mail/Passwort/Secret/Farbe/Name/Komma-Liste/
+# Uhrzeit) → "string", mehrzeilige Texte (Mail-Body, Homepage-Prosa, Adresse,
+# Einwilligung) → "text". Die gespeicherten Werte bleiben Zeichenketten; nur das
+# Widget beim Editieren passt zur Funktion.
+FELDTYPEN: dict[str, str] = {
+    # bool (gelesen via get_config_bool)
+    "EMAIL_USE_TLS": "bool",
+    "EMAIL_USE_SSL": "bool",
+    "CARDDAV_AKTIV": "bool",
+    "CARDDAV_FOTO": "bool",
+    "CALDAV_AKTIV": "bool",
+    "CALDAV_GEBURTSTAGE": "bool",
+    "MAIL_BEI_AKTIVIERUNG": "bool",
+    # int (gelesen via get_config_int — SATZUNG_FILE_ID / BEITRAGSORDNUNG_FILE_ID /
+    # MAP_CENTER_ID sind PKs für FilerFile.objects.get / Ort.objects.get)
+    "EJABBERD_BOT_PORT": "int",
+    "EMAIL_PORT": "int",
+    "UPLOAD_MAX_MB": "int",
+    "MAP_CENTER_ID": "int",
+    "MAP_DEFAULT_ZOOM": "int",
+    "PWRESET_MAX_PER_HOUR": "int",
+    "CARDDAV_AUTH_TTL": "int",
+    "CARDDAV_MAX_FEHLVERSUCHE_PRO_STUNDE": "int",
+    "CALDAV_TAGE_RUECKWIRKEND": "int",
+    "CALDAV_AUTH_TTL": "int",
+    "CALDAV_MAX_FEHLVERSUCHE_PRO_STUNDE": "int",
+    "NOTIFY_POLL_MS": "int",
+    "NOTIFY_DISMISS_MS": "int",
+    "SATZUNG_FILE_ID": "int",
+    "BEITRAGSORDNUNG_FILE_ID": "int",
+    "MAILINGLISTE_INTERVALL_MIN": "int",
+    "MAILINGLISTE_OPTIN_TAGE": "int",
+    # string (einzeilig; MAILINGLISTE_WOCHEN = Komma-Liste, MAILINGLISTE_VERSANDZEIT
+    # = Uhrzeit HH:MM, CALDAV_FARBE = Hex — type=color kann „leer" nicht abbilden)
+    "EJABBERD_API_URL": "string",
+    "EJABBERD_HOST": "string",
+    "EJABBERD_MUC_SERVICE": "string",
+    "EJABBERD_BOT_JID": "string",
+    "EJABBERD_BOT_PASSWORD": "string",
+    "ICAL_SECRET": "string",
+    "EMAIL_HOST": "string",
+    "EMAIL_HOST_USER": "string",
+    "EMAIL_HOST_PASSWORD": "string",
+    "DEFAULT_FROM_EMAIL": "string",
+    "CARDDAV_ADRESSBUCH_NAME": "string",
+    "CARDDAV_ORGANISATION": "string",
+    "CALDAV_KALENDER_NAME": "string",
+    "CALDAV_GEBURTSTAGE_NAME": "string",
+    "CALDAV_FARBE": "string",
+    "VEREINSNAME": "string",
+    "VEREINSNAME_LANG": "string",
+    "VEREINSNAME_KURZ": "string",
+    "ANTRAG_EMAIL": "string",
+    "VEREINS_URL": "string",
+    "MAILINGLISTE_WOCHEN": "string",
+    "MAILINGLISTE_VERSANDZEIT": "string",
+    # text (mehrzeilig: Mail-Body, Homepage-Prosa, Adresse, Einwilligung)
+    "VEREINSADRESSE": "text",
+    "HOMEPAGE_UEBER_UNS": "text",
+    "HOMEPAGE_AUFNAHME": "text",
+    "MAIL_ANTRAG": "text",
+    "MAIL_ANTRAG_ADMIN": "text",
+    "MAIL_ANTRAG_ADMIN_MINDERJAEHRIG": "text",
+    "MAIL_ANTRAG_ADMIN_FOERDER": "text",
+    "MAIL_BESTAETIGUNG": "text",
+    "MAIL_BESTAETIGUNG_BESTAETIGT": "text",
+    "MAIL_EINLADUNG": "text",
+    "MAIL_NEUES_PASSWORT": "text",
+    "MAIL_WILLKOMMEN": "text",
+    "MAIL_REAKTIVIERT": "text",
+    "MAIL_RUNDMAIL": "text",
+    "MAIL_FOOTER": "text",
+    "MAILINGLISTE_TEXT": "text",
+    "MAILINGLISTE_EINWILLIGUNG": "text",
+    "MAIL_MAILINGLISTE_OPTIN": "text",
+    "MAIL_MAILINGLISTE_WILLKOMMEN": "text",
+    "MAIL_MAILINGLISTE_BEREITS_ANGEMELDET": "text",
+    "MAIL_MAILINGLISTE_ERINNERUNG": "text",
+}
+
+
+def feldtyp(key: str) -> str:
+    """Liefert das Eingabewidget (``bool``/``int``/``string``/``text``).
+
+    Unbekannte Schlüssel bekommen ``text`` (Textarea) — das sicherste Widget, falls
+    ein ad-hoc angelegter Schlüssel nicht in ``FELDTYPEN`` steht.
+    """
+    return FELDTYPEN.get(key, "text")
+
 
 class Gruppe(NamedTuple):
     id: str
@@ -147,7 +238,9 @@ def gruppiere(rows: list[dict]) -> list[dict]:
     nach_id: dict[str, list[dict]] = {g.id: [] for g in GRUPPEN}
     nach_id[_SONSTIGE.id] = []
     for row in rows:
-        nach_id[zuordnung(row["key"])].append(row)
+        # Kopie mit angereichertem ``typ`` — der Eingabe-dict wird nicht mutiert.
+        eintrag = {**row, "typ": feldtyp(row["key"])}
+        nach_id[zuordnung(row["key"])].append(eintrag)
 
     ergebnis: list[dict] = []
     for g in GRUPPEN:

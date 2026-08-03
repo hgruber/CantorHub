@@ -1170,7 +1170,12 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 prefix) — otherwise `KonfigGruppenTest` in `intern/tests.py` fails, because it asserts that
 every `_CONFIG_DEFAULTS` key lands in a group other than „sonstiges". The page groups the
 67 keys into nine collapsible cards derived from the key name; the grouping is not stored
-in the DB.
+in the DB. Each key also needs an entry in `FELDTYPEN` in the same file (one of `bool` /
+`int` / `string` / `text`) so the edit page renders the matching input widget — a boolean
+toggle, a number input, a single-line text input, or a multi-line textarea — instead of a
+textarea for every value. `KonfigTypenTest` enforces that every `_CONFIG_DEFAULTS` key has
+a type; the stored value stays a string regardless (`get_config_bool`/`get_config_int` still
+parse it). An unknown key falls back to `text`.
 Choir-specific initial values (e.g. `VEREINSNAME`, `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`,
 `HOMEPAGE_AUFNAHME`) live in `seed_konfiguration` in `intern/migrations/0003_import.py` — those
 keys carry an empty-string default in `apps.py` and get their real content only via the data

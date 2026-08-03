@@ -1082,3 +1082,69 @@ class KonfigGruppenTest(SimpleTestCase):
         pattern = re.compile(r"^[a-z0-9-]+$")
         for g in GRUPPEN:
             self.assertRegex(g.id, pattern, msg=f"Gruppen-ID {g.id!r} nicht html-sicher")
+
+
+class KonfigTypenTest(SimpleTestCase):
+    """Eingabewidget-Typ je Konfigurationsschlüssel — DB-frei."""
+
+    def _defaults(self):
+        from intern.apps import _CONFIG_DEFAULTS
+        return list(_CONFIG_DEFAULTS)
+
+    def test_jeder_default_schluessel_hat_einen_typ(self):
+        # Regressionswächter: ein neuer Schlüssel ohne FELDTYPEN-Eintrag fällt hier
+        # auf, statt still als Textarea gerendert zu werden.
+        from intern.konfig_gruppen import FELDTYPEN
+        for key, _value, _desc in self._defaults():
+            self.assertIn(
+                key, FELDTYPEN,
+                msg=f"Schlüssel {key!r} fehlt in FELDTYPEN",
+            )
+
+    def test_typen_sind_gueltig(self):
+        from intern.konfig_gruppen import FELDTYPEN
+        gueltig = {"bool", "int", "string", "text"}
+        for key, typ in FELDTYPEN.items():
+            self.assertIn(typ, gueltig, msg=f"Schlüssel {key!r} hat ungültigen Typ {typ!r}")
+
+    def test_unbekannter_schluessel_default_text(self):
+        from intern.konfig_gruppen import feldtyp
+        self.assertEqual(feldtyp("UNBEKANNT_NEU"), "text")
+
+    def test_stichproben(self):
+        from intern.konfig_gruppen import feldtyp
+        self.assertEqual(feldtyp("MAIL_BEI_AKTIVIERUNG"), "bool")
+        self.assertEqual(feldtyp("EMAIL_PORT"), "int")
+        self.assertEqual(feldtyp("VEREINS_URL"), "string")
+        self.assertEqual(feldtyp("MAIL_ANTRAG"), "text")
+        self.assertEqual(feldtyp("MAILINGLISTE_WOCHEN"), "string")
+
+    def test_gruppiere_reichert_um_typ_ohne_mutation(self):
+        from intern.konfig_gruppen import gruppiere
+        rows = [
+            {"id": 1, "key": "EMAIL_PORT", "value": "25", "description": ""},
+            {"id": 2, "key": "MAIL_ANTRAG", "value": "Hallo", "description": ""},
+        ]
+        ergebnis = gruppiere(rows)
+        # Original-dict bleibt unverändert (kein 'typ'-Feld eingeschmuggelt).
+        self.assertNotIn("typ", rows[0])
+        # Angereicherte Einträge tragen den richtigen Typ.
+        typen = {}
+        for g in ergebnis:
+            for e in g["eintraege"]:
+                typen[e["key"]] = e["typ"]
+        self.assertEqual(typen["EMAIL_PORT"], "int")
+        self.assertEqual(typen["MAIL_ANTRAG"], "text")
+
+    def test_bool_defaults_sind_null_oder_eins(self):
+        # Das Checkbox-Rendering prüft {% if value == "1" %}; die Defaultwerte der
+        # Bool-Schlüssel müssen also "0" oder "1" sein.
+        from intern.konfig_gruppen import FELDTYPEN
+        defaults = {key: value for key, value, _desc in self._defaults()}
+        for key, typ in FELDTYPEN.items():
+            if typ != "bool":
+                continue
+            self.assertIn(
+                defaults[key], ("0", "1"),
+                msg=f"Bool-Schlüssel {key!r} hat Default {defaults[key]!r}, nicht 0/1",
+            )

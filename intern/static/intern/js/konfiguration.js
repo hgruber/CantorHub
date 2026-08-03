@@ -19,7 +19,7 @@
     const leerHinweis = document.getElementById("kf-leer");
 
     function autoGrow(ta) {
-        if (ta.offsetParent === null) return;   // in zugeklapptem <details> ist scrollHeight 0
+        if (ta.tagName !== "TEXTAREA" || ta.offsetParent === null) return;   // input/checkbox: kein scrollHeight; zugeklappt: 0
         ta.style.minHeight = "0";
         ta.style.minHeight = ta.scrollHeight + "px";
     }
@@ -124,16 +124,27 @@
     // --- Bestehende Einträge verdrahten ----------------------------------
     function wireExisting(entry) {
         const id = parseInt(entry.dataset.id, 10);
-        const valueTa = entry.querySelector(".kf-value-input");
+        const typ = entry.dataset.typ;
+        const widget = entry.querySelector(".kf-value-input");
         const delBtn = entry.querySelector(".kf-del-btn");
         function track() {
+            // Boolean bleibt die Zeichenkette "1"/"0" — nur das Widget ist eine
+            // Checkbox; alle anderen Typen lesen .value als Zeichenkette.
+            const val = (typ === "bool") ? (widget.checked ? "1" : "0") : widget.value;
             changeMap.set(id, {
-                value: valueTa.value,
+                value: val,
                 description: entry.querySelector(".kf-desc-input").value,
             });
             updateApplyBar();
         }
-        valueTa.addEventListener("input", function () { autoGrow(valueTa); track(); });
+        if (widget.tagName === "TEXTAREA") {
+            widget.addEventListener("input", function () { autoGrow(widget); track(); });
+        } else {
+            // input/checkbox: input feuert beim Tippen, change zuverlässig bei
+            // Checkbox-Umschaltung und number-Spinner.
+            widget.addEventListener("input", track);
+            widget.addEventListener("change", track);
+        }
         delBtn.addEventListener("click", function (e) {
             e.stopPropagation();
             if (entry.classList.contains("to-delete")) {
@@ -170,6 +181,7 @@
         const entry = document.createElement("div");
         entry.className = "kf-eintrag";
         entry.dataset.tempId = String(tempId);
+        entry.dataset.typ = "text";   // ad-hoc-Schlüssel: Typ unbekannt → Textarea
         entry.innerHTML =
             '<div class="kf-key">' +
             '<input type="text" class="inline-input kf-key-input" placeholder="SCHLUESSEL" maxlength="64">' +
@@ -229,7 +241,16 @@
             let sichtbar = 0;
             g.querySelectorAll(".kf-eintrag").forEach(function (e) {
                 const key = (e.dataset.key || (e.querySelector(".kf-key-input") || {}).value || "").toLowerCase();
-                const wert = ((e.querySelector(".kf-value-input") || {}).value || "").toLowerCase();
+                const widget = e.querySelector(".kf-value-input");
+                // Bool-Checkbox hat keinen sinnvollen .value-Text — „an"/„aus"
+                // durchsuchbar machen, sonst den Feldwert wie heute.
+                let wert;
+                if (e.dataset.typ === "bool" && widget && widget.type === "checkbox") {
+                    wert = widget.checked ? "an" : "aus";
+                } else {
+                    wert = (widget ? widget.value : "") || "";
+                }
+                wert = wert.toLowerCase();
                 const beschrEl = e.querySelector(".kf-desc-text");
                 const beschr = (beschrEl ? beschrEl.textContent : "").toLowerCase();
                 const treffer = key.indexOf(q) !== -1 || wert.indexOf(q) !== -1 || beschr.indexOf(q) !== -1;
