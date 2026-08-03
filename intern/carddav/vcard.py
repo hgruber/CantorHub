@@ -10,10 +10,17 @@ Betrachter sehen darf, entscheidet das Callable ``sichtbar`` — die View reicht
 die echte Regel herein, ein Test ein einfaches Mengen-Lookup. Dadurch ist die
 gesamte Serialisierung mit ``SimpleTestCase`` und ``SimpleNamespace`` prüfbar,
 ohne dass die Testdatenbank (und damit die Migration ``0003_import``) anläuft.
+
+Faltung, TEXT-Escaping und die beiden Hashes stehen in :mod:`intern.dav.text` —
+iCalendar arbeitet dort nach denselben Regeln. Sie werden hier weiter
+mitexportiert, damit ``from intern.carddav.vcard import fold`` das Erwartete
+tut.
 """
 
 import base64
-import hashlib
+
+from ..dav.text import escape_text, fold, liste, strukturiert, zeile
+from ..dav import text as _text
 
 __all__ = [
     "escape_text", "strukturiert", "liste", "fold", "zeile",
@@ -25,79 +32,6 @@ __all__ = [
 # alten Karten für immer: der Feldinhalt ändert sich ja nicht, nur unsere
 # Ausgabe — und woran sollte der Client das sonst merken?
 _SERIALISIERUNG = "v1"
-
-# RFC 6350 §3.2. Die Fortsetzungszeile beginnt mit einem Leerzeichen, das selbst
-# ein Oktett belegt, also bleiben dort nur 74 für Nutzlast.
-_ZEILENLAENGE = 75
-
-
-def escape_text(wert):
-    """Escaped einen TEXT-Wert nach RFC 6350 §3.4.
-
-    Reihenfolge ist wichtig: der Backslash zuerst, sonst würden die gleich
-    eingefügten Escapes ein zweites Mal escaped.
-    """
-    return (
-        str(wert)
-        .replace("\\", "\\\\")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-        .replace("\r\n", "\\n")
-        .replace("\n", "\\n")
-        .replace("\r", "\\n")
-    )
-
-
-def strukturiert(komponenten):
-    """Verbindet die Komponenten eines strukturierten Werts (``N``, ``ADR``).
-
-    Jede Komponente wird einzeln escaped, die trennenden Semikola bleiben roh —
-    genau andersherum wäre der Wert unlesbar.
-    """
-    return ";".join(escape_text(k or "") for k in komponenten)
-
-
-def liste(eintraege):
-    """Verbindet eine Werteliste (``CATEGORIES``, ``NICKNAME``).
-
-    Kommas *innerhalb* eines Eintrags werden escaped, die Listentrenner nicht.
-    """
-    return ",".join(escape_text(e) for e in eintraege if e)
-
-
-def fold(text):
-    """Faltet eine Inhaltszeile auf 75 Oktette (RFC 6350 §3.2).
-
-    Gezählt wird über die UTF-8-**Bytes**, nicht über Zeichen, und nie mitten in
-    einer Mehrbyte-Folge geschnitten: ein „ä" im Nachnamen an der falschen
-    Stelle zerlegt sonst die ganze Karte. Fortgesetzt wird mit CRLF plus genau
-    einem Leerzeichen — der einzige Weg, den alle Clients verstehen; die
-    vCard-2.1-Konvention mit Leerzeile ist hier keine Option.
-    """
-    roh = text.encode("utf-8")
-    if len(roh) <= _ZEILENLAENGE:
-        return text
-    teile, start, grenze = [], 0, _ZEILENLAENGE
-    while start < len(roh):
-        ende = min(start + grenze, len(roh))
-        # 0b10xxxxxx ist ein UTF-8-Folgebyte: zurück auf den Zeichenanfang.
-        while ende > start and ende < len(roh) and (roh[ende] & 0xC0) == 0x80:
-            ende -= 1
-        teile.append(roh[start:ende].decode("utf-8"))
-        start, grenze = ende, _ZEILENLAENGE - 1
-    return "\r\n ".join(teile)
-
-
-def zeile(name, wert, params=None):
-    """Baut eine gefaltete Inhaltszeile ``NAME;PARAM=WERT:wert``.
-
-    ``params`` ist eine Liste von ``(name, wert)``-Paaren; mehrwertige Parameter
-    wie ``TYPE=HOME,VOICE`` übergibt man als fertigen String.
-    """
-    kopf = name
-    for pname, pwert in params or []:
-        kopf += f";{pname}={pwert}"
-    return fold(f"{kopf}:{wert}")
 
 
 def uid_fuer(pk):
@@ -265,37 +199,13 @@ def vcard_text(daten, foto=None):
     return "\r\n".join(z) + "\r\n"
 
 
-def _kanonisch(wert):
-    """Stabile Textform eines Werts für den ETag-Hash."""
-    if isinstance(wert, (list, tuple)):
-        return "\x1e".join(_kanonisch(w) for w in wert)
-    return "" if wert is None else str(wert)
-
-
 def etag(daten):
     """Starker ETag einer Karte — Hash über die Feldwerte, nie über Fotobytes.
 
-    Gehasht wird das komplette ``kontakt_daten``-dict (sortiert, damit die
-    Reihenfolge nichts ändert) statt einer gepflegten Feldliste: ein später
-    ergänztes Feld kann so nicht vergessen werden. ``foto_kennung`` steht darin
-    stellvertretend für das Bild, weshalb ein PROPFIND über alle Kontakte keine
-    einzige Bilddatei öffnen muss.
-
-    Verborgene Felder stehen gar nicht erst im dict, der ETag verrät also nicht,
-    dass es sie gibt.
+    ``foto_kennung`` steht im dict stellvertretend für das Bild, weshalb ein
+    PROPFIND über alle Kontakte keine einzige Bilddatei öffnen muss.
     """
-    roh = "\x1f".join(
-        [_SERIALISIERUNG]
-        + [f"{k}={_kanonisch(daten[k])}" for k in sorted(daten)]
-    )
-    return '"' + hashlib.sha256(roh.encode("utf-8")).hexdigest()[:32] + '"'
+    return _text.etag(daten, _SERIALISIERUNG)
 
 
-def ctag(paare):
-    """CTag einer Sammlung aus ihren ``(pk, etag)``-Paaren.
-
-    Ändert sich damit sowohl, wenn sich eine Karte ändert, als auch bei Zu- und
-    Abgängen — die Primärschlüssel stecken mit im Hash.
-    """
-    roh = "|".join(f"{pk}:{tag}" for pk, tag in sorted(paare))
-    return '"' + hashlib.sha256(roh.encode("utf-8")).hexdigest()[:32] + '"'
+ctag = _text.ctag

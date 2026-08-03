@@ -1,4 +1,4 @@
-"""HTTP-Basic-Authentifizierung für die CardDAV-Views.
+"""HTTP-Basic-Authentifizierung für die DAV-Views.
 
 Angemeldet wird sich mit dem normalen Portal-Passwort. Das ist so gewollt, hat
 aber eine Kehrseite, die im Blick bleiben muss: das Passwort landet damit im
@@ -9,15 +9,19 @@ mitsamt Verwaltungsrechten. Die Abhilfe wäre ein widerrufbares Gerätepasswort;
 solcher Pfad später dort ergänzt werden kann, ohne die Views anzufassen.
 
 Warum kein ``@login_required``: ``LOGIN_URL`` zeigt auf ``/intern/login/``, ein
-PROPFIND bekäme also 302 auf eine HTML-Seite. DAVx⁵ meldet dann „CardDAV-Dienst
-nicht gefunden", iOS scheitert stumm. Es muss ein 401 mit ``WWW-Authenticate``
-sein.
+PROPFIND bekäme also 302 auf eine HTML-Seite. DAVx⁵ meldet dann „Dienst nicht
+gefunden", iOS scheitert stumm. Es muss ein 401 mit ``WWW-Authenticate`` sein.
+
+Adressbuch und Kalender teilen sich diesen Code und unterscheiden sich nur in
+dem, was :class:`Dienst` festhält — insbesondere im Konfigurationspräfix, über
+das jeder Dienst einzeln freigeschaltet und gedrosselt wird.
 """
 
 import base64
 import binascii
 import logging
 from functools import wraps
+from typing import NamedTuple
 
 from django.contrib.auth import authenticate
 from django.core.cache import cache
@@ -30,37 +34,49 @@ from ..views.auth import _client_ip
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["carddav_basic_auth", "dav_kopfzeilen", "DAV_HEADER", "ALLOW_HEADER"]
+__all__ = ["Dienst", "dav_basic_auth", "dav_kopfzeilen", "ALLOW_HEADER"]
 
-# Die 2 (LOCK) wird bewusst nicht behauptet — wir sperren nichts. Sollte ein
-# Client daran Anstoss nehmen, ist "1, 2, 3, addressbook" der nächste Versuch.
-DAV_HEADER = "1, 3, addressbook"
 ALLOW_HEADER = "OPTIONS, GET, HEAD, PROPFIND, REPORT"
 
 
-def dav_kopfzeilen(response):
+class Dienst(NamedTuple):
+    """Was einen DAV-Dienst von seinem Geschwister unterscheidet.
+
+    ``dav_header`` ist die ``DAV:``-Kopfzeile. Die 2 (LOCK) wird bewusst nicht
+    behauptet — wir sperren nichts. Sollte ein Client daran Anstoss nehmen, ist
+    ``"1, 2, 3, …"`` der nächste Versuch.
+
+    ``prefix`` benennt die Konfigurationsschlüssel ``<PREFIX>_AKTIV``,
+    ``<PREFIX>_AUTH_TTL`` und ``<PREFIX>_MAX_FEHLVERSUCHE_PRO_STUNDE``.
+    """
+
+    name: str
+    realm: str
+    dav_header: str
+    prefix: str
+
+
+def dav_kopfzeilen(response, dienst):
     """Setzt die Kopfzeilen, die auf **jeder** Antwort stehen müssen.
 
     ``DAV:`` prüft iOS mehrfach, auch auf 401 und 405. ``Vary: Authorization``
-    und ``no-store`` verhindern, dass ein Zwischenspeicher das Adressbuch des
-    einen Mitglieds an ein anderes ausliefert.
+    und ``no-store`` verhindern, dass ein Zwischenspeicher die Daten des einen
+    Mitglieds an ein anderes ausliefert.
     """
-    response["DAV"] = DAV_HEADER
+    response["DAV"] = dienst.dav_header
     response["Cache-Control"] = "private, no-store"
     patch_vary_headers(response, ("Authorization",))
     return response
 
 
-def _challenge():
+def _challenge(dienst):
     """401 mit Aufforderung zur Basic-Anmeldung."""
     r = HttpResponse(status=401, content_type="text/plain; charset=utf-8")
     # charset="UTF-8" (RFC 7617) ist hier nicht kosmetisch: Benutzernamen dürfen
     # in diesem Projekt Leerzeichen und Umlaute enthalten (User.username setzt
     # validators=[]).
-    r["WWW-Authenticate"] = (
-        'Basic realm="CantorHub Adressbuch", charset="UTF-8"'
-    )
-    return dav_kopfzeilen(r)
+    r["WWW-Authenticate"] = f'Basic realm="{dienst.realm}", charset="UTF-8"'
+    return dav_kopfzeilen(r, dienst)
 
 
 def _zugangsdaten(request):
@@ -88,10 +104,13 @@ def _cache_key(username, passwort):
     ``salted_hmac`` zieht den ``SECRET_KEY`` mit hinein. Wer die ``cache_table``
     liest, ohne ihn zu kennen, kann aus dem Digest nichts zurückrechnen — der
     Schlüssel steht als Umgebungsvariable ausserhalb der Datenbank.
+
+    Der Eintrag gilt dienstübergreifend: geprüft wird ein Portal-Passwort, und
+    das ist für Adressbuch und Kalender dasselbe.
     """
     roh = f"{username}\x00{passwort}"
-    digest = salted_hmac("intern.carddav.auth", roh, algorithm="sha256")
-    return "carddav-auth:" + digest.hexdigest()
+    digest = salted_hmac("intern.dav.auth", roh, algorithm="sha256")
+    return "dav-auth:" + digest.hexdigest()
 
 
 def _passwort_kennung(user):
@@ -101,11 +120,11 @@ def _passwort_kennung(user):
     dass eine Passwortänderung ihn sofort entwertet statt erst nach Ablauf.
     """
     return salted_hmac(
-        "intern.carddav.pw", user.password, algorithm="sha256"
+        "intern.dav.pw", user.password, algorithm="sha256"
     ).hexdigest()[:16]
 
 
-def _pruefe_anmeldung(username, passwort):
+def _pruefe_anmeldung(username, passwort, dienst):
     """Prüft Zugangsdaten und gibt den ``User`` zurück, sonst ``None``.
 
     Der Zwischenspeicher überspringt **ausschliesslich** den PBKDF2-Aufruf,
@@ -117,7 +136,7 @@ def _pruefe_anmeldung(username, passwort):
 
     Abwägung: Wer ``SECRET_KEY`` *und* Datenbank hat, kann gegen die Schlüssel
     Kandidatenpasswörter mit schnellem SHA-256 durchprobieren — das ist die
-    Abschwächung gegenüber PBKDF2. Sie ist auf ``CARDDAV_AUTH_TTL`` begrenzt,
+    Abschwächung gegenüber PBKDF2. Sie ist auf ``<PREFIX>_AUTH_TTL`` begrenzt,
     und wer beides hat, besitzt ohnehin Sitzungen, Signatur-Salts und die
     Datei-Token.
     """
@@ -141,43 +160,49 @@ def _pruefe_anmeldung(username, passwort):
     cache.set(
         key,
         {"pk": user.pk, "ph": _passwort_kennung(user)},
-        get_config_int("CARDDAV_AUTH_TTL", 300),
+        get_config_int(f"{dienst.prefix}_AUTH_TTL", 300),
     )
     return user
 
 
-def carddav_basic_auth(view):
-    """Verlangt HTTP-Basic und hängt den Betrachter an ``request.carddav_user``."""
+def dav_basic_auth(dienst):
+    """Verlangt HTTP-Basic und hängt den Betrachter an ``request.dav_user``."""
 
-    @wraps(view)
-    def wrapper(request, *args, **kwargs):
-        # Der Dienst wird ausgeliefert, aber erst freigeschaltet, wenn die
-        # Mitglieder informiert sind (Datenschutzerklärung §16). Http404 statt
-        # 403: solange er aus ist, gibt es ihn schlicht nicht.
-        if not get_config_bool("CARDDAV_AKTIV", False):
-            raise Http404
+    def decorator(view):
+        @wraps(view)
+        def wrapper(request, *args, **kwargs):
+            # Der Dienst wird ausgeliefert, aber erst freigeschaltet, wenn die
+            # Mitglieder informiert sind (Datenschutzerklärung §16). Http404
+            # statt 403: solange er aus ist, gibt es ihn schlicht nicht.
+            if not get_config_bool(f"{dienst.prefix}_AKTIV", False):
+                raise Http404
 
-        drossel = f"carddav-auth-fail:{_client_ip(request)}"
-        fehlversuche = cache.get(drossel, 0)
-        grenze = get_config_int("CARDDAV_MAX_FEHLVERSUCHE_PRO_STUNDE", 30)
-        if fehlversuche >= grenze:
-            # Bewusst 401 und nicht 429: der Client soll es später erneut
-            # versuchen, nicht das Konto als kaputt abschreiben.
-            return _challenge()
+            drossel = f"{dienst.name}-auth-fail:{_client_ip(request)}"
+            fehlversuche = cache.get(drossel, 0)
+            grenze = get_config_int(
+                f"{dienst.prefix}_MAX_FEHLVERSUCHE_PRO_STUNDE", 30
+            )
+            if fehlversuche >= grenze:
+                # Bewusst 401 und nicht 429: der Client soll es später erneut
+                # versuchen, nicht das Konto als kaputt abschreiben.
+                return _challenge(dienst)
 
-        daten = _zugangsdaten(request)
-        if daten is None:
-            return _challenge()
+            zugang = _zugangsdaten(request)
+            if zugang is None:
+                return _challenge(dienst)
 
-        user = _pruefe_anmeldung(*daten)
-        if user is None:
-            cache.set(drossel, fehlversuche + 1, 3600)
-            logger.info("CardDAV: Anmeldung fehlgeschlagen für %r", daten[0])
-            return _challenge()
-        if fehlversuche:
-            cache.delete(drossel)
+            user = _pruefe_anmeldung(*zugang, dienst)
+            if user is None:
+                cache.set(drossel, fehlversuche + 1, 3600)
+                logger.info("%s: Anmeldung fehlgeschlagen für %r",
+                            dienst.name, zugang[0])
+                return _challenge(dienst)
+            if fehlversuche:
+                cache.delete(drossel)
 
-        request.carddav_user = user
-        return dav_kopfzeilen(view(request, *args, **kwargs))
+            request.dav_user = user
+            return dav_kopfzeilen(view(request, *args, **kwargs), dienst)
 
-    return wrapper
+        return wrapper
+
+    return decorator

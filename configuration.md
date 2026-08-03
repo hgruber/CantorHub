@@ -32,6 +32,24 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   Deliberately generous — a member with a stale password on two devices behind one NAT must not
   lock out the whole household — and answers `401`, not `429`, so the client retries later
   instead of giving up
+- `CALDAV_AKTIV` (`1`/`0`, **default `0`**) — master switch of the read-only CalDAV calendar,
+  behaving exactly like `CARDDAV_AKTIV` (404 while off, privacy policy §16). The two switches
+  are independent, but turning **both** on is what lets a phone find calendar *and* address
+  book from the bare base URL: each service only advertises the other's home-set while that
+  other one is active
+- `CALDAV_KALENDER_NAME` (display name of the event calendar on the device; empty →
+  `"<VEREINSNAME_LANG> – Termine"`)
+- `CALDAV_GEBURTSTAGE` (`1`/`0`, default `1`) — deliver the birthdays as a second calendar.
+  Contains only active members who have **not** hidden `geburtstag`; while off, the collection
+  does not exist at all (404), it is not merely empty
+- `CALDAV_GEBURTSTAGE_NAME` (empty → `"<VEREINSNAME_LANG> – Geburtstage"`)
+- `CALDAV_FARBE` (hex colour handed to the device as `CS:calendar-color`, default `#c14468`;
+  empty → the property is omitted and the client picks its own)
+- `CALDAV_TAGE_RUECKWIRKEND` (how many days of past events are delivered, default `365`). There
+  is no limit towards the future — a calendar that stops in a year would be a surprise
+- `CALDAV_AUTH_TTL`, `CALDAV_MAX_FEHLVERSUCHE_PRO_STUNDE` — the CalDAV counterparts of the two
+  `CARDDAV_*` keys above, same meaning and same defaults. Note the throttle counts per service,
+  so a client failing on both endpoints has two budgets
 - `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`
 - `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`)
 - `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)

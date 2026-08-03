@@ -26,6 +26,10 @@ Bewusst **nicht** implementiert:
 Modulschnitt — er folgt der Testbarkeitsregel des Projekts (vgl.
 ``mailingliste.lese_abmelde_token`` vs. ``read_abmelde_token``): alles, was die
 Datenbank oder den Dateispeicher anfasst, steckt in :mod:`~intern.carddav.daten`.
-:mod:`~intern.carddav.vcard` und :mod:`~intern.carddav.dav` sind reine Funktionen
-und damit vollständig mit ``SimpleTestCase`` prüfbar.
+:mod:`~intern.carddav.vcard` ist rein und damit vollständig mit
+``SimpleTestCase`` prüfbar.
+
+Was sich Adressbuch und Kalender teilen — WebDAV-XML, HTTP-Basic, die
+Antwortbausteine und die Zeilenfaltung —, steht in :mod:`intern.dav`. Dieses
+Paket enthält nur noch, was das Adressbuch allein ausmacht.
 """

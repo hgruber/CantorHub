@@ -61,6 +61,51 @@ _CONFIG_DEFAULTS = [
         "30",
         "Maximale fehlgeschlagene CardDAV-Anmeldungen pro IP und Stunde",
     ),
+    (
+        "CALDAV_AKTIV",
+        "0",
+        "CalDAV-Kalender für Mitglieder freischalten (1/0). Vor dem "
+        "Einschalten die Mitglieder informieren — Datenschutzerklärung §16.",
+    ),
+    (
+        "CALDAV_KALENDER_NAME",
+        "",
+        "Anzeigename des Terminkalenders auf dem Gerät "
+        "(leer → „<Vereinsname> – Termine“)",
+    ),
+    (
+        "CALDAV_GEBURTSTAGE",
+        "1",
+        "Geburtstage als zweiten Kalender ausliefern (1/0). Enthält nur "
+        "Mitglieder, die ihr Geburtsdatum nicht verborgen haben.",
+    ),
+    (
+        "CALDAV_GEBURTSTAGE_NAME",
+        "",
+        "Anzeigename des Geburtstagskalenders "
+        "(leer → „<Vereinsname> – Geburtstage“)",
+    ),
+    (
+        "CALDAV_FARBE",
+        "#c14468",
+        "Farbe der Kalender auf dem Gerät (Hex, leer = keine Vorgabe)",
+    ),
+    (
+        "CALDAV_TAGE_RUECKWIRKEND",
+        "365",
+        "Wie viele Tage in die Vergangenheit Termine ausgeliefert werden",
+    ),
+    (
+        "CALDAV_AUTH_TTL",
+        "300",
+        "Sekunden, die eine erfolgreiche CalDAV-Passwortprüfung "
+        "zwischengespeichert wird (spart PBKDF2 bei häufig abfragenden Clients)",
+    ),
+    (
+        "CALDAV_MAX_FEHLVERSUCHE_PRO_STUNDE",
+        "30",
+        "Maximale fehlgeschlagene CalDAV-Anmeldungen pro IP und Stunde",
+    ),
     ("NOTIFY_POLL_MS", "10000", "Abfrageintervall für Benachrichtigungen (ms)"),
     ("NOTIFY_DISMISS_MS", "6000", "Anzeigedauer einer Benachrichtigung (ms)"),
     ("VEREINSNAME", "", "Name des Chors"),

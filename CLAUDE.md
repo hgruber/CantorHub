@@ -158,6 +158,7 @@ journalctl -u <unit> -n 30 --no-pager | grep proxy-check
 - `/datenschutz/` — public privacy policy (`intern/templates/datenschutz.html`, no login required, `TemplateView` in `config/urls.py`)
 - `/auftritte/`, `/auftritte/bestaetigen/<token>/`, `/auftritte/abmelden/<token>/` — public gig-reminder mailing list (no login; see "Auftritts-Mailingliste")
 - `/.well-known/carddav` → `301` → `/carddav/`, and `/carddav/*` — read-only CardDAV address book (HTTP Basic, **not** the portal session; see "CardDAV address book")
+- `/.well-known/caldav` → `301` → `/caldav/`, and `/caldav/*` — read-only CalDAV calendar, same auth (see "CalDAV calendar"). Both services advertise each other, so one base URL finds both
 - `/tiles/<z>/<x>/<y>.png` — OSM tile proxy (no login required). In production nginx intercepts this and serves from its disk cache (`/app/tiles/`, 7-day TTL) without hitting Django. In dev, `tiles_proxy` in `karte.py` fetches from OSM server-side so the user's IP is never sent to OSM.
 - `/admin/` — Django admin
 - `/intern/*` — all authenticated views (`intern/urls.py`)
@@ -819,11 +820,13 @@ would run `0003_import`, which needs the legacy MySQL):
 
 | Module | Contents |
 |---|---|
-| `vcard.py` | vCard 3.0 serialisation, pure. Escaping, RFC-6350 folding, `kontakt_daten`, `vcard_text`, `etag`, `ctag`. Imports nothing from `intern.models` — which field a reader may see arrives as the callable `sichtbar`, so a test passes a set lookup |
-| `dav.py` | namespaces, `parse_body`/`parse_propfind`/`parse_report`, `multistatus`, `element` |
+| `vcard.py` | vCard 3.0 serialisation, pure. `kontakt_daten`, `vcard_text`, `etag`, `ctag`; folding and escaping are re-exported from `intern/dav/text.py` so `from intern.carddav.vcard import fold` keeps working. Imports nothing from `intern.models` — which field a reader may see arrives as the callable `sichtbar`, so a test passes a set lookup |
 | `daten.py` | the **only** DB/storage contact: `carddav_sichtbar`, `mitglieder_qs`, `foto_kennung`, `foto_bytes`, `kontakt_liste`, `ctag` |
-| `auth.py` | `carddav_basic_auth` decorator, the verification cache, the IP throttle |
 | `views.py` | six FBVs, all `@csrf_exempt` |
+
+Everything the address book shares with the calendar lives in **`intern/dav/`** (see "The
+shared DAV base" below) — that is where `parse_report`, `multistatus`, the Basic-auth
+decorator and the 207/405/Depth helpers are.
 
 **vCard 3.0, not 4.0** — iOS is most reliable with it and `PHOTO;ENCODING=b` is proven on both
 platforms (the 4.0 `data:` URI is not). Folding counts **UTF-8 octets**, never splitting a
@@ -856,6 +859,96 @@ forever, since no field value changed.
 - `nginx.conf` needs no change (`location /` already catches both paths, and no secret travels
   in the URL), and `requirements.txt` gains no dependency — the XML goes through
   `xml.etree.ElementTree`, with DTDs rejected outright to close Billion Laughs.
+
+### The shared DAV base (`intern/dav/`)
+
+Everything the address book and the calendar have in common, and nothing else. All of it is
+DB-free (except the login lookup in `auth.py`) and therefore `SimpleTestCase`-able.
+
+| Module | Contents |
+|---|---|
+| `xml.py` | namespaces (`NS_DAV`/`NS_CARDDAV`/`NS_CALDAV`/`NS_CS`), `qn`, `element`, `parse_body`/`parse_propfind`/`parse_report`, `multistatus` |
+| `auth.py` | `Dienst` (the per-service tuple), `dav_basic_auth(dienst)`, `dav_kopfzeilen`, the verification cache, the IP throttle |
+| `http.py` | the response building blocks: `multistatus_antwort` (207), `options`, `nicht_erlaubt` (405), `aufteilen`, `privilegien`, `collection`, `href`, `supported_report`, `tiefe`, `basis`, `ressourcen_id`, `pruefe_eigentuemer` |
+| `text.py` | 75-octet folding, TEXT escaping, `etag(daten, serialisierung)` / `ctag(paare)`. vCard 3.0 and iCalendar fold and escape identically, so this exists once |
+| `verweise.py` | `home_sets(pk, eigener)` — the cross-advertising described below |
+
+**Each service is a `Dienst` tuple**, and the decorator reads its config keys by prefix:
+`<PREFIX>_AKTIV`, `<PREFIX>_AUTH_TTL`, `<PREFIX>_MAX_FEHLVERSUCHE_PRO_STUNDE`. That is the
+whole difference between the two — plus the realm and the `DAV:` header. The decorator sets
+`request.dav_user` (it used to be `request.carddav_user`).
+
+**`element(ns, tag, …)`'s second parameter is `tag`, not `name`** — `name` is needed as an
+*attribute*: `element(CAL, "comp", name="VEVENT")`.
+
+**One base URL must find both services.** Three things together make that work, and all three
+have to stay:
+
+1. `/.well-known/carddav` **and** `/.well-known/caldav` (each ± slash) are registered in
+   `config/urls.py`.
+2. `verweise.home_sets()` puts **both** `C:addressbook-home-set` and `CAL:calendar-home-set`
+   into the service root *and* the principal of **both** services. A client that only probes
+   one well-known path still discovers the other collection from there — which is what makes
+   DAVx⁵ create a single account holding the address book and both calendars.
+3. A foreign home-set is only advertised when that service is switched on. Otherwise the
+   client would be sent to a path that answers 404.
+
+### CalDAV calendar
+
+`intern/caldav/` serves the events — and, optionally, the members' birthdays — to DAVx⁵ and
+iOS Calendar. Same shape as CardDAV: **read-only** (`PUT`/`DELETE`/`MKCOL`/`PROPPATCH`/`LOCK`
+→ 405), HTTP Basic with the portal password, `CALDAV_AKTIV` seeded as `"0"` and every URL
+raising `Http404` while it is off.
+
+| URL | Purpose |
+|---|---|
+| `/.well-known/caldav` (± slash) | `301` → `/caldav/`, no auth |
+| `/caldav` (± slash) | service root |
+| `/caldav/principal/<pk>/` | the principal |
+| `/caldav/kalender/<pk>/` | `calendar-home-set` — Depth 1 lists both collections |
+| `/caldav/kalender/<pk>/termine/` | the events: `getctag`, the ETag list, both REPORTs |
+| `/caldav/kalender/<pk>/termine/<tid>.ics` | one event |
+| `/caldav/kalender/<pk>/geburtstage/` `…/<mid>.ics` | the birthdays, absent when `CALDAV_GEBURTSTAGE` is off |
+
+| Module | Contents |
+|---|---|
+| `ical.py` | iCalendar serialisation, pure: `termin_daten`, `geburtstag_daten`, `vcalendar_text`, `etag`, `ctag`. Imports nothing from `intern.models` and **never calls the clock** — the timezone and the `DTSTAMP` are passed in, the same rule as `intern/mailingliste.py`, which is what makes the tests deterministic |
+| `daten.py` | the **only** DB/config contact: `eintraege(art)`, `einzeln`, `nach_zeitraum`, `ctag`, `sammlung_name`, `farbe`, `zeitzone`, `stand` |
+| `views.py` | six FBVs, all `@csrf_exempt`; the two collections share `sammlung`/`eintrag` and are told apart by the `art` kwarg fixed in `urls.py` |
+
+**Hand-rolled, not via the `icalendar` library** (which stays for the ICS feed): the ETag would
+otherwise hang on a third party's byte output, and a library upgrade would trigger a full
+re-sync on every device.
+
+**Time handling.** `USE_TZ = False`, so `Termin.datum` is naive local time.
+
+- A termin **at 00:00** with no end (or an end also at 00:00) is treated as **all-day** and
+  written as `DTSTART;VALUE=DATE`. `intern/forms.py` stores `datetime.min.time()` when no time
+  was entered, so 00:00 *is* the marker for "no time given" — this also fixes the old feed's
+  "00:00–02:00" display. `DTEND` is **exclusive** for DATE values: the last day plus one, where
+  "last day" reads `datum_bis` inclusively, exactly as the month grid draws it.
+- Everything else is converted to **UTC** via `zoneinfo.ZoneInfo(settings.TIME_ZONE)` and ends
+  in `Z`, so no `VTIMEZONE` is needed and no client has to guess. Without an end, the feed's
+  two-hour convention applies.
+
+**Same content for everyone, so ETags are global.** There are no per-termin permissions in the
+portal, and the member's own `Zusage` is deliberately **not** in the VEVENT — it would make
+every ETag account-specific. Birthdays follow `private_fields` with **no admin bonus**, the
+same rule as the month grid and `carddav_sichtbar`.
+
+**`_SERIALISIERUNG` in `ical.py` must be bumped on every change to the serialisation**, for the
+same reason as in `vcard.py`.
+
+Of the `calendar-query` filter only the two cheap parts are honoured: a `comp-filter` asking
+for `VTODO`/`VJOURNAL` gets an empty answer instead of events, and a `time-range` narrows the
+list (`daten.nach_zeitraum` converts the UTC bounds back to local time first; recurring
+birthdays always pass). Everything else is ignored — over-delivery is harmless in a read-only
+service.
+
+**The old ICS feed stays.** `/intern/calendar/<secret>.ics` (`ICAL_SECRET`) is deliberately
+*not* replaced: Google Calendar on the web cannot subscribe to CalDAV, and the feed needs no
+portal password. The Termine list shows the CalDAV box first and labels the ICS one as the
+alternative without login.
 
 ### External integrations
 

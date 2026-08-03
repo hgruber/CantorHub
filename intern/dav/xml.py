@@ -1,18 +1,20 @@
 """WebDAV-XML: Multistatus bauen, PROPFIND- und REPORT-Rümpfe lesen.
 
-Reine Funktionen ohne Datenbankzugriff — wie :mod:`~intern.carddav.vcard` mit
-``SimpleTestCase`` prüfbar.
+Reine Funktionen ohne Datenbankzugriff — mit ``SimpleTestCase`` prüfbar.
 """
 
 import xml.etree.ElementTree as ET
+from datetime import datetime
+from typing import NamedTuple
 
 __all__ = [
-    "NS_DAV", "NS_CARDDAV", "NS_CS", "qn", "element",
-    "parse_body", "parse_propfind", "parse_report", "multistatus",
+    "NS_DAV", "NS_CARDDAV", "NS_CALDAV", "NS_CS", "qn", "element",
+    "parse_body", "parse_propfind", "parse_report", "multistatus", "Report",
 ]
 
 NS_DAV = "DAV:"
 NS_CARDDAV = "urn:ietf:params:xml:ns:carddav"
+NS_CALDAV = "urn:ietf:params:xml:ns:caldav"
 NS_CS = "http://calendarserver.org/ns/"
 
 # Ohne diese Registrierung schreibt ElementTree ns0/ns1/ns2 — gültig, aber die
@@ -20,11 +22,40 @@ NS_CS = "http://calendarserver.org/ns/"
 # Clients erwarten die üblichen Präfixe.
 ET.register_namespace("D", NS_DAV)
 ET.register_namespace("C", NS_CARDDAV)
+ET.register_namespace("CAL", NS_CALDAV)
 ET.register_namespace("CS", NS_CS)
 
 # 256 KiB. Ein PROPFIND-Rumpf ist wenige hundert Byte gross; ein multiget über
 # ein ganzes Adressbuch bleibt weit darunter.
 _MAX_BODY = 256 * 1024
+
+# Wurzelelement eines REPORT → Art. Beide Dienste benutzen denselben Parser;
+# welche Art er beantwortet, entscheidet die aufrufende View.
+_REPORT_ARTEN = {
+    f"{{{NS_CARDDAV}}}addressbook-multiget": "multiget",
+    f"{{{NS_CARDDAV}}}addressbook-query": "query",
+    f"{{{NS_CALDAV}}}calendar-multiget": "multiget",
+    f"{{{NS_CALDAV}}}calendar-query": "query",
+}
+
+
+class Report(NamedTuple):
+    """Das Ergebnis von :func:`parse_report`.
+
+    ``art``         ``"multiget"``, ``"query"`` oder ``None`` (unbekannt)
+    ``props``       angefragte Property-Namen, ``None`` heisst „alles"
+    ``hrefs``       die Ressourcen eines ``multiget``
+    ``limit``       ``<C:limit><C:nresults>`` des CardDAV-Query
+    ``komponenten`` Namen aus ``<CAL:comp-filter>`` ausser ``VCALENDAR``
+    ``zeitraum``    ``(start, ende)`` aus ``<CAL:time-range>``, sonst ``None``
+    """
+
+    art: str | None
+    props: list | None
+    hrefs: list
+    limit: int | None
+    komponenten: tuple
+    zeitraum: tuple | None
 
 
 def qn(ns, name):
@@ -86,16 +117,46 @@ def parse_propfind(roh):
     return _prop_namen(parse_body(roh))
 
 
-def parse_report(roh):
-    """``REPORT``-Rumpf → ``(art, props, hrefs, limit)``.
+def _zeitpunkt(roh):
+    """``YYYYMMDDTHHMMSSZ`` oder ``YYYYMMDD`` → naive UTC-``datetime``.
 
-    ``art`` ist ``"multiget"``, ``"query"`` oder ``None`` (unbekannter Report).
-    ``<C:filter>`` wird gelesen, aber nicht ausgewertet — siehe Modul-Docstring
-    des Pakets.
+    Unlesbares gibt ``None`` — ein kaputter Filter darf den Abgleich nicht
+    abbrechen, er wird dann eben nicht angewandt.
+    """
+    roh = (roh or "").strip()
+    for muster in ("%Y%m%dT%H%M%SZ", "%Y%m%dT%H%M%S", "%Y%m%d"):
+        try:
+            return datetime.strptime(roh, muster)
+        except ValueError:
+            continue
+    return None
+
+
+def _komponenten(wurzel):
+    """Die Komponentennamen aus ``<CAL:comp-filter>``.
+
+    ``VCALENDAR`` fliegt raus: das ist immer der äussere Rahmen und sagt nichts
+    darüber, wonach der Client sucht. Übrig bleibt ``VEVENT``, ``VTODO`` … —
+    woran die View erkennt, ob sie überhaupt etwas anzubieten hat.
+    """
+    namen = []
+    for el in wurzel.iter(qn(NS_CALDAV, "comp-filter")):
+        name = (el.get("name") or "").strip().upper()
+        if name and name != "VCALENDAR" and name not in namen:
+            namen.append(name)
+    return tuple(namen)
+
+
+def parse_report(roh):
+    """``REPORT``-Rumpf → :class:`Report`.
+
+    ``<C:filter>`` des CardDAV-Query wird gelesen, aber nicht ausgewertet
+    (siehe ``intern/carddav/__init__.py``); der CalDAV-Filter wird nur so weit
+    ausgewertet, wie es billig ist: Komponentenname und Zeitraum.
     """
     wurzel = parse_body(roh)
     if wurzel is None:
-        return None, None, [], None
+        return Report(None, None, [], None, (), None)
 
     props = _prop_namen(wurzel)
     hrefs = [(h.text or "").strip() for h in wurzel.findall(qn(NS_DAV, "href"))]
@@ -107,13 +168,14 @@ def parse_report(roh):
         if n is not None and (n.text or "").strip().isdigit():
             limit = int(n.text.strip())
 
-    if wurzel.tag == qn(NS_CARDDAV, "addressbook-multiget"):
-        art = "multiget"
-    elif wurzel.tag == qn(NS_CARDDAV, "addressbook-query"):
-        art = "query"
-    else:
-        art = None
-    return art, props, hrefs, limit
+    zeitraum = None
+    spanne = next(iter(wurzel.iter(qn(NS_CALDAV, "time-range"))), None)
+    if spanne is not None:
+        zeitraum = (_zeitpunkt(spanne.get("start")),
+                    _zeitpunkt(spanne.get("end")))
+
+    return Report(_REPORT_ARTEN.get(wurzel.tag), props, hrefs, limit,
+                  _komponenten(wurzel), zeitraum)
 
 
 def multistatus(eintraege):
@@ -158,9 +220,13 @@ def multistatus(eintraege):
     return ET.tostring(wurzel, encoding="utf-8", xml_declaration=True)
 
 
-def element(ns, name, text=None, kinder=(), **attribute):
-    """Kleiner Helfer für Property-Werte, die selbst XML sind."""
-    el = ET.Element(qn(ns, name), {k: str(v) for k, v in attribute.items()})
+def element(ns, tag, text=None, kinder=(), **attribute):
+    """Kleiner Helfer für Property-Werte, die selbst XML sind.
+
+    Der zweite Parameter heisst ``tag`` und nicht ``name``, weil ``name`` als
+    *Attribut* gebraucht wird: ``element(CAL, "comp", name="VEVENT")``.
+    """
+    el = ET.Element(qn(ns, tag), {k: str(v) for k, v in attribute.items()})
     if text is not None:
         el.text = text
     for k in kinder:

@@ -6,6 +6,7 @@ Für Termine reicht ein winziges Stellvertreter-Objekt — ``faelligkeit`` und
 """
 
 from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 from types import SimpleNamespace
 from unittest import mock
 
@@ -572,7 +573,7 @@ class CtagTest(SimpleTestCase):
 
 class DavParseTest(SimpleTestCase):
     def test_propfind_liefert_die_angefragten_namen(self):
-        from intern.carddav import dav
+        from intern.dav import xml as dav
 
         rumpf = (
             b'<?xml version="1.0" encoding="utf-8"?>'
@@ -585,7 +586,7 @@ class DavParseTest(SimpleTestCase):
         )
 
     def test_leerer_rumpf_und_allprop_bedeuten_alles(self):
-        from intern.carddav import dav
+        from intern.dav import xml as dav
 
         self.assertIsNone(dav.parse_propfind(b""))
         self.assertIsNone(
@@ -593,7 +594,7 @@ class DavParseTest(SimpleTestCase):
         )
 
     def test_multiget_liefert_die_hrefs(self):
-        from intern.carddav import dav
+        from intern.dav import xml as dav
 
         rumpf = (
             b'<C:addressbook-multiget xmlns:D="DAV:" '
@@ -602,12 +603,13 @@ class DavParseTest(SimpleTestCase):
             b"<D:href>/carddav/adressbuch/7/mitglieder/12.vcf</D:href>"
             b"</C:addressbook-multiget>"
         )
-        art, _props, hrefs, _limit = dav.parse_report(rumpf)
-        self.assertEqual(art, "multiget")
-        self.assertEqual(hrefs, ["/carddav/adressbuch/7/mitglieder/12.vcf"])
+        bericht = dav.parse_report(rumpf)
+        self.assertEqual(bericht.art, "multiget")
+        self.assertEqual(bericht.hrefs,
+                         ["/carddav/adressbuch/7/mitglieder/12.vcf"])
 
     def test_query_mit_limit(self):
-        from intern.carddav import dav
+        from intern.dav import xml as dav
 
         rumpf = (
             b'<C:addressbook-query xmlns:D="DAV:" '
@@ -616,12 +618,12 @@ class DavParseTest(SimpleTestCase):
             b"<C:limit><C:nresults>5</C:nresults></C:limit>"
             b"</C:addressbook-query>"
         )
-        art, _props, _hrefs, limit = dav.parse_report(rumpf)
-        self.assertEqual((art, limit), ("query", 5))
+        bericht = dav.parse_report(rumpf)
+        self.assertEqual((bericht.art, bericht.limit), ("query", 5))
 
     def test_dtd_wird_abgewiesen(self):
         # Schliesst Billion Laughs, ohne eine Bibliothek einzuziehen.
-        from intern.carddav import dav
+        from intern.dav import xml as dav
 
         with self.assertRaises(ValueError):
             dav.parse_body(
@@ -630,13 +632,13 @@ class DavParseTest(SimpleTestCase):
             )
 
     def test_uebergrosser_rumpf_wird_abgewiesen(self):
-        from intern.carddav import dav
+        from intern.dav import xml as dav
 
         with self.assertRaises(ValueError):
             dav.parse_body(b"<x/>" + b" " * (256 * 1024))
 
     def test_kaputtes_xml_wird_abgewiesen(self):
-        from intern.carddav import dav
+        from intern.dav import xml as dav
 
         with self.assertRaises(ValueError):
             dav.parse_body(b"<nicht-geschlossen")
@@ -644,7 +646,7 @@ class DavParseTest(SimpleTestCase):
 
 class MultistatusTest(SimpleTestCase):
     def _bauen(self):
-        from intern.carddav import dav
+        from intern.dav import xml as dav
 
         return dav, dav.multistatus([(
             "/carddav/adressbuch/7/mitglieder/",
@@ -687,21 +689,291 @@ class MultistatusTest(SimpleTestCase):
 
 class CarddavAuthKeyTest(SimpleTestCase):
     def test_schluessel_ist_stabil_und_unterscheidet(self):
-        from intern.carddav.auth import _cache_key
+        from intern.dav.auth import _cache_key
 
         self.assertEqual(_cache_key("a", "geheim"), _cache_key("a", "geheim"))
         self.assertNotEqual(_cache_key("a", "geheim"), _cache_key("b", "geheim"))
         self.assertNotEqual(_cache_key("a", "geheim"), _cache_key("a", "anders"))
 
     def test_das_passwort_steht_nicht_im_schluessel(self):
-        from intern.carddav.auth import _cache_key
+        from intern.dav.auth import _cache_key
 
         self.assertNotIn("geheim", _cache_key("a", "geheim"))
 
     def test_kennung_folgt_dem_gespeicherten_hash(self):
         # Damit eine Passwortaenderung den Eintrag sofort entwertet.
-        from intern.carddav.auth import _passwort_kennung
+        from intern.dav.auth import _passwort_kennung
 
         alt = _passwort_kennung(SimpleNamespace(password="pbkdf2$alt"))
         neu = _passwort_kennung(SimpleNamespace(password="pbkdf2$neu"))
         self.assertNotEqual(alt, neu)
+
+
+# ---------------------------------------------------------------------------
+# CalDAV
+#
+# Dieselbe Bauart wie oben: die iCalendar-Serialisierung ist rein, die Zeitzone
+# und der DTSTAMP werden hereingereicht. Was wirklich die Datenbank braucht,
+# steckt in intern/caldav/daten.py und bleibt hier aussen vor.
+# ---------------------------------------------------------------------------
+
+_ZONE = ZoneInfo("Europe/Berlin")
+_STAND = datetime(2026, 8, 3, 12, 0, 0)
+
+
+def _ort(**abweichend):
+    felder = dict(name="Heilig-Geist-Kirche", strasse="Berger Weg 3",
+                  plz="60389", ort="Frankfurt", breite=50.15, laenge=8.72)
+    felder.update(abweichend)
+    return SimpleNamespace(**felder)
+
+
+def _kalendertermin(**abweichend):
+    """Stellvertreter fuer einen Termin; termin_daten liest nur Attribute."""
+    felder = dict(
+        pk=42, kurz="Chorprobe", lang="", datum=datetime(2026, 1, 7, 20, 0),
+        datum_bis=None, ort=None, repertoire=False,
+    )
+    felder.update(abweichend)
+    return SimpleNamespace(**felder)
+
+
+def _vevent(termin=None, **kwargs):
+    from intern.caldav import ical
+
+    daten = ical.termin_daten(termin or _kalendertermin(), zone=_ZONE, **kwargs)
+    return daten, ical.vcalendar_text(daten, stand=_STAND)
+
+
+class ICalZeitTest(SimpleTestCase):
+    def test_winterzeit_wird_nach_utc_gerechnet(self):
+        # 20:00 MEZ ist 19:00 UTC. Ohne Umrechnung stuende hier eine Zeit ohne
+        # Zonenangabe, die jedes Geraet anders auslegt.
+        _daten, text = _vevent()
+        self.assertIn("DTSTART:20260107T190000Z", text)
+
+    def test_sommerzeit_wird_nach_utc_gerechnet(self):
+        _daten, text = _vevent(_kalendertermin(datum=datetime(2026, 8, 23, 18, 30)))
+        self.assertIn("DTSTART:20260823T163000Z", text)
+
+    def test_ohne_endzeit_gilt_die_standarddauer(self):
+        _daten, text = _vevent()
+        self.assertIn("DTEND:20260107T210000Z", text)
+
+    def test_endzeit_vor_beginn_wird_ignoriert(self):
+        # Kaputte Altdaten duerfen kein VEVENT mit negativer Dauer erzeugen.
+        _daten, text = _vevent(_kalendertermin(
+            datum_bis=datetime(2026, 1, 7, 18, 0)))
+        self.assertIn("DTEND:20260107T210000Z", text)
+
+
+class ICalGanztagTest(SimpleTestCase):
+    def test_mitternacht_ohne_ende_wird_ganztaegig(self):
+        # 00:00 ist die Kennung fuer "ohne Uhrzeit": das Formular setzt
+        # datetime.min.time(), wenn nichts eingegeben wurde.
+        daten, text = _vevent(_kalendertermin(datum=datetime(2026, 11, 8, 0, 0)))
+        self.assertTrue(daten["ganztaegig"])
+        self.assertIn("DTSTART;VALUE=DATE:20261108", text)
+
+    def test_dtend_ist_bei_value_date_exklusiv(self):
+        _daten, text = _vevent(_kalendertermin(datum=datetime(2026, 11, 8, 0, 0)))
+        self.assertIn("DTEND;VALUE=DATE:20261109", text)
+
+    def test_mehrtaegig_reicht_bis_einschliesslich_datum_bis(self):
+        # Dieselbe Lesart wie die Monatsansicht: das Band endet auf datum_bis.
+        _daten, text = _vevent(_kalendertermin(
+            datum=datetime(2026, 11, 6, 0, 0),
+            datum_bis=datetime(2026, 11, 8, 0, 0)))
+        self.assertIn("DTSTART;VALUE=DATE:20261106", text)
+        self.assertIn("DTEND;VALUE=DATE:20261109", text)
+
+    def test_eine_uhrzeit_am_ende_macht_es_zeitgebunden(self):
+        daten, _text = _vevent(_kalendertermin(
+            datum=datetime(2026, 11, 6, 0, 0),
+            datum_bis=datetime(2026, 11, 6, 12, 0)))
+        self.assertFalse(daten["ganztaegig"])
+
+
+class ICalInhaltTest(SimpleTestCase):
+    def test_ort_wird_zu_einer_location_zeile(self):
+        _daten, text = _vevent(_kalendertermin(ort=_ort()))
+        self.assertIn(
+            "LOCATION:Heilig-Geist-Kirche\\, Berger Weg 3\\, 60389 Frankfurt",
+            text,
+        )
+
+    def test_leere_ortsteile_hinterlassen_kein_komma(self):
+        _daten, text = _vevent(_kalendertermin(
+            ort=_ort(strasse="", plz="", ort="")))
+        self.assertIn("LOCATION:Heilig-Geist-Kirche\r\n", text)
+
+    def test_koordinaten_werden_mit_semikolon_getrennt(self):
+        _daten, text = _vevent(_kalendertermin(ort=_ort()))
+        self.assertIn("GEO:50.15;8.72", text)
+
+    def test_ohne_ort_keine_location_und_kein_geo(self):
+        _daten, text = _vevent()
+        self.assertNotIn("LOCATION", text)
+        self.assertNotIn("GEO", text)
+
+    def test_auftritt_bekommt_eine_eigene_kategorie(self):
+        _daten, text = _vevent(_kalendertermin(repertoire=True))
+        self.assertIn("CATEGORIES:Auftritt", text)
+        _daten, text = _vevent()
+        self.assertIn("CATEGORIES:Termin", text)
+
+    def test_beschreibung_wird_escaped_und_gefaltet(self):
+        lang = "Erste Zeile\nZweite, mit Komma; und Semikolon " + "ä" * 60
+        _daten, text = _vevent(_kalendertermin(lang=lang))
+        self.assertIn("\\n", text)
+        self.assertIn("\\,", text)
+        self.assertIn("\\;", text)
+        for zeile in text.split("\r\n"):
+            self.assertLessEqual(len(zeile.encode("utf-8")), 75)
+
+    def test_rahmen_und_zeilenenden(self):
+        _daten, text = _vevent()
+        self.assertTrue(text.startswith("BEGIN:VCALENDAR\r\n"))
+        self.assertTrue(text.endswith("END:VCALENDAR\r\n"))
+        self.assertIn("VERSION:2.0", text)
+        self.assertIn("UID:cantorhub-termin-42", text)
+        self.assertIn("DTSTAMP:20260803T120000Z", text)
+
+    def test_url_zeigt_auf_die_terminseite(self):
+        _daten, text = _vevent(basis_url="https://portal.example.org")
+        self.assertIn("URL:https://portal.example.org/intern/termin/42/", text)
+
+
+class ICalGeburtstagTest(SimpleTestCase):
+    def _bauen(self, **abweichend):
+        from intern.caldav import ical
+
+        felder = dict(pk=7, first_name="Ann-Kathrin", last_name="Müller-Groß",
+                      geburtstag=date(1976, 11, 10))
+        felder.update(abweichend)
+        daten = ical.geburtstag_daten(SimpleNamespace(**felder))
+        return daten, ical.vcalendar_text(daten, stand=_STAND)
+
+    def test_wiederkehrend_und_ganztaegig(self):
+        _daten, text = self._bauen()
+        self.assertIn("DTSTART;VALUE=DATE:19761110", text)
+        self.assertIn("DTEND;VALUE=DATE:19761111", text)
+        self.assertIn("RRULE:FREQ=YEARLY", text)
+
+    def test_zeigt_niemanden_als_beschaeftigt(self):
+        # Ein Geburtstag blockiert keinen Termin.
+        _daten, text = self._bauen()
+        self.assertIn("TRANSP:TRANSPARENT", text)
+
+    def test_name_steht_im_titel(self):
+        _daten, text = self._bauen()
+        self.assertIn("SUMMARY:Ann-Kathrin Müller-Groß hat Geburtstag", text)
+
+    def test_uid_haengt_am_mitglied_nicht_am_datum(self):
+        daten, _text = self._bauen()
+        self.assertEqual(daten["uid"], "cantorhub-geburtstag-7")
+
+
+class ICalETagTest(SimpleTestCase):
+    def test_geaenderter_titel_aendert_den_etag(self):
+        from intern.caldav import ical
+
+        a = ical.etag(_vevent()[0])
+        b = ical.etag(_vevent(_kalendertermin(kurz="Generalprobe"))[0])
+        self.assertNotEqual(a, b)
+
+    def test_gleiche_daten_ergeben_denselben_etag(self):
+        from intern.caldav import ical
+
+        self.assertEqual(ical.etag(_vevent()[0]), ical.etag(_vevent()[0]))
+
+    def test_etag_ist_stark_und_in_anfuehrungszeichen(self):
+        from intern.caldav import ical
+
+        tag = ical.etag(_vevent()[0])
+        self.assertTrue(tag.startswith('"') and tag.endswith('"'))
+        self.assertNotIn("W/", tag)
+
+    def test_ctag_bemerkt_einen_zugang(self):
+        from intern.caldav import ical
+
+        self.assertNotEqual(
+            ical.ctag([(1, '"a"')]),
+            ical.ctag([(1, '"a"'), (2, '"b"')]),
+        )
+
+
+class CalDavReportTest(SimpleTestCase):
+    def test_calendar_multiget_wird_erkannt(self):
+        from intern.dav import xml as dav
+
+        rumpf = (
+            b'<CAL:calendar-multiget xmlns:D="DAV:" '
+            b'xmlns:CAL="urn:ietf:params:xml:ns:caldav">'
+            b"<D:prop><D:getetag/></D:prop>"
+            b"<D:href>/caldav/kalender/7/termine/42.ics</D:href>"
+            b"</CAL:calendar-multiget>"
+        )
+        bericht = dav.parse_report(rumpf)
+        self.assertEqual(bericht.art, "multiget")
+        self.assertEqual(bericht.hrefs, ["/caldav/kalender/7/termine/42.ics"])
+
+    def test_comp_filter_nennt_die_gesuchte_komponente(self):
+        # Fragt ein Client nach VTODO, darf er keine Termine bekommen.
+        from intern.dav import xml as dav
+
+        rumpf = (
+            b'<CAL:calendar-query xmlns:D="DAV:" '
+            b'xmlns:CAL="urn:ietf:params:xml:ns:caldav">'
+            b"<D:prop><D:getetag/></D:prop><CAL:filter>"
+            b'<CAL:comp-filter name="VCALENDAR">'
+            b'<CAL:comp-filter name="VTODO"/>'
+            b"</CAL:comp-filter></CAL:filter></CAL:calendar-query>"
+        )
+        bericht = dav.parse_report(rumpf)
+        self.assertEqual(bericht.art, "query")
+        # VCALENDAR ist nur der Rahmen und faellt raus.
+        self.assertEqual(bericht.komponenten, ("VTODO",))
+
+    def test_time_range_wird_gelesen(self):
+        from intern.dav import xml as dav
+
+        rumpf = (
+            b'<CAL:calendar-query xmlns:D="DAV:" '
+            b'xmlns:CAL="urn:ietf:params:xml:ns:caldav">'
+            b"<D:prop><D:getetag/></D:prop><CAL:filter>"
+            b'<CAL:comp-filter name="VCALENDAR">'
+            b'<CAL:comp-filter name="VEVENT">'
+            b'<CAL:time-range start="20261101T000000Z" end="20261201T000000Z"/>'
+            b"</CAL:comp-filter></CAL:comp-filter>"
+            b"</CAL:filter></CAL:calendar-query>"
+        )
+        bericht = dav.parse_report(rumpf)
+        self.assertEqual(
+            bericht.zeitraum,
+            (datetime(2026, 11, 1), datetime(2026, 12, 1)),
+        )
+
+    def test_unlesbarer_zeitraum_bricht_nicht_ab(self):
+        # Ein kaputter Filter darf den Abgleich nicht beenden; er entfaellt dann.
+        from intern.dav import xml as dav
+
+        rumpf = (
+            b'<CAL:calendar-query xmlns:D="DAV:" '
+            b'xmlns:CAL="urn:ietf:params:xml:ns:caldav">'
+            b'<CAL:filter><CAL:time-range start="morgen"/></CAL:filter>'
+            b"</CAL:calendar-query>"
+        )
+        self.assertEqual(dav.parse_report(rumpf).zeitraum, (None, None))
+
+    def test_carddav_report_bleibt_unberuehrt(self):
+        from intern.dav import xml as dav
+
+        rumpf = (
+            b'<C:addressbook-query xmlns:D="DAV:" '
+            b'xmlns:C="urn:ietf:params:xml:ns:carddav"><C:filter/>'
+            b"</C:addressbook-query>"
+        )
+        bericht = dav.parse_report(rumpf)
+        self.assertEqual((bericht.art, bericht.komponenten, bericht.zeitraum),
+                         ("query", (), None))

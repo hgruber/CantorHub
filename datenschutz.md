@@ -71,16 +71,24 @@ this file tracks only what is still open.
   it in the leave/deactivation confirmation would be the same action item already recorded for
   §10 above.
 
-- **§16 the portal password ends up on private devices** — CardDAV authenticates with HTTP
-  Basic against the *normal* portal password, so it is stored in the Android AccountManager
-  or the iOS keychain. A lost, unlocked phone therefore grants access to the whole portal —
-  including administrative rights if it belongs to a board member. This was an explicit
-  decision, recorded here rather than treated as a defect. The remedy would be a revocable,
-  per-device app password; `carddav.auth._pruefe_anmeldung()` is deliberately the single
-  verification point so such a path can be added there without touching the views.
+- **§16 the portal password ends up on private devices** — CardDAV and CalDAV authenticate
+  with HTTP Basic against the *normal* portal password, so it is stored in the Android
+  AccountManager or the iOS keychain. A lost, unlocked phone therefore grants access to the
+  whole portal — including administrative rights if it belongs to a board member. This was an
+  explicit decision, recorded here rather than treated as a defect. The remedy would be a
+  revocable, per-device app password; `dav.auth._pruefe_anmeldung()` is deliberately the
+  single verification point **for both services** so such a path can be added there without
+  touching the views.
 
-- **§16 CardDAV verification cache in `cache_table`** — a deliberate deviation from
-  "passwords exist only as a PBKDF2 hash": for up to `CARDDAV_AUTH_TTL` (default 300 s) the
+- **§16 the birthday calendar exports a date of birth to devices** — the CalDAV birthday
+  collection carries name and full date of birth (including the year, so devices can show the
+  age) of every active member who has not hidden `geburtstag`. It follows `private_fields`
+  with no admin bonus, exactly like the vCard `BDAY` it duplicates, and the whole collection
+  can be switched off with `CALDAV_GEBURTSTAGE`. It nevertheless widens the §5 default problem
+  above by one more field on one more device class — same argument, same remedy.
+
+- **§16 DAV verification cache in `cache_table`** — a deliberate deviation from
+  "passwords exist only as a PBKDF2 hash": for up to `<PREFIX>_AUTH_TTL` (default 300 s) the
   database holds an HMAC-SHA256 over username+password, keyed by `SECRET_KEY`. Without the
   key (an environment variable, not stored in the DB) the entry is worthless; with both key
   and database an attacker could test candidate passwords using fast SHA-256. The reason is

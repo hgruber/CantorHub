@@ -22,7 +22,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from icalendar import Calendar, Event
 
 from intern import folders
-from intern.app_settings import get_config
+from intern.app_settings import get_config, get_config_bool
 
 from ..forms import TerminForm
 from ..models import Konzert, Lied, Ort, Termin, User, Zusage
@@ -191,6 +191,12 @@ def termin_list(request):
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
             "ical_url": ical_url,
             "webcal_url": webcal_url,
+            # Nur wenn der Dienst freigeschaltet ist — sonst führte der Hinweis
+            # ins Leere (jede CalDAV-URL antwortet dann 404).
+            "caldav_url": (
+                request.build_absolute_uri("/caldav/")
+                if get_config_bool("CALDAV_AKTIV", False) else None
+            ),
             "upload_folder_id": folders.termine(),
             "upload_folder_name": "Termine",
             "add": add,
