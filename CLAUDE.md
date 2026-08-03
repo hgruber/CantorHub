@@ -155,8 +155,9 @@ journalctl -u <unit> -n 30 --no-pager | grep proxy-check
 ### URL structure
 
 - `/` — public homepage (`templates/index.html`)
-- `/datenschutz/` — public privacy policy (`templates/datenschutz.html`, no login required, `TemplateView` in `config/urls.py`)
+- `/datenschutz/` — public privacy policy (`intern/templates/datenschutz.html`, no login required, `TemplateView` in `config/urls.py`)
 - `/auftritte/`, `/auftritte/bestaetigen/<token>/`, `/auftritte/abmelden/<token>/` — public gig-reminder mailing list (no login; see "Auftritts-Mailingliste")
+- `/.well-known/carddav` → `301` → `/carddav/`, and `/carddav/*` — read-only CardDAV address book (HTTP Basic, **not** the portal session; see "CardDAV address book")
 - `/tiles/<z>/<x>/<y>.png` — OSM tile proxy (no login required). In production nginx intercepts this and serves from its disk cache (`/app/tiles/`, 7-day TTL) without hitting Django. In dev, `tiles_proxy` in `karte.py` fetches from OSM server-side so the user's IP is never sent to OSM.
 - `/admin/` — Django admin
 - `/intern/*` — all authenticated views (`intern/urls.py`)
@@ -770,6 +771,91 @@ folder is world-readable. `folder_create` copies the parent's rows; `_copy_folde
 gives each copied folder its source folder's own rows and, if the source was unrestricted,
 the rows of its new parent (`_perm_specs` / `_apply_perm_specs`) — otherwise copying a
 protected folder into an open one would expose its contents.
+
+### CardDAV address book
+
+`intern/carddav/` serves the member directory — photos included — to DAVx⁵ on Android and to
+iOS Contacts. **Read-only**: `PUT`/`DELETE`/`MKCOL`/`PROPPATCH`/`LOCK` all answer `405`.
+Members authenticate with their normal portal username and password over HTTP Basic.
+
+**Off by default.** `CARDDAV_AKTIV` is seeded as `"0"`, and while it is off every CardDAV URL
+raises `Http404` — not `401`. Switching it on is a decision with privacy consequences
+(`datenschutz.html` §16), so it deliberately requires a deliberate act.
+
+| URL | Purpose |
+|---|---|
+| `/.well-known/carddav` (± slash) | `301` → `/carddav/`; RFC 6764, the only thing iOS derives from a bare hostname. No auth |
+| `/carddav` (± slash) | service root — `current-user-principal` |
+| `/carddav/principal/<pk>/` | the principal |
+| `/carddav/adressbuch/<pk>/` | `addressbook-home-set` |
+| `/carddav/adressbuch/<pk>/mitglieder/` | the address book: `getctag`, the ETag list, both REPORTs |
+| `/carddav/adressbuch/<pk>/mitglieder/<mid>.vcf` | one card |
+
+`<pk>` must equal the authenticated member's pk, else `Http404` (the `views/media.py` rule —
+404, never 403, so a foreign id is not confirmed by a different error). Integer pks rather than
+usernames, because `User.username` sets `validators=[]` ("Leerzeichen erlaubt") and hrefs must
+match byte-for-byte between the PROPFIND response and the following multiget.
+
+**Two rules shape the whole design, and both differ from the portal:**
+
+- **No admin bonus.** `carddav.daten.carddav_sichtbar()` consults `private_fields` and nothing
+  else — unlike `User.field_visible_to()`, holders of `intern.change_user` do *not* get hidden
+  fields. A vCard lands in the phone's contact database, gets backed up to Google/iCloud and is
+  read by messenger apps; hiding an address is not consent to that just because the reader sits
+  on the board. Consequence the architecture rests on: **every card is byte-identical for every
+  reader**, so ETags are global rather than per-account.
+- **Nobody gets their own card.** `mitglieder_qs()` does `exclude(pk=betrachter.pk)`; the
+  `.vcf` view uses the same queryset, so the own card 404s on its direct URL too. iOS and
+  Android keep their own "my card" and would treat a second copy as a duplicate. This is the
+  one viewer-dependent thing about the collection, and therefore the CTag varies per member
+  while the individual ETags do not.
+
+`is_active=True` applies to everyone, deliberately unlike `mitglied_list`, which shows admins
+inactive members too — otherwise a board member's phone fills up with ex-members and
+`geloescht_<id>` placeholders.
+
+**Module split follows the project's testability rule** (`SimpleTestCase` only — a `TestCase`
+would run `0003_import`, which needs the legacy MySQL):
+
+| Module | Contents |
+|---|---|
+| `vcard.py` | vCard 3.0 serialisation, pure. Escaping, RFC-6350 folding, `kontakt_daten`, `vcard_text`, `etag`, `ctag`. Imports nothing from `intern.models` — which field a reader may see arrives as the callable `sichtbar`, so a test passes a set lookup |
+| `dav.py` | namespaces, `parse_body`/`parse_propfind`/`parse_report`, `multistatus`, `element` |
+| `daten.py` | the **only** DB/storage contact: `carddav_sichtbar`, `mitglieder_qs`, `foto_kennung`, `foto_bytes`, `kontakt_liste`, `ctag` |
+| `auth.py` | `carddav_basic_auth` decorator, the verification cache, the IP throttle |
+| `views.py` | six FBVs, all `@csrf_exempt` |
+
+**vCard 3.0, not 4.0** — iOS is most reliable with it and `PHOTO;ENCODING=b` is proven on both
+platforms (the 4.0 `data:` URI is not). Folding counts **UTF-8 octets**, never splitting a
+multi-byte sequence: an `ä` cut in half destroys the whole card.
+
+**ETags never hash file bytes.** `foto_kennung()` builds `"<pk>:<sha1>:<size>"` from
+`filer.File` columns — `sha1` is the content digest filer computes on upload — so a
+`PROPFIND Depth:1` over the whole book costs one query and opens not a single image.
+`vcard.etag()` hashes the entire `kontakt_daten` dict (sorted) rather than a hand-maintained
+field list, so a field added later cannot be forgotten. **`_SERIALISIERUNG` must be bumped on
+every change to `vcard.py`** — otherwise every already-synced client keeps its old cards
+forever, since no field value changed.
+
+**Things that will bite when touching this:**
+
+- `@csrf_exempt` on all six views. Only `GET/HEAD/OPTIONS/TRACE` are CSRF-safe, and over HTTPS
+  without `Origin` *and* `Referer` — exactly what both clients send — Django answers 403. These
+  are the project's first `csrf_exempt` uses.
+- Never `@login_required`: `LOGIN_URL` would turn a PROPFIND into a 302 to an HTML page. DAVx⁵
+  then reports "service not found", iOS fails silently.
+- `GZipMiddleware` weakens a strong ETag to `W/"…"`. The `.vcf` response therefore sets
+  `Content-Encoding: identity`, which makes the middleware bail out; the 207s carry no ETag
+  header and stay compressed.
+- `current-user-privilege-set` containing only `<D:read/>` is what tells iOS the book is
+  read-only. Without it, opening a card raises a save error.
+- Unknown properties must be reported as a second `propstat` with 404, not omitted.
+- `sync-collection` is not implemented, so it is absent from `supported-report-set` and
+  `D:sync-token` is answered 404. Offering a report and then not serving it is worse than
+  omitting it.
+- `nginx.conf` needs no change (`location /` already catches both paths, and no secret travels
+  in the URL), and `requirements.txt` gains no dependency — the XML goes through
+  `xml.etree.ElementTree`, with DTDs rejected outright to close Billion Laughs.
 
 ### External integrations
 

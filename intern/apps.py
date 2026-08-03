@@ -32,6 +32,35 @@ _CONFIG_DEFAULTS = [
     ("MAP_CENTER_ID", "1", "ID des Orts, der als Karten-Mittelpunkt dient"),
     ("MAP_DEFAULT_ZOOM", "12", "Standard-Zoomstufe der Gesamtkarte"),
     ("PWRESET_MAX_PER_HOUR", "5", "Maximale Passwort-Reset-Anfragen pro IP und Stunde"),
+    (
+        "CARDDAV_AKTIV",
+        "0",
+        "CardDAV-Adressbuch für Mitglieder freischalten (1/0). Vor dem "
+        "Einschalten die Mitglieder informieren — Datenschutzerklärung §16.",
+    ),
+    (
+        "CARDDAV_ADRESSBUCH_NAME",
+        "",
+        "Anzeigename des Adressbuchs auf dem Gerät "
+        "(leer → „<Vereinsname> – Mitglieder“)",
+    ),
+    (
+        "CARDDAV_ORGANISATION",
+        "",
+        "Wert der vCard-Eigenschaft ORG (leer → langer Vereinsname)",
+    ),
+    ("CARDDAV_FOTO", "1", "Profilbilder als PHOTO in die vCard aufnehmen (1/0)"),
+    (
+        "CARDDAV_AUTH_TTL",
+        "300",
+        "Sekunden, die eine erfolgreiche CardDAV-Passwortprüfung "
+        "zwischengespeichert wird (spart PBKDF2 bei häufig abfragenden Clients)",
+    ),
+    (
+        "CARDDAV_MAX_FEHLVERSUCHE_PRO_STUNDE",
+        "30",
+        "Maximale fehlgeschlagene CardDAV-Anmeldungen pro IP und Stunde",
+    ),
     ("NOTIFY_POLL_MS", "10000", "Abfrageintervall für Benachrichtigungen (ms)"),
     ("NOTIFY_DISMISS_MS", "6000", "Anzeigedauer einer Benachrichtigung (ms)"),
     ("VEREINSNAME", "", "Name des Chors"),

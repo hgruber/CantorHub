@@ -56,6 +56,38 @@ this file tracks only what is still open.
   member's address, birthday and phone numbers; hiding is opt-out via `private_fields`.
   Privacy-by-default would mean at least birthday/address hidden by default (changing the
   default of `User.private_fields` + a data migration for existing rows).
+  **The CardDAV export (§16) sharpens this considerably**: the same defect used to mean "the
+  address is visible in the portal", it now means "the address sits in the contact database of
+  every member's phone", from where the OS syncs it to Google/iCloud and messenger apps read
+  it. That is the strongest argument yet for flipping the default. Two things soften it but do
+  not remove it: the export honours `private_fields` **without the admin bonus**
+  (`carddav.daten.carddav_sichtbar`, deliberately unlike `User.field_visible_to`), and it is
+  off until `CARDDAV_AKTIV` is switched on.
+
+- **§16 residual copies on member devices** — Art. 17 is satisfiable server-side (deleting a
+  member removes their card, and the next sync deletes it on every device), but a card the
+  user has meanwhile copied into a Google/iCloud account is out of reach. §16 informs about
+  this; whether informing is enough should be re-read at the next policy revision. Reinforcing
+  it in the leave/deactivation confirmation would be the same action item already recorded for
+  §10 above.
+
+- **§16 the portal password ends up on private devices** — CardDAV authenticates with HTTP
+  Basic against the *normal* portal password, so it is stored in the Android AccountManager
+  or the iOS keychain. A lost, unlocked phone therefore grants access to the whole portal —
+  including administrative rights if it belongs to a board member. This was an explicit
+  decision, recorded here rather than treated as a defect. The remedy would be a revocable,
+  per-device app password; `carddav.auth._pruefe_anmeldung()` is deliberately the single
+  verification point so such a path can be added there without touching the views.
+
+- **§16 CardDAV verification cache in `cache_table`** — a deliberate deviation from
+  "passwords exist only as a PBKDF2 hash": for up to `CARDDAV_AUTH_TTL` (default 300 s) the
+  database holds an HMAC-SHA256 over username+password, keyed by `SECRET_KEY`. Without the
+  key (an environment variable, not stored in the DB) the entry is worthless; with both key
+  and database an attacker could test candidate passwords using fast SHA-256. The reason is
+  cost: PBKDF2 per request is ~600 ms, and a sync client sends several requests every few
+  minutes — measured 620 ms cold versus 10 ms warm. Revocation is unaffected: a password
+  change or `is_active=False` takes effect on the very next request, because the stored
+  password hash and the active flag are re-checked on every cache hit.
 
 - **§10 ex-member anonymisation is deliberately opt-out** (not a defect) — after a member
   leaves, forum posts keep the full real name by default; deletion **and** the milder

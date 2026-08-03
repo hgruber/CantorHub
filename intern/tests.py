@@ -5,8 +5,9 @@ Für Termine reicht ein winziges Stellvertreter-Objekt — ``faelligkeit`` und
 ``faellige_erinnerungen`` lesen nur ``datum``.
 """
 
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from types import SimpleNamespace
+from unittest import mock
 
 from django.template import Context, Template
 from django.test import SimpleTestCase
@@ -294,3 +295,413 @@ class HilfeTagTest(SimpleTestCase):
     def test_icon_sendet_das_formular_nicht_ab(self):
         # Das Icon steht in <form>-Elementen; ohne type="button" waere es ein Submit.
         self.assertIn('type="button"', self._render('{% hilfe "Termin.repertoire" %}'))
+
+
+# ---------------------------------------------------------------------------
+# CardDAV
+#
+# Alles Folgende ist datenbankfrei, weil die Serialisierung und der XML-Bau
+# reine Funktionen sind (siehe intern/carddav/__init__.py). Geprueft wird
+# gegen SimpleNamespace-Stellvertreter; was wirklich die Datenbank braucht,
+# steckt in intern/carddav/daten.py und bleibt hier aussen vor.
+# ---------------------------------------------------------------------------
+
+
+def _mitglied(**abweichend):
+    """Stellvertreter fuer ein Mitglied; kontakt_daten liest nur Attribute."""
+    felder = dict(
+        pk=12, first_name="Ann-Kathrin", last_name="Müller-Groß",
+        username="amueller", email="a@example.org",
+        telefon="069 1", telefon_mobil="0170 2", telefon_job="",
+        telefon_job_mobil="", fax="",
+        strasse="Hauptstr. 1", plz="60311", ort="Frankfurt",
+        breite=50.11, laenge=8.68,
+        geburtstag=date(1985, 3, 7), xmpp="a@jabber.de",
+        text="Singt seit Ewigkeiten.", date_joined=datetime(2012, 4, 1),
+    )
+    felder.update(abweichend)
+    return SimpleNamespace(**felder)
+
+
+def _karte(mitglied=None, sichtbar=None, **kwargs):
+    from intern.carddav import vcard
+
+    daten = vcard.kontakt_daten(
+        mitglied or _mitglied(), sichtbar or (lambda f: True), **kwargs
+    )
+    return daten, vcard.vcard_text(daten)
+
+
+class VCardFaltungTest(SimpleTestCase):
+    def test_kurze_zeile_bleibt_ungefaltet(self):
+        from intern.carddav.vcard import fold
+
+        self.assertEqual(fold("x" * 75), "x" * 75)
+
+    def test_ab_76_oktetten_wird_gefaltet(self):
+        from intern.carddav.vcard import fold
+
+        self.assertIn("\r\n ", fold("x" * 76))
+
+    def test_folgezeile_beginnt_mit_genau_einem_leerzeichen(self):
+        from intern.carddav.vcard import fold
+
+        for zeile in fold("x" * 400).split("\r\n")[1:]:
+            self.assertTrue(zeile.startswith(" "))
+            self.assertFalse(zeile.startswith("  "))
+
+    def test_umlaute_werden_nie_mitten_im_zeichen_getrennt(self):
+        # Der eigentliche Grund fuer die byteweise Zaehlung: ein 'ä' belegt zwei
+        # Oktette, und ein Schnitt dazwischen macht die ganze Karte unlesbar.
+        from intern.carddav.vcard import fold
+
+        for laenge in (37, 38, 39, 100):
+            with self.subTest(laenge=laenge):
+                original = "ä" * laenge
+                gefaltet = fold(original)
+                self.assertEqual(gefaltet.replace("\r\n ", ""), original)
+                for zeile in gefaltet.split("\r\n"):
+                    self.assertLessEqual(len(zeile.encode("utf-8")), 75)
+
+
+class VCardEscapeTest(SimpleTestCase):
+    def test_sonderzeichen(self):
+        from intern.carddav.vcard import escape_text
+
+        self.assertEqual(escape_text("a,b"), "a\\,b")
+        self.assertEqual(escape_text("a;b"), "a\\;b")
+        self.assertEqual(escape_text("a\\b"), "a\\\\b")
+        self.assertEqual(escape_text("a\nb"), "a\\nb")
+        self.assertEqual(escape_text("a\r\nb"), "a\\nb")
+
+    def test_komponententrenner_bleibt_roh(self):
+        from intern.carddav.vcard import strukturiert
+
+        # Das Komma IN der Komponente wird escaped, das trennende ; nicht.
+        self.assertEqual(strukturiert(["a,b", "c"]), "a\\,b;c")
+
+    def test_listentrenner_bleibt_roh(self):
+        from intern.carddav.vcard import liste
+
+        self.assertEqual(liste(["Chor, e.V.", "Sopran"]), "Chor\\, e.V.,Sopran")
+
+
+class VCardStrukturTest(SimpleTestCase):
+    def test_rahmen_und_zeilenenden(self):
+        _daten, text = _karte()
+        self.assertTrue(text.startswith("BEGIN:VCARD\r\nVERSION:3.0\r\n"))
+        self.assertTrue(text.endswith("END:VCARD\r\n"))
+        self.assertNotIn("\n", text.replace("\r\n", ""))
+
+    def test_n_hat_fuenf_komponenten(self):
+        _daten, text = _karte()
+        n = [z for z in text.split("\r\n") if z.startswith("N:")][0]
+        self.assertEqual(n.count(";"), 4)
+
+    def test_uid_ist_vorhanden_und_stabil(self):
+        from intern.carddav.vcard import uid_fuer
+
+        _daten, text = _karte()
+        self.assertIn("UID:" + uid_fuer(12), text)
+
+    def test_keine_zeile_ueber_75_oktette(self):
+        _daten, text = _karte()
+        for zeile in text.split("\r\n"):
+            self.assertLessEqual(len(zeile.encode("utf-8")), 75)
+
+
+class VCardMappingTest(SimpleTestCase):
+    def test_felder_landen_mit_den_richtigen_typen(self):
+        _daten, text = _karte(organisation="Just Gospel", stimme_label="Sopran",
+                              basis_url="https://x.de")
+        for erwartet in (
+            "FN:Ann-Kathrin Müller-Groß",
+            "NICKNAME:amueller",
+            "ORG:Just Gospel",
+            "TITLE:Sopran",
+            "CATEGORIES:Just Gospel,Sopran",
+            "EMAIL;TYPE=INTERNET,HOME,PREF:a@example.org",
+            "TEL;TYPE=HOME,VOICE,PREF:069 1",
+            "TEL;TYPE=CELL,VOICE:0170 2",
+            "ADR;TYPE=HOME:;;Hauptstr. 1;Frankfurt;;60311;",
+            "GEO:50.11;8.68",
+            "BDAY:1985-03-07",
+            "IMPP;X-SERVICE-TYPE=XMPP;TYPE=HOME:xmpp:a@jabber.de",
+            "X-JABBER:a@jabber.de",
+            "URL:https://x.de/intern/mitglied/12/",
+        ):
+            with self.subTest(erwartet=erwartet):
+                self.assertIn(erwartet, text)
+
+    def test_leere_felder_erzeugen_keine_zeile(self):
+        # Eine leere TEL-Zeile legt auf Android einen leeren Eintrag an.
+        _daten, text = _karte()
+        self.assertNotIn("TEL;TYPE=WORK", text)
+        self.assertNotIn("TEL;TYPE=HOME,FAX", text)
+
+    def test_pref_nur_bei_der_ersten_nummer(self):
+        _daten, text = _karte()
+        self.assertEqual(text.count("PREF"), 2)  # einmal TEL, einmal EMAIL
+
+    def test_eintrittsjahr_steht_in_der_notiz(self):
+        _daten, text = _karte()
+        self.assertIn("Mitglied seit 2012", text)
+
+
+class VCardPrivacyTest(SimpleTestCase):
+    VERBORGEN = {"telefon", "telefon_mobil", "geburtstag", "email",
+                 "strasse", "plz", "ort"}
+
+    def _ohne(self, verborgen):
+        return _karte(sichtbar=lambda f: f not in verborgen)[1]
+
+    def test_verborgene_felder_fehlen(self):
+        text = self._ohne(self.VERBORGEN)
+        for verboten in ("TEL", "EMAIL", "BDAY", "ADR", "GEO"):
+            with self.subTest(verboten=verboten):
+                self.assertFalse(
+                    any(z.startswith(verboten) for z in text.split("\r\n"))
+                )
+
+    def test_sichtbares_bleibt(self):
+        text = self._ohne(self.VERBORGEN)
+        self.assertIn("FN:Ann-Kathrin Müller-Groß", text)
+        self.assertIn("X-JABBER:", text)
+
+    def test_teilweise_verborgene_adresse_behaelt_den_rest(self):
+        text = self._ohne({"plz"})
+        self.assertIn("ADR;TYPE=HOME:;;Hauptstr. 1;Frankfurt;;;", text)
+
+    def test_geo_haengt_an_der_sichtbarkeit_der_anschrift(self):
+        # Sonst liesse sich die verborgene Adresse aus den Koordinaten
+        # zurueckrechnen.
+        self.assertNotIn("GEO:", self._ohne({"plz"}))
+
+
+class CarddavSichtbarTest(SimpleTestCase):
+    """Der Export kennt bewusst keinen Admin-Bonus."""
+
+    def test_verwaltungsrecht_hebt_die_verbergung_nicht_auf(self):
+        from intern.carddav.daten import carddav_sichtbar
+
+        mitglied = SimpleNamespace(private_fields=["telefon", "geburtstag"])
+        self.assertFalse(carddav_sichtbar(mitglied, "telefon"))
+        self.assertTrue(carddav_sichtbar(mitglied, "email"))
+
+    def test_leere_liste_gibt_alles_frei(self):
+        from intern.carddav.daten import carddav_sichtbar
+
+        for leer in ([], None):
+            with self.subTest(leer=leer):
+                self.assertTrue(
+                    carddav_sichtbar(SimpleNamespace(private_fields=leer), "telefon")
+                )
+
+
+class EtagTest(SimpleTestCase):
+    def _etag(self, mitglied=None, sichtbar=None, **kwargs):
+        from intern.carddav import vcard
+
+        return vcard.etag(
+            vcard.kontakt_daten(mitglied or _mitglied(),
+                                sichtbar or (lambda f: True), **kwargs)
+        )
+
+    def test_gleiche_eingabe_gleicher_etag(self):
+        self.assertEqual(self._etag(), self._etag())
+
+    def test_ist_ein_starker_etag(self):
+        tag = self._etag()
+        self.assertTrue(tag.startswith('"') and tag.endswith('"'))
+
+    def test_jedes_sichtbare_feld_wirkt(self):
+        for feld, wert in [("first_name", "Anders"), ("telefon", "999"),
+                           ("ort", "Mainz"), ("xmpp", "b@j.de")]:
+            with self.subTest(feld=feld):
+                self.assertNotEqual(
+                    self._etag(), self._etag(_mitglied(**{feld: wert}))
+                )
+
+    def test_foto_wechsel_wirkt(self):
+        self.assertNotEqual(
+            self._etag(foto_kennung="1:aa:10"),
+            self._etag(foto_kennung="1:bb:10"),
+        )
+
+    def test_serialisierungsstand_wirkt(self):
+        # Ohne diesen Anteil behielten alle Clients nach einer Aenderung an
+        # vcard.py fuer immer ihre alten Karten.
+        from intern.carddav import vcard
+
+        alt = self._etag()
+        with mock.patch.object(vcard, "_SERIALISIERUNG", "v2"):
+            self.assertNotEqual(alt, self._etag())
+
+    def test_verborgenes_feld_veraendert_den_etag_nicht(self):
+        # Sonst liesse sich aus dem ETag ablesen, dass es das Feld gibt.
+        ohne = lambda f: f != "telefon"  # noqa: E731
+        self.assertEqual(
+            self._etag(_mitglied(telefon="111"), ohne),
+            self._etag(_mitglied(telefon="222"), ohne),
+        )
+
+
+class CtagTest(SimpleTestCase):
+    def setUp(self):
+        from intern.carddav.vcard import ctag
+
+        self.ctag = ctag
+
+    def test_reihenfolge_ist_egal(self):
+        self.assertEqual(
+            self.ctag([(1, '"a"'), (2, '"b"')]),
+            self.ctag([(2, '"b"'), (1, '"a"')]),
+        )
+
+    def test_abgang_wirkt(self):
+        self.assertNotEqual(
+            self.ctag([(1, '"a"'), (2, '"b"')]), self.ctag([(1, '"a"')])
+        )
+
+    def test_geaenderte_karte_wirkt(self):
+        self.assertNotEqual(
+            self.ctag([(1, '"a"'), (2, '"b"')]),
+            self.ctag([(1, '"a"'), (2, '"c"')]),
+        )
+
+
+class DavParseTest(SimpleTestCase):
+    def test_propfind_liefert_die_angefragten_namen(self):
+        from intern.carddav import dav
+
+        rumpf = (
+            b'<?xml version="1.0" encoding="utf-8"?>'
+            b'<D:propfind xmlns:D="DAV:" xmlns:CS="http://calendarserver.org/ns/">'
+            b"<D:prop><D:resourcetype/><CS:getctag/></D:prop></D:propfind>"
+        )
+        self.assertEqual(
+            dav.parse_propfind(rumpf),
+            [dav.qn(dav.NS_DAV, "resourcetype"), dav.qn(dav.NS_CS, "getctag")],
+        )
+
+    def test_leerer_rumpf_und_allprop_bedeuten_alles(self):
+        from intern.carddav import dav
+
+        self.assertIsNone(dav.parse_propfind(b""))
+        self.assertIsNone(
+            dav.parse_propfind(b'<D:propfind xmlns:D="DAV:"><D:allprop/></D:propfind>')
+        )
+
+    def test_multiget_liefert_die_hrefs(self):
+        from intern.carddav import dav
+
+        rumpf = (
+            b'<C:addressbook-multiget xmlns:D="DAV:" '
+            b'xmlns:C="urn:ietf:params:xml:ns:carddav">'
+            b"<D:prop><D:getetag/></D:prop>"
+            b"<D:href>/carddav/adressbuch/7/mitglieder/12.vcf</D:href>"
+            b"</C:addressbook-multiget>"
+        )
+        art, _props, hrefs, _limit = dav.parse_report(rumpf)
+        self.assertEqual(art, "multiget")
+        self.assertEqual(hrefs, ["/carddav/adressbuch/7/mitglieder/12.vcf"])
+
+    def test_query_mit_limit(self):
+        from intern.carddav import dav
+
+        rumpf = (
+            b'<C:addressbook-query xmlns:D="DAV:" '
+            b'xmlns:C="urn:ietf:params:xml:ns:carddav">'
+            b"<D:prop><D:getetag/></D:prop><C:filter/>"
+            b"<C:limit><C:nresults>5</C:nresults></C:limit>"
+            b"</C:addressbook-query>"
+        )
+        art, _props, _hrefs, limit = dav.parse_report(rumpf)
+        self.assertEqual((art, limit), ("query", 5))
+
+    def test_dtd_wird_abgewiesen(self):
+        # Schliesst Billion Laughs, ohne eine Bibliothek einzuziehen.
+        from intern.carddav import dav
+
+        with self.assertRaises(ValueError):
+            dav.parse_body(
+                b'<!DOCTYPE x [<!ENTITY a "aaa">]>'
+                b'<D:propfind xmlns:D="DAV:"><D:prop/></D:propfind>'
+            )
+
+    def test_uebergrosser_rumpf_wird_abgewiesen(self):
+        from intern.carddav import dav
+
+        with self.assertRaises(ValueError):
+            dav.parse_body(b"<x/>" + b" " * (256 * 1024))
+
+    def test_kaputtes_xml_wird_abgewiesen(self):
+        from intern.carddav import dav
+
+        with self.assertRaises(ValueError):
+            dav.parse_body(b"<nicht-geschlossen")
+
+
+class MultistatusTest(SimpleTestCase):
+    def _bauen(self):
+        from intern.carddav import dav
+
+        return dav, dav.multistatus([(
+            "/carddav/adressbuch/7/mitglieder/",
+            {
+                dav.qn(dav.NS_CS, "getctag"): '"abc"',
+                dav.qn(dav.NS_DAV, "resourcetype"): [
+                    dav.element(dav.NS_DAV, "collection"),
+                    dav.element(dav.NS_CARDDAV, "addressbook"),
+                ],
+            },
+            [dav.qn(dav.NS_DAV, "sync-token")],
+        )])
+
+    def test_ist_wohlgeformt(self):
+        import xml.etree.ElementTree as ET
+
+        _dav, xml = self._bauen()
+        ET.fromstring(xml)
+
+    def test_unbekannte_property_wird_als_404_gemeldet(self):
+        # Sie stillschweigend wegzulassen ist der Fehler, an dem iOS aussteigt.
+        import xml.etree.ElementTree as ET
+
+        dav, xml = self._bauen()
+        antwort = ET.fromstring(xml).find(dav.qn(dav.NS_DAV, "response"))
+        zustaende = sorted(
+            p.find(dav.qn(dav.NS_DAV, "status")).text
+            for p in antwort.findall(dav.qn(dav.NS_DAV, "propstat"))
+        )
+        self.assertEqual(zustaende, ["HTTP/1.1 200 OK", "HTTP/1.1 404 Not Found"])
+
+    def test_adressbuch_ist_collection_und_addressbook(self):
+        import xml.etree.ElementTree as ET
+
+        dav, xml = self._bauen()
+        rt = ET.fromstring(xml).find(".//" + dav.qn(dav.NS_DAV, "resourcetype"))
+        self.assertIsNotNone(rt.find(dav.qn(dav.NS_DAV, "collection")))
+        self.assertIsNotNone(rt.find(dav.qn(dav.NS_CARDDAV, "addressbook")))
+
+
+class CarddavAuthKeyTest(SimpleTestCase):
+    def test_schluessel_ist_stabil_und_unterscheidet(self):
+        from intern.carddav.auth import _cache_key
+
+        self.assertEqual(_cache_key("a", "geheim"), _cache_key("a", "geheim"))
+        self.assertNotEqual(_cache_key("a", "geheim"), _cache_key("b", "geheim"))
+        self.assertNotEqual(_cache_key("a", "geheim"), _cache_key("a", "anders"))
+
+    def test_das_passwort_steht_nicht_im_schluessel(self):
+        from intern.carddav.auth import _cache_key
+
+        self.assertNotIn("geheim", _cache_key("a", "geheim"))
+
+    def test_kennung_folgt_dem_gespeicherten_hash(self):
+        # Damit eine Passwortaenderung den Eintrag sofort entwertet.
+        from intern.carddav.auth import _passwort_kennung
+
+        alt = _passwort_kennung(SimpleNamespace(password="pbkdf2$alt"))
+        neu = _passwort_kennung(SimpleNamespace(password="pbkdf2$neu"))
+        self.assertNotEqual(alt, neu)

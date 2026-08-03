@@ -5,6 +5,7 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 from intern import views
+from intern.carddav import views as carddav_views
 
 handler400 = "intern.views.custom_400"
 handler403 = "intern.views.custom_403"
@@ -21,6 +22,14 @@ urlpatterns = [
          name="auftritte_bestaetigen"),
     path("auftritte/abmelden/<str:token>/", views.auftritte_abmelden,
          name="auftritte_abmelden"),
+    # CardDAV-Adressbuch (eigene HTTP-Basic-Anmeldung, keine Portal-Sitzung).
+    # /.well-known/ ist nach RFC 6764 die Adresse, die iOS beim Einrichten
+    # allein aus dem Hostnamen ableitet; beide Schreibweisen, damit kein
+    # APPEND_SLASH-Redirect dazwischenfunkt.
+    path(".well-known/carddav", carddav_views.well_known),
+    path(".well-known/carddav/", carddav_views.well_known),
+    path("carddav", carddav_views.dav_root),
+    path("carddav/", include("intern.carddav.urls")),
     path("", views.home),
     path("intern/", include("intern.urls")),
     path("admin/", admin.site.urls),

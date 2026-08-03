@@ -16,6 +16,22 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `UPLOAD_MAX_MB`
 - `MAP_CENTER_ID`, `MAP_DEFAULT_ZOOM`
 - `PWRESET_MAX_PER_HOUR`
+- `CARDDAV_AKTIV` (`1`/`0`, **default `0`**) — master switch of the read-only CardDAV address
+  book. While off, every CardDAV URL answers `404`, not `401`: the service simply does not
+  exist. Turn it on only after the members have been informed (privacy policy §16)
+- `CARDDAV_ADRESSBUCH_NAME` (display name of the collection on the device; empty →
+  `"<VEREINSNAME_LANG> – Mitglieder"`)
+- `CARDDAV_ORGANISATION` (value of the vCard `ORG` property; empty → `VEREINSNAME_LANG`)
+- `CARDDAV_FOTO` (`1`/`0`) — embed the 200×200 avatar thumbnail as `PHOTO`. Roughly 13 kB per
+  card; switch off if the sync volume matters more than the pictures
+- `CARDDAV_AUTH_TTL` (seconds a successful password check is cached, default `300`). Skips
+  **only** the PBKDF2 call — measured 620 ms cold vs. 10 ms warm — never an authorisation
+  decision: `is_active` and the stored password hash are re-checked on every hit, so a password
+  change or a deactivation takes effect on the very next request
+- `CARDDAV_MAX_FEHLVERSUCHE_PRO_STUNDE` (failed CardDAV logins per IP per hour, default `30`).
+  Deliberately generous — a member with a stale password on two devices behind one NAT must not
+  lock out the whole household — and answers `401`, not `429`, so the client retries later
+  instead of giving up
 - `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`
 - `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`)
 - `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)
