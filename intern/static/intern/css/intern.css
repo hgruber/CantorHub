@@ -7104,6 +7104,13 @@ body.join-page {
     box-shadow: 0 0 0 2px var(--brand-light);
     background: var(--bg-card);
 }
+/* Textfelder füllen die volle Höhe der wert-Zelle (auf Desktop key+desc-Zeilen)
+   und stehen nie unter 4 Zeilen. height:100% greift, weil .kf-wert als Grid-
+   Eintrag eine definite Höhe hat; autogrow setzt min-height auf den Inhalt. */
+.kf-eintrag[data-typ="text"] textarea.kf-value-input {
+    height: 100%;
+    min-height: calc(1.45em * 4 + 10px);
+}
 /* Number-Input: Spinner bleibt (Port/Zoom/Tage), kein min/max/step — die
    Wertefunktion wird nicht eingeengt (z.B. leere Datei-ID möglich). */
 .kf-eintrag input[type="number"].inline-input { width: 100%; }

@@ -105,6 +105,55 @@ def feldtyp(key: str) -> str:
     return FELDTYPEN.get(key, "text")
 
 
+# Anzeigereihenfolge der Schlüssel innerhalb ihrer Gruppe — nicht alphabetisch,
+# sondern nach Gesichtspunkten: beim Verein beginnt die URL (technische Basis),
+# dann Name, Adresse, Homepage-Texte; bei Mailtexten der Mitglied-Lebenszyklus
+# (Einladung → Antrag → Aktivierung → Bestätigung → Passwort → Rundmail → Footer);
+# bei CalDAV/CardDAV der Schalter vor den Detailparametern. Ein Schlüssel ohne
+# Eintrag hier fällt ans Ende seiner Gruppe (alphabetisch).
+SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
+    # Verein & Portal — Basis zuerst, dann Namen, Anschrift, Homepage-Texte
+    "VEREINS_URL", "VEREINSNAME", "VEREINSNAME_LANG", "VEREINSNAME_KURZ",
+    "VEREINSADRESSE", "HOMEPAGE_UEBER_UNS", "HOMEPAGE_AUFNAHME",
+    # Mitgliedsantrag & Dokumente — wohin gehen Anträge, dann die verlinkten Dokumente
+    "ANTRAG_EMAIL", "SATZUNG_FILE_ID", "BEITRAGSORDNUNG_FILE_ID",
+    # E-Mail-Versand — SMTP-Verbindung, dann Absender, dann Global-Schalter
+    "EMAIL_HOST", "EMAIL_PORT", "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD",
+    "EMAIL_USE_TLS", "EMAIL_USE_SSL", "DEFAULT_FROM_EMAIL", "MAIL_BEI_AKTIVIERUNG",
+    # E-Mail-Texte — Mitglied-Lebenszyklus
+    "MAIL_EINLADUNG", "MAIL_ANTRAG", "MAIL_ANTRAG_ADMIN",
+    "MAIL_ANTRAG_ADMIN_MINDERJAEHRIG", "MAIL_ANTRAG_ADMIN_FOERDER",
+    "MAIL_WILLKOMMEN", "MAIL_REAKTIVIERT",
+    "MAIL_BESTAETIGUNG", "MAIL_BESTAETIGUNG_BESTAETIGT",
+    "MAIL_NEUES_PASSWORT", "MAIL_RUNDMAIL", "MAIL_FOOTER",
+    # Auftritts-Mailingliste — Timing-Parameter, dann Formular-Texte, dann Mailtexte
+    "MAILINGLISTE_WOCHEN", "MAILINGLISTE_VERSANDZEIT", "MAILINGLISTE_INTERVALL_MIN",
+    "MAILINGLISTE_OPTIN_TAGE", "MAILINGLISTE_TEXT", "MAILINGLISTE_EINWILLIGUNG",
+    "MAIL_MAILINGLISTE_OPTIN", "MAIL_MAILINGLISTE_WILLKOMMEN",
+    "MAIL_MAILINGLISTE_BEREITS_ANGEMELDET", "MAIL_MAILINGLISTE_ERINNERUNG",
+    # Kalender (CalDAV) — Schalter, Namen, Farbe, Zeitraum, Auth, ICS-Alternative
+    "CALDAV_AKTIV", "CALDAV_KALENDER_NAME", "CALDAV_GEBURTSTAGE",
+    "CALDAV_GEBURTSTAGE_NAME", "CALDAV_FARBE", "CALDAV_TAGE_RUECKWIRKEND",
+    "CALDAV_AUTH_TTL", "CALDAV_MAX_FEHLVERSUCHE_PRO_STUNDE", "ICAL_SECRET",
+    # Adressbuch (CardDAV) — Schalter, Namen, Foto, Auth
+    "CARDDAV_AKTIV", "CARDDAV_ADRESSBUCH_NAME", "CARDDAV_ORGANISATION",
+    "CARDDAV_FOTO", "CARDDAV_AUTH_TTL", "CARDDAV_MAX_FEHLVERSUCHE_PRO_STUNDE",
+    # Forum-Chat (XMPP) — Server, dann Bot
+    "EJABBERD_HOST", "EJABBERD_MUC_SERVICE", "EJABBERD_API_URL",
+    "EJABBERD_BOT_JID", "EJABBERD_BOT_PASSWORD", "EJABBERD_BOT_PORT",
+    # Portal, Karte & Benachrichtigungen — Limits, Karte, Benachrichtigungen
+    "UPLOAD_MAX_MB", "PWRESET_MAX_PER_HOUR", "MAP_CENTER_ID", "MAP_DEFAULT_ZOOM",
+    "NOTIFY_POLL_MS", "NOTIFY_DISMISS_MS",
+)
+_REIHENFOLGE_INDEX: dict[str, int] = {k: i for i, k in enumerate(SCHLUESSEL_REIHENFOLGE)}
+_REIHENFOLGE_ENDE = len(SCHLUESSEL_REIHENFOLGE)
+
+
+def _sortierschluessel(key: str) -> tuple:
+    """Position in ``SCHLUESSEL_REIHENFOLGE``; unbekannte Schlüssel ans Ende."""
+    return (_REIHENFOLGE_INDEX.get(key, _REIHENFOLGE_ENDE), key)
+
+
 class Gruppe(NamedTuple):
     id: str
     titel: str
@@ -247,11 +296,13 @@ def gruppiere(rows: list[dict]) -> list[dict]:
         eintraege = nach_id[g.id]
         if not eintraege:
             continue
+        eintraege.sort(key=lambda e: _sortierschluessel(e["key"]))
         ergebnis.append(
             {"id": g.id, "titel": g.titel, "hinweis": g.hinweis, "eintraege": eintraege}
         )
     rest = nach_id[_SONSTIGE.id]
     if rest:
+        rest.sort(key=lambda e: _sortierschluessel(e["key"]))
         ergebnis.append(
             {"id": _SONSTIGE.id, "titel": _SONSTIGE.titel, "hinweis": _SONSTIGE.hinweis, "eintraege": rest}
         )

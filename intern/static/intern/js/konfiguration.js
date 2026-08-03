@@ -20,8 +20,13 @@
 
     function autoGrow(ta) {
         if (ta.tagName !== "TEXTAREA" || ta.offsetParent === null) return;   // input/checkbox: kein scrollHeight; zugeklappt: 0
+        // Mindesthöhe aus rows (4 für Textfelder) — nie unter 4 Zeilen schrumpfen.
+        const cs = getComputedStyle(ta);
+        const lh = parseFloat(cs.lineHeight) || 1.45 * parseFloat(cs.fontSize);
+        const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+        const basis = (parseInt(ta.rows, 10) || 1) * lh + pad;
         ta.style.minHeight = "0";
-        ta.style.minHeight = ta.scrollHeight + "px";
+        ta.style.minHeight = Math.max(ta.scrollHeight, basis) + "px";
     }
 
     function measureBars() {
@@ -187,7 +192,7 @@
             '<input type="text" class="inline-input kf-key-input" placeholder="SCHLUESSEL" maxlength="64">' +
             '<button type="button" class="kf-del-btn" title="Abbrechen" aria-label="Abbrechen">' + CANCEL_SVG + "</button>" +
             "</div>" +
-            '<div class="kf-wert"><textarea class="inline-input kf-value-input" rows="1"></textarea></div>' +
+            '<div class="kf-wert"><textarea class="inline-input kf-value-input" rows="4"></textarea></div>' +
             '<div class="kf-desc">' +
             '<span class="kf-desc-text" tabindex="0"></span>' +
             '<button type="button" class="kf-desc-edit" title="Beschreibung bearbeiten" aria-label="Beschreibung bearbeiten">' + PENCIL_SVG + "</button>" +

@@ -1030,14 +1030,13 @@ class KonfigGruppenTest(SimpleTestCase):
         self.assertEqual(zuordnung("DEFAULT_FROM_EMAIL"), "mailversand")
 
     def test_gruppiere_invarianten(self):
-        from intern.konfig_gruppen import GRUPPEN, gruppiere
+        from intern.konfig_gruppen import GRUPPEN, SCHLUESSEL_REIHENFOLGE, gruppiere
         keys = sorted(self._defaults_keys())
-        # Absichtlich gemischte Reihenfolge, damit die Eingabereihenfolge-Erhaltung
-        # geprüft wird, nicht die Sortierung.
-        reihenfolge = list(reversed(keys))
+        # Absichtlich gemischte Reihenfolge, damit die Sortierung geprüft wird,
+        # nicht die Eingabereihenfolge.
         rows = [
             {"id": i, "key": k, "value": "", "description": ""}
-            for i, k in enumerate(reihenfolge)
+            for i, k in enumerate(reversed(keys))
         ]
         ergebnis = gruppiere(rows)
 
@@ -1054,12 +1053,24 @@ class KonfigGruppenTest(SimpleTestCase):
         erwartet = [g.id for g in GRUPPEN if g.id in belegte]
         self.assertEqual([g["id"] for g in ergebnis], erwartet)
 
-        # Eingabereihenfolge innerhalb einer Gruppe erhalten.
-        index = {k: i for i, k in enumerate(reihenfolge)}
+        # Innerhalb einer Gruppe: SCHLUESSEL_REIHENFOLGE (nicht alphabetisch,
+        # nicht Eingabereihenfolge). Schlüssel ohne Eintrag in der Reihenfolge
+        # landen am Ende — hier kommt jeder Default-Schlüssel vor.
+        pos = {k: i for i, k in enumerate(SCHLUESSEL_REIHENFOLGE)}
         for g in ergebnis:
-            positions = [index[e["key"]] for e in g["eintraege"]]
-            self.assertEqual(positions, sorted(positions),
-                             msg=f"Reihenfolge in {g['id']!r} nicht erhalten")
+            positionen = [pos[e["key"]] for e in g["eintraege"]]
+            self.assertEqual(positionen, sorted(positionen),
+                             msg=f"Reihenfolge in {g['id']!r} nicht wie definiert")
+
+    def test_reihenfolge_ist_vollstaendig(self):
+        # Jeder Default-Schlüssel steht in SCHLUESSEL_REIHENFOLGE, kein Duplikat,
+        # kein Fremdschlüssel — sonst würde ein Schlüssel still ans Ende rutschen.
+        from intern.konfig_gruppen import SCHLUESSEL_REIHENFOLGE
+        defaults = self._defaults_keys()
+        self.assertEqual(len(SCHLUESSEL_REIHENFOLGE), len(set(SCHLUESSEL_REIHENFOLGE)),
+                         msg="SCHLUESSEL_REIHENFOLGE enthält Duplikate")
+        self.assertEqual(set(SCHLUESSEL_REIHENFOLGE), set(defaults),
+                         msg="SCHLUESSEL_REIHENFOLGE passt nicht zu _CONFIG_DEFAULTS")
 
     def test_unbekannter_schluessel_landet_in_sonstiges(self):
         from intern.konfig_gruppen import gruppiere, zuordnung
