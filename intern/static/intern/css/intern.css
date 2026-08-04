@@ -6957,35 +6957,6 @@ body.join-page {
     margin: 0 auto;
 }
 
-/* Suchleiste — sticky oben im .content-Scroller. Geschwister vor den Karten,
-   sonst klebt sie 20 px unter der Topbar. z-index unter Legende (99) / Apply-Bar (100). */
-.kf-suche {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    background: var(--bg-card);
-    padding: 10px 16px;
-    margin: -16px -16px 12px;
-    border-bottom: 1px solid var(--border);
-}
-.kf-suche input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 7px 12px;
-    border: 1px solid var(--border-dark);
-    border-radius: var(--r-sm);
-    background: var(--bg-card);
-    color: var(--t1);
-    font-size: 13px;
-    font-family: var(--font);
-    outline: none;
-    transition: border-color var(--ease), box-shadow var(--ease);
-}
-.kf-suche input:focus {
-    border-color: var(--brand);
-    box-shadow: 0 0 0 2px var(--brand-light);
-}
-
 /* Karte für neu angelegte Einträge — immer ganz oben, vor den Gruppen. */
 .kf-neu {
     background: var(--bg-card);
@@ -7223,7 +7194,6 @@ body.join-page {
 .kf-eintrag[hidden],
 .kf-gruppe[hidden],
 .kf-neu[hidden],
-.kf-suche[hidden],
 .kf-desc-input[hidden],
 .kf-leer[hidden] { display: none; }
 

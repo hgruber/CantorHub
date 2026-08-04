@@ -53,4 +53,5 @@ def konfiguration(request):
     return render(request, "konfiguration.html", {
         "seitentitel": "Konfiguration",
         "gruppen": gruppiere(rows),
+        "show_search": True,
     })

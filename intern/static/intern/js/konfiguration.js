@@ -269,15 +269,20 @@
         programmatisch = false;
         leerHinweis.hidden = total > 0;
     }
-    const suche = document.getElementById("kf-suche");
-    const suchfeld = document.getElementById("kf-suchfeld");
+    // Topbar-Suchfeld (base.html, show_search) ist eigentlich fuers Server-GET
+    // gedacht — hier missbraucht fuers rein clientseitige Filtern, weil ein
+    // echter Reload die ungespeicherten Aenderungen wegwerfen wuerde. Deshalb
+    // Auto-Submit-Attribut entfernen und jeden Submit abfangen.
+    const suchfeld = document.querySelector(".topbar-search input[type=search]");
     if (suchfeld) {
-        suche.hidden = false;   // ohne JS stünde hier sonst ein totes Feld
+        suchfeld.removeAttribute("onsearch");
+        const suchform = suchfeld.closest("form");
+        if (suchform) suchform.addEventListener("submit", function (e) { e.preventDefault(); });
         suchfeld.addEventListener("input", function () {
             filtern(suchfeld.value.trim().toLowerCase());
         });
-        suchfeld.addEventListener("keydown", function (e) {
-            if (e.key === "Enter") e.preventDefault();   // kein Submit — würde Änderungen wegwerfen
+        suchfeld.addEventListener("search", function () {
+            filtern(suchfeld.value.trim().toLowerCase());
         });
     }
 
