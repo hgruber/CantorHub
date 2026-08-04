@@ -207,8 +207,8 @@ def _client_ip(request):
     durchschlagen.  Voraussetzung ist, dass nginx per ``set_real_ip_from``
     (nginx.conf) die echte Client-IP aus dem haproxy-Header übernimmt und als
     einzigen Eintrag weiterreicht — ohne diese Konfiguration liefert die
-    Funktion die Adresse des vorgelagerten Proxys.  Siehe CLAUDE.md,
-    Abschnitt „Request flow".
+    Funktion die Adresse des vorgelagerten Proxys.  Siehe docs/architecture.md,
+    Abschnitt „What Django assumes about the proxy".
     """
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
     if forwarded:

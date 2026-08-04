@@ -12,7 +12,7 @@ member, or by a holder of `intern.change_user` (the same permission `mitglied_ed
 already requires for editing someone else's profile).
 
 Every write path on files has to consult `darf_avatar_aendern()` — see the call sites
-listed in CLAUDE.md under "Files as links, and file versions".
+listed in docs/files.md under "Avatars are write-protected against other members".
 """
 
 from . import folders

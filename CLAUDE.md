@@ -1,1194 +1,157 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) when working in this repository. It is the
+**developer** entry point: a map of the code, the rules that are not visible from any single
+file, and pointers to the topic documents. Running and configuring a deployment is `README.md`;
+the one-time migration off the legacy PHP portal is `migration.md`.
 
-**Language:** This file must be written strictly in English. Do not add German prose; code identifiers and string literals (e.g. filenames, variable names) may remain in their original form.
+**Language:** this file must be written strictly in English. Do not add German prose; code
+identifiers and string literals may remain in their original form. Note that the domain
+vocabulary in the code *is* German (`Termin`, `Zusage`, `verknuepfte_dateien`,
+`darf_avatar_aendern`) and all user-facing text is German — match the surrounding module rather
+than translating.
+
+## What this is
+
+CantorHub is a Django 6 member portal for a gospel choir: members, events with attendance, a song
+repertoire, forums bridged to XMPP, a versioned wiki, a file archive, a public homepage and a
+public gig-reminder mailing list. Phones can subscribe to the directory and the calendar over
+CardDAV/CalDAV.
 
 ## Commands
 
-**Fresh install — resets DB, imports avatars, starts server (DEV + Container):**
 ```bash
-./migrate.sh              # DEBUG not set → nginx + gunicorn (prod/container)
-DEBUG=1 ./migrate.sh      # DEV: runserver
+python manage.py runserver 0.0.0.0:8000     # dev server (DB already set up)
+DEBUG=1 ./start.sh                          # dev, incl. background jobs
+./start.sh                                  # container: nginx + gunicorn
+DEBUG=1 python manage.py test intern        # needs no database — see invariants
+python manage.py makemigrations intern --name <name> && python manage.py migrate
+docker build -t cantoreub . && docker run -p 8000:8000 cantoreub
 ```
 
-**Start with existing DB (no wipe):**
-```bash
-./start.sh                # DEBUG not set → nginx + gunicorn (prod/container)
-DEBUG=1 ./start.sh        # DEV: runserver
-```
+The management commands an operator runs (reminders, re-confirmation mails, cleanup jobs,
+ejabberd admin) are listed in `README.md`. `./migrate.sh` wipes the database and belongs to the
+migration — see `migration.md`.
 
-**Run dev server only (after migrate.sh has been run):**
-```bash
-python manage.py runserver 0.0.0.0:8000
-```
+## Where things are documented
 
-**Create and apply migrations:**
-```bash
-python manage.py makemigrations intern --name <migration_name>
-python manage.py migrate
-```
-
-**Build and run Docker container:**
-```bash
-docker build -t cantoreub .
-docker run -p 8000:8000 cantoreub
-```
-
-**Management commands:**
-| Command | Description |
+| Topic | File |
 |---|---|
-| `ejabberd_admin sync` | Full startup sync (ensure bot, assign MUC JIDs, configure rooms); no-op if ejabberd is not configured (`is_ejabberd_configured()`) |
-| `ejabberd_bot` | Run XMPP bot for MUC message forwarding; no-op if ejabberd is not configured |
-| `ejabberd_admin <group> <verb>` | Admin ops grouped by noun: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
-| `send_reconfirmation --user USERNAME` | Send data-reconfirmation mail to one active member |
-| `send_reconfirmation --all` | Send data-reconfirmation mail to all active members with an email address |
-| `send_reconfirmation --user USERNAME --print-url` | Print the confirmation URL for one member without sending mail (for testing) |
-| `send_reconfirmation --all --print-url` | Print confirmation URLs for all members (tab-separated `username<TAB>url`) without sending mail |
-| `make_invite_url EMAIL` | Print a signed 7-day invite link for the Neuantrag form (`/intern/beitritt/<token>/`) without sending mail |
-| `send_auftritt_erinnerungen [--loop] [--dry-run] [--now ISO] [--termin ID] [--force]` | Send the public gig reminders of the Auftritts-Mailingliste. **One pass is the default, `--loop` is the daemon** started by `start.sh`. `--now` overrides "now" so the timing can be tested without touching the clock; `--force` ignores existing `ErinnerungVersand` markers |
-| `cleanup_changelog [--days N] [--dry-run]` | Delete `ChangeLog` entries older than the retention period (default 3 years = 1095 days), enforcing the privacy-policy §10 claim. Runs in the background on every `start.sh` |
-| `cleanup_dateiversionen [--keep N] [--days N] [--dry-run]` | Prune `DateiVersion` rows **and their blobs** (plus the thumbnails generated next to them): everything older than `--days` (default 730 = 2 years) or beyond the newest `--keep` revisions per file (default 10). Runs in the background on every `start.sh`, but with `--keep 25 --days 36500` — see "Retention: what the cleanup jobs actually delete" |
+| Request flow, proxy assumptions, URLs, logging, cache, runtime config | `docs/architecture.md` |
+| Files: identity, versions, avatar protection, folder rights, retention | `docs/files.md` |
+| Frontend: pages, components, design tokens, calendar, maps, homepage | `docs/frontend.md` |
+| Automated e-mails and their markup | `docs/mail.md` |
+| Members: joining, re-confirmation, leaving, field privacy | `docs/members.md` |
+| Forums: read permissions and reactions | `docs/forum.md` |
+| Articles: versioning, editor, permissions, wiki markup | `docs/articles.md` |
+| Public gig-reminder mailing list | `docs/mailinglist.md` |
+| CardDAV and CalDAV | `docs/dav.md` |
+| XMPP/ejabberd bridge | `docs/xmpp.md` |
+| `Konfiguration` key catalog and mail placeholders | `docs/configuration.md` |
+| Privacy-policy compliance tracking | `docs/datenschutz.md` |
+| Known technical debt | `docs/technical-debt.md` |
+| Branding extraction plan (open-sourcing) | `docs/branding.md` |
 
-## Architecture
+## Code map
 
-CantorHub is a Django 6 member portal for "Just Gospel Frankfurt", a gospel choir. All application logic lives in the `intern/` app; `config/` holds only settings and URL routing. Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`, `forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`, `gallerie.py`, `auftritte.py`). The package's `__init__.py` re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
+All application logic lives in the `intern/` app; `config/` holds only settings and URL routing.
+Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`,
+`forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`,
+`gallerie.py`, `auftritte.py`, `konfiguration.py`, `notify.py`). The package's `__init__.py`
+re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
 
 Three underscore-prefixed modules hold what the view modules share:
 
-- **`views/_pagination.py`** — everything the infinite-scroll lists need.
-  `parse_offset(request)` reads `?offset=` (never negative, never raises, capped at
-  `_MAX_OFFSET` — an offset beyond the DB's 64-bit range is an error, not an empty
-  result, and the value comes from the URL). `ist_nachladen(request)` recognises the
-  `X-Requested-With` fetch. `nachlade_antwort(template, context, has_more, next_offset,
-  request=None, **extra)` renders the row fragment and returns the JSON the sentinel
-  script expects (`html`, `has_more`, `next_offset`, plus any `extra` such as the
-  permission matrix). Pass `request` only when the fragment really needs the context
-  processors — otherwise they (and their termin-banner queries) run on every scroll.
-  `paginate_ordered()` applies `?sort=` before slicing.
+- **`views/_pagination.py`** — the infinite-scroll contract: `parse_offset`, `ist_nachladen`,
+  `nachlade_antwort`, `paginate_ordered`. Details in `docs/frontend.md`.
 - **`views/_decorators.py`** — `perm_or_home(perm)` guards the three management pages
-  (`aufgaben`, `gruppen`, `aenderungsprotokoll_list`): permission or superuser, else a
-  silent redirect to „Aktuell" rather than a 403, because a member without the right
-  never sees the menu entry. It includes `login_required`.
-- **`views/_auswahl.py`** — `chip_eintraege(objekte, ausgewaehlt, label_attr="name")`
-  builds the `{id, label, selected}` list that `_chip_multiselect.html` expects. Only
-  the three permission pages need it; every form gets the same list from the
-  `ChipMultiSelect` widget instead (see "Multiple selection as chips" below).
-
-### Request flow
-
-```
-Browser → haproxy (TLS) → nginx (port 8000) → gunicorn (127.0.0.1:8001) → Django
-```
-
-Nginx serves `/static/`, `/media/`, and `/tiles/` directly; everything else is proxied to gunicorn. In development, `manage.py runserver` handles everything.
-
-**Two things the front proxy has to get right**, because Django cannot detect either
-of them going wrong:
-
-- **The client IP.** `_client_ip()` (`views/auth.py`) takes the *last* entry of
-  `X-Forwarded-For` — a client-supplied header always ends up further left and can
-  therefore never win. That only holds because `nginx.conf` runs the realip module
-  (`set_real_ip_from 10.88.0.0/16; real_ip_header X-Forwarded-For;`), which turns
-  `$remote_addr` into the real client address before it is forwarded as the single
-  XFF entry. Without it every visitor arrives as the proxy's address, which silently
-  turns both rate limits (password reset, mailing-list sign-up) into *global* ones —
-  one sender then locks out everybody — and makes `Auftrittsabo.bestaetigt_ip`
-  worthless as Art. 7(1) evidence. The trusted CIDR is the podman network; adjust it
-  if the deployment moves. Getting it wrong is fail-safe: realip simply does not
-  engage and behaviour falls back to what it was.
-- **`X-Forwarded-Proto: https`.** haproxy must set the literal string — `%[ssl_fc]`
-  renders as `1`/`0` (it is a boolean), which never matches
-  `SECURE_PROXY_SSL_HEADER`. When it does not match, `request.is_secure()` is
-  permanently `False` and every `build_absolute_uri()` emits `http://` links: the
-  password-reset mail, and via `_base_url()` the opt-in and unsubscribe links of
-  every mailing-list mail. Use `set-header X-Forwarded-Proto https if { ssl_fc }`
-  (or `%[ssl_fc,iif(https,http)]` from haproxy 2.3 on).
-
-`X-Forwarded-Host` and `X-Forwarded-Port` are **deleted** by nginx (`proxy_set_header
-… "";`) and correspondingly `USE_X_FORWARDED_HOST` / `USE_X_FORWARDED_PORT` are off:
-no hop in this chain sets either header, so whatever arrives is the client's own
-invention — and Django would feed it into `request.get_host()`/`get_port()` and hence
-into every `build_absolute_uri()`. The real host travels in the `Host` header, which
-nginx forwards. Do not switch those settings back on without a proxy that actually
-writes the headers.
-
-gunicorn binds to `127.0.0.1:8001` on purpose — nginx is in the same container, and
-a wildcard bind would be reachable over the podman bridge, bypassing nginx and thus
-realip. The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
-
-**Client IPs are logged in two of the three channels**, and the distinction matters for
-the §10 retention promise (see `datenschutz.md`):
-
-- The **access log is IP-free**: `log_format simple` in `nginx.conf` has no
-  `$remote_addr`, gunicorn runs without an access log, and Django's `LOGGING` carries no
-  request context. A normal request therefore leaves no address behind.
-- The **error log does record it**: nginx writes `client: <IP>` on every error — a 404
-  under `/static/` or `/media/`, a rejected `auth_request` subrequest. It goes to
-  `/dev/stderr` and thus into journald / `podman logs`, the same stream as the access
-  log. Before realip engaged this was the front proxy's own address and therefore
-  worthless; **since it engages, it is the real visitor's address.** Nothing in this
-  repository suppresses it, and a `client:` line is the simplest way to check what nginx
-  actually resolved (see the deploy note below).
-- The **haproxy log** (`%ci`) is the third place, one hop earlier.
-
-**`nginx.conf` lives in the image, not in the mount.** The `Dockerfile` does `COPY
-nginx.conf /etc/nginx/`, while the application code is deliberately *not* copied
-(`#COPY --chown=appuser:appuser . .`) and is bind-mounted instead. Changes to
-`nginx.conf` therefore take effect only after a **`podman build` plus a container
-restart** — a `git pull` alone silently keeps the old config, which is exactly how the
-realip lines above sat inert for a while after they were committed. Verify with:
-
-```bash
-podman exec <container> nginx -T | grep real_ip
-```
-
-and confirm the resolved address by requesting a file that does not exist (no login
-needed, leaves nothing behind) and reading the `client:` field of the resulting error
-line:
-
-```bash
-curl -s -o /dev/null https://<host>/static/proxy-check-gibtsnicht.css
-journalctl -u <unit> -n 30 --no-pager | grep proxy-check
-```
-
-### URL structure
-
-- `/` — public homepage (`templates/index.html`)
-- `/datenschutz/` — public privacy policy (`intern/templates/datenschutz.html`, no login required, `TemplateView` in `config/urls.py`)
-- `/auftritte/`, `/auftritte/bestaetigen/<token>/`, `/auftritte/abmelden/<token>/` — public gig-reminder mailing list (no login; see "Auftritts-Mailingliste")
-- `/.well-known/carddav` → `301` → `/carddav/`, and `/carddav/*` — read-only CardDAV address book (HTTP Basic, **not** the portal session; see "CardDAV address book")
-- `/.well-known/caldav` → `301` → `/caldav/`, and `/caldav/*` — read-only CalDAV calendar, same auth (see "CalDAV calendar"). Both services advertise each other, so one base URL finds both
-- `/tiles/<z>/<x>/<y>.png` — OSM tile proxy (no login required). In production nginx intercepts this and serves from its disk cache (`/app/tiles/`, 7-day TTL) without hitting Django. In dev, `tiles_proxy` in `karte.py` fetches from OSM server-side so the user's IP is never sent to OSM.
-- `/admin/` — Django admin
-- `/intern/*` — all authenticated views (`intern/urls.py`)
-- `/intern/karte/geocode/` — Nominatim geocoding proxy (`geocode_proxy` in `karte.py`, login required); passes query params server-side so the user's IP is never sent to Nominatim.
-
-### Detail pages
-
-All list views use django-tables2 with clickable rows (`data-href` on `<tr>`). Each table row navigates to a detail page. Detail pages have an edit button in the top bar (via `edit`/`id` context variables rendered in `base.html`).
-
-| URL pattern | View | Template |
-|---|---|---|
-| `/intern/forum/<id>/` | `forum_view` | `forum.html` |
-| `/intern/forum/<id>/edit/` | `forum_edit` | `forum_edit.html` |
-| `/intern/termin/<id>/` | `termin_view` | `termin.html` |
-| `/intern/termin/<id>/edit/` | `termin_edit` | `termin_edit.html` |
-| `/intern/titel/<id>/` | `titel_view` | `titel.html` |
-| `/intern/titel/<id>/edit/` | `titel_edit` | `titel_edit.html` |
-| `/intern/mitglied/<id>/` | `member_view` | `mitglied.html` |
-| `/intern/mitglied/<id>/edit/` | `member_edit` | `member_edit.html` |
-| `/intern/gallerie/<ordner_id>/` | `gallerie_view` | `gallerie.html` |
-
-Detail pages use the `.detail-page` / `.detail-card` CSS layout (2-column card grid, single column on mobile). Edit pages use the `.wiki` container with `.form-grid`.
-
-**Form fields are rendered via the `{% form_field %}` inclusion tag** (`intern/templatetags/form_tags.py` → `_form_field.html`): `{% form_field form.feld "Label" %}` emits the standard `form-group` (label, widget, `invalid-feedback` errors). Options: `req=True` shows the `*` marker when the field is required (join form), `privacy=form.priv_x` appends the "verbergen" checkbox when `can_set_privacy` is in the context (member edit), `hilfe=True` renders `help_text` (opt-in so Django's default help texts, e.g. on `username`, don't leak in). Without `label` the form field's own label is used. Non-standard groups (checkbox rows, label-less textareas, the search-select Ort widget, static read-only rows) stay hand-written.
-
-**Multiple selection as chips.** Every multi-select in the project goes through one
-component: the chosen entries sit on top as chips, below them a search box and a
-scrollable pool of what is left. Entries move by click, by drag (SortableJS), or — on
-touch devices — via a target popover opened with a 500 ms long-press.
-
-- **`intern/templates/_chip_multiselect.html`** is the only markup, with two entry
-  points. Forms use the `ChipMultiSelect` widget (`intern/forms.py`, built like
-  `TriStateToggle`), which sets the partial as `template_name` and fills the contract
-  in `get_context()`. Pages without a Django form — the three permission pages —
-  `{% include %}` the same partial and build their `eintraege` with
-  `chip_eintraege()`. Options: `auswahl_label`, `vorrat_label`, `such_platzhalter`,
-  `leer_text`, `suche_ab` (search box only from N entries, default 8) and
-  `variante="exclude"` for the red styling of the „Nicht in Gruppen" filter.
-- **The `<select multiple>` stays the single source of truth.** The server renders
-  only it; `chip-multiselect.js` builds the chips from its `<option>`s and moving an
-  entry does nothing but set `option.selected`. No hidden inputs, no state to
-  synchronise on submit — and a `<select multiple name="read_groups">` posts exactly
-  what same-named checkboxes posted before, which is why the permission views did not
-  change. Whoever reads the selection reads `option:checked` and listens for the
-  `change` event the widget dispatches (see `berechtigungen.js`).
-- **Progressive enhancement is load-bearing, and CSS must not break it.** The JS hides
-  the native field via the `hidden` attribute, so `.chip-ms-native` must never get a
-  `display` rule and `.chip-ms-ui` hangs its `display` on `:not([hidden])`. Without JS
-  a fully usable native multi-select remains.
-- **Drag is limited to `(pointer: fine)`** — on touch SortableJS would fight both page
-  scrolling and the long-press for the same gesture. The popover is `position: fixed`
-  and positioned from raw `getBoundingClientRect()` values (unlike `.att-move-picker`,
-  which uses scroll offsets): the offcanvas panels are `fixed` and scroll internally,
-  so a scroll-offset popover would drift. It is appended to `document.body` because
-  `.offcanvas` establishes a containing block via `transform`.
-- **The JS is loaded globally in `base.html`, deliberately not via `class Media`** —
-  the permission pages have no form at all, and two `.media` calls on one page
-  (`table.html` renders both a filter and an add form) would execute the IIFE twice.
-  It bails out in its first line when the page has no `[data-chip-multiselect]`.
-
-**Deleting is confirmed by `_confirm_delete_dialog.html`** — one `<dialog id="delete-dialog">`
-for `ort_edit.html`, `termin_edit.html` and `titel_edit.html`: `{% include
-"_confirm_delete_dialog.html" with titel="Ort löschen" objekt=ort.name action=loeschen_url %}`
-(resolve the URL with `{% url … as loeschen_url %}` first). `warnungen` takes a list of extra
-lines naming what a delete would take with it — `termin_edit` passes `loesch_warnungen`, built
-in the view so the pluralisation stays in Python. The opening button stays in each page's
-`.form-actions`, because it is guarded differently per page (`titel_edit` renders it disabled
-with a tooltip when the song is still referenced, and then omits the dialog entirely).
-
-### Attendance (Zusage) options
-
-`Zusage.option` values: `"1"` = Zusage, `"2"` = Absage, `"3"` = Eventuell, empty/missing = Keine Angabe. The attendance table on the termin detail page groups users by `Stimme` (S, A, T, B, C, M) and splits into two tables on mobile.
-
-**Next-event banner:** a slim banner is shown site-wide at the top of `<main class="content">` in `base.html` (`_termin_banner.html`), highlighting the next upcoming event (`banner_termin` / `banner_my_option`, computed in `config/context_processors.py`'s `project_meta`) with a `timeuntil` countdown, location and — when `anwesenheit=True` — the same quick Zusage buttons (governed by `ZUSAGE_TRANSITIONS`). The buttons POST to `termin_zusage` with a hidden `source=banner` field, which makes that view render `_termin_banner.html` instead of the detail widget (htmx swaps `#termin-banner`). The banner is rendered with the `hidden` attribute and only revealed by a small inline script at the end of `_termin_banner.html` — the dismissed state lives in `localStorage` and is therefore not known server-side, so deciding before paint avoids a flash of a banner that is immediately removed. That script removes the banner on that termin's own detail page (avoids a duplicate widget) and when it was dismissed for the current login session: both the dismiss button and following the banner link to the termin store the session key `banner_login` (exposed as `data-login`) in `localStorage["termin-banner-dismissed"]`, so the banner reappears after the next login when that value changes. `banner_login` is `"<pk>-<last_login timestamp>"` and is computed in `project_meta` from `request.user` on purpose — reading `user.last_login` in the template would break on detail views such as `mitglied_view`/`mitglied_edit`, which shadow `user` with the member being looked at. The script sits *inside* `#termin-banner` so an htmx `outerHTML` swap replaces it along with the markup; `intern.js` (`initTerminBanner`) keeps the dismiss click handler and the same logic as a fallback. On mobile (≤640px) the dismiss button is absolutely positioned in the banner's top right corner.
-
-### Calendar (month view)
-
-`/intern/kalender/` (`termin_kalender` in `views/termine.py`, name `termin_kalender`, sidebar
-entry right after "Termine") is a classic month grid (7 columns Mon–Sun) — not an agenda.
-Month is chosen via `?jahr=&monat=` (defaults to the current month; invalid values fall back
-to it). The grid is built with `calendar.Calendar(firstweekday=0).monthdatescalendar()`; the
-leading/trailing days of neighbouring months are shown dimmed (`.is-outside`). Events are loaded
-once with an **overlap** query (`datum__date <= grid_end AND (datum_bis >= grid_start OR
-single-day in range)`) so multi-day events (`datum_bis`) that start before or end after the grid
-are caught; each is expanded to one occurrence per covered day (a dict `{t, mehrtaegig, start,
-ende}`), rendered as a connected band (`.is-span` chips bleed into the cell padding, clipped by
-`.cal-day{overflow:hidden}`; only the start/end day is rounded, continuation days show a `‹`
-marker) that wraps correctly across week and month boundaries. Birthdays are active members with
-a set `geburtstag` **whose field is not hidden**
-(`"geburtstag" not in user.private_fields`, no viewer/admin bonus — same for everyone) mapped by
-`(month, day)`. Each event chip links to `termin_view`, each birthday chip to `mitglied_view`.
-Prev/next/"Heute" navigate via htmx: the toolbar + grid live in the partial `_kalender_grid.html`
-(wrapped in `#cal-view` by `kalender.html`); an `HX-Request` renders only the partial (swapped
-into `#cal-view`, `hx-push-url` keeps the URL in sync). Clicking any day with entries opens a
-large offcanvas detail panel (`#cal-day-panel`, sibling of `#cal-view` so it survives swaps):
-`kalender.js` clones that day's `.cal-day-detail` into the panel and shows its German date label
-(`d.label` → `data-datum`); Esc/overlay/close button dismiss it.
-
-**The panel also creates events.** Holders of `intern.add_termin` get the same `TerminForm` the
-`/intern/termin/` add panel uses, rendered once into `#cal-day-panel` (below `.cal-panel-body`,
-both inside the shared scroll box `.cal-panel-scroll`) — it lives outside `#cal-view` and thus
-survives the htmx month swap, which is why `kalender.js` fills it per day instead of the server:
-`form.reset()`, `datum` = the day's `data-iso`, and `next` = `location.pathname + search`, i.e.
-the month currently shown (`hx-push-url` keeps that URL honest). It sits collapsed behind a
-„Neuer Termin" button and opens by itself on a day with no entries, where creating is the only
-thing left to do. For those users **every** day opens the panel, empty ones included
-(`.cal-can-add` on `.cal-page` supplies the cursor); without the permission the view renders no
-form and only days with entries open, as before.
-
-`termin_add` honours that `next` (POST or GET) and redirects there instead of to `termin_view`,
-guarded by `url_has_allowed_host_and_scheme` so it can't be turned into an open redirect;
-`termin_edit.html` re-emits it as a hidden field so an invalid form keeps the way back.
-The toggle relies on the `hidden` attribute, so `.cal-add-open[hidden]` must state `display:
-none` explicitly — `.btn` sets `display` and would otherwise win over the UA default.
-
-On desktop the cells show the
-chips inline; below 768px they collapse to coloured dots (`--brand` = event, `--cal-geb` =
-birthday) and the panel is the readable view. The whole month grid fills the viewport height —
-`.content:has(.cal-page)` becomes a flex column so the grid (with `grid-auto-rows: 1fr`) shares
-the space with the next-event banner without a scrollbar. CSS lives under `/* === Kalender === */`
-in `intern.css`; birthdays use the `--cal-geb` / `--cal-geb-bg` tokens (green, distinct from the
-pink event colour) and weekend day numbers/headers use `--cal-weekend` (red) — all with dark-mode
-values. Note `USE_TZ = False`, so `datum` is naive — group by `t.datum.date()` directly (do not
-call `localtime()`).
-
-The forum edit page (`/intern/forum/<id>/edit/`) and its XMPP behaviour — room-info card, invite flow, avatar sync (`_sync_forum_avatar`), MUC room invariants (`configure_room`), the Forum→MUC relay and the `_relay_cursor` restart gap — are documented in `xmpp.md`.
-
-### Forum read permissions
-
-Forums are open to every logged-in member by default. Holders of
-`intern.manage_forum_permissions` can restrict a forum to specific groups via the
-lock button on the forum detail page (`/intern/forum/<id>/zugriff/`,
-`forum_permissions` view, `forum_zugriff.html`) — analogous to the article
-permissions, but **read-only**: there is no separate write right. Whoever may read a
-forum may also post; whoever may not read it doesn't see it at all.
-
-Model `ForumPermission(forum, group)` (`intern/models.py`): the **presence** of any row
-for a forum marks it restricted to the listed groups; no row = open. `_forum_access(user,
-forum_id)` and `_hidden_forum_ids(user)` in `views/forums.py` mirror `_artikel_access` —
-holders of `manage_forum_permissions` always have access. Enforcement covers the forum
-list/search, detail/poll/more/send views (403 for non-readers), and the notification
-bubbles in `views/notify.py` (restricted Forum/Mitteilung entries are dropped per user).
-
-Because each forum is also an XMPP MUC room, the restriction is synced to ejabberd so it
-can't be bypassed in an XMPP client: saving permissions runs `_reconcile_forum_muc`
-(removes non-reader affiliations, ensures readers are `member`), the bot's
-`_db_invite_missing_users` only invites permitted readers, and `forum_invite` refuses
-non-readers. See `xmpp.md`.
-
-Permission changes are recorded in the audit log: `_audit_forum_permissions`
-(`views/forums.py`) writes a `ChangeLog` row under `model_name="Forum"` with a
-`berechtigungen` change (group-name labels, or "Alle Mitglieder" when open), so it shows
-up in `forum_aenderungen` next to the regular forum-field edits. The forum's audited
-fields are `thema`, `aktiv`, `bild_id`, `xmpp_muc_jid` (`_AUDIT_FIELDS` in `signals.py`).
-
-### Forum reactions
-
-Members can react to individual forum messages with emoji (XEP-0444), synced both ways
-with the linked MUC room. A reaction bar renders under each message bubble
-(`_message.html` → `.reactions` container, populated by `forum.js`); a `+` opens a small
-picker (fixed quick set **plus** a free-emoji input). `forum.js` polls
-`forum_reactions` (JSON) every 5 s and re-renders all bars, so XMPP-originated reactions
-appear too; clicks POST to `forum_react` (`X-CSRFToken` via `getCsrfToken()`). Both views
-(`views/forums.py`) are gated by `_forum_access` — whoever may read a forum may react.
-
-Model `Reaktion` stores one row per (message, reactor, emoji) with `origin`
-(`"web"`/`"xmpp"`). XEP-0444 replace semantics (a reactor's stanza restates their full
-set) are implemented as delete-then-insert per reactor. The Forum↔MUC relay, the
-bot-attribution limitation (web reactions appear in XMPP clients bundled under
-`CantorBot`), and the origin-id stanza-id capture are documented in `xmpp.md`.
-
-### Article editor & versioning
-
-`Artikel` rows are immutable versions keyed by `(name, version)` — articles are addressed by `name`, not `id`. Saving an edit at `/intern/artikel/<name>/edit/` creates a new `Artikel` row with `version + 1` rather than mutating the existing one. The editor (`artikel.html`, edit branch) renders the `.article-editor` shell: an identity bar, a collapsible `.ae-help` syntax cheat-sheet, the textarea inside a `.wiki` container (kept so `abstimmung.js`'s `{abstimmung:...}` helper still binds), and a footer action bar.
-
-`article_view` shows the latest version by default, or a specific one via `?version=<n>`. When viewing an outdated version it renders the `.version-banner` — a warning plus a version stepper with previous/next links (`prev_version` / `next_version`, computed via DB queries so gaps in the version sequence are skipped) and an "Aktuelle Version" button. History and unified/side-by-side diffs live at `/intern/artikel/<name>/history/` and `/diff/`.
-
-New articles are created from the `+` in the article-list topbar (`article_list` sets `add`/`add_panel_include`). It opens the off-canvas panel `templates/artikel_add_panel.html`, which has **no** server form — a small vanilla script reads the entered page name and navigates client-side to `/intern/artikel/<name>/edit/` (built from the panel's `data-edit-url` `__NAME__` placeholder + `encodeURIComponent`), where the first save creates version 1. Shown to every logged-in member, matching the open-wiki default (`article_edit` has no permission check for a new name).
-
-### Automated e-mails
-
-Every automated mail carries its **entire** visible body in a `MAIL_*` key of the
-`Konfiguration` table — no sentence lives in a template. The templates only supply the
-branded frame: `templates/emails/base.html` (card, logo header, footer text from
-`MAIL_FOOTER`), `generic.html` (renders `body_html`) and
-`mitglied_benachrichtigung.html` (round mail, adds the signature block via the
-`after_body` block). Subjects remain in Python.
-
-`intern/mail_markup.py` renders one config text into **both** MIME parts (HTML with
-inline styles, plain text) using the wiki syntax of the article editor — `'''fett'''`,
-`''kursiv''`, `== Titel ==`, `*`/`#` lists, `% grauer Hinweis`, `@ Hinweisbox`,
-`: Einrückung`, `[https://… Name]`, `$roh$` — plus the mail-only directive
-`{button:Label}` (links to `{link}`) / `{button:Label:URL}`. A button without a URL
-renders nothing. Placeholder values are HTML-escaped; unknown `{placeholders}` stay
-verbatim. `/intern/konfiguration/` shows a syntax legend while a `MAIL_*` field is focused.
-
-Call sites use `mail.send_config_mail(subject, to, key, user=…, link=…, extra_keys=…,
-attachments=…, template=…, context=…, **placeholders)`; `render_config_mail()` /
-`render_mail_text()` return the `(html, plain)` pair for callers that need it.
-`extra_keys` holds conditional add-on texts (the minor/supporting-member notes of the
-application admin mail) and is rendered at `{hinweise}`. See `configuration.md` for the
-full markup table, the placeholder list and the recipe for adding a new mail.
-
-### Member application flow (Mitglieds-Beitritt)
-
-Two ways to add a member, both behind the `+` in `/intern/mitglied/` (perm `intern.add_user`).
-The off-canvas panel (`templates/mitglied_add_panel.html`, included via the
-`add_panel_include` context var in `table.html`) is two-step:
-
-1. **Invite** (default step): an admin enters only an e-mail and submits to
-   `mitglied_invite` (`views/mitglieder.py`). This sends a branded e-mail with a
-   non-guessable link to the public join form. No user is created yet. The link
-   carries the e-mail in a `TimestampSigner` token (salt `intern.mitglied_invite`,
-   **7-day** validity) — `make_invite_token()` / `_read_invite_token()` in
-   `views/auth.py`. Stateless: no DB model, no placeholder user.
-2. **Manuell anlegen** (JS-revealed): the existing `MitgliedAddForm` posting to
-   `mitglied_add`, which creates an **active** member immediately (unchanged).
-
-The public join form lives at `/intern/beitritt/<token>/` (`mitglied_beitritt` in
-`views/auth.py`, **no** `login_required`). `MitgliedBeitrittForm` (`forms.py`) validates
-all member fields — required: first/last name, all address fields, `geburtstag`,
-`username` (regex `^[A-Za-z0-9._-]{3,30}$` + case-insensitive uniqueness via
-`username__iexact`), two matching passwords (`validate_password`),
-five mandatory consent checkboxes (Richtigkeit der Angaben; Datenschutz — links to `/datenschutz/`; Datenverarbeitung; Satzung — links to the PDF configured via `SATZUNG_FILE_ID`; Beitragsordnung — links to the PDF configured via `BEITRAGSORDNUNG_FILE_ID`), and two optional fields (`einwilligung_fotos` for photo consent at public events, `foerdermitglied` for supporting membership). On success the member is created with `is_active=False`, a PDF of the completed
-application is saved to the filer folder **„Verwaltung/Mitglieder"** (Vorstand-only,
-via `_save_antrag_pdf` in `views/auth.py` using reportlab; best-effort, never blocks
-registration), a confirmation mail goes to the applicant, and a notification mail goes to the address configured via `ANTRAG_EMAIL` (falls back to members with `intern.change_user` via `_member_managers()` if empty). If the applicant is a minor at submission time, the admin notification contains a warning. If `foerdermitglied` is checked, the user is immediately added to the `"Fördermitglied"` group (created by `0003_import.py`). The public
-pages (`mitglied_beitritt.html`, `_success.html`, `_invalid.html`) extend the standalone
-`mitglied_public_base.html` shell (no sidebar), not `base.html`.
-
-The application is logged in the ChangeLog as a distinct action
-`ChangeLog.ACTION_APPLICATION` (`"apply"` → "Neuer Mitgliedsantrag"): the view sets
-`user._audit_application = True` before saving and `signals._write_audit_log` maps that
-to the application action (the action code is ≤8 chars to fit `action`'s `max_length`).
-
-All e-mails in this flow (invite, applicant confirmation, admin notification) and the
-password-reset mail go through `intern.mail.send_config_mail()` — their whole body comes
-from the matching `MAIL_*` key (see "Automated e-mails").
-
-**Applicants are created with `date_joined=None`** (the field is overridden on `User` to be
-nullable). This is the discriminator for the activation mail: when an admin later sets
-`is_active=True`, `signals._send_activation_mail()` checks `user.date_joined is None` →
-first-time activation → sends the `MAIL_WILLKOMMEN` text and stamps `date_joined`
-via `User.objects.filter(pk=...).update(date_joined=timezone.now())` (avoids recursive
-signal). If `date_joined` is already set → reactivation → sends `MAIL_REAKTIVIERT`.
-Both texts get `{link}` = the login URL derived from `VEREINS_URL`; without it the
-`{button:…}` in the text renders nothing. No mail is sent if the user has no email address.
-
-### Member re-confirmation flow (Datenbestätigung)
-
-Allows the board to request that existing members re-confirm their stored data and
-re-acknowledge the privacy policy, bylaws, and membership fee schedule.
-
-**Trigger:** `manage.py send_reconfirmation --user <username>|--all` (uses `VEREINS_URL` from config; override with `--base-url URL`)
-(e.g. `--base-url https://portal.example.com`). The command calls
-`send_bestaetigung_mail(user, base_url)` in `views/auth.py`, which:
-1. Creates a `TimestampSigner` token (salt `"intern.mitglied_bestaetigung"`, **30-day** validity) encoding the user PK.
-2. Reads the email body from the `Konfiguration` key **`MAIL_BESTAETIGUNG`** —
-   editable via `/intern/konfiguration/` without code changes. All standard placeholders
-   available plus `{link}`; an empty key means an empty mail body.
-3. Sends it via `send_config_mail()` (branded frame `emails/generic.html`).
-
-**Public form:** `/intern/bestaetigung/<token>/` (`mitglied_bestaetigung` in `views/auth.py`,
-no `login_required`). Shows the member's current data (read-only) plus three mandatory
-checkboxes (`MitgliedBestaetigungForm` in `forms.py`): data correct, Datenschutz, Satzung.
-
-**On submit:** `_save_bestaetigung_pdf(user)` generates a PDF (reportlab) with all stored
-data + confirmed checkboxes, saves it to **„Verwaltung/Mitglieder"** in filer, and attaches it
-to the quittance mail sent to the member. The quittance mail body is configurable via
-`MAIL_BESTAETIGUNG_BESTAETIGT` in `Konfiguration`.
-No Vorstand notification. Three public templates extend `mitglied_public_base.html`:
-`mitglied_bestaetigung.html`, `_success.html`, `_invalid.html`.
-
-`MAIL_BESTAETIGUNG` and `MAIL_ANTRAG` are seeded by `_CONFIG_DEFAULTS` in `intern/apps.py` on `post_migrate`, like all other `MAIL_*` keys.
-
-### Auftritts-Mailingliste (public gig reminders)
-
-A public, membership-independent mailing list: visitors sign up at `/auftritte/` and are
-reminded before each public gig. The triggering events are `Termin.objects.filter(
-repertoire=True)` — exactly the ones `home()` already shows publicly; no model change on
-`Termin`. Linked from the homepage in `#concerts` (`.concert-cta`) and as a third
-`.contact-card` in `#contact`.
-
-**Layers:** domain logic in `intern/mailingliste.py` (tokens, URLs, due-date arithmetic,
-placeholders, sending), views in `intern/views/auftritte.py`, the daemon in
-`intern/management/commands/send_auftritt_erinnerungen.py`. The time-dependent functions take
-`jetzt` as an argument and never call the clock themselves — that is what makes `--now` and
-the unit tests in `intern/tests.py` possible.
-
-Those tests are **all `SimpleTestCase`, and they have to be**: a `TestCase` makes Django build a
-test database, which runs the data migration `0003_import` — and that one talks to the legacy
-MySQL server and expects imported filer files, so it blows up anywhere that environment is
-absent. Every piece of logic worth testing is therefore kept free of DB access and the DB half
-is isolated in a thin wrapper (`lese_abmelde_token()` vs `read_abmelde_token()`). Keep it that
-way until `0003_import` learns to no-op without the legacy DB.
-
-**Double opt-in.** `auftritte_anmeldung` does `get_or_create` and always renders the *same*
-status page, whether the address was new, unconfirmed or already subscribed — anything else
-would be an address oracle (same reasoning as `register()`). Only the mail differs. Two
-brakes: an IP throttle via `cache` (LocMemCache, so per gunicorn worker — weak, same caveat as
-the existing pwreset throttle) and the DB-backed cooldown on `optin_gesendet_am`
-(`OPTIN_COOLDOWN_MIN`), which is the one that actually stops mail-bombing a foreign address.
-A honeypot field `webseite` (off-screen via `.hp-feld`, **not** `type="hidden"`) short-circuits
-to the success page.
-
-**Confirmation and unsubscribe are POST-only** — GET renders a page with a button. Outlook
-SafeLinks and virus scanners fetch links ahead of the human and would otherwise document a
-consent nobody gave. Unsubscribing **deletes** the row (a stored address without consent is
-itself a processing operation); an unknown token renders a friendly page with status 200,
-because that is the normal second click.
-
-**Due dates.** `faelligkeit()` = event time minus N weeks, i.e. automatically the same weekday
-and hour; `MAILINGLISTE_VERSANDZEIT` is only a fallback for events with no time of day (00:00).
-`faellige_erinnerungen()` fires within `faellig <= jetzt <= faellig + KULANZ_STUNDEN` (24 h), so
-a long outage does not produce absurdly late mail. `USE_TZ = False` — everything is naive local
-wall-clock time, never call `localtime()`.
-
-**Idempotence.** `ErinnerungVersand.get_or_create()` runs **before** sending and its
-`UniqueConstraint(termin, wochen)` is the only guard against parallel processes (daemon +
-manual call + a test system on the same DB); there is no process lock and deliberately no
-`transaction.atomic()` around the batch — the marker must be visible to others immediately, and
-SMTP has no business inside an open transaction. Side effect worth keeping: whoever subscribes
-after a reminder was due does not get it retro-fitted. Known gap: a crash mid-batch leaves the
-marker standing and the remaining recipients unserved — recover with `--termin <id> --force`.
-
-**The unsubscribe token is signed, not stored.** `make_abmelde_token()` signs
-`<pk>-<fingerprint>` with a plain `Signer` (no timestamp — the link sits in every mail and must
-stay valid forever). The fingerprint is a short SHA-256 of the address and is **not optional**:
-primary keys get reused after a delete (SQLite hands out `max(rowid)+1` without AUTOINCREMENT),
-so without it an old link from a long-sent mail could unsubscribe a *different* person who
-later inherited that pk. The address itself deliberately stays out of the URL — it would
-otherwise land in server logs, referrers and browser history. `lese_abmelde_token()` is the
-DB-free half, which is what makes it unit-testable (see below).
-
-**The unsubscribe link cannot be configured away.** `send_mailingliste_mail()` welds it into
-the `List-Unsubscribe` header, appends it to the plain-text part *above* the `-- ` signature
-separator, and `emails/mailingliste.html` renders it structurally in the HTML part. Emptying
-`MAIL_MAILINGLISTE_ERINNERUNG` does not remove it. `List-Unsubscribe-Post` is deliberately
-**not** set: providers then send an unauthenticated POST that the CSRF middleware rejects.
-
-**No `{beschreibung}` placeholder** — see `configuration.md`; `mail_markup` substitutes before
-parsing, so a multi-line `Termin.lang` could smuggle a `{button:…:URL}` into a mail to the
-general public.
-
-Without `VEREINS_URL` or `EMAIL_HOST` the daemon **warns and writes no marker** rather than
-sending — a mail with a relative, i.e. dead, unsubscribe link is not defensible. Both are
-re-read every iteration, so fixing the config takes effect without restarting the loop.
-Privacy-policy coverage is §15 in `datenschutz.html`; open operational points (no bounce
-handling) are recorded in `datenschutz.md`.
-
-### Key models (`intern/models.py`)
+  (`aufgaben`, `gruppen`, `aenderungsprotokoll_list`): permission or superuser, else a silent
+  redirect to „Aktuell" rather than a 403, because a member without the right never sees the menu
+  entry. It includes `login_required`.
+- **`views/_auswahl.py`** — `chip_eintraege()` builds the entry list `_chip_multiselect.html`
+  expects, for the pages that have no Django form.
+
+Cross-cutting modules: `models.py`, `forms.py`, `signals.py` (audit log, activation mails, filer
+indexing, MUC room assignment), `app_settings.py` (runtime config), `folder_access.py` /
+`avatar_access.py` (the two file access axes), `verwendung.py` (what a delete would break),
+`mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
+`ejabberd.py`, `konfig_gruppen.py`. `intern/dav/` is shared by `intern/carddav/` and
+`intern/caldav/`.
+
+## Key models (`intern/models.py`)
 
 | Model | Purpose |
 |---|---|
-| `User` | Extended `AbstractUser` — adds voice type, address, XMPP JID, coordinates |
-| `Artikel` | Versioned articles/news items |
-| `Forum` | Discussion threads; `bild` (FilerFileField), `aktiv` (Boolean), `xmpp_muc_jid` for XMPP bridge |
-| `ForumPermission` | Read restriction `(forum, group)`; presence of rows = forum restricted to those groups, no row = open (see "Forum read permissions") |
-| `Mitteilung` | Forum messages; adds `xmpp_stanza_id` for bridge deduplication and `reactions_dirty` (web-reaction relay flag). Display helpers `sender_name()` / `sender_avatar_url()` / `is_from_bot()` fall back to "Unbekannt"+`kein_photo.png` for `sender=None` and to nick `CantorBot`+`bot.png` for the bot JID |
-| `Reaktion` | Emoji reaction (XEP-0444) on a `Mitteilung`; `origin` (`"web"`/`"xmpp"`), `sender` for display, `reactor_jid` for XMPP-origin. Per-reactor uniqueness is enforced in code (delete-then-insert), not a DB constraint. See "Forum reactions" and `xmpp.md` |
+| `User` | Extended `AbstractUser` — voice type, address, XMPP JID, coordinates, `private_fields`, nullable `date_joined` (see `docs/members.md`) |
+| `Artikel` | Versioned wiki articles, immutable per `(name, version)` |
+| `ArtikelPermission` | Per-article read/edit restriction by group |
+| `Forum` / `ForumPermission` | Discussion threads, optionally bridged to an XMPP MUC room; read restriction by group |
+| `Mitteilung` / `Reaktion` | Forum messages and their emoji reactions (XEP-0444) |
 | `Termin` / `Ort` | Events and locations |
-| `Lied` | Songs in the repertoire |
-| `Konzert` | Ordered song list for a specific event (links `Lied` ↔ `Termin`) |
+| `Lied` / `Konzert` | Songs in the repertoire, and the ordered song list of one event |
 | `Zusage` | Per-member attendance response to an event |
 | `Abstimmung` | Voting records |
-| `TabellenPreferenzen` | Per-user table column visibility preferences |
-| `Auftrittsabo` | Subscriber of the public gig-reminder list — **not** a member, no FK to `User`. Carries the Art. 7(1) evidence: `bestaetigt_am`, `bestaetigt_ip` and a snapshot of the consent wording. Deliberately has **no** `bestaetigt` flag (`bestaetigt` is a property over `bestaetigt_am`; filter with `bestaetigt_am__isnull`), no sign-up IP and no stored unsubscribe token |
-| `ErinnerungVersand` | One marker per `(termin, wochen)`; the `UniqueConstraint` is the only protection against double sending |
-
-### File management
-
-**The folder browser's row context menu** (`initRowContextMenu` in `intern.js`, right-click
-or 500 ms long-press) groups its entries by *what they act on*, separated by rules. An
-action over every file in a folder belongs to the folder, not to whichever file happened to
-be right-clicked, so the two scopes never share a row:
-
-- **On a file row** — `data-url` (the `/media/…` path) plus `data-audio` → „Abspielen" (a
-  one-track queue), and `data-versionen` (a `DateiVersion` row exists) → „Frühere
-  Versionen", linking to `datei_view`.
-- **On a folder row** — `data-audios` / `data-bilder` carry how many audio files and images
-  lie **directly** in that folder, so an entry only appears when there is something to do:
-  play them in order, play them shuffled, or open `gallerie_view`.
-- **For the folder currently open** there is no row, so the topbar takes over: the gallery
-  button (`gallery_url`) was already there, and `folder_view` now also fills the generic
-  play menu in `base.html` (`play_menu`, `ordner_playlist_count`, and `playlists` under the
-  key `ordner`). That menu's handler already reads `data-playlist-type` + `data-shuffle`
-  and pulls its queue from `#playlists-data` — the same path `/intern/titel/` uses, so no
-  new JS was needed. This one queue *is* embedded, because it is a single known folder and
-  it must cover the **whole** folder rather than the loaded page (built from `files_list`
-  after sorting, before pagination).
-
-A folder row's playlist is fetched on click from `folder_playlist`
-(`/intern/ordner/<pk>/playlist/`) instead of being embedded — rendering the playlist of
-every visible subfolder would bloat the listing. It guards access exactly like
-`gallerie_view` (`is_folder_visible` **and** `folder_access`, else 404).
-
-Scope is deliberately **not** recursive anywhere here, matching `gallerie_view` — unlike the
-size and item counts in the same table, which do walk the subtree. Playback goes through
-`window.startPlayQueue(items, shuffle)`, the mini-player's queue entry point, i.e. the same
-`playQueue()` behind `startPlaylist`/`startPlaylistType`.
-
-What counts as playable is decided twice and must stay in sync: `_ist_audio()` (Python, for
-records already in memory) and `_audio_filter()` (the same rule as a `Q` for the row
-counts). Both read `_AUDIO_ENDUNGEN` — MIME type first, filename extensions as the fallback
-for uploads filer typed as `application/octet-stream` — and both honour the same field
-precedence, `original_filename` before `name` (which may be NULL). If they drift, a folder
-row promises a count its playlist then does not deliver.
-
-The search branch of `folder_view` sets none of these and renders no `#Action` panel either,
-so it has no context menu at all.
-
-Uses `django-filer`. Folder IDs are hard-coded constants in `settings.py` (e.g. `FOLDER_AVATARE = 1`, `FOLDER_MUSIK = 5`). The `import_files` management command imports avatars from the `Avatare/` directory into filer on first setup. `intern` overrides the filer-built-in `import_files` command (`intern/management/commands/import_files.py`) to set `_migrating.active = True` during the import, suppressing per-file index/thumbnail threads — otherwise importing a large directory would exhaust MySQL's connection limit. Indexing and thumbnailing are handled by the subsequent batch jobs instead.
-
-`Avatare/` also holds the superseded pictures as `<legacy_id>_<md5-prefix>.jpg`. `import_avatars`
-in `0003_import.py` hangs those off the member's current avatar as `DateiVersion` rows
-(see "Files as links, and file versions"): candidates whose `sha1` equals the current
-picture's are dropped (the legacy system stored the running revision under its hash name
-too), the rest are ordered by **file mtime** — the name carries no chronology — and get
-that mtime as `datum` (written after the fact, `datum` is `auto_now_add`). Their `File`
-rows are then removed with a *queryset* `delete()`, which bypasses `File.delete()` and so
-leaves the blob in place; this has to happen before the `owner is None` sweep, which would
-take the blobs with it. Versions of members who were not imported fall to that sweep.
-
-`index_files` and `thumbnail_files` run as background jobs after a fresh install in `migrate.sh`, building the search index and pre-generating thumbnails for all files. They are intentionally absent from `start.sh` (existing DB) — files are already indexed there. Files uploaded through the app are indexed and thumbnailed immediately via a `post_save` signal on `filer.File` (`on_filer_file_saved` in `signals.py`): a daemon thread calls `index_file()` and pre-generates all three thumbnail sizes so the upload response is not delayed. A semaphore caps concurrent thumbnail threads at 4 to prevent MySQL connection exhaustion; each thread closes its DB connection when done. The signal is suppressed (`_migrating.active`) during management commands that bulk-import files; file-creating functions in `0003_import.py` also set the flag explicitly as a backstop.
-
-### Files as links, and file versions
-
-**A file's identity is its storage path.** Two `filer.File` rows pointing at the same
-`file` path are the *same file in two folders* — folders work like tags (one invoice under
-Haus, Versicherung and Finanzamt). This is filer's own semantics: `File.delete()` drops the
-blob only when no other row references that path. Every operation that changes a file's
-path or name therefore has to carry all its rows along, which is what the helpers in
-`views/files.py` are for — use them instead of touching `File.file`/`name` directly:
-
-| Helper | Purpose |
-|---|---|
-| `verknuepfte_dateien(f, inklusive_selbst=True)` | all rows sharing `f`'s blob |
-| `datei_umbenennen(f, name)` | rename everywhere — one file, one name |
-| `version_anlegen(f, autor)` | archive the current revision before it is replaced |
-| `geschwister_nachziehen(alter_pfad, quelle)` | point all rows at the new blob, move the version chain over |
-| `versionen_loeschen(f)` | drop the archived blobs (when the last occurrence goes) |
-| `besitz_uebertragen(member, fallback)` | hand a departing member's files **and** folders to the owner of the folder above them |
-
-**Overwriting** an upload with the same name in the same folder (`upload` in
-`views/files.py`) keeps the `File` PK — so `Lied`/`Artikel`/`Forum` references survive —
-archives the old revision as a `DateiVersion` and moves every linked row onto the new blob.
-The update thus appears in *all* folders the file sits in, and nothing is deleted. The
-search index follows by itself (`ensure_indexed` spots a changed `file_size`); the sibling
-rows' `DateiIndex` entries are dropped so a same-size replacement is re-indexed too.
-
-**`DateiVersion`** (`models.py`) records the path and metadata of a superseded revision;
-the blob itself simply stays where it is. `aktuell` holds the path of the *live* revision
-and chains the history — it is rewritten whenever the file moves to a new blob.
-`/intern/datei/<pk>/` (`datei_view`, `datei.html`) shows the places a file is linked into
-(filtered by `visible_folder_ids` — never reveal folders the member cannot see) plus its
-version list; `datei_restore` makes an old revision current again, mirroring the overwrite
-path. Reached from the `#id` badge in the folder listing. `cleanup_dateiversionen`
-(command defaults `--keep 10 --days 730`; `start.sh` calls it with `--keep 25 --days 36500`
-so the imported avatar history below survives) prunes old revisions, blobs included.
-
-**When a member goes, their files stay — under a new owner.** `mitglied_delete`
-(`views/mitglieder.py`) calls `besitz_uebertragen(member, fallback=request.user)` before it
-decides between anonymising and hard-deleting: every `filer.File` and `filer.Folder` owned by
-that member is handed to the owner of the folder above it, walking further up whenever an
-ancestor belongs to the same member, and falling back to the deleting person at the root (or
-for an unfiled file). Without it filer's `on_delete=SET_NULL` would leave `owner` empty — no
-name in the listing, and filer's own permission check (`elif user == self.owner`) loses its
-owner branch — while an anonymised member would go on owning files as `geloescht_<id>`.
-
-Two consequences worth knowing:
-
-- **File ownership no longer forces anonymisation.** It used to be part of the `has_history`
-  test; after the transfer nothing in the file area points at the member, so a member whose
-  only trace was owning files is now really deleted. `Mitteilung`, `Artikel` and `Abstimmung`
-  still trigger the anonymising branch.
-- **The transfer is called explicitly, never from a `pre_delete` signal** — in the view and,
-  for the way around it, in `UserAdmin.delete_model`/`delete_queryset` (`intern/admin.py`).
-  Django's deletion collector gathers its `SET_NULL` updates *before* `pre_delete` is sent and
-  may write `owner=NULL` over freshly set owners; called before `delete()` there is no race,
-  because the collector then finds no rows left. The helper writes through queryset `update()`
-  for the same class of reason: `save()` would fire `on_filer_file_saved` and spawn an
-  indexing plus three thumbnail threads per file, for a field that affects neither.
-
-### Avatars are write-protected against other members
-
-The `Avatare` folder has no `FolderPermission` rows, so by the rule in `folder_access.py`
-every logged-in member has **write** access to it. Without a second check that means anyone
-could overwrite, rename or `datei_restore` someone else's profile picture — and the imported
-avatar history reaches back to 2012. Folder permissions cannot fix this: restricting the
-folder would also block the self-service upload in `mitglied_edit`, which goes through
-`upload()` and is checked against `folder_access()`.
-
-`intern/avatar_access.py` is therefore a second access axis, orthogonal to folder
-permissions:
-
-- `avatar_mitglied(f)` — the member whose profile picture `f` is, resolved via the
-  **`User.avatar` FK, not the `<id>.jpg` naming convention**, and across *all* linked rows
-  (`verknuepfte_dateien`): a sibling row in another folder shares the blob and the version
-  chain, so acting on it would swap the avatar just the same.
-- `darf_avatar_aendern(user, f)` — `False` when `f` is another member's avatar. Holders of
-  `intern.change_user` (the permission `mitglied_edit` already requires for foreign
-  profiles) and superusers always pass. A file in `Avatare` with no resolvable owner (a
-  leftover `<id>.jpg` of a member who has since cleared their avatar) is administration-only.
-  Everything that is not an avatar returns `True` — normal files are unaffected.
-
-**Every write path on files must call `darf_avatar_aendern()`.** Current call sites:
-`datei_restore` and `upload` (overwrite branch — checked *before* `version_anlegen`, plus
-the `rename_to`/`avatar_user_id` parameters, checked before the `File` row is created so a
-rejection leaves no orphan) in `views/files.py`; `folder_rename`, `folder_move` and
-`folder_delete` in `views/folders.py`. `folder_link`/`folder_duplicate` need no guard — they
-do not change the avatar, and reading is open anyway.
-
-`datei_view` passes `darf_wiederherstellen` (= `darf_schreiben` **and**
-`darf_avatar_aendern`) to `datei.html`, which hides only the restore button. The version
-list itself stays visible to everyone — a deliberate choice, not an oversight.
-
-A version blob has **no `File` row** — that is the whole point, and it makes the blob an
-orphan by filer's reckoning. Never run `filer_check --delete-orphans` on this project: it
-walks `filer_public/` and deletes every blob without a matching row, i.e. the entire
-version history. `migrate.sh` therefore only runs `thumbnail_files`.
-
-Every row of the version table carries a preview (`_vorschau()` in `views/files.py`,
-96×96 crop, `.v-vorschau` in `intern.css`); versions are addressed by path, which
-`get_thumbnailer()` takes as readily as a `FieldFile`. Because a bare path carries none of
-filer's storage config, those thumbnails land *next to the source blob* inside
-`filer_public/` instead of under `filer_public_thumbnails/` — harmless, and
-`versionen_loeschen()` / `cleanup_dateiversionen` already clean them up via
-`get_thumbnailer(v.pfad).delete_thumbnails()`. They are one more reason not to run
-`--delete-orphans`. Files with no usable preview (audio, spreadsheets) simply get an empty
-cell; `thumbnail_files` never pre-generates any of this, so the first view of a detail page
-builds them.
-
-### Retention: what the cleanup jobs actually delete
-
-Two scheduled jobs enforce retention, both started in the background by `start.sh`
-(**not** by `migrate.sh` — that path wipes the DB anyway):
-
-| Job | Deletes | Never touches |
-|---|---|---|
-| `cleanup_changelog` | `ChangeLog` rows older than 3 years (`timestamp__lt`), a plain queryset `delete()`. Backs the §10 promise in `datenschutz.html` | Any file, any content — only the audit trail |
-| `cleanup_dateiversionen` | `DateiVersion` rows **plus** the blob at `v.pfad` via `storage.delete()` and the thumbnails at that path via `get_thumbnailer(v.pfad).delete_thumbnails()` | Live files: a `DateiVersion` blob has no `filer.File` row by construction, so nothing a member can see in a folder is ever a candidate |
-
-`cleanup_dateiversionen` selects by two independent rules, unioned (`_veraltet`):
-`datum__lt=now-days` **or** everything past the newest `--keep` per `aktuell` group
-(`Meta.ordering = ["-nummer"]`, so `[keep:]` is the oldest tail). A row hit by either rule
-goes. `aktuell` is the path of the *live* revision, so grouping by it is grouping by file.
-
-**The defaults are not what runs.** `start.sh` calls it with `--keep 25 --days 36500`
-(≈100 years), which switches the age rule off entirely: in production only the count rule
-bites, i.e. each file keeps its newest 25 revisions forever. That is deliberate — the avatar
-history imported from the legacy system (2012 ff., see `import_avatars`) would otherwise
-vanish on the next server start, since those `DateiVersion` rows carry the original file
-mtime as `datum`. Consequence to keep in mind: **there is currently no time-based deletion
-of superseded file revisions in production.** A revision only disappears when 25 newer ones
-exist, when the last `filer.File` occurrence is deleted (`_datei_loeschen` →
-`versionen_loeschen`), or on an explicit erasure request. If a real time limit is ever
-wanted, the imported avatar versions have to be exempted first — a blanket `--days` would
-take them with it.
-
-Not covered by either job, and worth knowing when answering an Art. 17 request: **deleting a
-file removes one occurrence, not the blob** — the blob survives as long as another `File` row
-points at the same path (see "Files as links, and file versions"). Erasure therefore means
-deleting *every* linked row, which is exactly what `datei_verwendungen` shows in the
-confirmation dialog.
-
-Server logs are the third retention item in §10 (90 days), but they are not this codebase's
-job: nginx logs to stdout (`nginx.conf`) and Django's `LOGGING` uses a `StreamHandler`, so
-both land in journald/`podman logs` and their rotation is a host-side setting.
-
-### Breaking references: warn before deleting or renaming
-
-Two kinds of references point at a file, and they break differently:
-
-- **Wiki links** (`[[Datei:name.pdf]]`) address a file by **name**
-  (`replacements.internal_links`). They break on **rename**, and on **delete** only when
-  the *last* row goes — while another folder still links the file, the name resolves.
-  Note `internal_links` must use `filter().first()`, not `get()`: a file linked into
-  several folders has several rows, and `get()` would report a live file as broken.
-- **Everything else** — `Lied` (original/aufnahme/pdf/noten), `Forum.bild`, `User.avatar`
-  and `Konfiguration` keys ending in `_FILE_ID` (Satzung, Beitragsordnung — linked from the
-  public join form) — hangs off the **PK**. Those break when that row is deleted, even if
-  the file survives elsewhere, and are unaffected by a rename.
-
-`intern/verwendung.py` (`datei_verwendungen(dateien, user, beim_loeschen=True)`) collects
-both, honouring that distinction; `Artikel.aktuelle_datei_verweise()` maps file name →
-articles over each article's newest version only. Article names the user may not read
-(`_artikel_access`) are counted, not named. The endpoint `datei_verwendung`
-(`datei/verwendung/`) feeds the confirmation dialogs in `intern.js`
-(`verwendungenAbfragen` / `verwendungsDialog`, a native `<dialog>`), which the folder
-browser opens before deleting and before renaming. The file detail page shows the same
-list under „Verwendet in".
-
-On rename the dialog offers **„Links mitziehen"**: `folder_rename` with
-`links_mitziehen=1` calls `_wiki_links_umschreiben`, which writes a **new article version**
-per affected article (articles are immutable versions, same path as `article_edit`) with
-the comment „Dateiname geändert: alt → neu". Articles the user may not edit are skipped and
-reported back in `links_uebersprungen`.
-
-**Copy vs. duplicate:** `folder_link` (button „Verknüpfen") adds a row sharing the blob —
-the tag case above. `folder_duplicate` („Duplizieren") copies the blob, giving an
-independent file. Both share `_copy_action` / `_copy_folder_deep(…, blob_kopieren)` in
-`views/folders.py`. Deleting goes through `_datei_loeschen`, which removes one occurrence
-and only cleans up versions when it was the last one — pass it a **freshly loaded**
-instance, a stale one would have filer delete a blob that is still in use.
-
-**Folder permissions:** access is governed by `FolderPermission(folder, group)` rows —
-`folder_access()` in `intern/folder_access.py` treats a folder *without* rows as open for
-read/write. Any code that creates a folder must therefore set rows explicitly, or the new
-folder is world-readable. `folder_create` copies the parent's rows; `_copy_folder_deep`
-(used by both `folder_link` and `folder_duplicate`)
-gives each copied folder its source folder's own rows and, if the source was unrestricted,
-the rows of its new parent (`_perm_specs` / `_apply_perm_specs`) — otherwise copying a
-protected folder into an open one would expose its contents.
-
-### CardDAV address book
-
-`intern/carddav/` serves the member directory — photos included — to DAVx⁵ on Android and to
-iOS Contacts. **Read-only**: `PUT`/`DELETE`/`MKCOL`/`PROPPATCH`/`LOCK` all answer `405`.
-Members authenticate with their normal portal username and password over HTTP Basic.
-
-**Off by default.** `CARDDAV_AKTIV` is seeded as `"0"`, and while it is off every CardDAV URL
-raises `Http404` — not `401`. Switching it on is a decision with privacy consequences
-(`datenschutz.html` §16), so it deliberately requires a deliberate act.
-
-| URL | Purpose |
-|---|---|
-| `/.well-known/carddav` (± slash) | `301` → `/carddav/`; RFC 6764, the only thing iOS derives from a bare hostname. No auth |
-| `/carddav` (± slash) | service root — `current-user-principal` |
-| `/carddav/principal/<pk>/` | the principal |
-| `/carddav/adressbuch/<pk>/` | `addressbook-home-set` |
-| `/carddav/adressbuch/<pk>/mitglieder/` | the address book: `getctag`, the ETag list, both REPORTs |
-| `/carddav/adressbuch/<pk>/mitglieder/<mid>.vcf` | one card |
-
-`<pk>` must equal the authenticated member's pk, else `Http404` (the `views/media.py` rule —
-404, never 403, so a foreign id is not confirmed by a different error). Integer pks rather than
-usernames, because `User.username` sets `validators=[]` ("Leerzeichen erlaubt") and hrefs must
-match byte-for-byte between the PROPFIND response and the following multiget.
-
-**Two rules shape the whole design, and both differ from the portal:**
-
-- **No admin bonus.** `carddav.daten.carddav_sichtbar()` consults `private_fields` and nothing
-  else — unlike `User.field_visible_to()`, holders of `intern.change_user` do *not* get hidden
-  fields. A vCard lands in the phone's contact database, gets backed up to Google/iCloud and is
-  read by messenger apps; hiding an address is not consent to that just because the reader sits
-  on the board. Consequence the architecture rests on: **every card is byte-identical for every
-  reader**, so ETags are global rather than per-account.
-- **Nobody gets their own card.** `mitglieder_qs()` does `exclude(pk=betrachter.pk)`; the
-  `.vcf` view uses the same queryset, so the own card 404s on its direct URL too. iOS and
-  Android keep their own "my card" and would treat a second copy as a duplicate. This is the
-  one viewer-dependent thing about the collection, and therefore the CTag varies per member
-  while the individual ETags do not.
-
-`is_active=True` applies to everyone, deliberately unlike `mitglied_list`, which shows admins
-inactive members too — otherwise a board member's phone fills up with ex-members and
-`geloescht_<id>` placeholders.
-
-**Module split follows the project's testability rule** (`SimpleTestCase` only — a `TestCase`
-would run `0003_import`, which needs the legacy MySQL):
-
-| Module | Contents |
-|---|---|
-| `vcard.py` | vCard 3.0 serialisation, pure. `kontakt_daten`, `vcard_text`, `etag`, `ctag`; folding and escaping are re-exported from `intern/dav/text.py` so `from intern.carddav.vcard import fold` keeps working. Imports nothing from `intern.models` — which field a reader may see arrives as the callable `sichtbar`, so a test passes a set lookup |
-| `daten.py` | the **only** DB/storage contact: `carddav_sichtbar`, `mitglieder_qs`, `foto_kennung`, `foto_bytes`, `kontakt_liste`, `ctag` |
-| `views.py` | six FBVs, all `@csrf_exempt` |
-
-Everything the address book shares with the calendar lives in **`intern/dav/`** (see "The
-shared DAV base" below) — that is where `parse_report`, `multistatus`, the Basic-auth
-decorator and the 207/405/Depth helpers are.
-
-**vCard 3.0, not 4.0** — iOS is most reliable with it and `PHOTO;ENCODING=b` is proven on both
-platforms (the 4.0 `data:` URI is not). Folding counts **UTF-8 octets**, never splitting a
-multi-byte sequence: an `ä` cut in half destroys the whole card.
-
-**ETags never hash file bytes.** `foto_kennung()` builds `"<pk>:<sha1>:<size>"` from
-`filer.File` columns — `sha1` is the content digest filer computes on upload — so a
-`PROPFIND Depth:1` over the whole book costs one query and opens not a single image.
-`vcard.etag()` hashes the entire `kontakt_daten` dict (sorted) rather than a hand-maintained
-field list, so a field added later cannot be forgotten. **`_SERIALISIERUNG` must be bumped on
-every change to `vcard.py`** — otherwise every already-synced client keeps its old cards
-forever, since no field value changed.
-
-**Things that will bite when touching this:**
-
-- `@csrf_exempt` on all six views. Only `GET/HEAD/OPTIONS/TRACE` are CSRF-safe, and over HTTPS
-  without `Origin` *and* `Referer` — exactly what both clients send — Django answers 403. These
-  are the project's first `csrf_exempt` uses.
-- Never `@login_required`: `LOGIN_URL` would turn a PROPFIND into a 302 to an HTML page. DAVx⁵
-  then reports "service not found", iOS fails silently.
-- `GZipMiddleware` weakens a strong ETag to `W/"…"`. The `.vcf` response therefore sets
-  `Content-Encoding: identity`, which makes the middleware bail out; the 207s carry no ETag
-  header and stay compressed.
-- `current-user-privilege-set` containing only `<D:read/>` is what tells iOS the book is
-  read-only. Without it, opening a card raises a save error.
-- Unknown properties must be reported as a second `propstat` with 404, not omitted.
-- `sync-collection` is not implemented, so it is absent from `supported-report-set` and
-  `D:sync-token` is answered 404. Offering a report and then not serving it is worse than
-  omitting it.
-- `nginx.conf` needs no change (`location /` already catches both paths, and no secret travels
-  in the URL), and `requirements.txt` gains no dependency — the XML goes through
-  `xml.etree.ElementTree`, with DTDs rejected outright to close Billion Laughs.
-
-### The shared DAV base (`intern/dav/`)
-
-Everything the address book and the calendar have in common, and nothing else. All of it is
-DB-free (except the login lookup in `auth.py`) and therefore `SimpleTestCase`-able.
-
-| Module | Contents |
-|---|---|
-| `xml.py` | namespaces (`NS_DAV`/`NS_CARDDAV`/`NS_CALDAV`/`NS_CS`), `qn`, `element`, `parse_body`/`parse_propfind`/`parse_report`, `multistatus` |
-| `auth.py` | `Dienst` (the per-service tuple), `dav_basic_auth(dienst)`, `dav_kopfzeilen`, the verification cache, the IP throttle |
-| `http.py` | the response building blocks: `multistatus_antwort` (207), `options`, `nicht_erlaubt` (405), `aufteilen`, `privilegien`, `collection`, `href`, `supported_report`, `tiefe`, `basis`, `ressourcen_id`, `pruefe_eigentuemer` |
-| `text.py` | 75-octet folding, TEXT escaping, `etag(daten, serialisierung)` / `ctag(paare)`. vCard 3.0 and iCalendar fold and escape identically, so this exists once |
-| `verweise.py` | `home_sets(pk, eigener)` — the cross-advertising described below |
-
-**Each service is a `Dienst` tuple**, and the decorator reads its config keys by prefix:
-`<PREFIX>_AKTIV`, `<PREFIX>_AUTH_TTL`, `<PREFIX>_MAX_FEHLVERSUCHE_PRO_STUNDE`. That is the
-whole difference between the two — plus the realm and the `DAV:` header. The decorator sets
-`request.dav_user` (it used to be `request.carddav_user`).
-
-**`element(ns, tag, …)`'s second parameter is `tag`, not `name`** — `name` is needed as an
-*attribute*: `element(CAL, "comp", name="VEVENT")`.
-
-**One base URL must find both services.** Three things together make that work, and all three
-have to stay:
-
-1. `/.well-known/carddav` **and** `/.well-known/caldav` (each ± slash) are registered in
-   `config/urls.py`.
-2. `verweise.home_sets()` puts **both** `C:addressbook-home-set` and `CAL:calendar-home-set`
-   into the service root *and* the principal of **both** services. A client that only probes
-   one well-known path still discovers the other collection from there — which is what makes
-   DAVx⁵ create a single account holding the address book and both calendars.
-3. A foreign home-set is only advertised when that service is switched on. Otherwise the
-   client would be sent to a path that answers 404.
-
-### CalDAV calendar
-
-`intern/caldav/` serves the events — and, optionally, the members' birthdays — to DAVx⁵ and
-iOS Calendar. Same shape as CardDAV: **read-only** (`PUT`/`DELETE`/`MKCOL`/`PROPPATCH`/`LOCK`
-→ 405), HTTP Basic with the portal password, `CALDAV_AKTIV` seeded as `"0"` and every URL
-raising `Http404` while it is off.
-
-| URL | Purpose |
-|---|---|
-| `/.well-known/caldav` (± slash) | `301` → `/caldav/`, no auth |
-| `/caldav` (± slash) | service root |
-| `/caldav/principal/<pk>/` | the principal |
-| `/caldav/kalender/<pk>/` | `calendar-home-set` — Depth 1 lists both collections |
-| `/caldav/kalender/<pk>/termine/` | the events: `getctag`, the ETag list, both REPORTs |
-| `/caldav/kalender/<pk>/termine/<tid>.ics` | one event |
-| `/caldav/kalender/<pk>/geburtstage/` `…/<mid>.ics` | the birthdays, absent when `CALDAV_GEBURTSTAGE` is off |
-
-| Module | Contents |
-|---|---|
-| `ical.py` | iCalendar serialisation, pure: `termin_daten`, `geburtstag_daten`, `vcalendar_text`, `etag`, `ctag`. Imports nothing from `intern.models` and **never calls the clock** — the timezone and the `DTSTAMP` are passed in, the same rule as `intern/mailingliste.py`, which is what makes the tests deterministic |
-| `daten.py` | the **only** DB/config contact: `eintraege(art)`, `einzeln`, `nach_zeitraum`, `ctag`, `sammlung_name`, `farbe`, `zeitzone`, `stand` |
-| `views.py` | six FBVs, all `@csrf_exempt`; the two collections share `sammlung`/`eintrag` and are told apart by the `art` kwarg fixed in `urls.py` |
-
-**Hand-rolled, not via the `icalendar` library** (which stays for the ICS feed): the ETag would
-otherwise hang on a third party's byte output, and a library upgrade would trigger a full
-re-sync on every device.
-
-**Time handling.** `USE_TZ = False`, so `Termin.datum` is naive local time.
-
-- A termin **at 00:00** with no end (or an end also at 00:00) is treated as **all-day** and
-  written as `DTSTART;VALUE=DATE`. `intern/forms.py` stores `datetime.min.time()` when no time
-  was entered, so 00:00 *is* the marker for "no time given" — this also fixes the old feed's
-  "00:00–02:00" display. `DTEND` is **exclusive** for DATE values: the last day plus one, where
-  "last day" reads `datum_bis` inclusively, exactly as the month grid draws it.
-- Everything else is converted to **UTC** via `zoneinfo.ZoneInfo(settings.TIME_ZONE)` and ends
-  in `Z`, so no `VTIMEZONE` is needed and no client has to guess. Without an end, the feed's
-  two-hour convention applies.
-
-**Same content for everyone, so ETags are global.** There are no per-termin permissions in the
-portal, and the member's own `Zusage` is deliberately **not** in the VEVENT — it would make
-every ETag account-specific. Birthdays follow `private_fields` with **no admin bonus**, the
-same rule as the month grid and `carddav_sichtbar`.
-
-**`_SERIALISIERUNG` in `ical.py` must be bumped on every change to the serialisation**, for the
-same reason as in `vcard.py`.
-
-Of the `calendar-query` filter only the two cheap parts are honoured: a `comp-filter` asking
-for `VTODO`/`VJOURNAL` gets an empty answer instead of events, and a `time-range` narrows the
-list (`daten.nach_zeitraum` converts the UTC bounds back to local time first; recurring
-birthdays always pass). Everything else is ignored — over-delivery is harmless in a read-only
-service.
-
-**The old ICS feed stays.** `/intern/calendar/<secret>.ics` (`ICAL_SECRET`) is deliberately
-*not* replaced: Google Calendar on the web cannot subscribe to CalDAV, and the feed needs no
-portal password. The Termine list shows the CalDAV box first and labels the ICS one as the
-alternative without login.
-
-### External integrations
-
-**XMPP/ejabberd** (active when `EJABBERD_HOST` + `EJABBERD_BOT_JID` are set): Bidirectional bridge between Forum MUC rooms and ejabberd. Messages sync in both directions. Uses REST API for admin operations and a long-running slixmpp bot for message relay.
-
-See `xmpp.md` for detailed implementation notes.
-
-### Frontend design system (`intern/static/intern/css/intern.css`)
-
-All colors use CSS custom properties defined in `:root` (light mode). Dark mode is a `[data-theme="dark"]` block that overrides all color tokens. Theme is toggled via a button in the sidebar footer; persisted to `localStorage`; falls back to `prefers-color-scheme`.
-
-When adding new colors, always use CSS variables and add dark-mode values to `[data-theme="dark"]`. Avoid hardcoded hex colors in component styles.
-
-**Status ("Ampel") colours** — the green/yellow/red used by the attendance badges
-(`.att-count-*`, `.att-inline-*`) and the Zusage widgets (`.zusage-state-*`,
-`.zusage-btn-*`) come from one token family: `--status-{success,warning,danger}-{bg,text,border,solid}`.
-`bg`/`text`/`border` are the soft surface, `solid` the strong fill used on hover/active;
-the dark-mode block redefines the first three, so those components need **no**
-`[data-theme="dark"]` rules of their own — only the neutral "keine Angabe" state does.
-Destructive buttons use `--error-solid` / `--error-solid-hover`; do **not** reach for
-`--error-bg` there, that is a pale surface colour and carries no white text.
-
-**Explanation tooltips** — a small info icon whose bubble explains what an option
-means and what it does. Two rules make it work:
-
-- **The text lives as `help_text` on the model field, never in a template.** The form
-  inherits it for free, and display-only pages read the same string. `Termin.repertoire`
-  and `Termin.anwesenheit` (`intern/models.py`) are the current users — both options have
-  effects a member cannot guess from the word alone, and `repertoire` even publishes to
-  the homepage and mails the external gig list.
-- **One component, two entry points.** `{% hilfe form.repertoire %}` takes a `BoundField`
-  inside a form; `{% hilfe "Termin.repertoire" %}` takes a `"Model.field"` string on a
-  display page (`intern/templatetags/ui_tags.py` → `_hilfe_icon.html`). A wrong field
-  name raises rather than rendering an empty icon.
-
-`tooltip.js` keeps a single `.hilfe-bubble` on the body and hangs **delegated** handlers
-off `document` for `[data-hilfe]` — the calendar day panel is filled by `kalender.js`, the
-termin banner is swapped by htmx and table rows arrive by infinite scroll, so an init-time
-`querySelectorAll` would miss them all. It shows on hover (200 ms), on `:focus-visible`
-(keyboard only — a mouse click would otherwise open and immediately re-close it) and on
-tap, which is the only way touch devices reach it at all; that is why the plain `title`
-attribute used elsewhere was not enough here. The bubble is `position: fixed` because
-`.table-container` and `.cal-panel-scroll` scroll internally and would clip an absolutely
-positioned one.
-
-Two traps when placing the icon: it must stay **outside** a checkbox `<label>` (inside, a
-click on it toggles the checkbox), and where the surrounding template also renders
-`help_text` as `<small>` (`table.html`'s generic add panel) that branch must be limited to
-non-checkbox fields, or the same sentence appears twice. The attribute is `data-hilfe`,
-not `data-tooltip`, because `gruppen.html` still carries its own page-local tooltip on the
-latter — moving it onto this component is an open cleanup (its bubble also references
-`--border-strong`, a token only defined on `.perm-matrix-wrap`, so it renders without a
-border).
-
-**Theme boot script.** The inline `<script>` that sets `data-theme` before paint lives in
-exactly one place: `intern/templates/_theme_boot.html`. Every standalone page includes it
-right after its `intern.css` link and before any visible markup — `base.html`,
-`dialog.html`, `mitglied_public_base.html`, `datenschutz.html` and the five error pages.
-Put it anywhere later and the flash of the wrong theme comes back. The script only
-**reads** `localStorage["theme"]`, falling back to `prefers-color-scheme`; it never writes.
-
-Writing is the toggle's job alone (`initTheme` in `intern.js`, `apply(theme, persist)`):
-the initial call passes `persist = false`, only a click persists. That distinction matters
-— persisting on load would freeze whatever the system happened to prefer on the first
-visit, and a later OS switch would have no effect. While nothing is stored, a
-`prefers-color-scheme` change listener follows the system live.
-
-**Auth pages** (`dialog.html` → `login.html`, `register.html`, `register_success.html`,
-`reset_confirm.html`) are themed like everything else: they load `intern.css`, carry
-`class="join-page"` on `<html>`/`<body>` and reuse the `.join-wrap`/`.join-card`/
-`.join-header` shell of the public join pages. `login-style.css` loads *after* it and holds
-only what `intern.css` does not cover (narrower card, the `<h1>` that sits outside
-`.join-header`, full-width submit button, `helptext` sizing for `{{ form.as_div }}`) —
-tokens only, no hex values. Form fields, labels, buttons, error boxes (`.error`,
-`ul.errorlist`) and the password-strength meter all come from `intern.css`.
-
-The only page deliberately left light-only is the public homepage — see below.
-
-Map pages use Leaflet, and everything they share lives in
-`intern/static/intern/js/osm-map.js`, loaded once in `base.html` right after Leaflet:
-
-- It patches `L.TileLayer.prototype.createTile` to set `referrerPolicy = "origin"` —
-  OpenStreetMap's tile servers reject requests without a `Referer` header. Per-page
-  map code must not re-add this patch.
-- `window.CantorMap` holds the pieces every map needs: `tiles(map, opts)` (the
-  `/tiles/…` layer plus attribution — never call `L.tileLayer` directly, or a server
-  change misses one map), `pin("ort"|"mitglied")` (the `.karte-pin` divIcons, colour
-  and SVG defined once), `esc(s)`, and `init(el)`/`initAll()`.
-- **Detail-page maps are declarative.** `{% include "_leaflet_map.html" with lat=… lng=…
-  popup=… %}` renders only a `[data-osm-map]` container; `initAll()` builds the map from
-  its data attributes on load. Parameters: `lat`, `lng`, `zoom` (default 15), `popup`
-  (first line), `popup_ort` (an `Ort` whose address is appended as further lines), `pin`,
-  `map_id`, `hoehe`. Popup text travels as plain text with `&#10;` line breaks and is
-  escaped in JS — no `escapejs` in a template, no HTML from the DB. Used by
-  `ort_detail.html`, `termin.html` and `mitglied.html`.
-- `karte.html` keeps its own init (layer groups, live locations, search) but takes the
-  tile layer and both pin icons from `CantorMap`.
-
-### Public homepage (`templates/index.html`, `intern/static/intern/css/main.css`)
-
-The public landing page does **not** extend `base.html` and does **not** use
-`intern.css` — it is a standalone one-pager with its own stylesheet (`main.css`, light
-mode only, own token block in `:root`). Structure: fixed header over a full-bleed photo
-hero (transparent at the top, `.is-solid` white after 60 px of scroll — set by a small
-inline script at the end of the page), then Über uns (cards), Konzerte (date/title/place
-rows), Galerie (single wide photo band) and a dark Kontakt section plus footer.
-
-It is the one page that stays **light only** on purpose, and therefore the one page that
-does *not* include `_theme_boot.html`: the photo hero, the white `.is-solid` header state
-and the already-dark Kontakt section are a composed look, not a token swap. Do not bolt a
-`[data-theme="dark"]` block onto `main.css` without redesigning those three.
-
-Logo usage: the header shows the round mark
-(`intern/images/JG-Frankfurt-wG-color.svg`) over the photo and swaps to the black
-wordmark (`intern/brand/JG-Frankfurt.svg`) once the header turns white — below 460 px the
-mark stays. Hero headline and footer use the light wordmark
-(`intern/brand/JG-Frankfurt-transparent.svg`) as an image inside the `<h1>`; its font
-(Showcard Gothic) exists only as outlines in the SVG, so the lettering can only be used as
-an asset, never as a webfont. `JG-Frankfurt-wG-color.svg` previously existed **only** in
-the gitignored `static/` (STATIC_ROOT) — it now has a tracked source copy in
-`intern/static/intern/images/`, which the favicon redirect in `config/urls.py` also relies
-on.
-
-All copy comes from `Konfiguration` (`HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME`,
-`VEREINSNAME*`, `VEREINSADRESSE`, `DEFAULT_FROM_EMAIL`) — `home()` in `views/auth.py`
-additionally passes `homepage_intro`, the first sentence of `HOMEPAGE_UEBER_UNS`, used as
-the hero subline. The hero and gallery images are pre-scaled derivatives of the choir
-photo in `intern/static/intern/img/` (`chor-{800,1400,2000}.jpg` for the hero `srcset`,
-`chor-band-{1100,1800}.jpg` for the gallery band); regenerate them from the original with
-ImageMagick when the photo changes. Assets are referenced via `{% static %}`, so
-`collectstatic` covers them.
-
-### Known technical debt
-
-Tracked in separate files: general code/UX debt (branding, risk-ranked items) in
-`technical-debt.md`; privacy-policy compliance items in `datenschutz.md`.
-
-### Logging
-
-`settings.py` defines a `LOGGING` dict. The `intern` logger hierarchy is set to `INFO`; root and `django` loggers to `WARNING`. All output goes to stdout via `StreamHandler` (`stream: ext://sys.stdout`), which appears in `podman logs` and `journalctl`. Using stdout ensures systemd assigns the correct `PRIORITY` based on the Python log level, so INFO/WARNING entries are not colored red in journalctl. Custom loggers use `logging.getLogger(__name__)` — they all fall under `intern.*` and are therefore visible.
-
-### Notable utilities (`intern/`)
-
-- `pdf.py` — `new_letterhead_pdf(title, subtitle, vereinsname, vereinsname_lang, vereinsadresse)` returns `(buf, canvas, content_y)`; draws branded letterhead (logo from `intern/brand/JG-Frankfurt-transparent.png`, thin `#c14468` accent lines) and footer. Helper functions `draw_section`, `draw_field`, `draw_checkbox`, `draw_signature` build the content area. Used by `_save_antrag_pdf` and `_save_bestaetigung_pdf` in `views/auth.py`.
-- `mail.py` — `send_branded_mail(subject, to, template, context, text_body=None, attachments=None, headers=None)`: renders an HTML template into a branded mail with the embedded logo (`cid:logo`) and a plain-text fallback (both get the `MAIL_FOOTER` line); resolves the sender via `get_from_email()`; never raises and returns `True`/`False` so callers can tell whether the message reached the backend. `attachments` is an optional list of `(filename, bytes, content_type)` tuples — when present the outer MIME type is `multipart/mixed`. `headers` adds extra MIME headers (used for `List-Unsubscribe`). The function builds the MIME message itself and hands it to Django through a `_Msg` subclass whose `message()` is overridden; that override must apply `_SMTP_POLICY` (compat32 with CRLF line endings), otherwise `as_bytes()` emits bare LF and strict SMTP servers reject the whole mail as one over-long line (RFC 5321). Callers normally use the wrapper `send_config_mail()`, which renders a `MAIL_*` config text (see "Automated e-mails"); `build_mail_placeholders()` builds the placeholder dict.
-- `mail_markup.py` — `render_mail_markup(raw, placeholders, link)` → `(html, plain)`: wiki-style markup renderer for mail texts, including the `{button:Label}` directive.
-- `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file links)
-- `php_pbkdf2_hasher.py` — legacy password hasher for migrating users from a prior PHP system; listed in `PASSWORD_HASHERS` in settings
-- `fuzzy.py` — fuzzy song title matching used in article references
-- `context_processors.py` — injects global template context (`VERSION`, `upload_max_mb`, notify poll/dismiss intervals)
-- `app_settings.py` — runtime config helpers (`get_config`, `get_config_bool`, `get_config_int`, `get_from_email`, `get_map_center`, `get_document_url`, `get_base_url`) backed by the `Konfiguration` table; see "Runtime configuration" below. `get_document_url(key)` resolves a Filer file ID stored in `Konfiguration` to a public HMAC token URL (`/intern/datei/<pk>/<token>/<filename>`), returning `"#"` when unconfigured. `get_base_url(override=None, fallback="")` is the one way to build the portal's base URL outside a request (mails, management commands): `VEREINS_URL`, trimmed of any trailing slash. **Its default `fallback` is deliberately empty** — for mail an unset `VEREINS_URL` is an abort condition (a relative unsubscribe link is a dead one), and a silent `http://localhost` would hide that. Only the two commands that merely print a URL pass one.
-
-**External integrations:**
-- `ejabberd.py` — REST API client for ejabberd admin API (room config, affiliations, invitations, vCards). Message sending is done by the bot over its live session, not here.
-
-**Management commands:**
-- `ejabberd_bot` — slixmpp XMPP bot for MUC message forwarding
-- `ejabberd_admin` — operator CLI for all ejabberd admin ops; `ejabberd_admin sync` runs the startup user/room sync (was the separate `ejabberd_sync` command, now merged)
-
-### Migration quirks
-
-`migrate.sh` / `start.sh` delete `intern/migrations/0002_add_filer.py` and temporarily move `0003_import.py` out before regenerating migrations. This is intentional — `0002` is always regenerated fresh and `0003` depends on it being newly created. Do not check `0002_add_filer.py` into git.
-
-### Database
-
-SQLite in development (`db.sqlite3`, excluded from git). MySQL-compatible for production via `pymysql`.
-
-**Note on DB reset:** The full DB wipe in `migrate.sh` exists only during the current **test phase**. After the final migration it will be removed — the test system will simply receive a copy of the prod DB, and prod and test will have separate start strategies (no more destructive reset on start). Until then: every `migrate.sh` run discards all data.
-
-### Cache
-
-`CACHES` uses `DatabaseCache` (table `cache_table`), and it carries exactly one thing: the
-two IP rate limits — password reset (`views/auth.py`) and mailing-list sign-up
-(`views/auftritte.py`). Nothing else in the project uses the Django cache; the
-`_nick_jid_cache` in `ejabberd_bot.py` is a plain dict.
-
-The backend has to be shared, not per-process: with the default LocMemCache each of the
-three gunicorn workers counts on its own, so the effective limit is 3× the configured
-value and which worker a request lands on is luck. `OPTIONS.MAX_ENTRIES` is raised to
-10000 for the same reason the limits exist — Django's default of 300 makes
-`DatabaseCache` cull a third of all rows on overflow (`CULL_FREQUENCY` 3), which an
-attacker could use to evict the very counters that throttle them.
-
-The table is created by `python manage.py createcachetable` in **both** `start.sh` and
-`migrate.sh`. That is plain DDL, **not** a migration, so it does not collide with the rule
-that all model changes go into the regenerated `0002`. It is idempotent. If the table is
-missing the throttles fail loudly rather than silently switching themselves off — that is
-deliberate, hence no `try/except` around the cache calls.
-
-Unaffected by all of this: the DB-backed cooldown on `Auftrittsabo.optin_gesendet_am`,
-which is the brake that actually prevents mail-bombing a foreign address.
-
-### Environment variables
-
-Only bootstrap settings (needed before the DB is available) are real env vars:
-
-- `DEBUG` — set to `1` for development mode
-- `SECRET_KEY` — hardcoded in `settings.py` (development only; override for production)
-- `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`/`DB_PORT` — MySQL connection (unset → SQLite)
-
-### Runtime configuration (`Konfiguration` table)
-
-Operational settings are stored in the `intern.Konfiguration` key/value table, not
-env vars, so they can be changed at runtime (admin or `/intern/konfiguration/`)
-without a redeploy. **Read them via `intern.app_settings` helpers** (`get_config`,
-`get_config_bool`, `get_config_int`) — never `os.environ`/`settings` for these —
-and never call the helpers at settings/import time (the DB may not be ready).
-
-Environment variables take priority over DB values in `get_config()`, **and are also
-persisted to the DB during `post_migrate`** (`_seed_config` in `intern/apps.py` calls
-`update_or_create` for every key that has a matching ENV var). This means a container
-started with `-e EJABBERD_BOT_JID=...` writes the value into the DB — on subsequent
-starts the ENV var can be dropped and the DB value is used. Use
-`is_ejabberd_configured()` (not a flag) to check whether the XMPP integration is active.
-
-Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py`;
-**add new keys there** (with a German `description`) so fresh installs get them. A new key
-**must additionally** be sorted into a group in `intern/konfig_gruppen.py` (exact key or
-prefix) — otherwise `KonfigGruppenTest` in `intern/tests.py` fails, because it asserts that
-every `_CONFIG_DEFAULTS` key lands in a group other than „sonstiges". The page groups the
-67 keys into nine collapsible cards derived from the key name; the grouping is not stored
-in the DB. Each key also needs an entry in `FELDTYPEN` in the same file (one of `bool` /
-`int` / `string` / `text`) so the edit page renders the matching input widget — a boolean
-toggle, a number input, a single-line text input, or a multi-line textarea — instead of a
-textarea for every value. `KonfigTypenTest` enforces that every `_CONFIG_DEFAULTS` key has
-a type; the stored value stays a string regardless (`get_config_bool`/`get_config_int` still
-parse it). An unknown key falls back to `text`.
-Choir-specific initial values (e.g. `VEREINSNAME`, `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`,
-`HOMEPAGE_AUFNAHME`) live in `seed_konfiguration` in `intern/migrations/0003_import.py` — those
-keys carry an empty-string default in `apps.py` and get their real content only via the data
-migration, so the codebase stays deployable for other organisations without pre-filled choir text.
-The full key catalog and the mail-placeholder reference (`format_config_mail` /
-`format_config_text`, the standard `{vorname}`/`{vereinsname}`/… placeholders, and the
-"to add a new automated email" recipe) live in `configuration.md`.
-
-`VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into
-every template context by `config/context_processors.py` (`{{ vereinsname }}`), and
-into every email render in `mail.py`.
-
-For outgoing mail always pass `get_from_email()` as the sender (resolves
-`DEFAULT_FROM_EMAIL` from the DB, falling back to `settings.DEFAULT_FROM_EMAIL`).
-Frontend-facing values (`NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`) reach JS via
-`context_processors.project_meta` → `data-*` attributes on `<body>` → `notify.js`.
+| `DateiVersion` | A superseded revision of a file (path + metadata; the blob stays put) |
+| `FolderPermission` | Folder access by group — **no rows means open** |
+| `Konfiguration` | The runtime key/value settings table |
+| `ChangeLog` | Audit trail; retention enforced by `cleanup_changelog` |
+| `TabellenPreferenzen` | Per-user table column visibility |
+| `Auftrittsabo` / `ErinnerungVersand` | Gig-reminder subscribers and the per-event send markers |
+
+## URL structure
+
+`/` homepage · `/datenschutz/` · `/auftritte/*` gig mailing list · `/carddav/*` · `/caldav/*` ·
+`/tiles/<z>/<x>/<y>.png` OSM proxy · `/admin/` · `/intern/*` everything authenticated. The full
+list with the well-known redirects and the two privacy proxies is in `docs/architecture.md`.
+
+## Project-wide invariants
+
+These hold across the whole codebase. Each is stated once here; the topic files carry the
+reasoning where it matters.
+
+- **Migrations: never create `0004+`.** `0002_add_filer.py` is regenerated on every fresh install
+  and must not be committed. All model changes go into `models.py` and are picked up from there.
+  See `migration.md`.
+- **All tests are `SimpleTestCase`.** A `TestCase` makes Django build a test database, which runs
+  the data migration `0003_import`, which needs the legacy MySQL server. Keep logic free of DB
+  access and isolate the DB half in a thin wrapper so it stays testable (`lese_abmelde_token()`
+  vs. `read_abmelde_token()` is the pattern).
+- **`USE_TZ = False`.** Every datetime is naive local wall-clock time. Never call `localtime()`,
+  and pass "now" in as an argument rather than reading the clock inside logic you want to test.
+- **Runtime settings come from the `Konfiguration` table**, read through `intern.app_settings`
+  helpers — never `os.environ` or `settings` for these, and never at import time. A new key needs
+  three edits: `_CONFIG_DEFAULTS` in `apps.py`, a group in `konfig_gruppen.py`, and a `FELDTYPEN`
+  entry. `KonfigGruppenTest` and `KonfigTypenTest` enforce the last two.
+- **A file's identity is its storage path**, not its row: several `filer.File` rows may share one
+  blob. Use the helpers in `views/files.py` instead of touching `File.file`/`name`. Never run
+  `filer_check --delete-orphans` — it would delete the whole version history.
+- **Every write path on a file must call `darf_avatar_aendern()`**, or one member can overwrite
+  another's profile picture.
+- **A folder without `FolderPermission` rows is open.** Code that creates a folder must set rows
+  explicitly.
+- **Mail bodies live entirely in `MAIL_*` config keys**, never in templates. Subjects stay in
+  Python.
+- **DAV: bump `_SERIALISIERUNG`** in `carddav/vcard.py` / `caldav/ical.py` on every change to the
+  serialisation, or synced clients keep their stale entries forever.
+- **Hidden member fields have no admin bonus outside the portal.** `User.field_visible_to()` lets
+  holders of `intern.change_user` see hidden fields *in the portal*; the CardDAV cards, the CalDAV
+  birthdays and the calendar birthday chips consult `private_fields` alone.
+- **CSS uses tokens only.** Every new colour is a custom property with a `[data-theme="dark"]`
+  value; no hardcoded hex in component styles.
+- **Reuse the shared UI components** rather than hand-rolling: `{% form_field %}` for form rows,
+  `ChipMultiSelect` / `_chip_multiselect.html` for every multi-select,
+  `_confirm_delete_dialog.html` for delete confirmations, `{% hilfe %}` for explanation tooltips
+  (the text lives as the model field's `help_text`), `_leaflet_map.html` for detail-page maps.
+- **Redirect targets taken from a `next` parameter must pass
+  `url_has_allowed_host_and_scheme()`.**
+
+## Conventions
+
+- New domain code is written with German identifiers, in line with the models; older modules are
+  mixed. Follow the file you are in.
+- Views are function-based; the few class-based ones are Django's own auth views, subclassed in
+  `views/auth.py`.
+- Partial updates use htmx with a dedicated partial template; everything else is a full render.
+  JavaScript is vanilla, one file per concern, loaded in `base.html`.
+- Logging: `logging.getLogger(__name__)`; everything under `intern.*` is at INFO and goes to
+  stdout.

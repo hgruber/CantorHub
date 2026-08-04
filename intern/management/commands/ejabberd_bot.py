@@ -461,7 +461,7 @@ class CantorBot:
         """Send web-originated reaction changes to MUC. All web reactions on a
         message are sent as the bot's own reaction set (their union, ranked by
         frequency — most-reacted emoji first), since XEP-0444 attributes a reaction
-        to the sending JID — see xmpp.md."""
+        to the sending JID — see docs/xmpp.md."""
         candidates = await asyncio.to_thread(_db_dirty_reaction_candidates)
         for mid, muc_jid, to_id in candidates:
             if muc_jid not in self._joined_rooms:

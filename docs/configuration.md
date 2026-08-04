@@ -1,7 +1,7 @@
 # Runtime configuration reference (`Konfiguration` keys)
 
 How the `Konfiguration` key/value table works — env priority, seeding via `post_migrate`,
-reading via `intern.app_settings` helpers — is documented in `CLAUDE.md` ("Runtime
+reading via `intern.app_settings` helpers — is documented in `architecture.md` ("Runtime
 configuration"). This file is the **full key catalog** and the **mail-placeholder reference**.
 
 ## Current keys

@@ -41,7 +41,7 @@ this file tracks only what is still open.
   opposite: less was collected than the policy announces), but those rows carry **no**
   evidentiary value under Art. 7(1) — `bestaetigt_am` plus the `einwilligungstext` snapshot
   are all that stands behind them. Decided to leave the values in place rather than null them.
-  New confirmations record the real address. See "Request flow" in `CLAUDE.md`.
+  New confirmations record the real address. See "What Django assumes about the proxy" in `architecture.md`.
 
 - **§3 legal basis lit. b vs. lit. f for forum/chat** — membership admin and event
   organisation on Art. 6(1)(b) is fine, but forum + XMPP chat are hard to justify as
@@ -126,13 +126,12 @@ this file tracks only what is still open.
 
 - **File versions outlive the visible file (to record)** — overwriting an upload no longer
   destroys the previous revision: `DateiVersion` keeps its blob so the change reaches every
-  folder the file is linked into and can be undone (see "Files as links, and file versions"
-  in `CLAUDE.md`). Two consequences to keep in mind: content a member replaced on purpose
+  folder the file is linked into and can be undone (see "Files as links" in `files.md`). Two consequences to keep in mind: content a member replaced on purpose
   remains restorable by anyone with write access to the file, and it survives in storage
   until pruned. **Profile pictures are exempt** since `intern/avatar_access.py`: only the
   member themselves or a holder of `intern.change_user` may overwrite, rename, move, delete
   or restore an avatar (see "Avatars are write-protected against other members" in
-  `CLAUDE.md`). Their version list stays *visible* to every member, though — a deliberate
+  `files.md`). Their version list stays *visible* to every member, though — a deliberate
   decision; if that is ever reconsidered, `datei_view` already computes the flag
   (`darf_wiederherstellen`) that would gate it. An erasure request is covered — `_datei_loeschen` drops all versions with
   the last occurrence of a file — but the *automatic* pruning is weaker than the command's
@@ -144,4 +143,4 @@ this file tracks only what is still open.
   upload personal data it should say one, next to the 3-year audit-log figure; (b) if a real
   period is introduced, the imported avatar versions need exempting first, otherwise a
   blanket `--days` deletes them. See "Retention: what the cleanup jobs actually delete" in
-  `CLAUDE.md`.
+  `files.md`.
