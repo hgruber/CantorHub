@@ -3,6 +3,11 @@
 {% block extra_js %}<script src="{% static 'intern/js/konfiguration.js' %}" defer></script>{% endblock %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>{% endblock %}
 {% block topbar_actions_extra %}
+<button type="button" id="kf-toggle-all-btn" title="Alle Gruppen aufklappen">
+    <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 7l5-5 5 5"/><path d="M7 17l5 5 5-5"/>
+    </svg>
+</button>
 <button type="button" id="add-konfig-btn" title="Neue Konfiguration anlegen">
     <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
@@ -17,8 +22,8 @@
     <details class="kf-gruppe" id="kf-g-{{ gruppe.id }}">
         <summary>
             <span class="kf-gruppen-titel">{{ gruppe.titel }}</span>
-            <span class="kf-gruppen-count">{{ gruppe.eintraege|length }}</span>
             <span class="kf-gruppen-hinweis">{{ gruppe.hinweis }}</span>
+            <span class="kf-gruppen-count">{{ gruppe.eintraege|length }}</span>
         </summary>
         <div class="kf-gruppe-body">
             {% for eintrag in gruppe.eintraege %}

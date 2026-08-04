@@ -7016,7 +7016,9 @@ body.join-page {
     border-radius: 10px;
     padding: 1px 8px;
     min-width: 22px;
-    text-align: center;
+    text-align: right;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 .kf-gruppen-hinweis {
     font-size: 12px;
@@ -7147,6 +7149,16 @@ body.join-page {
 .kf-eintrag.to-delete { opacity: 0.45; }
 .kf-eintrag.to-delete .kf-key code,
 .kf-eintrag.to-delete .kf-desc-text { text-decoration: line-through; }
+
+/* Ungespeicherte Änderung — Warnfarbe statt Marken-Blau, damit sie sich von
+   :focus unterscheidet und auch ungefokussiert auffällt. Nur am tatsächlich
+   geänderten Teil (Wert und/oder Beschreibung getrennt geprüft in konfiguration.js). */
+.kf-wert.kf-geaendert .inline-input {
+    border-color: var(--warn-icon);
+    box-shadow: 0 0 0 2px var(--warn-border);
+}
+.kf-wert.kf-geaendert .kf-bool-state { color: var(--warn-icon); font-weight: 600; }
+.kf-desc.kf-geaendert .kf-desc-text { color: var(--warn-strong); font-weight: 600; }
 
 /* Beschreibung: Klick auf Text oder Stift schaltet zum Eingabefeld. */
 .kf-desc { display: flex; align-items: flex-start; gap: 6px; }

@@ -136,10 +136,20 @@
             // Boolean bleibt die Zeichenkette "1"/"0" — nur das Widget ist eine
             // Checkbox; alle anderen Typen lesen .value als Zeichenkette.
             const val = (typ === "bool") ? (widget.checked ? "1" : "0") : widget.value;
-            changeMap.set(id, {
-                value: val,
-                description: entry.querySelector(".kf-desc-input").value,
-            });
+            // .defaultValue/.defaultChecked spiegeln den urspruenglich vom Server
+            // gerenderten Wert — damit erkennen wir "zurueck auf Ausgangswert
+            // getippt" ohne eigene Buchhaltung.
+            const defaultVal = (typ === "bool") ? (widget.defaultChecked ? "1" : "0") : widget.defaultValue;
+            const descInput = entry.querySelector(".kf-desc-input");
+            const valGeaendert = val !== defaultVal;
+            const descGeaendert = descInput.value !== descInput.defaultValue;
+            entry.querySelector(".kf-wert").classList.toggle("kf-geaendert", valGeaendert);
+            entry.querySelector(".kf-desc").classList.toggle("kf-geaendert", descGeaendert);
+            if (valGeaendert || descGeaendert) {
+                changeMap.set(id, { value: val, description: descInput.value });
+            } else {
+                changeMap.delete(id);
+            }
             updateApplyBar();
         }
         if (widget.tagName === "TEXTAREA") {
@@ -310,6 +320,37 @@
             if (!programmatisch) persistOpenState();
         });
     });
+
+    // --- Alle Gruppen auf-/zuklappen ---------------------------------------
+    const toggleAllBtn = document.getElementById("kf-toggle-all-btn");
+    if (toggleAllBtn) {
+        // Wirkt nur auf gerade sichtbare Gruppen, damit ein aktiver Suchfilter
+        // nicht nebenbei versteckte Gruppen mit aufklappt.
+        const sichtbareGruppen = function () {
+            return Array.from(document.querySelectorAll(".kf-gruppe")).filter(function (g) { return !g.hidden; });
+        };
+        const updateToggleAllTitle = function () {
+            const gruppen = sichtbareGruppen();
+            const alleOffen = gruppen.length > 0 && gruppen.every(function (g) { return g.open; });
+            toggleAllBtn.title = alleOffen ? "Alle Gruppen zuklappen" : "Alle Gruppen aufklappen";
+        };
+        toggleAllBtn.addEventListener("click", function () {
+            const gruppen = sichtbareGruppen();
+            const alleOffen = gruppen.length > 0 && gruppen.every(function (g) { return g.open; });
+            programmatisch = true;
+            gruppen.forEach(function (g) {
+                g.open = !alleOffen;
+                if (!g.dataset.grown && g.open) {
+                    g.querySelectorAll(".kf-value-input").forEach(autoGrow);
+                    g.dataset.grown = "1";
+                }
+            });
+            programmatisch = false;
+            persistOpenState();
+            updateToggleAllTitle();
+        });
+        updateToggleAllTitle();
+    }
 
     // --- Anwenden --------------------------------------------------------
     document.getElementById("konfig-apply-btn").addEventListener("click", async function () {
