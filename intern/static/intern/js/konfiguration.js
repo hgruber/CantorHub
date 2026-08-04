@@ -150,18 +150,23 @@
             widget.addEventListener("input", track);
             widget.addEventListener("change", track);
         }
-        delBtn.addEventListener("click", function (e) {
-            e.stopPropagation();
-            if (entry.classList.contains("to-delete")) {
-                deleteIds.delete(id);
-                entry.classList.remove("to-delete");
-            } else {
-                deleteIds.add(id);
-                changeMap.delete(id);
-                entry.classList.add("to-delete");
-            }
-            updateApplyBar();
-        });
+        if (delBtn) {
+            // Nur manuell angelegte Schluessel haben ueberhaupt einen Loeschen-Button
+            // im Markup (siehe konfiguration.html) — vordefinierte koennten das Portal
+            // lahmlegen.
+            delBtn.addEventListener("click", function (e) {
+                e.stopPropagation();
+                if (entry.classList.contains("to-delete")) {
+                    deleteIds.delete(id);
+                    entry.classList.remove("to-delete");
+                } else {
+                    deleteIds.add(id);
+                    changeMap.delete(id);
+                    entry.classList.add("to-delete");
+                }
+                updateApplyBar();
+            });
+        }
         wireDesc(entry, track);
     }
 

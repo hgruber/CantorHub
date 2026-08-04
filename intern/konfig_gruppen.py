@@ -319,8 +319,8 @@ GRUPPEN: tuple[Gruppe, ...] = (
 
 _SONSTIGE = Gruppe(
     id="sonstiges",
-    titel="Sonstiges",
-    hinweis="Schlüssel ohne bekannte Zuordnung",
+    titel="Zusätzliche Parameter",
+    hinweis="Manuell angelegte Schlüssel ohne feste Zuordnung — hier gefahrlos löschbar",
     keys=(),
     praefixe=(),
 )
@@ -361,9 +361,10 @@ def gruppiere(rows: list[dict]) -> list[dict]:
     nach_id: dict[str, list[dict]] = {g.id: [] for g in GRUPPEN}
     nach_id[_SONSTIGE.id] = []
     for row in rows:
-        # Kopie mit angereichertem ``typ`` — der Eingabe-dict wird nicht mutiert.
-        eintrag = {**row, "typ": feldtyp(row["key"])}
-        nach_id[zuordnung(row["key"])].append(eintrag)
+        # Kopie mit angereichertem ``typ``/``manuell`` — der Eingabe-dict wird nicht mutiert.
+        gid = zuordnung(row["key"])
+        eintrag = {**row, "typ": feldtyp(row["key"]), "manuell": gid == _SONSTIGE.id}
+        nach_id[gid].append(eintrag)
 
     ergebnis: list[dict] = []
     for g in GRUPPEN:
