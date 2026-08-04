@@ -89,6 +89,9 @@ FIELD_LABELS = {
     "gruppe": "Gruppe",
     "berechtigung": "Berechtigung",
     "berechtigungen": "Berechtigungen",
+    # Konfiguration
+    "value": "Wert",
+    "description": "Beschreibung",
 }
 
 # Fields whose values are filer File PKs — resolved to filenames at display time
@@ -118,6 +121,7 @@ MODEL_LABELS = {
     "Group": "Gruppe",
     "Artikel": "Artikel",
     "Benachrichtigung": "E-Mail",
+    "Konfiguration": "Konfiguration",
 }
 
 # model_name → URL name used to build a detail-page link (only for non-delete actions)

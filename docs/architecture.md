@@ -146,6 +146,13 @@ the XMPP integration is active.
    enforces it. The stored value stays a string regardless — `get_config_bool` /
    `get_config_int` still parse it. An unknown key falls back to `text`.
 
+Edits — via `/intern/konfiguration/` or the admin — are recorded in the `ChangeLog` audit trail
+(`Änderungsprotokoll`) like any other tracked model (`_AUDIT_FIELDS["Konfiguration"]` in
+`intern/signals.py`). Keys whose name contains `PASSWORD`/`SECRET`/`TOKEN` have their `value`
+diff redacted to `***` rather than logged in plaintext. The `post_migrate` env-var reseed in
+`_seed_config` runs with `_migrating.active` set, so it never shows up as a spurious "System"
+change on every restart.
+
 Choir-specific initial values (`VEREINSNAME`, `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`,
 `HOMEPAGE_AUFNAHME`, …) live in `seed_konfiguration` in `intern/migrations/0003_import.py` —
 those keys carry an empty-string default in `apps.py` and get their real content only via the

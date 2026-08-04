@@ -26,6 +26,7 @@ def konfiguration(request):
                 obj = Konfiguration.objects.get(pk=int(change["id"]))
                 obj.value = change.get("value", obj.value)
                 obj.description = change.get("description", obj.description)
+                obj._audit_user = request.user
                 obj.save(update_fields=["value", "description"])
             except (Konfiguration.DoesNotExist, KeyError, TypeError, ValueError):
                 pass
@@ -33,17 +34,19 @@ def konfiguration(request):
         for new in data.get("new", []):
             key = (new.get("key") or "").strip()
             if key:
-                Konfiguration.objects.update_or_create(
-                    key=key,
-                    defaults={
-                        "value": new.get("value", ""),
-                        "description": new.get("description", ""),
-                    },
-                )
+                # Kein update_or_create: das würde intern speichern, bevor wir
+                # _audit_user auf der Instanz setzen können, und der Signal-Handler
+                # würde den Änderungsprotokoll-Eintrag ohne Benutzer schreiben.
+                obj = Konfiguration.objects.filter(key=key).first() or Konfiguration(key=key)
+                obj.value = new.get("value", "")
+                obj.description = new.get("description", "")
+                obj._audit_user = request.user
+                obj.save()
 
         pk_list = [pk for pk in data.get("delete", []) if isinstance(pk, int)]
-        if pk_list:
-            Konfiguration.objects.filter(pk__in=pk_list).delete()
+        for obj in Konfiguration.objects.filter(pk__in=pk_list):
+            obj._audit_user = request.user
+            obj.delete()
 
         return JsonResponse({"ok": True})
 

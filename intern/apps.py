@@ -550,43 +550,51 @@ def _seed_config(sender, **kwargs):
 
     from intern.models import Konfiguration
 
-    # description ist ein CharField — MySQL bricht bei Überlänge hart ab (SQLite nicht),
-    # deshalb hier kappen statt den Start zu riskieren.
-    max_desc = Konfiguration._meta.get_field("description").max_length
+    # post_migrate: _end_migration (siehe unten) ist vor _seed_config verbunden und
+    # setzt _migrating.active bereits auf False, bevor dieser Handler läuft. Ohne
+    # eigenes Flag würde jedes ENV-Reseeding (bei jedem Deploy/Neustart) als
+    # Änderungsprotokoll-Eintrag von "System" auftauchen, auch ohne echte Änderung.
+    _migrating.active = True
+    try:
+        # description ist ein CharField — MySQL bricht bei Überlänge hart ab (SQLite nicht),
+        # deshalb hier kappen statt den Start zu riskieren.
+        max_desc = Konfiguration._meta.get_field("description").max_length
 
-    for key, value, raw_description in _CONFIG_DEFAULTS:
-        description = raw_description[:max_desc]
-        env_val = os.environ.get(key)
-        if env_val is not None:
-            Konfiguration.objects.update_or_create(
-                key=key,
-                defaults={"value": env_val, "description": description},
-            )
-        else:
-            obj, created = Konfiguration.objects.get_or_create(
-                key=key,
-                defaults={"value": value, "description": description},
-            )
-            if created:
-                continue
-            fields = []
-            # Unveränderte Alt-Texte auf den aktuellen Default heben; händisch
-            # angepasste Texte bleiben unberührt.
-            if obj.value.strip() in _LEGACY_MAIL_DEFAULTS.get(key, ()):
-                obj.value = value
-                fields.append("value")
-            # Die Beschreibung ist Systemdokumentation (Platzhalter, Syntax) und
-            # wird deshalb immer nachgezogen.
-            if obj.description != description:
-                obj.description = description
-                fields.append("description")
-            if fields:
-                obj.save(update_fields=fields)
+        for key, value, raw_description in _CONFIG_DEFAULTS:
+            description = raw_description[:max_desc]
+            env_val = os.environ.get(key)
+            if env_val is not None:
+                Konfiguration.objects.update_or_create(
+                    key=key,
+                    defaults={"value": env_val, "description": description},
+                )
+            else:
+                obj, created = Konfiguration.objects.get_or_create(
+                    key=key,
+                    defaults={"value": value, "description": description},
+                )
+                if created:
+                    continue
+                fields = []
+                # Unveränderte Alt-Texte auf den aktuellen Default heben; händisch
+                # angepasste Texte bleiben unberührt.
+                if obj.value.strip() in _LEGACY_MAIL_DEFAULTS.get(key, ()):
+                    obj.value = value
+                    fields.append("value")
+                # Die Beschreibung ist Systemdokumentation (Platzhalter, Syntax) und
+                # wird deshalb immer nachgezogen.
+                if obj.description != description:
+                    obj.description = description
+                    fields.append("description")
+                if fields:
+                    obj.save(update_fields=fields)
 
-    obj = Konfiguration.objects.get(key="ICAL_SECRET")
-    if not obj.value:
-        obj.value = _secrets.token_urlsafe(6)  # 8 URL-safe chars
-        obj.save(update_fields=["value"])
+        obj = Konfiguration.objects.get(key="ICAL_SECRET")
+        if not obj.value:
+            obj.value = _secrets.token_urlsafe(6)  # 8 URL-safe chars
+            obj.save(update_fields=["value"])
+    finally:
+        _migrating.active = False
 
 
 class InternConfig(AppConfig):

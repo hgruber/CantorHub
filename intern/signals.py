@@ -228,7 +228,12 @@ _AUDIT_FIELDS = {
     "Ort": ["name", "beschreibung", "strasse", "plz", "ort", "breite", "laenge"],
     "Artikel": ["name", "version", "kommentar"],
     "Mitteilung": ["mitteilung"],
+    "Konfiguration": ["value", "description"],
 }
+
+# Konfiguration-Schlüssel, die auf ein Geheimnis hindeuten — deren Wert wird im
+# Änderungsprotokoll nie im Klartext abgelegt (siehe _log_change).
+_KONFIG_SECRET_MARKERS = ("PASSWORD", "SECRET", "TOKEN")
 
 
 _THUMBNAIL_SIZES = [
@@ -311,6 +316,13 @@ def _log_change(instance, user, action, old_values=None):
                 val = getattr(instance, field, None)
                 if val is not None and val != "" and val is not False:
                     changes[field] = [str(val), None]
+        if model_name == "Konfiguration" and "value" in changes:
+            key = (getattr(instance, "key", "") or "").upper()
+            if any(marker in key for marker in _KONFIG_SECRET_MARKERS):
+                changes["value"] = [
+                    "***" if changes["value"][0] is not None else None,
+                    "***" if changes["value"][1] is not None else None,
+                ]
         if getattr(instance, "_audit_password_changed", False):
             changes["password"] = [None, "geändert"]
             instance._audit_password_changed = False
@@ -499,6 +511,28 @@ def _audit_artikel_post(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender="intern.Artikel")
 def _audit_artikel_delete(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _log_change(instance, getattr(instance, "_audit_user", None), "delete")
+
+
+# --- Konfiguration ---
+@receiver(pre_save, sender="intern.Konfiguration")
+def _audit_konfiguration_pre(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _capture_audit_old(sender, instance, "Konfiguration")
+
+
+@receiver(post_save, sender="intern.Konfiguration")
+def _audit_konfiguration_post(sender, instance, created, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _write_audit_log(instance, created, "Konfiguration")
+
+
+@receiver(post_delete, sender="intern.Konfiguration")
+def _audit_konfiguration_delete(sender, instance, **kwargs):
     if getattr(_migrating, "active", False):
         return
     _log_change(instance, getattr(instance, "_audit_user", None), "delete")

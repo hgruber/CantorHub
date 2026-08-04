@@ -948,6 +948,7 @@ _CHANGELOG_MODEL_LABELS = {
     "Ort": "Ort",
     "Group": "Gruppe",
     "Benachrichtigung": "E-Mail",
+    "Konfiguration": "Konfiguration",
 }
 
 _CHANGELOG_MODEL_CHOICES = [("", "Alle"), ("__gruppe__", "Gruppenzuordnung")] + [
