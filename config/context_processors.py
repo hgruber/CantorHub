@@ -2,7 +2,9 @@ from django.conf import settings
 
 
 def project_meta(request):
-    from intern.app_settings import get_config_int, get_vereinsname, get_vereinsname_lang, get_vereinsname_kurz
+    from intern.app_settings import (
+        get_config_bool, get_config_int, get_vereinsname, get_vereinsname_lang, get_vereinsname_kurz,
+    )
     result = {
         "VERSION": settings.VERSION,
         "offen_termine": 0,
@@ -27,6 +29,7 @@ def project_meta(request):
             .select_related("ort")
             .order_by("datum")
             .first()
+            if get_config_bool("TERMIN_BANNER_AKTIV", True) else None
         )
         result["banner_termin"] = banner_termin
         # Session key for the banner's dismissed state. Deliberately not read from the

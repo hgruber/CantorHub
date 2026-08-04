@@ -28,6 +28,7 @@ FELDTYPEN: dict[str, str] = {
     "CALDAV_AKTIV": "bool",
     "CALDAV_GEBURTSTAGE": "bool",
     "MAIL_BEI_AKTIVIERUNG": "bool",
+    "TERMIN_BANNER_AKTIV": "bool",
     # int (gelesen via get_config_int — SATZUNG_FILE_ID / BEITRAGSORDNUNG_FILE_ID /
     # MAP_CENTER_ID sind PKs für FilerFile.objects.get / Ort.objects.get)
     "EJABBERD_BOT_PORT": "int",
@@ -173,7 +174,7 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     # Portal, Karte & Benachrichtigungen — Limits, Karte, OSM-Server, Benachrichtigungen
     "UPLOAD_MAX_MB", "PWRESET_MAX_PER_HOUR", "MAP_CENTER_ID", "MAP_DEFAULT_ZOOM",
     "MAP_CENTER_LAT", "MAP_CENTER_LNG", "OSM_TILE_URL", "OSM_NOMINATIM_URL",
-    "NOTIFY_POLL_MS", "NOTIFY_DISMISS_MS", "FILE_PREFIX",
+    "NOTIFY_POLL_MS", "NOTIFY_DISMISS_MS", "TERMIN_BANNER_AKTIV", "FILE_PREFIX",
     # Aufbewahrung & Bereinigung — Löschfristen der Cleanup-Jobs
     "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE", "DATEIVERSION_AUFBEWAHRUNG_TAGE",
     "DATEIVERSION_AUFBEWAHRUNG_ANZAHL", "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE",
@@ -287,13 +288,14 @@ GRUPPEN: tuple[Gruppe, ...] = (
     Gruppe(
         id="portal",
         titel="Portal, Karte & Benachrichtigungen",
-        hinweis="Upload-Grenze, Karten-Mittelpunkt, OSM-Server und "
-        "Benachrichtigungs-Intervalle",
+        hinweis="Upload-Grenze, Karten-Mittelpunkt, OSM-Server, "
+        "Benachrichtigungs-Intervalle und Terminerinnerung",
         keys=(
             "UPLOAD_MAX_MB",
             "PWRESET_MAX_PER_HOUR",
             "OSM_TILE_URL",
             "OSM_NOMINATIM_URL",
+            "TERMIN_BANNER_AKTIV",
             "FILE_PREFIX",
         ),
         praefixe=("MAP_", "NOTIFY_"),

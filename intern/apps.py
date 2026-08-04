@@ -108,6 +108,12 @@ _CONFIG_DEFAULTS = [
     ),
     ("NOTIFY_POLL_MS", "10000", "Abfrageintervall für Benachrichtigungen (ms)"),
     ("NOTIFY_DISMISS_MS", "6000", "Anzeigedauer einer Benachrichtigung (ms)"),
+    (
+        "TERMIN_BANNER_AKTIV",
+        "1",
+        "Terminerinnerung unterhalb der Topbar anzeigen (1/0). Wird sonst pro "
+        "Mitglied und Sitzung wegklickbar angezeigt.",
+    ),
     ("VEREINSNAME", "", "Name des Chors"),
     (
         "VEREINSNAME_LANG",

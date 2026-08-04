@@ -68,6 +68,11 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   `CARDDAV_*` keys above, same meaning and same defaults. Note the throttle counts per service,
   so a client failing on both endpoints has two budgets
 - `NOTIFY_POLL_MS`, `NOTIFY_DISMISS_MS`
+- `TERMIN_BANNER_AKTIV` (1/0, default `1`; global switch for the upcoming-event banner below the
+  topbar — read in `config/context_processors.py`, which leaves `banner_termin` unset while off,
+  so `base.html` never includes `_termin_banner.html`. Independent of the per-member,
+  per-login-dismissible state kept in `localStorage` — that dismissal only works while this key
+  is on)
 - `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`)
 - `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)
 - `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title)
