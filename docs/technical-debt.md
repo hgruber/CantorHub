@@ -8,6 +8,14 @@ compliance items are tracked separately in `datenschutz.md`.
 - **Branding is hardcoded** ("Just Gospel Frankfurt", logos, domain) across
   templates, `replacements.py`, `tables.py`, and static SVGs. Blocks open-sourcing
   as a white-label app. Full extraction plan in `branding.md`.
+- **Config key naming is mixed** — existing `Konfiguration` keys mix German and
+  English (`CALDAV_TAGE_RUECKWIRKEND` vs. `PWRESET_MAX_PER_HOUR`, `UPLOAD_MAX_MB`,
+  `NOTIFY_POLL_MS`, `MAP_DEFAULT_ZOOM`). Renaming the existing keys would touch
+  stored values in the `Konfiguration` table and every read site, so it is
+  deferred. Keys introduced since follow the convention: German for
+  Verein/datenschutz terms (`AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE`,
+  `HOSTING_ANBIETER_NAME`), English for purely technical admin values
+  (`EJABBERD_API_TIMEOUT`, `OSM_TILE_URL`).
 
 ## Medium risk (15-30%) — need testing after fixing
 

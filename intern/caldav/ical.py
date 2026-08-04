@@ -98,10 +98,14 @@ def _ort_zeile(ort):
     return ", ".join(t for t in teile if t)
 
 
-def termin_daten(termin, *, zone, basis_url=""):
+def termin_daten(termin, *, zone, basis_url="", standdauer=_STANDARDDAUER):
     """Rohdaten eines Termins als flaches ``dict``.
 
     ``termin`` muss nur Attribute anbieten, kein Django-Modell sein.
+
+    ``standdauer`` ist die Dauer, die ein Termin ohne Endzeitpunkt bekommt —
+    hereingereicht, damit dieses Modul selbst keine Konfiguration liest und
+    mit ``SimpleTestCase`` testbar bleibt.
 
     Ganztägig heisst ``VALUE=DATE``, und dort ist ``DTEND`` **exklusiv**: der
     letzte Tag plus eins. „Letzter Tag" ist ``datum_bis`` einschliesslich —
@@ -120,7 +124,7 @@ def termin_daten(termin, *, zone, basis_url=""):
         beginn = als_datum(datum.date())
         ende = als_datum(letzter + timedelta(days=1))
     else:
-        schluss = datum_bis if datum_bis and datum_bis > datum else datum + _STANDARDDAUER
+        schluss = datum_bis if datum_bis and datum_bis > datum else datum + standdauer
         beginn = utc(datum, zone)
         ende = utc(schluss, zone)
 

@@ -47,6 +47,17 @@ FELDTYPEN: dict[str, str] = {
     "BEITRAGSORDNUNG_FILE_ID": "int",
     "MAILINGLISTE_INTERVALL_MIN": "int",
     "MAILINGLISTE_OPTIN_TAGE": "int",
+    "MITGLIED_EINLADUNG_TAGE": "int",
+    "MITGLIED_BESTAETIGUNG_TAGE": "int",
+    "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE": "int",
+    "DATEIVERSION_AUFBEWAHRUNG_TAGE": "int",
+    "DATEIVERSION_AUFBEWAHRUNG_ANZAHL": "int",
+    "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE": "int",
+    "ICAL_TAGE_RUECKWIRKEND": "int",
+    "CALDAV_STANDARDDAUER_STUNDEN": "int",
+    "EJABBERD_API_TIMEOUT": "int",
+    "EJABBERD_BOT_RESCAN_SECONDS": "int",
+    "EJABBERD_BOT_RELAY_SECONDS": "int",
     # string (einzeilig; MAILINGLISTE_WOCHEN = Komma-Liste, MAILINGLISTE_VERSANDZEIT
     # = Uhrzeit HH:MM, CALDAV_FARBE = Hex — type=color kann „leer" nicht abbilden)
     "EJABBERD_API_URL": "string",
@@ -71,6 +82,12 @@ FELDTYPEN: dict[str, str] = {
     "VEREINS_URL": "string",
     "MAILINGLISTE_WOCHEN": "string",
     "MAILINGLISTE_VERSANDZEIT": "string",
+    "OSM_TILE_URL": "string",
+    "OSM_NOMINATIM_URL": "string",
+    "MAP_CENTER_LAT": "string",
+    "MAP_CENTER_LNG": "string",
+    "FILE_PREFIX": "string",
+    "DSB_URL": "string",
     # text (mehrzeilig: Mail-Body, Homepage-Prosa, Adresse, Einwilligung)
     "VEREINSADRESSE": "text",
     "HOMEPAGE_UEBER_UNS": "text",
@@ -93,6 +110,10 @@ FELDTYPEN: dict[str, str] = {
     "MAIL_MAILINGLISTE_WILLKOMMEN": "text",
     "MAIL_MAILINGLISTE_BEREITS_ANGEMELDET": "text",
     "MAIL_MAILINGLISTE_ERINNERUNG": "text",
+    "HOSTING_ANBIETER_NAME": "text",
+    "HOSTING_ANBIETER_ANSCHRIFT": "text",
+    "DSB_NAME": "text",
+    "DSB_ANSCHRIFT": "text",
 }
 
 
@@ -115,8 +136,12 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     # Verein & Portal — Basis zuerst, dann Namen, Anschrift, Homepage-Texte
     "VEREINS_URL", "VEREINSNAME", "VEREINSNAME_LANG", "VEREINSNAME_KURZ",
     "VEREINSADRESSE", "HOMEPAGE_UEBER_UNS", "HOMEPAGE_AUFNAHME",
-    # Mitgliedsantrag & Dokumente — wohin gehen Anträge, dann die verlinkten Dokumente
+    # Mitgliedsantrag & Dokumente — Fristen, dann wohin gehen Anträge, dann die verlinkten Dokumente
+    "MITGLIED_EINLADUNG_TAGE", "MITGLIED_BESTAETIGUNG_TAGE",
     "ANTRAG_EMAIL", "SATZUNG_FILE_ID", "BEITRAGSORDNUNG_FILE_ID",
+    # Datenschutz-Texte — Hosting-Anbieter, dann Aufsichtsbehörde
+    "HOSTING_ANBIETER_NAME", "HOSTING_ANBIETER_ANSCHRIFT",
+    "DSB_NAME", "DSB_ANSCHRIFT", "DSB_URL",
     # E-Mail-Versand — SMTP-Verbindung, dann Absender, dann Global-Schalter
     "EMAIL_HOST", "EMAIL_PORT", "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD",
     "EMAIL_USE_TLS", "EMAIL_USE_SSL", "DEFAULT_FROM_EMAIL", "MAIL_BEI_AKTIVIERUNG",
@@ -134,16 +159,24 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     # Kalender (CalDAV) — Schalter, Namen, Farbe, Zeitraum, Auth, ICS-Alternative
     "CALDAV_AKTIV", "CALDAV_KALENDER_NAME", "CALDAV_GEBURTSTAGE",
     "CALDAV_GEBURTSTAGE_NAME", "CALDAV_FARBE", "CALDAV_TAGE_RUECKWIRKEND",
-    "CALDAV_AUTH_TTL", "CALDAV_MAX_FEHLVERSUCHE_PRO_STUNDE", "ICAL_SECRET",
+    "CALDAV_STANDARDDAUER_STUNDEN",
+    "CALDAV_AUTH_TTL", "CALDAV_MAX_FEHLVERSUCHE_PRO_STUNDE",
+    "ICAL_TAGE_RUECKWIRKEND", "ICAL_SECRET",
     # Adressbuch (CardDAV) — Schalter, Namen, Foto, Auth
     "CARDDAV_AKTIV", "CARDDAV_ADRESSBUCH_NAME", "CARDDAV_ORGANISATION",
     "CARDDAV_FOTO", "CARDDAV_AUTH_TTL", "CARDDAV_MAX_FEHLVERSUCHE_PRO_STUNDE",
     # Forum-Chat (XMPP) — Server, dann Bot
     "EJABBERD_HOST", "EJABBERD_MUC_SERVICE", "EJABBERD_API_URL",
+    "EJABBERD_API_TIMEOUT",
     "EJABBERD_BOT_JID", "EJABBERD_BOT_PASSWORD", "EJABBERD_BOT_PORT",
-    # Portal, Karte & Benachrichtigungen — Limits, Karte, Benachrichtigungen
+    "EJABBERD_BOT_RESCAN_SECONDS", "EJABBERD_BOT_RELAY_SECONDS",
+    # Portal, Karte & Benachrichtigungen — Limits, Karte, OSM-Server, Benachrichtigungen
     "UPLOAD_MAX_MB", "PWRESET_MAX_PER_HOUR", "MAP_CENTER_ID", "MAP_DEFAULT_ZOOM",
-    "NOTIFY_POLL_MS", "NOTIFY_DISMISS_MS",
+    "MAP_CENTER_LAT", "MAP_CENTER_LNG", "OSM_TILE_URL", "OSM_NOMINATIM_URL",
+    "NOTIFY_POLL_MS", "NOTIFY_DISMISS_MS", "FILE_PREFIX",
+    # Aufbewahrung & Bereinigung — Löschfristen der Cleanup-Jobs
+    "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE", "DATEIVERSION_AUFBEWAHRUNG_TAGE",
+    "DATEIVERSION_AUFBEWAHRUNG_ANZAHL", "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE",
 )
 _REIHENFOLGE_INDEX: dict[str, int] = {k: i for i, k in enumerate(SCHLUESSEL_REIHENFOLGE)}
 _REIHENFOLGE_ENDE = len(SCHLUESSEL_REIHENFOLGE)
@@ -174,9 +207,29 @@ GRUPPEN: tuple[Gruppe, ...] = (
     ),
     Gruppe(
         id="aufnahme",
-        titel="Mitgliedsantrag & Dokumente",
-        hinweis="Antragseingang und verlinkte Satzung sowie Beitragsordnung",
-        keys=("ANTRAG_EMAIL", "SATZUNG_FILE_ID", "BEITRAGSORDNUNG_FILE_ID"),
+        titel="Mitgliedsantrag, Fristen & Dokumente",
+        hinweis="Einladungs- und Bestätigungsfristen, Antragseingang und verlinkte "
+        "Satzung sowie Beitragsordnung",
+        keys=(
+            "MITGLIED_EINLADUNG_TAGE",
+            "MITGLIED_BESTAETIGUNG_TAGE",
+            "ANTRAG_EMAIL",
+            "SATZUNG_FILE_ID",
+            "BEITRAGSORDNUNG_FILE_ID",
+        ),
+        praefixe=(),
+    ),
+    Gruppe(
+        id="datenschutz",
+        titel="Datenschutz-Texte",
+        hinweis="Hosting-Anbieter und Aufsichtsbehörde in der Datenschutzerklärung",
+        keys=(
+            "HOSTING_ANBIETER_NAME",
+            "HOSTING_ANBIETER_ANSCHRIFT",
+            "DSB_NAME",
+            "DSB_ANSCHRIFT",
+            "DSB_URL",
+        ),
         praefixe=(),
     ),
     Gruppe(
@@ -213,6 +266,7 @@ GRUPPEN: tuple[Gruppe, ...] = (
             # Der alte ICS-Feed ist die Alternative ohne Login zum CalDAV-Kalender
             # und wird auf derselben Termine-Seite angeboten.
             "ICAL_SECRET",
+            "ICAL_TAGE_RUECKWIRKEND",
         ),
         praefixe=("CALDAV_",),
     ),
@@ -233,9 +287,29 @@ GRUPPEN: tuple[Gruppe, ...] = (
     Gruppe(
         id="portal",
         titel="Portal, Karte & Benachrichtigungen",
-        hinweis="Upload-Grenze, Karten-Mittelpunkt und Benachrichtigungs-Intervalle",
-        keys=("UPLOAD_MAX_MB", "PWRESET_MAX_PER_HOUR"),
+        hinweis="Upload-Grenze, Karten-Mittelpunkt, OSM-Server und "
+        "Benachrichtigungs-Intervalle",
+        keys=(
+            "UPLOAD_MAX_MB",
+            "PWRESET_MAX_PER_HOUR",
+            "OSM_TILE_URL",
+            "OSM_NOMINATIM_URL",
+            "FILE_PREFIX",
+        ),
         praefixe=("MAP_", "NOTIFY_"),
+    ),
+    Gruppe(
+        id="aufbewahrung",
+        titel="Aufbewahrung & Bereinigung",
+        hinweis="Löschfristen der Cleanup-Jobs (Änderungsprotokoll, Dateiversionen, "
+        "Versand-Marker)",
+        keys=(
+            "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE",
+            "DATEIVERSION_AUFBEWAHRUNG_TAGE",
+            "DATEIVERSION_AUFBEWAHRUNG_ANZAHL",
+            "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE",
+        ),
+        praefixe=(),
     ),
 )
 

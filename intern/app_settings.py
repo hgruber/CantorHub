@@ -117,7 +117,11 @@ def get_document_url(config_key):
 
 
 def get_map_center():
-    """Return (lat, lng) from the Ort configured as MAP_CENTER_ID."""
+    """Return (lat, lng) from the Ort configured as MAP_CENTER_ID.
+
+    Fällt auf MAP_CENTER_LAT / MAP_CENTER_LNG zurück, wenn der Ort keine
+    Koordinaten hat oder nicht existiert — früher hartkodiert Frankfurt.
+    """
     from intern.models import Ort
     ort_id = get_config_int("MAP_CENTER_ID", 1)
     try:
@@ -126,4 +130,6 @@ def get_map_center():
             return (ort.breite, ort.laenge)
     except Exception:
         pass
-    return (50.1109, 8.6821)
+    lat = float(get_config("MAP_CENTER_LAT", "50.1109"))
+    lng = float(get_config("MAP_CENTER_LNG", "8.6821"))
+    return (lat, lng)

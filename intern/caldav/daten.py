@@ -111,7 +111,7 @@ def _geburtstagskinder():
             yield u
 
 
-def _spanne(termin, ganztaegig):
+def _spanne(termin, ganztaegig, standdauer):
     """``(beginn, ende)`` eines Termins für den ``time-range``-Filter.
 
     Das Ende ist grosszügig gewählt — lieber einen Termin zu viel ausliefern als
@@ -124,7 +124,7 @@ def _spanne(termin, ganztaegig):
     if ganztaegig:
         ende += timedelta(days=1)
     elif ende == beginn:
-        ende += timedelta(hours=2)
+        ende += standdauer
     return beginn, ende
 
 
@@ -142,11 +142,12 @@ def eintraege(art, *, basis_url):
         return ergebnis
 
     zone = zeitzone()
+    standdauer = timedelta(hours=get_config_int("CALDAV_STANDARDDAUER_STUNDEN", 2))
     ergebnis = []
     for t in _termine():
-        d = ical.termin_daten(t, zone=zone, basis_url=basis_url)
+        d = ical.termin_daten(t, zone=zone, basis_url=basis_url, standdauer=standdauer)
         ergebnis.append(
-            Eintrag(t, d, ical.etag(d), _spanne(t, d["ganztaegig"]))
+            Eintrag(t, d, ical.etag(d), _spanne(t, d["ganztaegig"], standdauer))
         )
     return ergebnis
 

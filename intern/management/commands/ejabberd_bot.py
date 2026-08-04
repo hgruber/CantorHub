@@ -402,17 +402,19 @@ class CantorBot:
 
         await self._ensure_rooms()
 
-        # Rescan every 60 s to pick up forums created after the bot started.
-        self._client.schedule("room_check", 60, self._ensure_rooms_sync, repeat=True)
+        # Rescan every N s to pick up forums created after the bot started.
+        rescan = get_config_int("EJABBERD_BOT_RESCAN_SECONDS", 60)
+        self._client.schedule("room_check", rescan, self._ensure_rooms_sync, repeat=True)
 
-        # Relay Forum→MUC over this live session every 3 s — far more reliable
+        # Relay Forum→MUC over this live session every N s — far more reliable
         # than opening a fresh (TLS-flaky) connection per message.
-        self._client.schedule("relay_check", 3, self._relay_check_sync, repeat=True)
+        relay = get_config_int("EJABBERD_BOT_RELAY_SECONDS", 3)
+        self._client.schedule("relay_check", relay, self._relay_check_sync, repeat=True)
 
         # Relay web-originated reaction changes (union under the bot identity) to
-        # their MUC room every 3 s.
+        # their MUC room, im selben Intervall.
         self._client.schedule(
-            "reaction_relay_check", 3, self._relay_reactions_sync, repeat=True
+            "reaction_relay_check", relay, self._relay_reactions_sync, repeat=True
         )
 
         self._stdout.write("ejabberd_bot: ready.")

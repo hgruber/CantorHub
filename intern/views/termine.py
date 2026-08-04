@@ -22,7 +22,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from icalendar import Calendar, Event
 
 from intern import folders
-from intern.app_settings import get_config, get_config_bool
+from intern.app_settings import get_config, get_config_bool, get_config_int
 
 from ..forms import TerminForm
 from ..models import Konzert, Lied, Ort, Termin, User, Zusage
@@ -79,7 +79,8 @@ def calendar_ics(request, secret):
     if not ical_secret or not secrets.compare_digest(secret, ical_secret):
         from django.http import Http404
         raise Http404
-    cutoff = timezone_now() - timedelta(days=180)
+    cutoff = timezone_now() - timedelta(days=get_config_int("ICAL_TAGE_RUECKWIRKEND", 180))
+    std_dauer = timedelta(hours=get_config_int("CALDAV_STANDARDDAUER_STUNDEN", 2))
     termine = Termin.objects.filter(datum__gte=cutoff).select_related("ort").order_by("datum")
     cal = Calendar()
     cal.add("prodid", "-//CantorHub//DE")
@@ -90,7 +91,7 @@ def calendar_ics(request, secret):
         ev.add("uid", f"termin-{t.pk}@cantorhub")
         ev.add("summary", t.kurz)
         ev.add("dtstart", t.datum)
-        ev.add("dtend", t.datum_bis or t.datum + timedelta(hours=2))
+        ev.add("dtend", t.datum_bis or t.datum + std_dauer)
         if t.lang:
             ev.add("description", t.lang)
         if t.ort:

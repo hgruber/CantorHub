@@ -176,6 +176,21 @@ def datenschutz(request):
         "vorstand": vorstand,
         "kontakt_email": get_from_email(),
         "vereinsadresse": get_config("VEREINSADRESSE"),
+        "hosting_anbieter_name": get_config(
+            "HOSTING_ANBIETER_NAME", "Hetzner Online GmbH"
+        ),
+        "hosting_anbieter_anschrift": get_config(
+            "HOSTING_ANBIETER_ANSCHRIFT",
+            "Industriestr. 25, 91710 Gunzenhausen, Deutschland",
+        ),
+        "dsb_name": get_config(
+            "DSB_NAME",
+            "Der Hessische Beauftragte für Datenschutz und Informationsfreiheit (HBDI)",
+        ),
+        "dsb_anschrift": get_config(
+            "DSB_ANSCHRIFT", "Gustav-Stresemann-Ring 1, 65189 Wiesbaden"
+        ),
+        "dsb_url": get_config("DSB_URL", "https://www.datenschutz.hessen.de"),
     })
 
 
@@ -308,19 +323,23 @@ def register_success(request):
 # Mitglieds-Beitritt (öffentliches Antragsformular hinter signiertem Link)
 # ---------------------------------------------------------------------------
 
-INVITE_MAX_AGE = 7 * 24 * 3600  # 7 Tage
+def _invite_max_age():
+    """Gültigkeit des Einladungs-Tokens in Sekunden, aus der Konfiguration."""
+    return get_config_int("MITGLIED_EINLADUNG_TAGE", 7) * 24 * 3600
+
+
 _invite_signer = TimestampSigner(salt="intern.mitglied_invite")
 
 
 def make_invite_token(email):
-    """Signierter, 7 Tage gültiger Token, der die eingeladene E-Mail trägt."""
+    """Signierter Token, der die eingeladene E-Mail trägt."""
     return _invite_signer.sign(email)
 
 
 def _read_invite_token(token):
     """E-Mail aus einem gültigen Token, sonst None (ungültig/abgelaufen)."""
     try:
-        return _invite_signer.unsign(token, max_age=INVITE_MAX_AGE)
+        return _invite_signer.unsign(token, max_age=_invite_max_age())
     except (BadSignature, SignatureExpired):
         return None
 
@@ -424,7 +443,11 @@ def mitglied_beitritt(request, token):
 # Mitglieds-Bestätigung (Daten + Datenschutz / Satzung / Beitrag)
 # ---------------------------------------------------------------------------
 
-BESTAETIGUNG_MAX_AGE = 30 * 24 * 3600  # 30 Tage
+def _bestaetigung_max_age():
+    """Gültigkeit des Bestätigungs-Tokens in Sekunden, aus der Konfiguration."""
+    return get_config_int("MITGLIED_BESTAETIGUNG_TAGE", 30) * 24 * 3600
+
+
 _bestaetigung_signer = TimestampSigner(salt="intern.mitglied_bestaetigung")
 
 
@@ -434,7 +457,7 @@ def _make_bestaetigung_token(user_pk):
 
 def _read_bestaetigung_token(token):
     try:
-        return int(_bestaetigung_signer.unsign(token, max_age=BESTAETIGUNG_MAX_AGE))
+        return int(_bestaetigung_signer.unsign(token, max_age=_bestaetigung_max_age()))
     except (BadSignature, SignatureExpired, ValueError):
         return None
 

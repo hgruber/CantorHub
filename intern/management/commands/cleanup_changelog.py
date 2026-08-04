@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import timedelta
 
+from intern.app_settings import get_config_int
 from intern.models import ChangeLog
 
 # Datenschutzerklärung §9: Das Änderungsprotokoll wird 3 Jahre aufbewahrt und
@@ -20,9 +21,10 @@ class Command(BaseCommand):
         parser.add_argument(
             "--days",
             type=int,
-            default=DEFAULT_RETENTION_DAYS,
+            default=None,
             metavar="N",
-            help=f"Aufbewahrungsfrist in Tagen (Standard: {DEFAULT_RETENTION_DAYS} = 3 Jahre).",
+            help="Aufbewahrungsfrist in Tagen (Standard: aus Konfiguration "
+            "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE, sonst 3 Jahre).",
         )
         parser.add_argument(
             "--dry-run",
@@ -31,7 +33,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        days = options["days"]
+        days = options["days"] if options["days"] is not None else get_config_int(
+            "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE", DEFAULT_RETENTION_DAYS
+        )
         cutoff = timezone.now() - timedelta(days=days)
         qs = ChangeLog.objects.filter(timestamp__lt=cutoff)
         count = qs.count()

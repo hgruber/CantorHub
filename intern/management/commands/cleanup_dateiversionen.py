@@ -6,6 +6,7 @@ from django.utils import timezone
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File
 
+from intern.app_settings import get_config_int
 from intern.models import DateiVersion
 
 # Alte Dateifassungen sind ein Komfort-Feature, kein Archiv: pro Datei bleiben
@@ -26,16 +27,18 @@ class Command(BaseCommand):
         parser.add_argument(
             "--keep",
             type=int,
-            default=DEFAULT_KEEP,
+            default=None,
             metavar="N",
-            help=f"Fassungen, die je Datei behalten werden (Standard: {DEFAULT_KEEP}).",
+            help="Fassungen, die je Datei behalten werden (Standard: aus "
+            "Konfiguration DATEIVERSION_AUFBEWAHRUNG_ANZAHL, sonst 10).",
         )
         parser.add_argument(
             "--days",
             type=int,
-            default=DEFAULT_RETENTION_DAYS,
+            default=None,
             metavar="N",
-            help=f"Aufbewahrungsfrist in Tagen (Standard: {DEFAULT_RETENTION_DAYS} = 2 Jahre).",
+            help="Aufbewahrungsfrist in Tagen (Standard: aus Konfiguration "
+            "DATEIVERSION_AUFBEWAHRUNG_TAGE, sonst 2 Jahre).",
         )
         parser.add_argument(
             "--dry-run",
@@ -64,7 +67,12 @@ class Command(BaseCommand):
         return DateiVersion.objects.filter(pk__in=pks)
 
     def handle(self, *args, **options):
-        keep, days = options["keep"], options["days"]
+        keep = options["keep"] if options["keep"] is not None else get_config_int(
+            "DATEIVERSION_AUFBEWAHRUNG_ANZAHL", DEFAULT_KEEP
+        )
+        days = options["days"] if options["days"] is not None else get_config_int(
+            "DATEIVERSION_AUFBEWAHRUNG_TAGE", DEFAULT_RETENTION_DAYS
+        )
         qs = self._veraltet(keep, days)
         count = qs.count()
 

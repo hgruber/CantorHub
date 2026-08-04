@@ -4,7 +4,7 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
-from ..app_settings import get_config_int, get_map_center
+from ..app_settings import get_config, get_config_int, get_map_center
 from ..models import ADDRESS_TRIGGER_FIELDS, Ort, Standort, User
 
 __all__ = [
@@ -22,7 +22,8 @@ _PROXY_UA = "CantorHub/1.0 (self-hosted member portal)"
 
 def tiles_proxy(request, z, x, y):
     """Fallback für den Dev-Betrieb (runserver). In Produktion greift die nginx-Location /tiles/ zuerst."""
-    url = f"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    base = get_config("OSM_TILE_URL", "https://tile.openstreetmap.org").rstrip("/")
+    url = f"{base}/{z}/{x}/{y}.png"
     try:
         resp = httpx.get(url, headers={"User-Agent": _PROXY_UA}, timeout=10)
     except httpx.TimeoutException:
@@ -35,9 +36,10 @@ def tiles_proxy(request, z, x, y):
 @login_required
 def geocode_proxy(request):
     """Serverseitiger Nominatim-Proxy: Browser-IP bleibt intern."""
+    base = get_config("OSM_NOMINATIM_URL", "https://nominatim.openstreetmap.org").rstrip("/")
     try:
         resp = httpx.get(
-            f"https://nominatim.openstreetmap.org/search?{request.GET.urlencode()}",
+            f"{base}/search?{request.GET.urlencode()}",
             headers={"User-Agent": _PROXY_UA},
             timeout=10,
         )

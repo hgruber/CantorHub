@@ -11,11 +11,23 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 
 - `EJABBERD_API_URL`, `EJABBERD_HOST`, `EJABBERD_MUC_SERVICE`, `EJABBERD_BOT_JID`,
   `EJABBERD_BOT_PASSWORD`, `EJABBERD_BOT_PORT`
+- `EJABBERD_API_TIMEOUT` (timeout of ejabberd REST API calls in seconds, default `10`)
+- `EJABBERD_BOT_RESCAN_SECONDS` (interval at which the bot rescans for new forums, default `60`)
+- `EJABBERD_BOT_RELAY_SECONDS` (interval at which the bot relays forum→MUC and reactions, default `3`)
 - `ICAL_SECRET`
 - the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`
-- `UPLOAD_MAX_MB`
-- `MAP_CENTER_ID`, `MAP_DEFAULT_ZOOM`
-- `PWRESET_MAX_PER_HOUR`
+- `UPLOAD_MAX_MB` (max upload size in MB, default `50`)
+- `MAP_CENTER_ID` (id of the `Ort` used as the map centre)
+- `MAP_DEFAULT_ZOOM` (default zoom of the overview map, default `12`)
+- `MAP_CENTER_LAT` / `MAP_CENTER_LNG` (fallback map centre when `MAP_CENTER_ID` has no
+  coordinates or does not exist; defaults `50.1109` / `8.6821`)
+- `OSM_TILE_URL` (base URL of the tile server, default `https://tile.openstreetmap.org`; the
+  proxy appends `/{z}/{x}/{y}.png`)
+- `OSM_NOMINATIM_URL` (base URL of the Nominatim geocoder, default
+  `https://nominatim.openstreetmap.org`; the proxy appends `/search`)
+- `FILE_PREFIX` (prefix for the alternative filenames in the song archive, default `JG`;
+  both `JG-Titel` and `JG - Titel` spellings are derived from it)
+- `PWRESET_MAX_PER_HOUR` (max password-reset requests per IP per hour, default `5`)
 - `CARDDAV_AKTIV` (`1`/`0`, **default `0`**) — master switch of the read-only CardDAV address
   book. While off, every CardDAV URL answers `404`, not `401`: the service simply does not
   exist. Turn it on only after the members have been informed (privacy policy §16)
@@ -47,6 +59,11 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   empty → the property is omitted and the client picks its own)
 - `CALDAV_TAGE_RUECKWIRKEND` (how many days of past events are delivered, default `365`). There
   is no limit towards the future — a calendar that stops in a year would be a surprise
+- `CALDAV_STANDARDDAUER_STUNDEN` (default duration in hours of an event without an end time,
+  default `2`; applies to the CalDAV time-range filter, the CalDAV serialisation and the
+  public iCal feed alike)
+- `ICAL_TAGE_RUECKWIRKEND` (how many days of past events the public iCal feed delivers, default
+  `180`; the CalDAV mirror of `CALDAV_TAGE_RUECKWIRKEND`)
 - `CALDAV_AUTH_TTL`, `CALDAV_MAX_FEHLVERSUCHE_PRO_STUNDE` — the CalDAV counterparts of the two
   `CARDDAV_*` keys above, same meaning and same defaults. Note the throttle counts per service,
   so a client failing on both endpoints has two budgets
@@ -80,7 +97,30 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `MAIL_RUNDMAIL` (frame around the member round mail; `{text}` = the text entered in the form)
 - `MAIL_WILLKOMMEN` (welcome email on first activation; `{link}` = login URL, empty if `VEREINS_URL` not set → the button is dropped)
 - `SATZUNG_FILE_ID` (Filer file ID of the current Satzung PDF; empty → `href="#"` in public forms)
+- `BEITRAGSORDNUNG_FILE_ID` (Filer file ID of the current Beitragsordnung PDF; same rules as `SATZUNG_FILE_ID`)
+- `ANTRAG_EMAIL` (where membership applications are sent; empty → all active users with `intern.change_user`)
+- `MITGLIED_EINLADUNG_TAGE` (validity of the signed invite link to the join form, in days; default `7`)
+- `MITGLIED_BESTAETIGUNG_TAGE` (validity of the re-confirmation link, in days; default `30`)
 - `VEREINS_URL` (base URL of the portal, e.g. `https://portal.example.com`; supplies `{link}` in the activation mails)
+
+### Datenschutz-Texte
+
+Defaults are the original Just-Gospel values — overwrite on first setup.
+
+- `HOSTING_ANBIETER_NAME` (name of the hoster in privacy policy §7; multi-line allowed)
+- `HOSTING_ANBIETER_ANSCHRIFT` (address of the hoster in §7; multi-line allowed)
+- `DSB_NAME` (name of the supervisory data-protection authority in §14; multi-line allowed)
+- `DSB_ANSCHRIFT` (address of the authority in §14; multi-line allowed)
+- `DSB_URL` (URL of the authority in §14)
+
+### Aufbewahrung & Bereinigung
+
+The cleanup jobs read these as their default; each has a `--days` (or `--keep`) CLI override.
+
+- `AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE` (retention of the change log in days; default `1095` = 3 years, privacy policy §9)
+- `DATEIVERSION_AUFBEWAHRUNG_TAGE` (retention of superseded file revisions in days; default `730` = 2 years — a convenience feature, not an archive)
+- `DATEIVERSION_AUFBEWAHRUNG_ANZAHL` (number of revisions kept per file regardless of age; default `10`)
+- `ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE` (retention of the `ErinnerungVersand` send markers in days; default `365`. The markers only guard against double sends, so after the event they are no longer needed)
 
 ## Mail texts: markup and placeholders
 

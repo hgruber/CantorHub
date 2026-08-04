@@ -79,7 +79,7 @@ def _request(endpoint, body=None, allow_statuses=None, *, raise_on_room_not_foun
                 url,
                 auth=auth,
                 json=body or {},
-                timeout=10,
+                timeout=get_config_int("EJABBERD_API_TIMEOUT", 10),
                 headers={"Host": get_config("EJABBERD_HOST", "")},
             )
         except httpx.RequestError as exc:

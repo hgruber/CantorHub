@@ -16,7 +16,7 @@ from intern import folders
 from ..forms import LiedEditForm
 from ..models import Konzert, Lied, Termin
 from ..tables import RepertoireFilter, RepertoireTabelle
-from .files import visible_fields, _get_file_extension
+from .files import _get_file_extension, _aufnahme_prefix_with_space, visible_fields
 
 _PAGE_SIZE = 50
 
@@ -225,7 +225,7 @@ def titel_edit(request, titel):
                             f.folder_id = folder_id
                         ext = _get_file_extension(f.original_filename or f.name or "")
                         if field_name == "aufnahme":
-                            new_name = f"JG - {lied.titel}{ext}"
+                            new_name = f"{_aufnahme_prefix_with_space()}{lied.titel}{ext}"
                         else:
                             new_name = f"{lied.titel}{ext}"
                         f.original_filename = new_name
@@ -348,7 +348,7 @@ def titel_add(request):
                             f.folder_id = folder_id
                         # Rename file to match the song title
                         ext = _get_file_extension(f.original_filename or f.name or "")
-                        new_name = f"JG - {lied.titel}{ext}" if model_field == "aufnahme" else f"{lied.titel}{ext}"
+                        new_name = f"{_aufnahme_prefix_with_space()}{lied.titel}{ext}" if model_field == "aufnahme" else f"{lied.titel}{ext}"
                         f.name = new_name
                         f.original_filename = new_name
                         f.save()

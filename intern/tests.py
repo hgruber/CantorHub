@@ -1159,3 +1159,66 @@ class KonfigTypenTest(SimpleTestCase):
                 defaults[key], ("0", "1"),
                 msg=f"Bool-Schlüssel {key!r} hat Default {defaults[key]!r}, nicht 0/1",
             )
+
+
+class KonfigurierteHelperTest(SimpleTestCase):
+    """Die aus Modulkonstanten in die Konfiguration gewanderten Helfer.
+
+    Ohne DB-Zugriff: env-Variablen haben Vorrang und lassen sich per
+    ``mock.patch.dict(os.environ, …)`` steuern. ``get_map_center`` fängt die
+    DB-Exception im try/except ab und fällt auf die env-basierten Werte zurück.
+    """
+
+    def test_invite_max_age_default(self):
+        from intern.views.auth import _invite_max_age
+        with mock.patch.dict("os.environ", {}, clear=False):
+            self.assertEqual(_invite_max_age(), 7 * 24 * 3600)
+
+    def test_invite_max_age_aus_konfiguration(self):
+        from intern.views.auth import _invite_max_age
+        with mock.patch.dict("os.environ", {"MITGLIED_EINLADUNG_TAGE": "14"}):
+            self.assertEqual(_invite_max_age(), 14 * 24 * 3600)
+
+    def test_bestaetigung_max_age_default(self):
+        from intern.views.auth import _bestaetigung_max_age
+        self.assertEqual(_bestaetigung_max_age(), 30 * 24 * 3600)
+
+    def test_bestaetigung_max_age_aus_konfiguration(self):
+        from intern.views.auth import _bestaetigung_max_age
+        with mock.patch.dict("os.environ", {"MITGLIED_BESTAETIGUNG_TAGE": "60"}):
+            self.assertEqual(_bestaetigung_max_age(), 60 * 24 * 3600)
+
+    def test_map_center_fallback_default(self):
+        # Ohne DB und ohne env bleibt es beim Frankfurt-Fallback.
+        from intern.app_settings import get_map_center
+        with mock.patch.dict("os.environ", {}, clear=False):
+            self.assertEqual(get_map_center(), (50.1109, 8.6821))
+
+    def test_map_center_fallback_aus_konfiguration(self):
+        from intern.app_settings import get_map_center
+        env = {"MAP_CENTER_LAT": "10.5", "MAP_CENTER_LNG": "20.25"}
+        with mock.patch.dict("os.environ", env):
+            self.assertEqual(get_map_center(), (10.5, 20.25))
+
+    def test_termin_daten_standdauer_default(self):
+        # Ohne hereingereichte standdauer gilt die Modulkonstante (2 h) —
+        # die bestehenden ical-Tests bleiben unberührt.
+        from intern.caldav import ical
+        termin = SimpleNamespace(
+            pk=1, datum=datetime(2025, 6, 1, 19, 30), datum_bis=None, ort=None
+        )
+        d = ical.termin_daten(termin, zone=ZoneInfo("Europe/Berlin"))
+        # 19:30 Berlin (CEST, UTC+2) + 2 h Standarddauer = 21:30 lokal = 19:30 UTC.
+        self.assertEqual(d["ende"], "20250601T193000Z")
+
+    def test_termin_daten_standdauer_konfiguriert(self):
+        from intern.caldav import ical
+        termin = SimpleNamespace(
+            pk=1, datum=datetime(2025, 6, 1, 19, 30), datum_bis=None, ort=None
+        )
+        d = ical.termin_daten(
+            termin, zone=ZoneInfo("Europe/Berlin"),
+            standdauer=timedelta(hours=3),
+        )
+        # + 3 h = 22:30 lokal = 20:30 UTC.
+        self.assertEqual(d["ende"], "20250601T203000Z")

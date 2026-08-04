@@ -373,6 +373,126 @@ _CONFIG_DEFAULTS = [
         "Fußzeile aller E-Mails (leer = keine Fußzeile). Platzhalter: {vereinsname}, "
         "{vereinsname_lang}, {vereinsname_kurz}",
     ),
+    # --- Mitglieds-Fristen (Einladung, Datenbestätigung) ---
+    (
+        "MITGLIED_EINLADUNG_TAGE",
+        "7",
+        "Gültigkeit des signierten Einladungs-Links zum Beitrittsformular in Tagen",
+    ),
+    (
+        "MITGLIED_BESTAETIGUNG_TAGE",
+        "30",
+        "Gültigkeit des Datenbestätigungs-Links (Re-Confirmation) in Tagen",
+    ),
+    # --- Aufbewahrungsfristen der Cleanup-Jobs ---
+    (
+        "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE",
+        "1095",
+        "Aufbewahrungsfrist des Änderungsprotokolls in Tagen (Datenschutzerklärung §9, "
+        "Standard 3 Jahre)",
+    ),
+    (
+        "DATEIVERSION_AUFBEWAHRUNG_TAGE",
+        "730",
+        "Aufbewahrungsfrist alter Dateifassungen in Tagen (Standard 2 Jahre; "
+        "Komfort-Feature, kein Archiv)",
+    ),
+    (
+        "DATEIVERSION_AUFBEWAHRUNG_ANZAHL",
+        "10",
+        "Anzahl Fassungen, die je Datei mindestens behalten werden",
+    ),
+    (
+        "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE",
+        "365",
+        "Aufbewahrungsfrist der Versand-Marker (ErinnerungVersand) in Tagen",
+    ),
+    # --- iCal-Feed / CalDAV ---
+    (
+        "ICAL_TAGE_RUECKWIRKEND",
+        "180",
+        "Wie viele Tage in die Vergangenheit der öffentliche iCal-Feed Termine "
+        "ausliefert (Spiegel zu CALDAV_TAGE_RUECKWIRKEND)",
+    ),
+    (
+        "CALDAV_STANDARDDAUER_STUNDEN",
+        "2",
+        "Standarddauer eines Termins ohne Endzeitpunkt in Stunden (iCal-Feed, CalDAV "
+        "und time-range-Filter)",
+    ),
+    # --- ejabberd REST-API und Bot-Intervalle ---
+    (
+        "EJABBERD_API_TIMEOUT",
+        "10",
+        "Timeout der ejabberd REST-API-Anfragen in Sekunden",
+    ),
+    (
+        "EJABBERD_BOT_RESCAN_SECONDS",
+        "60",
+        "Intervall in Sekunden, in dem der Bot nach neuen Foren sucht",
+    ),
+    (
+        "EJABBERD_BOT_RELAY_SECONDS",
+        "3",
+        "Intervall in Sekunden, in dem der Bot Forum→MUC und Reaktionen weiterleitet",
+    ),
+    # --- Karte: OSM-Tile- und Geocoder-Proxy ---
+    (
+        "OSM_TILE_URL",
+        "https://tile.openstreetmap.org",
+        "Basis-URL des Tile-Servers (ohne nachfolgenden /{z}/{x}/{y}.png)",
+    ),
+    (
+        "OSM_NOMINATIM_URL",
+        "https://nominatim.openstreetmap.org",
+        "Basis-URL des Nominatim-Geocoders (ohne /search)",
+    ),
+    (
+        "MAP_CENTER_LAT",
+        "50.1109",
+        "Breitengrad des Karten-Mittelpunkts als Fallback, wenn MAP_CENTER_ID keinen "
+        "Ort liefert",
+    ),
+    (
+        "MAP_CENTER_LNG",
+        "8.6821",
+        "Längengrad des Karten-Mittelpunkts als Fallback, wenn MAP_CENTER_ID keinen "
+        "Ort liefert",
+    ),
+    # --- Datei-Archiv ---
+    (
+        "FILE_PREFIX",
+        "JG",
+        "Präfix für die alternativen Dateinamen im Lied-Archiv (z. B. JG-Titel)",
+    ),
+    # --- Datenschutzerklärung: Hosting-Anbieter und Aufsichtsbehörde ---
+    (
+        "HOSTING_ANBIETER_NAME",
+        "Hetzner Online GmbH",
+        "Name des Hosting-Anbieters in Datenschutzerklärung §7",
+    ),
+    (
+        "HOSTING_ANBIETER_ANSCHRIFT",
+        "Industriestr. 25, 91710 Gunzenhausen, Deutschland",
+        "Anschrift des Hosting-Anbieters in Datenschutzerklärung §7 (mehrzeilig "
+        "erlaubt)",
+    ),
+    (
+        "DSB_NAME",
+        "Der Hessische Beauftragte für Datenschutz und Informationsfreiheit (HBDI)",
+        "Name der Datenschutz-Aufsichtsbehörde in Datenschutzerklärung §14",
+    ),
+    (
+        "DSB_ANSCHRIFT",
+        "Gustav-Stresemann-Ring 1, 65189 Wiesbaden",
+        "Anschrift der Datenschutz-Aufsichtsbehörde in Datenschutzerklärung §14 "
+        "(mehrzeilig erlaubt)",
+    ),
+    (
+        "DSB_URL",
+        "https://www.datenschutz.hessen.de",
+        "URL der Datenschutz-Aufsichtsbehörde in Datenschutzerklärung §14",
+    ),
 ]
 
 # Alte Default-Texte: wurde ein Wert nie händisch geändert, hebt _seed_config ihn auf

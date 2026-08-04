@@ -656,8 +656,11 @@ class Lied(models.Model):
         """
         Return all needed filenames for all songs
         """
+        from .app_settings import get_config
+
         titel = list(Lied.objects.values_list("titel", flat=True))
-        return [x for t in titel for x in (t, f"JG-{t}")]
+        praefix = get_config("FILE_PREFIX", "JG")
+        return [x for t in titel for x in (t, f"{praefix}-{t}")]
 
 
 class Konzert(models.Model):

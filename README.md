@@ -190,10 +190,11 @@ Run with `podman exec cantorhub python manage.py <command>`.
 |---|---|
 | `send_reconfirmation --user USERNAME` / `--all` | Ask one member / all active members with an address to re-confirm their data |
 | `send_reconfirmation … --print-url` | Print the confirmation URLs instead of sending mail — one URL for `--user`, tab-separated `username<TAB>url` lines for `--all`. Add `--base-url https://portal.example.com` to override `VEREINS_URL` |
-| `make_invite_url EMAIL` | Print a signed 7-day invitation link to the join form without sending mail |
+| `make_invite_url EMAIL` | Print a signed invitation link to the join form without sending mail (valid `MITGLIED_EINLADUNG_TAGE` days, default 7) |
 | `send_auftritt_erinnerungen [--dry-run] [--now ISO] [--termin ID] [--force]` | One pass of the gig reminders. `--now` tests the timing without touching the clock; `--force` ignores existing send markers (use after a crashed batch) |
-| `cleanup_changelog [--days N] [--dry-run]` | Delete audit-log entries past the retention period (default 1095 days) |
-| `cleanup_dateiversionen [--keep N] [--days N] [--dry-run]` | Prune old file revisions and their blobs (command defaults: keep 10, 730 days) |
+| `cleanup_changelog [--days N] [--dry-run]` | Delete audit-log entries past the retention period (config key `AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE`, default 1095 days) |
+| `cleanup_dateiversionen [--keep N] [--days N] [--dry-run]` | Prune old file revisions and their blobs (config keys `DATEIVERSION_AUFBEWAHRUNG_ANZAHL` / `DATEIVERSION_AUFBEWAHRUNG_TAGE`; command defaults: keep 10, 730 days) |
+| `cleanup_erinnerung_versand [--days N] [--dry-run]` | Delete `ErinnerungVersand` send markers past the retention period (config key `ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE`, default 365 days). Wire into `start.sh` alongside the other cleanup jobs |
 | `ejabberd_admin sync` | Full XMPP startup sync — bot account, room JIDs, room configuration |
 | `ejabberd_admin <group> <verb>` | XMPP admin operations: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
 | `ejabberd_bot` | Run the XMPP relay bot in the foreground |

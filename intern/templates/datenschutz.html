@@ -216,9 +216,10 @@
             <h2>7. Hosting und technischer Betrieb</h2>
             <p>
                 Das Mitgliederportal wird auf einem virtuellen Server (vServer) bei
-                <strong>Hetzner Online GmbH</strong>, Industriestr. 25, 91710 Gunzenhausen,
-                Deutschland betrieben. Der Serverstandort liegt in Deutschland. Mit Hetzner
-                besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO; Hetzner
+                <strong>{{ hosting_anbieter_name }}</strong>,
+                {{ hosting_anbieter_anschrift }} betrieben. Der Serverstandort liegt in
+                Deutschland. Mit {{ hosting_anbieter_name }} besteht ein Vertrag zur
+                Auftragsverarbeitung nach Art. 28 DSGVO; {{ hosting_anbieter_name }}
                 verarbeitet die Daten ausschließlich weisungsgebunden in unserem Auftrag
                 und gewährleistet geeignete technische und organisatorische
                 Schutzmaßnahmen. Zusätzlich liegen die Daten verschlüsselt auf dem Server
@@ -363,10 +364,9 @@
                 Du hast das Recht, Dich bei der zuständigen Datenschutz-Aufsichtsbehörde zu beschweren:
             </p>
             <address>
-                Der Hessische Beauftragte für Datenschutz und Informationsfreiheit (HBDI)<br>
-                Gustav-Stresemann-Ring 1<br>
-                65189 Wiesbaden<br>
-                <a href="https://www.datenschutz.hessen.de" target="_blank" rel="noopener">www.datenschutz.hessen.de</a>
+                {{ dsb_name|linebreaksbr }}<br>
+                {{ dsb_anschrift|linebreaksbr }}<br>
+                <a href="{{ dsb_url }}" target="_blank" rel="noopener">{{ dsb_url }}</a>
             </address>
 
             <h2>15. Auftritts-Mailingliste</h2>

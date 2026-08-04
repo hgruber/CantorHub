@@ -22,7 +22,22 @@ from intern import folders
 from intern.avatar_access import darf_avatar_aendern
 from intern.folder_access import folder_access, visible_folder_ids
 
+from ..app_settings import get_config
 from ..models import DateiIndex, DateiVersion, Lied, TabellenPreferenzen, User
+
+
+def _aufnahme_prefixes():
+    """Die beiden Schreibweisen des Aufnahme-Präfixes, aus FILE_PREFIX abgeleitet.
+
+    ``JG-Titel`` und ``JG - Titel`` sind historisch gleichwertig; das Präfix
+    selbst ist konfigurierbar (FILE_PREFIX), die beiden Trenner bleiben.
+    """
+    p = get_config("FILE_PREFIX", "JG")
+    return (f"{p} - ", f"{p}-")
+
+
+def _aufnahme_prefix_with_space():
+    return f"{get_config('FILE_PREFIX', 'JG')} - "
 from ..verwendung import datei_verwendungen
 
 __all__ = [
@@ -230,13 +245,14 @@ def _get_file_type_config(extension):
 
 
 def _get_lied_by_filename(filename):
-    """Look up Lied object by filename (with JG- prefix support)"""
+    """Look up Lied object by filename (with Aufnahme-Präfix support)."""
     name, _ = os.path.splitext(filename)
+    mit_abstand, ohne_abstand = _aufnahme_prefixes()
     try:
-        if name.startswith("JG - "):
-            return Lied.objects.get(titel=name[5:])
-        if name.startswith("JG-"):
-            return Lied.objects.get(titel=name[3:])
+        if name.startswith(mit_abstand):
+            return Lied.objects.get(titel=name[len(mit_abstand):])
+        if name.startswith(ohne_abstand):
+            return Lied.objects.get(titel=name[len(ohne_abstand):])
         return Lied.objects.get(titel=name)
     except Lied.DoesNotExist:
         return None
@@ -252,7 +268,7 @@ def _assign_file_to_song(filename, filer_file):
     if not file_type:
         return
     name_stem = os.path.splitext(filename)[0]
-    if file_type == "audio" and name_stem.startswith(("JG - ", "JG-")):
+    if file_type == "audio" and name_stem.startswith(_aufnahme_prefixes()):
         field_name = "aufnahme"
     else:
         field_name = settings.FILE_TYPE_LIED_MAP.get(file_type)
@@ -277,7 +293,7 @@ def _route_and_rename_for_lied(lied, filer_file, source_name):
         return None
 
     name_stem = os.path.splitext(source_name)[0]
-    if file_type == "audio" and name_stem.startswith(("JG - ", "JG-")):
+    if file_type == "audio" and name_stem.startswith(_aufnahme_prefixes()):
         field_name = "aufnahme"
     else:
         field_name = settings.FILE_TYPE_LIED_MAP.get(file_type)
@@ -294,7 +310,7 @@ def _route_and_rename_for_lied(lied, filer_file, source_name):
         filer_file.folder_id = folder_id
 
     new_name = (
-        f"JG - {lied.titel}{extension}"
+        f"{_aufnahme_prefix_with_space()}{lied.titel}{extension}"
         if field_name == "aufnahme"
         else f"{lied.titel}{extension}"
     )
