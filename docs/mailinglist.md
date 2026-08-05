@@ -64,7 +64,8 @@ Without `VEREINS_URL` or `EMAIL_HOST` the daemon **warns and writes no marker** 
 sending — a mail with a relative, i.e. dead, unsubscribe link is not defensible. Both are re-read
 every iteration, so fixing the config takes effect without restarting the loop.
 
-Privacy-policy coverage is §15 in `datenschutz.html`; open operational points (no bounce
+Privacy-policy coverage is the „Auftritts-Mailingliste" section of `datenschutz.html` — the
+only section that is not about members; open operational points (no bounce
 handling) are recorded in `datenschutz.md`.
 
 **Models.** `Auftrittsabo` is a subscriber, **not** a member — no FK to `User`. It carries the

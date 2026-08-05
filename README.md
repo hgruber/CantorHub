@@ -153,7 +153,8 @@ is in `docs/configuration.md`; these are the ones that decide whether things wor
 - **CardDAV / CalDAV** — while the switch is `0`, the URLs answer `404`, i.e. the service does not
   exist. Turning it on means member data (including photos and, optionally, birthdays) lands in
   personal phone address books and their cloud backups: **inform the members first** — the privacy
-  policy covers this in §16. Members then use `https://<host>/` with their normal portal login;
+  policy covers this in its „Sichtbarkeit Deiner Daten im Portal" section. Members then use
+  `https://<host>/` with their normal portal login;
   one base URL finds the address book and both calendars.
 - **iCal feed** — `/intern/calendar/<ICAL_SECRET>.ics`, needs no login and works with Google
   Calendar, which cannot subscribe to CalDAV.

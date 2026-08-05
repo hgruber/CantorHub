@@ -159,3 +159,7 @@ reasoning where it matters.
   JavaScript is vanilla, one file per concern, loaded in `base.html`.
 - Logging: `logging.getLogger(__name__)`; everything under `intern.*` is at INFO and goes to
   stdout.
+- References to the privacy policy — in code comments, `Konfiguration` help texts, `docs/` —
+  name the German section heading of `datenschutz.html` („Speicherdauer", „Sichtbarkeit Deiner
+  Daten im Portal"), never the section number. Every `<h2>`/`<h3>` there carries a stable
+  `ds-*` id and the policy's own cross-links are anchors, so renumbering breaks nothing.

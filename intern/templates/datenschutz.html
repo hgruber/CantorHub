@@ -20,7 +20,7 @@
         </div>
 
         <div class="wiki">
-            <h2>1. Verantwortliche</h2>
+            <h2 id="ds-verantwortliche">1. Verantwortliche</h2>
             <p>
                 Verantwortlicher im Sinne der Datenschutz-Grundverordnung ist der
                 (nicht eingetragene) Verein <strong>„{{ vereinsname }}"</strong>,
@@ -56,12 +56,13 @@
                 <a href="mailto:{{ kontakt_email }}">{{ kontakt_email }}</a>
             </p>
 
-            <h2>2. Erhobene Daten</h2>
+            <h2 id="ds-daten">2. Erhobene Daten</h2>
             <p>Im Rahmen der Mitgliedschaft und der Nutzung des internen Mitgliederportals
             verarbeiten wir folgende personenbezogene Daten:</p>
             <p>
                 <em>Hinweis:</em> Für die öffentliche Auftritts-Mailingliste, die keine
-                Mitgliedschaft voraussetzt, gilt ausschließlich Abschnitt&nbsp;15.
+                Mitgliedschaft voraussetzt, gilt ausschließlich der Abschnitt
+                <a href="#ds-mailingliste">„Auftritts-Mailingliste"</a>.
             </p>
             <ul>
                 <li><strong>Stammdaten:</strong> Vor- und Nachname, Anschrift, Geburtsdatum</li>
@@ -95,7 +96,7 @@
                 sind freiwillig.
             </p>
 
-            <h2>3. Zwecke und Rechtsgrundlagen</h2>
+            <h2 id="ds-zwecke">3. Zwecke und Rechtsgrundlagen</h2>
             <p>Wir verarbeiten Deine Daten ausschließlich für folgende Zwecke:</p>
             <ul>
                 <li>
@@ -113,7 +114,8 @@
                     XMPP-Chat-Systems. Forum-Beiträge werden automatisch in die verknüpften
                     XMPP-Gruppenchats synchronisiert; umgekehrt werden Nachrichten aus den
                     XMPP-Chats dauerhaft im Forum gespeichert. Auch nach Beendigung der
-                    Mitgliedschaft bleiben Beiträge im Forum erhalten (s. Abschnitt&nbsp;10).<br>
+                    Mitgliedschaft bleiben Beiträge im Forum erhalten
+                    (s. Abschnitt <a href="#ds-speicherdauer">„Speicherdauer"</a>).<br>
                     Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
                 </li>
                 <li>
@@ -131,6 +133,16 @@
                     am sicheren und nachvollziehbaren Betrieb des Portals)
                 </li>
                 <li>
+                    <strong>Adressbuch- und Kalender-Synchronisation</strong> – Damit Du die
+                    Kontaktdaten der anderen Mitglieder und die Termine des Chors auf Deinem
+                    eigenen Gerät zur Hand hast, lassen sich Mitgliederverzeichnis und
+                    Terminkalender mit dem Adressbuch und dem Kalender des Geräts abgleichen.
+                    Einzelheiten im Abschnitt
+                    <a href="#ds-sichtbarkeit">„Sichtbarkeit Deiner Daten im Portal"</a>.<br>
+                    Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der
+                    internen Erreichbarkeit der Mitglieder untereinander)
+                </li>
+                <li>
                     <strong>Profilfoto und Freitext</strong> – nur bei freiwilliger Angabe.
                     Die Einwilligung erteilst Du durch das eigenständige Hochladen bzw. Eingeben
                     im Profil; Du kannst sie jederzeit durch eigenständiges Löschen im Profil
@@ -140,12 +152,13 @@
                 <li>
                     <strong>Auftritts-Mailingliste</strong> – Erinnerungen an unsere
                     öffentlichen Auftritte an Interessierte, die sich dafür eingetragen
-                    haben. Einzelheiten in Abschnitt&nbsp;15.<br>
+                    haben. Einzelheiten im Abschnitt
+                    <a href="#ds-mailingliste">„Auftritts-Mailingliste"</a>.<br>
                     Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)
                 </li>
             </ul>
 
-            <h2>4. Veranstaltungsfotos und Bildmaterial</h2>
+            <h2 id="ds-fotos">4. Veranstaltungsfotos und Bildmaterial</h2>
             <p>
                 Im Rahmen von Proben, Auftritten und sonstigen Vereinsveranstaltungen können
                 Fotoaufnahmen angefertigt werden. Soweit diese ausschließlich vereinsintern im
@@ -162,7 +175,7 @@
                 abgebildeten Personen ein (Art. 6 Abs. 1 lit. a DSGVO).
             </p>
 
-            <h2>5. Sichtbarkeit Deiner Daten im Portal</h2>
+            <h2 id="ds-sichtbarkeit">5. Sichtbarkeit Deiner Daten im Portal</h2>
             <p>
                 Das Mitgliederportal ist ausschließlich für aktive Mitglieder zugänglich.
                 Alle Mitglieder können Profilseiten anderer Mitglieder einsehen.
@@ -178,32 +191,68 @@
                 Mitglieder des Vorstands und Personen mit Verwaltungsrechten haben stets vollständigen
                 Zugriff auf alle Mitgliedsdaten, soweit dies zur Verwaltung des Vereins erforderlich ist.
             </p>
+
+            <h3 id="ds-sync">Synchronisation mit Adressbuch und Kalender</h3>
             <p>
-                Die hier getroffenen Einstellungen gelten auch für die Adressbuch-
-                und Kalender-Synchronisation nach Abschnitt&nbsp;16 — dort sogar
-                uneingeschränkt: verborgene Felder werden auch dann nicht
-                übertragen, wenn die abrufende Person Verwaltungsrechte besitzt.
-                Das gilt insbesondere für das Geburtsdatum, das andernfalls im
-                Geburtstagskalender erschiene.
+                Als Mitglied kannst Du das Mitgliederverzeichnis mit dem Adressbuch und den
+                Terminkalender des Chors mit dem Kalender Deines Smartphones oder Computers
+                abgleichen (CardDAV und CalDAV). Beides ist freiwillig und muss auf dem Gerät
+                eingerichtet werden.
+                Der Zugriff steht nur aktiven Mitgliedern offen, setzt die Anmeldung mit dem
+                eigenen Portal-Passwort über eine verschlüsselte Verbindung voraus und ist rein
+                lesend — Änderungen auf dem Gerät wirken nicht auf das Portal zurück.
+            </p>
+            <p>
+                Übertragen werden dieselben Profildaten, die auch im Portal sichtbar sind
+                (s. Abschnitt <a href="#ds-daten">„Erhobene Daten"</a>) — abzüglich der Felder,
+                die Du nach den obigen Datenschutz-Einstellungen verborgen hast. Diese
+                Einstellungen gelten hier sogar uneingeschränkt: verborgene Felder werden auch
+                dann nicht übertragen, wenn die abrufende Person Verwaltungsrechte besitzt.
+                Insoweit ist der Schutz strenger als im Portal. Übertragen werden ausschließlich
+                aktive Mitglieder, und niemals der eigene Eintrag.
+            </p>
+            <p>
+                Der <strong>Kalender</strong> enthält die Termine des Chors mit Bezeichnung,
+                Zeitraum, Beschreibung sowie Name, Anschrift und Koordinaten des
+                Veranstaltungsorts; personenbezogen ist daran nichts. Zu- und Absagen werden
+                <strong>nicht</strong> übertragen: wer zu einem Termin zugesagt hat, steht in
+                keinem Kalendereintrag. Auf Wunsch wird zusätzlich ein
+                <em>Geburtstagskalender</em> ausgeliefert; er enthält Name und Geburtsdatum der
+                aktiven Mitglieder, die ihr Geburtsdatum nicht verborgen haben.
+            </p>
+            <p>
+                <strong>Widerspruch:</strong> Über die Datenschutz-Einstellungen in Deinem Profil
+                bestimmst Du, welche Felder übertragen werden — verbirgst Du etwa Dein
+                Geburtsdatum, erscheinst Du in keinem Geburtstagskalender, auch nicht bei
+                Personen mit Verwaltungsrechten. Bereits abgeglichene Geräte entfernen den
+                Eintrag beim nächsten Abgleich. Möchtest Du darüber hinaus gar nicht im
+                Adressbuch erscheinen, wende Dich an den Vorstand. Was nach dem Abgleich mit
+                den Daten auf dem Gerät geschieht, steht im Abschnitt
+                <a href="#ds-weitergabe">„Weitergabe an Dritte"</a>.
             </p>
 
-            <h2>6. Weitergabe an Dritte</h2>
+            <h2 id="ds-weitergabe">6. Weitergabe an Dritte</h2>
             <p>
                 Wir geben Deine personenbezogenen Daten nicht an Dritte weiter.
                 Eingebunden ist lediglich unser Hosting-Dienstleister als
                 Auftragsverarbeiter, der die Daten ausschließlich weisungsgebunden
                 in unserem Auftrag verarbeitet und rechtlich nicht als „Dritter"
-                gilt (s. Abschnitt&nbsp;7).
+                gilt (s. Abschnitt
+                <a href="#ds-hosting">„Hosting und technischer Betrieb"</a>).
                 Eine Übermittlung in Länder außerhalb der EU bzw. des EWR findet nicht statt.
             </p>
             <p>
                 Davon zu unterscheiden ist die Adressbuch- und Kalender-Synchronisation
-                (Abschnitt&nbsp;16): Nutzt ein Mitglied sie, übernimmt sein
-                eigenes Gerät die Kontakt- und Termindaten in sein Adressbuch
-                beziehungsweise seinen Kalender. Wir geben die
-                Daten dabei nicht an einen Dritten weiter, aber die Kopie auf dem
-                Gerät unterliegt dann dessen Sicherungs- und Freigabeeinstellungen
-                und damit nicht mehr unserem Einfluss.
+                (s. Abschnitt <a href="#ds-sichtbarkeit">„Sichtbarkeit Deiner Daten im
+                Portal"</a>): Nutzt ein Mitglied sie, übernimmt sein eigenes Gerät die
+                Kontakt- und Termindaten in sein Adressbuch beziehungsweise seinen Kalender.
+                Wir geben die Daten dabei nicht an einen Dritten weiter, aber die Kopie auf dem
+                Gerät unterliegt dann dessen Sicherungs- und Freigabeeinstellungen und damit
+                nicht mehr unserem Einfluss. Viele Geräte sichern ihr Adressbuch automatisch
+                beim Hersteller (etwa Google oder Apple), und zahlreiche Apps lesen es aus.
+                Löschst Du Daten im Portal, verschwinden sie beim nächsten Abgleich auch auf den
+                Geräten — Kopien, die inzwischen in fremde Dienste gelangt sind, können wir
+                jedoch nicht erreichen.
             </p>
             <p>
                 <strong>Kartendarstellung:</strong> Die im Portal angezeigten Karten beruhen
@@ -213,7 +262,7 @@
                 an externe Kartendienste übermittelt.
             </p>
 
-            <h2>7. Hosting und technischer Betrieb</h2>
+            <h2 id="ds-hosting">7. Hosting und technischer Betrieb</h2>
             <p>
                 Das Mitgliederportal wird auf einem virtuellen Server (vServer) bei
                 <strong>{{ hosting_anbieter_name }}</strong>,
@@ -223,20 +272,23 @@
                 verarbeitet die Daten ausschließlich weisungsgebunden in unserem Auftrag
                 und gewährleistet geeignete technische und organisatorische
                 Schutzmaßnahmen. Zusätzlich liegen die Daten verschlüsselt auf dem Server
-                (s. Abschnitt&nbsp;8).
+                (s. Abschnitt <a href="#ds-sicherheit">„Datensicherheit"</a>).
             </p>
             <p>
                 Im Rahmen des Serverbetriebs fallen technische Logdateien an
-                (s. Abschnitt&nbsp;2), die nach spätestens 90&nbsp;Tagen gelöscht werden.
+                (s. Abschnitt <a href="#ds-daten">„Erhobene Daten"</a>), die nach spätestens
+                90&nbsp;Tagen gelöscht werden.
             </p>
             <p>
                 Der Versand von E-Mails (z.&nbsp;B. Terminerinnerungen, Einladungen,
                 Bestätigungen) erfolgt über denselben Server; ein zusätzlicher externer
                 E-Mail-Dienstleister wird nicht eingesetzt. Auch der Proxy für die
-                Kartendarstellung (s. Abschnitt&nbsp;6) wird vom Verein selbst betrieben.
+                Kartendarstellung (s. Abschnitt
+                <a href="#ds-weitergabe">„Weitergabe an Dritte"</a>) wird vom Verein selbst
+                betrieben.
             </p>
 
-            <h2>8. Datensicherheit</h2>
+            <h2 id="ds-sicherheit">8. Datensicherheit</h2>
             <p>
                 Wir treffen technische und organisatorische Maßnahmen, um Deine Daten
                 gegen unbefugten Zugriff, Verlust und Manipulation zu schützen
@@ -258,10 +310,11 @@
                     alle Mitgliedsdaten sind auf den Vorstand und Personen mit
                     Verwaltungsrechten beschränkt.</li>
                 <li><strong>Nachvollziehbarkeit:</strong> Änderungen an Mitgliedsdaten werden
-                    in einem internen Änderungsprotokoll erfasst (s. Abschnitt&nbsp;10).</li>
+                    in einem internen Änderungsprotokoll erfasst (s. Abschnitt
+                    <a href="#ds-speicherdauer">„Speicherdauer"</a>).</li>
             </ul>
 
-            <h2>9. Cookies und Tracking</h2>
+            <h2 id="ds-cookies">9. Cookies und Tracking</h2>
             <p>
                 Das Portal verwendet ausschließlich technisch notwendige Session-Cookies zur
                 Authentifizierung. Zusätzlich wird Deine Anzeige-Einstellung (heller oder
@@ -273,7 +326,7 @@
                 Es findet kein Web-Tracking statt.
             </p>
 
-            <h2>10. Speicherdauer</h2>
+            <h2 id="ds-speicherdauer">10. Speicherdauer</h2>
             <p>
                 Deine Mitgliedsdaten werden für die Dauer Deiner Mitgliedschaft gespeichert.
                 Nach Beendigung der Mitgliedschaft werden personenbezogene Daten gelöscht,
@@ -306,7 +359,7 @@
                 Technische Server-Logdateien werden nach spätestens 90&nbsp;Tagen gelöscht.
             </p>
 
-            <h2>11. Deine Rechte</h2>
+            <h2 id="ds-rechte">11. Deine Rechte</h2>
             <p>Als betroffene Person stehen Dir folgende Rechte zu:</p>
             <ul>
                 <li>
@@ -345,13 +398,7 @@
                 Zur Ausübung dieser Rechte wende Dich bitte an die oben genannten Verantwortlichen.
             </p>
 
-            <h2>12. Keine automatisierte Entscheidungsfindung</h2>
-            <p>
-                Eine ausschließlich auf einer automatisierten Verarbeitung – einschließlich
-                Profiling – beruhende Entscheidung im Sinne des Art. 22 DSGVO findet nicht statt.
-            </p>
-
-            <h2>13. Minderjährige</h2>
+            <h2 id="ds-minderjaehrige">12. Minderjährige</h2>
             <p>
                 Die Mitgliedschaft richtet sich in aller Regel an volljährige Personen.
                 Sollte ausnahmsweise eine minderjährige Person aufgenommen werden, holen wir
@@ -359,7 +406,7 @@
                 (Erziehungsberechtigten) ein.
             </p>
 
-            <h2>14. Beschwerderecht bei der Aufsichtsbehörde</h2>
+            <h2 id="ds-aufsichtsbehoerde">13. Beschwerderecht bei der Aufsichtsbehörde</h2>
             <p>
                 Du hast das Recht, Dich bei der zuständigen Datenschutz-Aufsichtsbehörde zu beschweren:
             </p>
@@ -369,7 +416,7 @@
                 <a href="{{ dsb_url }}" target="_blank" rel="noopener">{{ dsb_url }}</a>
             </address>
 
-            <h2>15. Auftritts-Mailingliste</h2>
+            <h2 id="ds-mailingliste">14. Auftritts-Mailingliste</h2>
             <p>
                 Unabhängig von einer Mitgliedschaft kannst Du Dich auf unserer Website
                 in eine Erinnerungsliste für unsere öffentlichen Auftritte eintragen.
@@ -397,71 +444,10 @@
                     sofort und vollständig.</li>
             </ul>
             <p>
-                Die unter Abschnitt&nbsp;11 genannten Rechte gelten auch hier. Insbesondere
-                kannst Du Deine Einwilligung jederzeit mit Wirkung für die Zukunft
-                widerrufen — der Abmelde-Link in jeder E-Mail genügt dafür.
-            </p>
-
-            <h2>16. Adressbuch- und Kalender-Synchronisation (CardDAV/CalDAV)</h2>
-            <p>
-                Als Mitglied kannst Du das Mitgliederverzeichnis mit dem Adressbuch
-                Deines Smartphones oder Computers abgleichen, damit Du die Kontaktdaten
-                der anderen dort zur Hand hast. Dieser Abschnitt gilt ausschließlich
-                für diese Funktion; sie ist freiwillig und muss auf dem Gerät
-                eingerichtet werden.
-            </p>
-            <ul>
-                <li><strong>Verarbeitete Daten:</strong> Vor- und Nachname, Benutzername,
-                    Stimmlage, Profilbild, Eintrittsjahr und Profiltext sowie — soweit
-                    Du sie nicht nach Abschnitt&nbsp;5 verborgen hast — E-Mail-Adresse,
-                    Telefon- und Faxnummern, Anschrift, Kartenkoordinaten, Geburtsdatum
-                    und XMPP-Kennung.</li>
-                <li><strong>Zweck und Rechtsgrundlage:</strong> die interne Erreichbarkeit
-                    der Mitglieder untereinander, Art. 6 Abs. 1 lit. f DSGVO.</li>
-                <li><strong>Zugriff:</strong> ausschließlich aktive Mitglieder, nach
-                    Anmeldung mit dem eigenen Portal-Passwort über eine verschlüsselte
-                    Verbindung. Der Zugriff ist rein lesend — Änderungen auf dem Gerät
-                    wirken nicht auf das Portal zurück.</li>
-                <li><strong>Umfang:</strong> übertragen werden ausschließlich aktive
-                    Mitglieder, und niemals der eigene Eintrag. Verborgene Felder
-                    bleiben auch dann ausgespart, wenn die abrufende Person
-                    Verwaltungsrechte besitzt — insoweit ist der Schutz hier strenger
-                    als im Portal.</li>
-                <li><strong>Was Du wissen solltest:</strong> Nach dem Abgleich liegen die
-                    Daten im Adressbuch des jeweiligen Geräts und damit außerhalb unseres
-                    Einflussbereichs. Viele Geräte sichern ihr Adressbuch automatisch
-                    beim Hersteller (etwa Google oder Apple), und zahlreiche Apps lesen es
-                    aus. Löschst Du Daten im Portal, verschwinden sie beim nächsten
-                    Abgleich auch auf den Geräten — Kopien, die inzwischen in fremde
-                    Dienste gelangt sind, können wir jedoch nicht erreichen.</li>
-                <li><strong>Widerspruch:</strong> Über die Datenschutz-Einstellungen in
-                    Deinem Profil (Abschnitt&nbsp;5) bestimmst Du, welche Felder
-                    übertragen werden. Möchtest Du darüber hinaus gar nicht im Adressbuch
-                    erscheinen, wende Dich an den Vorstand.</li>
-            </ul>
-            <p>
-                Auf demselben Weg lässt sich der <strong>Terminkalender</strong> des
-                Chors mit dem Kalender Deines Geräts abgleichen. Es gelten dieselben
-                Regeln wie oben — freiwillig, nur nach Anmeldung mit dem eigenen
-                Portal-Passwort, rein lesend —, mit diesen Besonderheiten:
-            </p>
-            <ul>
-                <li><strong>Verarbeitete Daten:</strong> die Termine des Chors mit
-                    Bezeichnung, Zeitraum, Beschreibung sowie Name, Anschrift und
-                    Koordinaten des Veranstaltungsorts. Personenbezogen ist daran
-                    nichts — mit einer Ausnahme: auf Wunsch wird zusätzlich ein
-                    <em>Geburtstagskalender</em> ausgeliefert. Er enthält Name und
-                    Geburtsdatum der aktiven Mitglieder, die ihr Geburtsdatum nicht
-                    nach Abschnitt&nbsp;5 verborgen haben.</li>
-                <li><strong>Nicht übertragen</strong> werden Zu- und Absagen: wer zu
-                    einem Termin zugesagt hat, steht in keinem Kalendereintrag.</li>
-                <li><strong>Widerspruch:</strong> Verbirgst Du Dein Geburtsdatum in
-                    Deinem Profil, erscheinst Du in keinem Geburtstagskalender — auch
-                    nicht bei Personen mit Verwaltungsrechten. Bereits abgeglichene
-                    Geräte entfernen den Eintrag beim nächsten Abgleich.</li>
-            </ul>
-            <p>
-                Die unter Abschnitt&nbsp;11 genannten Rechte gelten auch hier.
+                Die im Abschnitt <a href="#ds-rechte">„Deine Rechte"</a> genannten Rechte
+                gelten auch hier. Insbesondere kannst Du Deine Einwilligung jederzeit mit
+                Wirkung für die Zukunft widerrufen — der Abmelde-Link in jeder E-Mail genügt
+                dafür.
             </p>
 
             <p class="datenschutz-stand"><em>Stand: August 2026</em></p>

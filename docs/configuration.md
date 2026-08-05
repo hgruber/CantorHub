@@ -30,7 +30,8 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `PWRESET_MAX_PER_HOUR` (max password-reset requests per IP per hour, default `5`)
 - `CARDDAV_AKTIV` (`1`/`0`, **default `0`**) — master switch of the read-only CardDAV address
   book. While off, every CardDAV URL answers `404`, not `401`: the service simply does not
-  exist. Turn it on only after the members have been informed (privacy policy §16)
+  exist. Turn it on only after the members have been informed (privacy policy, section
+  „Sichtbarkeit Deiner Daten im Portal")
 - `CARDDAV_ADRESSBUCH_NAME` (display name of the collection on the device; empty →
   `"<VEREINSNAME_LANG> – Mitglieder"`)
 - `CARDDAV_ORGANISATION` (value of the vCard `ORG` property; empty → `VEREINSNAME_LANG`)
@@ -45,7 +46,7 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   lock out the whole household — and answers `401`, not `429`, so the client retries later
   instead of giving up
 - `CALDAV_AKTIV` (`1`/`0`, **default `0`**) — master switch of the read-only CalDAV calendar,
-  behaving exactly like `CARDDAV_AKTIV` (404 while off, privacy policy §16). The two switches
+  behaving exactly like `CARDDAV_AKTIV` (404 while off, same privacy-policy section). The two switches
   are independent, but turning **both** on is what lets a phone find calendar *and* address
   book from the bare base URL: each service only advertises the other's home-set while that
   other one is active
@@ -76,7 +77,7 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`)
 - `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)
 - `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title)
-- `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in privacy-policy §1; multi-line, empty → only board member names are listed, no addresses)
+- `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in the privacy policy's „Verantwortliche" section; multi-line, empty → only board member names are listed, no addresses)
 - `HOMEPAGE_UEBER_UNS` (body text for the "Über uns" card on the public homepage; multi-line allowed)
 - `HOMEPAGE_AUFNAHME` (body text for the "Wir suchen" card on the public homepage; multi-line allowed; hidden when empty)
 - `MAILINGLISTE_WOCHEN` (lead times of the public gig reminders in weeks, comma-separated; default `4,1`. Parsed by `parse_wochen()` in `intern/mailingliste.py`, which drops anything unparsable — a hand-edited nonsense value must not kill the daemon)
@@ -117,17 +118,17 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 
 Defaults are the original Just-Gospel values — overwrite on first setup.
 
-- `HOSTING_ANBIETER_NAME` (name of the hoster in privacy policy §7; multi-line allowed)
-- `HOSTING_ANBIETER_ANSCHRIFT` (address of the hoster in §7; multi-line allowed)
-- `DSB_NAME` (name of the supervisory data-protection authority in §14; multi-line allowed)
-- `DSB_ANSCHRIFT` (address of the authority in §14; multi-line allowed)
-- `DSB_URL` (URL of the authority in §14)
+- `HOSTING_ANBIETER_NAME` (name of the hoster in the privacy policy's „Hosting und technischer Betrieb" section; multi-line allowed)
+- `HOSTING_ANBIETER_ANSCHRIFT` (address of the hoster in the same section; multi-line allowed)
+- `DSB_NAME` (name of the supervisory data-protection authority in „Beschwerderecht bei der Aufsichtsbehörde"; multi-line allowed)
+- `DSB_ANSCHRIFT` (address of the authority in the same section; multi-line allowed)
+- `DSB_URL` (URL of the authority in the same section)
 
 ### Aufbewahrung & Bereinigung
 
 The cleanup jobs read these as their default; each has a `--days` (or `--keep`) CLI override.
 
-- `AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE` (retention of the change log in days; default `1095` = 3 years, privacy policy §9)
+- `AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE` (retention of the change log in days; default `1095` = 3 years, privacy policy section „Speicherdauer")
 - `DATEIVERSION_AUFBEWAHRUNG_TAGE` (retention of superseded file revisions in days; default `730` = 2 years — a convenience feature, not an archive)
 - `DATEIVERSION_AUFBEWAHRUNG_ANZAHL` (number of revisions kept per file regardless of age; default `10`)
 - `ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE` (retention of the `ErinnerungVersand` send markers in days; default `365`. The markers only guard against double sends, so after the event they are no longer needed)

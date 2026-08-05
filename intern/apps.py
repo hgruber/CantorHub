@@ -39,7 +39,8 @@ _CONFIG_DEFAULTS = [
         "CARDDAV_AKTIV",
         "0",
         "CardDAV-Adressbuch für Mitglieder freischalten (1/0). Vor dem "
-        "Einschalten die Mitglieder informieren — Datenschutzerklärung §16.",
+        "Einschalten die Mitglieder informieren — Datenschutzerklärung, "
+        "Abschnitt „Sichtbarkeit Deiner Daten im Portal“.",
     ),
     (
         "CARDDAV_ADRESSBUCH_NAME",
@@ -68,7 +69,8 @@ _CONFIG_DEFAULTS = [
         "CALDAV_AKTIV",
         "0",
         "CalDAV-Kalender für Mitglieder freischalten (1/0). Vor dem "
-        "Einschalten die Mitglieder informieren — Datenschutzerklärung §16.",
+        "Einschalten die Mitglieder informieren — Datenschutzerklärung, "
+        "Abschnitt „Sichtbarkeit Deiner Daten im Portal“.",
     ),
     (
         "CALDAV_KALENDER_NAME",
@@ -127,8 +129,9 @@ _CONFIG_DEFAULTS = [
     (
         "VEREINSADRESSE",
         "",
-        "Ladungsfähige Kontaktanschrift des Vereins (Datenschutzerklärung §1, "
-        "mehrzeilig erlaubt; leer → es werden nur die Vorstandsnamen genannt)",
+        "Ladungsfähige Kontaktanschrift des Vereins (Datenschutzerklärung, "
+        "Abschnitt „Verantwortliche“; mehrzeilig erlaubt; leer → es werden nur "
+        "die Vorstandsnamen genannt)",
     ),
     (
         "HOMEPAGE_UEBER_UNS",
@@ -397,8 +400,8 @@ _CONFIG_DEFAULTS = [
     (
         "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE",
         "1095",
-        "Aufbewahrungsfrist des Änderungsprotokolls in Tagen (Datenschutzerklärung §9, "
-        "Standard 3 Jahre)",
+        "Aufbewahrungsfrist des Änderungsprotokolls in Tagen (Datenschutzerklärung, "
+        "Abschnitt „Speicherdauer“; Standard 3 Jahre)",
     ),
     (
         "DATEIVERSION_AUFBEWAHRUNG_TAGE",
@@ -478,29 +481,32 @@ _CONFIG_DEFAULTS = [
     (
         "HOSTING_ANBIETER_NAME",
         "Hetzner Online GmbH",
-        "Name des Hosting-Anbieters in Datenschutzerklärung §7",
+        "Name des Hosting-Anbieters in der Datenschutzerklärung, Abschnitt "
+        "„Hosting und technischer Betrieb“",
     ),
     (
         "HOSTING_ANBIETER_ANSCHRIFT",
         "Industriestr. 25, 91710 Gunzenhausen, Deutschland",
-        "Anschrift des Hosting-Anbieters in Datenschutzerklärung §7 (mehrzeilig "
-        "erlaubt)",
+        "Anschrift des Hosting-Anbieters in der Datenschutzerklärung, Abschnitt "
+        "„Hosting und technischer Betrieb“ (mehrzeilig erlaubt)",
     ),
     (
         "DSB_NAME",
         "Der Hessische Beauftragte für Datenschutz und Informationsfreiheit (HBDI)",
-        "Name der Datenschutz-Aufsichtsbehörde in Datenschutzerklärung §14",
+        "Name der Datenschutz-Aufsichtsbehörde in der Datenschutzerklärung, "
+        "Abschnitt „Beschwerderecht bei der Aufsichtsbehörde“",
     ),
     (
         "DSB_ANSCHRIFT",
         "Gustav-Stresemann-Ring 1, 65189 Wiesbaden",
-        "Anschrift der Datenschutz-Aufsichtsbehörde in Datenschutzerklärung §14 "
-        "(mehrzeilig erlaubt)",
+        "Anschrift der Datenschutz-Aufsichtsbehörde in der Datenschutzerklärung, "
+        "Abschnitt „Beschwerderecht bei der Aufsichtsbehörde“ (mehrzeilig erlaubt)",
     ),
     (
         "DSB_URL",
         "https://www.datenschutz.hessen.de",
-        "URL der Datenschutz-Aufsichtsbehörde in Datenschutzerklärung §14",
+        "URL der Datenschutz-Aufsichtsbehörde in der Datenschutzerklärung, "
+        "Abschnitt „Beschwerderecht bei der Aufsichtsbehörde“",
     ),
 ]
 

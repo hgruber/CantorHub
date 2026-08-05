@@ -216,7 +216,7 @@ Two scheduled jobs enforce retention, both started in the background by `start.s
 
 | Job | Deletes | Never touches |
 |---|---|---|
-| `cleanup_changelog` | `ChangeLog` rows older than 3 years (`timestamp__lt`), a plain queryset `delete()`. Backs the §10 promise in `datenschutz.html` | Any file, any content — only the audit trail |
+| `cleanup_changelog` | `ChangeLog` rows older than 3 years (`timestamp__lt`), a plain queryset `delete()`. Backs the „Speicherdauer" promise in `datenschutz.html` | Any file, any content — only the audit trail |
 | `cleanup_dateiversionen` | `DateiVersion` rows **plus** the blob at `v.pfad` via `storage.delete()` and the thumbnails at that path | Live files: a `DateiVersion` blob has no `filer.File` row by construction, so nothing a member can see in a folder is ever a candidate |
 
 `cleanup_dateiversionen` selects by two independent rules, unioned (`_veraltet`):
@@ -240,6 +240,6 @@ file removes one occurrence, not the blob** — the blob survives as long as ano
 points at the same path. Erasure therefore means deleting *every* linked row, which is exactly
 what `datei_verwendungen` shows in the confirmation dialog.
 
-Server logs are the third retention item in §10 (90 days), but they are not this codebase's
+Server logs are the third retention item in „Speicherdauer" (90 days), but they are not this codebase's
 job: nginx logs to stdout and Django's `LOGGING` uses a `StreamHandler`, so both land in
 journald/`podman logs` and their rotation is a host-side setting.

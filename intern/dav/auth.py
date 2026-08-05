@@ -172,8 +172,9 @@ def dav_basic_auth(dienst):
         @wraps(view)
         def wrapper(request, *args, **kwargs):
             # Der Dienst wird ausgeliefert, aber erst freigeschaltet, wenn die
-            # Mitglieder informiert sind (Datenschutzerklärung §16). Http404
-            # statt 403: solange er aus ist, gibt es ihn schlicht nicht.
+            # Mitglieder informiert sind (Datenschutzerklärung, Abschnitt
+            # „Sichtbarkeit Deiner Daten im Portal“). Http404 statt 403:
+            # solange er aus ist, gibt es ihn schlicht nicht.
             if not get_config_bool(f"{dienst.prefix}_AKTIV", False):
                 raise Http404
 

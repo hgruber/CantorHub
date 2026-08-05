@@ -5,8 +5,8 @@ Android, Contacts/Calendar on iOS. Both authenticate with the member's normal po
 and password over HTTP Basic (**not** the portal session), both answer `405` to
 `PUT`/`DELETE`/`MKCOL`/`PROPPATCH`/`LOCK`, and both are **off by default**: `CARDDAV_AKTIV`
 and `CALDAV_AKTIV` are seeded as `"0"`, and while a service is off every one of its URLs
-raises `Http404` — not `401`. Switching one on has privacy consequences (`datenschutz.html`
-§16), so it deliberately requires a deliberate act.
+raises `Http404` — not `401`. Switching one on has privacy consequences (`datenschutz.html`,
+section „Sichtbarkeit Deiner Daten im Portal"), so it deliberately requires a deliberate act.
 
 ## The shared base (`intern/dav/`)
 

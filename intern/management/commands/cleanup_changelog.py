@@ -5,15 +5,17 @@ from datetime import timedelta
 from intern.app_settings import get_config_int
 from intern.models import ChangeLog
 
-# Datenschutzerklärung §9: Das Änderungsprotokoll wird 3 Jahre aufbewahrt und
-# anschließend gelöscht (Amtszeit Vorstand + Puffer; § 195 BGB).
+# Datenschutzerklärung, Abschnitt „Speicherdauer“: Das Änderungsprotokoll wird
+# 3 Jahre aufbewahrt und anschließend gelöscht (Amtszeit Vorstand + Puffer;
+# § 195 BGB).
 DEFAULT_RETENTION_DAYS = 3 * 365
 
 
 class Command(BaseCommand):
     help = (
         "Löscht Änderungsprotokoll-Einträge (ChangeLog), die älter als die "
-        "Aufbewahrungsfrist sind (Standard: 3 Jahre, gemäß Datenschutzerklärung §9). "
+        "Aufbewahrungsfrist sind (Standard: 3 Jahre, gemäß Datenschutzerklärung, "
+        "Abschnitt „Speicherdauer“). "
         "Sollte regelmäßig laufen (z. B. bei jedem Server-Start)."
     )
 
