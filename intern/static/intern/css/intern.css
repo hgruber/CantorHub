@@ -2345,7 +2345,7 @@ table.mitglied-table tr.stimme-group-start td {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #a83a5a;
+    color: var(--brand-dark);
     margin: 0 0 12px;
     padding-bottom: 8px;
     border-bottom: 2px solid var(--brand);
