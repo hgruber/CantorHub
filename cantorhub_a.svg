@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128"
+     role="img" aria-label="CantorHub">
+  <title>CantorHub — Klangbögen</title>
+  <desc>Stimmgabel, aus der nach beiden Seiten Schallbögen austreten.</desc>
+
+  <!-- Farben stehen als Attribute am Element; das CSS unten hellt sie nur fuer
+       den Dark Mode auf. Renderer ohne CSS-Unterstuetzung bleiben so korrekt. -->
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .hell   { stop-color: #ec8aa9; }
+      .dunkel { stop-color: #c14468; }
+      .welle  { stroke: #e0688a; }
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="cha-gabel" x1="64" y1="28" x2="64" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" class="hell"   stop-color="#d4587b"/>
+      <stop offset="1" class="dunkel" stop-color="#a83a5a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Klang, der die Gabel verlaesst: nach aussen weiter und leiser -->
+  <g class="welle" fill="none" stroke="#c14468" stroke-linecap="round">
+    <g stroke-width="6" opacity="0.55">
+      <path d="M97.40 39.90 A42 42 0 0 1 97.40 88.10"/>
+      <path d="M30.60 39.90 A42 42 0 0 0 30.60 88.10"/>
+    </g>
+    <g stroke-width="5" opacity="0.28">
+      <path d="M109.87 31.87 A56 56 0 0 1 109.87 96.13"/>
+      <path d="M18.13 31.87 A56 56 0 0 0 18.13 96.13"/>
+    </g>
+  </g>
+
+  <!-- Stimmgabel -->
+  <g fill="none" stroke="url(#cha-gabel)" stroke-width="8" stroke-linecap="round">
+    <path d="M52 32 L52 68 A12 12 0 0 0 76 68 L76 32"/>
+    <path d="M64 80 L64 96"/>
+  </g>
+</svg>

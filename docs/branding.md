@@ -95,16 +95,26 @@ order of preference:
 Rename the three `JG-Frankfurt-*.svg` files to generic names (`logo.svg`,
 `logo-mono.svg`) and update the ~12 references in one pass.
 
-Two candidates for that neutral default sit in the repository root as
-`cantorhub_v1.svg` (open voice ring with four satellite nodes) and
-`cantorhub_v2.svg` (tuning fork resolving into a node triangle, on a tile).
-Both are drafts, not yet wired into any template: each is an icon-plus-wordmark
-lockup whose icon occupies the square `0 0 96 96` of the viewBox, so cropping the
-viewBox yields the favicon/PWA mark of step 4. Their colours are the `--brand`
-/ `--brand-dark` literals rather than tokens — an SVG file cannot read the CSS
-custom properties, and `BRAND_FARBE` is configurable, so a deployer who changes
-it also replaces the logo. Pick one, move it to `intern/static/intern/images/`
-under the generic name, and delete the other.
+Candidates for that neutral default sit in the repository root, none of them
+wired into a template yet. The current round is `cantorhub_a.svg` … `_d.svg`:
+four square 128×128 marks that share one identical tuning-fork silhouette and
+differ only in what surrounds it — sound arcs (a), a circle of four voices (b),
+a stamped-out seal (c), a staff of five lines (d). The two earlier drafts
+`cantorhub_v1.svg` / `_v2.svg` are icon-plus-wordmark lockups and are
+superseded; delete them once a mark is chosen.
+
+Two constraints these files encode, worth keeping in any successor:
+
+- Colours are the `--brand` / `--brand-dark` literals, not tokens — an SVG
+  cannot read the CSS custom properties, and `BRAND_FARBE` is configurable, so
+  a deployer who changes it replaces the logo too.
+- Every colour is a presentation attribute; the embedded `<style>` only carries
+  the `prefers-color-scheme: dark` override. Renderers that ignore CSS (librsvg,
+  Inkscape's exporter, most SVG-to-PDF paths) would otherwise paint gradient
+  stops black.
+
+Pick one, move it to `intern/static/intern/images/` under the generic name, and
+delete the rest. The square viewBox doubles as the favicon/PWA mark of step 4.
 
 ### 4. Favicon / PWA
 Same files drive the favicon (`<link rel="icon">` in base + error pages). Fold

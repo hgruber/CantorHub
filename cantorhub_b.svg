@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128"
+     role="img" aria-label="CantorHub">
+  <title>CantorHub — Stimmenkreis</title>
+  <desc>Stimmgabel im Zentrum eines Kreises, auf dem vier Stimmen als Knoten sitzen.</desc>
+
+  <!-- Farben stehen als Attribute am Element; das CSS unten hellt sie nur fuer
+       den Dark Mode auf. Renderer ohne CSS-Unterstuetzung bleiben so korrekt. -->
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .hell   { stop-color: #ec8aa9; }
+      .dunkel { stop-color: #c14468; }
+      .bahn   { stroke: #e0688a; }
+      .stimme { fill: #e0688a; }
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="chb-gabel" x1="64" y1="28" x2="64" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" class="hell"   stop-color="#d4587b"/>
+      <stop offset="1" class="dunkel" stop-color="#a83a5a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Der Kreis, um den herum gesungen wird -->
+  <circle class="bahn" cx="64" cy="64" r="54" fill="none" stroke="#c14468"
+          stroke-width="3" opacity="0.45"/>
+
+  <!-- Vier Stimmen auf der Bahn -->
+  <g class="stimme" fill="#a83a5a">
+    <circle cx="101.90" cy="26.10"  r="6.5"/>
+    <circle cx="26.10"  cy="26.10"  r="6.5"/>
+    <circle cx="26.10"  cy="101.90" r="6.5"/>
+    <circle cx="101.90" cy="101.90" r="6.5"/>
+  </g>
+
+  <!-- Stimmgabel -->
+  <g fill="none" stroke="url(#chb-gabel)" stroke-width="8" stroke-linecap="round">
+    <path d="M52 32 L52 68 A12 12 0 0 0 76 68 L76 32"/>
+    <path d="M64 80 L64 96"/>
+  </g>
+</svg>

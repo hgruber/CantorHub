@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128"
+     role="img" aria-label="CantorHub">
+  <title>CantorHub — Siegel</title>
+  <desc>Stimmgabel als Aussparung in einer Scheibe, umgeben von einem feinen Ring.</desc>
+
+  <!-- Farben stehen als Attribute am Element; das CSS unten hellt sie nur fuer
+       den Dark Mode auf. Renderer ohne CSS-Unterstuetzung bleiben so korrekt. -->
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .hell   { stop-color: #ec8aa9; }
+      .dunkel { stop-color: #b13f60; }
+      .ring   { stroke: #e0688a; }
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="chc-scheibe" x1="18" y1="18" x2="110" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0" class="hell"   stop-color="#d4587b"/>
+      <stop offset="1" class="dunkel" stop-color="#9c3352"/>
+    </linearGradient>
+
+    <!-- Die Gabel wird ausgestanzt, nicht uebermalt: das Zeichen bleibt
+         auf jedem Untergrund korrekt. -->
+    <mask id="chc-stanze">
+      <rect x="0" y="0" width="128" height="128" fill="#000"/>
+      <circle cx="64" cy="64" r="52" fill="#fff"/>
+      <g fill="none" stroke="#000" stroke-width="8" stroke-linecap="round">
+        <path d="M52 32 L52 68 A12 12 0 0 0 76 68 L76 32"/>
+        <path d="M64 80 L64 96"/>
+      </g>
+    </mask>
+  </defs>
+
+  <circle class="ring" cx="64" cy="64" r="60" fill="none" stroke="#c14468"
+          stroke-width="2.5" opacity="0.4"/>
+  <rect x="0" y="0" width="128" height="128" fill="url(#chc-scheibe)" mask="url(#chc-stanze)"/>
+</svg>
