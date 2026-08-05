@@ -24,6 +24,21 @@ logger = logging.getLogger(__name__)
 
 _LOGO_STATIC = "intern/brand/icon-192.png"
 
+# Inline-Farben fuer die HTML-Mails. E-Mail-Clients koennen var() nicht
+# verlaesslich, daher werden die Farben als String direkt ins Template
+# geschrieben. Die Werte entsprechen den CSS-Tokens in intern.css :root
+# (--bg-app, --bg-card, --t2, --t3, --border) und muessen parallel zu diesen
+# gepflegt werden. Die Akzentfarbe (brand_farbe) ist einziger konfigurierbarer
+# Farbwert und wird separat als ``brand_farbe`` in den Kontext gelegt.
+_MAIL_FARBE = {
+    "mail_farbe_bg":      "#f1f3f5",  # --bg-app
+    "mail_farbe_card":    "#ffffff",  # --bg-card
+    "mail_farbe_border":  "#e5e7eb",  # --border
+    "mail_farbe_text":    "#374151",  # --t2
+    "mail_farbe_muted":   "#6b7280",  # --t3
+    "mail_farbe_onbrand": "#ffffff",  # Kontrastfarbe auf Brand-Hintergrund
+}
+
 # Zeilenenden fuer den SMTP-Transport (RFC 5321). Bewusst compat32 und nicht
 # email.policy.SMTP: die Nachricht wird mit der alten MIME-API gebaut, ein
 # Wechsel der Policy wuerde auch die Kopfzeilen-Kodierung veraendern.
@@ -52,6 +67,7 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
         "vereinsname_lang": get_vereinsname_lang(),
         "vereinsname_kurz": get_vereinsname_kurz(),
         "brand_farbe":      get_brand_farbe(),
+        **_MAIL_FARBE,
         "text_body":        text_body,
         "mail_footer":      footer,
         **context,

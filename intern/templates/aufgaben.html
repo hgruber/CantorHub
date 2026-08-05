@@ -113,28 +113,28 @@
 }
 
 /* Voice badges */
-.badge-stimme-s { background: rgba(124, 58, 237, 0.12); color: #7c3aed; }
-.badge-stimme-a { background: rgba(193, 68, 104, 0.12); color: #c14468; }
-.badge-stimme-t { background: rgba(3, 105, 161, 0.12);  color: #0369a1; }
-.badge-stimme-b { background: rgba(5, 150, 105, 0.12);  color: #059669; }
-.badge-stimme-c { background: rgba(180, 83, 9, 0.12);   color: #b45309; }
-.badge-stimme-m { background: rgba(8, 145, 178, 0.12);  color: #0891b2; }
-.badge-stimme-n { background: var(--bg-row-hover);       color: var(--t4); }
+.badge-stimme-s { background: color-mix(in srgb, var(--kat-1) 12%, transparent); color: var(--kat-1); }
+.badge-stimme-a { background: color-mix(in srgb, var(--brand) 12%, transparent);  color: var(--brand); }
+.badge-stimme-t { background: color-mix(in srgb, var(--kat-2) 12%, transparent); color: var(--kat-2); }
+.badge-stimme-b { background: color-mix(in srgb, var(--kat-3) 12%, transparent); color: var(--kat-3); }
+.badge-stimme-c { background: color-mix(in srgb, var(--kat-4) 12%, transparent); color: var(--kat-4); }
+.badge-stimme-m { background: color-mix(in srgb, var(--kat-5) 12%, transparent); color: var(--kat-5); }
+.badge-stimme-n { background: var(--bg-row-hover);                                           color: var(--t4); }
 
 /* Stimme tint for user column */
-.perm-stimme-s { --stimme-tint: rgba(124,  58, 237, 0.07); }
-.perm-stimme-a { --stimme-tint: rgba(193,  68, 104, 0.07); }
-.perm-stimme-t { --stimme-tint: rgba(  3, 105, 161, 0.07); }
-.perm-stimme-b { --stimme-tint: rgba(  5, 150, 105, 0.07); }
-.perm-stimme-c { --stimme-tint: rgba(180,  83,   9, 0.07); }
-.perm-stimme-m { --stimme-tint: rgba(  8, 145, 178, 0.07); }
+.perm-stimme-s { --stimme-tint: color-mix(in srgb, var(--kat-1) 7%, transparent); }
+.perm-stimme-a { --stimme-tint: color-mix(in srgb, var(--brand) 7%, transparent); }
+.perm-stimme-t { --stimme-tint: color-mix(in srgb, var(--kat-2) 7%, transparent); }
+.perm-stimme-b { --stimme-tint: color-mix(in srgb, var(--kat-3) 7%, transparent); }
+.perm-stimme-c { --stimme-tint: color-mix(in srgb, var(--kat-4) 7%, transparent); }
+.perm-stimme-m { --stimme-tint: color-mix(in srgb, var(--kat-5) 7%, transparent); }
 
-[data-theme="dark"] .perm-stimme-s { --stimme-tint: rgba(167, 139, 250, 0.10); }
-[data-theme="dark"] .perm-stimme-a { --stimme-tint: rgba(240, 128, 154, 0.10); }
-[data-theme="dark"] .perm-stimme-t { --stimme-tint: rgba( 56, 189, 248, 0.10); }
-[data-theme="dark"] .perm-stimme-b { --stimme-tint: rgba( 52, 211, 153, 0.10); }
-[data-theme="dark"] .perm-stimme-c { --stimme-tint: rgba(251, 191,  36, 0.10); }
-[data-theme="dark"] .perm-stimme-m { --stimme-tint: rgba( 34, 211, 238, 0.10); }
+[data-theme="dark"] .perm-stimme-s { --stimme-tint: color-mix(in srgb, var(--kat-1) 10%, transparent); }
+[data-theme="dark"] .perm-stimme-a { --stimme-tint: color-mix(in srgb, var(--brand) 10%, transparent); }
+[data-theme="dark"] .perm-stimme-t { --stimme-tint: color-mix(in srgb, var(--kat-2) 10%, transparent); }
+[data-theme="dark"] .perm-stimme-b { --stimme-tint: color-mix(in srgb, var(--kat-3) 10%, transparent); }
+[data-theme="dark"] .perm-stimme-c { --stimme-tint: color-mix(in srgb, var(--kat-4) 10%, transparent); }
+[data-theme="dark"] .perm-stimme-m { --stimme-tint: color-mix(in srgb, var(--kat-5) 10%, transparent); }
 
 /* Permission cell */
 .perm-cell-td {
@@ -237,12 +237,12 @@
 [data-theme="dark"] .perm-cell-admin.granted { background: #d97706; border-color: #d97706; }
 [data-theme="dark"] .perm-cell.pending::after,
 [data-theme="dark"] .perm-cell-admin.pending::after { border-color: var(--bg-card); }
-[data-theme="dark"] .badge-stimme-s { background: rgba(167,139,250,0.15); color: #a78bfa; }
-[data-theme="dark"] .badge-stimme-a { background: rgba(193,68,104,0.20);  color: #f0809a; }
-[data-theme="dark"] .badge-stimme-t { background: rgba(56,189,248,0.15);  color: #38bdf8; }
-[data-theme="dark"] .badge-stimme-b { background: rgba(52,211,153,0.15);  color: #34d399; }
-[data-theme="dark"] .badge-stimme-c { background: rgba(251,191,36,0.15);  color: #fbbf24; }
-[data-theme="dark"] .badge-stimme-m { background: rgba(34,211,238,0.15);  color: #22d3ee; }
+[data-theme="dark"] .badge-stimme-s { background: color-mix(in srgb, var(--kat-1) 15%, transparent); color: var(--kat-1); }
+[data-theme="dark"] .badge-stimme-a { background: color-mix(in srgb, var(--brand) 20%, transparent); color: var(--brand); }
+[data-theme="dark"] .badge-stimme-t { background: color-mix(in srgb, var(--kat-2) 15%, transparent); color: var(--kat-2); }
+[data-theme="dark"] .badge-stimme-b { background: color-mix(in srgb, var(--kat-3) 15%, transparent); color: var(--kat-3); }
+[data-theme="dark"] .badge-stimme-c { background: color-mix(in srgb, var(--kat-4) 15%, transparent); color: var(--kat-4); }
+[data-theme="dark"] .badge-stimme-m { background: color-mix(in srgb, var(--kat-5) 15%, transparent); color: var(--kat-5); }
 
 /* Apply bar */
 .perm-apply-bar {

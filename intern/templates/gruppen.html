@@ -59,22 +59,22 @@
 .perm-cat-header:first-of-type { border-left: none; }
 
 /* Category color accents */
-.perm-cat-Artikel    { color: #7c3aed; border-bottom: 2px solid #7c3aed; }
-.perm-cat-Forum      { color: #0369a1; border-bottom: 2px solid #0369a1; }
-.perm-cat-Dateien    { color: #059669; border-bottom: 2px solid #059669; }
-.perm-cat-Orte       { color: #b45309; border-bottom: 2px solid #b45309; }
+.perm-cat-Artikel    { color: var(--kat-1); border-bottom: 2px solid var(--kat-1); }
+.perm-cat-Forum      { color: var(--kat-2); border-bottom: 2px solid var(--kat-2); }
+.perm-cat-Dateien    { color: var(--kat-3); border-bottom: 2px solid var(--kat-3); }
+.perm-cat-Orte       { color: var(--kat-4); border-bottom: 2px solid var(--kat-4); }
 .perm-cat-Termine    { color: var(--brand); border-bottom: 2px solid var(--brand); }
-.perm-cat-Repertoire { color: #0891b2; border-bottom: 2px solid #0891b2; }
-.perm-cat-Mitglieder { color: #65a30d; border-bottom: 2px solid #65a30d; }
+.perm-cat-Repertoire { color: var(--kat-5); border-bottom: 2px solid var(--kat-5); }
+.perm-cat-Mitglieder { color: var(--kat-6); border-bottom: 2px solid var(--kat-6); }
 
 /* Column tint */
-.perm-col-cat-Artikel    { --perm-tint: rgba(124,  58, 237, 0.05); }
-.perm-col-cat-Forum      { --perm-tint: rgba(  3, 105, 161, 0.05); }
-.perm-col-cat-Dateien    { --perm-tint: rgba(  5, 150, 105, 0.05); }
-.perm-col-cat-Orte       { --perm-tint: rgba(180,  83,   9, 0.05); }
-.perm-col-cat-Termine    { --perm-tint: rgba(193,  68, 104, 0.05); }
-.perm-col-cat-Repertoire { --perm-tint: rgba(  8, 145, 178, 0.05); }
-.perm-col-cat-Mitglieder { --perm-tint: rgba(101, 163,  13, 0.05); }
+.perm-col-cat-Artikel    { --perm-tint: color-mix(in srgb, var(--kat-1) 5%, transparent); }
+.perm-col-cat-Forum      { --perm-tint: color-mix(in srgb, var(--kat-2) 5%, transparent); }
+.perm-col-cat-Dateien    { --perm-tint: color-mix(in srgb, var(--kat-3) 5%, transparent); }
+.perm-col-cat-Orte       { --perm-tint: color-mix(in srgb, var(--kat-4) 5%, transparent); }
+.perm-col-cat-Termine    { --perm-tint: color-mix(in srgb, var(--brand) 5%, transparent); }
+.perm-col-cat-Repertoire { --perm-tint: color-mix(in srgb, var(--kat-5) 5%, transparent); }
+.perm-col-cat-Mitglieder { --perm-tint: color-mix(in srgb, var(--kat-6) 5%, transparent); }
 
 td.perm-cell-td { background-color: var(--perm-tint, transparent); }
 th.perm-col-head {
@@ -261,19 +261,13 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
 [data-theme="dark"] .perm-cell:hover { background: var(--brand-light); border-color: var(--brand); }
 [data-theme="dark"] .perm-cell.pending::after { border-color: var(--bg-card); }
 [data-theme="dark"] .perm-apply-bar { box-shadow: 0 -2px 12px rgba(0,0,0,0.35); }
-[data-theme="dark"] .perm-cat-Artikel    { color: #a78bfa; border-bottom-color: #a78bfa; }
-[data-theme="dark"] .perm-cat-Forum      { color: #38bdf8; border-bottom-color: #38bdf8; }
-[data-theme="dark"] .perm-cat-Dateien    { color: #34d399; border-bottom-color: #34d399; }
-[data-theme="dark"] .perm-cat-Orte       { color: #fbbf24; border-bottom-color: #fbbf24; }
-[data-theme="dark"] .perm-cat-Repertoire { color: #22d3ee; border-bottom-color: #22d3ee; }
-[data-theme="dark"] .perm-cat-Mitglieder { color: #86efac; border-bottom-color: #86efac; }
-[data-theme="dark"] .perm-col-cat-Artikel    { --perm-tint: rgba(167,139,250,0.08); }
-[data-theme="dark"] .perm-col-cat-Forum      { --perm-tint: rgba( 56,189,248,0.08); }
-[data-theme="dark"] .perm-col-cat-Dateien    { --perm-tint: rgba( 52,211,153,0.08); }
-[data-theme="dark"] .perm-col-cat-Orte       { --perm-tint: rgba(251,191, 36,0.08); }
-[data-theme="dark"] .perm-col-cat-Termine    { --perm-tint: rgba(193, 68,104,0.08); }
-[data-theme="dark"] .perm-col-cat-Repertoire { --perm-tint: rgba( 34,211,238,0.08); }
-[data-theme="dark"] .perm-col-cat-Mitglieder { --perm-tint: rgba(134,239,172,0.08); }
+[data-theme="dark"] .perm-col-cat-Artikel    { --perm-tint: color-mix(in srgb, var(--kat-1) 8%, transparent); }
+[data-theme="dark"] .perm-col-cat-Forum      { --perm-tint: color-mix(in srgb, var(--kat-2) 8%, transparent); }
+[data-theme="dark"] .perm-col-cat-Dateien    { --perm-tint: color-mix(in srgb, var(--kat-3) 8%, transparent); }
+[data-theme="dark"] .perm-col-cat-Orte       { --perm-tint: color-mix(in srgb, var(--kat-4) 8%, transparent); }
+[data-theme="dark"] .perm-col-cat-Termine    { --perm-tint: color-mix(in srgb, var(--brand) 8%, transparent); }
+[data-theme="dark"] .perm-col-cat-Repertoire { --perm-tint: color-mix(in srgb, var(--kat-5) 8%, transparent); }
+[data-theme="dark"] .perm-col-cat-Mitglieder { --perm-tint: color-mix(in srgb, var(--kat-6) 8%, transparent); }
 
 @media (max-width: 768px) {
     .perm-apply-bar { left: 0; }

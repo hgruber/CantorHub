@@ -14,6 +14,18 @@
     --cal-geb-bg:      rgba(21, 128, 61, 0.13);
     --cal-weekend:     #dc2626;
 
+    /* Kategoriale Palette — Stimmen (S/A/T/B/C/M) und Berechtigungskategorien.
+       Stimme A / Kategorie „Termine" sind die Akzentfarbe (var(--brand)), alle
+       weiteren sind domain-feste Kategoriefarben, nicht pro Verein konfigurierbar.
+       Tints entstehen per color-mix() direkt an der Verwendungsstelle, damit
+       Opazitaetsunterschiede (Light/Dark, Base/Hover) ohne weitere Tokens greifen. */
+    --kat-1:           #7c3aed;   /* violett  — Stimme S / Artikel        */
+    --kat-2:           #0369a1;   /* blau    — Stimme T / Forum          */
+    --kat-3:           #059669;   /* gruen   — Stimme B / Dateien        */
+    --kat-4:           #b45309;   /* orange  — Stimme C / Orte          */
+    --kat-5:           #0891b2;   /* cyan    — Stimme M / Repertoire    */
+    --kat-6:           #65a30d;   /* limette — (nur Berechtigungskategorie Mitglieder) */
+
     /* Sidebar */
     --sb-bg:           #ffffff;
     --sb-hover:        rgba(0, 0, 0, 0.04);
@@ -135,6 +147,13 @@
     --cal-geb:         #4ade80;
     --cal-geb-bg:      rgba(74, 222, 128, 0.16);
     --cal-weekend:     #f87171;
+
+    --kat-1:           #a78bfa;
+    --kat-2:           #38bdf8;
+    --kat-3:           #34d399;
+    --kat-4:           #fbbf24;
+    --kat-5:           #22d3ee;
+    --kat-6:           #86efac;
 
     --sb-bg:           #111117;
     --sb-hover:        rgba(255, 255, 255, 0.05);
@@ -2004,7 +2023,7 @@ div.avatar { cursor: pointer; }
     border-radius: 10px;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.18));
+    box-shadow: var(--shadow-md);
 }
 .reaction-pick {
     border: 0;
@@ -2127,37 +2146,39 @@ div.avatar { cursor: pointer; }
     color: var(--t1);
 }
 
-/* Member list row tints — same palette as aufgaben perm-stimme-X */
-.row-stimme-s { --stimme-bg: linear-gradient(rgba(124,  58, 237, 0.07), rgba(124,  58, 237, 0.07)), var(--bg-card); }
+/* Member list row tints — same palette as aufgaben perm-stimme-X.
+   --kat-1..5 bzw. var(--brand) fuer Stimme A; die Dark-Tints brauchen etwas
+   mehr Opazitaet (10 %/20 %) als die Light-Tints (7 %/15 %). */
+.row-stimme-s { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-1) 7%, transparent), color-mix(in srgb, var(--kat-1) 7%, transparent)), var(--bg-card); }
 .row-stimme-a { --stimme-bg: linear-gradient(color-mix(in srgb, var(--brand) 7%, transparent), color-mix(in srgb, var(--brand) 7%, transparent)), var(--bg-card); }
-.row-stimme-t { --stimme-bg: linear-gradient(rgba(  3, 105, 161, 0.07), rgba(  3, 105, 161, 0.07)), var(--bg-card); }
-.row-stimme-b { --stimme-bg: linear-gradient(rgba(  5, 150, 105, 0.07), rgba(  5, 150, 105, 0.07)), var(--bg-card); }
-.row-stimme-c { --stimme-bg: linear-gradient(rgba(180,  83,   9, 0.07), rgba(180,  83,   9, 0.07)), var(--bg-card); }
-.row-stimme-m { --stimme-bg: linear-gradient(rgba(  8, 145, 178, 0.07), rgba(  8, 145, 178, 0.07)), var(--bg-card); }
+.row-stimme-t { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-2) 7%, transparent), color-mix(in srgb, var(--kat-2) 7%, transparent)), var(--bg-card); }
+.row-stimme-b { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-3) 7%, transparent), color-mix(in srgb, var(--kat-3) 7%, transparent)), var(--bg-card); }
+.row-stimme-c { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-4) 7%, transparent), color-mix(in srgb, var(--kat-4) 7%, transparent)), var(--bg-card); }
+.row-stimme-m { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-5) 7%, transparent), color-mix(in srgb, var(--kat-5) 7%, transparent)), var(--bg-card); }
 .row-stimme-s td, .row-stimme-a td, .row-stimme-t td,
 .row-stimme-b td, .row-stimme-c td, .row-stimme-m td { background: var(--stimme-bg); }
 .row-inactive td { background: var(--bg-app); }
 
-[data-theme="dark"] .row-stimme-s { --stimme-bg: linear-gradient(rgba(167, 139, 250, 0.10), rgba(167, 139, 250, 0.10)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-a { --stimme-bg: linear-gradient(rgba(240, 128, 154, 0.10), rgba(240, 128, 154, 0.10)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-t { --stimme-bg: linear-gradient(rgba( 56, 189, 248, 0.10), rgba( 56, 189, 248, 0.10)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-b { --stimme-bg: linear-gradient(rgba( 52, 211, 153, 0.10), rgba( 52, 211, 153, 0.10)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-c { --stimme-bg: linear-gradient(rgba(251, 191,  36, 0.10), rgba(251, 191,  36, 0.10)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-m { --stimme-bg: linear-gradient(rgba( 34, 211, 238, 0.10), rgba( 34, 211, 238, 0.10)), var(--bg-card); }
+[data-theme="dark"] .row-stimme-s { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-1) 10%, transparent), color-mix(in srgb, var(--kat-1) 10%, transparent)), var(--bg-card); }
+[data-theme="dark"] .row-stimme-a { --stimme-bg: linear-gradient(color-mix(in srgb, var(--brand) 10%, transparent), color-mix(in srgb, var(--brand) 10%, transparent)), var(--bg-card); }
+[data-theme="dark"] .row-stimme-t { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-2) 10%, transparent), color-mix(in srgb, var(--kat-2) 10%, transparent)), var(--bg-card); }
+[data-theme="dark"] .row-stimme-b { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-3) 10%, transparent), color-mix(in srgb, var(--kat-3) 10%, transparent)), var(--bg-card); }
+[data-theme="dark"] .row-stimme-c { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-4) 10%, transparent), color-mix(in srgb, var(--kat-4) 10%, transparent)), var(--bg-card); }
+[data-theme="dark"] .row-stimme-m { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-5) 10%, transparent), color-mix(in srgb, var(--kat-5) 10%, transparent)), var(--bg-card); }
 
-tr.row-stimme-s:hover td { background: linear-gradient(rgba(124,  58, 237, 0.15), rgba(124,  58, 237, 0.15)), var(--bg-card); }
+tr.row-stimme-s:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-1) 15%, transparent), color-mix(in srgb, var(--kat-1) 15%, transparent)), var(--bg-card); }
 tr.row-stimme-a:hover td { background: linear-gradient(color-mix(in srgb, var(--brand) 15%, transparent), color-mix(in srgb, var(--brand) 15%, transparent)), var(--bg-card); }
-tr.row-stimme-t:hover td { background: linear-gradient(rgba(  3, 105, 161, 0.15), rgba(  3, 105, 161, 0.15)), var(--bg-card); }
-tr.row-stimme-b:hover td { background: linear-gradient(rgba(  5, 150, 105, 0.15), rgba(  5, 150, 105, 0.15)), var(--bg-card); }
-tr.row-stimme-c:hover td { background: linear-gradient(rgba(180,  83,   9, 0.15), rgba(180,  83,   9, 0.15)), var(--bg-card); }
-tr.row-stimme-m:hover td { background: linear-gradient(rgba(  8, 145, 178, 0.15), rgba(  8, 145, 178, 0.15)), var(--bg-card); }
+tr.row-stimme-t:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-2) 15%, transparent), color-mix(in srgb, var(--kat-2) 15%, transparent)), var(--bg-card); }
+tr.row-stimme-b:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-3) 15%, transparent), color-mix(in srgb, var(--kat-3) 15%, transparent)), var(--bg-card); }
+tr.row-stimme-c:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-4) 15%, transparent), color-mix(in srgb, var(--kat-4) 15%, transparent)), var(--bg-card); }
+tr.row-stimme-m:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-5) 15%, transparent), color-mix(in srgb, var(--kat-5) 15%, transparent)), var(--bg-card); }
 
-[data-theme="dark"] tr.row-stimme-s:hover td { background: linear-gradient(rgba(167, 139, 250, 0.20), rgba(167, 139, 250, 0.20)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-a:hover td { background: linear-gradient(rgba(240, 128, 154, 0.20), rgba(240, 128, 154, 0.20)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-t:hover td { background: linear-gradient(rgba( 56, 189, 248, 0.20), rgba( 56, 189, 248, 0.20)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-b:hover td { background: linear-gradient(rgba( 52, 211, 153, 0.20), rgba( 52, 211, 153, 0.20)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-c:hover td { background: linear-gradient(rgba(251, 191,  36, 0.20), rgba(251, 191,  36, 0.20)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-m:hover td { background: linear-gradient(rgba( 34, 211, 238, 0.20), rgba( 34, 211, 238, 0.20)), var(--bg-card); }
+[data-theme="dark"] tr.row-stimme-s:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-1) 20%, transparent), color-mix(in srgb, var(--kat-1) 20%, transparent)), var(--bg-card); }
+[data-theme="dark"] tr.row-stimme-a:hover td { background: linear-gradient(color-mix(in srgb, var(--brand) 20%, transparent), color-mix(in srgb, var(--brand) 20%, transparent)), var(--bg-card); }
+[data-theme="dark"] tr.row-stimme-t:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-2) 20%, transparent), color-mix(in srgb, var(--kat-2) 20%, transparent)), var(--bg-card); }
+[data-theme="dark"] tr.row-stimme-b:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-3) 20%, transparent), color-mix(in srgb, var(--kat-3) 20%, transparent)), var(--bg-card); }
+[data-theme="dark"] tr.row-stimme-c:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-4) 20%, transparent), color-mix(in srgb, var(--kat-4) 20%, transparent)), var(--bg-card); }
+[data-theme="dark"] tr.row-stimme-m:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-5) 20%, transparent), color-mix(in srgb, var(--kat-5) 20%, transparent)), var(--bg-card); }
 
 tr:hover td.stimme-merged-cell { background: var(--stimme-bg, var(--bg-card)); }
 
@@ -2610,7 +2631,7 @@ table.mitglied-table tr.stimme-group-start td {
     border-radius: 10px;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.18));
+    box-shadow: var(--shadow-md);
 }
 .att-move-pick {
     border: 0;
@@ -5267,7 +5288,7 @@ span.not_found {
     border-radius: var(--r-sm);
     border: 1.5px solid var(--border-dark, #ccc);
     background: transparent;
-    color: var(--brand, #c14468);
+    color: var(--brand);
     font-size: 11.5px;
     font-weight: 500;
     font-family: inherit;
@@ -5275,9 +5296,9 @@ span.not_found {
     transition: background .15s, color .15s;
 }
 .karte-popup-btn:hover {
-    background: var(--brand, #c14468);
+    background: var(--brand);
     color: #fff;
-    border-color: var(--brand, #c14468);
+    border-color: var(--brand);
 }
 .karte-popup-link {
     display: inline-block;
@@ -6817,7 +6838,7 @@ body.join-page {
     border-radius: 10px;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.18));
+    box-shadow: var(--shadow-md);
 }
 
 .chip-ms-pick {

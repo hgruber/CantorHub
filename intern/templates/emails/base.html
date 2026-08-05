@@ -6,11 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>{% block title %}{{ mail_title|default:vereinsname_lang }}{% endblock %}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f1f3f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+<body style="margin:0;padding:0;background-color:{{ mail_farbe_bg }};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
 
   <!-- Outer wrapper -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-         style="background-color:#f1f3f5;padding:32px 16px;">
+         style="background-color:{{ mail_farbe_bg }};padding:32px 16px;">
     <tr>
       <td align="center">
 
@@ -29,7 +29,7 @@
                          style="display:block;border:0;border-radius:4px;">
                   </td>
                   <td style="vertical-align:middle;">
-                    <span style="color:#ffffff;font-size:18px;font-weight:700;
+                    <span style="color:{{ mail_farbe_onbrand }};font-size:18px;font-weight:700;
                                  letter-spacing:.01em;line-height:1.2;">
                       {{ vereinsname_lang }}
                     </span>
@@ -41,7 +41,7 @@
 
           <!-- Body -->
           <tr>
-            <td style="background-color:#ffffff;padding:32px;">
+            <td style="background-color:{{ mail_farbe_card }};padding:32px;">
               {% block body %}{{ body_html|safe }}{% endblock %}
             </td>
           </tr>
@@ -51,7 +51,7 @@
           <!-- Footer -->
           {% if mail_footer %}
           <tr>
-            <td style="background-color:#f1f3f5;padding:20px 32px;">
+            <td style="background-color:{{ mail_farbe_bg }};padding:20px 32px;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="padding-right:12px;vertical-align:middle;">
@@ -59,7 +59,7 @@
                          style="display:block;border:0;border-radius:2px;">
                   </td>
                   <td style="vertical-align:middle;">
-                    <span style="color:#6b7280;font-size:12px;line-height:1.5;">{{ mail_footer }}</span>
+                    <span style="color:{{ mail_farbe_muted }};font-size:12px;line-height:1.5;">{{ mail_footer }}</span>
                   </td>
                 </tr>
               </table>
