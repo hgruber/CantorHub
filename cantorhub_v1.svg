@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 96" width="340" height="96"
+     role="img" aria-label="CantorHub">
+  <title>CantorHub</title>
+  <desc>Offener Stimmenring mit vier Satellitenknoten (SATB) um einen zentralen Notenkopf.</desc>
+
+  <!-- Nur das Bildzeichen verwenden: viewBox auf "0 0 96 96" setzen und die Wortmarke entfernen. -->
+
+  <defs>
+    <linearGradient id="ch1-ring" x1="14" y1="14" x2="82" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d4587b"/>
+      <stop offset="1" stop-color="#a83a5a"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    .ch1-wort { fill: #1f2933; }
+    .ch1-akzent { fill: #c14468; }
+    @media (prefers-color-scheme: dark) {
+      .ch1-wort { fill: #eef1f4; }
+      .ch1-akzent { fill: #e0688a; }
+    }
+  </style>
+
+  <g id="ch1-mark">
+    <!-- Speichen: das Hub-Motiv, vom Zentrum zu den vier Stimmlagen -->
+    <g stroke="#a83a5a" stroke-width="2.6" stroke-linecap="round" opacity="0.42">
+      <path d="M48 48 L42.10 14.52"/>
+      <path d="M48 48 L17.19 33.63"/>
+      <path d="M48 48 L17.19 62.37"/>
+      <path d="M48 48 L42.10 81.48"/>
+    </g>
+
+    <!-- Offener Ring: das C von CantorHub, zugleich der Chorkreis -->
+    <path d="M74.04 26.14 A34 34 0 1 0 74.04 69.86"
+          fill="none" stroke="url(#ch1-ring)" stroke-width="9" stroke-linecap="round"/>
+
+    <!-- Die vier Stimmen auf dem Kreis -->
+    <g fill="#a83a5a">
+      <circle cx="42.10" cy="14.52" r="5.6"/>
+      <circle cx="17.19" cy="33.63" r="5.6"/>
+      <circle cx="17.19" cy="62.37" r="5.6"/>
+      <circle cx="42.10" cy="81.48" r="5.6"/>
+    </g>
+
+    <!-- Nabe = Notenkopf -->
+    <ellipse cx="48" cy="48" rx="13" ry="9.4" fill="#c14468"
+             transform="rotate(-22 48 48)"/>
+  </g>
+
+  <g font-family="Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+     font-size="40" font-weight="600" letter-spacing="-0.8">
+    <text x="114" y="62" class="ch1-wort">Cantor<tspan class="ch1-akzent">Hub</tspan></text>
+  </g>
+</svg>

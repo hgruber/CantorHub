@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 96" width="340" height="96"
+     role="img" aria-label="CantorHub">
+  <title>CantorHub</title>
+  <desc>Stimmgabel, deren Zinken in einem Knotendreieck enden — Stimmung und Knotenpunkt in einem Zeichen.</desc>
+
+  <!-- Nur das Bildzeichen verwenden: viewBox auf "0 0 96 96" setzen und die Wortmarke entfernen. -->
+
+  <defs>
+    <linearGradient id="ch2-kachel" x1="0" y1="0" x2="96" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d4587b"/>
+      <stop offset="1" stop-color="#9c3352"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    .ch2-wort { fill: #1f2933; }
+    .ch2-akzent { fill: #c14468; }
+    @media (prefers-color-scheme: dark) {
+      .ch2-wort { fill: #eef1f4; }
+      .ch2-akzent { fill: #e0688a; }
+    }
+  </style>
+
+  <g id="ch2-mark">
+    <rect x="0" y="0" width="96" height="96" rx="24" fill="url(#ch2-kachel)"/>
+
+    <!-- translate: rueckt die Gabel in die optische Mitte der Kachel -->
+    <g transform="translate(0 4)">
+    <!-- Netzkanten zum oberen Knoten -->
+    <g stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" opacity="0.75">
+      <path d="M36 22 L48 12"/>
+      <path d="M60 22 L48 12"/>
+    </g>
+
+    <!-- Stimmgabel -->
+    <path d="M36 24 L36 50 A12 12 0 0 0 60 50 L60 24"
+          fill="none" stroke="#ffffff" stroke-width="7.5" stroke-linecap="round"/>
+    <path d="M48 62 L48 76"
+          fill="none" stroke="#ffffff" stroke-width="7.5" stroke-linecap="round"/>
+
+    <!-- Knoten: die beiden Zinken und der Hub darüber -->
+    <g fill="#ffffff">
+      <circle cx="36" cy="22" r="6"/>
+      <circle cx="60" cy="22" r="6"/>
+      <circle cx="48" cy="12" r="5"/>
+    </g>
+    </g>
+  </g>
+
+  <g font-family="Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+     font-size="40" font-weight="600" letter-spacing="-0.8">
+    <text x="114" y="62" class="ch2-wort">Cantor<tspan class="ch2-akzent">Hub</tspan></text>
+  </g>
+</svg>
