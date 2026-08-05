@@ -17,10 +17,10 @@
     /* Sidebar */
     --sb-bg:           #ffffff;
     --sb-hover:        rgba(0, 0, 0, 0.04);
-    --sb-active-bg:    rgba(193, 68, 104, 0.10);
+    --sb-active-bg:    var(--brand-light);
     --sb-text:         #6b7280;
     --sb-text-hover:   #374151;
-    --sb-text-active:  #c14468;
+    --sb-text-active:  var(--brand);
     --sb-divider:      #e5e7eb;
     --sb-width:        232px;
 
@@ -65,8 +65,8 @@
     --forum-bg:         #f8f9fb;
     --msg-bg:           #ffffff;
     --msg-border:       #e5e7eb;
-    --msg-me-bg:        #fce8ee;
-    --msg-me-border:    #f5c6d3;
+    --msg-me-bg:        color-mix(in srgb, var(--brand) 10%, white);
+    --msg-me-border:    color-mix(in srgb, var(--brand) 25%, white);
     --mention-bg:       #ecfdf5;
     --mention-border:   #6ee7b7;
     --mention-color:    #065f46;
@@ -138,7 +138,7 @@
 
     --sb-bg:           #111117;
     --sb-hover:        rgba(255, 255, 255, 0.05);
-    --sb-active-bg:    rgba(193, 68, 104, 0.14);
+    --sb-active-bg:    color-mix(in srgb, var(--brand) 14%, transparent);
     --sb-text:         #a0a3b8;
     --sb-text-hover:   #c9ccde;
     --sb-text-active:  #ffffff;
@@ -168,8 +168,8 @@
     --forum-bg:        #16161e;
     --msg-bg:          #1e1e2e;
     --msg-border:      rgba(255, 255, 255, 0.07);
-    --msg-me-bg:       rgba(193, 68, 104, 0.22);
-    --msg-me-border:   rgba(193, 68, 104, 0.35);
+    --msg-me-bg:       color-mix(in srgb, var(--brand) 22%, transparent);
+    --msg-me-border:   color-mix(in srgb, var(--brand) 35%, transparent);
     --mention-bg:      rgba(6, 95, 70, 0.15);
     --mention-border:  rgba(110, 231, 183, 0.30);
     --mention-color:   #6ee7b7;
@@ -230,7 +230,7 @@
 [data-theme="dark"] .message_me .content_me { background: var(--msg-me-bg); border-color: var(--msg-me-border); }
 [data-theme="dark"] .mention { background: var(--mention-bg); border-color: var(--mention-border); color: var(--mention-color); }
 [data-theme="dark"] .wiki pre { background: var(--pre-bg); }
-[data-theme="dark"] #app-main.drag-active .upload-overlay { background: rgba(193,68,104,0.18); }
+[data-theme="dark"] #app-main.drag-active .upload-overlay { background: color-mix(in srgb, var(--brand) 18%, transparent); }
 [data-theme="dark"] span.not_found { background: rgba(254,249,195,0.10); }
 [data-theme="dark"] .offcanvas { box-shadow: -2px 0 16px rgba(0,0,0,0.30); }
 
@@ -397,8 +397,8 @@ body {
     animation: nav-offen-pulse 1.6s ease-in-out infinite;
 }
 @keyframes nav-offen-pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(193,68,104,.5); }
-    50%       { opacity: .7; box-shadow: 0 0 0 4px rgba(193,68,104,0); }
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 50%, transparent); }
+    50%       { opacity: .7; box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 0%, transparent); }
 }
 
 .nav-icon {
@@ -452,7 +452,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(193,68,104,0.10);
+    background: color-mix(in srgb, var(--brand) 10%, transparent);
     border: 2px dashed var(--brand);
     border-radius: var(--r);
 }
@@ -813,7 +813,7 @@ button:hover,
 a.btn:hover {
     background: var(--brand-dark);
     text-decoration: none;
-    box-shadow: 0 2px 10px rgba(193, 68, 104, 0.28);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--brand) 28%, transparent);
 }
 
 .btn-secondary,
@@ -1847,7 +1847,7 @@ time {
 
 .forum-entry button[type="submit"]:hover {
     background: var(--brand-dark);
-    box-shadow: 0 2px 8px rgba(193,68,104,0.28);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--brand) 28%, transparent);
 }
 
 .forum-entry button[type="submit"]::before {
@@ -2129,7 +2129,7 @@ div.avatar { cursor: pointer; }
 
 /* Member list row tints — same palette as aufgaben perm-stimme-X */
 .row-stimme-s { --stimme-bg: linear-gradient(rgba(124,  58, 237, 0.07), rgba(124,  58, 237, 0.07)), var(--bg-card); }
-.row-stimme-a { --stimme-bg: linear-gradient(rgba(193,  68, 104, 0.07), rgba(193,  68, 104, 0.07)), var(--bg-card); }
+.row-stimme-a { --stimme-bg: linear-gradient(color-mix(in srgb, var(--brand) 7%, transparent), color-mix(in srgb, var(--brand) 7%, transparent)), var(--bg-card); }
 .row-stimme-t { --stimme-bg: linear-gradient(rgba(  3, 105, 161, 0.07), rgba(  3, 105, 161, 0.07)), var(--bg-card); }
 .row-stimme-b { --stimme-bg: linear-gradient(rgba(  5, 150, 105, 0.07), rgba(  5, 150, 105, 0.07)), var(--bg-card); }
 .row-stimme-c { --stimme-bg: linear-gradient(rgba(180,  83,   9, 0.07), rgba(180,  83,   9, 0.07)), var(--bg-card); }
@@ -2146,7 +2146,7 @@ div.avatar { cursor: pointer; }
 [data-theme="dark"] .row-stimme-m { --stimme-bg: linear-gradient(rgba( 34, 211, 238, 0.10), rgba( 34, 211, 238, 0.10)), var(--bg-card); }
 
 tr.row-stimme-s:hover td { background: linear-gradient(rgba(124,  58, 237, 0.15), rgba(124,  58, 237, 0.15)), var(--bg-card); }
-tr.row-stimme-a:hover td { background: linear-gradient(rgba(193,  68, 104, 0.15), rgba(193,  68, 104, 0.15)), var(--bg-card); }
+tr.row-stimme-a:hover td { background: linear-gradient(color-mix(in srgb, var(--brand) 15%, transparent), color-mix(in srgb, var(--brand) 15%, transparent)), var(--bg-card); }
 tr.row-stimme-t:hover td { background: linear-gradient(rgba(  3, 105, 161, 0.15), rgba(  3, 105, 161, 0.15)), var(--bg-card); }
 tr.row-stimme-b:hover td { background: linear-gradient(rgba(  5, 150, 105, 0.15), rgba(  5, 150, 105, 0.15)), var(--bg-card); }
 tr.row-stimme-c:hover td { background: linear-gradient(rgba(180,  83,   9, 0.15), rgba(180,  83,   9, 0.15)), var(--bg-card); }
@@ -2554,7 +2554,7 @@ table.mitglied-table tr.stimme-group-start td {
 }
 @keyframes att-na-flash {
     0%, 100% { border-color: transparent; box-shadow: none; }
-    50%       { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(193,68,104,.18); }
+    50%       { border-color: var(--brand); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 18%, transparent); }
 }
 .att-names {
     font-size: 12px;
@@ -3035,11 +3035,11 @@ table.mitglied-table tr.stimme-group-start td {
     .attendance-split { display: block; }
 }
 
-[data-theme="dark"] .detail-icon { background: rgba(193,68,104,0.15); }
+[data-theme="dark"] .detail-icon { background: color-mix(in srgb, var(--brand) 15%, transparent); }
 [data-theme="dark"] .detail-card-danger { border-color: #7f1d1d; }
 [data-theme="dark"] .detail-card-danger h3 { color: #fca5a5; border-bottom-color: #7f1d1d; }
-[data-theme="dark"] .badge-primary { background: rgba(193,68,104,0.2); }
-[data-theme="dark"] .tag-active { background: rgba(193,68,104,0.15); }
+[data-theme="dark"] .badge-primary { background: color-mix(in srgb, var(--brand) 20%, transparent); }
+[data-theme="dark"] .tag-active { background: color-mix(in srgb, var(--brand) 15%, transparent); }
 [data-theme="dark"] .detail-card-row { border-bottom-color: rgba(255,255,255,0.05); }
 [data-theme="dark"] .media-row { border-bottom-color: rgba(255,255,255,0.05); }
 [data-theme="dark"] .invite-row { border-bottom-color: rgba(255,255,255,0.05); }
@@ -3414,7 +3414,7 @@ span.not_found {
     background: var(--brand-light);
     color: var(--brand-dark);
     font-weight: 600;
-    border-color: rgba(193, 68, 104, 0.18);
+    border-color: color-mix(in srgb, var(--brand) 18%, transparent);
     white-space: nowrap;
 }
 
@@ -3438,9 +3438,9 @@ span.not_found {
 }
 
 [data-theme="dark"] .wiki-table tbody th {
-    background: rgba(193, 68, 104, 0.14);
+    background: color-mix(in srgb, var(--brand) 14%, transparent);
     color: #e89ab5;
-    border-color: rgba(193, 68, 104, 0.20);
+    border-color: color-mix(in srgb, var(--brand) 20%, transparent);
 }
 
 [data-theme="dark"] .wiki-table tbody tr:nth-child(even) td {
@@ -3493,7 +3493,7 @@ span.not_found {
 .wiki-page .wiki h3 {
     font-size: 1.05em;
     color: var(--t1);
-    border-left: 3px solid rgba(193, 68, 104, 0.35);
+    border-left: 3px solid color-mix(in srgb, var(--brand) 35%, transparent);
     padding-left: 10px;
     margin: 1.6em 0 0.5em;
 }
@@ -3518,7 +3518,7 @@ span.not_found {
 .wiki-page .wiki a {
     color: var(--brand);
     text-decoration: none;
-    border-bottom: 1px solid rgba(193, 68, 104, 0.28);
+    border-bottom: 1px solid color-mix(in srgb, var(--brand) 28%, transparent);
     transition: border-color var(--ease), color var(--ease);
 }
 .wiki-page .wiki a:hover {
@@ -3578,8 +3578,8 @@ span.not_found {
 }
 
 .wiki-page .wiki .boxed {
-    background: linear-gradient(135deg, rgba(193,68,104,0.06), rgba(193,68,104,0.02));
-    border: 1px solid rgba(193, 68, 104, 0.22);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 6%, transparent), color-mix(in srgb, var(--brand) 2%, transparent));
+    border: 1px solid color-mix(in srgb, var(--brand) 22%, transparent);
     border-radius: var(--r);
     padding: 14px 18px;
     margin: 1.4em 0;
@@ -3632,8 +3632,8 @@ span.not_found {
 
 /* ── Mentions ─────────────────────────────────────── */
 .wiki-page .wiki .mention {
-    background: rgba(193, 68, 104, 0.10);
-    border-color: rgba(193, 68, 104, 0.25);
+    background: color-mix(in srgb, var(--brand) 10%, transparent);
+    border-color: color-mix(in srgb, var(--brand) 25%, transparent);
     color: var(--brand-dark);
     border-radius: 99px;
 }
@@ -3666,16 +3666,16 @@ span.not_found {
 
 /* ── Dark mode ────────────────────────────────────── */
 [data-theme="dark"] .wiki-page .wiki .citation {
-    background: rgba(193, 68, 104, 0.12);
+    background: color-mix(in srgb, var(--brand) 12%, transparent);
 }
 [data-theme="dark"] .wiki-page .wiki .boxed {
-    background: rgba(193, 68, 104, 0.07);
-    border-color: rgba(193, 68, 104, 0.18);
+    background: color-mix(in srgb, var(--brand) 7%, transparent);
+    border-color: color-mix(in srgb, var(--brand) 18%, transparent);
 }
 [data-theme="dark"] .wiki-page .wiki .mention {
-    background: rgba(193, 68, 104, 0.15);
+    background: color-mix(in srgb, var(--brand) 15%, transparent);
     color: #e89ab5;
-    border-color: rgba(193, 68, 104, 0.25);
+    border-color: color-mix(in srgb, var(--brand) 25%, transparent);
 }
 
 /* =================================================== */
@@ -3825,7 +3825,7 @@ span.not_found {
     color: var(--brand);
 }
 .audio-btn--jg:hover {
-    background: rgba(193, 68, 104, 0.20);
+    background: color-mix(in srgb, var(--brand) 20%, transparent);
     border-color: var(--brand-dark);
     color: var(--brand-dark);
 }
@@ -3836,17 +3836,17 @@ span.not_found {
     box-shadow: 0 0 0 3px var(--brand-ring);
 }
 [data-theme="dark"] .audio-btn--jg {
-    background: rgba(193, 68, 104, 0.15);
-    border-color: rgba(193, 68, 104, 0.40);
+    background: color-mix(in srgb, var(--brand) 15%, transparent);
+    border-color: color-mix(in srgb, var(--brand) 40%, transparent);
     color: #d97a96;
 }
 [data-theme="dark"] .audio-btn--jg:hover {
-    background: rgba(193, 68, 104, 0.28);
-    border-color: rgba(193, 68, 104, 0.60);
+    background: color-mix(in srgb, var(--brand) 28%, transparent);
+    border-color: color-mix(in srgb, var(--brand) 60%, transparent);
     color: #eba8be;
 }
 [data-theme="dark"] .audio-btn--jg.playing {
-    background: rgba(193, 68, 104, 0.55);
+    background: color-mix(in srgb, var(--brand) 55%, transparent);
     border-color: var(--brand);
     color: #fff;
 }
@@ -3973,7 +3973,7 @@ span.not_found {
 /* Dark-mode tweaks */
 [data-theme="dark"] .eig-dot--on  { background: #34d399; }
 [data-theme="dark"] .eig-beats    { border-color: rgba(255,255,255,0.18); color: var(--t1); }
-[data-theme="dark"] .eig-chip:hover { background: rgba(193,68,104,0.18); }
+[data-theme="dark"] .eig-chip:hover { background: color-mix(in srgb, var(--brand) 18%, transparent); }
 
 /* Aktiv/Inaktiv status dot — used in member tables */
 .status-dot {
@@ -5104,7 +5104,7 @@ span.not_found {
     transition: background var(--ease), color var(--ease), border-color var(--ease);
 }
 .karte-coord-hint-active {
-    background: rgba(193,68,104,.08);
+    background: color-mix(in srgb, var(--brand) 8%, transparent);
     color: var(--brand);
     border-color: var(--brand);
     font-weight: 500;
@@ -5310,7 +5310,7 @@ span.not_found {
     box-shadow: 0 2px 8px rgba(0,0,0,.5);
 }
 [data-theme="dark"] .karte-coord-hint-active {
-    background: rgba(193,68,104,.15);
+    background: color-mix(in srgb, var(--brand) 15%, transparent);
 }
 
 /* Abstimmung (poll widget in articles) */
@@ -5547,7 +5547,7 @@ span.not_found {
 }
 [data-theme="dark"] .dl-icon-word  { background: rgba(37,99,235,0.15);  color: #60a5fa; }
 [data-theme="dark"] .dl-icon-pdf   { background: rgba(220,38,38,0.15);  color: #f87171; }
-[data-theme="dark"] .dl-icon-audio { background: rgba(193,68,104,0.15); color: var(--brand); }
+[data-theme="dark"] .dl-icon-audio { background: color-mix(in srgb, var(--brand) 15%, transparent); color: var(--brand); }
 
 .dl-context-menu {
     position: fixed !important;
@@ -5777,7 +5777,7 @@ span.not_found {
     justify-content: center;
     border-radius: 50%;
     color: var(--primary);
-    background: rgba(193, 68, 104, 0.08);
+    background: color-mix(in srgb, var(--brand) 8%, transparent);
 }
 .notify-icon svg {
     width: 16px;
@@ -6291,7 +6291,7 @@ body.join-page {
 .cal-day.is-today .cal-daynum {
     background: var(--brand);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(193, 68, 104, 0.35);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--brand) 35%, transparent);
 }
 
 /* Chips (Termine / Geburtstage) */

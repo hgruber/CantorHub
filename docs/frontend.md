@@ -196,6 +196,12 @@ All colours use CSS custom properties defined in `:root` (light mode). Dark mode
 `[data-theme="dark"]` block that overrides all colour tokens. When adding new colours, always
 use CSS variables and add dark-mode values; avoid hardcoded hex values in component styles.
 
+The accent colour is the one exception worth calling out explicitly: never hardcode `#c14468`
+or `rgba(193, 68, 104, …)` in component styles — always reference `var(--brand)`, one of its
+derived tokens (`--brand-dark`, `--brand-light`, `--brand-ring`), or a fresh
+`color-mix(in srgb, var(--brand) X%, transparent|white|black)` expression, so a `BRAND_FARBE`
+override (see `_brand_boot.html`) reaches every surface that uses it.
+
 **Status ("Ampel") colours** — the green/yellow/red used by the attendance badges
 (`.att-count-*`, `.att-inline-*`) and the Zusage widgets (`.zusage-state-*`, `.zusage-btn-*`)
 come from one token family:
