@@ -156,7 +156,9 @@ is in `docs/configuration.md`; these are the ones that decide whether things wor
   personal phone address books and their cloud backups: **inform the members first** — the privacy
   policy covers this in its „Sichtbarkeit Deiner Daten im Portal" section. Members then use
   `https://<host>/` with their normal portal login;
-  one base URL finds the address book and both calendars.
+  one base URL finds the address book and both calendars. Anyone who would rather not be in the
+  address book at all can switch that off in their own profile — no board action needed, so say so
+  when you announce the service.
 - **iCal feed** — `/intern/calendar/<ICAL_SECRET>.ics`, needs no login and works with Google
   Calendar, which cannot subscribe to CalDAV.
 - **Gig-reminder mailing list** — public sign-up at `/auftritte/` with double opt-in; reminders go

@@ -993,6 +993,7 @@ _CHANGELOG_FIELD_LABELS = {
     "berechtigung": "Berechtigung",
     "berechtigungen": "Zugriff",
     "private_fields": "Privatsphäre",
+    "adressbuch_verborgen": "Adressbuch",
 }
 
 

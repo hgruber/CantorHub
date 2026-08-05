@@ -109,6 +109,22 @@ class User(AbstractUser):
     # --- Meta / Status ---
     text = models.TextField(null=True, blank=True)
     private_fields = models.JSONField(default=list, blank=True)
+    # Der stärkere Bruder von private_fields: nicht einzelne Felder, sondern der
+    # ganze Datensatz bleibt aus dem CardDAV-Adressbuch draussen. Partizip statt
+    # Verb, weil es einen Zustand der Person beschreibt; und positiv formuliert,
+    # damit zwischen Checkbox und Feld nirgends invertiert werden muss.
+    adressbuch_verborgen = models.BooleanField(
+        default=False,
+        verbose_name="Nicht im Adressbuch",
+        help_text=(
+            "Andere Mitglieder können das Mitgliederverzeichnis mit dem Adressbuch "
+            "ihres Telefons abgleichen. Mit diesem Haken wird Dein Eintrag dabei "
+            "vollständig ausgelassen — auch Name und Stimme —, und bereits "
+            "abgeglichene Geräte entfernen ihn beim nächsten Abgleich. Im Portal "
+            "bleibt Dein Profil unverändert sichtbar; einzelne Felder verbirgst Du "
+            "dort mit „verbergen“."
+        ),
+    )
     notify_enabled = models.BooleanField(default=True, verbose_name="Benachrichtigungen")
 
     REQUIRED_FIELDS = []

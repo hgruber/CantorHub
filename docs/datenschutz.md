@@ -69,7 +69,10 @@ this file tracks only what is still open.
   it. That is the strongest argument yet for flipping the default. Two things soften it but do
   not remove it: the export honours `private_fields` **without the admin bonus**
   (`carddav.daten.carddav_sichtbar`, deliberately unlike `User.field_visible_to`), and it is
-  off until `CARDDAV_AKTIV` is switched on.
+  off until `CARDDAV_AKTIV` is switched on. A third now weakens the CardDAV half of the argument
+  further: `User.adressbuch_verborgen` is a full self-service opt-out from the address book, so
+  the objection no longer needs the board. It does not settle the point — opt-out remains
+  opt-out, and the portal itself is untouched by it.
 
 - **„Synchronisation mit Adressbuch und Kalender": residual copies on member devices** —
   Art. 17 is satisfiable server-side (deleting a member removes their card, and the next sync
@@ -77,7 +80,18 @@ this file tracks only what is still open.
   account is out of reach. The policy informs about this (in that subsection and in „Weitergabe
   an Dritte"); whether informing is enough should be re-read at the next policy revision.
   Reinforcing it in the leave/deactivation confirmation would be the same action item already
-  recorded for „Speicherdauer" below.
+  recorded for „Speicherdauer" below. `adressbuch_verborgen` takes the same server-side route —
+  the card disappears from the collection, the CTag moves, the device deletes it — and runs into
+  the same limit at a card already copied into a Google/iCloud account.
+
+- **„Synchronisation mit Adressbuch und Kalender": the address-book opt-out does not cover the
+  birthday calendar** — `adressbuch_verborgen` filters `carddav.daten.mitglieder_qs()` only.
+  Someone who withdraws from the address book but leaves `geburtstag` visible still appears in
+  the CalDAV birthday collection with name and full date of birth. That is a deliberate split
+  (one switch per collection, each with its own established rule) and the policy says so in as
+  many words in „Synchronisation mit Adressbuch und Kalender" — but it is the kind of split a
+  member can misread, so re-read it at the next policy revision and consider whether one
+  device-level opt-out would serve people better.
 
 - **„Synchronisation mit Adressbuch und Kalender": the portal password ends up on private
   devices** — CardDAV and CalDAV authenticate with HTTP Basic against the *normal* portal

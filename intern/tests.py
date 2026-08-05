@@ -499,6 +499,85 @@ class CarddavSichtbarTest(SimpleTestCase):
                 )
 
 
+class AdressbuchOptOutTest(SimpleTestCase):
+    """Der Widerspruch gegen den ganzen Datensatz, nicht gegen einzelne Felder.
+
+    Der Filter selbst sitzt in ``mitglieder_qs`` und braucht Zeilen — ohne
+    Testdatenbank nicht pruefbar (siehe dortigen Docstring). Geprueft wird hier
+    alles, was ihn umgibt und still falsch werden koennte.
+    """
+
+    def _feld(self):
+        from intern.models import User
+
+        return User._meta.get_field("adressbuch_verborgen")
+
+    def test_standard_laesst_alle_im_adressbuch(self):
+        # Ein True als Default leerte auf einen Schlag jedes Adressbuch.
+        self.assertIs(self._feld().default, False)
+
+    def test_help_text_ist_gesetzt(self):
+        # Der Erklaerungstext lebt am Model, nie im Template ({% hilfe %}).
+        self.assertTrue(str(self._feld().help_text).strip())
+
+    def test_hilfe_tag_findet_das_feld(self):
+        # mitglied_edit.html nutzt die String-Form; ein Tippfehler faellt sonst
+        # erst beim Rendern der Seite auf.
+        from django.template import Context, Template
+        from django.utils.html import escape
+
+        html = Template(
+            '{% load ui_tags %}{% hilfe "User.adressbuch_verborgen" %}'
+        ).render(Context({}))
+        self.assertIn('data-hilfe="' + escape(str(self._feld().help_text)) + '"', html)
+
+    def test_ist_kein_feld_fuer_feld_schalter(self):
+        from intern.models import PRIVACY_FIELDS
+
+        # Stuende es dort, baute UserEditForm ein sinnloses priv_-Haekchen dazu.
+        self.assertNotIn("adressbuch_verborgen", PRIVACY_FIELDS)
+
+    def test_nicht_in_meta_fields(self):
+        """Sonst loescht ein fremdes Formular den Widerspruch stillschweigend.
+
+        Eine nicht gerenderte Checkbox fehlt im POST, ``BooleanField`` liefert
+        dann ``False``, und ``construct_instance`` schreibt es weg.
+        """
+        from intern.forms import UserEditForm
+
+        self.assertNotIn("adressbuch_verborgen", UserEditForm.Meta.fields)
+
+    def test_steht_im_aenderungsprotokoll(self):
+        from intern.signals import _AUDIT_FIELDS
+        from intern.tables import _CHANGELOG_FIELD_LABELS
+        from intern.views.aenderungen import FIELD_LABELS
+
+        self.assertIn("adressbuch_verborgen", _AUDIT_FIELDS["User"])
+        for karte in (FIELD_LABELS, _CHANGELOG_FIELD_LABELS):
+            with self.subTest(karte=karte):
+                self.assertIn("adressbuch_verborgen", karte)
+
+    def test_haekchen_nur_im_eigenen_profil_bei_aktivem_dienst(self):
+        from intern.forms import UserEditForm
+        from intern.models import User
+
+        instanz = User(adressbuch_verborgen=True)
+        for privacy, adressbuch, erwartet in [
+            (False, False, False),   # fremdes Profil
+            (True, False, False),    # eigenes Profil, CardDAV aus
+            (True, True, True),      # eigenes Profil, CardDAV an
+        ]:
+            with self.subTest(privacy=privacy, adressbuch=adressbuch):
+                form = UserEditForm(
+                    instance=instanz,
+                    with_privacy=privacy,
+                    mit_adressbuch=adressbuch,
+                )
+                self.assertIs("adressbuch_verborgen" in form.fields, erwartet)
+                if erwartet:
+                    self.assertTrue(form.fields["adressbuch_verborgen"].initial)
+
+
 class EtagTest(SimpleTestCase):
     def _etag(self, mitglied=None, sichtbar=None, **kwargs):
         from intern.carddav import vcard

@@ -556,9 +556,24 @@ class UserEditForm(forms.ModelForm):
             "text": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
         }
 
-    def __init__(self, *args, with_privacy=False, **kwargs):
+    def __init__(self, *args, with_privacy=False, mit_adressbuch=False, **kwargs):
         super().__init__(*args, **kwargs)
         self._with_privacy = with_privacy
+        if mit_adressbuch:
+            # Bewusst nicht in Meta.fields: eine nicht gerenderte Checkbox fehlt im
+            # POST und liefert dann False. Ein Verwaltender, der ein fremdes Profil
+            # speichert — oder irgendwer, solange CARDDAV_AKTIV aus ist —, wuerde so
+            # den Widerspruch des Mitglieds still loeschen. Deshalb dynamisch, wie
+            # die priv_*-Felder, und in save() nur schreiben, wenn es das Feld gibt.
+            #
+            # Kein help_text am Formularfeld: Django haengte sonst ein
+            # aria-describedby an die Checkbox, das ins Leere zeigt. Der Text steht
+            # im Tooltip, den {% hilfe %} direkt vom Model liest.
+            self.fields["adressbuch_verborgen"] = forms.BooleanField(
+                required=False,
+                initial=bool(getattr(self.instance, "adressbuch_verborgen", False)),
+                label="Meinen Eintrag gar nicht übertragen",
+            )
         if not with_privacy:
             return
         current = set((self.instance.private_fields or []) if self.instance else [])
@@ -577,6 +592,10 @@ class UserEditForm(forms.ModelForm):
             if set(hidden) & ADDRESS_TRIGGER_FIELDS:
                 instance.breite = None
                 instance.laenge = None
+        if "adressbuch_verborgen" in self.fields:
+            instance.adressbuch_verborgen = bool(
+                self.cleaned_data.get("adressbuch_verborgen")
+            )
         if commit:
             instance.save()
             self.save_m2m()

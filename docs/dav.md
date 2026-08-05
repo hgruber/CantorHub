@@ -67,7 +67,10 @@ have to stay:
   `xml.etree.ElementTree`, with DTDs rejected outright to close Billion Laughs.
 - **`_SERIALISIERUNG` must be bumped on every change to the serialisation** (`vcard.py`,
   `ical.py`) — otherwise every already-synced client keeps its old entries forever, since no
-  field value changed.
+  field value changed. A changed *composition* of a collection is the CTag's job and needs no
+  bump: it hashes the `(pk, etag)` pairs, so entries coming and going move it by themselves. A
+  bump there would invalidate every ETag on every device and force a full re-download of all
+  cards including photos, for nothing.
 
 ## CardDAV address book (`intern/carddav/`)
 
@@ -82,7 +85,7 @@ Serves the member directory, photos included.
 | `/carddav/adressbuch/<pk>/mitglieder/` | the address book: `getctag`, the ETag list, both REPORTs |
 | `/carddav/adressbuch/<pk>/mitglieder/<mid>.vcf` | one card |
 
-**Two rules shape the whole design, and both differ from the portal:**
+**Three rules shape the whole design, and all of them differ from the portal:**
 
 - **No admin bonus.** `carddav.daten.carddav_sichtbar()` consults `private_fields` and nothing
   else — unlike `User.field_visible_to()`, holders of `intern.change_user` do *not* get hidden
@@ -95,6 +98,15 @@ Serves the member directory, photos included.
   Android keep their own "my card" and would treat a second copy as a duplicate. This is the
   one viewer-dependent thing about the collection, and therefore the CTag varies per member
   while the individual ETags do not.
+- **A member can withhold their entire card.** `User.adressbuch_verborgen` is a self-service
+  opt-out on the profile page — the stronger sibling of `private_fields`, which only hides single
+  fields. It is filtered in `mitglieder_qs()`, and that one filter is enough because the
+  collection, the `.vcf` URL and `getctag` all read that queryset: removing a pk changes the CTag,
+  so an already-synced phone drops the card on its next PROPFIND, and the direct URL 404s. The
+  checkbox only appears while `CARDDAV_AKTIV` is on, but a stored `True` survives switching the
+  service off — the field is built dynamically in `UserEditForm` and is deliberately **not** in
+  `Meta.fields`, or an admin saving someone else's profile would silently clear it. The birthday
+  calendar is **not** covered; it still follows `private_fields["geburtstag"]` alone.
 
 `is_active=True` applies to everyone, deliberately unlike `mitglied_list`, which shows admins
 inactive members too — otherwise a board member's phone fills up with ex-members and

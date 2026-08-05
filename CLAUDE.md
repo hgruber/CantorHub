@@ -82,7 +82,7 @@ indexing, MUC room assignment), `app_settings.py` (runtime config), `folder_acce
 
 | Model | Purpose |
 |---|---|
-| `User` | Extended `AbstractUser` — voice type, address, XMPP JID, coordinates, `private_fields`, nullable `date_joined` (see `docs/members.md`) |
+| `User` | Extended `AbstractUser` — voice type, address, XMPP JID, coordinates, `private_fields`, `adressbuch_verborgen`, nullable `date_joined` (see `docs/members.md`) |
 | `Artikel` | Versioned wiki articles, immutable per `(name, version)` |
 | `ArtikelPermission` | Per-article read/edit restriction by group |
 | `Forum` / `ForumPermission` | Discussion threads, optionally bridged to an XMPP MUC room; read restriction by group |
@@ -139,7 +139,10 @@ reasoning where it matters.
   serialisation, or synced clients keep their stale entries forever.
 - **Hidden member fields have no admin bonus outside the portal.** `User.field_visible_to()` lets
   holders of `intern.change_user` see hidden fields *in the portal*; the CardDAV cards, the CalDAV
-  birthdays and the calendar birthday chips consult `private_fields` alone.
+  birthdays and the calendar birthday chips consult `private_fields` alone. **Every CardDAV member
+  selection goes through `carddav.daten.mitglieder_qs()`** — which is why the whole-record opt-out
+  (`adressbuch_verborgen`) needs a single filter and reaches collection, single card and CTag at
+  once.
 - **CSS uses tokens only.** Every new colour is a custom property with a `[data-theme="dark"]`
   value; no hardcoded hex in component styles.
 - **Reuse the shared UI components** rather than hand-rolling: `{% form_field %}` for form rows,

@@ -137,6 +137,7 @@ def mitglied_view(request, id):
         "history": "mitglied_aenderungen" if can_view_history else None,
         "id": id,
         "visible": visible,
+        "carddav_aktiv": get_config_bool("CARDDAV_AKTIV", False),
         "map_center_lat": str(map_center[0]),
         "map_center_lng": str(map_center[1]),
         "member_groups": list(user.groups.order_by("name")),
@@ -152,6 +153,10 @@ def mitglied_edit(request, id):
     ):
         return redirect("mitglied_view", id=id)
     user = get_object_or_404(User.objects.prefetch_related("groups"), id=id)
+    ist_selbst = request.user.id == id
+    # Solange der Dienst aus ist, gaebe es nichts zu widersprechen — dann wird das
+    # Feld gar nicht erst gebaut, und ein gespeichertes True ueberlebt unangetastet.
+    carddav_aktiv = get_config_bool("CARDDAV_AKTIV", False)
 
     if request.method == "POST":
         if request.POST.get("action") == "deactivate" and request.user.has_perm("intern.change_user"):
@@ -166,7 +171,8 @@ def mitglied_edit(request, id):
 
         form = UserEditForm(
             request.POST, request.FILES, instance=user,
-            with_privacy=(request.user.id == id),
+            with_privacy=ist_selbst,
+            mit_adressbuch=ist_selbst and carddav_aktiv,
         )
         if form.is_valid():
             # Move dropzone-uploaded avatar to Avatare folder and rename.
@@ -193,7 +199,11 @@ def mitglied_edit(request, id):
             form.save_m2m()
             return redirect("mitglied_view", id=id)
     else:
-        form = UserEditForm(instance=user, with_privacy=(request.user.id == id))
+        form = UserEditForm(
+            instance=user,
+            with_privacy=ist_selbst,
+            mit_adressbuch=ist_selbst and carddav_aktiv,
+        )
 
     context = {
         "form": form,
@@ -205,7 +215,8 @@ def mitglied_edit(request, id):
         "upload_rename_to": id,
         "id": id,
         "can_manage": request.user.has_perm("intern.change_user"),
-        "can_set_privacy": request.user.id == id,
+        "can_set_privacy": ist_selbst,
+        "carddav_aktiv": carddav_aktiv,
         "privacy_fields": PRIVACY_FIELDS,
         "member_groups": list(user.groups.order_by("name")),
     }
@@ -269,6 +280,9 @@ def mitglied_delete(request, id):
         member.legacy_id         = None
         member.text              = None
         member.private_fields    = []
+        # adressbuch_verborgen wird bewusst NICHT zurueckgesetzt: das waere ein
+        # stiller Widerruf des zuletzt geaeusserten Willens. is_active = False
+        # nimmt die Person ohnehin aus dem Adressbuch.
         member.stimme            = "N"
         member.is_active         = False
         member.is_staff          = False

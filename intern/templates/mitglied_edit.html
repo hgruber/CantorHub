@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load form_tags %}
+{% load form_tags ui_tags %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{% endblock %}
 {% block content %}
 <div class="detail-page">
@@ -60,6 +60,16 @@
                     {% form_field form.ort "Ort" privacy=form.priv_ort %}
                 </div>
             </div>
+
+            {% if can_set_privacy and carddav_aktiv %}
+            <div class="detail-card">
+                <h3>Adressbuch auf dem Telefon</h3>
+                {# Das Icon steht bewusst ausserhalb des <label> – darin wuerde ein Klick die Checkbox umschalten. #}
+                <div class="form-group checkbox-group">
+                    <label>{{ form.adressbuch_verborgen }} Meinen Eintrag gar nicht übertragen</label>{% hilfe "User.adressbuch_verborgen" %}
+                </div>
+            </div>
+            {% endif %}
 
             <div class="detail-card">
                 <h3>Beschreibung</h3>

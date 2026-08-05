@@ -55,11 +55,26 @@ def mitglieder_qs(betrachter):
     Sich selbst findet niemand im eigenen Adressbuch — iOS und Android führen
     ohnehin eine eigene „Meine Karte", ein zweiter Eintrag mit denselben Daten
     wäre ein Duplikat, das manche Clients zusammenzuführen versuchen.
+
+    ``adressbuch_verborgen`` ist der Widerspruch gegen den ganzen Datensatz, den
+    ein Mitglied im eigenen Profil setzt — kein Feldfilter wie
+    :func:`carddav_sichtbar`, und aus demselben Grund ohne Admin-Bonus. Dass er
+    hier steht und nicht in den Views, ist der Kern: an dieser Abfrage hängen die
+    Sammlung, die einzelne ``.vcf`` und über :func:`ctag` auch das ``getctag``.
+    Ein Gerät, das die Karte schon hat, sieht den geänderten CTag, findet den
+    Eintrag in der Href-Liste nicht mehr und löscht ihn.
+
+    Nicht gefiltert wird in :mod:`intern.dav.auth`: wer sich aus dem Adressbuch
+    austrägt, darf es weiterhin *benutzen*.
+
+    Ohne Testdatenbank lässt sich der Filter nicht prüfen (siehe Modul-Docstring).
+    Deshalb steht er als einzelne Bedingung hier, statt sich in eine zweite,
+    „testbare" Python-Prüfung zu verdoppeln, die auseinanderlaufen könnte.
     """
     from ..models import User
 
     return (
-        User.objects.filter(is_active=True)
+        User.objects.filter(is_active=True, adressbuch_verborgen=False)
         .exclude(pk=betrachter.pk)
         .select_related("avatar")
         .order_by("last_name", "first_name", "pk")

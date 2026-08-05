@@ -310,8 +310,9 @@ def kontakt(request, pk, mid):
 
     mitglied = daten.mitglieder_qs(request.dav_user).filter(pk=mid).first()
     if mitglied is None:
-        # Deckt auch die eigene Karte ab: mitglieder_qs schliesst sie aus, also
-        # ist sie hier zu Recht nicht auffindbar.
+        # Deckt auch die eigene Karte ab und die von Mitgliedern, die dem
+        # Adressbuch widersprochen haben: mitglieder_qs schliesst beide aus, also
+        # sind sie hier zu Recht nicht auffindbar.
         raise Http404
 
     kdaten = daten.kontakt_daten(mitglied, basis_url=http.basis(request))

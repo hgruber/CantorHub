@@ -87,9 +87,19 @@ owner (`besitz_uebertragen`, see `files.md`), then decides: a member who left co
 really deleted. `UserAdmin.delete_model`/`delete_queryset` (`intern/admin.py`) take the same
 route so the admin path cannot bypass the ownership transfer.
 
-## Field-level privacy
+## Field-level privacy and the address-book opt-out
 
 `User.private_fields` holds the fields a member has hidden. `User.field_visible_to()` grants
 holders of `intern.change_user` a view of hidden fields inside the portal — but **that admin
 bonus stops at the portal boundary**: the CardDAV cards, the CalDAV birthdays and the birthday
 chips in the month grid consult `private_fields` alone (see `dav.md`).
+
+`User.adressbuch_verborgen` goes one step further: it keeps the **whole** record out of the
+CardDAV address book, not just single fields. Both are set by the member alone — `mitglied_edit`
+passes `with_privacy` / `mit_adressbuch` only when `request.user.id == id`, so an admin editing a
+foreign profile never sees either control. The address-book checkbox additionally requires
+`CARDDAV_AKTIV`; when the service is off the field is not built at all, which is what makes a
+stored `True` survive the service being switched off and on again. It is deliberately **not** in
+`UserEditForm.Meta.fields` — a checkbox that was never rendered is absent from the POST, and
+`BooleanField` would turn that into a `False` that silently overwrites the member's wish.
+`mitglied_delete` leaves the flag alone when anonymising, for the same reason.
