@@ -81,7 +81,8 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   `--brand` via `color-mix()` in `intern.css` and follow automatically. Also colours mail buttons
   and links (`intern/mail_markup.py`), the mail header background (`emails/base.html`), the
   PDF letterhead rule (`intern/pdf.py`) and the CalDAV `CS:calendar-color` handed to devices
-  (`intern/caldav/daten.py:farbe()`)
+  (`intern/caldav/daten.py:farbe()`). Edited on the configuration page via the generic
+  text-plus-native-picker component (`feldtyp` `"color"`, see `docs/frontend.md`)
 - `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in the privacy policy's „Verantwortliche" section; multi-line, empty → only board member names are listed, no addresses)
 - `HOMEPAGE_UEBER_UNS` (body text for the "Über uns" card on the public homepage; multi-line allowed)
 - `HOMEPAGE_AUFNAHME` (body text for the "Wir suchen" card on the public homepage; multi-line allowed; hidden when empty)

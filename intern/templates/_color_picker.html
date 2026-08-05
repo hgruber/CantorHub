@@ -1,0 +1,31 @@
+{% comment %}
+Farbwahl: Textfeld (Quelle der Wahrheit, erlaubt leer/beliebige Werte) + nativer
+<input type="color"> daneben, der zugleich als Vorschau-Swatch dient (jeder
+gängige Browser rendert ihn bereits ausgefüllt). color-picker.js hält beide
+Felder synchron; ohne JS bleibt allein das Textfeld nutzbar.
+
+Zwei Einstiegspunkte, ein Kontrakt: das Widget ColorPickerInput (intern/forms.py)
+setzt dieses Template als template_name, Seiten ohne Django-Form binden es per
+{% templatetag openblock %} include {% templatetag closeblock %} ein.
+
+Parameter:
+  name          Feldname; landet auf <input name=...> (Pflicht)
+  value         aktueller Wert (Hex-String oder leer)
+  widget_id     DOM-id (Vorgabe "id_<name>")
+  extra_class   zusaetzliche CSS-Klasse(n) auf dem TEXT-Input (z.B. "kf-value-input" --
+                MUSS auf dem Text-Input landen, NIE auf <input type="color">, sonst
+                liest fremder Code das falsche Element)
+  placeholder   Platzhaltertext (Vorgabe "#rrggbb")
+  pflicht       required auf dem Textfeld
+{% endcomment %}
+<div class="color-picker" data-color-picker>
+    <input type="text" name="{{ name }}"
+           id="{% if widget_id %}{{ widget_id }}{% else %}id_{{ name }}{% endif %}"
+           class="inline-input color-picker-text{% if extra_class %} {{ extra_class }}{% endif %}"
+           value="{{ value }}" placeholder="{{ placeholder|default:'#rrggbb' }}"
+           autocomplete="off" spellcheck="false" maxlength="7"
+           {% if pflicht %}required{% endif %}>
+    <input type="color" class="color-picker-swatch" tabindex="0"
+           aria-label="Farbe auswählen" title="Farbe auswählen"
+           value="{{ value|default:'#000000' }}">
+</div>

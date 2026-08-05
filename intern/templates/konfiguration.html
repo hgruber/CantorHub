@@ -52,6 +52,8 @@
                         <option value="{{ value }}"{% if value == eintrag.value %} selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
+                    {% elif eintrag.typ == "color" %}
+                    {% include "_color_picker.html" with name=eintrag.key value=eintrag.value extra_class="kf-value-input" %}
                     {% else %}
                     <textarea class="inline-input kf-value-input" rows="4">{{ eintrag.value }}</textarea>
                     {% endif %}

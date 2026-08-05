@@ -6836,6 +6836,44 @@ body.join-page {
 }
 
 /* =================================================== */
+/* Farbwahl (Color Picker)                              */
+/* =================================================== */
+/* Markup: _color_picker.html, Verhalten: color-picker.js.
+   Textfeld bleibt Quelle der Wahrheit; der native <input type="color"> dient
+   als Picker UND Vorschau-Swatch in einem. */
+
+.color-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.color-picker-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.color-picker-swatch {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border-dark);
+    border-radius: 5px;
+    background: var(--bg-card);
+    cursor: pointer;
+}
+
+.color-picker-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
+.color-picker-swatch::-webkit-color-swatch { border: none; border-radius: 3px; }
+.color-picker-swatch::-moz-color-swatch { border: none; border-radius: 3px; }
+
+.color-picker-swatch:focus-visible {
+    outline: 2px solid var(--brand-ring);
+    outline-offset: 2px;
+}
+
+/* =================================================== */
 /* Gruppen-Berechtigungen                              */
 /* =================================================== */
 /* Gemeinsam von folder_berechtigungen, artikel_berechtigungen und

@@ -1114,7 +1114,7 @@ class KonfigTypenTest(SimpleTestCase):
 
     def test_typen_sind_gueltig(self):
         from intern.konfig_gruppen import FELDTYPEN
-        gueltig = {"bool", "int", "string", "text", "select"}
+        gueltig = {"bool", "int", "string", "text", "select", "color"}
         for key, typ in FELDTYPEN.items():
             self.assertIn(typ, gueltig, msg=f"Schlüssel {key!r} hat ungültigen Typ {typ!r}")
 
@@ -1130,6 +1130,7 @@ class KonfigTypenTest(SimpleTestCase):
         self.assertEqual(feldtyp("MAIL_ANTRAG"), "text")
         self.assertEqual(feldtyp("MAILINGLISTE_WOCHEN"), "string")
         self.assertEqual(feldtyp("ZEITZONE"), "select")
+        self.assertEqual(feldtyp("BRAND_FARBE"), "color")
 
     def test_gruppiere_reichert_um_typ_ohne_mutation(self):
         from intern.konfig_gruppen import gruppiere
@@ -1187,6 +1188,24 @@ class KonfigTypenTest(SimpleTestCase):
         defaults = {key: value for key, value, _desc in self._defaults()}
         optionen = {wert for wert, _label in SELECT_OPTIONEN["ZEITZONE"]}
         self.assertIn(defaults["ZEITZONE"], optionen)
+
+    def test_color_defaults_sind_hex_oder_leer(self):
+        # Jeder color-Typ-Default muss entweder leer sein oder ein #rrggbb-Hexwert
+        # -- sonst rendert der native <input type="color"> ohne sinnvollen
+        # Startwert bzw. get_config liefert an anderer Stelle (mail_markup.py,
+        # pdf.py, caldav/daten.py:farbe()) einen unparsbaren String.
+        import re
+        from intern.konfig_gruppen import FELDTYPEN
+        hex_re = re.compile(r"^#[0-9a-fA-F]{6}$")
+        defaults = {key: value for key, value, _desc in self._defaults()}
+        for key, typ in FELDTYPEN.items():
+            if typ != "color":
+                continue
+            value = defaults.get(key, "")
+            self.assertTrue(
+                value == "" or hex_re.match(value),
+                msg=f"{key!r}: Default {value!r} ist weder leer noch #rrggbb",
+            )
 
 
 class ZeitzoneTest(SimpleTestCase):

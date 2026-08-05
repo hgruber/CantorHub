@@ -111,6 +111,39 @@ class ChipMultiSelect(forms.SelectMultiple):
         }
 
 
+class ColorPickerInput(forms.TextInput):
+    """Textfeld für einen Hex-Farbwert + natives <input type="color"> daneben.
+
+    Das Textfeld bleibt die einzige Quelle der Wahrheit und erlaubt jeden String,
+    insbesondere leer -- genau das kann ein reines <input type="color"> nicht
+    (siehe Kommentar in intern/konfig_gruppen.py zu Farb-Schlüsseln). Der native
+    Color-Picker liefert Auswahl-UI *und* Vorschau-Swatch in einem Element, ein
+    eigenes <span> als Farbfläche ist deshalb nicht nötig.
+
+    Dasselbe Template binden Seiten ohne Django-Form (Konfiguration) per
+    {% include %} ein -- ein Markup, zwei Einstiegspunkte, wie ChipMultiSelect.
+    Das JS laedt base.html global, deshalb bewusst kein `class Media`.
+    """
+
+    template_name = "_color_picker.html"
+
+    def __init__(self, attrs=None, *, extra_class="", placeholder="#rrggbb"):
+        super().__init__(attrs)
+        self.extra_class = extra_class
+        self.placeholder = placeholder
+
+    def get_context(self, name, value, attrs):
+        widget = super().get_context(name, value, attrs)["widget"]
+        return {
+            "name": widget["name"],
+            "value": widget["value"] or "",
+            "widget_id": widget["attrs"].get("id"),
+            "pflicht": widget["attrs"].get("required", False),
+            "extra_class": self.extra_class,
+            "placeholder": self.placeholder,
+        }
+
+
 class RegisterForm(forms.Form):
     first_name = forms.CharField(max_length=32, label="Vorname", required=False)
     last_name = forms.CharField(max_length=32, label="Nachname", required=False)

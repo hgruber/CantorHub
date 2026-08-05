@@ -15,11 +15,13 @@ from typing import NamedTuple
 
 # Eingabewidget je Schlüssel — abgeleitet aus der Lese-Verwendung im Code, nicht aus
 # dem Schlüsselnamen: ``get_config_bool`` → "bool", ``get_config_int`` → "int",
-# einzeilige Werte (URL/Host/JID/E-Mail/Passwort/Secret/Farbe/Name/Komma-Liste/
-# Uhrzeit) → "string", mehrzeilige Texte (Mail-Body, Homepage-Prosa, Adresse,
-# Einwilligung) → "text", Werte aus einer festen Optionliste (IANA-Zeitzone) →
-# "select" (die Optionen stehen in ``SELECT_OPTIONEN``). Die gespeicherten Werte
-# bleiben Zeichenketten; nur das Widget beim Editieren passt zur Funktion.
+# einzeilige Werte (URL/Host/JID/E-Mail/Passwort/Secret/Name/Komma-Liste/Uhrzeit) →
+# "string", mehrzeilige Texte (Mail-Body, Homepage-Prosa, Adresse, Einwilligung) →
+# "text", Werte aus einer festen Optionliste (IANA-Zeitzone) → "select" (die
+# Optionen stehen in ``SELECT_OPTIONEN``), Hex-Farbwerte → "color" (Textfeld +
+# nativer Color-Picker, siehe ``_color_picker.html``; das gespeicherte Format
+# bleibt ein String, leer erlaubt). Die gespeicherten Werte bleiben Zeichenketten;
+# nur das Widget beim Editieren passt zur Funktion.
 FELDTYPEN: dict[str, str] = {
     # bool (gelesen via get_config_bool)
     "EMAIL_USE_TLS": "bool",
@@ -61,7 +63,7 @@ FELDTYPEN: dict[str, str] = {
     "EJABBERD_BOT_RESCAN_SECONDS": "int",
     "EJABBERD_BOT_RELAY_SECONDS": "int",
     # string (einzeilig; MAILINGLISTE_WOCHEN = Komma-Liste, MAILINGLISTE_VERSANDZEIT
-    # = Uhrzeit HH:MM, BRAND_FARBE = Hex — type=color kann „leer" nicht abbilden)
+    # = Uhrzeit HH:MM)
     "EJABBERD_API_URL": "string",
     "EJABBERD_HOST": "string",
     "EJABBERD_MUC_SERVICE": "string",
@@ -79,7 +81,6 @@ FELDTYPEN: dict[str, str] = {
     "VEREINSNAME": "string",
     "VEREINSNAME_LANG": "string",
     "VEREINSNAME_KURZ": "string",
-    "BRAND_FARBE": "string",
     "ANTRAG_EMAIL": "string",
     "VEREINS_URL": "string",
     "MAILINGLISTE_WOCHEN": "string",
@@ -90,6 +91,8 @@ FELDTYPEN: dict[str, str] = {
     "MAP_CENTER_LNG": "string",
     "FILE_PREFIX": "string",
     "DSB_URL": "string",
+    # color (Hex-Farbwert; Textfeld + nativer Color-Picker, siehe _color_picker.html)
+    "BRAND_FARBE": "color",
     # text (mehrzeilig: Mail-Body, Homepage-Prosa, Adresse, Einwilligung)
     "VEREINSADRESSE": "text",
     "HOMEPAGE_UEBER_UNS": "text",

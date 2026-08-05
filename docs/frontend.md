@@ -74,6 +74,28 @@ long-press.
   renders both a filter and an add form) would execute the IIFE twice. It bails out in its
   first line when the page has no `[data-chip-multiselect]`.
 
+## Color field: text + native picker
+
+One component for every hex-color input: a text field (source of truth, allows empty/free-form
+values) plus a native `<input type="color">` next to it, which doubles as both the picker *and*
+a live swatch — every modern browser already renders it filled with the current color, so no
+separate `<span>` swatch element exists.
+
+- **`intern/templates/_color_picker.html`** is the only markup, with two entry points. Forms use
+  the `ColorPickerInput` widget (`intern/forms.py`, built like `ChipMultiSelect`), which sets the
+  partial as `template_name`. Pages without a Django form — the configuration page — `{% include
+  %}` the same partial directly. Options: `extra_class` (adds a caller-defined class to the
+  *text* input only — e.g. `kf-value-input` so `konfiguration.js`'s single `.kf-value-input`
+  `querySelector` keeps finding exactly one element), `placeholder`, `pflicht`.
+- **The text field stays the single source of truth.** `color-picker.js` only keeps the two
+  fields in sync: typing a valid `#rrggbb` in the text field updates the picker; picking a color
+  updates the text field and dispatches an `input` event on it (so change-tracking code that
+  listens for `input`, e.g. `konfiguration.js`, sees it). An invalid or empty text value leaves
+  the picker untouched rather than erroring — `<input type="color">` cannot represent "empty" at
+  all, which is exactly why it is never the sole widget.
+- **The JS is loaded globally in `base.html`**, like `chip-multiselect.js` — it bails out
+  immediately if the page has no `[data-color-picker]`.
+
 ## Delete confirmation
 
 **One `<dialog id="delete-dialog">`**, `_confirm_delete_dialog.html`, for `ort_edit.html`,
