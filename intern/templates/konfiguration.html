@@ -46,6 +46,12 @@
                     <input type="number" class="inline-input kf-value-input" value="{{ eintrag.value }}">
                     {% elif eintrag.typ == "string" %}
                     <input type="text" class="inline-input kf-value-input" value="{{ eintrag.value }}">
+                    {% elif eintrag.typ == "select" %}
+                    <select class="inline-input kf-value-input">
+                        {% for value, label in eintrag.optionen %}
+                        <option value="{{ value }}"{% if value == eintrag.value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
                     {% else %}
                     <textarea class="inline-input kf-value-input" rows="4">{{ eintrag.value }}</textarea>
                     {% endif %}

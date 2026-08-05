@@ -147,9 +147,14 @@ re-sync on every device.
   was entered, so 00:00 *is* the marker for "no time given". `DTEND` is **exclusive** for DATE
   values: the last day plus one, where "last day" reads `datum_bis` inclusively, exactly as the
   month grid draws it.
-- Everything else is converted to **UTC** via `zoneinfo.ZoneInfo(settings.TIME_ZONE)` and ends
-  in `Z`, so no `VTIMEZONE` is needed and no client has to guess. Without an end, the feed's
-  two-hour convention applies.
+- Everything else is converted to **UTC** via `zoneinfo.ZoneInfo(…)`, where the zone comes from
+  the `ZEITZONE` `Konfiguration` key (read by `daten.zeitzone()`, helper
+  `intern.app_settings.get_zeitzone()`; fallback `settings.TIME_ZONE`). It ends in `Z`, so no
+  `VTIMEZONE` is needed and no client has to guess. Without an end, the feed's two-hour
+  convention applies. `settings.TIME_ZONE` is synced from `ZEITZONE` at app start
+  (`apps.py ready()`), so the legacy iCal feed and Django template formatting follow the same
+  zone; CalDAV reads the live value, so a config change takes effect immediately, the rest on
+  the next process restart.
 
 **Same content for everyone, so ETags are global.** There are no per-termin permissions in the
 portal, and the member's own `Zusage` is deliberately **not** in the VEVENT — it would make

@@ -48,6 +48,24 @@ def get_config_int(key, default=0):
         return default
 
 
+def get_zeitzone():
+    """IANA-Zeitzonenname des Portals, als Zeichenkette.
+
+    Liest ``ZEITZONE`` (Env hat Vorrang, siehe ``get_config``), prüft gegen
+    ``zoneinfo.available_timezones()`` und fällt bei fehlendem oder ungültigem
+    Wert auf ``settings.TIME_ZONE`` zurück. So kann CalDAV ohne erneutes Deploy
+    auf eine andere Zone umgestellt werden, ohne dass ein Tippfehler den
+    Kalender-Export zum Absturz bringt.
+    """
+    from django.conf import settings
+    from zoneinfo import available_timezones
+
+    roh = get_config("ZEITZONE")
+    if roh and roh in available_timezones():
+        return roh
+    return settings.TIME_ZONE
+
+
 def get_config_list(key, default=""):
     """Kommaseparierten Konfigurationswert als Liste von Strings.
 

@@ -28,6 +28,9 @@ _CONFIG_DEFAULTS = [
     ("EMAIL_USE_TLS", "0", "SMTP STARTTLS verwenden (1/0)"),
     ("EMAIL_USE_SSL", "0", "SMTP SSL verwenden (1/0)"),
     ("DEFAULT_FROM_EMAIL", "webmaster@example.org", "Absenderadresse für E-Mails"),
+    ("ZEITZONE", "Europe/Berlin",
+     "Zeitzone des Portals (IANA-Name); steuert iCal/CalDAV-Uhrzeitumrechnung "
+     "und Django-Zeitformatierung"),
     ("UPLOAD_MAX_MB", "50", "Maximale Upload-Größe in MB"),
     ("MAP_CENTER_ID", "1", "ID des Orts, der als Karten-Mittelpunkt dient"),
     ("MAP_DEFAULT_ZOOM", "12", "Standard-Zoomstufe der Gesamtkarte"),
@@ -621,3 +624,21 @@ class InternConfig(AppConfig):
         )
 
         from . import signals  # noqa: F401
+
+        # Zeitzone aus der Konfiguration in settings.TIME_ZONE nachziehen, damit
+        # Legacy-ICS-Feed und Django-Vorlagen-Formatierung derselben Zone folgen
+        # wie CalDAV (das daten.zeitzone() live liest). get_zeitzone() fällt auf
+        # settings.TIME_ZONE zurück, wenn die DB (noch) nicht greifbar ist — beim
+        # allerersten Start oder vor ``migrate`` also ein no-op. Eine nachträgliche
+        # Änderung von ZEITZONE wirkt für CalDAV sofort, für den Rest beim nächsten
+        # Prozess-Neustart. Der DB-Zugriff in ready() ist bewusst und try/except-
+        # gesichert; die RuntimeWarning dazu unterdrücken wir gezielt.
+        try:
+            import warnings
+            from django.conf import settings
+            from .app_settings import get_zeitzone
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                settings.TIME_ZONE = get_zeitzone()
+        except Exception:
+            pass

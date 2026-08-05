@@ -107,6 +107,11 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `MITGLIED_EINLADUNG_TAGE` (validity of the signed invite link to the join form, in days; default `7`)
 - `MITGLIED_BESTAETIGUNG_TAGE` (validity of the re-confirmation link, in days; default `30`)
 - `VEREINS_URL` (base URL of the portal, e.g. `https://portal.example.com`; supplies `{link}` in the activation mails)
+- `ZEITZONE` (IANA time zone of the portal, default `Europe/Berlin`; a `select` of curated
+  European + common world zones. Drives the iCal/CalDAV UTC conversion via
+  `intern.caldav.daten.zeitzone()` and is synced into `settings.TIME_ZONE` at app start so the
+  legacy iCal feed and Django template time formatting follow the same zone. CalDAV picks up a
+  change immediately; the rest follows on the next process restart)
 
 ### Datenschutz-Texte
 

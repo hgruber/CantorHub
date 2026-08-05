@@ -1114,7 +1114,7 @@ class KonfigTypenTest(SimpleTestCase):
 
     def test_typen_sind_gueltig(self):
         from intern.konfig_gruppen import FELDTYPEN
-        gueltig = {"bool", "int", "string", "text"}
+        gueltig = {"bool", "int", "string", "text", "select"}
         for key, typ in FELDTYPEN.items():
             self.assertIn(typ, gueltig, msg=f"Schlüssel {key!r} hat ungültigen Typ {typ!r}")
 
@@ -1129,6 +1129,7 @@ class KonfigTypenTest(SimpleTestCase):
         self.assertEqual(feldtyp("VEREINS_URL"), "string")
         self.assertEqual(feldtyp("MAIL_ANTRAG"), "text")
         self.assertEqual(feldtyp("MAILINGLISTE_WOCHEN"), "string")
+        self.assertEqual(feldtyp("ZEITZONE"), "select")
 
     def test_gruppiere_reichert_um_typ_ohne_mutation(self):
         from intern.konfig_gruppen import gruppiere
@@ -1159,6 +1160,70 @@ class KonfigTypenTest(SimpleTestCase):
                 defaults[key], ("0", "1"),
                 msg=f"Bool-Schlüssel {key!r} hat Default {defaults[key]!r}, nicht 0/1",
             )
+
+    def test_select_optionen_sind_gueltig_und_vollstaendig(self):
+        # Jeder select-Typ braucht eine nicht-leere Optionliste in SELECT_OPTIONEN,
+        # und jeder Optionwert muss eine gültige IANA-Zone sein — sonst rendert das
+        # Template ein leeres Dropdown oder daten.zeitzone() schlägt fehl.
+        from zoneinfo import available_timezones
+        from intern.konfig_gruppen import FELDTYPEN, SELECT_OPTIONEN
+        zonen = available_timezones()
+        for key, typ in FELDTYPEN.items():
+            if typ != "select":
+                continue
+            self.assertIn(
+                key, SELECT_OPTIONEN,
+                msg=f"select-Schlüssel {key!r} fehlt in SELECT_OPTIONEN",
+            )
+            optionen = SELECT_OPTIONEN[key]
+            self.assertGreater(len(optionen), 0, msg=f"{key!r} hat keine Optionen")
+            for wert, _label in optionen:
+                self.assertIn(wert, zonen, msg=f"{key!r}: {wert!r} ist keine IANA-Zone")
+
+    def test_zeitzone_default_steht_in_optionen(self):
+        # Der Defaultwert aus _CONFIG_DEFAULTS muss eine der Auswahl-Optionen sein,
+        # sonst ist nach dem Seeding nichts selected im Dropdown.
+        from intern.konfig_gruppen import SELECT_OPTIONEN
+        defaults = {key: value for key, value, _desc in self._defaults()}
+        optionen = {wert for wert, _label in SELECT_OPTIONEN["ZEITZONE"]}
+        self.assertIn(defaults["ZEITZONE"], optionen)
+
+
+class ZeitzoneTest(SimpleTestCase):
+    """ZEITZONE-Konfiguration — DB-frei über Env-Variablen und Fallback geprüft."""
+
+    def test_env_vorrang(self):
+        import os
+        from unittest import mock
+        from intern.app_settings import get_zeitzone
+        with mock.patch.dict(os.environ, {"ZEITZONE": "Europe/Zurich"}):
+            self.assertEqual(get_zeitzone(), "Europe/Zurich")
+
+    def test_fallback_auf_settings_ohne_db(self):
+        # Ohne Env und ohne DB lief get_config auf None zurück → settings.TIME_ZONE.
+        import os
+        from unittest import mock
+        from django.conf import settings
+        from intern.app_settings import get_zeitzone
+        env = {k: v for k, v in os.environ.items() if k != "ZEITZONE"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertEqual(get_zeitzone(), settings.TIME_ZONE)
+
+    def test_ungueltiger_wert_faellt_zurueck(self):
+        # Ein verstellter/ungültiger Wert darf nie eine ZoneInfo werfen.
+        import os
+        from unittest import mock
+        from django.conf import settings
+        from intern.app_settings import get_zeitzone
+        with mock.patch.dict(os.environ, {"ZEITZONE": "Nicht/Vorhanden"}):
+            self.assertEqual(get_zeitzone(), settings.TIME_ZONE)
+
+    def test_daten_zeitzone_ohne_db(self):
+        # daten.zeitzone() baut auch ohne DB eine ZoneInfo (über den Fallback).
+        from django.conf import settings
+        from intern.caldav.daten import zeitzone
+        from zoneinfo import ZoneInfo
+        self.assertEqual(zeitzone(), ZoneInfo(settings.TIME_ZONE))
 
 
 class KonfigurierteHelperTest(SimpleTestCase):

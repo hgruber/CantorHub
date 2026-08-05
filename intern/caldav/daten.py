@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.utils.timezone import now as jetzt_lokal
 
-from ..app_settings import get_config, get_config_bool, get_config_int, get_vereinsname_lang
+from ..app_settings import get_config, get_config_bool, get_config_int, get_vereinsname_lang, get_zeitzone
 from . import ical
 
 logger = logging.getLogger(__name__)
@@ -47,9 +47,14 @@ def zeitzone():
     """Die Zone, in der ``Termin.datum`` gemeint ist.
 
     ``USE_TZ`` ist aus, die Werte sind also naive Ortszeit — welche Ortszeit,
-    sagt ``settings.TIME_ZONE``.
+    sagt der ``ZEITZONE``-Konfigurationsschlüssel (Fallback ``settings.TIME_ZONE``).
+    Ein ungültiger Wert fällt hier nochmals auf ``settings.TIME_ZONE`` zurück, damit
+    ein verstellter Eintrag niemals den Kalender-Export abwürgt.
     """
-    return ZoneInfo(settings.TIME_ZONE)
+    try:
+        return ZoneInfo(get_zeitzone())
+    except Exception:
+        return ZoneInfo(settings.TIME_ZONE)
 
 
 def stand():

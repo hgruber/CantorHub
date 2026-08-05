@@ -118,10 +118,14 @@ reasoning where it matters.
   vs. `read_abmelde_token()` is the pattern).
 - **`USE_TZ = False`.** Every datetime is naive local wall-clock time. Never call `localtime()`,
   and pass "now" in as an argument rather than reading the clock inside logic you want to test.
+  The wall-clock zone is the `ZEITZONE` `Konfiguration` key (default `Europe/Berlin`), synced
+  into `settings.TIME_ZONE` at app start; `intern.caldav.daten.zeitzone()` reads it live for the
+  iCal/CalDAV UTC conversion.
 - **Runtime settings come from the `Konfiguration` table**, read through `intern.app_settings`
   helpers — never `os.environ` or `settings` for these, and never at import time. A new key needs
   three edits: `_CONFIG_DEFAULTS` in `apps.py`, a group in `konfig_gruppen.py`, and a `FELDTYPEN`
-  entry. `KonfigGruppenTest` and `KonfigTypenTest` enforce the last two.
+  entry. `KonfigGruppenTest` and `KonfigTypenTest` enforce the last two. A `select`-typed key
+  additionally needs an entry in `SELECT_OPTIONEN` (same file).
 - **A file's identity is its storage path**, not its row: several `filer.File` rows may share one
   blob. Use the helpers in `views/files.py` instead of touching `File.file`/`name`. Never run
   `filer_check --delete-orphans` — it would delete the whole version history.

@@ -17,8 +17,9 @@ from typing import NamedTuple
 # dem Schlüsselnamen: ``get_config_bool`` → "bool", ``get_config_int`` → "int",
 # einzeilige Werte (URL/Host/JID/E-Mail/Passwort/Secret/Farbe/Name/Komma-Liste/
 # Uhrzeit) → "string", mehrzeilige Texte (Mail-Body, Homepage-Prosa, Adresse,
-# Einwilligung) → "text". Die gespeicherten Werte bleiben Zeichenketten; nur das
-# Widget beim Editieren passt zur Funktion.
+# Einwilligung) → "text", Werte aus einer festen Optionliste (IANA-Zeitzone) →
+# "select" (die Optionen stehen in ``SELECT_OPTIONEN``). Die gespeicherten Werte
+# bleiben Zeichenketten; nur das Widget beim Editieren passt zur Funktion.
 FELDTYPEN: dict[str, str] = {
     # bool (gelesen via get_config_bool)
     "EMAIL_USE_TLS": "bool",
@@ -115,11 +116,45 @@ FELDTYPEN: dict[str, str] = {
     "HOSTING_ANBIETER_ANSCHRIFT": "text",
     "DSB_NAME": "text",
     "DSB_ANSCHRIFT": "text",
+    # select (Optionen aus SELECT_OPTIONEN — hier IANA-Zeitzonen)
+    "ZEITZONE": "select",
+}
+
+
+# Optionlisten für ``select``-Typen — Schlüssel → ((Wert, Anzeige), …). Bewusst
+# hartcodiert und DB-frei, damit es mit ``SimpleTestCase`` prüfbar ist. Werte sind
+# IANA-Namen; die Gültigkeit testet ``KonfigTypenTest`` gegen
+# ``zoneinfo.available_timezones()``.
+SELECT_OPTIONEN: dict[str, tuple[tuple[str, str], ...]] = {
+    "ZEITZONE": (
+        ("Europe/Berlin", "Berlin (DE)"),
+        ("Europe/Zurich", "Zürich (CH)"),
+        ("Europe/Vienna", "Wien (AT)"),
+        ("Europe/Amsterdam", "Amsterdam (NL)"),
+        ("Europe/Brussels", "Brüssel (BE)"),
+        ("Europe/Paris", "Paris (FR)"),
+        ("Europe/Luxembourg", "Luxemburg (LU)"),
+        ("Europe/Copenhagen", "Kopenhagen (DK)"),
+        ("Europe/Stockholm", "Stockholm (SE)"),
+        ("Europe/Oslo", "Oslo (NO)"),
+        ("Europe/Helsinki", "Helsinki (FI)"),
+        ("Europe/Warsaw", "Warschau (PL)"),
+        ("Europe/Prague", "Prag (CZ)"),
+        ("Europe/Rome", "Rom (IT)"),
+        ("Europe/Madrid", "Madrid (ES)"),
+        ("Europe/Lisbon", "Lissabon (PT)"),
+        ("Europe/London", "London (UK)"),
+        ("Europe/Dublin", "Dublin (IE)"),
+        ("Atlantic/Canary", "Kanaren"),
+        ("America/New_York", "New York (US-Ost)"),
+        ("America/Los_Angeles", "Los Angeles (US-West)"),
+        ("UTC", "UTC"),
+    ),
 }
 
 
 def feldtyp(key: str) -> str:
-    """Liefert das Eingabewidget (``bool``/``int``/``string``/``text``).
+    """Liefert das Eingabewidget (``bool``/``int``/``string``/``text``/``select``).
 
     Unbekannte Schlüssel bekommen ``text`` (Textarea) — das sicherste Widget, falls
     ein ad-hoc angelegter Schlüssel nicht in ``FELDTYPEN`` steht.
@@ -171,7 +206,8 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     "EJABBERD_API_TIMEOUT",
     "EJABBERD_BOT_JID", "EJABBERD_BOT_PASSWORD", "EJABBERD_BOT_PORT",
     "EJABBERD_BOT_RESCAN_SECONDS", "EJABBERD_BOT_RELAY_SECONDS",
-    # Portal, Karte & Benachrichtigungen — Limits, Karte, OSM-Server, Benachrichtigungen
+    # Portal, Karte & Benachrichtigungen — Zeitzone, Limits, Karte, OSM-Server, Benachrichtigungen
+    "ZEITZONE",
     "UPLOAD_MAX_MB", "PWRESET_MAX_PER_HOUR", "MAP_CENTER_ID", "MAP_DEFAULT_ZOOM",
     "MAP_CENTER_LAT", "MAP_CENTER_LNG", "OSM_TILE_URL", "OSM_NOMINATIM_URL",
     "NOTIFY_POLL_MS", "NOTIFY_DISMISS_MS", "TERMIN_BANNER_AKTIV", "FILE_PREFIX",
@@ -291,6 +327,7 @@ GRUPPEN: tuple[Gruppe, ...] = (
         hinweis="Upload-Grenze, Karten-Mittelpunkt, OSM-Server, "
         "Benachrichtigungs-Intervalle und Terminerinnerung",
         keys=(
+            "ZEITZONE",
             "UPLOAD_MAX_MB",
             "PWRESET_MAX_PER_HOUR",
             "OSM_TILE_URL",
@@ -365,7 +402,13 @@ def gruppiere(rows: list[dict]) -> list[dict]:
     for row in rows:
         # Kopie mit angereichertem ``typ``/``manuell`` — der Eingabe-dict wird nicht mutiert.
         gid = zuordnung(row["key"])
-        eintrag = {**row, "typ": feldtyp(row["key"]), "manuell": gid == _SONSTIGE.id}
+        typ = feldtyp(row["key"])
+        eintrag = {
+            **row,
+            "typ": typ,
+            "manuell": gid == _SONSTIGE.id,
+            "optionen": SELECT_OPTIONEN.get(row["key"], ()) if typ == "select" else (),
+        }
         nach_id[gid].append(eintrag)
 
     ergebnis: list[dict] = []
