@@ -105,6 +105,10 @@ def get_vereinsname_kurz():
     return get_config("VEREINSNAME_KURZ", "Just Gospel")
 
 
+def get_brand_farbe():
+    return get_config("BRAND_FARBE", "#c14468")
+
+
 def get_base_url(override=None, fallback=""):
     """Basis-URL des Portals (Schema + Host), garantiert ohne Schrägstrich am Ende.
 

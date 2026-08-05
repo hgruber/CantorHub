@@ -18,7 +18,7 @@ from django.contrib.staticfiles import finders
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
-from intern.app_settings import get_config, get_from_email, get_vereinsname, get_vereinsname_lang, get_vereinsname_kurz, is_email_configured
+from intern.app_settings import get_brand_farbe, get_config, get_from_email, get_vereinsname, get_vereinsname_lang, get_vereinsname_kurz, is_email_configured
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,7 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
         "vereinsname":      get_vereinsname(),
         "vereinsname_lang": get_vereinsname_lang(),
         "vereinsname_kurz": get_vereinsname_kurz(),
+        "brand_farbe":      get_brand_farbe(),
         "text_body":        text_body,
         "mail_footer":      footer,
         **context,

@@ -1,0 +1,7 @@
+{% comment %}
+Überschreibt den CSS-Token --brand mit der konfigurierten BRAND_FARBE.
+
+Muss nach dem intern.css-Link stehen, damit die Regel in der Kaskade gewinnt.
+--brand-dark/--brand-light/--brand-ring werden in intern.css per color-mix()
+aus --brand abgeleitet und folgen der Überschreibung automatisch mit.
+{% endcomment %}<style>:root{--brand:{{ brand_farbe|default:"#c14468" }};}</style>

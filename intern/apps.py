@@ -127,6 +127,12 @@ _CONFIG_DEFAULTS = [
     ),
     ("VEREINSNAME_KURZ", "", "Kurzer Vereinsname (für Sidebar, Alt-Texte)"),
     (
+        "BRAND_FARBE",
+        "#c14468",
+        "Akzentfarbe des Portals (Hex; Buttons, Links, Sidebar-Hervorhebung, "
+        "Mail-Header, PDF-Briefkopf)",
+    ),
+    (
         "VEREINSADRESSE",
         "",
         "Ladungsfähige Kontaktanschrift des Vereins (Datenschutzerklärung, "

@@ -5,9 +5,11 @@
 /* ─── Tokens ─────────────────────────────────────── */
 :root {
     --brand:           #c14468;
-    --brand-dark:      #a83a5a;
-    --brand-light:     rgba(193, 68, 104, 0.10);
-    --brand-ring:      rgba(193, 68, 104, 0.22);
+    /* Von --brand abgeleitet (nicht literal), damit BRAND_FARBE-Überschreibungen
+       (siehe _brand_boot.html) Hover-Zustand, Tint und Fokusring mitziehen. */
+    --brand-dark:      color-mix(in srgb, var(--brand) 85%, black);
+    --brand-light:     color-mix(in srgb, var(--brand) 10%, transparent);
+    --brand-ring:      color-mix(in srgb, var(--brand) 22%, transparent);
     --cal-geb:         #157347;
     --cal-geb-bg:      rgba(21, 128, 61, 0.13);
     --cal-weekend:     #dc2626;

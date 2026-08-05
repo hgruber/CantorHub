@@ -4,16 +4,23 @@ from io import BytesIO
 
 from django.contrib.staticfiles import finders
 
-from intern.app_settings import get_config
+from intern.app_settings import get_brand_farbe, get_config
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas as rl_canvas
 
 # ── Farben ────────────────────────────────────────────────────────────────────
-BRAND = (193/255, 68/255, 104/255)   # #c14468 — nur für Linien
 BLACK = (0, 0, 0)
 GRAY  = (0.35, 0.35, 0.35)           # Untertitel / Metaangaben
+
+
+def _brand_rgb():
+    """RGB-Tripel (0..1) aus BRAND_FARBE — nur für Linien, zur Aufrufzeit gelesen."""
+    hexfarbe = (get_brand_farbe() or "#c14468").lstrip("#")
+    if len(hexfarbe) != 6:
+        hexfarbe = "c14468"
+    return tuple(int(hexfarbe[i:i + 2], 16) / 255 for i in (0, 2, 4))
 
 # ── Layout ────────────────────────────────────────────────────────────────────
 PAGE_W, PAGE_H = A4
@@ -69,14 +76,14 @@ def _draw_header(c, vereinsname, vereinsadresse):
         c.drawRightString(PAGE_W - MARGIN, text_y, line)
 
     # Dünne farbige Zierlinie unter dem Briefkopf
-    c.setStrokeColorRGB(*BRAND)
+    c.setStrokeColorRGB(*_brand_rgb())
     c.setLineWidth(1.2)
     c.line(MARGIN, PAGE_H - HEADER_H, PAGE_W - MARGIN, PAGE_H - HEADER_H)
 
 
 def _draw_footer(c, vereinsname, vereinsadresse):
     # Dünne farbige Linie
-    c.setStrokeColorRGB(*BRAND)
+    c.setStrokeColorRGB(*_brand_rgb())
     c.setLineWidth(0.8)
     c.line(MARGIN, FOOTER_Y, PAGE_W - MARGIN, FOOTER_Y)
 
@@ -113,7 +120,7 @@ def new_letterhead_pdf(title, subtitle, vereinsname, vereinsadresse):
     c.drawString(MARGIN, subtitle_y, subtitle)
 
     sep_y = subtitle_y - 0.45 * cm
-    c.setStrokeColorRGB(*BRAND)
+    c.setStrokeColorRGB(*_brand_rgb())
     c.setLineWidth(0.4)
     c.line(MARGIN, sep_y, PAGE_W - MARGIN, sep_y)
 

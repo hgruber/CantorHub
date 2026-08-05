@@ -136,6 +136,7 @@ is in `docs/configuration.md`; these are the ones that decide whether things wor
 | `ANTRAG_EMAIL` | Where new membership applications are announced; empty → everyone who may edit members |
 | `MAIL_*` | The full text of every automated mail (see `docs/mail.md`) |
 | `VEREINSNAME`, `VEREINSNAME_LANG`, `VEREINSNAME_KURZ`, `VEREINSADRESSE` | Name and address used in the UI, mails and PDFs |
+| `BRAND_FARBE` | Accent colour (hex) used in the UI, mail headers/buttons and the PDF letterhead |
 | `HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME` | The copy on the public homepage |
 | `SATZUNG_FILE_ID`, `BEITRAGSORDNUNG_FILE_ID` | Filer file IDs of the two PDFs the join form links to |
 | `UPLOAD_MAX_MB` | Maximum upload size |

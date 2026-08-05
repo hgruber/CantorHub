@@ -77,6 +77,12 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`)
 - `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)
 - `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title)
+- `BRAND_FARBE` (accent colour, hex, default `#c14468`) — overrides the `--brand` CSS custom
+  property (`intern/templates/_brand_boot.html`, included right after the `intern.css` link on
+  every page that loads it); `--brand-dark`/`--brand-light`/`--brand-ring` are derived from
+  `--brand` via `color-mix()` in `intern.css` and follow automatically. Also colours mail buttons
+  and links (`intern/mail_markup.py`), the mail header background (`emails/base.html`) and the
+  PDF letterhead rule (`intern/pdf.py`)
 - `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in the privacy policy's „Verantwortliche" section; multi-line, empty → only board member names are listed, no addresses)
 - `HOMEPAGE_UEBER_UNS` (body text for the "Über uns" card on the public homepage; multi-line allowed)
 - `HOMEPAGE_AUFNAHME` (body text for the "Wir suchen" card on the public homepage; multi-line allowed; hidden when empty)

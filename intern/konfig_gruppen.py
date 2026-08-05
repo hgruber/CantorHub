@@ -61,7 +61,8 @@ FELDTYPEN: dict[str, str] = {
     "EJABBERD_BOT_RESCAN_SECONDS": "int",
     "EJABBERD_BOT_RELAY_SECONDS": "int",
     # string (einzeilig; MAILINGLISTE_WOCHEN = Komma-Liste, MAILINGLISTE_VERSANDZEIT
-    # = Uhrzeit HH:MM, CALDAV_FARBE = Hex — type=color kann „leer" nicht abbilden)
+    # = Uhrzeit HH:MM, CALDAV_FARBE/BRAND_FARBE = Hex — type=color kann „leer"
+    # nicht abbilden)
     "EJABBERD_API_URL": "string",
     "EJABBERD_HOST": "string",
     "EJABBERD_MUC_SERVICE": "string",
@@ -80,6 +81,7 @@ FELDTYPEN: dict[str, str] = {
     "VEREINSNAME": "string",
     "VEREINSNAME_LANG": "string",
     "VEREINSNAME_KURZ": "string",
+    "BRAND_FARBE": "string",
     "ANTRAG_EMAIL": "string",
     "VEREINS_URL": "string",
     "MAILINGLISTE_WOCHEN": "string",
@@ -171,6 +173,7 @@ def feldtyp(key: str) -> str:
 SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     # Verein & Portal — Basis zuerst, dann Namen, Anschrift, Homepage-Texte
     "VEREINS_URL", "VEREINSNAME", "VEREINSNAME_LANG", "VEREINSNAME_KURZ",
+    "BRAND_FARBE",
     "VEREINSADRESSE", "HOMEPAGE_UEBER_UNS", "HOMEPAGE_AUFNAHME",
     # Mitgliedsantrag & Dokumente — Fristen, dann wohin gehen Anträge, dann die verlinkten Dokumente
     "MITGLIED_EINLADUNG_TAGE", "MITGLIED_BESTAETIGUNG_TAGE",
@@ -238,8 +241,8 @@ GRUPPEN: tuple[Gruppe, ...] = (
     Gruppe(
         id="verein",
         titel="Verein & Portal",
-        hinweis="Name, Anschrift und öffentliche Startseite",
-        keys=("VEREINSADRESSE", "VEREINS_URL"),
+        hinweis="Name, Anschrift, Akzentfarbe und öffentliche Startseite",
+        keys=("VEREINSADRESSE", "VEREINS_URL", "BRAND_FARBE"),
         praefixe=("VEREINSNAME", "HOMEPAGE_"),
     ),
     Gruppe(

@@ -5,8 +5,11 @@
 configuration/assets, so the open-source default is generic and a deployer only
 sets a few values.
 
-This is a **plan for later**, not yet implemented. Do it as its own change set
-after the current config work lands.
+This is a **plan for later**, not fully implemented. Do the rest as its own change set.
+Note: `VEREINSNAME`/`VEREINSNAME_LANG`/`VEREINSNAME_KURZ` (text) and `BRAND_FARBE` (accent
+colour, see `docs/configuration.md`) already landed outside this plan; the logo/photo assets and
+the `Just Gospel`/`example.org` literals in `config/settings.py`, `config/urls.py`,
+`intern/pdf.py`, `intern/forms.py` and `intern/static/intern/manifest.json` are still open.
 
 ## Inventory of hardcoded branding
 

@@ -29,8 +29,11 @@ und aus **einer** Quelle beide MIME-Teile — HTML und Plain-Text.
 import html as _html
 import re
 
+from intern.app_settings import get_brand_farbe
+
 # Farben analog zum Mail-Layout (Inline-Styles, da E-Mail-Clients kein CSS laden)
-_BRAND = "#c14468"
+# _BRAND kommt aus BRAND_FARBE, wird bewusst nicht hier als Konstante gelesen
+# (Projektregel: kein Konfig-Zugriff zur Importzeit) — siehe _button()/_link().
 _TEXT = "#111827"
 _MUTED = "#6b7280"
 _BOX_BG = "#fff3cd"
@@ -218,13 +221,14 @@ def _button(inner, link, html_mode):
     if not html_mode:
         return f"{label}: {url}"
     url = _escape(url)  # der Fallback-Link kommt ungefiltert aus dem Aufrufer
+    brand = get_brand_farbe()
     return (
         '<table role="presentation" cellpadding="0" cellspacing="0" border="0" '
         'style="margin:0 0 24px 0;">'
-        f'<tr><td style="border-radius:4px;background-color:{_BRAND};">'
+        f'<tr><td style="border-radius:4px;background-color:{brand};">'
         f'<a href="{url}" style="display:inline-block;padding:12px 28px;color:#ffffff;'
         'font-size:15px;font-weight:700;text-decoration:none;border-radius:4px;'
-        f'background-color:{_BRAND};line-height:1.4;">{label}</a>'
+        f'background-color:{brand};line-height:1.4;">{label}</a>'
         "</td></tr></table>"
     )
 
@@ -233,7 +237,7 @@ def _link(url, label, html_mode):
     if not html_mode:
         return url if label == url else f"{label}: {url}"
     return (
-        f'<a href="{url}" style="color:{_BRAND};word-break:break-word;">{label}</a>'
+        f'<a href="{url}" style="color:{get_brand_farbe()};word-break:break-word;">{label}</a>'
     )
 
 

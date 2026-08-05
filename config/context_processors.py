@@ -3,7 +3,8 @@ from django.conf import settings
 
 def project_meta(request):
     from intern.app_settings import (
-        get_config_bool, get_config_int, get_vereinsname, get_vereinsname_lang, get_vereinsname_kurz,
+        get_brand_farbe, get_config_bool, get_config_int, get_vereinsname,
+        get_vereinsname_lang, get_vereinsname_kurz,
     )
     result = {
         "VERSION": settings.VERSION,
@@ -12,6 +13,7 @@ def project_meta(request):
         "vereinsname":      get_vereinsname(),
         "vereinsname_lang": get_vereinsname_lang(),
         "vereinsname_kurz": get_vereinsname_kurz(),
+        "brand_farbe":      get_brand_farbe(),
     }
     if request.user.is_authenticated:
         from django.utils.timezone import now
