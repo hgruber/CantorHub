@@ -56,8 +56,6 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   Contains only active members who have **not** hidden `geburtstag`; while off, the collection
   does not exist at all (404), it is not merely empty
 - `CALDAV_GEBURTSTAGE_NAME` (empty → `"<VEREINSNAME_LANG> – Geburtstage"`)
-- `CALDAV_FARBE` (hex colour handed to the device as `CS:calendar-color`, default `#c14468`;
-  empty → the property is omitted and the client picks its own)
 - `CALDAV_TAGE_RUECKWIRKEND` (how many days of past events are delivered, default `365`). There
   is no limit towards the future — a calendar that stops in a year would be a surprise
 - `CALDAV_STANDARDDAUER_STUNDEN` (default duration in hours of an event without an end time,
@@ -81,8 +79,9 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   property (`intern/templates/_brand_boot.html`, included right after the `intern.css` link on
   every page that loads it); `--brand-dark`/`--brand-light`/`--brand-ring` are derived from
   `--brand` via `color-mix()` in `intern.css` and follow automatically. Also colours mail buttons
-  and links (`intern/mail_markup.py`), the mail header background (`emails/base.html`) and the
-  PDF letterhead rule (`intern/pdf.py`)
+  and links (`intern/mail_markup.py`), the mail header background (`emails/base.html`), the
+  PDF letterhead rule (`intern/pdf.py`) and the CalDAV `CS:calendar-color` handed to devices
+  (`intern/caldav/daten.py:farbe()`)
 - `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in the privacy policy's „Verantwortliche" section; multi-line, empty → only board member names are listed, no addresses)
 - `HOMEPAGE_UEBER_UNS` (body text for the "Über uns" card on the public homepage; multi-line allowed)
 - `HOMEPAGE_AUFNAHME` (body text for the "Wir suchen" card on the public homepage; multi-line allowed; hidden when empty)

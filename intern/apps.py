@@ -91,11 +91,6 @@ _CONFIG_DEFAULTS = [
         "(leer → „<Vereinsname> – Geburtstage“)",
     ),
     (
-        "CALDAV_FARBE",
-        "#c14468",
-        "Farbe der Kalender auf dem Gerät (Hex, leer = keine Vorgabe)",
-    ),
-    (
         "CALDAV_TAGE_RUECKWIRKEND",
         "365",
         "Wie viele Tage in die Vergangenheit Termine ausgeliefert werden",

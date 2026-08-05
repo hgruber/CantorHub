@@ -61,8 +61,7 @@ FELDTYPEN: dict[str, str] = {
     "EJABBERD_BOT_RESCAN_SECONDS": "int",
     "EJABBERD_BOT_RELAY_SECONDS": "int",
     # string (einzeilig; MAILINGLISTE_WOCHEN = Komma-Liste, MAILINGLISTE_VERSANDZEIT
-    # = Uhrzeit HH:MM, CALDAV_FARBE/BRAND_FARBE = Hex — type=color kann „leer"
-    # nicht abbilden)
+    # = Uhrzeit HH:MM, BRAND_FARBE = Hex — type=color kann „leer" nicht abbilden)
     "EJABBERD_API_URL": "string",
     "EJABBERD_HOST": "string",
     "EJABBERD_MUC_SERVICE": "string",
@@ -77,7 +76,6 @@ FELDTYPEN: dict[str, str] = {
     "CARDDAV_ORGANISATION": "string",
     "CALDAV_KALENDER_NAME": "string",
     "CALDAV_GEBURTSTAGE_NAME": "string",
-    "CALDAV_FARBE": "string",
     "VEREINSNAME": "string",
     "VEREINSNAME_LANG": "string",
     "VEREINSNAME_KURZ": "string",
@@ -195,9 +193,9 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     "MAILINGLISTE_OPTIN_TAGE", "MAILINGLISTE_TEXT", "MAILINGLISTE_EINWILLIGUNG",
     "MAIL_MAILINGLISTE_OPTIN", "MAIL_MAILINGLISTE_WILLKOMMEN",
     "MAIL_MAILINGLISTE_BEREITS_ANGEMELDET", "MAIL_MAILINGLISTE_ERINNERUNG",
-    # Kalender (CalDAV) — Schalter, Namen, Farbe, Zeitraum, Auth, ICS-Alternative
+    # Kalender (CalDAV) — Schalter, Namen, Zeitraum, Auth, ICS-Alternative
     "CALDAV_AKTIV", "CALDAV_KALENDER_NAME", "CALDAV_GEBURTSTAGE",
-    "CALDAV_GEBURTSTAGE_NAME", "CALDAV_FARBE", "CALDAV_TAGE_RUECKWIRKEND",
+    "CALDAV_GEBURTSTAGE_NAME", "CALDAV_TAGE_RUECKWIRKEND",
     "CALDAV_STANDARDDAUER_STUNDEN",
     "CALDAV_AUTH_TTL", "CALDAV_MAX_FEHLVERSUCHE_PRO_STUNDE",
     "ICAL_TAGE_RUECKWIRKEND", "ICAL_SECRET",

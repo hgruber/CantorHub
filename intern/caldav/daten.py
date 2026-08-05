@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.utils.timezone import now as jetzt_lokal
 
-from ..app_settings import get_config, get_config_bool, get_config_int, get_vereinsname_lang, get_zeitzone
+from ..app_settings import get_brand_farbe, get_config, get_config_bool, get_config_int, get_vereinsname_lang, get_zeitzone
 from . import ical
 
 logger = logging.getLogger(__name__)
@@ -75,8 +75,8 @@ def sammlung_name(art):
 
 
 def farbe():
-    """``CS:calendar-color``; leer, wenn nichts eingestellt ist."""
-    return get_config("CALDAV_FARBE") or ""
+    """``CS:calendar-color`` — folgt der portalweiten BRAND_FARBE."""
+    return get_brand_farbe()
 
 
 def _termine():
