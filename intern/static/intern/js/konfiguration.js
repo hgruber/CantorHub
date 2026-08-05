@@ -333,6 +333,7 @@
             const gruppen = sichtbareGruppen();
             const alleOffen = gruppen.length > 0 && gruppen.every(function (g) { return g.open; });
             toggleAllBtn.title = alleOffen ? "Alle Gruppen zuklappen" : "Alle Gruppen aufklappen";
+            toggleAllBtn.classList.toggle("kf-toggle-all-open", alleOffen);
         };
         toggleAllBtn.addEventListener("click", function () {
             const gruppen = sichtbareGruppen();

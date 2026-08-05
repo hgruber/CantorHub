@@ -637,6 +637,14 @@ body {
     stroke: currentColor;
 }
 
+/* Auf-/Zuklappen-Button: Icon dreht sich mit dem Zustand */
+.kf-toggle-all-icon {
+    transition: transform var(--ease), color var(--ease);
+}
+.kf-toggle-all-open .kf-toggle-all-icon {
+    transform: rotate(180deg);
+}
+
 .top-bar a {
     display: flex;
     align-items: center;
