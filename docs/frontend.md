@@ -212,6 +212,18 @@ neutral "keine Angabe" state does. Destructive buttons use `--error-solid` /
 `--error-solid-hover`; do **not** reach for `--error-bg` there, that is a pale surface colour
 and carries no white text.
 
+**Categorical palette** — voice types (Stimmen S/A/T/B/C/M) and permission categories
+(Artikel/Forum/Dateien/Orte/Termine/Repertoire/Mitglieder) share one token family
+`--kat-1..6`, with the dark-mode block redefining all six. Stimme A and the category „Termine"
+are the accent colour (`var(--brand)`, not a `--kat-*`), so a `BRAND_FARBE` override reaches
+them too. Tints are written inline as `color-mix(in srgb, var(--kat-N) X%, transparent)` —
+the row tints (`.row-stimme-*`) and permission column tints (`.perm-stimme-*`,
+`.perm-col-cat-*`) keep their light/dark opacity difference (7 %/15 % light vs 10 %/20 %
+dark) via explicit `[data-theme="dark"]` rules; the `.perm-cat-*` colour bar needs none,
+because it uses the full-tone token that the dark block already overrides. The palette is
+domain-fixed (soprano/alto/tenor/bass are not a per-choir setting) and not exposed in
+`Konfiguration`.
+
 ## Explanation tooltips
 
 A small info icon whose bubble explains what an option means and what it does. Two rules make
