@@ -36,6 +36,7 @@ from intern.folder_access import (
     is_folder_visible,
     visible_folder_ids,
 )
+from intern.medientypen import AUDIO_ENDUNGEN
 
 from ..models import Artikel, DateiVersion, FolderPermission
 from ..tables import OrdnerTabelle
@@ -403,8 +404,9 @@ _FOLDER_PAGE_SIZE = 50
 # Der Player im Kontextmenü ist ein <audio>-Element — nur was es spielen kann,
 # darf angeboten werden. Der MIME-Typ ist die Hauptquelle; hochgeladene Dateien
 # landen aber gelegentlich als application/octet-stream in filer, daher die
-# Endungsliste als Rückfall.
-_AUDIO_ENDUNGEN = (".mp3", ".m4a", ".ogg", ".oga", ".opus", ".wav", ".flac", ".aac")
+# Endungsliste als Rückfall. Sie ist mit dem Wiki-Player geteilt, siehe
+# `intern/medientypen.py`.
+_AUDIO_ENDUNGEN = AUDIO_ENDUNGEN
 
 
 def _ist_audio(record):

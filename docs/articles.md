@@ -51,6 +51,29 @@ code blocks, indentation, notes, external links, and `[[Datei:name.pdf]]` file l
 against filer by **name**. `internal_links` must use `filter().first()`, not `get()` — a file
 linked into several folders has several rows (see `files.md`).
 
+### Embedded media
+
+A `[[Datei:…]]` whose target `intern/medientypen.py` calls playable renders as a **media bar**
+instead of a link: the same `.mp-*` markup the floating mini-player uses, inline in the text.
+`|Label` overrides the title, which otherwise is the filename without its extension. Video gets a
+`<video>` without `controls` — the bar *is* the controls. Everything else keeps the old
+`<figure class="wiki-figure">`.
+
+Two constraints on `_medienleiste()` come from `apply_replacements()` and are easy to break:
+
+- The bar must be **phrasing content on a single line**. The `<p>` rule runs over the same line
+  *after* this substitution, so a `<div>` would tear the paragraph open. It costs nothing
+  visually, because every `.mp-*` rule sets its own `display`.
+- The `''italic''`, `""quote""` and `$raw$` rules run afterwards too. So: no single quotes, no
+  empty attribute values (two of them would read as `""…""`), no `$`. `MedienleisteMarkupTest`
+  guards all of this.
+
+The queue — click a bar, the article's remaining media follow in document order — is built in the
+browser from the DOM, not from a `json_script`. See `frontend.md`.
+
+Forum messages deliberately keep the plain link: `Mitteilung.formatiert()` renders without a
+`request`, and `internal_links` passes that through as `spieler=False`.
+
 `fuzzy.py` provides the fuzzy song-title matching used when an article references a `Lied`.
 `abstimmung.js` binds the `{abstimmung:...}` directive to the `Abstimmung` model.
 

@@ -1385,3 +1385,146 @@ class KonfigurierteHelperTest(SimpleTestCase):
         )
         # + 3 h = 22:30 lokal = 20:30 UTC.
         self.assertEqual(d["ende"], "20250601T203000Z")
+
+
+def _datei(name, mime="", url=None):
+    """Ein filer-File, so weit die Einbettung es anfasst."""
+    return SimpleNamespace(
+        original_filename=name,
+        mime_type=mime,
+        url=url if url is not None else f"/media/{name}",
+    )
+
+
+class MedientypTest(SimpleTestCase):
+    """MIME zuerst, Endung als Rückfall — dieselbe Rangfolge wie im Ordner."""
+
+    def test_audio_endungen(self):
+        from intern.medientypen import medientyp
+        for name in ("a.mp3", "a.M4A", "a.opus", "a.flac", "a.wav"):
+            self.assertEqual(medientyp("", name), "audio", name)
+
+    def test_video_endungen(self):
+        from intern.medientypen import medientyp
+        for name in ("a.mp4", "a.webm", "a.MOV", "a.ogv"):
+            self.assertEqual(medientyp("", name), "video", name)
+
+    def test_nicht_abspielbar(self):
+        from intern.medientypen import medientyp
+        # .mkv/.avi spielt kein Browser verlässlich, .pdf/.jpg gehören in die Figur.
+        for name in ("a.mkv", "a.avi", "a.wmv", "a.pdf", "a.jpg", "a", ""):
+            self.assertIsNone(medientyp("", name), name)
+
+    def test_mime_schlaegt_endung(self):
+        from intern.medientypen import medientyp
+        self.assertEqual(medientyp("audio/mpeg", "unbekannt.dat"), "audio")
+        self.assertEqual(medientyp("video/mp4", "unbekannt.dat"), "video")
+        # .ogg ist Audio, solange kein video/ogg dagegensteht.
+        self.assertEqual(medientyp("", "a.ogg"), "audio")
+        self.assertEqual(medientyp("video/ogg", "a.ogg"), "video")
+
+    def test_endungen_mit_folders_geteilt(self):
+        """Divergieren die Listen, verspricht die Ordnerzeile Zählungen,
+        die die Playlist nicht einlöst."""
+        from intern import medientypen
+        from intern.views import folders
+        self.assertIs(folders._AUDIO_ENDUNGEN, medientypen.AUDIO_ENDUNGEN)
+
+
+class MedienleisteMarkupTest(SimpleTestCase):
+    """Das Markup muss die Regex-Kette in ``apply_replacements`` überleben."""
+
+    def _leiste(self, name, mime=""):
+        from intern.replacements import insert_file_object
+        return insert_file_object(_datei(name, mime), spieler=True)
+
+    def test_audio_leiste(self):
+        markup = self._leiste("Song.mp3")
+        self.assertIn('class="wiki-player wiki-player--audio"', markup)
+        self.assertIn('data-typ="audio"', markup)
+        self.assertIn('data-url="/media/Song.mp3"', markup)
+        self.assertIn("mp-progress-bar", markup)
+        self.assertIn('class="mp-title">Song<', markup)
+        self.assertIn('class="mp-type">MP3<', markup)
+        self.assertNotIn("<video", markup)
+
+    def test_video_leiste_ohne_eigene_controls(self):
+        import re as _re
+        markup = self._leiste("Clip.mp4")
+        self.assertIn('data-typ="video"', markup)
+        self.assertIn('<video class="wp-video"', markup)
+        # Die Leiste *ist* die Steuerung — native controls daneben wären doppelt.
+        video_tag = _re.search(r"<video[^>]*>", markup).group(0)
+        self.assertNotIn("controls", video_tag)
+
+    def test_nur_phrasing_content(self):
+        """Ein Blockelement bräche den <p>, in den die Zeile danach wandert."""
+        markup = self._leiste("Song.mp3")
+        self.assertNotIn("<div", markup)
+        self.assertNotIn("<figure", markup)
+        self.assertNotIn("\n", markup)
+
+    def test_ueberlebt_die_nachfolgenden_regeln(self):
+        """''kursiv'', ""zitat"" und $roh$ laufen nach dieser Ersetzung."""
+        markup = self._leiste("Song.mp3")
+        self.assertNotIn("'", markup)
+        self.assertNotIn('""', markup)
+        self.assertNotIn("$", markup)
+
+    def test_anfuehrungszeichen_im_dateinamen(self):
+        markup = self._leiste('a"b.mp3')
+        self.assertIn("&quot;", markup)
+        # Das Attribut bleibt heil: nach data-url folgt genau ein schließendes ".
+        self.assertIn('data-url="/media/a&quot;b.mp3"', markup)
+
+    def test_label_ueberschreibt_den_titel(self):
+        from intern.replacements import insert_file_object
+        markup = insert_file_object(_datei("Song.mp3"), "Mein Titel", spieler=True)
+        self.assertIn('class="mp-title">Mein Titel<', markup)
+
+    def test_nicht_abspielbares_bleibt_figur(self):
+        for name in ("Noten.pdf", "Brief.docx", "Film.mkv"):
+            markup = self._leiste(name)
+            self.assertIn('class="wiki-figure"', markup, name)
+            self.assertNotIn("wiki-player", markup, name)
+
+    def test_ohne_spieler_kein_player(self):
+        """Der Forums-Renderpfad ruft ohne ``spieler`` auf."""
+        from intern.replacements import insert_file_object
+        markup = insert_file_object(_datei("Song.mp3"))
+        self.assertIn('class="wiki-figure"', markup)
+        self.assertNotIn("wiki-player", markup)
+
+
+class WikiPlayerIntegrationTest(SimpleTestCase):
+    """Der ganze Weg durch ``apply_replacements``."""
+
+    def _rendern(self, text, datei=None, request=True):
+        from intern import replacements
+        req = SimpleNamespace(user=None) if request else None
+        with mock.patch.object(replacements, "File") as File, mock.patch.object(
+            replacements, "get_vereinsname_kurz", return_value="JG"
+        ):
+            File.objects.filter.return_value.first.return_value = datei
+            return replacements.apply_replacements(text, req)
+
+    def test_absatz_bleibt_heil(self):
+        out = self._rendern("Hier: [[Datei:Song.mp3]] und Ende", _datei("Song.mp3"))
+        self.assertIn('<p>Hier: <span class="wiki-player', out)
+        self.assertIn("und Ende</p>", out)
+
+    def test_label_wird_ausgewertet(self):
+        out = self._rendern("[[Datei:Song.mp3|Mein Titel]]", _datei("Song.mp3"))
+        self.assertIn('class="mp-title">Mein Titel<', out)
+
+    def test_fehlende_datei_unveraendert(self):
+        out = self._rendern("[[Datei:fehlt.mp3]]", None)
+        self.assertIn('class="not_found"', out)
+        self.assertNotIn("wiki-player", out)
+
+    def test_forum_ohne_player(self):
+        out = self._rendern(
+            "[[Datei:Song.mp3]]", _datei("Song.mp3"), request=False
+        )
+        self.assertNotIn("wiki-player", out)
+        self.assertIn('class="wiki-figure"', out)

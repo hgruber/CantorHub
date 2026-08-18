@@ -195,6 +195,14 @@ filer typed as `application/octet-stream` — and both honour the same field pre
 `original_filename` before `name` (which may be NULL). If they drift, a folder row promises a
 count its playlist then does not deliver.
 
+`_AUDIO_ENDUNGEN` itself is `intern/medientypen.py`'s `AUDIO_ENDUNGEN`, shared with the wiki
+media bar (see `articles.md`); `medientyp()` there applies the same MIME-before-extension order
+and additionally knows `VIDEO_ENDUNGEN`. Both lists cover only what a browser actually plays —
+`.mkv`, `.avi`, `.wmv` and `.flv` are left out on purpose, so they stay a file link rather than
+becoming a dead player. The folder browser keeps reading the constant rather than calling
+`medientyp()`, because the `Q` version would have to be taught the same delegation to stay
+equivalent.
+
 The search branch of `folder_view` sets none of these and renders no `#Action` panel either,
 so it has no context menu at all.
 

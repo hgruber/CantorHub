@@ -562,6 +562,12 @@ document.addEventListener("DOMContentLoaded", function () {
     let activeBtn = null;
     let queue = [];
     let queueIndex = -1;
+    // Der schwebende Player ist nur eine von mehreren Anzeigen: die Wiki-Artikel
+    // betten Leisten (.wiki-player) in den Text ein, die dieselbe Wiedergabe
+    // spiegeln. Es klingt immer nur eine Quelle — `audio`.
+    let aktuellerItem = null;   // was gerade läuft, für den Abgleich mit den Leisten
+    let trackAbbruch = null;    // AbortController für die Listener des laufenden Tracks
+    let fremdesMedium = false;  // `audio` ist ein <video> aus dem DOM, kein new Audio()
 
     // ── Media Session (lock screen / OS media controls) ──────
     const HAS_MS = "mediaSession" in navigator;
@@ -616,6 +622,39 @@ document.addEventListener("DOMContentLoaded", function () {
     function setMainIcon(playing) {
       playBtn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
     }
+
+    // ── Inline-Leisten im Wikitext ───────────────────────────
+    // Bewusst keine Registrierung: die Leisten werden bei jedem Rendern frisch
+    // aus dem DOM geholt. Damit überleben sie htmx-Swaps, und es bleibt kein
+    // Zustand zurück, der auf entfernte Knoten zeigt.
+    function leisten() {
+      return Array.from(document.querySelectorAll(".wiki-player"));
+    }
+    function leistenRendern() {
+      const alle = leisten();
+      if (!alle.length) return;
+      const url = aktuellerItem ? aktuellerItem.url : null;
+      const laeuft = !!(audio && !audio.paused);
+      alle.forEach((l) => {
+        const aktiv = !!audio && url !== null && l.dataset.url === url;
+        l.classList.toggle("playing", aktiv);
+        l.querySelector(".mp-play").innerHTML = (aktiv && laeuft) ? ICON_PAUSE : ICON_PLAY;
+        l.querySelector(".mp-current").textContent = aktiv ? fmt(audio.currentTime) : "0:00";
+        l.querySelector(".mp-total").textContent = aktiv ? fmt(audio.duration) : "0:00";
+        l.querySelector(".mp-progress-bar").style.width =
+          (aktiv && audio.duration) ? (audio.currentTime / audio.duration * 100) + "%" : "0%";
+        l.querySelector(".mp-prev").disabled = !aktiv || queueIndex <= 0;
+        l.querySelector(".mp-next").disabled = !aktiv || queueIndex >= queue.length - 1;
+      });
+    }
+    // Das <video> einer Leiste, falls der Track zu einer gehört — die Engine
+    // übernimmt es dann, statt ein eigenes Audio-Objekt zu bauen.
+    function medienElement(url) {
+      const treffer = leisten().find(
+        (l) => l.dataset.typ === "video" && l.dataset.url === url
+      );
+      return treffer ? treffer.querySelector("video") : null;
+    }
     function show() {
       player.classList.add("open");
       player.setAttribute("aria-hidden", "false");
@@ -625,11 +664,17 @@ document.addEventListener("DOMContentLoaded", function () {
       player.setAttribute("aria-hidden", "true");
     }
     function stop() {
-      if (audio) { try { audio.pause(); } catch (_) {} audio = null; }
+      if (audio) { try { audio.pause(); } catch (_) {} }
+      if (trackAbbruch) { trackAbbruch.abort(); trackAbbruch = null; }
+      if (audio && fremdesMedium) { try { audio.currentTime = 0; } catch (_) {} }
+      audio = null;
+      fremdesMedium = false;
+      aktuellerItem = null;
       setBtnPlaying(activeBtn, false);
       activeBtn = null;
       queue = [];
       queueIndex = -1;
+      leistenRendern();
       bar.style.width = "0%";
       currentEl.textContent = "0:00";
       totalEl.textContent = "0:00";
@@ -642,6 +687,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     function loadTrack(item, onEnded) {
       if (audio) { try { audio.pause(); } catch (_) {} }
+      // Ein wiederverwendetes <video> aus dem DOM behielte sonst die Listener
+      // jedes vorigen Durchlaufs — bei new Audio() starben sie mit dem Objekt.
+      if (trackAbbruch) trackAbbruch.abort();
+      if (audio && fremdesMedium) { try { audio.currentTime = 0; } catch (_) {} }
+      trackAbbruch = new AbortController();
+      const opt = { signal: trackAbbruch.signal };
+      aktuellerItem = item;
       titleEl.textContent = item.title || "";
       composerEl.textContent = item.composer || "";
       let typeText = item.type || "";
@@ -653,27 +705,42 @@ document.addEventListener("DOMContentLoaded", function () {
       currentEl.textContent = "0:00";
       totalEl.textContent = "0:00";
       updateNavButtons();
-      audio = new Audio(item.url);
+      // Gehört der Track zu einer Video-Leiste, spielt deren <video> — sonst
+      // gäbe es Ton ohne Bild. HTMLVideoElement und HTMLAudioElement teilen
+      // sich die HTMLMediaElement-API, alles darunter bleibt gleich.
+      const medium = medienElement(item.url);
+      fremdesMedium = !!medium;
+      audio = medium || new Audio(item.url);
       audio.addEventListener("loadedmetadata", () => {
         totalEl.textContent = fmt(audio.duration);
-      });
+        leistenRendern();
+      }, opt);
       audio.addEventListener("timeupdate", () => {
         currentEl.textContent = fmt(audio.currentTime);
         if (audio.duration) {
           bar.style.width = (audio.currentTime / audio.duration * 100) + "%";
         }
-      });
-      audio.addEventListener("ended", onEnded);
+        leistenRendern();
+      }, opt);
+      audio.addEventListener("ended", onEnded, opt);
       audio.addEventListener("error", () => {
         console.error("Error playing audio:", item.url);
         onEnded();
-      });
-      audio.addEventListener("play",  () => msState("playing"));
-      audio.addEventListener("pause", () => msState("paused"));
+      }, opt);
+      audio.addEventListener("play",  () => { msState("playing"); leistenRendern(); }, opt);
+      audio.addEventListener("pause", () => { msState("paused");  leistenRendern(); }, opt);
       msMetadata(item);
-      audio.play().catch((err) => console.error("Audio play() rejected:", err));
+      audio.play().catch((err) => {
+        // Beim Weiterschalten in der Warteschlange fehlt die Nutzergeste —
+        // manche Browser lehnen Autoplay dann ab. Die Leiste zeigt wieder Play.
+        console.error("Audio play() rejected:", err);
+        setMainIcon(false);
+        leistenRendern();
+      });
+      if (medium) medium.scrollIntoView({ block: "nearest", behavior: "smooth" });
       setMainIcon(true);
       show();
+      leistenRendern();
     }
     function play(btn) {
       setBtnPlaying(activeBtn, false);
@@ -696,7 +763,9 @@ document.addEventListener("DOMContentLoaded", function () {
         stop();
       }
     }
-    function playQueue(items, shuffle) {
+    // `start` ist der Index, ab dem gespielt wird — die Wiki-Leisten starten
+    // mitten in der Liste. Ohne dritten Parameter bleibt es beim Anfang.
+    function playQueue(items, shuffle, start) {
       if (!items || !items.length) {
         alert("Keine spielbaren Audios in der Liste.");
         return;
@@ -710,8 +779,24 @@ document.addEventListener("DOMContentLoaded", function () {
           [queue[i], queue[j]] = [queue[j], queue[i]];
         }
       }
-      queueIndex = 0;
-      loadTrack(queue[0], advance);
+      queueIndex = shuffle ? 0 : Math.max(0, start || 0);
+      loadTrack(queue[queueIndex], advance);
+    }
+
+    // Die Warteschlange eines Artikels sind seine Leisten in Dokument-
+    // reihenfolge. Sie kommt aus dem DOM statt aus einem json_script: so
+    // spiegelt sie genau das, was der Leser sieht — auch in alten Versionen
+    // eines Artikels — und die View muss den Wikitext nicht ein zweites Mal
+    // auflösen.
+    function artikelQueueStarten(leiste) {
+      const bereich = leiste.closest(".wiki") || document;
+      const alle = Array.from(bereich.querySelectorAll(".wiki-player"));
+      const items = alle.map((l) => ({
+        url: l.dataset.url,
+        title: l.dataset.titel || "",
+        type: l.dataset.typ === "video" ? "Video" : "Audio",
+      }));
+      playQueue(items, false, alle.indexOf(leiste));
     }
     // Für Aufrufer, die ihre Liste selbst mitbringen (Ordner-Kontextmenü) —
     // ein einzelner Titel ist einfach eine Warteschlange der Länge 1.
@@ -747,6 +832,47 @@ document.addEventListener("DOMContentLoaded", function () {
         play(btn);
       }
     });
+
+    // Die Knöpfe der Inline-Leisten. Bewusst nicht über .audio-btn: dessen
+    // Handler leert die Warteschlange, hier soll sie gerade entstehen.
+    document.addEventListener("click", function (e) {
+      const leiste = e.target.closest && e.target.closest(".wiki-player");
+      if (!leiste) return;
+      const knopf = e.target.closest("button, .mp-progress");
+      if (!knopf) return;
+      e.preventDefault();
+      const aktiv = !!aktuellerItem && aktuellerItem.url === leiste.dataset.url;
+      if (knopf.classList.contains("mp-play")) {
+        if (aktiv && audio) {
+          if (audio.paused) audio.play(); else audio.pause();
+        } else {
+          artikelQueueStarten(leiste);
+        }
+      } else if (!aktiv || !audio) {
+        return;  // Vor/Zurück/Suchlauf gehören zum laufenden Track
+      } else if (knopf.classList.contains("mp-prev")) {
+        if (queueIndex > 0) { queueIndex--; loadTrack(queue[queueIndex], advance); }
+      } else if (knopf.classList.contains("mp-next")) {
+        if (queueIndex < queue.length - 1) advance();
+      } else if (knopf.classList.contains("mp-progress") && audio.duration) {
+        const rect = knopf.getBoundingClientRect();
+        const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+        audio.currentTime = pct * audio.duration;
+        leistenRendern();
+      }
+    });
+
+    // Startet irgendein anderes Medium auf der Seite — etwa ein <audio controls>
+    // aus einer externen URL im Wikitext —, schweigt unseres. Es soll nie mehr
+    // als eine Quelle klingen. `play` bubbelt nicht, daher capture.
+    document.addEventListener("play", function (e) {
+      if (e.target === audio) return;
+      if (audio && !audio.paused) {
+        try { audio.pause(); } catch (_) {}
+        setMainIcon(false);
+        leistenRendern();
+      }
+    }, true);
 
     playBtn.addEventListener("click", () => {
       if (!audio) return;

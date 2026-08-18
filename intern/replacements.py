@@ -1,10 +1,12 @@
 import html
 import locale
+import os
 import re
 from datetime import date, datetime, timedelta
 from typing import Union
 
 from intern.app_settings import get_vereinsname_kurz
+from intern.medientypen import medientyp
 
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File
@@ -182,7 +184,110 @@ class CodeBlockProcessor:
         return ""
 
 
-def insert_file_object(f):
+# Die Icons sind wörtlich die des schwebenden Mini-Players (`base.html`) bzw. der
+# Medien-Karte im Repertoire (`titel.html`) — die Inline-Leiste soll nicht nur
+# ähnlich, sondern gleich aussehen.
+_ICON_NOTE = (
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"'
+    ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/>'
+    '<circle cx="18" cy="16" r="3"/></svg>'
+)
+_ICON_VIDEO = (
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"'
+    ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M22 8L16 12L22 16V8Z"/>'
+    '<rect x="2" y="6" width="14" height="12" rx="2"/></svg>'
+)
+_ICON_PREV = (
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"'
+    ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<polygon points="19 20 9 12 19 4 19 20"/>'
+    '<line x1="5" y1="4" x2="5" y2="20"/></svg>'
+)
+_ICON_PLAY = (
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"'
+    ' aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>'
+)
+_ICON_NEXT = (
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"'
+    ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<polygon points="5 4 15 12 5 20 5 4"/>'
+    '<line x1="19" y1="4" x2="19" y2="20"/></svg>'
+)
+_ICON_DOWNLOAD = (
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"'
+    ' stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>'
+    '<polyline points="7 10 12 15 17 10"/>'
+    '<line x1="12" y1="15" x2="12" y2="3"/></svg>'
+)
+
+
+def _medienleiste(f, typ, label=None):
+    """Die Abspielleiste für eine Audio- oder Videodatei im Artikeltext.
+
+    Sie teilt sich die `.mp-*`-Klassen mit dem schwebenden Mini-Player und wird
+    von derselben Wiedergabe-Engine bedient (`intern.js`); hier entsteht nur die
+    Hülle. Zwei Eigenheiten von `apply_replacements()` bestimmen die Form:
+
+    - Das Ergebnis muss **phrasing content** sein und in *eine* Zeile passen.
+      Die `<p>`-Regel läuft nach dieser Ersetzung über dieselbe Zeile, ein
+      `<div>` würde den Absatz aufbrechen. Optisch kostet das nichts, weil alle
+      `.mp-*`-Regeln ihr eigenes `display` setzen.
+    - Danach laufen noch die Regeln für ``''kursiv''``, ``""zitat""`` und
+      ``$roh$``. Deshalb: keine einfachen Anführungszeichen, keine leeren
+      Attributwerte (zwei davon ergäben zusammen ein ``""…""``), kein `$`.
+    """
+    dateiname = f.original_filename or ""
+    url = html.escape(f.url)
+    # `label` kommt aus dem bereits escapten Quelltext (`[[Datei:x|Titel]]`) —
+    # ein zweites html.escape() machte daraus &amp;quot;.
+    titel = (label or "").strip() or html.escape(os.path.splitext(dateiname)[0])
+    endung = os.path.splitext(dateiname)[1].lstrip(".").upper()
+    chip = html.escape(endung) or ("VIDEO" if typ == "video" else "AUDIO")
+    icon = _ICON_VIDEO if typ == "video" else _ICON_NOTE
+    bild = (
+        f'<video class="wp-video" preload="metadata" playsinline src="{url}"></video>'
+        if typ == "video"
+        else ""
+    )
+    return (
+        f'<span class="wiki-player wiki-player--{typ}" data-typ="{typ}"'
+        f' data-url="{url}" data-titel="{titel}">'
+        f"{bild}"
+        f'<span class="mp-info">'
+        f'<span class="mp-info-icon" aria-hidden="true">{icon}</span>'
+        f'<span class="mp-meta"><span class="mp-title">{titel}</span></span>'
+        f'<span class="mp-type">{chip}</span>'
+        f"</span>"
+        f'<span class="mp-controls">'
+        f'<button type="button" class="mp-prev" aria-label="Vorheriger Titel" disabled>'
+        f"{_ICON_PREV}</button>"
+        f'<button type="button" class="mp-play" aria-label="Abspielen">'
+        f"{_ICON_PLAY}</button>"
+        f'<button type="button" class="mp-next" aria-label="Nächster Titel" disabled>'
+        f"{_ICON_NEXT}</button>"
+        f'<span class="mp-time mp-current">0:00</span>'
+        f'<span class="mp-progress" role="progressbar" aria-label="Position">'
+        f'<span class="mp-progress-bar"></span></span>'
+        f'<span class="mp-time mp-total">0:00</span>'
+        f'<a class="wp-download" href="{url}" download aria-label="Herunterladen">'
+        f"{_ICON_DOWNLOAD}</a>"
+        f"</span></span>"
+    )
+
+
+def insert_file_object(f, label=None, spieler=False):
+    """Das eingebettete HTML für `[[Datei:…]]`.
+
+    `spieler` schaltet die Medienleiste frei; der Forums-Renderpfad lässt sie
+    aus (siehe `internal_links`).
+    """
+    if spieler:
+        typ = medientyp(f.mime_type, f.original_filename)
+        if typ:
+            return _medienleiste(f, typ, label)
     mime = f.mime_type or ""
     filename = html.escape(f.original_filename or "")
     # URLs stammen aus Dateinamen und können Anführungszeichen enthalten —
@@ -401,7 +506,13 @@ def internal_links(match, request):
                 f'⚠️ Datei: {html.escape(name)}</span>'
             )
         try:
-            return insert_file_object(f)
+            # Die Medienleiste nur im Artikel, nicht im Forum: dort ist
+            # `request` None (dieselbe Unterscheidung wie beim Codeblock und
+            # beim Footer weiter unten), und eine Abspielleiste je Anhang
+            # würde den Nachrichtenstrom dominieren.
+            return insert_file_object(
+                f, match.group(6), spieler=request is not None
+            )
         except Exception as e:
             return (
                 f'<span title="{html.escape(str(e))}" class="not_found">⚠️ Datei: {html.escape(name)}</span>'
