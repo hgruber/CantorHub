@@ -72,7 +72,7 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   so `base.html` never includes `_termin_banner.html`. Independent of the per-member,
   per-login-dismissible state kept in `localStorage` — that dismissal only works while this key
   is on)
-- `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel"`)
+- `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel e.V."`)
 - `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)
 - `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title)
 - `BRAND_FARBE` (accent colour, hex, default `#c14468`) — overrides the `--brand` CSS custom

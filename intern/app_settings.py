@@ -94,7 +94,7 @@ def get_from_email():
 
 
 def get_vereinsname():
-    return get_config("VEREINSNAME", "Join us singing the Gospel")
+    return get_config("VEREINSNAME", "Join us singing the Gospel e.V.")
 
 
 def get_vereinsname_lang():
