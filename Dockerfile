@@ -43,7 +43,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     echo 'LANG=de_DE.UTF-8' > /etc/default/locale && \
     echo 'LC_ALL=de_DE.UTF-8' >> /etc/default/locale && \
     rm -f /etc/nginx/sites-enabled/default && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* \
+           /usr/share/doc/* /usr/share/man/* /usr/share/info/* \
+           /usr/local/lib/python3.14/site-packages/pip \
+           /usr/local/lib/python3.14/site-packages/pip-*.dist-info \
+           /usr/local/lib/python3.14/site-packages/setuptools \
+           /usr/local/lib/python3.14/site-packages/setuptools-*.dist-info \
+           /usr/local/lib/python3.14/site-packages/wheel \
+           /usr/local/lib/python3.14/site-packages/wheel-*.dist-info \
+           /usr/local/lib/python3.14/site-packages/pkg_resources \
+           /usr/local/lib/python3.14/site-packages/_distutils_hack \
+           /usr/local/lib/python3.14/site-packages/distutils-precedence.pth \
+           /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.14 \
+           /usr/local/bin/wheel
 
 ENV LANG=de_DE.UTF-8
 ENV LC_ALL=de_DE.UTF-8
