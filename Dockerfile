@@ -38,7 +38,7 @@ RUN useradd -m -r appuser && \
 COPY --from=builder /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx locales git libmariadb3 && \
+    nginx locales libmariadb3 && \
     locale-gen de_DE.UTF-8 && \
     echo 'LANG=de_DE.UTF-8' > /etc/default/locale && \
     echo 'LC_ALL=de_DE.UTF-8' >> /etc/default/locale && \

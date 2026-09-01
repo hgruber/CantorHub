@@ -17,10 +17,29 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-VERSION = (
-    "CantorHub v0."
-    + subprocess.check_output(["git", "rev-list", "--count", "HEAD"]).decode().strip()
-)
+def _versionsstring():
+    """CantorHub vX.Y — aus CANTORHUB_VERSION, sonst git, sonst Platzhalter.
+
+    Der Container hat kein git mehr im Image; dort setzt der Betreiber
+    CANTORHUB_VERSION beim Start. Fehlt das .git-Verzeichnis (etwa weil der
+    Bind-Mount es nicht enthält), startete das Portal bisher gar nicht erst.
+    """
+    aus_env = os.environ.get("CANTORHUB_VERSION")
+    if aus_env:
+        return aus_env
+    try:
+        anzahl = subprocess.check_output(
+            ["git", "rev-list", "--count", "HEAD"],
+            cwd=BASE_DIR,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).decode().strip()
+    except Exception:
+        return "CantorHub"
+    return "CantorHub v0." + anzahl
+
+
+VERSION = _versionsstring()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/

@@ -34,11 +34,13 @@ podman build -t cantorhub .
 podman run -d --name cantorhub -p 8000:8000 \
     -v /srv/cantorhub:/app \
     -e DB_HOST=db -e DB_NAME=cantorhub -e DB_USER=cantorhub -e DB_PASSWORD=secret \
+    -e CANTORHUB_VERSION="CantorHub v0.999" \
     cantorhub
 ```
 
 Without `DB_HOST` the portal falls back to SQLite (`db.sqlite3` next to the code) — fine for a
-test instance, not for production.
+test instance, not for production. `CANTORHUB_VERSION` fills the version line in the sidebar
+(the image deliberately ships no `git`; without the variable it just shows „CantorHub").
 
 For local development:
 
