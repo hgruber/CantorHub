@@ -21,15 +21,22 @@ def pdf_source(source, **options):
         return None
 
     try:
-        import fitz  # PyMuPDF
+        import pypdfium2 as pdfium
 
-        with fitz.open(stream=data, filetype="pdf") as doc:
-            if doc.page_count == 0:
+        with pdfium.PdfDocument(data) as doc:
+            if len(doc) == 0:
                 return None
-            pix = doc[0].get_pixmap(dpi=150)
-            return Image.open(BytesIO(pix.tobytes("png")))
+            bild = doc[0].render(scale=150 / 72).to_pil()
     except Exception:
         return None
+
+    if bild.mode == "RGBA":
+        # pypdfium2 rendert mit Alpha-Kanal; auf deckendes Weiss aufpassen,
+        # damit keine durchscheinenden Thumbnails entstehen.
+        hintergrund = Image.new("RGB", bild.size, "white")
+        hintergrund.paste(bild, mask=bild.getchannel("A"))
+        return hintergrund
+    return bild
 
 
 def docx_source(source, **options):

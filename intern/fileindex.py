@@ -1,7 +1,7 @@
 """Lightweight per-file text index for content search in the folder browser.
 
 Text is extracted lazily (on the first search that touches a file) and stored in
-the DateiIndex model. PDFs go through PyMuPDF; plain-text files are read
+the DateiIndex model. PDFs go through pypdfium2; plain-text files are read
 directly; every other type gets an empty index row so it is not re-examined on
 every search. Extraction never raises — failures yield an empty row.
 """
@@ -23,13 +23,13 @@ def _filename(filer_file):
 
 def _extract_pdf(data):
     try:
-        import fitz  # PyMuPDF
+        import pypdfium2 as pdfium
 
         parts = []
         total = 0
-        with fitz.open(stream=data, filetype="pdf") as doc:
-            for i in range(min(doc.page_count, _MAX_PAGES)):
-                txt = doc[i].get_text()
+        with pdfium.PdfDocument(data) as doc:
+            for i in range(min(len(doc), _MAX_PAGES)):
+                txt = doc[i].get_textpage().get_text_bounded()
                 parts.append(txt)
                 total += len(txt)
                 if total >= _MAX_CHARS:

@@ -289,17 +289,19 @@ def konzert_docx_titles(request, id):
 
 @login_required
 def konzert_pdf(request, id):
-    import fitz
+    import pypdfium2 as pdfium
 
     termin = get_object_or_404(Termin, id=id)
     lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
 
-    combined = fitz.open()
+    combined = pdfium.PdfDocument.new()
     for k in lieder:
         if k.lied and k.lied.pdf:
-            src = fitz.open(k.lied.pdf.file.path)
-            combined.insert_pdf(src)
-            src.close()
+            quelle = pdfium.PdfDocument(k.lied.pdf.file.path)
+            try:
+                combined.import_pages(quelle)
+            finally:
+                quelle.close()
 
     buf = io.BytesIO()
     combined.save(buf)

@@ -1528,3 +1528,71 @@ class WikiPlayerIntegrationTest(SimpleTestCase):
         )
         self.assertNotIn("wiki-player", out)
         self.assertIn('class="wiki-figure"', out)
+
+
+class PdfExtraktionTest(SimpleTestCase):
+    """PDF-Preview und Textextraktion über pypdfium2 (Nachfolger von PyMuPDF).
+
+    Das Test-PDF entsteht in-memory mit reportlab — kein DB-Zugriff, kein
+    Fixture, konsistent mit der SimpleTestCase-Invariante.
+    """
+
+    @classmethod
+    def _pdf(cls):
+        if not hasattr(cls, "_pdf_bytes"):
+            import io as _io
+
+            from reportlab.pdfgen import canvas as rl_canvas
+
+            buf = _io.BytesIO()
+            c = rl_canvas.Canvas(buf, pagesize=(595, 842))
+            c.setFont("Helvetica", 12)
+            c.drawString(72, 700, "Erste Strophe des Liedes")
+            c.save()
+            cls._pdf_bytes = buf.getvalue()
+        return cls._pdf_bytes
+
+    def test_text_wird_gelesen(self):
+        from intern.fileindex import _extract_pdf
+
+        self.assertIn("Erste Strophe", _extract_pdf(self._pdf()))
+
+    def test_textextraktion_bricht_bei_muell_ab(self):
+        from intern.fileindex import _extract_pdf
+
+        self.assertEqual(_extract_pdf(b"gar kein pdf"), "")
+
+    def test_thumbnail_wird_erzeugt(self):
+        from io import BytesIO
+
+        from intern.thumbnails import pdf_source
+
+        bild = pdf_source(BytesIO(self._pdf()))
+        self.assertIsNotNone(bild)
+        # 150 dpi auf A4 (595 pt breit) → ca. 1240 px.
+        self.assertAlmostEqual(bild.size[0], 595 * 150 / 72, delta=2)
+
+    def test_thumbnail_nicht_pdf_liefert_none(self):
+        from io import BytesIO
+
+        from intern.thumbnails import pdf_source
+
+        self.assertIsNone(pdf_source(BytesIO(b"gar kein pdf")))
+        # Magic-Byte-Guard: "%PDF-" ohne gültigen Rest kippt nicht, sondern
+        # liefert None (wie bei PyMuPDF).
+        self.assertIsNone(pdf_source(BytesIO(b"%PDF-" + b"\x00" * 64)))
+
+    def test_thumbnail_leeres_pdf_liefert_none(self):
+        from io import BytesIO
+
+        import pypdfium2 as pdfium
+
+        from intern.thumbnails import pdf_source
+
+        doc = pdfium.PdfDocument.new()
+        buf = BytesIO()
+        doc.save(buf)
+        doc.close()
+        self.assertIsNone(pdf_source(BytesIO(buf.getvalue())))
+        self.assertIsNone(pdf_source(BytesIO(b"%PDF-" + b"\x00" * 64)))
+        self.assertIsNone(pdf_source(BytesIO(b"gar kein pdf")))
