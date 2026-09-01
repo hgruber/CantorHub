@@ -14,5 +14,6 @@ PyMuPDF==1.27.2.3
 mysqlclient>=2.2.1
 pymysql==1.1.2
 pytz==2025.2
+reportlab==4.4.9
 slixmpp==1.13.2
 tzdata==2025.3
