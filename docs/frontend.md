@@ -119,10 +119,32 @@ Keine Angabe. The attendance table on the termin detail page groups users by `St
 A slim banner is shown site-wide at the top of `<main class="content">` in `base.html`
 (`_termin_banner.html`), highlighting the next upcoming event (`banner_termin` /
 `banner_my_option`, computed in `config/context_processors.py`'s `project_meta`) with a
-`timeuntil` countdown, location and — when `anwesenheit=True` — the same quick Zusage buttons
+countdown, location and — when `anwesenheit=True` — the same quick Zusage buttons
 (governed by `ZUSAGE_TRANSITIONS`). The buttons POST to `termin_zusage` with a hidden
 `source=banner` field, which makes that view render `_termin_banner.html` instead of the detail
 widget (htmx swaps `#termin-banner`).
+
+**All-day events are counted in calendar days, not hours.** An event entered without a time
+sits at `00:00` (see `intern/forms.py`), so Django's `timeuntil` would both measure against
+midnight — „3 Tage, 14 Stunden" where „4 Tage" is meant — and treat the event as past from
+00:01 of its own day. The rules live in `intern/terminzeit.py`, pure and clock-free so they are
+testable as `SimpleTestCase`:
+
+- `countdown_text()` yields „heute" / „morgen" / „N Tage" for all-day events and falls back to
+  `timeuntil` for events that carry a time, where hours are the useful answer. It keeps the
+  non-breaking space `timeuntil` uses between number and unit.
+- `kommende_q()` is the single definition of „upcoming" and feeds both `banner_termin` and the
+  `offen_termine` badge — including the `answered` subquery, which would otherwise use a
+  narrower definition and count an already-answered event as open forever. Besides the real
+  future it admits today's all-day event (`datum` equals midnight of today) and an all-day
+  event still running, up to and including `datum_bis` — the same reading as the month grid.
+  Events *with* a time are unaffected and still leave the banner when they start.
+
+The countdown is a template filter (`intern/templatetags/termin_tags.py`), not a value
+precomputed in the context processor: `termin_zusage` re-renders the banner with its own
+`banner_termin`, where a precomputed variable would still describe the event the context
+processor picked. `zeitraum_bis` in the same module gives the date line the full span of a
+multi-day all-day event, so „heute" is not paired with a start date in the past.
 
 The banner is rendered with the `hidden` attribute and only revealed by a small inline script
 at the end of `_termin_banner.html` — the dismissed state lives in `localStorage` and is

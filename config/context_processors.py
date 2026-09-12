@@ -18,19 +18,24 @@ def project_meta(request):
     if request.user.is_authenticated:
         from django.utils.timezone import now
         from intern.models import ChangeLog, Termin, Zusage
+        from intern.terminzeit import kommende_q
+        # Eine Definition für alle drei Verwendungen: „bevorstehend“ schließt
+        # den ganztägigen Termin von heute ein, dessen datum formal schon
+        # vergangen ist (siehe intern/terminzeit.py). Gäbe es zwei Lesarten,
+        # fiele eine bereits erteilte Zusage aus `answered` heraus und der
+        # Termin bliebe für immer als „offen“ gezählt.
+        jetzt = now()
+        kommende = Termin.objects.filter(kommende_q(jetzt))
         answered = Zusage.objects.filter(
             person=request.user,
-            termin__datum__gt=now(),
+            termin__in=kommende,
             option__in=["1", "2", "3"],
         ).values("termin_id")
-        result["offen_termine"] = Termin.objects.filter(
-            datum__gt=now(), anwesenheit=True,
-        ).exclude(id__in=answered).count()
+        result["offen_termine"] = (
+            kommende.filter(anwesenheit=True).exclude(id__in=answered).count()
+        )
         banner_termin = (
-            Termin.objects.filter(datum__gt=now())
-            .select_related("ort")
-            .order_by("datum")
-            .first()
+            kommende.select_related("ort").order_by("datum").first()
             if get_config_bool("TERMIN_BANNER_AKTIV", True) else None
         )
         result["banner_termin"] = banner_termin

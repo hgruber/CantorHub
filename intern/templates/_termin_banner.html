@@ -1,3 +1,4 @@
+{% load termin_tags %}
 <div id="termin-banner" class="termin-banner" hidden data-termin-id="{{ banner_termin.id }}" data-login="{{ banner_login }}">
   <a class="termin-banner-main" href="{% url 'termin_view' id=banner_termin.id %}">
     <span class="termin-banner-icon" aria-hidden="true">
@@ -7,12 +8,12 @@
       <span class="termin-banner-line1">
         <span class="termin-banner-countdown">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          {{ banner_termin.datum|timeuntil }}</span>
+          {{ banner_termin|countdown }}</span>
         <span class="termin-banner-titel">{{ banner_termin.kurz }}</span>
         {% if banner_termin.repertoire %}<span class="termin-banner-tag">Konzert</span>{% endif %}
       </span>
       <span class="termin-banner-line2">
-        {{ banner_termin.datum|date:"D, d.m." }}{% if banner_termin.datum|time:"H:i" != "00:00" %}, {{ banner_termin.datum|time:"H:i" }} Uhr{% endif %}{% if banner_termin.ort %} · {{ banner_termin.ort.name }}{% endif %}
+        {{ banner_termin.datum|date:"D, d.m." }}{% if banner_termin.datum|time:"H:i" != "00:00" %}, {{ banner_termin.datum|time:"H:i" }} Uhr{% else %}{% with bis=banner_termin|zeitraum_bis %}{% if bis %} – {{ bis|date:"D, d.m." }}{% endif %}{% endwith %}{% endif %}{% if banner_termin.ort %} · {{ banner_termin.ort.name }}{% endif %}
       </span>
     </span>
   </a>

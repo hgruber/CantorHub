@@ -75,6 +75,8 @@ Cross-cutting modules: `models.py`, `forms.py`, `signals.py` (audit log, activat
 indexing, MUC room assignment), `app_settings.py` (runtime config), `folder_access.py` /
 `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
 shared by the folder browser and the wiki media bar), `verwendung.py` (what a delete would break),
+`terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
+events are `00:00`, see `docs/frontend.md`),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
 `ejabberd.py`, `konfig_gruppen.py`. `intern/dav/` is shared by `intern/carddav/` and
 `intern/caldav/`.

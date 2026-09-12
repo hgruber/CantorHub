@@ -10,11 +10,15 @@ from zoneinfo import ZoneInfo
 from types import SimpleNamespace
 from unittest import mock
 
+from django.db.models import Q
 from django.template import Context, Template
 from django.test import SimpleTestCase
 from django.utils.html import escape
+from django.utils.timesince import timeuntil
 
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
+from intern.templatetags.termin_tags import zeitraum_bis
+from intern.terminzeit import countdown_text, ist_ganztaegig, kommende_q
 from intern.views.files import _ziel_owner
 
 
@@ -1596,3 +1600,234 @@ class PdfExtraktionTest(SimpleTestCase):
         self.assertIsNone(pdf_source(BytesIO(buf.getvalue())))
         self.assertIsNone(pdf_source(BytesIO(b"%PDF-" + b"\x00" * 64)))
         self.assertIsNone(pdf_source(BytesIO(b"gar kein pdf")))
+
+
+# ---------------------------------------------------------------------------
+# Termin-Banner: Countdown und Auswahl
+# ---------------------------------------------------------------------------
+
+# Ein Montag — von hier aus sind die Wochentage in den Tests ablesbar.
+MONTAG = datetime(2026, 9, 14, 10, 0)
+
+# Djangos timeuntil trennt Zahl und Einheit mit einem geschuetzten Leerzeichen;
+# der Countdown macht das mit. Hier benannt, damit im Testcode kein
+# unsichtbares Zeichen steht.
+NBSP = "\u00a0"
+
+
+def _bannertermin(datum, datum_bis=None):
+    """Stellvertreter fuer den Banner-Termin: gelesen werden nur die zwei Felder."""
+    return SimpleNamespace(datum=datum, datum_bis=datum_bis)
+
+
+class IstGanztaegigTest(SimpleTestCase):
+    def test_ohne_uhrzeit(self):
+        self.assertTrue(ist_ganztaegig(datetime(2026, 9, 18, 0, 0)))
+
+    def test_mit_uhrzeit(self):
+        self.assertFalse(ist_ganztaegig(datetime(2026, 9, 18, 20, 0)))
+
+    def test_beide_enden_muessen_mitternacht_sein(self):
+        self.assertTrue(ist_ganztaegig(
+            datetime(2026, 9, 18, 0, 0), datetime(2026, 9, 20, 0, 0)))
+        self.assertFalse(ist_ganztaegig(
+            datetime(2026, 9, 18, 0, 0), datetime(2026, 9, 20, 14, 0)))
+
+    def test_sekunden_zaehlen_nicht_als_uhrzeit(self):
+        # Fixiert die (hour, minute)-Lesart: Altdaten mit Sekundenanteil sind
+        # ganztaegig, genau wie die Datumszeile des Banners es sieht.
+        self.assertTrue(ist_ganztaegig(datetime(2026, 9, 18, 0, 0, 30)))
+
+
+class TerminCountdownTest(SimpleTestCase):
+    """``countdown_text`` — Kalendertage bei 00:00, sonst Djangos timeuntil."""
+
+    def test_mit_uhrzeit_bleibt_timeuntil(self):
+        # Gegen Djangos eigene Ausgabe pruefen, nicht gegen einen
+        # festgeschriebenen String: sonst braeche der Test an einer geaenderten
+        # Uebersetzung statt an einem echten Fehler.
+        freitag = datetime(2026, 9, 18, 20, 0)
+        self.assertEqual(
+            countdown_text(freitag, None, MONTAG), timeuntil(freitag, MONTAG)
+        )
+
+    def test_ganztaegig_zaehlt_kalendertage(self):
+        # Der gemeldete Fall: Montag 10:00 auf Freitag ganztaegig.
+        freitag = datetime(2026, 9, 18, 0, 0)
+        self.assertIn("Stunden", timeuntil(freitag, MONTAG))      # Gegenprobe
+        self.assertEqual(countdown_text(freitag, None, MONTAG), f"4{NBSP}Tage")
+
+    def test_morgen(self):
+        self.assertEqual(
+            countdown_text(datetime(2026, 9, 15, 0, 0), None, MONTAG), "morgen"
+        )
+
+    def test_heute(self):
+        self.assertEqual(
+            countdown_text(datetime(2026, 9, 14, 0, 0), None, MONTAG), "heute"
+        )
+
+    def test_kurz_vor_mitternacht(self):
+        # timeuntil sagte hier "1 Minute" — gemeint ist der naechste Tag.
+        jetzt = datetime(2026, 9, 14, 23, 59)
+        self.assertEqual(
+            countdown_text(datetime(2026, 9, 15, 0, 0), None, jetzt), "morgen"
+        )
+
+    def test_kurz_nach_mitternacht(self):
+        jetzt = datetime(2026, 9, 15, 0, 1)
+        self.assertEqual(
+            countdown_text(datetime(2026, 9, 15, 0, 0), None, jetzt), "heute"
+        )
+
+    def test_laufend_mehrtaegig_ist_heute(self):
+        # Chorfreizeit Fr–So, jetzt ist Samstag: der Termin laeuft noch.
+        self.assertEqual(
+            countdown_text(
+                datetime(2026, 9, 18, 0, 0), datetime(2026, 9, 20, 0, 0),
+                datetime(2026, 9, 19, 11, 0),
+            ),
+            "heute",
+        )
+
+    def test_mehrtaegig_mit_uhrzeit_bleibt_timeuntil(self):
+        # Eine Uhrzeit an einem der beiden Enden genuegt: zeitgebunden.
+        datum = datetime(2026, 9, 18, 0, 0)
+        self.assertEqual(
+            countdown_text(datum, datetime(2026, 9, 20, 14, 0), MONTAG),
+            timeuntil(datum, MONTAG),
+        )
+
+    def test_ein_tag_kommt_nie_vor(self):
+        # Bei Kalendertagen ist "1 Tag" per Definition der naechste Tag und
+        # heisst "morgen"; der Plural-Zweig beginnt erst bei 2, deshalb braucht
+        # es kein ngettext. Die Tageszeit darf nichts daran aendern.
+        erwartet = [
+            "heute", "morgen", f"2{NBSP}Tage", f"3{NBSP}Tage",
+            f"4{NBSP}Tage", f"5{NBSP}Tage", f"6{NBSP}Tage", f"7{NBSP}Tage",
+        ]
+        for stunde in (0, 9, 23):
+            jetzt = datetime(2026, 9, 14, stunde, 30)
+            self.assertEqual(
+                [countdown_text(datetime(2026, 9, 14 + t, 0, 0), None, jetzt)
+                 for t in range(8)],
+                erwartet,
+            )
+
+    def test_monatswechsel(self):
+        jetzt = datetime(2026, 9, 30, 22, 0)
+        self.assertEqual(
+            countdown_text(datetime(2026, 10, 1, 0, 0), None, jetzt), "morgen"
+        )
+        self.assertEqual(
+            countdown_text(datetime(2026, 10, 3, 0, 0), None, jetzt), f"3{NBSP}Tage"
+        )
+
+    def test_jahreswechsel(self):
+        jetzt = datetime(2026, 12, 31, 10, 0)
+        self.assertEqual(
+            countdown_text(datetime(2027, 1, 1, 0, 0), None, jetzt), "morgen"
+        )
+
+    def test_ueber_die_zeitumstellung(self):
+        # USE_TZ ist aus, alles ist naive Wanduhrzeit: die Nacht mit 25 Stunden
+        # darf die Kalendertage nicht verschieben.
+        jetzt = datetime(2026, 10, 24, 12, 0)
+        self.assertEqual(
+            countdown_text(datetime(2026, 10, 26, 0, 0), None, jetzt), f"2{NBSP}Tage"
+        )
+
+    def test_vergangener_termin_wird_heute(self):
+        # Defensiv: zwischen Seitenaufbau und htmx-Swap kann Mitternacht liegen.
+        self.assertEqual(
+            countdown_text(datetime(2026, 9, 13, 0, 0), None, MONTAG), "heute"
+        )
+
+    def test_geschuetztes_leerzeichen(self):
+        # Djangos timeuntil trennt Zahl und Einheit mit U+00A0; ohne das
+        # braeche der Countdown im Banner anders um als bisher.
+        self.assertIn(
+            NBSP, countdown_text(datetime(2026, 9, 18, 0, 0), None, MONTAG)
+        )
+
+
+class KommendeTermineQTest(SimpleTestCase):
+    """``kommende_q`` ohne Datenbank — ueber die strukturelle Q-Gleichheit."""
+
+    def _erwartet(self, jetzt, tagesbeginn):
+        return (
+            Q(datum__gt=jetzt)
+            | Q(datum=tagesbeginn)
+            | Q(
+                datum__lt=tagesbeginn,
+                datum_bis__gte=tagesbeginn,
+                datum__hour=0,
+                datum__minute=0,
+                datum_bis__hour=0,
+                datum_bis__minute=0,
+            )
+        )
+
+    def test_zweige(self):
+        self.assertEqual(
+            kommende_q(MONTAG),
+            self._erwartet(MONTAG, datetime(2026, 9, 14, 0, 0)),
+        )
+
+    def test_keine_luecke_um_mitternacht(self):
+        # Ist `jetzt` exakt 00:00, greift datum__gt noch nicht — dann faengt
+        # der Gleichheitszweig den ganztaegigen Termin desselben Augenblicks.
+        mitternacht = datetime(2026, 9, 14, 0, 0)
+        self.assertEqual(
+            kommende_q(mitternacht), self._erwartet(mitternacht, mitternacht)
+        )
+
+
+class TerminCountdownFilterTest(SimpleTestCase):
+    """Der Template-Filter — die einzige Stelle, die die Uhr liest."""
+
+    def _rendern(self, termin, jetzt):
+        return Template("{% load termin_tags %}{{ t|countdown:jetzt }}").render(
+            Context({"t": termin, "jetzt": jetzt})
+        )
+
+    def test_reicht_jetzt_durch(self):
+        termin = _bannertermin(datetime(2026, 9, 15, 0, 0))
+        self.assertEqual(self._rendern(termin, MONTAG), "morgen")
+
+    def test_ohne_argument_wird_die_uhr_gelesen(self):
+        termin = _bannertermin(datetime(2026, 9, 15, 0, 0))
+        with mock.patch("intern.templatetags.termin_tags.now", return_value=MONTAG):
+            out = Template("{% load termin_tags %}{{ t|countdown }}").render(
+                Context({"t": termin})
+            )
+        self.assertEqual(out, "morgen")
+
+    def test_none_bleibt_leer(self):
+        self.assertEqual(self._rendern(None, MONTAG), "")
+
+
+class ZeitraumBisFilterTest(SimpleTestCase):
+    """Die Datumszeile zeigt bei mehrtaegigen Ganztagsterminen den Zeitraum."""
+
+    def test_mehrtaegig_ganztaegig(self):
+        termin = _bannertermin(
+            datetime(2026, 9, 18, 0, 0), datetime(2026, 9, 20, 0, 0))
+        self.assertEqual(zeitraum_bis(termin), datetime(2026, 9, 20, 0, 0))
+
+    def test_eintaegig_ohne_ende(self):
+        self.assertIsNone(zeitraum_bis(_bannertermin(datetime(2026, 9, 18, 0, 0))))
+
+    def test_ende_am_selben_tag_ist_kein_zeitraum(self):
+        termin = _bannertermin(
+            datetime(2026, 9, 18, 0, 0), datetime(2026, 9, 18, 0, 0))
+        self.assertIsNone(zeitraum_bis(termin))
+
+    def test_mit_uhrzeit_kein_zeitraum(self):
+        # Zeitgebundene Termine behalten ihre bisherige Datumszeile.
+        termin = _bannertermin(
+            datetime(2026, 9, 18, 18, 0), datetime(2026, 9, 20, 14, 0))
+        self.assertIsNone(zeitraum_bis(termin))
+
+    def test_none(self):
+        self.assertIsNone(zeitraum_bis(None))
