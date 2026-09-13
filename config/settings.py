@@ -198,8 +198,14 @@ CACHES = {
 
 AUTH_PASSWORD_VALIDATORS = []
 
+# Der erste Eintrag schreibt neue Hashes, alle weiteren pruefen nur noch
+# Altbestand. Djangos eingebauter PBKDF2PasswordHasher steht bewusst *nicht*
+# mehr in der Liste: er teilt sich den Algorithmusnamen mit PortalPBKDF2Hasher,
+# und bei gleichem Namen gewinnt der letzte Eintrag — er wuerde jeden Hash
+# wieder auf 1.200.000 Iterationen hochrechnen. Begruendung des Iterationswerts
+# in intern/hashers.py.
 PASSWORD_HASHERS = [
-    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "intern.hashers.PortalPBKDF2Hasher",
     "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
     "django.contrib.auth.hashers.Argon2PasswordHasher",
     "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",

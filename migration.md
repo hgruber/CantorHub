@@ -88,10 +88,10 @@ Two consequences that outlive the import and are easy to destroy by accident:
 `intern/php_pbkdf2_hasher.py` verifies the password hashes of the old PHP system and is listed in
 `PASSWORD_HASHERS` in `settings.py`. Django re-hashes a password with the current default on the
 first successful login, so the entry can be dropped once no legacy hash is left in the `auth_user`
-table:
+table. The stored prefix is the hasher's `algorithm`, `php_sha256`, not the module name:
 
 ```sql
-SELECT COUNT(*) FROM auth_user WHERE password LIKE 'php_pbkdf2%';
+SELECT COUNT(*) FROM auth_user WHERE password LIKE 'php_sha256$%';
 ```
 
 ## After the final migration

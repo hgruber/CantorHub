@@ -152,6 +152,11 @@ reasoning where it matters.
   `ChipMultiSelect` / `_chip_multiselect.html` for every multi-select,
   `_confirm_delete_dialog.html` for delete confirmations, `{% hilfe %}` for explanation tooltips
   (the text lives as the model field's `help_text`), `_leaflet_map.html` for detail-page maps.
+- **One hasher per algorithm in `PASSWORD_HASHERS`.** `intern.hashers.PortalPBKDF2Hasher` writes
+  new passwords and keeps the `pbkdf2_sha256` algorithm name, so Django's built-in
+  `PBKDF2PasswordHasher` must *not* be listed next to it: `get_hashers_by_algorithm()` keys by
+  `algorithm` and the last entry wins, so the built-in would answer every verification and its
+  `must_update()` would re-hash each password back to Django's 1,200,000 iterations.
 - **Redirect targets taken from a `next` parameter must pass
   `url_has_allowed_host_and_scheme()`.**
 

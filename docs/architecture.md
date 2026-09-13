@@ -193,6 +193,9 @@ The full key catalog and the mail-placeholder reference live in `configuration.m
 - `verwendung.py` — which references a file has, and which of them a delete or rename would
   break; see `files.md`.
 - `folder_access.py`, `avatar_access.py` — the two access axes over files; see `files.md`.
+- `hashers.py` — `PortalPBKDF2Hasher`, the hasher that writes new passwords: PBKDF2-SHA256 with
+  a deliberately reduced iteration count, because Django 6's default of 1,200,000 costs half a
+  second of CPU per login. The module docstring carries the reasoning and the constraint.
 - `php_pbkdf2_hasher.py` — legacy password hasher for users migrated from the prior PHP
   system; listed in `PASSWORD_HASHERS`. See `../migration.md`.
 - `fuzzy.py` — fuzzy song title matching used in article references.
