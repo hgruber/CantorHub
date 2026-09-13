@@ -13,7 +13,7 @@ __all__ = ["konfiguration"]
 @login_required
 def konfiguration(request):
     if not request.user.is_superuser:
-        return redirect("article_list", name="Aktuell")
+        return redirect("article_view", name="Aktuell")
 
     if request.method == "POST":
         try:

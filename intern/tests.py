@@ -5,17 +5,20 @@ Für Termine reicht ein winziges Stellvertreter-Objekt — ``faelligkeit`` und
 ``faellige_erinnerungen`` lesen nur ``datum``.
 """
 
+import os
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 from types import SimpleNamespace
 from unittest import mock
 
+from django.core.signals import request_finished, request_started
 from django.db.models import Q
 from django.template import Context, Template
 from django.test import SimpleTestCase
 from django.utils.html import escape
 from django.utils.timesince import timeuntil
 
+from intern import app_settings
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
 from intern.templatetags.termin_tags import zeitraum_bis
 from intern.terminzeit import countdown_text, ist_ganztaegig, kommende_q
@@ -162,6 +165,64 @@ class GetConfigListTest(SimpleTestCase):
         # Ohne DB-Zugriff: get_config fängt die Exception ab und liefert None,
         # get_config_list fällt dann auf den übergebenen Default zurück.
         self.assertEqual(get_config_list("GIBT_ES_NICHT", " 4 , ,1 "), ["4", "1"])
+
+
+class KonfigCacheTest(SimpleTestCase):
+    """Der Anfrage-Zwischenspeicher aus app_settings.
+
+    Ohne Datenbank: SimpleTestCase verbietet den Zugriff, der Lesefehler landet
+    also im try/except von ``_werte()`` und das Ergebnis ist das leere Dict —
+    genau der Fall, in dem der Vorgabewert durchkommen muss.
+    """
+
+    def tearDown(self):
+        # Der Zwischenspeicher hängt an einem threading.local, das die übrigen
+        # Tests im selben Thread weiterbenutzen.
+        app_settings.cache_verwerfen()
+
+    def test_ausserhalb_einer_anfrage_kein_zwischenspeicher(self):
+        app_settings.cache_verwerfen()
+        self.assertIsNone(app_settings._werte())
+
+    def test_innerhalb_einer_anfrage_wird_gelesen(self):
+        app_settings.cache_anlegen()
+        self.assertEqual(app_settings._werte(), {})
+
+    def test_vorgabewert_kommt_durch(self):
+        app_settings.cache_anlegen()
+        self.assertEqual(app_settings.get_config("GIBT_ES_NICHT", "vorgabe"), "vorgabe")
+
+    def test_gelesen_wird_aus_dem_zwischenspeicher(self):
+        app_settings.cache_anlegen()
+        app_settings._lokal.werte = {"VEREINSNAME": "Testchor"}
+        self.assertEqual(app_settings.get_vereinsname(), "Testchor")
+
+    def test_umgebungsvariable_schlaegt_den_zwischenspeicher(self):
+        app_settings.cache_anlegen()
+        app_settings._lokal.werte = {"VEREINSNAME": "Aus der Tabelle"}
+        with mock.patch.dict(os.environ, {"VEREINSNAME": "Aus der Umgebung"}):
+            self.assertEqual(app_settings.get_vereinsname(), "Aus der Umgebung")
+
+    def test_leeren_erzwingt_neulesen(self):
+        app_settings.cache_anlegen()
+        app_settings._lokal.werte = {"VEREINSNAME": "Testchor"}
+        app_settings.cache_leeren()
+        self.assertIs(app_settings._lokal.werte, app_settings._UNGELESEN)
+
+    def test_leeren_schaltet_ausserhalb_einer_anfrage_nichts_ein(self):
+        # Sonst finge ein Management-Kommando, das die Konfiguration schreibt,
+        # ab diesem Moment an zwischenzuspeichern — und bliebe auf dem Stand.
+        app_settings.cache_verwerfen()
+        app_settings.cache_leeren()
+        self.assertIsNone(app_settings._werte())
+
+    def test_signale_sind_verbunden(self):
+        # Prüft die Verdrahtung in signals.py, nicht nur die Funktionen.
+        app_settings.cache_verwerfen()
+        request_started.send(sender=self.__class__)
+        self.assertIsNotNone(app_settings._werte())
+        request_finished.send(sender=self.__class__)
+        self.assertIsNone(app_settings._werte())
 
 
 class ClientIpTest(SimpleTestCase):

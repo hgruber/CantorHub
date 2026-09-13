@@ -125,7 +125,9 @@ reasoning where it matters.
   into `settings.TIME_ZONE` at app start; `intern.caldav.daten.zeitzone()` reads it live for the
   iCal/CalDAV UTC conversion.
 - **Runtime settings come from the `Konfiguration` table**, read through `intern.app_settings`
-  helpers — never `os.environ` or `settings` for these, and never at import time. A new key needs
+  helpers — never `os.environ` or `settings` for these, and never at import time. Inside a
+  request the helpers share one cached read of the whole table; outside one (management
+  commands, the two endless loops) every call still hits the DB. See `docs/architecture.md`. A new key needs
   three edits: `_CONFIG_DEFAULTS` in `apps.py`, a group in `konfig_gruppen.py`, and a `FELDTYPEN`
   entry. `KonfigGruppenTest` and `KonfigTypenTest` enforce the last two. A `select`-typed key
   additionally needs an entry in `SELECT_OPTIONEN` (same file).

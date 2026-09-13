@@ -126,6 +126,15 @@ so they can be changed at runtime (admin or `/intern/konfiguration/`) without a 
 `get_config_int`) — never `os.environ`/`settings` for these — and never call the helpers at
 settings/import time (the DB may not be ready).
 
+**Within one request the whole table is read once.** `get_config()` is called a dozen times per
+page — nine of them from the context processor alone — and each call used to be its own SELECT.
+`request_started` now opens a per-request cache in `app_settings` that loads all rows in a single
+query, `request_finished` drops it again (both wired in `intern/signals.py`, along with a
+`post_save`/`post_delete` invalidation so a writer sees its own change). Outside a request the
+cache deliberately does not engage: `ejabberd_bot` and `send_auftritt_erinnerungen` run as endless
+loops and would otherwise serve the configuration of their start-up moment forever. There, every
+key stays one query, as before.
+
 Environment variables take priority over DB values in `get_config()`, **and are also persisted
 to the DB during `post_migrate`** (`_seed_config` in `intern/apps.py` calls `update_or_create`
 for every key that has a matching ENV var). A container started with `-e

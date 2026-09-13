@@ -11,12 +11,19 @@ import logging
 import threading
 from datetime import datetime
 
+from django.core.signals import request_finished, request_started
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_out
 
 from .apps import _migrating
-from .app_settings import get_config, is_ejabberd_configured
+from .app_settings import (
+    cache_anlegen,
+    cache_leeren,
+    cache_verwerfen,
+    get_config,
+    is_ejabberd_configured,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -537,6 +544,21 @@ def _audit_konfiguration_delete(sender, instance, **kwargs):
     if getattr(_migrating, "active", False):
         return
     _log_change(instance, getattr(instance, "_audit_user", None), "delete")
+
+
+# --- Konfigurations-Zwischenspeicher ---
+# Lebensdauer und Begründung stehen in app_settings.py. Die Verbindung gehört
+# hierher, weil apps.ready() dieses Modul ohnehin importiert — app_settings wird
+# von überall her importiert, auch von Kommandos ohne Anfragezyklus, und dürfte
+# sich nicht schon beim Import an Signale hängen.
+request_started.connect(cache_anlegen, dispatch_uid="intern_konfig_cache_an")
+request_finished.connect(cache_verwerfen, dispatch_uid="intern_konfig_cache_aus")
+post_save.connect(
+    cache_leeren, sender="intern.Konfiguration", dispatch_uid="intern_konfig_cache_save"
+)
+post_delete.connect(
+    cache_leeren, sender="intern.Konfiguration", dispatch_uid="intern_konfig_cache_delete"
+)
 
 
 # --- User logout ---

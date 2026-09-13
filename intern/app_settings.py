@@ -9,12 +9,72 @@ can configure the app via -e flags without needing an initial.sh or admin access
 """
 
 import os
+import threading
+
+# Zwischenspeicher für die Dauer einer Anfrage.
+#
+# Jede Seite liest ein knappes Dutzend Schlüssel — allein der Kontextprozessor in
+# config/context_processors.py neun —, und jeder einzelne war ein eigener SELECT.
+# Die Tabelle hat unter hundert Zeilen, ein Komplettabzug ist also billiger als
+# schon der zweite Roundtrip.
+#
+# Der Zwischenspeicher lebt ausschließlich innerhalb einer Anfrage: ``request_started``
+# legt ihn an, ``request_finished`` wirft ihn weg (verbunden in signals.py). Außerhalb
+# einer Anfrage greift er bewusst nicht — zwei Management-Kommandos laufen als
+# Dauerschleife (``ejabberd_bot``, ``send_auftritt_erinnerungen``), die sähen sonst bis
+# zum Prozessende die Konfiguration ihres Startzeitpunkts. Dort bleibt es beim
+# Einzelquery pro Schlüssel, so wie bisher.
+_lokal = threading.local()
+
+# Unterscheidet „Anfrage läuft, noch nichts gelesen" von „keine Anfrage" (None).
+_UNGELESEN = object()
+
+
+def cache_anlegen(**kwargs):
+    """``request_started``: ab hier wird zwischengespeichert, gelesen wird beim ersten Zugriff."""
+    _lokal.werte = _UNGELESEN
+
+
+def cache_verwerfen(**kwargs):
+    """``request_finished``: der Thread bedient als nächstes eine fremde Anfrage."""
+    _lokal.werte = None
+
+
+def cache_leeren(**kwargs):
+    """Erzwingt ein Neulesen, ohne den Zwischenspeicher abzuschalten.
+
+    Hängt an ``post_save``/``post_delete`` von ``Konfiguration``: wer innerhalb
+    einer Anfrage schreibt und danach liest, muss seinen eigenen Wert sehen.
+    """
+    if getattr(_lokal, "werte", None) is not None:
+        _lokal.werte = _UNGELESEN
+
+
+def _werte():
+    """Alle Konfigurationszeilen als ``dict``, oder ``None`` außerhalb einer Anfrage."""
+    werte = getattr(_lokal, "werte", None)
+    if werte is None:
+        return None
+    if werte is _UNGELESEN:
+        try:
+            from intern.models import Konfiguration
+            werte = dict(Konfiguration.objects.values_list("key", "value"))
+        except Exception:
+            # Gleiche Haltung wie in get_config: ohne greifbare Datenbank gilt der
+            # Vorgabewert. Auch das leere Ergebnis wird gemerkt, sonst liefe jeder
+            # einzelne Schlüssel erneut in denselben Fehler.
+            werte = {}
+        _lokal.werte = werte
+    return werte
 
 
 def get_config(key, default=None):
     env_val = os.environ.get(key)
     if env_val is not None:
         return env_val
+    werte = _werte()
+    if werte is not None:
+        return werte.get(key, default)
     try:
         from intern.models import Konfiguration
         return Konfiguration.objects.get(key=key).value
