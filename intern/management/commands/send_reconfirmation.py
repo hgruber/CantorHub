@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from intern.app_settings import get_base_url
+from intern.app_settings import get_base_url, konfiguration_gepuffert
 from intern.models import User
 from intern.views.auth import make_bestaetigung_url, send_bestaetigung_mail
 
@@ -67,8 +67,11 @@ class Command(BaseCommand):
             else:
                 count = users.count()
                 self.stdout.write(f"Sende an {count} Mitglieder …")
-                for user in users:
-                    self._send(user, base_url)
+                # Ein Puffer fuer den ganzen Versand: jede Mail liest sonst
+                # sechzehn Konfigurationswerte neu, die sich hier nicht aendern.
+                with konfiguration_gepuffert():
+                    for user in users:
+                        self._send(user, base_url)
 
     def _send(self, user, base_url):
         try:

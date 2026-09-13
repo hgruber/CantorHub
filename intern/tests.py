@@ -216,6 +216,31 @@ class KonfigCacheTest(SimpleTestCase):
         app_settings.cache_leeren()
         self.assertIsNone(app_settings._werte())
 
+    def test_kontextmanager_puffert_und_raeumt_auf(self):
+        app_settings.cache_verwerfen()
+        with app_settings.konfiguration_gepuffert():
+            self.assertIsNotNone(app_settings._werte())
+        self.assertIsNone(app_settings._werte())
+
+    def test_kontextmanager_laesst_eine_laufende_anfrage_unberuehrt(self):
+        # Verschachtelt in einer Anfrage darf sein finally den Zwischenspeicher
+        # nicht wegwerfen — der Rest der Anfrage liefe sonst wieder auf
+        # Einzelabfragen.
+        app_settings.cache_anlegen()
+        app_settings._lokal.werte = {"VEREINSNAME": "Testchor"}
+        with app_settings.konfiguration_gepuffert():
+            self.assertEqual(app_settings.get_vereinsname(), "Testchor")
+        self.assertEqual(app_settings.get_vereinsname(), "Testchor")
+
+    def test_kontextmanager_raeumt_auch_nach_einem_fehler_auf(self):
+        # Ein abgebrochener Versand darf den Puffer nicht stehen lassen: das
+        # Kommando laeuft als Dauerschleife weiter.
+        app_settings.cache_verwerfen()
+        with self.assertRaises(RuntimeError):
+            with app_settings.konfiguration_gepuffert():
+                raise RuntimeError("Versand fehlgeschlagen")
+        self.assertIsNone(app_settings._werte())
+
     def test_signale_sind_verbunden(self):
         # Prüft die Verdrahtung in signals.py, nicht nur die Funktionen.
         app_settings.cache_verwerfen()

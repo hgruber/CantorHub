@@ -10,6 +10,7 @@ can configure the app via -e flags without needing an initial.sh or admin access
 
 import os
 import threading
+from contextlib import contextmanager
 
 # Zwischenspeicher für die Dauer einer Anfrage.
 #
@@ -48,6 +49,33 @@ def cache_leeren(**kwargs):
     """
     if getattr(_lokal, "werte", None) is not None:
         _lokal.werte = _UNGELESEN
+
+
+@contextmanager
+def konfiguration_gepuffert():
+    """Öffnet den Zwischenspeicher für einen abgegrenzten Block außerhalb einer Anfrage.
+
+    Für den Massenversand: ``send_branded_mail`` liest pro Empfänger sechzehn Werte
+    (Vereinsname dreifach, Brand-Farbe, Footer, Absender), die sich während eines
+    Durchlaufs nicht ändern — ohne diesen Block sind das sechzehn SELECTs mal Anzahl
+    der Empfänger.
+
+    Gehört um **einen Durchlauf**, nie um die Dauerschleife eines Kommandos: sonst
+    gilt bis zum Prozessende die Konfiguration des Starts, und genau das soll der
+    Zwischenspeicher außerhalb von Anfragen ja vermeiden.
+
+    Läuft verschachtelt sauber: innerhalb einer Anfrage (oder eines äußeren Blocks)
+    lässt er den vorhandenen Zwischenspeicher unangetastet, statt ihn am Ende
+    wegzuwerfen und den Rest der Anfrage wieder auf Einzelabfragen zu werfen.
+    """
+    schon_offen = getattr(_lokal, "werte", None) is not None
+    if not schon_offen:
+        cache_anlegen()
+    try:
+        yield
+    finally:
+        if not schon_offen:
+            cache_verwerfen()
 
 
 def _werte():

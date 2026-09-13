@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.models import Group, Permission
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import render
 
@@ -213,7 +214,9 @@ def gruppen(request):
         return JsonResponse({"ok": True})
 
     all_groups = list(
-        Group.objects.order_by("id").prefetch_related("permissions__content_type")
+        Group.objects.annotate(mitglieder_anzahl=Count("user"))
+        .order_by("id")
+        .prefetch_related("permissions__content_type")
     )
 
     # Build permission matrix: {group_name: [perm_strings]}
@@ -239,8 +242,11 @@ def gruppen(request):
         })
     categories = [{"name": c, "perms": cat_map[c]} for c in cat_order]
 
-    # User count per group to guard the delete button
-    group_user_counts = {g.name: g.user_set.count() for g in all_groups}
+    # User count per group to guard the delete button. Kommt aus der Annotation
+    # oben — sonst eine COUNT-Abfrage je Gruppe hier und drei weitere je Zeile im
+    # Template. Bleibt im Kontext: gruppen.html reicht das Dict per json_script
+    # ans JavaScript weiter.
+    group_user_counts = {g.name: g.mitglieder_anzahl for g in all_groups}
 
     group_members = {
         g.name: [

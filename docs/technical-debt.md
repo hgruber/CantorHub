@@ -17,6 +17,32 @@ compliance items are tracked separately in `datenschutz.md`.
   `HOSTING_ANBIETER_NAME`), English for purely technical admin values
   (`EJABBERD_API_TIMEOUT`, `OSM_TILE_URL`).
 
+## Query counts (low risk) — measured, left alone on purpose
+
+N+1 hotspots were swept in September 2026; the four with measurable weight were fixed (see
+`docs/architecture.md` on the per-request config cache, plus `select_related` in the repertoire,
+forum and groups views). These were found and deliberately left as they are — each is a one-liner,
+but the measured effect on this data set does not justify touching the code:
+
+- **CalDAV `einzeln()`** (`intern/caldav/daten.py:160`) serialises the whole collection for every
+  single-resource GET — quadratic if a client syncs item by item. Its docstring argues the case:
+  a targeted lookup would have to duplicate the time-window and visibility rules, and the ETag
+  must match the one from the collection listing. CardDAV does do a targeted lookup
+  (`intern/carddav/views.py:303`). Revisit if `CALDAV_AKTIV` is ever switched on and a real client
+  turns out to fetch single resources individually.
+- **Recursive folder sizes** (`intern/views/folders.py:605-612`) — two queries per subfolder, plus
+  one per tree level inside `_descendant_folder_ids`. Measured on the live data: 13 folders,
+  maximum depth 1, at most 4 subfolders per level. Would matter with a deep tree, does not here.
+- **`select_related("avatar")`** missing in the member list (`intern/views/mitglieder.py:48`) — the
+  avatar column is off by default and there are ≤30 members.
+- **`select_related("autor")`** missing for `DateiVersion` on the file detail page
+  (`intern/views/files.py:528`) — a handful of revisions per file.
+- **One `.get()` per entry** in the notification poll (`intern/views/notify.py:106`) — capped at 30
+  and usually zero, because the poll normally returns an empty set. The batching pattern is right
+  above it at line 76.
+- **`get_config` inside loops** in `intern/ejabberd.py:581,696` — both in admin-command paths where
+  the per-request cache does not apply, but the loops run over forums/users (single digits).
+
 ## Medium risk (15-30%) — need testing after fixing
 
 - **No DB-backed tests are possible.** Any `TestCase` (as opposed to `SimpleTestCase`) makes Django create a test database, which replays the data migration `0003_import` — it connects to the legacy MySQL server and expects the filer files imported by `import_files`. Wherever that environment is missing, test-DB setup dies with `File.DoesNotExist` before a single test runs. Consequence: everything worth testing has to be written free of DB access (see `intern/tests.py`). The fix is to make `0003_import` a no-op when the legacy DB is unreachable — it already probes the connection, it just does not tolerate the absence.

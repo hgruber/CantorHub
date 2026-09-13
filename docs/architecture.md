@@ -135,6 +135,15 @@ cache deliberately does not engage: `ejabberd_bot` and `send_auftritt_erinnerung
 loops and would otherwise serve the configuration of their start-up moment forever. There, every
 key stays one query, as before.
 
+For the one case where that hurts — bulk mail — `app_settings.konfiguration_gepuffert()` opens the
+cache for a bounded block. `send_branded_mail()` reads sixteen config values per recipient
+(Vereinsname three times, brand colour, footer, sender), so a run over 50 subscribers was 800
+queries for values that cannot change mid-run. The context manager wraps **one pass** of
+`send_auftritt_erinnerungen` / `send_reconfirmation`, never the endless loop itself — the sleep
+interval is read after each pass and has to stay outside, or a changed interval would never take
+effect. It is re-entrant: inside a request it leaves the existing cache alone instead of dropping
+it on exit.
+
 Environment variables take priority over DB values in `get_config()`, **and are also persisted
 to the DB during `post_migrate`** (`_seed_config` in `intern/apps.py` calls `update_or_create`
 for every key that has a matching ENV var). A container started with `-e

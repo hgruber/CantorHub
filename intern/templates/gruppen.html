@@ -353,10 +353,10 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
                     <td class="perm-user-col perm-user-name">
                         <div class="perm-group-info">
                             <span class="perm-group-name">{{ group.name }}</span>
-                            <span class="perm-group-count" data-group="{{ group.name }}">{{ group.user_set.count }}</span>
+                            <span class="perm-group-count" data-group="{{ group.name }}">{{ group.mitglieder_anzahl }}</span>
                             <button type="button" class="perm-delete-btn"
                                     data-group="{{ group.name }}"
-                                    {% if group.user_set.count > 0 %}disabled title="Gruppe hat noch {{ group.user_set.count }} Mitglied{% if group.user_set.count != 1 %}er{% endif %}"{% else %}title="Gruppe löschen"{% endif %}>
+                                    {% if group.mitglieder_anzahl > 0 %}disabled title="Gruppe hat noch {{ group.mitglieder_anzahl }} Mitglied{% if group.mitglieder_anzahl != 1 %}er{% endif %}"{% else %}title="Gruppe löschen"{% endif %}>
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
                                 </svg>

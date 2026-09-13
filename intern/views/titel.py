@@ -32,9 +32,18 @@ __all__ = [
 
 @login_required
 def titel_list(request):
-    queryset = Lied.objects.annotate(
-        zuletzt=Max("konzert__termin__datum", filter=Q(konzert__termin__datum__lte=timezone.now().date()))
-    ).order_by("titel")
+    queryset = (
+        Lied.objects.annotate(
+            zuletzt=Max("konzert__termin__datum", filter=Q(konzert__termin__datum__lte=timezone.now().date()))
+        )
+        # Alle vier Dateifelder, nicht nur die eingeblendeten Spalten: RepertoireTabelle
+        # schreibt die vier data-*-url-Attribute in jede Zeile (Meta.row_attrs in
+        # tables.py), unabhaengig davon, welche Spalten sichtbar sind. solist/dirigent
+        # sind ManyToManyColumn und kosten sonst je eine weitere Abfrage pro Zeile.
+        .select_related("original", "aufnahme", "pdf", "noten")
+        .prefetch_related("solist", "dirigent")
+        .order_by("titel")
+    )
     konzert_id = request.GET.get("konzert")
     repertoire_filter = RepertoireFilter(request.GET, queryset=queryset)
     fields = visible_fields(request, "RepertoireTabelle")

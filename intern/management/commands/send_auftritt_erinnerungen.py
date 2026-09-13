@@ -13,7 +13,11 @@ from django.core.management.base import BaseCommand
 from django.db import close_old_connections
 from django.utils import timezone
 
-from intern.app_settings import get_config_int, is_email_configured
+from intern.app_settings import (
+    get_config_int,
+    is_email_configured,
+    konfiguration_gepuffert,
+)
 from intern.mailingliste import (
     basis_url,
     cleanup_unbestaetigte,
@@ -58,8 +62,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        # konfiguration_gepuffert() umschliesst genau einen Durchlauf: der Versand
+        # liest pro Empfaenger sechzehn Konfigurationswerte (Vereinsname, Footer,
+        # Absender), die sich waehrend eines Durchlaufs nicht aendern. Bewusst nicht
+        # um die while-Schleife herum — sonst bliebe der Prozess bis zum Neustart auf
+        # der Konfiguration seines Starts stehen, das Intervall unten eingeschlossen.
         if not options["loop"]:
-            self._iteration(options)
+            with konfiguration_gepuffert():
+                self._iteration(options)
             return
 
         self.stdout.write("Auftritts-Erinnerungen: Dauerbetrieb gestartet.")
@@ -68,11 +78,13 @@ class Command(BaseCommand):
             # mit '&', es gibt keinen Supervisor. Eine ungefangene Exception
             # wuerde den Versand still bis zum naechsten Neustart killen.
             try:
-                self._iteration(options)
+                with konfiguration_gepuffert():
+                    self._iteration(options)
             except Exception:
                 logger.exception("Auftritts-Erinnerungen: Durchlauf fehlgeschlagen")
             # Intervall pro Iteration neu lesen — die Konfiguration ist zur
-            # Laufzeit ueber /intern/konfiguration/ aenderbar.
+            # Laufzeit ueber /intern/konfiguration/ aenderbar. Steht ausserhalb des
+            # Puffers, damit eine Aenderung zwischen zwei Durchlaeufen ankommt.
             _time.sleep(max(1, get_config_int("MAILINGLISTE_INTERVALL_MIN", 10)) * 60)
 
     # ------------------------------------------------------------------

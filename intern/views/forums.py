@@ -236,7 +236,10 @@ def forum_list(request):
 def forum_view(request, forum):
     if not _forum_access(request.user, forum):
         raise PermissionDenied
-    messages = Mitteilung.objects.filter(forum_id=forum)[:25]
+    messages = (
+        Mitteilung.objects.filter(forum_id=forum)
+        .select_related("sender", "sender__avatar")[:25]
+    )
     last_id = max((msg.id for msg in messages), default=0)
     oldest_id = min((msg.id for msg in messages), default=0)
     permissions_url = (
@@ -271,7 +274,9 @@ def forum_get(request, forum, last_id=0):
     if last_id == 0:
         last_id = request.GET.get("last_id", 0)
     last_id = int(last_id or 0)
-    messages = Mitteilung.objects.filter(forum_id=forum, id__gt=last_id)
+    messages = Mitteilung.objects.filter(
+        forum_id=forum, id__gt=last_id
+    ).select_related("sender", "sender__avatar")
     if messages:
         # Keep last_id monotonic so an in-flight poll never lowers it.
         last_id = max(last_id, max(msg.id for msg in messages))
@@ -292,7 +297,8 @@ def forum_more(request, forum):
         raise PermissionDenied
     oldest_id = request.GET.get("oldest_id", 0)
     messages = list(
-        Mitteilung.objects.filter(forum_id=forum, id__lt=oldest_id)[:FORUM_MORE_BATCH]
+        Mitteilung.objects.filter(forum_id=forum, id__lt=oldest_id)
+        .select_related("sender", "sender__avatar")[:FORUM_MORE_BATCH]
     )
     new_oldest_id = min((msg.id for msg in messages), default=0)
     has_more = (
