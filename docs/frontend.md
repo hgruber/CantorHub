@@ -134,6 +134,14 @@ the pure `intern/aufstellung.py`; `_aufstellungen_anhaengen()` in `views/termine
 half and needs two queries per page, for the first load and the infinite-scroll reloads alike.
 The viewer's own square carries a `--brand` outline, every square a name tooltip.
 
+The termin detail page repeats it larger as the wide card „Aufstellung" right above
+„Anwesenheit" (`_termin_aufstellung_karte.html`, `gross=True` → `.aufst-gross`, which only
+overrides the `--aufst-*` size variables). The card has to follow every change of the answers:
+`termin_zusage` and `termin_anwesenheit_update` attach the aufstellung too, and
+`_termin_zusage.html` sends the card with `hx-swap-oob` next to `#attendance-section`. The admin
+drag-and-drop editor does not go through htmx, so `anwesenheit.js` swaps `#aufstellung-section`
+from the same response by hand.
+
 A slim banner is shown site-wide at the top of `<main class="content">` in `base.html`
 (`_termin_banner.html`), highlighting the next upcoming event (`banner_termin` /
 `banner_my_option`, computed in `config/context_processors.py`'s `project_meta`) with a

@@ -191,6 +191,9 @@
         tmp.innerHTML = html;
         const fresh = tmp.querySelector("#attendance-section");
         const current = document.getElementById("attendance-section");
+        const freshBuehne = tmp.querySelector("#aufstellung-section");
+        const currentBuehne = document.getElementById("aufstellung-section");
+        if (freshBuehne && currentBuehne) currentBuehne.replaceWith(freshBuehne);
         if (fresh && current) {
           sortables.forEach((s) => s.destroy());
           sortables = [];

@@ -1,5 +1,5 @@
 {% if value %}{% with a=value z=value.zahlen %}
-<div class="aufst" role="img" aria-label="{{ a.label }}">
+<div class="aufst{% if gross %} aufst-gross{% endif %}" role="img" aria-label="{{ a.label }}">
   <div class="aufst-buehne">
     <span class="aufst-block aufst-links">{% for k in a.hinten.0 %}<i class="aufst-p aufst-{{ k.status }}{% if k.ich %} aufst-ich{% endif %}" title="{{ k.titel }}"></i>{% endfor %}</span>
     <span class="aufst-block aufst-rechts">{% for k in a.hinten.1 %}<i class="aufst-p aufst-{{ k.status }}{% if k.ich %} aufst-ich{% endif %}" title="{{ k.titel }}"></i>{% endfor %}</span>

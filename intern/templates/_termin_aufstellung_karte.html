@@ -1,0 +1,6 @@
+{% if termin.aufstellung %}
+<div id="aufstellung-section" class="detail-card detail-card-wide"{% if oob %} hx-swap-oob="true"{% endif %}>
+    <h3>Aufstellung</h3>
+    {% include "_aufstellung.html" with value=termin.aufstellung gross=True %}
+</div>
+{% endif %}

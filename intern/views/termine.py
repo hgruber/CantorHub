@@ -203,6 +203,7 @@ def termin_view(request, id):
     lieder = Konzert.objects.filter(termin=termin).select_related("lied").order_by("position")
     my_zusage = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
     my_option = my_zusage.option if my_zusage else ""
+    _aufstellungen_anhaengen([termin], request.user)
     context = {
         "seitentitel": str(termin),
         "termin": termin,
@@ -375,6 +376,7 @@ def termin_zusage(request, id):
             "banner_my_option": current_option,
         })
 
+    _aufstellungen_anhaengen([termin], request.user)
     return render(request, "_termin_zusage.html", {
         "termin": termin,
         "my_option": current_option,
@@ -426,6 +428,7 @@ def termin_anwesenheit_update(request, id):
         )
 
     my_zusage = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
+    _aufstellungen_anhaengen([termin], request.user)
     return render(request, "_termin_zusage.html", {
         "termin": termin,
         "my_option": my_zusage.option if my_zusage else "",

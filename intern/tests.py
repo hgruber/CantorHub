@@ -1974,4 +1974,27 @@ class AufstellungTest(SimpleTestCase):
         self.assertIn("aufst-yes aufst-ich", html)
         self.assertIn(">S 1<", html)
         self.assertNotIn(">A ", html)
+        self.assertNotIn("aufst-gross", html)
         self.assertEqual(render_to_string("_aufstellung.html", {"value": None}).strip(), "")
+
+    def test_karte_auf_der_terminseite(self):
+        termin = SimpleNamespace(id=1, anwesenheit=True,
+                                 aufstellung=aufstellung(self.MITGLIEDER, []))
+        html = render_to_string("_termin_aufstellung_karte.html", {"termin": termin})
+        self.assertIn('id="aufstellung-section"', html)
+        self.assertIn("aufst aufst-gross", html)
+        self.assertNotIn("hx-swap-oob", html)
+        # ohne Zu-/Absage hängt der View keine Aufstellung an → keine Karte
+        leer = SimpleNamespace(id=2, anwesenheit=False)
+        self.assertEqual(render_to_string("_termin_aufstellung_karte.html", {"termin": leer}).strip(), "")
+
+    def test_karte_kommt_mit_der_zusage_antwort(self):
+        # Nach „Zusagen" tauscht htmx die Karte out-of-band aus; das Widget der
+        # Terminseite selbst (widget_only) rendert sie nicht doppelt.
+        termin = SimpleNamespace(id=1, anwesenheit=True,
+                                 aufstellung=aufstellung(self.MITGLIEDER, [(1, "1")], ich_id=1))
+        kontext = {"termin": termin, "my_option": "1", "stimme_groups": []}
+        html = render_to_string("_termin_zusage.html", kontext)
+        self.assertRegex(html, r'id="aufstellung-section"[^>]*hx-swap-oob="true"')
+        html = render_to_string("_termin_zusage.html", {**kontext, "widget_only": True})
+        self.assertNotIn("aufstellung-section", html)
