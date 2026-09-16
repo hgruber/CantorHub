@@ -3629,14 +3629,11 @@ span.not_found {
 }
 
 .wiki-page .version-banner {
-    max-width: 820px;
-    margin: 0 auto 28px;
+    margin: 0 52px 28px;
 }
 
 .wiki-page .wiki {
     height: auto;
-    max-width: 820px;
-    margin: 0 auto;
     padding: 0 52px;
     font-size: calc(15rem / 14);
     line-height: 1.85;
