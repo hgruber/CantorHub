@@ -130,6 +130,7 @@
     --status-danger-text:    #991b1b;
     --status-danger-border:  #fecaca;
     --status-danger-solid:   #dc2626;
+    --aufst-eventuell:       #facc15;   /* kräftiges Gelb der Eventuell-Kästchen */
 
     /* Password-strength meter (score 0-4) */
     --strength-0:       #dc2626;
@@ -233,6 +234,7 @@
     --status-danger-bg:      rgba(153,27,27,.25);
     --status-danger-text:    #fca5a5;
     --status-danger-border:  rgba(153,27,27,.40);
+    --aufst-eventuell:       #facc15;
 
     --strength-0:      #ef4444;
     --strength-1:      #f59e0b;
@@ -2691,7 +2693,7 @@ table.mitglied-table tr.stimme-group-start td {
     border-radius: var(--aufst-radius);
 }
 .aufst-yes   { background: var(--status-success-solid); }
-.aufst-maybe { background: var(--status-warning-solid); }
+.aufst-maybe { background: var(--aufst-eventuell); }
 .aufst-no    { background: var(--status-danger-solid); }
 .aufst-na    { background: color-mix(in srgb, var(--t4) 45%, transparent); }
 .aufst-ich   { outline: 1.5px solid var(--brand); outline-offset: 1px; }
