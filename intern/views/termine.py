@@ -4,11 +4,12 @@ import json
 import os
 import secrets
 import zipfile
+from collections import defaultdict
 from datetime import date, datetime, timedelta
 
 from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Value
+from django.db.models import Count, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -24,6 +25,7 @@ from icalendar import Calendar, Event
 from intern import folders
 from intern.app_settings import get_config, get_config_bool, get_config_int
 
+from ..aufstellung import aufstellung
 from ..forms import TerminForm
 from ..models import Konzert, Lied, Ort, Termin, User, Zusage
 from ..tables import TerminTabelle
@@ -103,6 +105,28 @@ def calendar_ics(request, secret):
     return HttpResponse(cal.to_ical(), content_type="text/calendar; charset=utf-8")
 
 
+def _aufstellungen_anhaengen(termine, ich):
+    """Hängt jedem Termin mit Zu-/Absage seine ``aufstellung`` an (siehe
+    ``intern.aufstellung``) — zwei Abfragen für die ganze Seite."""
+    termine = [t for t in termine if t.anwesenheit]
+    if not termine:
+        return
+    mitglieder = list(
+        User.objects.filter(is_active=True)
+        .order_by("last_name", "first_name")
+        .values_list("id", "first_name", "last_name", "stimme")
+    )
+    zusagen = defaultdict(list)
+    for termin_id, person_id, option in (
+        Zusage.objects.filter(termin__in=termine)
+        .order_by("id")
+        .values_list("termin_id", "person_id", "option")
+    ):
+        zusagen[termin_id].append((person_id, option))
+    for t in termine:
+        t.aufstellung = aufstellung(mitglieder, zusagen[t.pk], ich.pk)
+
+
 @login_required
 def termin_list(request):
     past = request.GET.get("past") == "1"
@@ -116,44 +140,6 @@ def termin_list(request):
             Value(""),
         ),
         "anzahl_songs": Count("konzert", distinct=True),
-        "anzahl_zusagen_sopran": Count(
-            "zusage",
-            filter=Q(zusage__person__stimme="S", zusage__option="1"),
-            distinct=True,
-        ),
-        "anzahl_zusagen_alt": Count(
-            "zusage",
-            filter=Q(zusage__person__stimme="A", zusage__option="1"),
-            distinct=True,
-        ),
-        "anzahl_zusagen_tenor": Count(
-            "zusage",
-            filter=Q(zusage__person__stimme="T", zusage__option="1"),
-            distinct=True,
-        ),
-        "anzahl_zusagen_bass": Count(
-            "zusage",
-            filter=Q(zusage__person__stimme="B", zusage__option="1"),
-            distinct=True,
-        ),
-        "anzahl_vielleicht": Count(
-            "zusage",
-            filter=Q(zusage__option="3"),
-            distinct=True,
-        ),
-        "anzahl_absagen": Count(
-            "zusage",
-            filter=Q(zusage__option="2"),
-            distinct=True,
-        ),
-        "anzahl_keine_angabe": Coalesce(
-            Value(
-                User.objects.filter(is_active=True).count(),
-                output_field=IntegerField(),
-            ) - Count("zusage", distinct=True),
-            Value(0),
-            output_field=IntegerField(),
-        ),
     }
     if past:
         qs = Termin.objects.filter(datum__lte=timezone_now()).order_by("-datum")
@@ -166,6 +152,7 @@ def termin_list(request):
 
     probe = TerminTabelle(termin_queryset)
     rows, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
+    _aufstellungen_anhaengen(rows, request.user)
     table = TerminTabelle(rows)
     RequestConfig(request, paginate=False).configure(table)
 

@@ -218,40 +218,10 @@ class TerminTabelle(tables.Table):
         orderable=False,
         attrs={"td": {"class": "right"}},
     )
-    anzahl_zusagen_sopran = tables.Column(
-        verbose_name="S",
+    aufstellung = tables.TemplateColumn(
+        template_name="_aufstellung.html",
+        verbose_name="Aufstellung",
         orderable=False,
-        attrs={"td": {"class": "right att-yes"}},
-    )
-    anzahl_zusagen_alt = tables.Column(
-        verbose_name="A",
-        orderable=False,
-        attrs={"td": {"class": "right att-yes"}},
-    )
-    anzahl_zusagen_tenor = tables.Column(
-        verbose_name="T",
-        orderable=False,
-        attrs={"td": {"class": "right att-yes"}},
-    )
-    anzahl_zusagen_bass = tables.Column(
-        verbose_name="B",
-        orderable=False,
-        attrs={"td": {"class": "right att-yes"}},
-    )
-    anzahl_absagen = tables.Column(
-        verbose_name="Absage",
-        orderable=False,
-        attrs={"td": {"class": "right att-no"}},
-    )
-    anzahl_vielleicht = tables.Column(
-        verbose_name="Eventuell",
-        orderable=False,
-        attrs={"td": {"class": "right att-maybe"}},
-    )
-    anzahl_keine_angabe = tables.Column(
-        verbose_name="Offen",
-        orderable=False,
-        attrs={"td": {"class": "right att-na"}},
     )
     lang = tables.Column(
         verbose_name="Info",
@@ -279,31 +249,6 @@ class TerminTabelle(tables.Table):
             return value
         else:
             return ""
-
-    def render_anzahl_zusagen_sopran(self, value, record):
-        return self._att_badge(value, "yes") if value and record.anwesenheit else ""
-
-    def render_anzahl_zusagen_alt(self, value, record):
-        return self._att_badge(value, "yes") if value and record.anwesenheit else ""
-
-    def render_anzahl_zusagen_tenor(self, value, record):
-        return self._att_badge(value, "yes") if value and record.anwesenheit else ""
-
-    def render_anzahl_zusagen_bass(self, value, record):
-        return self._att_badge(value, "yes") if value and record.anwesenheit else ""
-
-    def render_anzahl_absagen(self, value, record):
-        return self._att_badge(value, "no") if value and record.anwesenheit else ""
-
-    def render_anzahl_vielleicht(self, value, record):
-        return self._att_badge(value, "maybe") if value and record.anwesenheit else ""
-
-    def render_anzahl_keine_angabe(self, value, record):
-        return self._att_badge(value, "na") if value and record.anwesenheit else ""
-
-    @staticmethod
-    def _att_badge(value, kind):
-        return format_html('<span class="att-count att-count-{}">{}</span>', kind, value)
 
     class Meta:
         row_attrs = {"data-href": lambda record: reverse("termin_view", args=[record.id])}

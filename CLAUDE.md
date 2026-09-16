@@ -76,7 +76,8 @@ indexing, MUC room assignment), `app_settings.py` (runtime config), `folder_acce
 `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
 shared by the folder browser and the wiki media bar), `verwendung.py` (what a delete would break),
 `terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
-events are `00:00`, see `docs/frontend.md`),
+events are `00:00`, see `docs/frontend.md`), `aufstellung.py` (the stage picture of the answers
+in the event list),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
 `ejabberd.py`, `konfig_gruppen.py`. `intern/dav/` is shared by `intern/carddav/` and
 `intern/caldav/`.

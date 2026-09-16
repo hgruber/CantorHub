@@ -14,11 +14,13 @@ from unittest import mock
 from django.core.signals import request_finished, request_started
 from django.db.models import Q
 from django.template import Context, Template
+from django.template.loader import render_to_string
 from django.test import SimpleTestCase
 from django.utils.html import escape
 from django.utils.timesince import timeuntil
 
 from intern import app_settings
+from intern.aufstellung import aufstellung
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
 from intern.templatetags.termin_tags import zeitraum_bis
 from intern.terminzeit import countdown_text, ist_ganztaegig, kommende_q
@@ -1917,3 +1919,59 @@ class ZeitraumBisFilterTest(SimpleTestCase):
 
     def test_none(self):
         self.assertIsNone(zeitraum_bis(None))
+
+
+class AufstellungTest(SimpleTestCase):
+    """Die Bühnengrafik der Terminliste: Platz, Spiegelung, Zahlen."""
+
+    MITGLIEDER = [
+        (1, "Sa", "Eins", "S"), (2, "Sa", "Zwei", "S"), (3, "Sa", "Drei", "S"),
+        (4, "Al", "Eins", "A"), (5, "Al", "Zwei", "A"),
+        (6, "Te", "Eins", "T"), (7, "Ba", "Eins", "B"),
+        (8, "Chor", "Leiter", "C"), (9, "Mu", "Siker", "M"), (10, "Ohne", "Stimme", "N"),
+    ]
+
+    def _stati(self, kaestchen):
+        return [k["status"] for k in kaestchen]
+
+    def test_plaetze(self):
+        a = aufstellung(self.MITGLIEDER, [])
+        self.assertEqual([len(a["hinten"][0]), len(a["hinten"][1])], [1, 1])
+        self.assertEqual([len(a["vorn"][0]), len(a["vorn"][1])], [3, 2])
+        self.assertEqual([k["titel"] for k in a["extra"]],
+                         ["Chor Leiter – Offen", "Mu Siker – Offen"])
+        # Stimme N taucht nirgends auf, auch nicht in den Zahlen
+        self.assertEqual(a["zahlen"]["offen"], 9)
+
+    def test_zusagen_zur_mitte(self):
+        zusagen = [(1, "2"), (2, "1"), (3, "3"), (4, "1"), (5, "2")]
+        a = aufstellung(self.MITGLIEDER, zusagen)
+        # links vom Gang: außen Absage, innen Zusage
+        self.assertEqual(self._stati(a["vorn"][0]), ["no", "maybe", "yes"])
+        # rechts gespiegelt
+        self.assertEqual(self._stati(a["vorn"][1]), ["yes", "no"])
+
+    def test_fehlend_offen_und_letzte_zusage_gewinnt(self):
+        a = aufstellung(self.MITGLIEDER, [(6, "2"), (6, "1")])
+        self.assertEqual(self._stati(a["hinten"][0]), ["yes"])
+        self.assertEqual(self._stati(a["hinten"][1]), ["na"])
+
+    def test_ich_und_zahlen(self):
+        zusagen = [(1, "1"), (4, "1"), (5, "1"), (6, "3"), (7, "2"), (8, "1"), (10, "1")]
+        a = aufstellung(self.MITGLIEDER, zusagen, ich_id=4)
+        alle = [*a["hinten"][0], *a["hinten"][1], *a["vorn"][0], *a["vorn"][1], *a["extra"]]
+        self.assertEqual([k["titel"] for k in alle if k["ich"]], ["Al Eins – Zusage"])
+        self.assertEqual(a["zahlen"], {
+            "S": 1, "A": 2, "T": 0, "B": 0,
+            "zusagen": 4, "vielleicht": 1, "offen": 3, "absagen": 1,
+        })
+        self.assertEqual(a["label"], "4 Zusagen, 1 Eventuell, 3 offen, 1 Absagen")
+
+    def test_template(self):
+        a = aufstellung(self.MITGLIEDER, [(1, "1")], ich_id=1)
+        html = render_to_string("_aufstellung.html", {"value": a})
+        self.assertEqual(html.count('class="aufst-p '), 9)
+        self.assertIn("aufst-yes aufst-ich", html)
+        self.assertIn(">S 1<", html)
+        self.assertNotIn(">A ", html)
+        self.assertEqual(render_to_string("_aufstellung.html", {"value": None}).strip(), "")

@@ -2646,6 +2646,56 @@ table.mitglied-table tr.stimme-group-start td {
     color: var(--t4);
 }
 
+/* Aufstellung (Terminliste): ein Kästchen pro Mitglied, hinten T|B, vorn S|A,
+   Chorleiter/Musiker abgesetzt. Die Grid-Spalten sind so breit wie die längste
+   Stimme ihrer Seite, dadurch steht der Gang in beiden Reihen übereinander. */
+.aufst {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+.aufst-buehne {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    column-gap: calc(5rem / 14);
+    row-gap: 2px;
+    flex-shrink: 0;
+}
+.aufst-block {
+    display: flex;
+    gap: 2px;
+    min-height: calc(8rem / 14);
+}
+.aufst-links  { grid-column: 1; justify-content: flex-end; }
+.aufst-rechts { grid-column: 2; justify-content: flex-start; }
+.aufst-extra  { grid-column: 3; grid-row: 1; margin-left: .5rem; }
+.aufst-p {
+    display: block;
+    width: calc(8rem / 14);
+    height: calc(8rem / 14);
+    border-radius: 2px;
+}
+.aufst-yes   { background: var(--status-success-solid); }
+.aufst-maybe { background: var(--status-warning-solid); }
+.aufst-no    { background: var(--status-danger-solid); }
+.aufst-na    { background: color-mix(in srgb, var(--t4) 45%, transparent); }
+.aufst-ich   { outline: 1.5px solid var(--brand); outline-offset: 1px; }
+.aufst-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.aufst-chipzeile {
+    display: flex;
+    gap: 3px;
+    white-space: nowrap;
+}
+.aufst-chips .att-count { margin-right: 0; }
+@media (max-width: 640px) {
+    .aufst { flex-direction: column; align-items: flex-start; gap: .375rem; }
+    .aufst-chips { flex-direction: row; flex-wrap: wrap; }
+}
+
 /* Admin drag-and-drop chips */
 .att-chips {
     list-style: none;

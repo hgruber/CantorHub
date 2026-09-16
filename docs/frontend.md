@@ -122,6 +122,18 @@ first; see `files.md`.
 Keine Angabe. The attendance table on the termin detail page groups users by `Stimme`
 (S, A, T, B, C, M) and splits into two tables on mobile.
 
+**The event list shows the answers as a stage picture** (column „Aufstellung", `_aufstellung.html`),
+modelled on the legacy portal: one square per active member, back row Tenor | Bass, front row
+Sopran | Alt, Chorleiter and Musiker set apart top right. Within a voice the Zusagen face the
+aisle — the left voice runs Absage → Offen → Eventuell → Zusage from the outside in, the right
+one mirrored — so a green block forms in the middle. The two-column grid is sized by the longer
+voice of each side, which keeps the aisle aligned in both rows. The count chips (Zusagen per
+S/A/T/B, totals of Absage/Eventuell/Offen) sit in the same cell and are computed from the very
+same placed members; members with Stimme `N` are neither drawn nor counted. The layout logic is
+the pure `intern/aufstellung.py`; `_aufstellungen_anhaengen()` in `views/termine.py` is the DB
+half and needs two queries per page, for the first load and the infinite-scroll reloads alike.
+The viewer's own square carries a `--brand` outline, every square a name tooltip.
+
 A slim banner is shown site-wide at the top of `<main class="content">` in `base.html`
 (`_termin_banner.html`), highlighting the next upcoming event (`banner_termin` /
 `banner_my_option`, computed in `config/context_processors.py`'s `project_meta`) with a
