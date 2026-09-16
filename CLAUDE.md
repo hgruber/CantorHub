@@ -152,6 +152,9 @@ reasoning where it matters.
   once.
 - **CSS uses tokens only.** Every new colour is a custom property with a `[data-theme="dark"]`
   value; no hardcoded hex in component styles.
+- **Font sizes in `rem`, never `px`** — write `calc(13rem / 14)` for 13px, also in template
+  `<style>` blocks (mail templates excepted). The sidebar font-size setting scales the root; a
+  `px` size silently ignores it. See „Theme boot" in `docs/frontend.md`.
 - **Reuse the shared UI components** rather than hand-rolling: `{% form_field %}` for form rows,
   `ChipMultiSelect` / `_chip_multiselect.html` for every multi-select,
   `_confirm_delete_dialog.html` for delete confirmations, `{% hilfe %}` for explanation tooltips

@@ -56,10 +56,10 @@
       <div class="detail-card">
         <h3>Signatur</h3>
         {% if not notify_groups %}
-          <p style="margin:0;color:var(--t3);font-size:13px;font-style:italic;">(nicht unterschrieben)</p>
+          <p style="margin:0;color:var(--t3);font-size:calc(13rem / 14);font-style:italic;">(nicht unterschrieben)</p>
         {% elif notify_groups|length == 1 %}
           <input type="hidden" name="group_id" value="{{ notify_groups.0.id }}">
-          <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:var(--brand);">{{ notify_groups.0.name }}</p>
+          <p style="margin:0 0 8px;font-size:calc(14rem / 14);font-weight:600;color:var(--brand);">{{ notify_groups.0.name }}</p>
           <div class="tag-list">
             {% for u in notify_groups.0.user_set.all %}
               {% if u.is_active %}<span class="tag">{{ u.first_name }} {{ u.last_name }}</span>{% endif %}
@@ -178,7 +178,7 @@
       row.style.cssText =
         'display:flex;align-items:center;gap:6px;width:100%;text-align:left;' +
         'background:none;border:none;cursor:pointer;padding:6px 14px;' +
-        'font-size:13px;color:var(--t2);font-family:inherit;' +
+        'font-size:calc(13rem / 14);color:var(--t2);font-family:inherit;' +
         'transition:background var(--ease);';
       row.innerHTML =
         '<svg width="14" height="14" class="folder-chevron" viewBox="0 0 24 24" fill="none" ' +
@@ -220,7 +220,7 @@
       row.style.cssText =
         'display:flex;align-items:center;gap:6px;width:100%;text-align:left;' +
         'background:none;border:none;cursor:pointer;padding:6px 14px;' +
-        'font-size:13px;color:var(--t1);font-family:inherit;' +
+        'font-size:calc(13rem / 14);color:var(--t1);font-family:inherit;' +
         'transition:background var(--ease);';
       row.innerHTML =
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
@@ -306,7 +306,7 @@
       '<button type="button" aria-label="Entfernen" ' +
       'style="display:inline-flex;align-items:center;justify-content:center;' +
       'width:16px;height:16px;padding:0;border:none;background:none;cursor:pointer;' +
-      'color:var(--brand);opacity:.7;font-size:14px;line-height:1;">&times;</button>';
+      'color:var(--brand);opacity:.7;font-size:calc(14rem / 14);line-height:1;">&times;</button>';
     chip.querySelector('button').addEventListener('click', () => removeAttachment(id));
     chips.appendChild(chip);
   }

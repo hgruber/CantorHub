@@ -65,6 +65,59 @@ if (overlay) {
   }
 })();
 
+// Schriftgroesse (Einstellungen in der Sidebar). Der Faktor skaliert ueber
+// --schrift-faktor die Wurzel-Schriftgroesse; _theme_boot.html setzt ihn schon
+// vor dem ersten Paint. Bei 100 % wird der Key entfernt statt gespeichert.
+(function initSchriftgroesse() {
+  const box = document.getElementById("schriftgroesse");
+  if (!box) return;
+  const KEY = "schriftgroesse";
+  const STUFEN = [0.9, 1, 1.15, 1.3, 1.5];
+  const wert = box.querySelector(".schriftgroesse-wert");
+  const kleiner = box.querySelector('[data-schritt="-1"]');
+  const groesser = box.querySelector('[data-schritt="1"]');
+
+  function gespeicherteStufe() {
+    let f = 1;
+    try { f = parseFloat(localStorage.getItem(KEY)) || 1; } catch (_) {}
+    // naechstgelegene Stufe, falls sich die Stufen einmal aendern
+    let beste = STUFEN.indexOf(1);
+    STUFEN.forEach((s, i) => {
+      if (Math.abs(s - f) < Math.abs(STUFEN[beste] - f)) beste = i;
+    });
+    return beste;
+  }
+
+  let stufe = gespeicherteStufe();
+
+  function anwenden(speichern) {
+    const f = STUFEN[stufe];
+    const root = document.documentElement;
+    if (f === 1) root.style.removeProperty("--schrift-faktor");
+    else root.style.setProperty("--schrift-faktor", f);
+    if (speichern) {
+      try {
+        if (f === 1) localStorage.removeItem(KEY);
+        else localStorage.setItem(KEY, String(f));
+      } catch (_) {}
+    }
+    wert.textContent = Math.round(f * 100) + " %";
+    kleiner.disabled = stufe === 0;
+    groesser.disabled = stufe === STUFEN.length - 1;
+  }
+
+  anwenden(false);
+
+  box.addEventListener("click", (e) => {
+    const btn = e.target.closest(".schriftgroesse-btn");
+    if (!btn || btn.disabled) return;
+    const neu = stufe + parseInt(btn.dataset.schritt, 10);
+    if (neu < 0 || neu >= STUFEN.length) return;
+    stufe = neu;
+    anwenden(true);
+  });
+})();
+
 // Active navigation state
 document.querySelectorAll(".sidebar-nav .nav-item[href]").forEach((link) => {
   try {

@@ -193,11 +193,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function livePopup(s) {
     return `<div><strong>${escHtml(s.name)}</strong><br>` +
-           `<span style="font-size:11px;color:#888">zuletzt: ${escHtml(s.aktualisiert)}</span></div>`;
+           `<span style="font-size:calc(11rem / 14);color:#888">zuletzt: ${escHtml(s.aktualisiert)}</span></div>`;
   }
   function myPopup(timeStr) {
     return `<div><strong>Mein Standort</strong><br>` +
-           `<span style="font-size:11px;color:#888">aktuell: ${escHtml(timeStr)}</span></div>`;
+           `<span style="font-size:calc(11rem / 14);color:#888">aktuell: ${escHtml(timeStr)}</span></div>`;
   }
 
   function applyLiveUpdate(list) {

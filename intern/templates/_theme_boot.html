@@ -1,5 +1,5 @@
 {% comment %}
-Dark-Mode vor dem ersten Paint setzen (FOUC vermeiden).
+Dark-Mode und Schriftgroesse vor dem ersten Paint setzen (FOUC vermeiden).
 
 Muss unmittelbar nach dem intern.css-Link und vor jedem sichtbaren Inhalt
 stehen. Liest nur — geschrieben wird "theme" ausschliesslich beim Klick auf
@@ -8,4 +8,8 @@ erkannte Systemeinstellung nicht dauerhaft eingefroren wird.
 
 Der if(m)-Guard erlaubt die Einbindung auch auf Seiten ohne
 <meta id="meta-theme-color">.
-{% endcomment %}<script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark");var m=document.getElementById("meta-theme-color");if(m)m.setAttribute("content",t==="dark"?"#1a1a2e":"#ffffff")})()</script>
+
+Ebenso die Schriftgroesse: "schriftgroesse" (Faktor, fehlt bei 100 %) wird als
+--schrift-faktor auf <html> gesetzt, sonst springt die Schrift nach dem Laden.
+Geschrieben wird der Key nur von initSchriftgroesse in intern.js.
+{% endcomment %}<script>(function(){var t=localStorage.getItem("theme");if(!t&&window.matchMedia)t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";if(t==="dark")document.documentElement.setAttribute("data-theme","dark");var m=document.getElementById("meta-theme-color");if(m)m.setAttribute("content",t==="dark"?"#1a1a2e":"#ffffff");var f=parseFloat(localStorage.getItem("schriftgroesse"));if(f>=0.5&&f<=2&&f!==1)document.documentElement.style.setProperty("--schrift-faktor",f)})()</script>

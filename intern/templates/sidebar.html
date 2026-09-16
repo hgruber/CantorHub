@@ -109,6 +109,17 @@
             </svg>
             <span class="theme-label">Dunkel</span>
         </button>
+        <div class="nav-subitem schriftgroesse" id="schriftgroesse">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>
+            </svg>
+            <span>Schrift</span>
+            <span class="schriftgroesse-steuerung">
+                <button type="button" class="schriftgroesse-btn" data-schritt="-1" aria-label="Schrift verkleinern">A−</button>
+                <output class="schriftgroesse-wert" aria-live="polite">100&nbsp;%</output>
+                <button type="button" class="schriftgroesse-btn" data-schritt="1" aria-label="Schrift vergrößern">A+</button>
+            </span>
+        </div>
         <button type="button" class="nav-subitem" id="notify-toggle">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -182,7 +193,7 @@
 <div class="sidebar-bottom">
     <form method="post" action="{% url 'logout' %}" style="margin:0">
         {% csrf_token %}
-        <button type="submit" class="nav-item" style="font-size:13px">
+        <button type="submit" class="nav-item" style="font-size:calc(13rem / 14)">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>

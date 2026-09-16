@@ -299,6 +299,25 @@ persisting on load would freeze whatever the system happened to prefer on the fi
 a later OS switch would have no effect. While nothing is stored, a `prefers-color-scheme`
 change listener follows the system live.
 
+The same script applies the **font size**. Ctrl+mouse wheel has no counterpart on phones: the
+app shell (`html, body { height: 100%; overflow: hidden }`) turns pinch-zoom into panning
+without reflow, and the installed PWA (`display: standalone`) has no browser zoom menu. So
+Einstellungen → Schrift in the sidebar offers 90 · 100 · 115 · 130 · 150 %
+(`initSchriftgroesse` in `intern.js`). The factor is stored per device as
+`localStorage["schriftgroesse"]` — the key is removed at 100 % — and set as `--schrift-faktor`
+on `<html>`, where `intern.css` computes `font-size: calc(14px * var(--schrift-faktor, 1))`.
+
+This only works because every font size hangs off that root: sizes are written as
+`calc(Nrem / 14)` (identical to `Npx` at 100 %), never in `px`, in the stylesheets and in
+template `<style>` blocks alike; mail templates are exempt. Only text scales — paddings and
+icons stay in `px`. `--sb-width` and the submenu height grow along
+(`min(calc(232rem / 14), 85vw)`). A fixed `px` width next to text that must fit, such as the
+rotated column heads of the permission matrices, needs `rem` as well. Check new layouts at
+150 % on a 390 px viewport.
+
+Rejected alternative: CSS `zoom` on `<html>` would scale `100dvh` past the screen edge and put
+Leaflet, SortableJS and the fixed popovers out of step with pointer coordinates.
+
 **Auth pages** (`dialog.html` → `login.html`, `register.html`, `register_success.html`,
 `reset_confirm.html`) are themed like everything else: they load `intern.css`, carry
 `class="join-page"` on `<html>`/`<body>` and reuse the `.join-wrap`/`.join-card`/`.join-header`

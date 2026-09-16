@@ -48,7 +48,7 @@
 }
 .perm-cat-header {
     text-align: center;
-    font-size: 10px;
+    font-size: calc(10rem / 14);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -87,10 +87,10 @@ th.perm-col-head {
     top: calc(var(--cat-row-h, 29px) - 1px);
     z-index: 2;
     background: var(--bg-thead);
-    width: 20px;
-    min-width: 20px;
-    max-width: 20px;
-    height: 130px;
+    width: calc(20rem / 14);
+    min-width: calc(20rem / 14);
+    max-width: calc(20rem / 14);
+    height: calc(130rem / 14);
     vertical-align: middle;
     text-align: left;
     border-bottom: 1px solid var(--border-strong);
@@ -101,7 +101,7 @@ th.perm-col-head {
 th.perm-col-head.perm-col-cat-first { border-left-color: var(--border-strong); }
 .perm-col-rotate {
     position: relative;
-    height: 130px;
+    height: calc(130rem / 14);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -111,7 +111,7 @@ th.perm-col-head.perm-col-cat-first { border-left-color: var(--border-strong); }
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     white-space: nowrap;
-    font-size: 11.5px;
+    font-size: calc(11.5rem / 14);
     font-weight: 500;
     color: var(--t2);
     line-height: 1;
@@ -135,13 +135,13 @@ tr.perm-label-row th { border-bottom: 2px solid var(--t1); }
     gap: 8px;
 }
 .perm-group-name {
-    font-size: 13px;
+    font-size: calc(13rem / 14);
     font-weight: 600;
     color: var(--t1);
     flex: 1;
 }
 .perm-group-count {
-    font-size: 11px;
+    font-size: calc(11rem / 14);
     color: var(--t4);
     background: var(--bg-row-hover);
     border-radius: 10px;
@@ -213,7 +213,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     background: var(--bg-row-hover);
 }
 .perm-new-name-input {
-    font-size: 13px;
+    font-size: calc(13rem / 14);
     font-weight: 600;
     padding: 4px 8px;
     border: 1px solid var(--brand);
@@ -246,7 +246,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
 }
 .perm-apply-bar.visible { transform: translateY(0); }
-.perm-change-summary { font-size: 13px; color: var(--t3); }
+.perm-change-summary { font-size: calc(13rem / 14); color: var(--t3); }
 
 /* Dark mode */
 .perm-matrix-wrap             { --border-strong: rgba(0,0,0,0.55); }
@@ -287,7 +287,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     border: 1px solid var(--border-strong);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    font-size: 12.5px;
+    font-size: calc(12.5rem / 14);
     line-height: 1.5;
     color: var(--t2);
     pointer-events: none;
@@ -307,11 +307,11 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     color: var(--t1);
     border-radius: 99px;
     padding: 1px 8px;
-    font-size: 11.5px;
+    font-size: calc(11.5rem / 14);
     white-space: nowrap;
 }
 .perm-tooltip-title {
-    font-size: 11px;
+    font-size: calc(11rem / 14);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -339,7 +339,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
                 </tr>
                 <!-- Row 2: Rotated permission labels -->
                 <tr class="perm-label-row">
-                    <th class="perm-user-col perm-user-head" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--t3);padding:8px 16px;vertical-align:bottom;">Gruppe</th>
+                    <th class="perm-user-col perm-user-head" style="font-size:calc(11rem / 14);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--t3);padding:8px 16px;vertical-align:bottom;">Gruppe</th>
                     {% for cat in categories %}{% for perm in cat.perms %}
                     <th class="perm-col-head perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}" data-perm="{{ perm.key }}" data-tooltip="{{ perm.description }}">
                         <div class="perm-col-rotate"><span>{{ perm.label }}</span></div>

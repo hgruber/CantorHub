@@ -47,10 +47,10 @@
     top: 0;
     z-index: 2;
     background: var(--bg-thead);
-    width: 36px;
-    min-width: 36px;
-    max-width: 36px;
-    height: 140px;
+    width: calc(36rem / 14);
+    min-width: calc(36rem / 14);
+    max-width: calc(36rem / 14);
+    height: calc(140rem / 14);
     vertical-align: middle;
     text-align: left;
     border-bottom: 2px solid var(--border-strong);
@@ -63,7 +63,7 @@
 }
 .perm-col-rotate {
     position: relative;
-    height: 140px;
+    height: calc(140rem / 14);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -73,7 +73,7 @@
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     white-space: nowrap;
-    font-size: 12px;
+    font-size: calc(12rem / 14);
     font-weight: 600;
     color: var(--t2);
     line-height: 1;
@@ -106,7 +106,7 @@
     flex-wrap: nowrap;
 }
 .perm-name {
-    font-size: 13px;
+    font-size: calc(13rem / 14);
     font-weight: 500;
     color: var(--t1);
     white-space: nowrap;
@@ -264,7 +264,7 @@
     box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
 }
 .perm-apply-bar.visible { transform: translateY(0); }
-.perm-change-summary { font-size: 13px; color: var(--t3); }
+.perm-change-summary { font-size: calc(13rem / 14); color: var(--t3); }
 [data-theme="dark"] .perm-apply-bar { box-shadow: 0 -2px 12px rgba(0,0,0,0.35); }
 
 .perm-matrix-wrap             { --border-strong: rgba(0,0,0,0.55); }
