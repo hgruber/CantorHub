@@ -71,7 +71,8 @@
 
     /* Table */
     --bg-thead:     #f9fafb;
-    --bg-row-hover: #f3f4f6;
+    --bg-row-alt:   #f5f6f8;
+    --bg-row-hover: #eef0f3;
 
     /* Forum */
     --forum-bg:         #f8f9fb;
@@ -186,7 +187,8 @@
     --border-dark:     rgba(255, 255, 255, 0.10);
 
     --bg-thead:        #22222e;
-    --bg-row-hover:    rgba(255, 255, 255, 0.03);
+    --bg-row-alt:      rgba(255, 255, 255, 0.025);
+    --bg-row-hover:    rgba(255, 255, 255, 0.05);
 
     --forum-bg:        #16161e;
     --msg-bg:          #1e1e2e;
@@ -1071,6 +1073,13 @@ td {
 tr:last-child td { border-bottom: none; }
 
 tr[data-href] { cursor: pointer; }
+
+/* Zebrastreifen zur Zeilenverfolgung. :where() zaehlt nicht mit, die Regel
+   wiegt so viel wie der Hover darunter und verliert gegen ihn, gegen
+   Drag-over (!important) und die row-fresh-Animation.
+   Tabellen mit eigener Zeilenfaerbung stehen in der :not()-Liste. */
+:where(table:not(.mitglied-table, .wiki-table, .perm-matrix, .diff-unified, .diff))
+    tbody tr:nth-child(even) td { background: var(--bg-row-alt); }
 
 tbody tr:hover td { background: var(--bg-row-hover); }
 
@@ -4506,7 +4515,7 @@ span.not_found {
     z-index: 1;
 }
 
-.history-table tbody tr:hover {
+.history-table tbody tr:hover td {
     background: var(--bg-row-hover);
 }
 

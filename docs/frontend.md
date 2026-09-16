@@ -10,6 +10,12 @@ All list views use django-tables2 with clickable rows (`data-href` on `<tr>`). E
 navigates to a detail page. Detail pages have an edit button in the top bar (via `edit`/`id`
 context variables rendered in `base.html`).
 
+Every table is zebra-striped (`--bg-row-alt` on even `tbody` rows) except those that colour
+their rows themselves: the member list (voice colours), wiki tables (own stripes), the
+permission matrix and the article diff. They are listed in the `:not()` of the stripe rule in
+`intern.css`; a new table with its own row colouring belongs there too. The rule is wrapped in
+`:where()` so hover, drag-over and the live-refresh flash still win over it.
+
 | URL pattern | View | Template |
 |---|---|---|
 | `/intern/forum/<id>/` | `forum_view` | `forum.html` |
