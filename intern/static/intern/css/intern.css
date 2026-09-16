@@ -2647,6 +2647,8 @@ table.mitglied-table tr.stimme-group-start td {
     font-size: calc(12rem / 14);
     color: var(--t4);
 }
+/* Vor- und Nachname bleiben zusammen, umbrochen wird nur nach dem Komma. */
+.att-name { white-space: nowrap; }
 
 /* Aufstellung (Terminliste, groß als Karte auf der Terminseite): ein Kästchen
    pro Mitglied, hinten T|B, vorn S|A, Chorleiter/Musiker abgesetzt. Die
@@ -2748,6 +2750,7 @@ table.mitglied-table tr.stimme-group-start td {
     color: var(--t2);
     font-size: calc(12rem / 14);
     line-height: 1.4;
+    white-space: nowrap;
     user-select: none;
     border: 1px solid transparent;
 }
