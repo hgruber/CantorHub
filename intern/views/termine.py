@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 
 from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Count, OuterRef, Q, Subquery, Value
+from django.db.models import OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -139,7 +139,6 @@ def termin_list(request):
             ),
             Value(""),
         ),
-        "anzahl_songs": Count("konzert", distinct=True),
     }
     if past:
         qs = Termin.objects.filter(datum__lte=timezone_now()).order_by("-datum")

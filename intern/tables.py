@@ -213,20 +213,10 @@ class TerminTabelle(tables.Table):
         orderable=False,
         empty_values=(),
     )
-    anzahl_songs = tables.Column(
-        verbose_name="Songs",
-        orderable=False,
-        attrs={"td": {"class": "right"}},
-    )
     aufstellung = tables.TemplateColumn(
         template_name="_aufstellung.html",
         verbose_name="Aufstellung",
         orderable=False,
-    )
-    lang = tables.Column(
-        verbose_name="Info",
-        orderable=False,
-        attrs={"td": {"style": "min-width: 372px;"}},
     )
 
     def render_datum(self, value):
@@ -243,12 +233,6 @@ class TerminTabelle(tables.Table):
             return mark_safe('<span class="att-inline att-inline-maybe">Eventuell</span>')
         else:
             return mark_safe('<span class="att-inline att-inline-na">Offen</span>')
-
-    def render_anzahl_songs(self, value):
-        if value > 0:
-            return value
-        else:
-            return ""
 
     class Meta:
         row_attrs = {"data-href": lambda record: reverse("termin_view", args=[record.id])}
