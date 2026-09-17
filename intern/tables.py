@@ -3,6 +3,7 @@ import django_tables2 as tables
 from django import forms
 from django.contrib.auth.models import Group
 from django.db.models import Q
+from django.template.defaultfilters import date as datumsfilter
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
@@ -14,6 +15,37 @@ from intern.app_settings import get_vereinsname_kurz
 from .models import Artikel, ChangeLog, Lied, Ort, PRIVACY_FIELDS, Termin, User
 from .forms import ChipMultiSelect, TriStateToggle
 from .replacements import format_bytes, format_datetime
+
+
+class _Datumsspalte(tables.Column):
+    """Wie ``DateTimeColumn``/``DateColumn``, aber ohne Vorlage je Zelle.
+
+    Beide Spalten von django_tables2 sind ``TemplateColumn``s: sie bauen den
+    Ausdruck ``{{ value|date:"…"|default:default }}`` und kompilieren ihn für
+    **jede** Zelle neu. Hier ruft die Zelle denselben ``date``-Filter direkt auf,
+    das Ergebnis ist dasselbe.
+    """
+
+    standard_format = "SHORT_DATETIME_FORMAT"
+
+    def __init__(self, format=None, short=True, **kwargs):
+        if format is None:
+            format = self.standard_format if short else self.langes_format
+        self.datums_format = format
+        super().__init__(**kwargs)
+
+    def render(self, value, bound_column):
+        return datumsfilter(value, self.datums_format) or bound_column.default
+
+
+class DatumZeitSpalte(_Datumsspalte):
+    standard_format = "SHORT_DATETIME_FORMAT"
+    langes_format = "DATETIME_FORMAT"
+
+
+class DatumSpalte(_Datumsspalte):
+    standard_format = "SHORT_DATE_FORMAT"
+    langes_format = "DATE_FORMAT"
 
 
 def _datei_url(pfad):
@@ -100,8 +132,8 @@ class OrdnerTabelle(tables.Table):
     size = tables.Column(verbose_name="Elemente", attrs={"td": {"class": "right"}})
     groesse = tables.Column(verbose_name="Größe", orderable=False, attrs={"td": {"class": "right"}})
     besitzer = tables.Column(verbose_name="Besitzer")
-    created = tables.DateTimeColumn(verbose_name="Hochgeladen")
-    modified = tables.DateTimeColumn(verbose_name="Geändert")
+    created = DatumZeitSpalte(verbose_name="Hochgeladen")
+    modified = DatumZeitSpalte(verbose_name="Geändert")
     file_id = tables.Column(
         verbose_name="ID",
         accessor="id",
@@ -228,7 +260,7 @@ class OrdnerTabelle(tables.Table):
 
 
 class TerminTabelle(tables.Table):
-    datum = tables.DateTimeColumn()
+    datum = DatumZeitSpalte()
     kurz = tables.Column(
         verbose_name="Termin",
         orderable=False,
@@ -570,7 +602,7 @@ class RepertoireTabelle(tables.Table):
         },
     )
 
-    zuletzt = tables.DateColumn(
+    zuletzt = DatumSpalte(
         verbose_name="Zuletzt",
         accessor="zuletzt",
         format="d.m.Y",
@@ -781,8 +813,8 @@ class MitgliederTabelle(tables.Table):
     stimme = tables.Column(order_by=("_stimme_pos", "last_name", "first_name"))
     email = tables.EmailColumn()
     xmpp = tables.EmailColumn()
-    geburtstag = tables.DateColumn()
-    last_login = tables.DateTimeColumn()
+    geburtstag = DatumSpalte()
+    last_login = DatumZeitSpalte()
     mitteilungen = tables.Column(
         attrs={"th": {"class": "zahl"}, "td": {"class": "zahl"}},
     )
@@ -868,7 +900,7 @@ class ArtikelTabelle(tables.Table):
         verbose_name="Letzter Autor",
         order_by=("autor__last_name", "autor__first_name"),
     )
-    datum = tables.DateTimeColumn(verbose_name="Zuletzt bearbeitet")
+    datum = DatumZeitSpalte(verbose_name="Zuletzt bearbeitet")
     size = tables.Column(
         verbose_name="Größe",
         attrs={"th": {"class": "zahl"}, "td": {"class": "zahl"}},
@@ -1031,7 +1063,7 @@ class ChangeLogFilter(filters.FilterSet):
 
 
 class ChangeLogTabelle(tables.Table):
-    timestamp = tables.DateTimeColumn(
+    timestamp = DatumZeitSpalte(
         verbose_name="Datum",
         format="d.m.Y H:i",
         attrs={"td": {"class": "nowrap"}},

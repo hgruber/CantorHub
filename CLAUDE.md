@@ -82,8 +82,10 @@ events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unrea
 `docs/forum.md`), `aufstellung.py` (the stage picture of the answers
 in the event list),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
-`ejabberd.py`, `konfig_gruppen.py`. `intern/dav/` is shared by `intern/carddav/` and
-`intern/caldav/`.
+`ejabberd.py`, `konfig_gruppen.py`, `middleware.py` (the throttled session refresh, see
+`docs/architecture.md`), `tables2_beschleunigung.py` (a cache for django_tables2's per-cell
+`signature()` lookup; guarded by `Tables2SignaturTest` and a pinned version).
+`intern/dav/` is shared by `intern/carddav/` and `intern/caldav/`.
 
 ## Key models (`intern/models.py`)
 
@@ -160,6 +162,10 @@ reasoning where it matters.
 - **Font sizes in `rem`, never `px`** — write `calc(13rem / 14)` for 13px, also in template
   `<style>` blocks (mail templates excepted). The sidebar font-size setting scales the root; a
   `px` size silently ignores it. See „Theme boot" in `docs/frontend.md`.
+- **Tables: no `TemplateColumn` on a hot list.** It renders every cell with `request=`, which
+  runs the context processors again per row, and `DateTimeColumn`/`DateColumn` are subclasses
+  of it that compile a `Template` per cell. Use a `render_` method, and `DatumZeitSpalte` /
+  `DatumSpalte` from `tables.py` for dates — same output, no template.
 - **Reuse the shared UI components** rather than hand-rolling: `{% form_field %}` for form rows,
   `ChipMultiSelect` / `_chip_multiselect.html` for every multi-select,
   `_confirm_delete_dialog.html` for delete confirmations, `{% hilfe %}` for explanation tooltips

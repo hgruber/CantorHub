@@ -632,6 +632,12 @@ class InternConfig(AppConfig):
 
         from . import signals  # noqa: F401
 
+        # django_tables2 fragt pro Zelle die Signatur der Render-Funktion ab;
+        # das Ergebnis aendert sich nie (siehe tables2_beschleunigung.py).
+        from .tables2_beschleunigung import einbauen as _tables2_beschleunigen
+
+        _tables2_beschleunigen()
+
         # Zeitzone aus der Konfiguration in settings.TIME_ZONE nachziehen, damit
         # Legacy-ICS-Feed und Django-Vorlagen-Formatierung derselben Zone folgen
         # wie CalDAV (das daten.zeitzone() live liest). get_zeitzone() fällt auf

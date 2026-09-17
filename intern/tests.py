@@ -22,6 +22,7 @@ from django.utils.timesince import timeuntil
 from intern import app_settings
 from intern.aufstellung import aufstellung
 from intern.middleware import muss_auffrischen
+from intern.tables2_beschleunigung import _original as tables2_original, signature_gepuffert
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
 from intern.templatetags.termin_tags import zeitraum_bis
 from intern.terminzeit import countdown_text, ist_ganztaegig, kommende_q
@@ -2278,3 +2279,47 @@ class SitzungAuffrischenTest(SimpleTestCase):
 
     def test_unbrauchbarer_stand_faellig(self):
         self.assertTrue(muss_auffrischen("kaputt", 1000, intervall=300))
+
+
+class Tables2SignaturTest(SimpleTestCase):
+    """Der Zwischenspeicher für ``django_tables2.utils.signature``.
+
+    Er ersetzt eine Funktion einer Fremdbibliothek (siehe
+    ``intern/tables2_beschleunigung.py``); dieser Test hält fest, dass er
+    dieselben Antworten gibt wie das Original — auch für den Fall, in dem
+    ``inspect.signature`` ``self`` wegkürzt.
+    """
+
+    def _vergleiche(self, fn):
+        self.assertEqual(signature_gepuffert(fn), tables2_original(fn))
+        # zweiter Aufruf kommt aus dem Zwischenspeicher
+        self.assertEqual(signature_gepuffert(fn), tables2_original(fn))
+
+    def test_funktion(self):
+        def render(record, value, **kwargs):
+            return ""
+
+        self._vergleiche(render)
+
+    def test_lambda(self):
+        self._vergleiche(lambda record: record)
+
+    def test_gebundene_methode_ohne_self(self):
+        class Tabelle:
+            def render_spalte(self, record, value):
+                return ""
+
+        t = Tabelle()
+        # gebunden: ohne self — ungebunden: mit self. Beide Formen derselben
+        # Funktion duerfen sich im Zwischenspeicher nicht ueberschreiben.
+        self._vergleiche(t.render_spalte)
+        self._vergleiche(Tabelle.render_spalte)
+        self.assertEqual(signature_gepuffert(t.render_spalte)[0], ("record", "value"))
+        self.assertEqual(
+            signature_gepuffert(Tabelle.render_spalte)[0], ("self", "record", "value")
+        )
+
+    def test_eingebaut(self):
+        from django_tables2 import utils
+
+        self.assertIs(utils.signature, signature_gepuffert)
