@@ -2612,14 +2612,10 @@ table.mitglied-table tr.stimme-group-start td {
     line-height: calc(18rem / 14);
     margin-right: 4px;
 }
-.att-yes .att-count,
-.att-count-yes { background: var(--status-success-bg); color: var(--status-success-text); }
-.att-maybe .att-count,
-.att-count-maybe { background: var(--status-warning-bg); color: var(--status-warning-text); }
-.att-no .att-count,
-.att-count-no { background: var(--status-danger-bg); color: var(--status-danger-text); }
-.att-na .att-count,
-.att-count-na { background: var(--bg-row-hover); color: var(--t4); }
+.att-yes .att-count { background: var(--status-success-bg); color: var(--status-success-text); }
+.att-maybe .att-count { background: var(--status-warning-bg); color: var(--status-warning-text); }
+.att-no .att-count { background: var(--status-danger-bg); color: var(--status-danger-text); }
+.att-na .att-count { background: var(--bg-row-hover); color: var(--t4); }
 
 /* Inline attendance badges (list table) */
 .att-inline {
@@ -2662,7 +2658,6 @@ table.mitglied-table tr.stimme-group-start td {
     --aufst-radius: 2px;
     display: flex;
     align-items: center;
-    gap: .75rem;
 }
 .aufst-gross {
     --aufst-p: 1rem;
@@ -2670,7 +2665,6 @@ table.mitglied-table tr.stimme-group-start td {
     --aufst-gang: .75rem;
     --aufst-radius: 3px;
     justify-content: center;
-    gap: 2rem;
     padding-block: .5rem;
 }
 .aufst-buehne {
@@ -2700,30 +2694,8 @@ table.mitglied-table tr.stimme-group-start td {
 .aufst-na    { background: color-mix(in srgb, var(--t4) 45%, transparent); }
 .aufst-ich   { outline: 1.5px solid var(--brand); outline-offset: 1px; }
 .aufst-gross .aufst-ich { outline-width: 2px; }
-.aufst-chips {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.aufst-chipzeile {
-    display: flex;
-    gap: 3px;
-    white-space: nowrap;
-}
-.aufst-chips .att-count { margin-right: 0; }
-.aufst-gross .aufst-chips { gap: 5px; }
-.aufst-gross .aufst-chipzeile { gap: 5px; }
-.aufst-gross .att-count {
-    font-size: calc(13rem / 14);
-    line-height: calc(22rem / 14);
-    padding: 0 8px;
-    border-radius: 11px;
-}
 @media (max-width: 640px) {
-    .aufst { flex-direction: column; align-items: flex-start; gap: .375rem; }
-    .aufst-chips { flex-direction: row; flex-wrap: wrap; }
-    .aufst-gross { --aufst-p: calc(10rem / 14); --aufst-abstand: 2px; --aufst-gang: .5rem; align-items: center; gap: .75rem; }
-    .aufst-gross .aufst-chips { justify-content: center; }
+    .aufst-gross { --aufst-p: calc(10rem / 14); --aufst-abstand: 2px; --aufst-gang: .5rem; }
 }
 
 /* Admin drag-and-drop chips */
@@ -2863,8 +2835,7 @@ table.mitglied-table tr.stimme-group-start td {
 
 /* yes/maybe/no brauchen hier nichts: die --status-*-Tokens sind bereits
    dunkelmodus-tauglich. Nur „keine Angabe" hat kein Ampel-Pendant. */
-[data-theme="dark"] .att-na .att-count,
-[data-theme="dark"] .att-count-na { background: rgba(255,255,255,0.08); color: var(--t4); }
+[data-theme="dark"] .att-na .att-count { background: rgba(255,255,255,0.08); color: var(--t4); }
 
 [data-theme="dark"] .att-inline-na { background: rgba(255,255,255,0.08); color: var(--t4); border-color: transparent; }
 

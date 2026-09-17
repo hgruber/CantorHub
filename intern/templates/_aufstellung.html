@@ -1,4 +1,4 @@
-{% if value %}{% with a=value z=value.zahlen %}
+{% if value %}{% with a=value %}
 <div class="aufst{% if gross %} aufst-gross{% endif %}" role="img" aria-label="{{ a.label }}">
   <div class="aufst-buehne">
     <span class="aufst-block aufst-links">{% for k in a.hinten.0 %}<i class="aufst-p aufst-{{ k.status }}{% if k.ich %} aufst-ich{% endif %}" title="{{ k.titel }}"></i>{% endfor %}</span>
@@ -6,10 +6,6 @@
     {% if a.extra %}<span class="aufst-block aufst-extra">{% for k in a.extra %}<i class="aufst-p aufst-{{ k.status }}{% if k.ich %} aufst-ich{% endif %}" title="{{ k.titel }}"></i>{% endfor %}</span>{% endif %}
     <span class="aufst-block aufst-links">{% for k in a.vorn.0 %}<i class="aufst-p aufst-{{ k.status }}{% if k.ich %} aufst-ich{% endif %}" title="{{ k.titel }}"></i>{% endfor %}</span>
     <span class="aufst-block aufst-rechts">{% for k in a.vorn.1 %}<i class="aufst-p aufst-{{ k.status }}{% if k.ich %} aufst-ich{% endif %}" title="{{ k.titel }}"></i>{% endfor %}</span>
-  </div>
-  <div class="aufst-chips">
-    <span class="aufst-chipzeile">{% if z.S %}<span class="att-count att-count-yes" title="Zusagen Sopran">S {{ z.S }}</span>{% endif %}{% if z.A %}<span class="att-count att-count-yes" title="Zusagen Alt">A {{ z.A }}</span>{% endif %}{% if z.T %}<span class="att-count att-count-yes" title="Zusagen Tenor">T {{ z.T }}</span>{% endif %}{% if z.B %}<span class="att-count att-count-yes" title="Zusagen Bass">B {{ z.B }}</span>{% endif %}</span>
-    <span class="aufst-chipzeile">{% if z.absagen %}<span class="att-count att-count-no" title="Absagen">✗ {{ z.absagen }}</span>{% endif %}{% if z.vielleicht %}<span class="att-count att-count-maybe" title="Eventuell">? {{ z.vielleicht }}</span>{% endif %}{% if z.offen %}<span class="att-count att-count-na" title="Offen">– {{ z.offen }}</span>{% endif %}</span>
   </div>
 </div>
 {% endwith %}{% endif %}

@@ -127,9 +127,9 @@ modelled on the legacy portal: one square per active member, back row Tenor | Ba
 Sopran | Alt, Chorleiter and Musiker set apart top right. Within a voice the Zusagen face the
 aisle — the left voice runs Absage → Offen → Eventuell → Zusage from the outside in, the right
 one mirrored — so a green block forms in the middle. The two-column grid is sized by the longer
-voice of each side, which keeps the aisle aligned in both rows. The count chips (Zusagen per
-S/A/T/B, totals of Absage/Eventuell/Offen) sit in the same cell and are computed from the very
-same placed members; members with Stimme `N` are neither drawn nor counted. The layout logic is
+voice of each side, which keeps the aisle aligned in both rows. There are no count chips — the
+picture alone carries the numbers, and the totals only feed its `aria-label`, computed from the
+very same placed members; members with Stimme `N` are neither drawn nor counted. The layout logic is
 the pure `intern/aufstellung.py`; `_aufstellungen_anhaengen()` in `views/termine.py` is the DB
 half and needs two queries per page, for the first load and the infinite-scroll reloads alike.
 The viewer's own square carries a `--brand` outline, every square a name tooltip.
@@ -251,7 +251,7 @@ derived tokens (`--brand-dark`, `--brand-light`, `--brand-ring`), or a fresh
 override (see `_brand_boot.html`) reaches every surface that uses it.
 
 **Status ("Ampel") colours** — the green/yellow/red used by the attendance badges
-(`.att-count-*`, `.att-inline-*`) and the Zusage widgets (`.zusage-state-*`, `.zusage-btn-*`)
+(`.att-count`, `.att-inline-*`) and the Zusage widgets (`.zusage-state-*`, `.zusage-btn-*`)
 come from one token family:
 `--status-{success,warning,danger}-{bg,text,border,solid}`. `bg`/`text`/`border` are the soft
 surface, `solid` the strong fill used on hover/active; the dark-mode block redefines the first

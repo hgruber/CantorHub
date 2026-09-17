@@ -1962,7 +1962,6 @@ class AufstellungTest(SimpleTestCase):
         alle = [*a["hinten"][0], *a["hinten"][1], *a["vorn"][0], *a["vorn"][1], *a["extra"]]
         self.assertEqual([k["titel"] for k in alle if k["ich"]], ["Al Eins – Zusage"])
         self.assertEqual(a["zahlen"], {
-            "S": 1, "A": 2, "T": 0, "B": 0,
             "zusagen": 4, "vielleicht": 1, "offen": 3, "absagen": 1,
         })
         self.assertEqual(a["label"], "4 Zusagen, 1 Eventuell, 3 offen, 1 Absagen")
@@ -1972,8 +1971,8 @@ class AufstellungTest(SimpleTestCase):
         html = render_to_string("_aufstellung.html", {"value": a})
         self.assertEqual(html.count('class="aufst-p '), 9)
         self.assertIn("aufst-yes aufst-ich", html)
-        self.assertIn(">S 1<", html)
-        self.assertNotIn(">A ", html)
+        self.assertIn('aria-label="1 Zusagen, 0 Eventuell, 8 offen, 0 Absagen"', html)
+        self.assertNotIn("att-count", html)
         self.assertNotIn("aufst-gross", html)
         self.assertEqual(render_to_string("_aufstellung.html", {"value": None}).strip(), "")
 

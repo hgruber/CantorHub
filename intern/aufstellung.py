@@ -29,8 +29,8 @@ def aufstellung(mitglieder, zusagen, ich_id=None):
     sortiert. ``zusagen``: Folge von ``(person_id, option)`` in id-Reihenfolge — gibt
     es mehrere, gewinnt die letzte, wie auf der Terminseite.
 
-    Mitglieder ohne Stimme (``N``) werden weder platziert noch gezählt, damit Chips
-    und Kästchen immer dieselben Menschen meinen.
+    Mitglieder ohne Stimme (``N``) werden weder platziert noch gezählt, damit die
+    Zahlen im ``label`` und die Kästchen dieselben Menschen meinen.
     """
     option_von = dict(zusagen)
 
@@ -55,14 +55,10 @@ def aufstellung(mitglieder, zusagen, ich_id=None):
         # links vom Gang liegt die Mitte am rechten Ende
         reihen[reihe][seite] = kaestchen[::-1] if seite == 0 else kaestchen
 
-    def anzahl(status, auswahl=stimmen):
-        return sum(len(stimmen[s][status]) for s in auswahl)
+    def anzahl(status):
+        return sum(len(stimmen[s][status]) for s in stimmen)
 
     zahlen = {
-        "S": anzahl("yes", ["S"]),
-        "A": anzahl("yes", ["A"]),
-        "T": anzahl("yes", ["T"]),
-        "B": anzahl("yes", ["B"]),
         "zusagen": anzahl("yes"),
         "vielleicht": anzahl("maybe"),
         "offen": anzahl("na"),
