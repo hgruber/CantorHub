@@ -5,4 +5,7 @@
        hx-swap-oob="true" />{% endif %}
 {% for message in messages %}
     {% include '_message.html' with message=message %}
+    {% if trenner_nach and message.id == trenner_nach %}
+        <div class="forum-neu-trenner" role="separator"><span>Neu seit Deinem letzten Besuch</span></div>
+    {% endif %}
 {% endfor %}

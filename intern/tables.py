@@ -24,7 +24,18 @@ class ForumTabelle(tables.Table):
     )
 
     class Meta:
-        row_attrs = {"data-href": lambda record: reverse("forum_view", args=[record.id])}
+        row_attrs = {
+            "data-href": lambda record: reverse("forum_view", args=[record.id]),
+            "class": lambda record: "ungelesen" if getattr(record, "ungelesen", 0) else "",
+        }
+
+    def render_thema(self, record, value):
+        anzahl = getattr(record, "ungelesen", 0)
+        if not anzahl:
+            return value
+        return format_html(
+            '{} <span class="badge badge-primary" title="ungelesen">{}</span>', value, anzahl
+        )
 
     def render_zugriff(self, record):
         return format_html(

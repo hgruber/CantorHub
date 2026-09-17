@@ -11,11 +11,12 @@ from django.db.models import (
     IntegerField,
     Max,
     OuterRef,
+    Q,
     Subquery,
     Value,
     When,
 )
-from django.db.models.functions import Concat
+from django.db.models.functions import Coalesce, Concat
 from django.utils import timezone
 from django.utils.html import format_html
 from filer.fields.file import FilerFileField
@@ -315,6 +316,20 @@ class ForumQuerySet(models.QuerySet):
             letzter_absender=Subquery(last_sender_subquery),
         )
 
+    def mit_ungelesen(self, user):
+        """Annotate `ungelesen`: messages from others above the user's read marker.
+        A forum without a ForumGelesen row counts from 0 — see intern/forum_gelesen.py."""
+        bis_id = ForumGelesen.objects.filter(forum=OuterRef("pk"), user=user).values("bis_id")[:1]
+        return self.alias(
+            _gelesen_bis=Coalesce(Subquery(bis_id), Value(0)),
+        ).annotate(
+            ungelesen=Count(
+                "mitteilung",
+                filter=Q(mitteilung__id__gt=F("_gelesen_bis"))
+                & (Q(mitteilung__sender__isnull=True) | ~Q(mitteilung__sender=user)),
+            ),
+        )
+
 
 class Forum(models.Model):
     thema = models.CharField(max_length=120)
@@ -410,6 +425,30 @@ class ForumPermission(models.Model):
 
     def __str__(self):
         return f"{self.forum} → {self.group}"
+
+
+class ForumGelesen(models.Model):
+    """How far a member has read a forum: every message with an id up to `bis_id`.
+
+    The message id is stored rather than a date — `forum_get` polls by `id__gt` as well,
+    and the `datum` of messages relayed from XMPP is not guaranteed to be monotonic.
+    Reading in an XMPP client is not recorded here."""
+
+    user = models.ForeignKey(
+        "User", on_delete=models.CASCADE, related_name="foren_gelesen"
+    )
+    forum = models.ForeignKey(
+        "Forum", on_delete=models.CASCADE, related_name="gelesen"
+    )
+    bis_id = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = [("user", "forum")]
+        verbose_name = "Forum gelesen"
+        verbose_name_plural = "Foren gelesen"
+
+    def __str__(self):
+        return f"{self.user} → {self.forum} bis #{self.bis_id}"
 
 
 class Reaktion(models.Model):

@@ -42,7 +42,7 @@ migration — see `migration.md`.
 | Frontend: pages, components, design tokens, calendar, maps, homepage | `docs/frontend.md` |
 | Automated e-mails and their markup | `docs/mail.md` |
 | Members: joining, re-confirmation, leaving, field privacy | `docs/members.md` |
-| Forums: read permissions and reactions | `docs/forum.md` |
+| Forums: read permissions, reactions and unread markers | `docs/forum.md` |
 | Articles: versioning, editor, permissions, wiki markup | `docs/articles.md` |
 | Public gig-reminder mailing list | `docs/mailinglist.md` |
 | CardDAV and CalDAV | `docs/dav.md` |
@@ -78,7 +78,8 @@ indexing, MUC room assignment), `app_settings.py` (runtime config), `folders.py`
 folders under Backstage), `folder_access.py` / `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
 shared by the folder browser and the wiki media bar), `verwendung.py` (what a delete would break),
 `terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
-events are `00:00`, see `docs/frontend.md`), `aufstellung.py` (the stage picture of the answers
+events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
+`docs/forum.md`), `aufstellung.py` (the stage picture of the answers
 in the event list),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
 `ejabberd.py`, `konfig_gruppen.py`. `intern/dav/` is shared by `intern/carddav/` and
@@ -93,6 +94,7 @@ in the event list),
 | `ArtikelPermission` | Per-article read/edit restriction by group |
 | `Forum` / `ForumPermission` | Discussion threads, optionally bridged to an XMPP MUC room; read restriction by group |
 | `Mitteilung` / `Reaktion` | Forum messages and their emoji reactions (XEP-0444) |
+| `ForumGelesen` | Per member and forum, the id of the newest message seen — the unread markers |
 | `Termin` / `Ort` | Events and locations |
 | `Lied` / `Konzert` | Songs in the repertoire, and the ordered song list of one event |
 | `Zusage` | Per-member attendance response to an event |

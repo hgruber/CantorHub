@@ -32,7 +32,7 @@
          hx-include="#last_id_input"
          hx-trigger="every 5s"
          hx-swap="afterbegin">
-        {% include '_messages.html' with messages=messages initial=True %}
+        {% include '_messages.html' with messages=messages initial=True trenner_nach=trenner_nach %}
         {% if oldest_id %}
             <div id="load-more"
                  class="sentinel"

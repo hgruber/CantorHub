@@ -54,6 +54,11 @@ def project_meta(request):
                 .first()
             )
             result["banner_my_option"] = zusage or ""
+        # Unread forum messages light the dot on „Forum". Skipped for htmx requests: the
+        # forum's 5 s poll renders through here too, and partials carry no sidebar.
+        if not request.headers.get("HX-Request"):
+            from intern.forum_gelesen import hat_ungelesene
+            result["foren_ungelesen"] = hat_ungelesene(request.user)
         result["latest_changelog_id"] = (
             ChangeLog.objects.order_by("-id").values_list("id", flat=True).first() or 0
         )

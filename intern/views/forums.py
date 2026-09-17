@@ -16,6 +16,12 @@ from filer.models import File
 
 from intern import ejabberd, folders
 from intern.app_settings import get_config, get_from_email, is_ejabberd_configured
+from intern.forum_gelesen import (
+    lese_bis_id,
+    markiere_gelesen,
+    sichere_ausgangspunkt,
+    trenner_id,
+)
 
 from ..forms import ForumEditForm
 from ..models import ChangeLog, Forum, ForumPermission, Mitteilung, Reaktion, User
@@ -212,7 +218,13 @@ def forum_list(request):
             },
         )
 
-    foren = Forum.objects.extra_data().exclude(id__in=hidden).order_by("-zugriff")
+    sichere_ausgangspunkt(request.user)
+    foren = (
+        Forum.objects.extra_data()
+        .mit_ungelesen(request.user)
+        .exclude(id__in=hidden)
+        .order_by("-zugriff")
+    )
     table = ForumTabelle(foren)
     RequestConfig(request, paginate=False).configure(table)
     return render(
@@ -244,6 +256,13 @@ def forum_view(request, forum):
     )
     last_id = max((msg.id for msg in messages), default=0)
     oldest_id = min((msg.id for msg in messages), default=0)
+    # Read the old marker before raising it: the divider shows what was new on arrival.
+    trenner_nach = trenner_id(
+        [(msg.id, msg.sender_id) for msg in messages],
+        lese_bis_id(request.user, forum),
+        request.user.id,
+    )
+    markiere_gelesen(request.user, forum, last_id)
     permissions_url = (
         reverse("forum_permissions", args=[forum])
         if request.user.has_perm("intern.manage_forum_permissions")
@@ -258,6 +277,7 @@ def forum_view(request, forum):
             "last_id": last_id,
             "oldest_id": oldest_id,
             "messages": messages,
+            "trenner_nach": trenner_nach,
             "upload_folder_id": folders.forum(),
             "upload_folder_name": folders.FORENBILDER,
             "up": "forum_list",
@@ -282,6 +302,8 @@ def forum_get(request, forum, last_id=0):
     if messages:
         # Keep last_id monotonic so an in-flight poll never lowers it.
         last_id = max(last_id, max(msg.id for msg in messages))
+        # What arrives while the forum is open counts as read.
+        markiere_gelesen(request.user, forum, last_id)
     return render(
         request,
         "_messages.html",

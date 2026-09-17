@@ -1952,6 +1952,26 @@ time {
     gap: 2px;
 }
 
+/* Unread markers (intern/forum_gelesen.py) */
+tr.ungelesen td { font-weight: 600; color: var(--t1); }
+tr.ungelesen .badge { margin-left: 4px; vertical-align: 1px; }
+
+.forum-neu-trenner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+    color: var(--brand);
+    font-size: calc(11rem / 14);
+    font-weight: 600;
+}
+.forum-neu-trenner::before,
+.forum-neu-trenner::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid color-mix(in srgb, var(--brand) 45%, transparent);
+}
+
 .message,
 .message_me {
     display: flex;

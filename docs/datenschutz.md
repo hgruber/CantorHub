@@ -34,6 +34,13 @@ this file tracks only what is still open.
   that wording is now slightly *under*-inclusive and should be re-read at the next policy
   revision.
 
+- **„Erhobene Daten": forum read markers are new per-member data** — `ForumGelesen` records,
+  per member and forum, up to which message the member has read (see „Unread markers" in
+  `forum.md`). It is visible to no other member and serves only the member's own unread
+  markers; rows go with the member (`on_delete=CASCADE`). It is usage data the policy does not
+  name explicitly yet — re-read „Erhobene Daten" at the next policy revision and add a sentence
+  if the wording doesn't already cover data needed to operate the portal's functions.
+
 - **„Auftritts-Mailingliste": stored consent IPs from before the realip fix are the proxy's,
   not the subscriber's** — until `set_real_ip_from` took effect, `_client_ip()` returned the
   address of the front proxy for every request, so `Auftrittsabo.bestaetigt_ip` holds one and

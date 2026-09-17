@@ -2212,3 +2212,41 @@ class StandardOrdnerTest(SimpleTestCase):
         with mock.patch("filer.models.Folder.objects") as objects:
             objects.filter.side_effect = filter_
             self.assertIsNone(folders.musik())
+
+
+class ForumGelesenTest(SimpleTestCase):
+    """Pure half of the forum unread markers (intern/forum_gelesen.py)."""
+
+    def test_eigene_nachricht_nie_ungelesen(self):
+        from intern.forum_gelesen import ist_ungelesen
+
+        self.assertFalse(ist_ungelesen(10, 7, 5, 7))
+        self.assertTrue(ist_ungelesen(10, 8, 5, 7))
+        self.assertTrue(ist_ungelesen(10, None, 5, 7))
+        self.assertFalse(ist_ungelesen(5, 8, 5, 7))
+
+    def test_ohne_letzten_besuch_kein_trenner(self):
+        from intern.forum_gelesen import trenner_id
+
+        self.assertIsNone(trenner_id([(12, 8), (11, 8)], None, 7))
+
+    def test_nichts_ungelesen(self):
+        from intern.forum_gelesen import trenner_id
+
+        self.assertIsNone(trenner_id([(12, 8), (11, 8)], 12, 7))
+
+    def test_nur_eigene_ungelesen(self):
+        from intern.forum_gelesen import trenner_id
+
+        self.assertIsNone(trenner_id([(14, 7), (13, 7), (12, 8)], 12, 7))
+
+    def test_trenner_unter_aeltester_fremder_ungelesener(self):
+        from intern.forum_gelesen import trenner_id
+
+        nachrichten = [(16, 8), (15, 7), (14, None), (13, 7), (12, 8)]
+        self.assertEqual(trenner_id(nachrichten, 12, 7), 14)
+
+    def test_alles_ungelesen(self):
+        from intern.forum_gelesen import trenner_id
+
+        self.assertEqual(trenner_id([(3, 8), (2, 9), (1, 8)], 0, 7), 1)
