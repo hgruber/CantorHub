@@ -24,7 +24,9 @@ from intern import app_settings
 from intern.aufstellung import aufstellung
 from intern.forms import SchnellSelect, SchnellSelectMultiple
 from intern.middleware import muss_auffrischen
-from intern.tables2_beschleunigung import _original as tables2_original, signature_gepuffert
+from intern.tables2_beschleunigung import (
+    _original as tables2_original, attrs_gepuffert, signature_gepuffert,
+)
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
 from intern.templatetags.termin_tags import zeitraum_bis
 from intern.terminzeit import countdown_text, ist_ganztaegig, kommende_q
@@ -2325,6 +2327,59 @@ class Tables2SignaturTest(SimpleTestCase):
         from django_tables2 import utils
 
         self.assertIs(utils.signature, signature_gepuffert)
+
+
+class Tables2AttributeTest(SimpleTestCase):
+    """Der Zwischenspeicher für ``BoundColumn.attrs``.
+
+    Er darf nur greifen, wo die Attribute nicht von der Zeile abhängen — sonst
+    bekäme jede Zeile die Attribute der ersten.
+    """
+
+    def _tabelle(self, spalten_attrs, daten):
+        import django_tables2 as tables
+
+        class Tabelle(tables.Table):
+            wert = tables.Column(attrs=spalten_attrs)
+
+        return Tabelle(daten)
+
+    def test_feste_attribute_werden_gepuffert(self):
+        t = self._tabelle({"td": {"class": "rechts"}}, [{"wert": 1}, {"wert": 2}])
+        spalte = list(t.columns)[0]
+        erst = spalte.attrs
+        self.assertIs(spalte.attrs, erst)  # zweiter Zugriff aus dem Puffer
+        self.assertEqual(erst["td"]["class"], "rechts")
+
+    def test_attribute_je_zeile_werden_nicht_gepuffert(self):
+        # data-wert hängt am Datensatz: hier muss jede Zelle neu rechnen.
+        t = self._tabelle(
+            {"td": {"data-wert": lambda record: record["wert"]}},
+            [{"wert": 1}, {"wert": 2}],
+        )
+        zeilen = list(t.rows)
+        werte = [
+            str(dict(bound.attrs["td"]).get("data-wert"))
+            for zeile in zeilen
+            for bound, _zelle in zeile.items()
+        ]
+        self.assertEqual(werte, ["1", "2"])
+
+    def test_html_der_zellen_stimmt(self):
+        from django.test import RequestFactory
+
+        t = self._tabelle(
+            {"td": {"data-wert": lambda record: record["wert"]}},
+            [{"wert": 7}, {"wert": 8}],
+        )
+        html = t.as_html(RequestFactory().get("/"))
+        self.assertIn('data-wert="7"', html)
+        self.assertIn('data-wert="8"', html)
+
+    def test_eingebaut(self):
+        from django_tables2.columns.base import BoundColumn
+
+        self.assertIs(BoundColumn.attrs.fget, attrs_gepuffert)
 
 
 class SchnellSelectTest(SimpleTestCase):
