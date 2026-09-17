@@ -877,11 +877,25 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       playQueue(items, shuffle);
     };
-    window.startPlaylistType = function (type, shuffle) {
+    // Warteschlangen einer Listenseite. Der Ordner bettet seine eine Liste ein
+    // (#playlists-data); das Repertoire waeren 72 KB in jedem Seitenaufruf, also
+    // traegt die Seite nur die Adresse und wir holen sie beim ersten Klick.
+    let geholtePlaylists = null;
+    window.startPlaylistType = async function (type, shuffle) {
       const dataEl = document.getElementById("playlists-data");
       let playlists = {};
       if (dataEl) {
         try { playlists = JSON.parse(dataEl.textContent); } catch (_) {}
+      } else if (geholtePlaylists) {
+        playlists = geholtePlaylists;
+      } else {
+        const urlEl = document.getElementById("playlists-url");
+        if (urlEl && urlEl.dataset.url) {
+          try {
+            const antwort = await fetch(urlEl.dataset.url, { headers: { "X-Requested-With": "fetch" } });
+            if (antwort.ok) playlists = geholtePlaylists = await antwort.json();
+          } catch (_) { playlists = {}; }
+        }
       }
       playQueue(playlists[type] || [], shuffle);
     };

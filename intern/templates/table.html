@@ -257,6 +257,11 @@
     {% if playlists %}
     {{ playlists|json_script:"playlists-data" }}
     {% endif %}
+    {# Ohne eingebettete Listen: die Adresse, unter der intern.js sie beim ersten
+       Klick auf „Abspielen" holt (siehe titel_playlist). #}
+    {% if playlists_url %}
+    <span id="playlists-url" data-url="{{ playlists_url }}" hidden></span>
+    {% endif %}
     {% if caldav_url %}
     <div class="ical-subscribe" id="caldav-subscribe">
         <button type="button" class="ical-close" aria-label="Schließen"

@@ -226,9 +226,14 @@ row:
   button (`gallery_url`), plus the generic play menu in `base.html` filled by `folder_view`
   (`play_menu`, `ordner_playlist_count`, and `playlists` under the key `ordner`). That menu's
   handler reads `data-playlist-type` + `data-shuffle` and pulls its queue from
-  `#playlists-data` — the same path `/intern/titel/` uses. This one queue *is* embedded,
-  because it is a single known folder and it must cover the **whole** folder rather than the
-  loaded page (built from `files_list` after sorting, before pagination).
+  `#playlists-data`. This one queue *is* embedded, because it is a single known folder and it
+  must cover the **whole** folder rather than the loaded page (built from `files_list` after
+  sorting, before pagination). `/intern/titel/` does **not**: its three queues cover the whole
+  filtered repertoire and came to 72.7 KB in every page view, so the page carries only the
+  address (`#playlists-url` → `titel_playlist`, the list's filters minus `sort`/`offset`) and
+  the counts for the menu, while `startPlaylistType` in `intern.js` fetches the queue on the
+  first click and keeps it for the page. That took the list from 244 to 171 KB (40.4 to
+  21.7 KB gzipped).
 
 A folder row's playlist is fetched on click from `folder_playlist`
 (`/intern/ordner/<pk>/playlist/`) instead of being embedded — rendering the playlist of every

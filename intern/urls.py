@@ -76,6 +76,7 @@ urlpatterns = [
     path("forum/<int:id>/aenderungen/", views.forum_aenderungen, name="forum_aenderungen"),
     # Repertoire URLs
     path("titel/", views.titel_list, name="titel_list"),
+    path("titel/playlist/", views.titel_playlist, name="titel_playlist"),
     path("titel/add/", views.titel_add, name="titel_add"),
     path("titel/<int:titel>/", views.titel_view, name="titel_view"),
     path("titel/<int:titel>/edit/", views.titel_edit, name="titel_edit"),

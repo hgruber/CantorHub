@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Count, F, Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
@@ -23,6 +24,7 @@ _PAGE_SIZE = 50
 
 __all__ = [
     "titel_list",
+    "titel_playlist",
     "titel_view",
     "titel_edit",
     "titel_delete",
@@ -31,10 +33,71 @@ __all__ = [
 ]
 
 
+def _playlist_url(request):
+    """Adresse der Warteschlangen zu genau dieser Liste (Filter inbegriffen)."""
+    parameter = _ohne_offset_und_sortierung(request.GET)
+    pfad = reverse("titel_playlist")
+    return f"{pfad}?{parameter}" if parameter else pfad
+
+
+def _ohne_offset_und_sortierung(query):
+    """Die Filterparameter der Liste — ohne das, was nur die Tabelle betrifft."""
+    rest = query.copy()
+    for name in ("offset", "sort", "edit"):
+        rest.pop(name, None)
+    return rest.urlencode()
+
+
 @login_required
-@tabellenzustand
-def titel_list(request):
-    queryset = (
+def titel_playlist(request):
+    """Die Wiedergabelisten des (gefilterten) Repertoires als JSON.
+
+    Gegenstueck zu ``folder_playlist``: der Mini-Player holt sie beim ersten Klick
+    auf „Abspielen", statt sie in jede Seite einzubetten.
+    """
+    qs = RepertoireFilter(request.GET, queryset=_repertoire_queryset()).qs
+    return JsonResponse(_warteschlangen(qs))
+
+
+def _warteschlangen_zaehlen(qs):
+    """Wie viele Titel je Warteschlange — fuers Menue, ohne die Listen zu bauen."""
+    originals = aufnahmen = alle = 0
+    for original, aufnahme in qs.values_list("original__file", "aufnahme__file"):
+        if original:
+            originals += 1
+        if aufnahme:
+            aufnahmen += 1
+        if original or aufnahme:
+            alle += 1
+    return {"originals": originals, "aufnahmen": aufnahmen, "all": alle}
+
+
+def _warteschlangen(qs):
+    """Die drei Wiedergabelisten des Repertoires: Originale, JG-Aufnahmen, beides.
+
+    Nur die Speicherpfade, nicht die ``File``-Zeilen: fuer die URL braucht es die
+    Objekte nicht, und filer legt pro Zeile ein MultiStorageFieldFile samt
+    easy-thumbnails-Objekt an. Ueber 206 Titel gemessen: 72,7 ms mit Objekten,
+    2,9 ms so — bei gleichen URLs.
+    """
+    originals, aufnahmen, alle = [], [], []
+    for titel, komponist, original, aufnahme in qs.values_list(
+        "titel", "komponist", "original__file", "aufnahme__file"
+    ):
+        composer = komponist or ""
+        if original:
+            originals.append({"url": datei_url(original), "title": titel, "type": "Original", "composer": composer})
+        if aufnahme:
+            aufnahmen.append({"url": datei_url(aufnahme), "title": titel, "type": "JG Aufnahme", "composer": composer})
+        audio = original or aufnahme
+        if audio:
+            alle.append({"url": datei_url(audio), "title": titel, "type": "Original" if original else "JG Aufnahme", "composer": composer})
+    return {"originals": originals, "aufnahmen": aufnahmen, "all": alle}
+
+
+def _repertoire_queryset():
+    """Das Repertoire, wie Liste und Warteschlangen es brauchen."""
+    return (
         Lied.objects.annotate(
             zuletzt=Max("konzert__termin__datum", filter=Q(konzert__termin__datum__lte=timezone.now().date()))
         )
@@ -56,6 +119,12 @@ def titel_list(request):
         .prefetch_related("solist", "dirigent")
         .order_by("titel")
     )
+
+
+@login_required
+@tabellenzustand
+def titel_list(request):
+    queryset = _repertoire_queryset()
     konzert_id = request.GET.get("konzert")
     repertoire_filter = RepertoireFilter(request.GET, queryset=queryset)
     fields = visible_fields(request, "RepertoireTabelle")
@@ -145,26 +214,13 @@ def titel_list(request):
         return nachlade_antwort("table_rows.html", {"table": table},
                                 has_more, offset + _PAGE_SIZE)
 
-    # Playlists must include every (filtered) song so the player works for any row,
-    # not just the first page — build them from the full qs on initial render only.
-    #
-    # Nur die Speicherpfade holen, nicht die ``File``-Zeilen: für die URL braucht es
-    # die Objekte nicht, und filer legt pro Zeile ein MultiStorageFieldFile samt
-    # easy-thumbnails-Objekt an. Über 206 Titel gemessen: 72,7 ms mit Objekten,
-    # 2,9 ms so — bei gleichen URLs.
-    playlist_originals, playlist_aufnahmen, playlist_all = [], [], []
-    for titel, komponist, original, aufnahme in qs.values_list(
-        "titel", "komponist", "original__file", "aufnahme__file"
-    ):
-        composer = komponist or ""
-        if original:
-            playlist_originals.append({"url": datei_url(original), "title": titel, "type": "Original", "composer": composer})
-        if aufnahme:
-            playlist_aufnahmen.append({"url": datei_url(aufnahme), "title": titel, "type": "JG Aufnahme", "composer": composer})
-        audio = original or aufnahme
-        if audio:
-            playlist_all.append({"url": datei_url(audio), "title": titel, "type": "Original" if original else "JG Aufnahme", "composer": composer})
-    playlists = {"originals": playlist_originals, "aufnahmen": playlist_aufnahmen, "all": playlist_all}
+    # Die Wiedergabelisten deckt das **gefilterte** Repertoire ab, nicht die geladene
+    # Seite — eingebettet waren das 72,7 KB in jedem Seitenaufruf, fuer eine Angabe,
+    # die nur braucht, wer auf „Abspielen" klickt. Die Seite traegt deshalb nur die
+    # Adresse (titel_playlist) und die Anzahlen fuers Menue; die Liste selbst holt
+    # intern.js beim ersten Klick. Anders als die Ordneransicht, die ihre eine
+    # Warteschlange bewusst einbettet (docs/files.md).
+    anzahlen = _warteschlangen_zaehlen(qs)
     column_choices = [
         {
             "name": name,
@@ -197,11 +253,13 @@ def titel_list(request):
         "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
         "add_form_multipart": True,
         "add_label": "Neuer Titel",
-        "play_menu": bool(playlist_originals or playlist_aufnahmen),
-        "playlists": playlists,
-        "playlist_originals_count": len(playlist_originals),
-        "playlist_aufnahmen_count": len(playlist_aufnahmen),
-        "playlist_all_count": len(playlist_all),
+        "play_menu": bool(anzahlen["originals"] or anzahlen["aufnahmen"]),
+        # Nicht die Listen, nur ihre Adresse — mit den Filtern der Seite, damit die
+        # Warteschlange dasselbe Repertoire abdeckt wie die Liste davor.
+        "playlists_url": _playlist_url(request),
+        "playlist_originals_count": anzahlen["originals"],
+        "playlist_aufnahmen_count": anzahlen["aufnahmen"],
+        "playlist_all_count": anzahlen["all"],
         "konzert_id": konzert_id,
         "chips_skip": ["konzert"],
         "has_more": has_more,
