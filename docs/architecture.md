@@ -100,6 +100,17 @@ than to the second. Anything that changes the session anyway — logging in, dis
 banner — is saved immediately as before. The decision itself is the pure function
 `muss_auffrischen(stand, jetzt, intervall)`, tested without a database.
 
+## Per-request cache
+
+Beyond the configuration cache described below, `intern/anfragespeicher.py` holds values that
+recur within one request but cannot change inside it: the set of folders a member may browse
+(`visible_folder_ids()`, asked three times per folder listing, three queries and a walk up the
+tree each time) and the fallback avatars (`fallback_avatar_datei()`, once per bot message in a
+forum). Lifetime and wiring are the configuration cache's: `request_started` opens it,
+`request_finished` drops it, both in `signals.py`, and **outside a request it deliberately does
+not engage** — the two endless loops would otherwise serve their start-up state forever. Writing
+a `FolderPermission` empties it, because that shifts which folders are visible.
+
 ## Cache
 
 `CACHES` uses `DatabaseCache` (table `cache_table`), and it carries exactly one thing: the

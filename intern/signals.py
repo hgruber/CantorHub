@@ -17,6 +17,9 @@ from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_out
 
 from .apps import _migrating
+from .anfragespeicher import anlegen as anfrage_anlegen
+from .anfragespeicher import leeren as anfrage_leeren
+from .anfragespeicher import verwerfen as anfrage_verwerfen
 from .app_settings import (
     cache_anlegen,
     cache_leeren,
@@ -553,6 +556,22 @@ def _audit_konfiguration_delete(sender, instance, **kwargs):
 # sich nicht schon beim Import an Signale hängen.
 request_started.connect(cache_anlegen, dispatch_uid="intern_konfig_cache_an")
 request_finished.connect(cache_verwerfen, dispatch_uid="intern_konfig_cache_aus")
+
+# --- Anfrage-Zwischenspeicher (anfragespeicher.py) ---
+# Dieselbe Lebensdauer, andere Werte: sichtbare Ordner und die Fallback-Avatare.
+# Eine geänderte Ordnerberechtigung verschiebt die Sichtbarkeit, deshalb leert sie
+# den Speicher — wer innerhalb einer Anfrage schreibt, muss danach seinen eigenen
+# Stand sehen.
+request_started.connect(anfrage_anlegen, dispatch_uid="intern_anfrage_cache_an")
+request_finished.connect(anfrage_verwerfen, dispatch_uid="intern_anfrage_cache_aus")
+post_save.connect(
+    anfrage_leeren, sender="intern.FolderPermission",
+    dispatch_uid="intern_anfrage_cache_fp_save",
+)
+post_delete.connect(
+    anfrage_leeren, sender="intern.FolderPermission",
+    dispatch_uid="intern_anfrage_cache_fp_delete",
+)
 post_save.connect(
     cache_leeren, sender="intern.Konfiguration", dispatch_uid="intern_konfig_cache_save"
 )

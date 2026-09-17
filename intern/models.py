@@ -40,10 +40,18 @@ BOT_NICK = "CantorBot"
 
 def fallback_avatar_datei(original_filename):
     """Die per ``import_files`` (django-filer) importierte Fallback-Datei
-    (z. B. ``kein_photo.png`` / ``bot.png``), oder ``None``."""
+    (z. B. ``kein_photo.png`` / ``bot.png``), oder ``None``.
+
+    Je Anfrage einmal ermittelt: im Forum braucht sie jede Nachricht des
+    XMPP-Bots und jede Nachricht ohne Absenderbild."""
     from filer.models import File
 
-    return File.objects.filter(original_filename=original_filename).first()
+    from .anfragespeicher import gemerkt
+
+    return gemerkt(
+        ("fallback_avatar", original_filename),
+        lambda: File.objects.filter(original_filename=original_filename).first(),
+    )
 
 
 def fallback_avatar_url(original_filename):

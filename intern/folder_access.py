@@ -12,6 +12,7 @@ ancestor up to the root. Folders without read access vanish entirely from the tr
 
 from filer.models import Folder
 
+from .anfragespeicher import gemerkt
 from .models import FolderPermission
 
 
@@ -41,9 +42,18 @@ def folder_access(user, folder):
 def visible_folder_ids(user):
     """Return the set of folder ids that `user` can browse.
 
-    A folder is included only if can_read holds on it AND on every ancestor."""
+    A folder is included only if can_read holds on it AND on every ancestor.
+
+    Das Ergebnis wird je Anfrage einmal ermittelt (``anfragespeicher``): die
+    Ordneransicht fragt dreimal danach, und die drei Abfragen samt Aufstieg durch
+    den Baum wachsen mit der Zahl der Ordner. Eine geänderte Berechtigung leert
+    den Speicher (siehe ``signals.py``)."""
     if user is None or not user.is_authenticated:
         return set()
+    return gemerkt(("sichtbare_ordner", user.pk), lambda: _visible_folder_ids(user))
+
+
+def _visible_folder_ids(user):
     all_folders = dict(Folder.objects.values_list("id", "parent_id"))
     if user.is_superuser:
         return set(all_folders.keys())

@@ -21,6 +21,10 @@ from django.utils.html import escape
 from django.utils.timesince import timeuntil
 
 from intern import app_settings
+from intern.anfragespeicher import anlegen as anfrage_anlegen
+from intern.anfragespeicher import gemerkt
+from intern.anfragespeicher import leeren as anfrage_leeren
+from intern.anfragespeicher import verwerfen as anfrage_verwerfen
 from intern.aufstellung import aufstellung
 from intern.forms import SchnellSelect, SchnellSelectMultiple
 from intern.middleware import muss_auffrischen
@@ -2380,6 +2384,53 @@ class Tables2AttributeTest(SimpleTestCase):
         from django_tables2.columns.base import BoundColumn
 
         self.assertIs(BoundColumn.attrs.fget, attrs_gepuffert)
+
+
+class AnfragespeicherTest(SimpleTestCase):
+    """Der Zwischenspeicher, der genau eine Anfrage lang lebt.
+
+    Reine Logik, keine Datenbank — ``erzeugen`` ist hier ein Zähler.
+    """
+
+    def setUp(self):
+        self.aufrufe = 0
+
+    def _erzeugen(self):
+        self.aufrufe += 1
+        return self.aufrufe
+
+    def test_ohne_anfrage_wird_nichts_gemerkt(self):
+        anfrage_verwerfen()
+        self.assertEqual(gemerkt("a", self._erzeugen), 1)
+        self.assertEqual(gemerkt("a", self._erzeugen), 2)
+
+    def test_innerhalb_einer_anfrage_nur_einmal(self):
+        anfrage_anlegen()
+        try:
+            self.assertEqual(gemerkt("a", self._erzeugen), 1)
+            self.assertEqual(gemerkt("a", self._erzeugen), 1)
+            # anderer Schlüssel, andere Rechnung
+            self.assertEqual(gemerkt("b", self._erzeugen), 2)
+        finally:
+            anfrage_verwerfen()
+
+    def test_leeren_erzwingt_neuberechnung(self):
+        anfrage_anlegen()
+        try:
+            self.assertEqual(gemerkt("a", self._erzeugen), 1)
+            anfrage_leeren()
+            self.assertEqual(gemerkt("a", self._erzeugen), 2)
+            # der Speicher ist danach weiter offen
+            self.assertEqual(gemerkt("a", self._erzeugen), 2)
+        finally:
+            anfrage_verwerfen()
+
+    def test_verwerfen_beendet_das_merken(self):
+        anfrage_anlegen()
+        gemerkt("a", self._erzeugen)
+        anfrage_verwerfen()
+        self.assertEqual(gemerkt("a", self._erzeugen), 2)
+        self.assertEqual(gemerkt("a", self._erzeugen), 3)
 
 
 class SchnellSelectTest(SimpleTestCase):

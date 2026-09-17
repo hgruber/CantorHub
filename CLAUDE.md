@@ -83,7 +83,8 @@ events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unrea
 in the event list),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
 `ejabberd.py`, `konfig_gruppen.py`, `middleware.py` (the throttled session refresh, see
-`docs/architecture.md`), `tables2_beschleunigung.py` (two caches over django_tables2's per-cell work —
+`docs/architecture.md`), `anfragespeicher.py` (values worth computing once per request —
+visible folders, fallback avatars), `tables2_beschleunigung.py` (two caches over django_tables2's per-cell work —
 `signature()` and `BoundColumn.attrs`; guarded by `Tables2SignaturTest`,
 `Tables2AttributeTest` and a pinned version).
 `intern/dav/` is shared by `intern/carddav/` and `intern/caldav/`.

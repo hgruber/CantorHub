@@ -71,6 +71,11 @@ logger = logging.getLogger(__name__)
 # is what the helpers below are for.
 
 
+# Der Storage des filer-Dateifelds — einmal ermittelt, danach wiederverwendet.
+# Die Titelliste ruft datei_url() 639-mal je Aufruf.
+_datei_storage = None
+
+
 def datei_url(pfad):
     """Öffentliche URL zu einem Speicherpfad — ohne die Datei zu laden.
 
@@ -92,7 +97,12 @@ def datei_url(pfad):
     """
     if not pfad:
         return ""
-    return File._meta.get_field("file").storage.url(pfad)
+    global _datei_storage
+    if _datei_storage is None:
+        # Erst beim ersten Aufruf, nicht beim Import: zur Importzeit stehen
+        # Modelle und Einstellungen noch nicht bereit (siehe CLAUDE.md).
+        _datei_storage = File._meta.get_field("file").storage
+    return _datei_storage.url(pfad)
 
 
 def verknuepfte_dateien(f, inklusive_selbst=True):
