@@ -90,12 +90,14 @@ Two consequences worth knowing:
 ## Standard folders
 
 The folders the portal files into on its own sit under **Backstage**, so a member browsing the
-archive sees their own folders rather than a dozen system ones. Only **Mitglieder-Verwaltung**
-(application and re-confirmation PDFs, Vorstand-only) stays at the root.
+archive sees their own folders rather than a dozen system ones. Two stay at the root:
+**Eingang**, because every upload without a better folder lands there (a drop on the browser's
+root included) and members have to find it, and **Mitglieder-Verwaltung** (application and
+re-confirmation PDFs, Vorstand-only).
 
 ```
+Eingang                fallback target of every upload without a better folder
 Backstage/
-  Eingang              fallback target of every upload without a better folder
   Forenbilder          forum pictures
   Profilbilder         member avatars, see below
   Repertoire/          upload target of the Repertoire page

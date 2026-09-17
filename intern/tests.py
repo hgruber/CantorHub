@@ -2153,13 +2153,19 @@ class StandardOrdnerTest(SimpleTestCase):
         folders.invalidate()
         self.addCleanup(folders.invalidate)
 
-    def test_alles_unter_backstage_ausser_mitglieder_verwaltung(self):
+    def test_alles_unter_backstage_ausser_eingang_und_mitglieder_verwaltung(self):
         from intern import folders
+        an_der_wurzel = {
+            "backstage": (folders.BACKSTAGE,),
+            "unsortiert": (folders.EINGANG,),
+            "mitglieder_verwaltung": (folders.MITGLIEDER_VERWALTUNG,),
+        }
         for schluessel, pfad in folders.PFADE.items():
-            if schluessel == "mitglieder_verwaltung":
-                self.assertEqual(pfad, (folders.MITGLIEDER_VERWALTUNG,))
+            if schluessel in an_der_wurzel:
+                self.assertEqual(pfad, an_der_wurzel[schluessel])
             else:
                 self.assertEqual(pfad[0], folders.BACKSTAGE, schluessel)
+                self.assertGreater(len(pfad), 1, schluessel)
 
     def test_pfade_eindeutig_und_eltern_zuerst(self):
         """0003_import legt die Ordner in dieser Reihenfolge an."""

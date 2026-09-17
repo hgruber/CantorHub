@@ -404,6 +404,22 @@ starts `playQueue(items, false, index)` at the clicked one. Building the queue f
 instead of a `json_script` mirrors exactly what the reader sees — old article versions included —
 and spares the view a second pass over the wikitext.
 
+## Uploads
+
+Every page uploads through one Dropzone, `appMainDz` on `#app-main` (`intern.js`), fed two ways:
+a file dropped anywhere on the page (the „Dateien ablegen" overlay) and the topbar icon
+`#uploadBtn`, which opens a hidden `<input type="file" multiple>` and hands each chosen file to
+`appMainDz.addFile()`. Phones have no drag and drop, so the icon is the only way there. Both paths
+share the `sending` parameters, the progress card (`upload-progress.js`) and the reload on
+`queuecomplete`.
+
+The view decides target and visibility through its context: `upload_folder_id`,
+`upload_folder_name` and the other `upload_*` keys read by `base.html`. The icon shows wherever
+`upload_folder_id` is not `None`. In the folder browser (`show_file_actions`) it follows
+`can_write_here` instead, root included (pk 0 → the upload lands in Eingang). A page without an
+upload target shows no icon; a drop there still lands in Eingang. Write access is enforced by
+`upload` in `views/files.py` either way.
+
 ## Infinite scroll
 
 List views load further rows through `views/_pagination.py`: `parse_offset(request)` reads

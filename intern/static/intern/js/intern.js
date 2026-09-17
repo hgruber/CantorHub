@@ -301,6 +301,19 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     });
 
+    // Topbar-Button: für Geräte ohne Drag & Drop. Die gewählten Dateien laufen
+    // durch dieselbe Dropzone wie ein Drop — Zielordner, Fortschrittskarte und
+    // Neuladen gelten damit unverändert.
+    const uploadBtn = document.getElementById("uploadBtn");
+    const uploadInput = document.getElementById("uploadInput");
+    if (uploadBtn && uploadInput) {
+      uploadBtn.addEventListener("click", () => uploadInput.click());
+      uploadInput.addEventListener("change", () => {
+        Array.from(uploadInput.files).forEach((f) => appMainDz.addFile(f));
+        uploadInput.value = "";  // dieselbe Datei lässt sich erneut wählen
+      });
+    }
+
     let dragCounter = 0;
     appMain.addEventListener("dragenter", (e) => {
       if (!e.dataTransfer || !e.dataTransfer.types.includes("Files")) return;

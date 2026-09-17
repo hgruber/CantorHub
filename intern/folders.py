@@ -2,8 +2,9 @@
 Well-known folder registry.
 
 The folders the portal files into on its own sit under ``Backstage`` — most
-members never need to browse them. Only ``Mitglieder-Verwaltung`` stays at the
-root. See „Standard folders" in docs/files.md.
+members never need to browse them. Only ``Eingang`` (where everything without a
+better place lands) and ``Mitglieder-Verwaltung`` stay at the root. See
+„Standard folders" in docs/files.md.
 
 Looks up folders by their path from the root on first use, then caches the
 result in-process. No dependency on auto-increment IDs — only folder names
@@ -35,7 +36,7 @@ WIKI_ANHAENGE = "Wiki-Anhänge"
 PFADE: dict[str, tuple[str, ...]] = {
     "backstage":             (BACKSTAGE,),
     "mitglieder_verwaltung": (MITGLIEDER_VERWALTUNG,),
-    "unsortiert":            (BACKSTAGE, EINGANG),
+    "unsortiert":            (EINGANG,),
     "forum":                 (BACKSTAGE, FORENBILDER),
     "avatare":               (BACKSTAGE, PROFILBILDER),
     "artikel":               (BACKSTAGE, WIKI_ANHAENGE),
