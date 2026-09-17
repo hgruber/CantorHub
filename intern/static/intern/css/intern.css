@@ -1125,6 +1125,19 @@ tbody tr:hover td { background: var(--bg-row-hover); }
 
 th.right, td.right { text-align: right; }
 th.center, td.center { text-align: center; }
+/* Sortierbare Kopfzellen tragen das Label in einem Flex-Link, an dem
+   text-align abprallt; die Ausrichtung muss dort als justify-content stehen. */
+th.right a { justify-content: flex-end; }
+th.center a { justify-content: center; }
+
+/* Zahlenspalte: so schmal wie ihr Inhalt, rechtsbuendig, gleich breite Ziffern. */
+th.zahl, td.zahl {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+th.zahl a { justify-content: flex-end; }
 
 th.asc a::after  { content: " ↑"; color: var(--brand); font-size: calc(10rem / 14); font-weight: 700; }
 th.desc a::after { content: " ↓"; color: var(--brand); font-size: calc(10rem / 14); font-weight: 700; }

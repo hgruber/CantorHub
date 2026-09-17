@@ -20,7 +20,7 @@ class ForumTabelle(tables.Table):
     zugriff = tables.Column()
     anzahl_mitteilungen = tables.Column(
         verbose_name="Anzahl",
-        attrs={"th": {"class": "right"}, "td": {"class": "right"}},
+        attrs={"th": {"class": "zahl"}, "td": {"class": "zahl"}},
     )
 
     class Meta:
@@ -755,9 +755,7 @@ class MitgliederTabelle(tables.Table):
     geburtstag = tables.DateColumn()
     last_login = tables.DateTimeColumn()
     mitteilungen = tables.Column(
-        attrs={
-            "td": {"class": "right"},
-        }
+        attrs={"th": {"class": "zahl"}, "td": {"class": "zahl"}},
     )
     strasse = tables.Column()
     plz = tables.Column()
@@ -844,7 +842,7 @@ class ArtikelTabelle(tables.Table):
     datum = tables.DateTimeColumn(verbose_name="Zuletzt bearbeitet")
     size = tables.Column(
         verbose_name="Größe",
-        attrs={"th": {"class": "right"}, "td": {"class": "right"}},
+        attrs={"th": {"class": "zahl"}, "td": {"class": "zahl"}},
     )
 
     class Meta:
