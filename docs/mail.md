@@ -61,13 +61,28 @@ the `(html, plain)` pair for callers that need it, and `build_mail_placeholders(
 placeholder dict.
 
 Underneath sits `send_branded_mail(subject, to, template, context, text_body=None,
-attachments=None, headers=None)`: it renders the HTML template into a branded mail with the
+attachments=None, headers=None, connection=None)`: it renders the HTML template into a branded mail with the
 embedded logo (`cid:logo`) and a plain-text fallback (both get the `MAIL_FOOTER` line), resolves
 the sender via `get_from_email()` (the `DEFAULT_FROM_EMAIL` config key, falling back to
 `settings.DEFAULT_FROM_EMAIL`), and **never raises** — it returns `True`/`False` so callers
 can tell whether the message reached the backend. `attachments` is a list of `(filename, bytes,
 content_type)` tuples; when present the outer MIME type is `multipart/mixed`. `headers` adds
 extra MIME headers (used for `List-Unsubscribe`).
+`connection` is an opened mail backend shared across a bulk send; without it every call opens
+its own SMTP connection (TCP, TLS, login).
+
+**Bulk mail never runs inside the request.** The round mail used to loop over its recipients
+synchronously; with one SMTP handshake per mail it ran into gunicorn's 30-second worker timeout
+and the worker was killed after about eight recipients. `mitglied_benachrichtigen` now starts
+`_rundmail_versenden()` in a non-daemon thread and redirects at once. The thread opens one
+connection via `get_connection()`, wraps the pass in `konfiguration_gepuffert()`, and drives
+`mail.versende_serie(empfaenger, senden, neu_verbinden)`: a failed send reconnects
+(`mail.neu_verbinden()`) and retries exactly once, then counts as failed while the remaining
+recipients still get their mail. The `ChangeLog` entry is written afterwards with the number
+actually sent and the names under „Nicht zugestellt"; failed addresses are also logged at
+ERROR. `DbEmailBackend.open()` is a no-op without `EMAIL_HOST`, so the pre-opened connection
+works in development too. A worker restart during a send waits up to gunicorn's graceful
+timeout; mails not sent by then are lost (and not logged).
 
 The function builds the MIME message itself and hands it to Django through a `_Msg` subclass
 whose `message()` is overridden. **That override must apply `_SMTP_POLICY`** (compat32 with CRLF

@@ -1,8 +1,11 @@
 import json
 import logging
+import threading
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
+from django.core.mail import get_connection
+from django.db import connections
 from django.db.models import Count, OuterRef
 from django.http import HttpResponseForbidden, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
@@ -16,8 +19,9 @@ from filer.models import File, Folder
 from intern import ejabberd, folders
 from intern.app_settings import (
     get_config_bool, get_map_center, get_vereinsname_lang, is_ejabberd_configured,
+    konfiguration_gepuffert,
 )
-from intern.mail import send_config_mail
+from intern.mail import neu_verbinden, send_config_mail, versende_serie
 
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..models import Abstimmung, Artikel, Mitteilung, PRIVACY_FIELDS, User, Zusage
@@ -396,7 +400,7 @@ def _notify_groups_data(groups):
     ]
 
 
-def _log_notify(user, subject, body, sent, attachments, signature_group_name):
+def _log_notify(user, subject, body, sent, attachments, signature_group_name, failed=()):
     from ..models import ChangeLog
     try:
         changes = {
@@ -404,6 +408,8 @@ def _log_notify(user, subject, body, sent, attachments, signature_group_name):
             "empfaenger": [None, str(sent)],
             "text": [None, body],
         }
+        if failed:
+            changes["fehlgeschlagen"] = [None, ", ".join(r["name"] or r["email"] for r in failed)]
         if attachments:
             changes["anhaenge"] = [None, ", ".join(a[0] for a in attachments)]
         if signature_group_name:
@@ -418,6 +424,72 @@ def _log_notify(user, subject, body, sent, attachments, signature_group_name):
         )
     except Exception:
         logger.warning("ChangeLog für Benachrichtigung konnte nicht geschrieben werden.")
+
+
+def _rundmail_versenden(user, subject, body, recipients, attachments,
+                        signature_group_name, signature_members):
+    """Verschickt die Rundmail — laeuft im eigenen Thread, nicht im Request.
+
+    Synchron im Request lief der Versand in den gunicorn-Timeout (30 s): jede Mail
+    baute ihre eigene SMTP-Verbindung samt TLS und Login auf, und nach etwa acht
+    Empfaengern wurde der Worker abgeschossen — der Rest ging nie raus. Jetzt
+    antwortet der Request sofort, alle Mails teilen sich eine Verbindung, und das
+    Aenderungsprotokoll haelt fest, wie viele tatsaechlich angekommen sind.
+
+    Der Thread ist bewusst kein Daemon: beendet gunicorn den Worker geordnet,
+    wartet der Prozess, bis der Versand durch ist (bis zum graceful timeout).
+    """
+    try:
+        with konfiguration_gepuffert():
+            connection = get_connection()
+            try:
+                connection.open()
+            except Exception:
+                logger.warning("Rundmail: SMTP-Verbindung konnte nicht geoeffnet werden.",
+                               exc_info=True)
+
+            def senden(r):
+                return send_config_mail(
+                    subject,
+                    r["email"],
+                    "MAIL_RUNDMAIL",
+                    template="emails/mitglied_benachrichtigung.html",
+                    context={
+                        "mail_title": subject,
+                        "signature_group_name": signature_group_name,
+                        "signature_members": signature_members,
+                    },
+                    attachments=attachments or None,
+                    connection=connection,
+                    vorname=r["name"].split()[0] if r["name"] else "",
+                    text=body,
+                )
+
+            try:
+                gesendet, fehlgeschlagen = versende_serie(
+                    recipients, senden, lambda: neu_verbinden(connection)
+                )
+            finally:
+                try:
+                    connection.close()
+                except Exception:
+                    pass
+
+        if fehlgeschlagen:
+            logger.error(
+                "Rundmail '%s': %d von %d nicht zugestellt: %s", subject,
+                len(fehlgeschlagen), len(recipients),
+                ", ".join(r["email"] for r in fehlgeschlagen),
+            )
+        logger.info("Rundmail '%s': %d von %d verschickt.",
+                    subject, len(gesendet), len(recipients))
+        _log_notify(user, subject, body, len(gesendet), attachments, signature_group_name,
+                    failed=fehlgeschlagen)
+    except Exception:
+        logger.exception("Rundmail '%s': Versand abgebrochen.", subject)
+    finally:
+        # Der Thread hat eine eigene DB-Verbindung; ohne Request schliesst sie niemand.
+        connections.close_all()
 
 
 def _verwaltung_tree(folder_id):
@@ -504,25 +576,16 @@ def mitglied_benachrichtigen(request):
                 logger.warning("Anhang %s konnte nicht geladen werden: %s", fid, e)
 
         if not errors:
-            sent = 0
-            for r in recipients:
-                send_config_mail(
-                    subject,
-                    r["email"],
-                    "MAIL_RUNDMAIL",
-                    template="emails/mitglied_benachrichtigung.html",
-                    context={
-                        "mail_title": subject,
-                        "signature_group_name": signature_group_name,
-                        "signature_members": signature_members,
-                    },
-                    attachments=attachments if attachments else None,
-                    vorname=r["name"].split()[0] if r["name"] else "",
-                    text=body,
-                )
-                sent += 1
-            _log_notify(request.user, subject, body, sent, attachments, signature_group_name)
-            messages.success(request, f"E-Mail an {sent} Mitglied(er) gesendet.")
+            threading.Thread(
+                target=_rundmail_versenden,
+                args=(request.user, subject, body, recipients, attachments,
+                      signature_group_name, signature_members),
+                name="rundmail",
+            ).start()
+            messages.success(
+                request,
+                f"E-Mail an {len(recipients)} Mitglied(er) wird im Hintergrund verschickt.",
+            )
             list_url = reverse("mitglied_list")
             if filter_params:
                 list_url += f"?{filter_params}"

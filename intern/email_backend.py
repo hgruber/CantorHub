@@ -38,6 +38,13 @@ class DbEmailBackend(SmtpBackend):
             **kwargs,
         )
 
+    def open(self):
+        # Ohne Host gibt es nichts zu verbinden — send_messages() unten schreibt dann
+        # nur ins Log. Wichtig fuer den Serienversand, der die Verbindung vorab oeffnet.
+        if not self._host_configured:
+            return False
+        return super().open()
+
     def send_messages(self, email_messages):
         if not self._host_configured:
             for msg in email_messages:

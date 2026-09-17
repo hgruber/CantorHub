@@ -1997,3 +1997,67 @@ class AufstellungTest(SimpleTestCase):
         self.assertRegex(html, r'id="aufstellung-section"[^>]*hx-swap-oob="true"')
         html = render_to_string("_termin_zusage.html", {**kontext, "widget_only": True})
         self.assertNotIn("aufstellung-section", html)
+
+
+class RundmailSerieTest(SimpleTestCase):
+    """Serienversand der Rundmail: eine Verbindung, Wiederholung, kein Abbruch."""
+
+    def test_alle_erfolgreich_ohne_neu_verbinden(self):
+        from intern.mail import versende_serie
+        neu = mock.Mock()
+        gesendet, fehl = versende_serie([1, 2, 3], lambda e: True, neu)
+        self.assertEqual(gesendet, [1, 2, 3])
+        self.assertEqual(fehl, [])
+        neu.assert_not_called()
+
+    def test_fehler_verbindet_neu_und_wiederholt_einmal(self):
+        from intern.mail import versende_serie
+        # Empfänger 2 scheitert beim ersten Versuch (Verbindung weg), klappt beim zweiten;
+        # Empfänger 3 scheitert zweimal — Empfänger 4 bekommt seine Mail trotzdem.
+        ergebnisse = {1: [True], 2: [False, True], 3: [False, False], 4: [True]}
+        neu = mock.Mock()
+        gesendet, fehl = versende_serie([1, 2, 3, 4], lambda e: ergebnisse[e].pop(0), neu)
+        self.assertEqual(gesendet, [1, 2, 4])
+        self.assertEqual(fehl, [3])
+        self.assertEqual(neu.call_count, 2)
+
+    def test_neu_verbinden_uebersteht_fehler(self):
+        from intern.mail import neu_verbinden
+        conn = mock.Mock()
+        conn.close.side_effect = OSError("tot")
+        conn.open.side_effect = OSError("weg")
+        neu_verbinden(conn)  # darf nicht werfen
+        conn.open.assert_called_once()
+
+    def test_backend_ohne_host_oeffnet_nichts(self):
+        from intern.email_backend import DbEmailBackend
+        with mock.patch("intern.app_settings.get_config", return_value=""), \
+                mock.patch("intern.app_settings.get_config_int", return_value=25), \
+                mock.patch("intern.app_settings.get_config_bool", return_value=False):
+            backend = DbEmailBackend()
+        with mock.patch("smtplib.SMTP") as smtp:
+            self.assertFalse(backend.open())
+        smtp.assert_not_called()
+
+    def test_thread_teilt_eine_verbindung_und_protokolliert_ergebnis(self):
+        from intern.views import mitglieder
+        conn = mock.Mock()
+        empfaenger = [
+            {"pk": 1, "name": "Anna A", "email": "a@x.de"},
+            {"pk": 2, "name": "Bert B", "email": "b@x.de"},
+        ]
+        with mock.patch.object(mitglieder, "get_connection", return_value=conn), \
+                mock.patch.object(mitglieder, "konfiguration_gepuffert"), \
+                mock.patch.object(mitglieder, "send_config_mail",
+                                  side_effect=[True, False, False]) as senden, \
+                mock.patch.object(mitglieder, "_log_notify") as log, \
+                mock.patch.object(mitglieder.connections, "close_all"):
+            mitglieder._rundmail_versenden("user", "Betreff", "Text", empfaenger, [], "", [])
+        conn.open.assert_called()
+        self.assertTrue(all(c.kwargs["connection"] is conn for c in senden.call_args_list))
+        self.assertEqual([c.kwargs["vorname"] for c in senden.call_args_list],
+                         ["Anna", "Bert", "Bert"])
+        conn.close.assert_called()
+        args, kwargs = log.call_args
+        self.assertEqual(args[3], 1)
+        self.assertEqual(kwargs["failed"], [empfaenger[1]])

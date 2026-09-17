@@ -32,6 +32,7 @@ FIELD_LABELS = {
     "text": "Text",
     "anhaenge": "Anhänge",
     "gruppe": "Signatur",
+    "fehlgeschlagen": "Nicht zugestellt",
     # User
     "first_name": "Vorname",
     "last_name": "Nachname",

@@ -46,7 +46,7 @@ _SMTP_POLICY = _email_policy.compat32.clone(linesep="\r\n")
 
 
 def send_branded_mail(subject, to, template, context, text_body=None, attachments=None,
-                      headers=None):
+                      headers=None, connection=None):
     """Render ``template`` to HTML and send it as a branded email.
 
     ``to`` may be a single address or an iterable of addresses (all placed in
@@ -54,6 +54,8 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
     is used when omitted. ``attachments`` is an optional list of
     ``(filename, bytes, content_type)`` tuples added as file attachments.
     ``headers`` is an optional dict of extra MIME headers (e.g. List-Unsubscribe).
+    ``connection`` is an opened mail backend shared by a bulk send; without it
+    every call opens (and closes) its own SMTP connection.
 
     Returns True when the message was handed to the mail backend, False otherwise.
     """
@@ -124,7 +126,7 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
             return mime
 
     try:
-        _Msg(subject, "", get_from_email(), recipients).send()
+        _Msg(subject, "", get_from_email(), recipients, connection=connection).send()
     except Exception:
         logger.exception("Failed to send mail '%s' to %s", subject, recipients)
         return False
@@ -197,11 +199,12 @@ def render_config_mail(key, user=None, link=None, extra_keys=(), **extra):
 
 def send_config_mail(subject, to, key, user=None, link=None, extra_keys=(),
                      attachments=None, template="emails/generic.html",
-                     context=None, **extra):
+                     context=None, connection=None, **extra):
     """Rendert einen MAIL_*-Konfigurationstext und verschickt ihn als Mail.
 
     Der gerenderte HTML-Teil kommt als ``body_html`` in den Template-Kontext,
-    der Plain-Text-Teil wird zum ``text/plain``-Teil der Mail.
+    der Plain-Text-Teil wird zum ``text/plain``-Teil der Mail. ``connection``
+    wie bei ``send_branded_mail``.
     """
     body_html, plain = render_config_mail(
         key, user=user, link=link, extra_keys=extra_keys, **extra
@@ -213,4 +216,44 @@ def send_config_mail(subject, to, key, user=None, link=None, extra_keys=(),
         {"body_html": body_html, **(context or {})},
         text_body=plain,
         attachments=attachments,
+        connection=connection,
     )
+
+
+def versende_serie(empfaenger, senden, neu_verbinden):
+    """Schickt jedem Eintrag aus ``empfaenger`` seine Mail, mit einem Wiederholversuch.
+
+    ``senden(eintrag)`` liefert True bei Erfolg (``send_branded_mail`` wirft nie).
+    Schlaegt ein Versand fehl, ist meist die gemeinsame SMTP-Verbindung weg — der
+    Server hat sie nach einer Hoechstzahl an Nachrichten oder nach Leerlauf
+    geschlossen. Deshalb ``neu_verbinden()`` und genau ein zweiter Versuch; erst
+    danach gilt der Eintrag als fehlgeschlagen und der Rest geht trotzdem raus.
+
+    Frei von Datenbank und SMTP, damit die Schleife testbar bleibt.
+    Gibt ``(gesendet, fehlgeschlagen)`` als zwei Listen der Eintraege zurueck.
+    """
+    gesendet, fehlgeschlagen = [], []
+    for eintrag in empfaenger:
+        if senden(eintrag):
+            gesendet.append(eintrag)
+            continue
+        neu_verbinden()
+        if senden(eintrag):
+            gesendet.append(eintrag)
+        else:
+            fehlgeschlagen.append(eintrag)
+    return gesendet, fehlgeschlagen
+
+
+def neu_verbinden(connection):
+    """Schliesst eine (womoeglich schon tote) SMTP-Verbindung und oeffnet sie neu."""
+    try:
+        connection.close()
+    except Exception:
+        pass
+    try:
+        connection.open()
+    except Exception:
+        # Kein Abbruch: send_messages() versucht beim naechsten Senden selbst zu
+        # verbinden, und scheitert das, zaehlt der Eintrag als fehlgeschlagen.
+        logger.warning("SMTP-Verbindung konnte nicht neu geoeffnet werden.", exc_info=True)
