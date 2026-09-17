@@ -16,6 +16,20 @@ from .forms import ChipMultiSelect, TriStateToggle
 from .replacements import format_bytes, format_datetime
 
 
+def _datei_url(pfad):
+    """URL zu einem Speicherpfad, leer ohne Pfad.
+
+    Der Import liegt in der Funktion: ``intern.views`` zieht beim Laden alle
+    View-Module und damit dieses Modul nach — ein Import auf Modulebene waere
+    ein Ring.
+    """
+    if not pfad:
+        return ""
+    from .views.files import datei_url
+
+    return datei_url(pfad)
+
+
 class ForumTabelle(tables.Table):
     thema = tables.Column()
     zugriff = tables.Column()
@@ -513,6 +527,7 @@ class RepertoireTabelle(tables.Table):
     )
     original = tables.Column(
         verbose_name="Audio",
+        accessor="original_pfad",
         empty_values=(),
         orderable=False,
         attrs={
@@ -536,6 +551,7 @@ class RepertoireTabelle(tables.Table):
 
     pdf = tables.Column(
         verbose_name="PDF",
+        accessor="pdf_pfad",
         empty_values=(),
         orderable=False,
         attrs={
@@ -545,6 +561,7 @@ class RepertoireTabelle(tables.Table):
     )
     noten = tables.Column(
         verbose_name="Noten",
+        accessor="noten_pfad",
         empty_values=(),
         orderable=False,
         attrs={
@@ -575,10 +592,13 @@ class RepertoireTabelle(tables.Table):
             "data-lied-id":      lambda record: record.id,
             "data-titel":        lambda record: record.titel,
             "data-komponist":    lambda record: record.komponist or "",
-            "data-original-url": lambda record: record.original.url if getattr(record, "original", None) else "",
-            "data-aufnahme-url": lambda record: record.aufnahme.url if getattr(record, "aufnahme", None) else "",
-            "data-pdf-url":      lambda record: record.pdf.url if getattr(record, "pdf", None) else "",
-            "data-noten-url":    lambda record: record.noten.url if getattr(record, "noten", None) else "",
+            # Die vier URLs kommen aus den annotierten Speicherpfaden (siehe
+            # views/titel.py): ein Zugriff auf record.original laedt sonst je
+            # Zeile vier filer-File-Zeilen samt Thumbnail-Objekt.
+            "data-original-url": lambda record: _datei_url(getattr(record, "original_pfad", None)),
+            "data-aufnahme-url": lambda record: _datei_url(getattr(record, "aufnahme_pfad", None)),
+            "data-pdf-url":      lambda record: _datei_url(getattr(record, "pdf_pfad", None)),
+            "data-noten-url":    lambda record: _datei_url(getattr(record, "noten_pfad", None)),
         }
 
     def __init__(self, *args, visible_fields=None, counter_offset=0, **kwargs):
@@ -597,40 +617,40 @@ class RepertoireTabelle(tables.Table):
     def render_original(self, record):
         parts = []
         composer = getattr(record, "komponist", "") or ""
-        if getattr(record, "original", None):
+        if getattr(record, "original_pfad", None):
             parts.append(_audio_button_html(
-                record.original.url, record.id, record.titel, "original", composer
+                _datei_url(record.original_pfad), record.id, record.titel, "original", composer
             ))
-        if getattr(record, "aufnahme", None):
+        if getattr(record, "aufnahme_pfad", None):
             parts.append(_audio_button_html(
-                record.aufnahme.url, f"r{record.id}", record.titel, "jg", composer
+                _datei_url(record.aufnahme_pfad), f"r{record.id}", record.titel, "jg", composer
             ))
         if not parts:
             return ""
         return mark_safe("".join(parts))
 
     def render_pdf(self, record):
-        if not getattr(record, "pdf", None):
+        if not getattr(record, "pdf_pfad", None):
             return ""
         return format_html(
             '<a href="{url}" target="_blank" rel="noopener" '
             'class="file-icon-btn file-icon-btn--pdf" '
             'title="Notenblatt: {title}" aria-label="Notenblatt {title} öffnen">'
             "{icon}</a>",
-            url=record.pdf.url,
+            url=_datei_url(record.pdf_pfad),
             title=record.titel,
             icon=mark_safe(_PDF_ICON_SVG),
         )
 
     def render_noten(self, record):
-        if not getattr(record, "noten", None):
+        if not getattr(record, "noten_pfad", None):
             return ""
         return format_html(
             '<a href="{url}" target="_blank" rel="noopener" '
             'class="file-icon-btn file-icon-btn--notes" '
             'title="Notensatz: {title}" aria-label="Notensatz {title} öffnen">'
             "{icon}</a>",
-            url=record.noten.url,
+            url=_datei_url(record.noten_pfad),
             title=record.titel,
             icon=mark_safe(_NOTES_ICON_SVG),
         )

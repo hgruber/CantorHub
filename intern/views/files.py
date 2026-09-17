@@ -71,6 +71,30 @@ logger = logging.getLogger(__name__)
 # is what the helpers below are for.
 
 
+def datei_url(pfad):
+    """Öffentliche URL zu einem Speicherpfad — ohne die Datei zu laden.
+
+    Eine Liste braucht von ihren Dateien meist nur die URL. Dafür das ganze
+    ``File`` zu laden ist teuer: filer legt pro Zeile ein
+    ``MultiStorageFieldFile`` an, das wiederum ein easy-thumbnails-Objekt baut.
+    Über 206 Titel gemessen kostete der Aufbau der Wiedergabelisten so 72,7 ms,
+    mit ``values_list`` auf ``…__file`` und diesem Helfer 2,9 ms — bei gleichen
+    URLs.
+
+    Der Speicherpfad ist die Identität einer Datei (siehe oben), der Storage
+    stammt deshalb vom Feld selbst und nicht vom Vorgabe-Storage: filer kann
+    öffentliche Dateien woanders ablegen als Django.
+
+    Gilt für öffentliche Dateien — das sind im Portal alle, den Zugriff regelt
+    ``media_auth`` (siehe ``views/media.py``) und nicht filers privater Storage.
+    Für ein ``File`` mit ``is_public=False`` bliebe ``File.url`` die richtige
+    Quelle.
+    """
+    if not pfad:
+        return ""
+    return File._meta.get_field("file").storage.url(pfad)
+
+
 def verknuepfte_dateien(f, inklusive_selbst=True):
     """All File rows sharing `f`'s blob — the same file in other folders.
 

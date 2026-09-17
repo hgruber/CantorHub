@@ -16,6 +16,7 @@ are for — use them instead of touching `File.file`/`name` directly:
 | Helper | Purpose |
 |---|---|
 | `verknuepfte_dateien(f, inklusive_selbst=True)` | all rows sharing `f`'s blob |
+| `datei_url(pfad)` | the public URL of a storage path, without loading the `File` |
 | `datei_umbenennen(f, name)` | rename everywhere — one file, one name |
 | `version_anlegen(f, autor)` | archive the current revision before it is replaced |
 | `geschwister_nachziehen(alter_pfad, quelle)` | point all rows at the new blob, move the version chain over |
@@ -28,6 +29,15 @@ file. Both share `_copy_action` / `_copy_folder_deep(…, blob_kopieren)` in `vi
 Deleting goes through `_datei_loeschen`, which removes one occurrence and only cleans up
 versions when it was the last one — pass it a **freshly loaded** instance, a stale one would
 have filer delete a blob that is still in use.
+
+`datei_url()` is the one to reach for in a list: a table needs the URL, not the object, and
+each `File` filer instantiates brings a `MultiStorageFieldFile` and an easy-thumbnails object
+with it. The repertoire list therefore annotates the four song files as paths
+(`original_pfad` … in `views/titel.py`) instead of `select_related`, and builds its playlists
+from `values_list`. Measured over 206 songs: 72.7 ms with objects, 2.9 ms with paths, the same
+URLs; the page went from 228 ms to 110 ms. It applies to public files — which in this portal
+is all of them, access is `media_auth`'s job — while a row with `is_public=False` would still
+need `File.url`.
 
 ## File versions
 
