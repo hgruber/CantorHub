@@ -2061,3 +2061,84 @@ class RundmailSerieTest(SimpleTestCase):
         args, kwargs = log.call_args
         self.assertEqual(args[3], 1)
         self.assertEqual(kwargs["failed"], [empfaenger[1]])
+
+
+class TabellenzustandTest(SimpleTestCase):
+    """Die Liste merkt sich Sortierung und Filter im Cookie und leitet vor dem Rendern um."""
+
+    PFAD = "/intern/mitglied/"
+
+    def setUp(self):
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+        from intern.views._decorators import tabellenzustand, zustand_cookie
+
+        self.rf = RequestFactory()
+        self.aufrufe = []
+        self.status = 200
+
+        def view(request):
+            self.aufrufe.append(request)
+            return HttpResponse(status=self.status)
+
+        self.view = tabellenzustand(view)
+        self.cookie = zustand_cookie(self.PFAD)
+
+    def _get(self, query="", cookie=None, referer=None, **extra):
+        if referer:
+            extra["HTTP_REFERER"] = referer
+        request = self.rf.get(self.PFAD + query, **extra)
+        if cookie is not None:
+            request.COOKIES[self.cookie] = cookie
+        return self.view(request)
+
+    def test_parameter_werden_ohne_offset_gemerkt(self):
+        from urllib.parse import unquote
+        response = self._get("?sort=stimme&aktiv=true&offset=50")
+        self.assertEqual(response.status_code, 200)
+        morsel = response.cookies[self.cookie]
+        self.assertEqual(unquote(morsel.value), "sort=stimme&aktiv=true")
+        self.assertEqual(morsel["path"], self.PFAD)
+        self.assertTrue(morsel["httponly"])
+
+    def test_ohne_parameter_von_anderswo_leitet_um_ohne_zu_rendern(self):
+        response = self._get(cookie="sort%3Dstimme%26offset%3D50",
+                             referer="https://portal.example/intern/termin/")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], self.PFAD + "?sort=stimme")
+        self.assertEqual(self.aufrufe, [])
+
+    def test_von_derselben_liste_ohne_parameter_vergisst_den_zustand(self):
+        response = self._get("?", cookie="sort%3Dstimme",
+                             referer="https://portal.example" + self.PFAD + "?sort=stimme")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.aufrufe), 1)
+        self.assertEqual(response.cookies[self.cookie]["max-age"], 0)
+
+    def test_ohne_cookie_normal_rendern(self):
+        response = self._get()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.aufrufe), 1)
+        self.assertNotIn(self.cookie, response.cookies)
+
+    def test_leerer_oder_nur_offset_cookie_leitet_nicht_um(self):
+        self.assertEqual(self._get(cookie="offset%3D50").status_code, 200)
+        self.assertEqual(self._get(cookie="").status_code, 200)
+
+    def test_nachladen_und_post_laufen_durch(self):
+        response = self._get("?sort=stimme&offset=50", HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertNotIn(self.cookie, response.cookies)
+        response = self._get(cookie="sort%3Dstimme", HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 200)
+        request = self.rf.post(self.PFAD + "?sort=stimme", {"columns": ["name"]})
+        self.assertNotIn(self.cookie, self.view(request).cookies)
+        self.assertEqual(len(self.aufrufe), 3)
+
+    def test_fehlerantwort_wird_nicht_gemerkt(self):
+        self.status = 404
+        self.assertNotIn(self.cookie, self._get("?sort=stimme").cookies)
+
+    def test_cookie_name_pro_pfad(self):
+        from intern.views._decorators import zustand_cookie
+        self.assertNotEqual(zustand_cookie("/intern/ordner/1/"),
+                            zustand_cookie("/intern/ordner/12/"))

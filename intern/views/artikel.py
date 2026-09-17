@@ -17,6 +17,7 @@ from intern.replacements import apply_replacements
 from ..models import Artikel, ArtikelPermission
 from ..tables import ArtikelTabelle
 from ._auswahl import chip_eintraege
+from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
 __all__ = [
@@ -53,6 +54,7 @@ def _artikel_access(user, artikel_name):
 
 
 @login_required
+@tabellenzustand
 def article_list(request):
     latest_id = (
         Artikel.objects.filter(name=OuterRef("name"))

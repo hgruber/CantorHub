@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 from filer.models import File, Folder
@@ -47,6 +48,7 @@ __all__ = [
 
 
 @login_required
+@tabellenzustand
 def mitglied_list(request):
     can_manage = request.user.has_perm("intern.change_user")
     base_qs = User.objects.all() if can_manage else User.objects.filter(is_active=True)

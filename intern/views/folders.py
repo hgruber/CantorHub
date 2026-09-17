@@ -24,6 +24,7 @@ from django.template.loader import render_to_string
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 from easy_thumbnails.files import get_thumbnailer
@@ -451,6 +452,7 @@ def _playlist_eintraege(records, ordnername):
 
 
 @login_required
+@tabellenzustand
 def folder_view(request, pk):
     from .files import _get_file_extension
 

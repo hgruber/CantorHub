@@ -67,7 +67,9 @@ Three underscore-prefixed modules hold what the view modules share:
 - **`views/_decorators.py`** — `perm_or_home(perm)` guards the three management pages
   (`aufgaben`, `gruppen`, `aenderungsprotokoll_list`): permission or superuser, else a silent
   redirect to „Aktuell" rather than a 403, because a member without the right never sees the menu
-  entry. It includes `login_required`.
+  entry. It includes `login_required`. `tabellenzustand` remembers a list's sort and filters in
+  a per-path cookie and redirects before rendering; every view that renders `table.html` carries
+  it (below `login_required`). Details in `docs/frontend.md`.
 - **`views/_auswahl.py`** — `chip_eintraege()` builds the entry list `_chip_multiselect.html`
   expects, for the pages that have no Django form.
 

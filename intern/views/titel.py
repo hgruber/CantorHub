@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 from filer.models import File
@@ -31,6 +32,7 @@ __all__ = [
 
 
 @login_required
+@tabellenzustand
 def titel_list(request):
     queryset = (
         Lied.objects.annotate(

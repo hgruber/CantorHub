@@ -493,36 +493,6 @@
         }).observe(tbody, { childList: true });
     }());
     </script>
-    <script>
-    (function () {
-        'use strict';
-        var KEY = 'tstate-' + window.location.pathname;
-        var params = new URLSearchParams(window.location.search);
-        params.delete('offset');
-
-        if (params.toString()) {
-            try { localStorage.setItem(KEY, params.toString()); } catch (e) {}
-        } else {
-            var isInternalNav = false;
-            try {
-                if (document.referrer) {
-                    isInternalNav = new URL(document.referrer).pathname === window.location.pathname;
-                }
-            } catch (e) {}
-
-            if (isInternalNav) {
-                try { localStorage.removeItem(KEY); } catch (e) {}
-            } else {
-                var saved;
-                try { saved = localStorage.getItem(KEY); } catch (e) {}
-                if (saved) {
-                    window.location.replace(window.location.pathname + '?' + saved);
-                    return;
-                }
-            }
-        }
-    }());
-    </script>
 </div>
 {% if gallery_url %}
 <script>

@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 from docx import Document
 from docx.shared import Pt
@@ -128,6 +129,7 @@ def _aufstellungen_anhaengen(termine, ich):
 
 
 @login_required
+@tabellenzustand
 def termin_list(request):
     past = request.GET.get("past") == "1"
     annotations = {

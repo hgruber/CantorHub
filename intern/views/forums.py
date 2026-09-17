@@ -21,6 +21,7 @@ from ..forms import ForumEditForm
 from ..models import ChangeLog, Forum, ForumPermission, Mitteilung, Reaktion, User
 from ..tables import ForumTabelle
 from ._auswahl import chip_eintraege
+from ._decorators import tabellenzustand
 
 __all__ = [
     "forum_list",
@@ -186,6 +187,7 @@ def _forum_user_lists(forum_obj):
 
 
 @login_required
+@tabellenzustand
 def forum_list(request):
     q = (request.GET.get("q") or "").strip()
     add = "forum_add" if request.user.has_perm("intern.add_forum") else None

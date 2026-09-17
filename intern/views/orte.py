@@ -6,6 +6,7 @@ from django_tables2 import RequestConfig
 from ..forms import OrtForm
 from ..models import Ort
 from ..tables import OrtTabelle
+from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 __all__ = [
@@ -20,6 +21,7 @@ _PAGE_SIZE = 50
 
 
 @login_required
+@tabellenzustand
 def ort_list(request):
     qs = Ort.objects.order_by("name")
 

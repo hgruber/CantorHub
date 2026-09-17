@@ -414,6 +414,25 @@ script expects (`html`, `has_more`, `next_offset`, plus any `extra`). Pass `requ
 the fragment really needs the context processors — otherwise they (and their termin-banner
 queries) run on every scroll. `paginate_ordered()` applies `?sort=` before slicing.
 
+## Remembered list state
+
+A list remembers its last sort and filters per device. `@tabellenzustand`
+(`views/_decorators.py`, placed below `@login_required`) handles this on the server:
+
+- A `GET` with query parameters stores them without `offset` in a cookie whose `Path` is the
+  list's path. The name comes from `zustand_cookie(path)`, a hash, because `Path` matches as a
+  prefix and a fixed name would be ambiguous (`/intern/ordner/1/` vs. `/intern/ordner/12/`).
+  The cookie is only written on a 200.
+- A `GET` without parameters answers with a 302 to the stored state **before the view runs**.
+  It used to be a script at the end of `table.html`: the server rendered the unfiltered list
+  first and the browser then loaded the filtered one, so the list jumped.
+- A `GET` without parameters whose `Referer` path is the list itself („Zurücksetzen" `href="?"`,
+  the last filter chip removed, a menu click on the open list) forgets the state.
+  `SECURE_REFERRER_POLICY = "same-origin"` guarantees that header.
+- Infinite-scroll fetches and `POST` (column selection) pass through untouched.
+
+Every new view that renders `table.html` needs the decorator.
+
 ## Public homepage
 
 `templates/index.html` + `intern/static/intern/css/main.css`. The public landing page does
