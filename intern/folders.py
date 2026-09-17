@@ -1,8 +1,13 @@
 """
 Well-known folder registry.
 
-Looks up folders by their logical name on first use, then caches the result
-in-process. No dependency on auto-increment IDs — only folder names matter.
+The folders the portal files into on its own sit under ``Backstage`` — most
+members never need to browse them. Only ``Mitglieder-Verwaltung`` stays at the
+root. See „Standard folders" in docs/files.md.
+
+Looks up folders by their path from the root on first use, then caches the
+result in-process. No dependency on auto-increment IDs — only folder names
+matter.
 
 Usage:
     from intern import folders
@@ -12,41 +17,70 @@ Usage:
 
 from django.db.utils import OperationalError
 
+BACKSTAGE = "Backstage"
+MITGLIEDER_VERWALTUNG = "Mitglieder-Verwaltung"
+EINGANG = "Eingang"
+FORENBILDER = "Forenbilder"
+PROFILBILDER = "Profilbilder"
+REPERTOIRE = "Repertoire"
+HOERBEISPIELE = "Hörbeispiele"
+NOTENBLAETTER = "Notenblätter"
+NOTENSATZ = "Notensatz-Dateien"
+PROBENMITSCHNITTE = "Probenmitschnitte"
+TERMIN_ANHAENGE = "Termin-Anhänge"
+WIKI_ANHAENGE = "Wiki-Anhänge"
+
+# Logical name -> path from the root. Parents come before their children, so
+# creating the folders in this order always finds the parent already there.
+PFADE: dict[str, tuple[str, ...]] = {
+    "backstage":             (BACKSTAGE,),
+    "mitglieder_verwaltung": (MITGLIEDER_VERWALTUNG,),
+    "unsortiert":            (BACKSTAGE, EINGANG),
+    "forum":                 (BACKSTAGE, FORENBILDER),
+    "avatare":               (BACKSTAGE, PROFILBILDER),
+    "artikel":               (BACKSTAGE, WIKI_ANHAENGE),
+    "termine":               (BACKSTAGE, TERMIN_ANHAENGE),
+    "musik":                 (BACKSTAGE, REPERTOIRE),
+    "repertoire":            (BACKSTAGE, REPERTOIRE, HOERBEISPIELE),
+    "pdf":                   (BACKSTAGE, REPERTOIRE, NOTENBLAETTER),
+    "notensatz":             (BACKSTAGE, REPERTOIRE, NOTENSATZ),
+    "andere":                (BACKSTAGE, REPERTOIRE, PROBENMITSCHNITTE),
+}
+
 _cache: dict[str, int] = {}
 
 
-def _get(name: str, parent_name: str | None = None) -> int | None:
-    key = f"{parent_name}/{name}" if parent_name else name
+def _get(*pfad: str) -> int | None:
+    key = "/".join(pfad)
     if key in _cache:
         return _cache[key]
     try:
         from filer.models import Folder
 
-        qs = Folder.objects.filter(name=name)
-        if parent_name:
-            qs = qs.filter(parent__name=parent_name)
-        else:
-            qs = qs.filter(parent=None)
-        folder = qs.first()
-        if folder:
-            _cache[key] = folder.pk
-            return folder.pk
+        parent_id = None
+        for name in pfad:
+            folder = Folder.objects.filter(name=name, parent_id=parent_id).first()
+            if folder is None:
+                return None
+            parent_id = folder.pk
     except OperationalError:
-        pass  # DB not yet initialised (e.g. during migrate)
-    return None
+        return None  # DB not yet initialised (e.g. during migrate)
+    _cache[key] = parent_id
+    return parent_id
 
 
-def verwaltung() -> int | None: return _get("Verwaltung")
-def avatare()    -> int | None: return _get("Avatare")
-def unsortiert() -> int | None: return _get("Unsortiert")
-def forum()      -> int | None: return _get("Forum")
-def artikel()    -> int | None: return _get("Artikel")
-def musik()      -> int | None: return _get("Musik")
-def termine()    -> int | None: return _get("Termine")
-def extern()     -> int | None: return _get("Extern")
-def repertoire() -> int | None: return _get("Repertoire", parent_name="Musik")
-def pdf()        -> int | None: return _get("PDF",        parent_name="Musik")
-def notensatz()  -> int | None: return _get("Notensatz",  parent_name="Musik")
+def backstage()             -> int | None: return _get(*PFADE["backstage"])
+def mitglieder_verwaltung() -> int | None: return _get(*PFADE["mitglieder_verwaltung"])
+def avatare()               -> int | None: return _get(*PFADE["avatare"])
+def unsortiert()            -> int | None: return _get(*PFADE["unsortiert"])
+def forum()                 -> int | None: return _get(*PFADE["forum"])
+def artikel()               -> int | None: return _get(*PFADE["artikel"])
+def musik()                 -> int | None: return _get(*PFADE["musik"])
+def termine()               -> int | None: return _get(*PFADE["termine"])
+def repertoire()            -> int | None: return _get(*PFADE["repertoire"])
+def pdf()                   -> int | None: return _get(*PFADE["pdf"])
+def notensatz()             -> int | None: return _get(*PFADE["notensatz"])
+def andere()                -> int | None: return _get(*PFADE["andere"])
 
 
 def invalidate() -> None:

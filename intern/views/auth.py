@@ -13,8 +13,8 @@ from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils.timezone import now as tz_now
-from filer.models import File as FilerFile, Folder
-from intern import ejabberd
+from filer.models import File as FilerFile
+from intern import ejabberd, folders
 from intern.app_settings import (
     get_config,
     get_config_int,
@@ -135,17 +135,31 @@ def _save_antrag_pdf(user, email, einwilligung_fotos=False, foerdermitglied=Fals
 
     pdf_bytes = buf.getvalue()
     fname = f"antrag_{user.first_name}_{user.last_name}_{datetime.now().strftime('%Y-%m-%d')}.pdf"
-    verwaltung, _ = Folder.objects.get_or_create(name="Verwaltung", parent=None)
-    folder, _ = Folder.objects.get_or_create(name="Mitglieder", parent=verwaltung)
+    _pdf_ablegen(user, pdf_bytes, fname)
+    return pdf_bytes, fname
+
+
+def _pdf_ablegen(user, pdf_bytes, fname):
+    """File an application or confirmation PDF under Mitglieder-Verwaltung.
+
+    A missing folder is not recreated: a new folder has no FolderPermission
+    rows and would be open to every member, yet it holds applications. The PDF
+    still goes out by mail, it is just not filed."""
+    folder_id = folders.mitglieder_verwaltung()
+    if folder_id is None:
+        logger.warning(
+            "Ordner '%s' fehlt, %s wird nicht abgelegt.",
+            folders.MITGLIEDER_VERWALTUNG, fname,
+        )
+        return
     FilerFile.objects.create(
         file=ContentFile(pdf_bytes, name=fname),
         original_filename=fname,
         name=fname,
         owner=user,
-        folder=folder,
+        folder_id=folder_id,
         mime_type="application/pdf",
     )
-    return pdf_bytes, fname
 
 
 def home(request):
@@ -504,16 +518,7 @@ def _save_bestaetigung_pdf(user):
 
     pdf_bytes = buf.getvalue()
     fname = f"bestaetigung_{user.first_name}_{user.last_name}_{datetime.now().strftime('%Y-%m-%d')}.pdf"
-    verwaltung, _ = Folder.objects.get_or_create(name="Verwaltung", parent=None)
-    folder, _ = Folder.objects.get_or_create(name="Mitglieder", parent=verwaltung)
-    FilerFile.objects.create(
-        file=ContentFile(pdf_bytes, name=fname),
-        original_filename=fname,
-        name=fname,
-        owner=user,
-        folder=folder,
-        mime_type="application/pdf",
-    )
+    _pdf_ablegen(user, pdf_bytes, fname)
     return pdf_bytes, fname
 
 

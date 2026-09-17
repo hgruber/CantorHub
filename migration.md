@@ -58,7 +58,9 @@ tests become possible.
 
 ## Avatars and their history
 
-`import_files --path Avatare` imports the profile pictures into filer. The `Avatare/` directory
+`import_files --path Avatare` imports the profile pictures into filer; `import_avatars` later
+renames that root folder to `Backstage/Profilbilder` (see „Standard folders" in
+`docs/files.md`). The `Avatare/` directory
 also holds the *superseded* pictures as `<legacy_id>_<md5-prefix>.jpg`, and `import_avatars` in
 `0003_import.py` hangs those off the member's current avatar as `DateiVersion` rows (see
 `docs/files.md`):

@@ -223,7 +223,7 @@ def forum_list(request):
             "seitentitel": "Foren",
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
             "upload_folder_id": folders.forum(),
-            "upload_folder_name": "Forum",
+            "upload_folder_name": folders.FORENBILDER,
             "add": add,
             "add_form": ForumEditForm() if request.user.has_perm("intern.add_forum") else None,
             "add_form_multipart": True,
@@ -259,7 +259,7 @@ def forum_view(request, forum):
             "oldest_id": oldest_id,
             "messages": messages,
             "upload_folder_id": folders.forum(),
-            "upload_folder_name": "Forum",
+            "upload_folder_name": folders.FORENBILDER,
             "up": "forum_list",
             "edit": "forum_edit" if request.user.has_perm("intern.change_forum") else None,
             "history": "forum_aenderungen" if request.user.has_perm("intern.change_forum") else None,
@@ -417,7 +417,7 @@ def forum_edit(request, forum):
     if request.method == "POST":
         form = ForumEditForm(request.POST, request.FILES, instance=forum_obj)
         if form.is_valid():
-            # Move dropzone-uploaded bild to Forum folder
+            # Move dropzone-uploaded bild to the Forenbilder folder
             new_bild_id = request.POST.get("bild")
             old_bild_id = str(forum_obj.bild_id) if forum_obj.bild_id else ""
             if new_bild_id and new_bild_id != old_bild_id:

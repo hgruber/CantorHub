@@ -181,7 +181,7 @@ def mitglied_edit(request, id):
             mit_adressbuch=ist_selbst and carddav_aktiv,
         )
         if form.is_valid():
-            # Move dropzone-uploaded avatar to Avatare folder and rename.
+            # Move dropzone-uploaded avatar to the Profilbilder folder and rename.
             # The avatar text input (set by JS on upload) holds the new filer ID;
             # if it differs from the original, the file was just uploaded.
             new_avatar_id = request.POST.get("avatar")
@@ -217,7 +217,7 @@ def mitglied_edit(request, id):
         "seitentitel": f"bearbeiten: {user.first_name} {user.last_name}",
         "view": "mitglied_view",
         "upload_folder_id": folders.avatare(),
-        "upload_folder_name": "Avatare",
+        "upload_folder_name": folders.PROFILBILDER,
         "upload_rename_to": id,
         "id": id,
         "can_manage": request.user.has_perm("intern.change_user"),
@@ -593,7 +593,7 @@ def mitglied_benachrichtigen(request):
                 list_url += f"?{filter_params}"
             return redirect(list_url)
 
-        vw_id = folders.verwaltung()
+        vw_id = folders.mitglieder_verwaltung()
         verwaltung_tree = _verwaltung_tree(vw_id) if vw_id else []
         safe_ids = [int(x) for x in attachment_ids if str(x).strip().isdigit()]
         return render(request, "mitglied_benachrichtigen.html", {
@@ -610,7 +610,7 @@ def mitglied_benachrichtigen(request):
             "errors": errors,
         })
 
-    vw_id = folders.verwaltung()
+    vw_id = folders.mitglieder_verwaltung()
     verwaltung_tree = _verwaltung_tree(vw_id) if vw_id else []
     return render(request, "mitglied_benachrichtigen.html", {
         "seitentitel": "E-Mail verfassen",
@@ -631,6 +631,6 @@ def mitglied_benachrichtigen(request):
 def mitglied_benachrichtigen_files(request):
     if not request.user.has_perm("intern.notify_user"):
         return HttpResponseForbidden()
-    vw_id = folders.verwaltung()
+    vw_id = folders.mitglieder_verwaltung()
     tree = _verwaltung_tree(vw_id) if vw_id else []
     return JsonResponse({"tree": tree})

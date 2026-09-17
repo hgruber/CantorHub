@@ -1,6 +1,6 @@
 """Write protection for profile pictures.
 
-The `Avatare` folder carries no FolderPermission rows, so by the rule in
+The `Profilbilder` folder carries no FolderPermission rows, so by the rule in
 `folder_access.py` every logged-in member has write access to it — which would let
 anyone overwrite, rename or restore an old revision of someone else's profile
 picture. Folder permissions cannot fix this: restricting the folder would also block
@@ -51,7 +51,7 @@ def darf_avatar_aendern(user, f):
     if mitglied is not None:
         return mitglied.pk == user.pk
 
-    # No owner to be found, but the file sits in Avatare: a leftover `<id>.jpg`
+    # No owner to be found, but the file sits in Profilbilder: a leftover `<id>.jpg`
     # of a member who has no avatar set any more, version history included.
     # Only the membership administration touches those.
     from .views.files import verknuepfte_dateien

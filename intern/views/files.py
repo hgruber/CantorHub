@@ -380,7 +380,7 @@ def upload(request):
 
         # Fremde Mitglieds-IDs nur mit Verwaltungsrecht — vor dem Anlegen der
         # Datei geprüft, damit eine Ablehnung keine Leiche im Ordner hinterlässt.
-        # Sonst könnte man eine zweite "<id>.jpg" in den Avatare-Ordner schieben
+        # Sonst könnte man eine zweite "<id>.jpg" in den Ordner Profilbilder schieben
         # oder das Avatar-FK eines beliebigen Mitglieds umbiegen.
         fremd_erlaubt = request.user.is_superuser or request.user.has_perm("intern.change_user")
 

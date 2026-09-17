@@ -38,7 +38,7 @@ migration — see `migration.md`.
 | Topic | File |
 |---|---|
 | Request flow, proxy assumptions, URLs, logging, cache, runtime config | `docs/architecture.md` |
-| Files: identity, versions, avatar protection, folder rights, retention | `docs/files.md` |
+| Files: identity, versions, standard folders, avatar protection, folder rights, retention | `docs/files.md` |
 | Frontend: pages, components, design tokens, calendar, maps, homepage | `docs/frontend.md` |
 | Automated e-mails and their markup | `docs/mail.md` |
 | Members: joining, re-confirmation, leaving, field privacy | `docs/members.md` |
@@ -74,8 +74,8 @@ Three underscore-prefixed modules hold what the view modules share:
   expects, for the pages that have no Django form.
 
 Cross-cutting modules: `models.py`, `forms.py`, `signals.py` (audit log, activation mails, filer
-indexing, MUC room assignment), `app_settings.py` (runtime config), `folder_access.py` /
-`avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
+indexing, MUC room assignment), `app_settings.py` (runtime config), `folders.py` (the standard
+folders under Backstage), `folder_access.py` / `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
 shared by the folder browser and the wiki media bar), `verwendung.py` (what a delete would break),
 `terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
 events are `00:00`, see `docs/frontend.md`), `aufstellung.py` (the stage picture of the answers

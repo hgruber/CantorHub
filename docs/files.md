@@ -1,7 +1,7 @@
 # Files: identity, versions, permissions, retention
 
 Everything about `django-filer` in this project. Two rules dominate and are easy to violate:
-a file's identity is its **storage path**, not its row, and the `Avatare` folder needs a
+a file's identity is its **storage path**, not its row, and the `Profilbilder` folder needs a
 second permission axis on top of the folder permissions.
 
 ## Files as links
@@ -87,6 +87,38 @@ Two consequences worth knowing:
   for the same class of reason: `save()` would fire `on_filer_file_saved` and spawn an
   indexing plus three thumbnail threads per file, for a field that affects neither.
 
+## Standard folders
+
+The folders the portal files into on its own sit under **Backstage**, so a member browsing the
+archive sees their own folders rather than a dozen system ones. Only **Mitglieder-Verwaltung**
+(application and re-confirmation PDFs, Vorstand-only) stays at the root.
+
+```
+Backstage/
+  Eingang              fallback target of every upload without a better folder
+  Forenbilder          forum pictures
+  Profilbilder         member avatars, see below
+  Repertoire/          upload target of the Repertoire page
+    Hörbeispiele       Lied.original, Lied.aufnahme
+    Notenblätter       Lied.pdf
+    Notensatz-Dateien  Lied.noten (capella, MuseScore)
+    Probenmitschnitte  imported recordings not tied to a song
+  Termin-Anhänge       upload target of the event list
+  Wiki-Anhänge         files and pictures used in articles
+Mitglieder-Verwaltung  root of the attachment picker in the Rundmail
+```
+
+`intern/folders.py` is the registry: the names are constants there, `PFADE` maps each logical
+name to its path from the root, and one accessor per folder (`folders.pdf()` …) resolves that
+path level by level and caches the id. `0003_import.py` creates the tree from `PFADE`, in its
+order (parents first). Renaming or moving one of these folders in the browser breaks the lookup
+— the accessor then returns `None` and uploads fall back or fail.
+
+**Backstage has no `FolderPermission` rows, deliberately.** A folder is only visible when every
+ancestor is readable, so restricting Backstage would hide the song files from members.
+`_pdf_ablegen` in `views/auth.py` does not recreate a missing Mitglieder-Verwaltung: a fresh
+folder would be open to everyone while holding membership applications.
+
 ## Folder permissions
 
 Access is governed by `FolderPermission(folder, group)` rows — `folder_access()` in
@@ -99,7 +131,7 @@ copying a protected folder into an open one would expose its contents.
 
 ## Avatars are write-protected against other members
 
-The `Avatare` folder has no `FolderPermission` rows, so by the rule above every logged-in
+The `Profilbilder` folder has no `FolderPermission` rows, so by the rule above every logged-in
 member has **write** access to it. Without a second check that means anyone could overwrite,
 rename or `datei_restore` someone else's profile picture — and the imported avatar history
 reaches back to 2012. Folder permissions cannot fix this: restricting the folder would also
@@ -114,7 +146,7 @@ against `folder_access()`.
   chain, so acting on it would swap the avatar just the same.
 - `darf_avatar_aendern(user, f)` — `False` when `f` is another member's avatar. Holders of
   `intern.change_user` (the permission `mitglied_edit` already requires for foreign profiles)
-  and superusers always pass. A file in `Avatare` with no resolvable owner (a leftover
+  and superusers always pass. A file in `Profilbilder` with no resolvable owner (a leftover
   `<id>.jpg` of a member who has since cleared their avatar) is administration-only.
   Everything that is not an avatar returns `True` — normal files are unaffected.
 

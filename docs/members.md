@@ -27,7 +27,7 @@ optional fields: `einwilligung_fotos` (photo consent at public events) and `foer
 On success:
 
 - the member is created with `is_active=False`;
-- a PDF of the completed application is saved to the filer folder **„Verwaltung/Mitglieder"**
+- a PDF of the completed application is saved to the filer folder **„Mitglieder-Verwaltung"**
   (Vorstand-only, via `_save_antrag_pdf` in `views/auth.py` using reportlab; best-effort, never
   blocks registration);
 - a confirmation mail goes to the applicant;
@@ -74,7 +74,7 @@ override with `--base-url URL`). The command calls `send_bestaetigung_mail(user,
 (`MitgliedBestaetigungForm`): data correct, Datenschutz, Satzung.
 
 **On submit:** `_save_bestaetigung_pdf(user)` generates a PDF (reportlab) with all stored data +
-confirmed checkboxes, saves it to „Verwaltung/Mitglieder" in filer, and attaches it to the
+confirmed checkboxes, saves it to „Mitglieder-Verwaltung" in filer, and attaches it to the
 quittance mail sent to the member (`MAIL_BESTAETIGUNG_BESTAETIGT`). No Vorstand notification.
 Three public templates extend `mitglied_public_base.html`: `mitglied_bestaetigung.html`,
 `_success.html`, `_invalid.html`.

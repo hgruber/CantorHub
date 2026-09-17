@@ -253,20 +253,17 @@ THUMBNAIL_SOURCE_GENERATORS = (
     "intern.thumbnails.docx_source",
 )
 
-# File type routing for uploads — folder_name is resolved at runtime via
-# intern.folders so no integer IDs are hardcoded here.
+# File type detection for uploads. The target folder per type is chosen in
+# intern/views/files.py (`upload`) through intern.folders.
 FILE_TYPE_CONFIG = {
     "audio": {
         "extensions": [".mp3", ".m4a"],
-        "folder_name": "Repertoire",
     },
     "music": {
         "extensions": [".cap", ".msc", ".mscz"],
-        "folder_name": "Notensatz",
     },
     "pdf": {
         "extensions": [".pdf"],
-        "folder_name": "PDF",
     },
 }
 

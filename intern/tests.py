@@ -2142,3 +2142,67 @@ class TabellenzustandTest(SimpleTestCase):
         from intern.views._decorators import zustand_cookie
         self.assertNotEqual(zustand_cookie("/intern/ordner/1/"),
                             zustand_cookie("/intern/ordner/12/"))
+
+
+class StandardOrdnerTest(SimpleTestCase):
+    """intern.folders: die Standard-Ordner liegen unter Backstage und werden
+    ab der Wurzel über ihren ganzen Pfad gesucht."""
+
+    def setUp(self):
+        from intern import folders
+        folders.invalidate()
+        self.addCleanup(folders.invalidate)
+
+    def test_alles_unter_backstage_ausser_mitglieder_verwaltung(self):
+        from intern import folders
+        for schluessel, pfad in folders.PFADE.items():
+            if schluessel == "mitglieder_verwaltung":
+                self.assertEqual(pfad, (folders.MITGLIEDER_VERWALTUNG,))
+            else:
+                self.assertEqual(pfad[0], folders.BACKSTAGE, schluessel)
+
+    def test_pfade_eindeutig_und_eltern_zuerst(self):
+        """0003_import legt die Ordner in dieser Reihenfolge an."""
+        from intern import folders
+        pfade = list(folders.PFADE.values())
+        self.assertEqual(len(pfade), len(set(pfade)))
+        for i, pfad in enumerate(pfade):
+            if len(pfad) > 1:
+                self.assertIn(pfad[:-1], pfade[:i], pfad)
+
+    def test_jede_zugriffsfunktion_hat_einen_pfad(self):
+        from intern import folders
+        for schluessel in folders.PFADE:
+            self.assertTrue(callable(getattr(folders, schluessel)), schluessel)
+
+    def test_sucht_jede_ebene_mit_ihrem_elternordner(self):
+        from intern import folders
+        ids = {
+            (folders.BACKSTAGE, None): 1,
+            (folders.REPERTOIRE, 1): 2,
+            (folders.NOTENBLAETTER, 2): 3,
+        }
+
+        def filter_(name, parent_id):
+            pk = ids.get((name, parent_id))
+            return mock.Mock(first=lambda: SimpleNamespace(pk=pk) if pk else None)
+
+        with mock.patch("filer.models.Folder.objects") as objects:
+            objects.filter.side_effect = filter_
+            self.assertEqual(folders.pdf(), 3)
+            self.assertEqual(objects.filter.call_count, 3)
+            # Zweiter Aufruf kommt aus dem Cache.
+            self.assertEqual(folders.pdf(), 3)
+            self.assertEqual(objects.filter.call_count, 3)
+
+    def test_gleichnamiger_ordner_an_anderer_stelle_zaehlt_nicht(self):
+        """Ein "Repertoire" an der Wurzel ist nicht Backstage/Repertoire."""
+        from intern import folders
+
+        def filter_(name, parent_id):
+            pk = 7 if (name, parent_id) == (folders.REPERTOIRE, None) else None
+            return mock.Mock(first=lambda: SimpleNamespace(pk=pk) if pk else None)
+
+        with mock.patch("filer.models.Folder.objects") as objects:
+            objects.filter.side_effect = filter_
+            self.assertIsNone(folders.musik())

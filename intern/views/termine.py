@@ -187,7 +187,7 @@ def termin_list(request):
                 if get_config_bool("CALDAV_AKTIV", False) else None
             ),
             "upload_folder_id": folders.termine(),
-            "upload_folder_name": "Termine",
+            "upload_folder_name": folders.TERMIN_ANHAENGE,
             "add": add,
             "add_form": TerminForm() if request.user.has_perm("intern.add_termin") else None,
             "add_label": "Neuer Termin",

@@ -95,7 +95,7 @@ def article_list(request):
         "add_panel_include": "artikel_add_panel.html",
         "table": table,
         "upload_folder_id": folders.artikel(),
-        "upload_folder_name": "Artikel",
+        "upload_folder_name": folders.WIKI_ANHAENGE,
     }
     return render(request, "table.html", context)
 
@@ -150,7 +150,7 @@ def article_edit(request, name):
         "id": name,
         "back": "",
         "upload_folder_id": folders.artikel(),
-        "upload_folder_name": "Artikel",
+        "upload_folder_name": folders.WIKI_ANHAENGE,
     }
     return render(request, "artikel.html", context)
 
@@ -203,7 +203,7 @@ def article_view(request, name):
         "prev_version": prev_version,
         "next_version": next_version,
         "upload_folder_id": folders.artikel(),
-        "upload_folder_name": "Artikel",
+        "upload_folder_name": folders.WIKI_ANHAENGE,
         "up": "article_list",
         "edit": "article_edit" if can_edit else None,
         "history": "article_history",
