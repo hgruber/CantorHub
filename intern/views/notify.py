@@ -62,7 +62,9 @@ def site_notify(request):
     entries = (
         ChangeLog.objects.filter(id__gt=since, model_name__in=_NOTIFY_MODELS)
         .exclude(user_id=request.user.id)
-        .select_related("user")
+        # user__avatar: die Blase zeigt das Bild des Handelnden — sonst eine
+        # Abfrage je Eintrag.
+        .select_related("user", "user__avatar")
         .order_by("id")[:30]
     )
 
@@ -88,6 +90,13 @@ def site_notify(request):
             )
         ]
 
+    # Alle angezeigten Mitteilungen auf einmal — der erste Poll einer Sitzung
+    # (since=0) holte sonst je Eintrag eine eigene Zeile: als Verwalter 68
+    # Abfragen fuer einen Aufruf, der alle zehn Sekunden kommt.
+    mitteilungen = Mitteilung.objects.filter(
+        pk__in=[e.object_id for e in entries if e.model_name == "Mitteilung"]
+    ).select_related("forum", "sender", "sender__avatar").in_bulk()
+
     data = []
     for e in entries:
         item = {
@@ -104,15 +113,13 @@ def site_notify(request):
         # Special: for Mitteilung, include forum id and snippet so the
         # bubble can link directly to the forum and show the message text
         if e.model_name == "Mitteilung":
-            try:
-                msg = Mitteilung.objects.select_related("forum", "sender").get(pk=e.object_id)
+            msg = mitteilungen.get(e.object_id)
+            if msg is not None:
                 item["forum"] = msg.forum_id
                 item["thema"] = msg.forum.thema
                 item["snippet"] = (msg.mitteilung or "")[:120]
                 if msg.sender and msg.sender.avatar:
                     item["avatar"] = msg.sender.avatar.url
-            except Mitteilung.DoesNotExist:
-                pass
 
         # For Forum creates/edits, link to the forum
         if e.model_name == "Forum" and e.action != "delete":

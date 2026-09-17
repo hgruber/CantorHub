@@ -261,7 +261,11 @@ def article_history(request, name):
     can_read, can_edit = _artikel_access(request.user, name)
     if not can_read:
         raise PermissionDenied
-    all_versions = list(Artikel.objects.filter(name=name).order_by("version"))
+    # select_related: die Versionsliste zeigt je Zeile den Autor — sonst eine
+    # Abfrage pro Version (bei „Aktuell" 25).
+    all_versions = list(
+        Artikel.objects.filter(name=name).select_related("autor").order_by("version")
+    )
     if not all_versions:
         return redirect("article_list")
 

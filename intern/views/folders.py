@@ -2,6 +2,7 @@ import posixpath
 import re
 import unicodedata
 import zipfile
+from collections import defaultdict
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -605,13 +606,35 @@ def folder_view(request, pk):
                 pass
 
     folders_list = list(folders_qs)
-    for record in folders_list:
-        desc_ids = _descendant_folder_ids(record["id"])
-        agg = File.objects.filter(folder_id__in=desc_ids).aggregate(
-            s=Sum("_file_size"), c=Count("id")
-        )
-        record["groesse"] = agg["s"] or 0
-        record["count"] = agg["c"] or 0
+    if folders_list:
+        # Größe und Elementzahl je Unterordner samt allem darunter. Früher war
+        # das pro Zeile eine Breitensuche *und* eine Aggregation — bei fünf
+        # Unterordnern elf Abfragen. Jetzt: einmal der Ordnerbaum, einmal die
+        # Dateien, der Rest ist Rechnen.
+        kinder = defaultdict(list)
+        for kind_id, eltern_id in Folder.objects.values_list("id", "parent_id"):
+            kinder[eltern_id].append(kind_id)
+        je_ordner = {
+            z["folder_id"]: (z["s"] or 0, z["c"])
+            for z in File.objects.values("folder_id").annotate(
+                s=Sum("_file_size"), c=Count("id")
+            )
+        }
+        for record in folders_list:
+            stapel = [record["id"]]
+            gesehen = set()
+            groesse = anzahl = 0
+            while stapel:
+                fid = stapel.pop()
+                if fid in gesehen:
+                    continue
+                gesehen.add(fid)
+                s, c = je_ordner.get(fid, (0, 0))
+                groesse += s
+                anzahl += c
+                stapel.extend(kinder.get(fid, ()))
+            record["groesse"] = groesse
+            record["count"] = anzahl
     for record in folder_up:
         record["groesse"] = None
 
