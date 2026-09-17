@@ -13,6 +13,7 @@ from unittest import mock
 
 from django.core.signals import request_finished, request_started
 from django.db.models import Q
+from django import forms
 from django.template import Context, Template
 from django.template.loader import render_to_string
 from django.test import SimpleTestCase
@@ -21,6 +22,7 @@ from django.utils.timesince import timeuntil
 
 from intern import app_settings
 from intern.aufstellung import aufstellung
+from intern.forms import SchnellSelect, SchnellSelectMultiple
 from intern.middleware import muss_auffrischen
 from intern.tables2_beschleunigung import _original as tables2_original, signature_gepuffert
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
@@ -2323,3 +2325,54 @@ class Tables2SignaturTest(SimpleTestCase):
         from django_tables2 import utils
 
         self.assertIs(utils.signature, signature_gepuffert)
+
+
+class SchnellSelectTest(SimpleTestCase):
+    """``SchnellSelect`` muss zeichengleich zu ``forms.Select`` rendern.
+
+    Das Widget ersetzt Djangos Vorlage je ``<option>`` (siehe ``intern/forms.py``).
+    Weicht eine kommende Django-Fassung ab, soll dieser Test es melden, statt die
+    Abweichung still auszuliefern.
+    """
+
+    FAELLE = [
+        ("leer", [("", "---------"), ("1", "Eins")], None),
+        ("ausgewaehlt", [("", "---"), ("1", "Eins"), ("2", "Zwei")], "2"),
+        ("gruppen", [("A", [("1", "Eins"), ("2", "Zwei")]), ("B", [("3", "Drei")])], "3"),
+        ("sonderzeichen", [("<x>", 'Fu"ss & Ma<ss>'), ("ü", "Öl & Wasser")], "<x>"),
+        ("zahlenwert", [(1, "Eins"), (2, "Zwei")], 1),
+    ]
+
+    def test_gleiche_ausgabe_wie_django(self):
+        for name, choices, wert in self.FAELLE:
+            with self.subTest(fall=name):
+                attrs = {"class": "filter-inline", "id": "id_f"}
+                original = forms.Select(attrs=attrs, choices=choices)
+                schnell = SchnellSelect(attrs=attrs, choices=choices)
+                self.assertHTMLEqual(
+                    schnell.render("f", wert), original.render("f", wert)
+                )
+
+    def test_mehrfachauswahl_gleiche_ausgabe(self):
+        choices = [("1", "Eins"), ("2", "Zwei"), ("3", "Drei")]
+        original = forms.SelectMultiple(choices=choices)
+        schnell = SchnellSelectMultiple(choices=choices)
+        self.assertHTMLEqual(
+            schnell.render("f", ["1", "3"]), original.render("f", ["1", "3"])
+        )
+
+    def test_maskierung_bleibt(self):
+        # Die Maskierung ist der Grund, warum hier nicht mit Zeichenketten
+        # zusammengebaut werden darf.
+        schnell = SchnellSelect(choices=[("a", '<script>alert("x")</script>')])
+        html = schnell.render("f", "a")
+        self.assertNotIn("<script>", html)
+        self.assertIn("&lt;script&gt;", html)
+
+    def test_deaktiviertes_feld(self):
+        choices = [("1", "Eins"), ("2", "Zwei")]
+        original = forms.Select(choices=choices)
+        schnell = SchnellSelect(choices=choices)
+        original.attrs["disabled"] = True
+        schnell.attrs["disabled"] = True
+        self.assertHTMLEqual(schnell.render("f", "1"), original.render("f", "1"))

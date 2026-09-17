@@ -15,7 +15,7 @@ from intern.app_settings import get_vereinsname_kurz
 from .models import (
     Artikel, ChangeLog, Lied, Ort, PRIVACY_FIELDS, Termin, User, vorschau_url,
 )
-from .forms import ChipMultiSelect, TriStateToggle
+from .forms import ChipMultiSelect, SchnellSelect, TriStateToggle
 from .replacements import format_bytes, format_datetime
 
 
@@ -312,13 +312,13 @@ class RepertoireFilter(filters.FilterSet):
     )
     tempo = filters.ChoiceFilter(
         field_name="tempo", choices=Lied.CHOICES, label="Tempo",
-        widget=forms.Select(attrs={"class": "filter-inline"}),
+        widget=SchnellSelect(attrs={"class": "filter-inline"}),
     )
     tonart = filters.ChoiceFilter(
         field_name="tonart",
         choices=Lied.TONART_CHOICES,
         label="Tonart",
-        widget=forms.Select(attrs={"class": "filter-inline"}),
+        widget=SchnellSelect(attrs={"class": "filter-inline"}),
     )
     aktiv = filters.BooleanFilter(field_name="aktiv", label="Aktiv")
     hymne = filters.BooleanFilter(field_name="hymne", label="Hymne")
@@ -387,6 +387,9 @@ class RepertoireFilter(filters.FilterSet):
         field_name="termin",
         queryset=konzert_qs,
         label="Konzert",
+        # SchnellSelect: der Filter bietet jeden Termin an (dreistellige Anzahl),
+        # und Djangos Vorgabe rendert je Option eine eigene Vorlage.
+        widget=SchnellSelect(),
     )
 
     class Meta:
@@ -747,6 +750,7 @@ class MitgliederFilter(filters.FilterSet):
 
     status = filters.ChoiceFilter(
         label="Status",
+        widget=SchnellSelect(),
         choices=[
             ("1", "Zusage"),
             ("2", "Absage"),
@@ -759,6 +763,8 @@ class MitgliederFilter(filters.FilterSet):
         label="Termin",
         queryset=konzert_qs,
         method=lambda qs, name, value: qs,
+        # siehe RepertoireFilter.konzert
+        widget=SchnellSelect(),
     )
 
     def filter_status(self, queryset, name, value):

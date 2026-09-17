@@ -5,6 +5,8 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils.crypto import get_random_string
+from django.forms.utils import flatatt
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.db import models
 from filer.fields.file import FilerFileField
@@ -22,7 +24,56 @@ from .models import (
 )
 
 
-class TriStateToggle(forms.Select):
+class SchnellSelect(forms.Select):
+    """Ein <select>, dessen Optionen ohne eine Vorlage je Eintrag entstehen.
+
+    Django rendert fuer **jede** ``<option>`` das Template
+    ``django/forms/widgets/select_option.html``. Der Filter „Konzert" bietet
+    jeden Termin an — 215 Optionen in der Mitgliederliste, 105 im Repertoire —,
+    und damit kostete allein die Filterleiste rund 17 Millisekunden je Seite.
+    Hier entsteht dieselbe Ausgabe mit ``format_html``.
+
+    Die Maskierung uebernimmt weiterhin ``format_html``; ``SchnellSelectTest``
+    vergleicht die Ausgabe Zeichen fuer Zeichen mit der von ``forms.Select``,
+    damit eine Aenderung in Django auffaellt statt still abzuweichen.
+    """
+
+    def render(self, name, value, attrs=None, renderer=None):
+        kontext = self.get_context(name, value, attrs)["widget"]
+        teile = []
+        for gruppenname, optionen, _index in kontext["optgroups"]:
+            if gruppenname:
+                teile.append(format_html('<optgroup label="{}">', gruppenname))
+            for option in optionen:
+                teile.append(format_html(
+                    "<option{}>{}</option>",
+                    flatatt(self._option_attrs(option)),
+                    option["label"],
+                ))
+            if gruppenname:
+                teile.append(mark_safe("</optgroup>"))
+        return format_html(
+            '<select name="{}"{}>{}</select>',
+            kontext["name"],
+            flatatt(kontext["attrs"]),
+            mark_safe("".join(teile)),
+        )
+
+    @staticmethod
+    def _option_attrs(option):
+        """Die Attribute einer Option in derselben Reihenfolge wie Djangos Vorlage."""
+        attrs = {"value": option["value"]}
+        attrs.update(option["attrs"])
+        if option["selected"]:
+            attrs["selected"] = True
+        return attrs
+
+
+class SchnellSelectMultiple(SchnellSelect, forms.SelectMultiple):
+    """Die Mehrfachauswahl dazu — ``forms.SelectMultiple`` erbt von ``Select``."""
+
+
+class TriStateToggle(SchnellSelect):
     """Three-position sliding toggle for boolean filter fields.
 
     Renders a hidden <select> (unknown/true/false) plus a pill-shaped

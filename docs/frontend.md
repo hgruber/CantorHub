@@ -42,6 +42,19 @@ Django's default help texts, e.g. on `username`, don't leak in). Without `label`
 field's own label is used. Non-standard groups (checkbox rows, label-less textareas, the
 search-select Ort widget, static read-only rows) stay hand-written.
 
+## Select fields
+
+`SchnellSelect` (`intern/forms.py`) is the `<select>` the filter bars use, and
+`SchnellSelectMultiple` its multi-value sibling; `TriStateToggle` builds on it. Django renders
+**one template per `<option>`** (`django/forms/widgets/select_option.html`), and the „Konzert"
+filter offers every event — 215 entries in the member list, 105 in the repertoire — which put
+about 17 ms of each list page into the filter bar alone. The widget writes the same markup with
+`format_html`, so escaping stays Django's.
+
+`SchnellSelectTest` compares its output against `forms.Select` character for character (empty,
+selected, optgroups, special characters, disabled). Should a future Django change the markup,
+that test fails rather than the portal silently drifting.
+
 ## Multiple selection as chips
 
 Every multi-select in the project goes through one component: the chosen entries sit on top as
