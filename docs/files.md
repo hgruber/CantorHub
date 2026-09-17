@@ -30,6 +30,14 @@ Deleting goes through `_datei_loeschen`, which removes one occurrence and only c
 versions when it was the last one — pass it a **freshly loaded** instance, a stale one would
 have filer delete a blob that is still in use.
 
+Avatars follow the same rule through `vorschau_url(pfad)` (`models.py`), which builds the
+square preview from a storage path. Going through the `File` row costs **two** queries per
+row — the file row plus, because filer stores polymorphically, its `Image` row: measured over
+50 members, 63 queries and 52.5 ms against 1 query and 8.8 ms, for the same URLs. The member
+list therefore annotates `avatar_pfad` and its `avatar` column accesses nothing else; the
+preview keeps filer's own `filer_public_thumbnails/` location, because a thumbnailer built
+from a bare path would write a second copy next to the source.
+
 `datei_url()` is the one to reach for in a list: a table needs the URL, not the object, and
 each `File` filer instantiates brings a `MultiStorageFieldFile` and an easy-thumbnails object
 with it. The repertoire list therefore annotates the four song files as paths

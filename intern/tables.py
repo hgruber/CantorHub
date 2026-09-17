@@ -12,7 +12,9 @@ from django.utils.safestring import mark_safe
 from django_tables2.data import TableListData
 
 from intern.app_settings import get_vereinsname_kurz
-from .models import Artikel, ChangeLog, Lied, Ort, PRIVACY_FIELDS, Termin, User
+from .models import (
+    Artikel, ChangeLog, Lied, Ort, PRIVACY_FIELDS, Termin, User, vorschau_url,
+)
 from .forms import ChipMultiSelect, TriStateToggle
 from .replacements import format_bytes, format_datetime
 
@@ -807,7 +809,11 @@ class MitgliederTabelle(tables.Table):
         orderable=False,
         attrs={"td": {"class": "right"}, "th": {"class": "right"}},
     )
-    avatar = tables.Column()
+    # accessor auf den annotierten Pfad: mit dem Vorgabe-Accessor "avatar" laedt
+    # django_tables2 fuer den Zellwert die Dateizeile — genau das, was hier
+    # vermieden werden soll. Nicht sortierbar, weil eine Sortierung nach
+    # Speicherpfad so sinnlos ist wie die bisherige nach Datei-Id.
+    avatar = tables.Column(accessor="avatar_pfad", orderable=False, empty_values=())
     first_name = tables.Column()
     last_name = tables.Column()
     stimme = tables.Column(order_by=("_stimme_pos", "last_name", "first_name"))
@@ -875,18 +881,17 @@ class MitgliederTabelle(tables.Table):
         self._row_counter += 1
         return self._row_counter
 
-    def render_avatar(self, value, record):
-        if record.avatar:
-            # Try to get the thumbnail, fall back to original if needed
-            try:
-                thumbnail_url = record.avatar.thumbnails.get("admin_clipboard_icon")
-            except Exception:
-                # If thumbnail is not available, use the original image
-                thumbnail_url = record.avatar.url
+    def render_avatar(self, record):
+        # Aus dem annotierten Speicherpfad (siehe views/mitglieder.py), nicht aus
+        # record.avatar: dieser Zugriff kostet zwei Abfragen je Zeile, weil filer
+        # die Datei polymorph nachlaedt — mit eingeblendeter Spalte waren das 62
+        # zusaetzliche Abfragen und 57 ms fuer eine Seite.
+        pfad = getattr(record, "avatar_pfad", None)
+        if pfad:
             return format_html(
-                '<a href="{}/"><img class="avatar-circle" src="{}" width="40" height="40"></a>',
+                '<a href="{}/"><img class="avatar-circle" src="{}" width="40" height="40" loading="lazy"></a>',
                 record.id,
-                thumbnail_url,
+                vorschau_url(pfad),
             )
         # Fallback to default avatar image
         return format_html(

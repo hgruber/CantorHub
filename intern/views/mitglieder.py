@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.core.mail import get_connection
 from django.db import connections
-from django.db.models import Count, OuterRef
+from django.db.models import Count, F, OuterRef
 from django.http import HttpResponseForbidden, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -60,6 +60,10 @@ def mitglied_list(request):
             .annotate(cnt=Count("*"))
             .values("cnt"),
             _stimme_pos=User.stimme_order_case(),
+            # Nur der Speicherpfad des Avatars, nicht die Datei: ein Zugriff auf
+            # record.avatar kostet zwei Abfragen je Zeile (filer speichert
+            # polymorph). Daraus baut MitgliederTabelle.render_avatar die URL.
+            avatar_pfad=F("avatar__file"),
         )
         .prefetch_related("groups")
         .order_by("last_name", "first_name")
