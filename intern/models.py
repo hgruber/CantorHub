@@ -37,13 +37,43 @@ ADDRESS_TRIGGER_FIELDS = {"strasse", "plz", "ort"}
 BOT_NICK = "CantorBot"
 
 
-def fallback_avatar_url(original_filename):
-    """URL eines per ``import_files`` (django-filer) importierten Fallback-Avatars
-    (z. B. ``kein_photo.png`` / ``bot.png``). Leerer String, falls nicht vorhanden."""
+def fallback_avatar_datei(original_filename):
+    """Die per ``import_files`` (django-filer) importierte Fallback-Datei
+    (z. B. ``kein_photo.png`` / ``bot.png``), oder ``None``."""
     from filer.models import File
 
-    f = File.objects.filter(original_filename=original_filename).first()
+    return File.objects.filter(original_filename=original_filename).first()
+
+
+def fallback_avatar_url(original_filename):
+    """URL eines Fallback-Avatars. Leerer String, falls nicht vorhanden."""
+    f = fallback_avatar_datei(original_filename)
     return f.url if f else ""
+
+
+# Kantenlaenge des Forum-Avatars: angezeigt werden 38 Pixel, das Doppelte
+# deckt Bildschirme mit hoher Punktdichte ab.
+AVATAR_VORSCHAU = (76, 76)
+
+
+def avatar_vorschau_url(datei):
+    """Quadratisches Vorschaubild einer Avatar-Datei, sonst deren Original-URL.
+
+    Ein frisch hochgeladener Avatar kann mehrere Megabyte haben; ungetrimmt
+    landet er in jeder Forennachricht. Schlaegt das Erzeugen fehl (kein Bild,
+    fehlende Datei), bleibt es beim Original — ein fehlendes Bild waere
+    schlimmer als ein zu grosses.
+    """
+    if not datei:
+        return ""
+    from easy_thumbnails.files import get_thumbnailer
+
+    try:
+        return get_thumbnailer(datei.file).get_thumbnail(
+            {"size": AVATAR_VORSCHAU, "crop": True, "quality": 85}
+        ).url
+    except Exception:
+        return datei.url
 
 
 class User(AbstractUser):
@@ -397,12 +427,16 @@ class Mitteilung(models.Model):
         return "Unbekannt"
 
     def sender_avatar_url(self):
-        """Avatar-URL des Absenders mit Fallback auf bot.png bzw. kein_photo.png."""
+        """Avatar-URL des Absenders mit Fallback auf bot.png bzw. kein_photo.png.
+
+        Als Vorschaubild, nicht im Original: die Blase zeigt 38 Pixel, und jede
+        Bilddatei laeuft ueber ``media_auth`` einzeln durch Django.
+        """
         if self.is_from_bot():
-            return fallback_avatar_url("bot.png")
+            return avatar_vorschau_url(fallback_avatar_datei("bot.png"))
         if self.sender and self.sender.avatar:
-            return self.sender.avatar.url
-        return fallback_avatar_url("kein_photo.png")
+            return avatar_vorschau_url(self.sender.avatar)
+        return avatar_vorschau_url(fallback_avatar_datei("kein_photo.png"))
 
 
 class ForumPermission(models.Model):

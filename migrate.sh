@@ -57,5 +57,10 @@ else
     python manage.py collectstatic --noinput
     /usr/sbin/nginx -g 'daemon on; master_process on;'
     # Nur an localhost — Begruendung siehe start.sh.
-    gunicorn --bind 127.0.0.1:8001 --workers 3 config.wsgi:application
+    # --threads: kurze Anfragen (media-auth fuer jede Bilddatei, die beiden
+    # Polls) warten sonst hinter einem laufenden Seitenaufbau — drei
+    # Sync-Prozesse bedienen exakt drei Anfragen gleichzeitig. Der
+    # modulweite Zustand des Projekts ist threadsicher: app_settings und
+    # apps._migrating sind threading.local.
+    gunicorn --bind 127.0.0.1:8001 --workers 3 --threads 4 config.wsgi:application
 fi

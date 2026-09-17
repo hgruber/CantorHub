@@ -27,7 +27,15 @@ legacy PHP portal is described in `migration.md`.
 The container image carries the Python dependencies, nginx and its configuration; **the
 application code is bind-mounted, not copied into the image**. Inside the container, `start.sh`
 applies pending migrations, starts the background jobs and then runs nginx (port 8000) in front
-of gunicorn.
+of gunicorn (three worker processes with four threads each — the threads matter because every
+file under `/media/` is checked by a Django subrequest, and short requests would otherwise wait
+behind a page being rendered).
+
+Nginx serves `/media/` with `Cache-Control: private, max-age=604800`, so a member's browser
+fetches an image or a recording once rather than on every page view. `private` keeps it out of
+shared caches, and the week is safe because the content under a path never changes: overwriting
+a file writes a new blob and moves the references (see `docs/files.md`). If a file ever has to be
+replaced *in place* out of band, change its path — or the week has to pass.
 
 ```bash
 podman build -t cantorhub .
