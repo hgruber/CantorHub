@@ -21,6 +21,7 @@ from django.utils.timesince import timeuntil
 
 from intern import app_settings
 from intern.aufstellung import aufstellung
+from intern.middleware import muss_auffrischen
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
 from intern.templatetags.termin_tags import zeitraum_bis
 from intern.terminzeit import countdown_text, ist_ganztaegig, kommende_q
@@ -2250,3 +2251,30 @@ class ForumGelesenTest(SimpleTestCase):
         from intern.forum_gelesen import trenner_id
 
         self.assertEqual(trenner_id([(3, 8), (2, 9), (1, 8)], 0, 7), 1)
+
+class SitzungAuffrischenTest(SimpleTestCase):
+    """Die Drosselung der Sitzungsfrist (``intern/middleware.py``).
+
+    Reine Logik, ``jetzt`` wird übergeben — kein Datenbankzugriff.
+    """
+
+    def test_ohne_stand_faellig(self):
+        # Sitzung aus der Zeit vor der Drosselung oder gerade angelegt.
+        self.assertTrue(muss_auffrischen(None, 1000, intervall=300))
+
+    def test_innerhalb_des_intervalls_nicht_faellig(self):
+        self.assertFalse(muss_auffrischen(1000, 1000, intervall=300))
+        self.assertFalse(muss_auffrischen(1000, 1299, intervall=300))
+
+    def test_genau_am_intervall_faellig(self):
+        self.assertTrue(muss_auffrischen(1000, 1300, intervall=300))
+
+    def test_aelter_faellig(self):
+        self.assertTrue(muss_auffrischen(1000, 99999, intervall=300))
+
+    def test_stand_aus_der_zukunft_faellig(self):
+        # Systemuhr zurückgestellt: sonst bliebe die Sitzung bis dahin ungeschrieben.
+        self.assertTrue(muss_auffrischen(5000, 1000, intervall=300))
+
+    def test_unbrauchbarer_stand_faellig(self):
+        self.assertTrue(muss_auffrischen("kaputt", 1000, intervall=300))

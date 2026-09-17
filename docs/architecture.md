@@ -82,6 +82,24 @@ systemd assigns the correct `PRIORITY` based on the Python log level, so INFO/WA
 are not coloured red in journalctl. Custom loggers use `logging.getLogger(__name__)` — they
 all fall under `intern.*` and are therefore visible.
 
+## Sessions
+
+Sessions live in the database (Django's default backend). `SESSION_SAVE_EVERY_REQUEST` is
+**off**: with it, every request rewrote the session row — a transaction plus an fsync of
+roughly ten milliseconds — and that included every nginx `auth_request` under `/media/` and
+both polls. A gallery page with 48 thumbnails therefore issued 48 *writing* requests that
+queued behind each other on three worker processes. Measured on the media check: 22.5 ms with,
+1.5 ms without.
+
+`intern.middleware.SitzungAuffrischen` (listed right after `AuthenticationMiddleware`) keeps
+the sliding expiry instead: for a logged-in member it stores the current time in the session
+key `_aufgefrischt`, but at most once every `AUFFRISCH_INTERVALL` seconds (five minutes).
+Writing that key marks the session as modified, so Django saves it and pushes `expire_date`
+forward. The consequence is that the four-hour idle timeout is accurate to five minutes rather
+than to the second. Anything that changes the session anyway — logging in, dismissing the event
+banner — is saved immediately as before. The decision itself is the pure function
+`muss_auffrischen(stand, jetzt, intervall)`, tested without a database.
+
 ## Cache
 
 `CACHES` uses `DatabaseCache` (table `cache_table`), and it carries exactly one thing: the

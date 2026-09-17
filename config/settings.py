@@ -82,7 +82,13 @@ if not DEBUG:
     SECURE_REFERRER_POLICY = "same-origin"
 
 SESSION_COOKIE_AGE = 14400          # 4 hours
-SESSION_SAVE_EVERY_REQUEST = True   # reset timer on activity
+# Deliberately off: the sliding expiry is refreshed by
+# intern.middleware.SitzungAuffrischen at most every five minutes instead.
+# Saving on *every* request wrote the session row (transaction plus fsync) for
+# each nginx auth_request under /media/ and for every poll — measured 22.5 ms
+# vs. 1.5 ms per media check. The idle timeout is therefore accurate to five
+# minutes rather than to the second; see intern/middleware.py.
+SESSION_SAVE_EVERY_REQUEST = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Application definition
@@ -109,6 +115,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Direkt hinter der Authentifizierung: die Drosselung braucht request.user.
+    "intern.middleware.SitzungAuffrischen",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.http.ConditionalGetMiddleware",
