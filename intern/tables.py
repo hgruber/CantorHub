@@ -3,6 +3,7 @@ import django_tables2 as tables
 from django import forms
 from django.contrib.auth.models import Group
 from django.db.models import Q
+from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
@@ -224,14 +225,22 @@ class TerminTabelle(tables.Table):
         orderable=False,
         empty_values=(),
     )
-    aufstellung = tables.TemplateColumn(
-        template_name="_aufstellung.html",
+    # Bewusst keine TemplateColumn: die rendert jede Zelle mit ``request=`` und
+    # ließ damit den Kontextprozessor (elf Millisekunden, sieben Abfragen) pro
+    # Zeile noch einmal laufen — 17 Läufe für eine Terminliste.
+    aufstellung = tables.Column(
         verbose_name="Aufstellung",
         orderable=False,
+        empty_values=(),
     )
 
     def render_datum(self, value):
         return format_datetime(value)
+
+    def render_aufstellung(self, value):
+        if not value:
+            return ""
+        return mark_safe(render_to_string("_aufstellung.html", {"value": value}))
 
     def render_anwesenheit_option(self, value, record):
         if not record.anwesenheit:

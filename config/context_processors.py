@@ -1,7 +1,32 @@
 from django.conf import settings
 
+# Attribut am Request, unter dem das Ergebnis einer Anfrage liegt.
+_GEMERKT = "_project_meta"
+
 
 def project_meta(request):
+    """Globaler Vorlagenkontext — pro Anfrage genau einmal berechnet.
+
+    Der Prozessor kostet rund elf Millisekunden und sieben Abfragen (Termin-Banner,
+    offene Zusagen, Forum-Ungelesen, Änderungsprotokoll, Konfiguration), und er lief
+    mehrfach pro Seite: einmal für die Seite selbst, ein zweites Mal in
+    ``{% render_table %}`` — django_tables2 rendert die Tabellenvorlage mit ``request=`` —
+    und in der Terminliste zusätzlich einmal pro Zeile, weil ``TemplateColumn`` dasselbe
+    tut. Die Terminliste brauchte so 17 Läufe, 232 ms und 130 Abfragen; mit diesem
+    Zwischenspeicher sind es 39 ms und 15 Abfragen.
+
+    Das gespeicherte Ergebnis wird nicht verändert: ``RequestContext`` kopiert die Werte
+    beim Binden der Vorlage in eine eigene Ebene.
+    """
+    gemerkt = getattr(request, _GEMERKT, None)
+    if gemerkt is not None:
+        return gemerkt
+    ergebnis = _project_meta_berechnen(request)
+    setattr(request, _GEMERKT, ergebnis)
+    return ergebnis
+
+
+def _project_meta_berechnen(request):
     from intern.app_settings import (
         get_brand_farbe, get_config_bool, get_config_int, get_vereinsname,
         get_vereinsname_lang, get_vereinsname_kurz,

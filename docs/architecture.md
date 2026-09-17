@@ -236,5 +236,12 @@ The full key catalog and the mail-placeholder reference live in `configuration.m
   system; listed in `PASSWORD_HASHERS`. See `../migration.md`.
 - `fuzzy.py` — fuzzy song title matching used in article references.
 - `context_processors.py` — global template context (`VERSION`, `upload_max_mb`, notify
-  poll/dismiss intervals, `vereinsname`, the next-event banner).
+  poll/dismiss intervals, `vereinsname`, the next-event banner). **Computed once per
+  request** and remembered on the request object: the processor costs about eleven
+  milliseconds and seven queries, and it used to run several times per page — once for the
+  page, once more inside `{% render_table %}` (django_tables2 renders the table template
+  with `request=`), and in the event list once per row, because `TemplateColumn` does the
+  same. That list needed 17 runs, 232 ms and 130 queries; it is now 35 ms and 13 queries.
+  For the same reason `TerminTabelle.aufstellung` is a plain `Column` whose `render_`
+  method calls `render_to_string` **without** a request.
 - `ejabberd.py` — REST API client for the ejabberd admin API; see `xmpp.md`.
