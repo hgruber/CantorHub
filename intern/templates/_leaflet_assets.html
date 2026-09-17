@@ -1,0 +1,15 @@
+{% load static %}{% comment %}
+Leaflet und osm-map.js — nur fuer die Seiten, die eine Karte zeigen.
+
+Frueher lud base.html beides auf *jeder* Seite: 147 KB JavaScript und ein
+render-blockierendes Stylesheet von unpkg, gebraucht auf vier Seiten. Wer eine
+Karte einbindet — direkt oder ueber `_leaflet_map.html` —, bindet dieses
+Stueck im Block `extra_js` mit ein.
+
+Ausgeliefert wird aus `intern/static/intern/vendor/leaflet/` (Fassung 1.9.4):
+nginx gibt /static/ mit einem Jahr und `immutable` heraus, und die IP der
+Mitglieder erreicht kein fremdes Rechenzentrum.
+{% endcomment %}
+<link rel="stylesheet" href="{% static 'intern/vendor/leaflet/leaflet.css' %}" />
+<script src="{% static 'intern/vendor/leaflet/leaflet.js' %}" defer></script>
+<script src="{% static 'intern/js/osm-map.js' %}" defer></script>

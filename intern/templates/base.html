@@ -12,20 +12,19 @@
         <title>{{ vereinsname_kurz }} Intern – {{ seitentitel }}</title>
         <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
         <link rel="apple-touch-icon" href="{% static 'intern/brand/icon-192.png' %}">
-        <link rel="preconnect" href="https://unpkg.com">
-        <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-        <link rel="preconnect" href="https://cdn.jsdelivr.net">
         <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
         {% include "_theme_boot.html" %}
         {% include "_brand_boot.html" %}
-        <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        {# Fest versioniert aus dem eigenen /static/ statt von unpkg, jsdelivr und
+           cdnjs: die beiden Stylesheets blockierten das Rendern jeder Seite hinter
+           einer fremden Verbindung, "dropzone@5" und "sortablejs@latest" sind
+           Weiterleitungen mit kurzer Cache-Zeit — und keine Mitglieder-IP geht mehr
+           an Dritte. Leaflet laedt nur noch, wer eine Karte zeigt: _leaflet_assets.html. #}
+        <link rel="stylesheet" href="{% static 'intern/vendor/dropzone.min.css' %}" type="text/css" />
         {% block extra_js %}{% endblock %}
         <script src="{% static 'intern/js/htmx.min.js' %}" defer></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js" defer></script>
-        <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" defer></script>
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-        <script src="{% static 'intern/js/osm-map.js' %}" defer></script>
+        <script src="{% static 'intern/vendor/dropzone.min.js' %}" defer></script>
+        <script src="{% static 'intern/vendor/Sortable.min.js' %}" defer></script>
         <script src="{% static 'intern/js/intern.js' %}" defer></script>
         <script src="{% static 'intern/js/chip-multiselect.js' %}" defer></script>
         <script src="{% static 'intern/js/color-picker.js' %}" defer></script>

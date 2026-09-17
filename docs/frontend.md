@@ -350,7 +350,21 @@ password-strength meter all come from `intern.css`.
 ## Maps
 
 Map pages use Leaflet, and everything they share lives in
-`intern/static/intern/js/osm-map.js`, loaded once in `base.html` right after Leaflet:
+`intern/static/intern/js/osm-map.js`. Both are pulled in by
+`{% include "_leaflet_assets.html" %}` inside the `extra_js` block of the four templates that
+show a map (`karte.html`, `mitglied.html`, `ort_detail.html`, `termin.html`) — **not** by
+`base.html`: 147 KB of JavaScript plus a render-blocking stylesheet on every page, for four
+pages. A new page with a map has to include that partial, otherwise `L` is undefined.
+
+Leaflet, Dropzone and SortableJS are served from `intern/static/intern/vendor/` at a fixed
+version rather than from unpkg/jsdelivr/cdnjs. The two CDN stylesheets used to block the first
+paint of every page behind a foreign connection, `dropzone@5` and `sortablejs@latest` were
+redirects with a short cache lifetime, and every visit handed a member's IP to a third party —
+which the privacy policy now rules out in „Sichtbarkeit Deiner Daten im Portal". Under
+`/static/` nginx serves them with a one-year `immutable` cache. To upgrade one, drop in the new
+file; nothing else changes.
+
+What `osm-map.js` does:
 
 - It patches `L.TileLayer.prototype.createTile` to set `referrerPolicy = "origin"` —
   OpenStreetMap's tile servers reject requests without a `Referer` header. Per-page map code
