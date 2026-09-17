@@ -163,5 +163,12 @@
     });
 
     fetchReactions();
-    setInterval(fetchReactions, POLL_MS);
+    // Im verborgenen Tab nicht pollen — wie der Nachrichten-Poll in forum.html.
+    // Beim Zurueckwechseln sofort einmal nachziehen.
+    setInterval(function () {
+        if (!document.hidden) fetchReactions();
+    }, POLL_MS);
+    document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) fetchReactions();
+    });
 })();

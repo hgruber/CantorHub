@@ -6,8 +6,9 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db.models import Count
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
@@ -304,11 +305,14 @@ def forum_get(request, forum, last_id=0):
         last_id = max(last_id, max(msg.id for msg in messages))
         # What arrives while the forum is open counts as read.
         markiere_gelesen(request.user, forum, last_id)
-    return render(
-        request,
+    # Bewusst ohne ``request``: das Teilstueck braucht nur ``user`` (siehe
+    # _message.html), und ``render()`` liesse den Kontextprozessor mitlaufen —
+    # alle fuenf Sekunden pro offenem Forum-Tab.
+    return HttpResponse(render_to_string(
         "_messages.html",
-        {"forum": forum, "last_id": last_id, "messages": messages},
-    )
+        {"forum": forum, "last_id": last_id, "messages": messages,
+         "user": request.user},
+    ))
 
 
 FORUM_MORE_BATCH = 20

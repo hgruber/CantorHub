@@ -35,8 +35,8 @@ edits. The forum's audited fields are `thema`, `aktiv`, `bild_id`, `xmpp_muc_jid
 Members can react to individual forum messages with emoji (XEP-0444), synced both ways with the
 linked MUC room. A reaction bar renders under each message bubble (`_message.html` →
 `.reactions` container, populated by `forum.js`); a `+` opens a small picker (fixed quick set
-**plus** a free-emoji input). `forum.js` polls `forum_reactions` (JSON) every 5 s and re-renders
-all bars, so XMPP-originated reactions appear too; clicks POST to `forum_react` (`X-CSRFToken`
+**plus** a free-emoji input). `forum.js` polls `forum_reactions` (JSON) every 5 s **while the tab is visible** and
+re-renders all bars, so XMPP-originated reactions appear too; clicks POST to `forum_react` (`X-CSRFToken`
 via `getCsrfToken()`). Both views are gated by `_forum_access` — whoever may read a forum may
 react.
 
@@ -74,8 +74,11 @@ wrapper below it):
   newly readable after a permission change — counts from 0.
 - **Restricted forums** are excluded through `_hidden_forum_ids`, like everywhere else.
 - **Cost.** The sidebar dot is one `exists()` query in `config/context_processors.py`, skipped
-  for requests carrying `HX-Request` — the forum's 5 s poll renders through the context
-  processor too, and partials have no sidebar. The list uses the conditional count
+  for requests carrying `HX-Request` — partials have no sidebar. `forum_get` goes further and
+  renders through `render_to_string` **without** a request, so the context processor does not
+  run at all: the partial only needs `user`. Both polls carry `[!document.hidden]` /
+  a `document.hidden` check, so a forgotten tab stops asking. The poll costs 24 ms and seven
+  queries, down from 50 ms and 14. The list uses the conditional count
   `ForumQuerySet.mit_ungelesen(user)` on the join `extra_data()` already makes.
 
 **Limitation:** reading in an XMPP client (Conversations) is not recorded; a member who follows
