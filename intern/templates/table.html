@@ -209,8 +209,10 @@
     {% if playlists %}
     {{ playlists|json_script:"playlists-data" }}
     {% endif %}
-    {# Ohne eingebettete Listen: die Adresse, unter der intern.js sie beim ersten
-       Klick auf „Abspielen" holt (siehe titel_playlist). #}
+    {% comment %}
+       Ohne eingebettete Listen: die Adresse, unter der intern.js sie beim ersten
+       Klick auf „Abspielen" holt (siehe titel_playlist).
+    {% endcomment %}
     {% if playlists_url %}
     <span id="playlists-url" data-url="{{ playlists_url }}" hidden></span>
     {% endif %}

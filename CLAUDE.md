@@ -169,6 +169,9 @@ reasoning where it matters.
   runs the context processors again per row, and `DateTimeColumn`/`DateColumn` are subclasses
   of it that compile a `Template` per cell. Use a `render_` method, and `DatumZeitSpalte` /
   `DatumSpalte` from `tables.py` for dates — same output, no template.
+- **Template comments over more than one line use `{% comment %}`.** `{# … #}` ends at the
+  end of its line; written across several lines Django prints the text instead. In `<head>`
+  that closes the head early and the page falls apart. `VorlagenKommentarTest` enforces it.
 - **Reuse the shared UI components** rather than hand-rolling: `{% form_field %}` for form rows,
   `ChipMultiSelect` / `_chip_multiselect.html` for every multi-select,
   `_confirm_delete_dialog.html` for delete confirmations, `{% hilfe %}` for explanation tooltips

@@ -6,6 +6,7 @@ Für Termine reicht ein winziges Stellvertreter-Objekt — ``faelligkeit`` und
 """
 
 import os
+from pathlib import Path
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 from types import SimpleNamespace
@@ -2482,3 +2483,44 @@ class SchnellSelectTest(SimpleTestCase):
         original.attrs["disabled"] = True
         schnell.attrs["disabled"] = True
         self.assertHTMLEqual(schnell.render("f", "1"), original.render("f", "1"))
+
+
+class VorlagenKommentarTest(SimpleTestCase):
+    """``{# … #}`` gilt in Django nur bis zum Zeilenende.
+
+    Über mehrere Zeilen geschrieben ist es kein Kommentar mehr: Django gibt den
+    Text aus. Im ``<head>`` beendet das die Kopfzone, der Browser schiebt alles
+    Weitere in den Körper — die Seite sieht zerlegt aus. Genau das ist einmal in
+    Betrieb gegangen, deshalb dieser Test. Mehrzeilig gehört
+    ``{% comment %}…{% endcomment %}``.
+    """
+
+    @staticmethod
+    def _vorlagen():
+        wurzel = Path(__file__).resolve().parent.parent
+        for verzeichnis in (wurzel / "intern" / "templates", wurzel / "templates"):
+            yield from sorted(verzeichnis.rglob("*.html"))
+
+    def test_keine_mehrzeiligen_rautenkommentare(self):
+        gefunden = []
+        for pfad in self._vorlagen():
+            for nummer, zeile in enumerate(pfad.read_text(encoding="utf-8").splitlines(), 1):
+                # Jedes {# muss in derselben Zeile sein #} haben.
+                if zeile.count("{#") > zeile.count("#}"):
+                    gefunden.append(f"{pfad.name}:{nummer}: {zeile.strip()[:70]}")
+        self.assertEqual(
+            gefunden, [],
+            "Mehrzeilige {# #}-Kommentare landen im HTML — "
+            "{% comment %}…{% endcomment %} benutzen:\n" + "\n".join(gefunden),
+        )
+
+    def test_gerenderte_seite_traegt_keinen_kommentarrest(self):
+        # Die Gegenprobe am Ergebnis: eine Vorlage mit dem Fehler faellt hier auf,
+        # auch wenn sie den Test oben umgeht.
+        kaputt = Template("{# Anfang\n   Ende #}<p>Inhalt</p>").render(Context({}))
+        self.assertIn("{#", kaputt)   # so sieht der Fehler aus
+        sauber = Template(
+            "{% comment %}\n   Anfang\n   Ende\n{% endcomment %}<p>Inhalt</p>"
+        ).render(Context({}))
+        self.assertNotIn("{#", sauber)
+        self.assertEqual(sauber.strip(), "<p>Inhalt</p>")

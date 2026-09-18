@@ -15,11 +15,13 @@
         <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
         {% include "_theme_boot.html" %}
         {% include "_brand_boot.html" %}
-        {# Fest versioniert aus dem eigenen /static/ statt von unpkg, jsdelivr und
+        {% comment %}
+           Fest versioniert aus dem eigenen /static/ statt von unpkg, jsdelivr und
            cdnjs: die beiden Stylesheets blockierten das Rendern jeder Seite hinter
            einer fremden Verbindung, "dropzone@5" und "sortablejs@latest" sind
            Weiterleitungen mit kurzer Cache-Zeit — und keine Mitglieder-IP geht mehr
-           an Dritte. Leaflet laedt nur noch, wer eine Karte zeigt: _leaflet_assets.html. #}
+           an Dritte. Leaflet laedt nur noch, wer eine Karte zeigt: _leaflet_assets.html.
+        {% endcomment %}
         <link rel="stylesheet" href="{% static 'intern/vendor/dropzone.min.css' %}" type="text/css" />
         {% block extra_js %}{% endblock %}
         <script src="{% static 'intern/js/htmx.min.js' %}" defer></script>
@@ -27,8 +29,10 @@
         <script src="{% static 'intern/vendor/Sortable.min.js' %}" defer></script>
         <script src="{% static 'intern/js/intern.js' %}" defer></script>
         <script src="{% static 'intern/js/chip-multiselect.js' %}" defer></script>
-        {# Verhalten der Listenseiten; stand frueher als <script> in table.html und
-           ging mit jeder Liste neu ueber die Leitung. #}
+        {% comment %}
+           Verhalten der Listenseiten; stand frueher als <script> in table.html und
+           ging mit jeder Liste neu ueber die Leitung.
+        {% endcomment %}
         <script src="{% static 'intern/js/tabelle.js' %}" defer></script>
         <script src="{% static 'intern/js/color-picker.js' %}" defer></script>
         <script src="{% static 'intern/js/tooltip.js' %}" defer></script>

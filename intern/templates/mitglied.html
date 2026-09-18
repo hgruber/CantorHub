@@ -126,8 +126,10 @@
                         <span class="label">Mitglied seit:</span>
                         <span class="value">{{ user.date_joined|date:"d.m.Y" }}</span>
                     </div>
-                    {# Nur fuer die betroffene Person: fuer andere waere es keine Information ueber
-                       sie, sondern ueber ihre Praeferenz — und das erzeugt sozialen Druck. #}
+                    {% comment %}
+                       Nur fuer die betroffene Person: fuer andere waere es keine Information ueber
+                       sie, sondern ueber ihre Praeferenz — und das erzeugt sozialen Druck.
+                    {% endcomment %}
                     {% if request.user.id == id and carddav_aktiv and user.adressbuch_verborgen %}
                     <div class="personal-item">
                         <span class="label">Adressbuch:</span>
