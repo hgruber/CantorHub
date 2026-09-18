@@ -6,6 +6,7 @@ Für Termine reicht ein winziges Stellvertreter-Objekt — ``faelligkeit`` und
 """
 
 import os
+import re
 from pathlib import Path
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
@@ -2524,3 +2525,36 @@ class VorlagenKommentarTest(SimpleTestCase):
         ).render(Context({}))
         self.assertNotIn("{#", sauber)
         self.assertEqual(sauber.strip(), "<p>Inhalt</p>")
+
+
+class StatikQuellkartenTest(SimpleTestCase):
+    """Eine ``sourceMappingURL`` ohne die zugehörige ``.map`` legt den Start lahm.
+
+    ``ManifestStaticFilesStorage`` schreibt beim ``collectstatic`` jede Referenz
+    einer statischen Datei auf ihren Hash-Namen um und wirft ``ValueError``,
+    wenn das Ziel fehlt. In ``start.sh`` steht ``set -e``: das Kommando bricht
+    ab, gunicorn kommt nie hoch. Genau so ist einmal ein mitgeliefertes
+    Leaflet mit ``//# sourceMappingURL=leaflet.js.map`` in Betrieb gegangen.
+    Entweder die ``.map`` mit ablegen oder die Zeile aus dem Vendor-Bündel
+    entfernen.
+    """
+
+    QUELLKARTE = re.compile(r"sourceMappingURL=([^\s*'\"]+)")
+
+    def test_jede_quellkarte_ist_vorhanden(self):
+        wurzel = Path(__file__).resolve().parent / "static"
+        gefunden = []
+        for pfad in sorted(wurzel.rglob("*")):
+            if pfad.suffix not in (".js", ".css") or not pfad.is_file():
+                continue
+            for treffer in self.QUELLKARTE.finditer(pfad.read_text(encoding="utf-8")):
+                ziel = treffer.group(1)
+                if ziel.startswith("data:"):
+                    continue          # eingebettet, kein eigener Dateizugriff
+                if not (pfad.parent / ziel).exists():
+                    gefunden.append(f"{pfad.relative_to(wurzel)} → {ziel}")
+        self.assertEqual(
+            gefunden, [],
+            "collectstatic bricht an diesen Referenzen ab — .map beilegen "
+            "oder die Zeile entfernen:\n" + "\n".join(gefunden),
+        )

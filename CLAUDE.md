@@ -165,6 +165,10 @@ reasoning where it matters.
 - **Font sizes in `rem`, never `px`** — write `calc(13rem / 14)` for 13px, also in template
   `<style>` blocks (mail templates excepted). The sidebar font-size setting scales the root; a
   `px` size silently ignores it. See „Theme boot" in `docs/frontend.md`.
+- **No `sourceMappingURL` without the `.map` next to it.** `ManifestStaticFilesStorage`
+  rewrites every reference inside a static file and raises on a missing target; with `set -e`
+  in `start.sh` that kills the container before gunicorn starts. Vendor bundles either bring
+  their `.map` along or lose the line. `StatikQuellkartenTest` enforces it.
 - **Tables: no `TemplateColumn` on a hot list.** It renders every cell with `request=`, which
   runs the context processors again per row, and `DateTimeColumn`/`DateColumn` are subclasses
   of it that compile a `Template` per cell. Use a `render_` method, and `DatumZeitSpalte` /
