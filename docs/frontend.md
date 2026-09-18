@@ -197,8 +197,14 @@ computed in `project_meta` from `request.user` on purpose — reading `user.last
 template would break on detail views such as `mitglied_view`/`mitglied_edit`, which shadow
 `user` with the member being looked at. The script sits *inside* `#termin-banner` so an htmx
 `outerHTML` swap replaces it along with the markup; `intern.js` (`initTerminBanner`) keeps the
-dismiss click handler and the same logic as a fallback. On mobile (≤640px) the dismiss button
-is absolutely positioned in the banner's top right corner.
+dismiss click handler and the same logic as a fallback.
+
+Narrow screens only break the banner into rows where it has to: the three answer buttons get a
+row of their own below ≤640px (`:has(.zusage-actions)`), and only then is the dismiss button
+absolutely positioned in the top right corner. The answered state is a single „Zugesagt" pill
+and stays on the first row; below ≤480px it drops its label (`.zusage-state-text`) and shows
+the check alone, with the wording kept in `title`/`aria-label`. A second row for one pill would
+make the banner tower over the page it only annotates.
 
 ## Calendar (month view)
 

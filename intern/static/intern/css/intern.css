@@ -3036,16 +3036,26 @@ table.mitglied-table tr.stimme-group-start td {
 .termin-banner-dismiss:hover { background: var(--bg-row-hover); color: var(--t2); }
 
 @media (max-width: 640px) {
-    /* Dismiss button stays pinned to the top right corner instead of flowing
-       into its own row; the text reserves space for it. */
-    .termin-banner { flex-wrap: wrap; gap: 10px; position: relative; }
-    .termin-banner-main { flex: 1 1 100%; order: 1; padding-right: 28px; }
-    .termin-banner-zusage { order: 2; flex: 1 1 100%; }
-    .termin-banner-dismiss {
+    /* Only the three answer buttons need a row of their own; then the dismiss
+       button stays pinned to the top right corner instead of flowing into yet
+       another row, and the text reserves space for it. The answered state is one
+       narrow pill and keeps the banner a single row — a second row would make it
+       tower over the page. */
+    .termin-banner:has(.zusage-actions) { flex-wrap: wrap; gap: 10px; position: relative; }
+    .termin-banner:has(.zusage-actions) .termin-banner-main { flex: 1 1 100%; order: 1; padding-right: 28px; }
+    .termin-banner:has(.zusage-actions) .termin-banner-zusage { order: 2; flex: 1 1 100%; }
+    .termin-banner:has(.zusage-actions) .termin-banner-dismiss {
         position: absolute;
         top: 6px;
         right: 6px;
     }
+    .termin-banner { gap: 10px; }
+}
+
+@media (max-width: 480px) {
+    /* Before it gets tight the pill drops its label and shows the check alone. */
+    .termin-banner .zusage-state-text { display: none; }
+    .termin-banner .zusage-state-badge { gap: 0; padding: 4px; border-radius: 999px; }
 }
 
 /* Invite list */

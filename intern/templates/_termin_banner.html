@@ -21,9 +21,14 @@
   {% if banner_termin.anwesenheit %}
   <div class="termin-banner-zusage">
     {% if banner_my_option == "1" %}
-      <span class="zusage-state-badge zusage-state-yes">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Zugesagt
+      {% comment %}
+      Die Beschriftung steckt in einem eigenen Span: auf schmalen Displays blendet
+      das CSS sie aus, damit die Pille neben dem Text bleibt statt eine zweite
+      Zeile aufzuziehen. title/aria-label tragen die Bedeutung dann allein.
+      {% endcomment %}
+      <span class="zusage-state-badge zusage-state-yes" title="Zugesagt" aria-label="Zugesagt">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <span class="zusage-state-text">Zugesagt</span>
       </span>
     {% else %}
       <div class="zusage-actions">
