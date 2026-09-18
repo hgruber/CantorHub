@@ -213,6 +213,7 @@ Run with `podman exec cantorhub python manage.py <command>`.
 | `ejabberd_admin <group> <verb>` | XMPP admin operations: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
 | `ejabberd_bot` | Run the XMPP relay bot in the foreground |
 | `index_files`, `thumbnail_files` | Rebuild the file search index / pre-generate thumbnails |
+| `seitenmessung [--nutzer NAME] [--laeufe N] [--seite TEXT]` | Measure the response time and query count of the main pages. It copies the SQLite file first and throws the copy away afterwards, so the running database is never written to; the last column names a query that occurs more than three times, which is how a per-row query gives itself away |
 | `createsuperuser` | Django's own — create an administrator |
 
 **Never run `filer_check --delete-orphans`.** File revisions are stored without a database row on

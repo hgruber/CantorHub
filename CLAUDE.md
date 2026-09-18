@@ -26,6 +26,7 @@ DEBUG=1 ./start.sh                          # dev, incl. background jobs
 ./start.sh                                  # container: nginx + gunicorn
 DEBUG=1 python manage.py test intern        # needs no database — see invariants
 python manage.py makemigrations intern --name <name> && python manage.py migrate
+python manage.py seitenmessung             # Seitenzeiten + Abfragezahl, gegen eine DB-Kopie
 docker build -t cantoreub . && docker run -p 8000:8000 cantoreub
 ```
 
