@@ -447,6 +447,19 @@ The view decides target and visibility through its context: `upload_folder_id`,
 upload target shows no icon; a drop there still lands in Eingang. Write access is enforced by
 `upload` in `views/files.py` either way.
 
+## The list pages' script
+
+`intern/static/intern/js/tabelle.js` carries what every list page needs: the infinite scroll,
+„Neuer Ordner" in the folder browser, the merging of equal voices when sorting by `stimme`, and
+the click that opens an image in the gallery. It used to sit in `table.html` as inline
+`<script>` blocks — about 9 KB going over the wire with *every* list page; now it is fetched
+once and served from `/static/` with the one-year cache. Each part checks for its own anchor
+and returns when there is nothing to do, so loading it on a page without a table is harmless.
+
+The two URLs that came from the template live on two empty elements, `#ordner-anlegen` and
+`#galerie-link` (`data-url`), the same way `notify.js` reads its values off `<body>`. A new
+part of the script needs its own anchor; do not put a `{% url %}` back into the JavaScript.
+
 ## Infinite scroll
 
 List views load further rows through `views/_pagination.py`: `parse_offset(request)` reads

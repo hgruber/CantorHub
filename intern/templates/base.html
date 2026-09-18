@@ -27,6 +27,9 @@
         <script src="{% static 'intern/vendor/Sortable.min.js' %}" defer></script>
         <script src="{% static 'intern/js/intern.js' %}" defer></script>
         <script src="{% static 'intern/js/chip-multiselect.js' %}" defer></script>
+        {# Verhalten der Listenseiten; stand frueher als <script> in table.html und
+           ging mit jeder Liste neu ueber die Leitung. #}
+        <script src="{% static 'intern/js/tabelle.js' %}" defer></script>
         <script src="{% static 'intern/js/color-picker.js' %}" defer></script>
         <script src="{% static 'intern/js/tooltip.js' %}" defer></script>
         <script src="{% static 'intern/js/upload-progress.js' %}" defer></script>
