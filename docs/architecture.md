@@ -65,7 +65,7 @@ The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
 - `/.well-known/caldav` → `301` → `/caldav/`, and `/caldav/*` — read-only CalDAV calendar,
   same auth. Both services advertise each other, so one base URL finds both
 - `/tiles/<z>/<x>/<y>.png` — OSM tile proxy (no login required). In production nginx
-  intercepts this and serves from its disk cache (`/app/tiles/`, 7-day TTL) without hitting
+  intercepts this and serves from its disk cache (`/data/tiles/`, 7-day TTL) without hitting
   Django. In dev, `tiles_proxy` in `karte.py` fetches from OSM server-side so the user's IP
   is never sent to OSM.
 - `/admin/` — Django admin
@@ -141,11 +141,30 @@ SQLite in development (`db.sqlite3`, excluded from git). MySQL-compatible for pr
 
 ## Environment variables
 
-Only bootstrap settings (needed before the DB is available) are real env vars:
+Only bootstrap settings (needed before the DB is available) are real env vars, and each of them
+is exactly one variable:
 
+- `DATABASE_URL` — `mysql://user:pw@host:port/name` or `sqlite:////data/db.sqlite3`; unset →
+  SQLite in the data directory. Parsed by `config/datenbank.py`.
+- `VEREINS_URL` — base URL of the portal. `settings.py` derives `ALLOWED_HOSTS` and
+  `CSRF_TRUSTED_ORIGINS` from it (`hosts_aus_url`); `InternConfig.ready()` reads the value from
+  the `Konfiguration` table when the variable is absent, so it is needed on the first start
+  only. Neither set nor configured → only `localhost`, plus a warning in the log.
+- `CANTORHUB_DATA` — directory for everything that changes (`/data` in the image, set there;
+  the project directory in development). Feeds `MEDIA_ROOT`, the secret key file and the SQLite
+  fallback; nginx knows `/data/media` and `/data/tiles` as fixed paths.
+- `CANTORHUB_VERSION` — the bare version string, baked in at build time by `build.sh` from
+  `git describe --tags`. `settings.VERSION` prefixes the product name.
+- `SECRET_KEY` — optional override. Normally the key is generated on first start and kept as
+  `$CANTORHUB_DATA/secret_key` with mode 0600 (`config/geheimnis.py`), so it survives restarts
+  and image updates and with it every session. In `DEBUG` mode a fixed insecure constant is
+  used, which keeps the test run from writing anything to disk.
 - `DEBUG` — set to `1` for development mode
-- `SECRET_KEY` — hardcoded in `settings.py` (development only; override for production)
-- `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`/`DB_PORT` — MySQL connection (unset → SQLite)
+- `MIGRATE` — set → `start.sh` runs the migration path first (wipes the database)
+
+**Neither `config/datenbank.py` nor `config/geheimnis.py` imports Django**, and `settings.py`
+must not touch the database at import time: the whole test suite is `SimpleTestCase` and runs
+without one.
 
 ## Runtime configuration (`Konfiguration` table)
 

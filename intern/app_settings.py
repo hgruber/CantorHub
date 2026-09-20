@@ -154,6 +154,32 @@ def get_zeitzone():
     return settings.TIME_ZONE
 
 
+def get_sprache():
+    """Sprachkennung des Portals (``de-de``), als Zeichenkette.
+
+    Liest ``SPRACHE`` (Env hat Vorrang, siehe ``get_config``) und prüft gegen
+    Djangos eigene Sprachliste; bei fehlendem oder unbekanntem Wert bleibt es
+    bei ``settings.LANGUAGE_CODE``. Wie bei ``get_zeitzone`` soll ein Tippfehler
+    in der Konfiguration nichts zum Absturz bringen.
+
+    Die Portaltexte sind fest deutsch. Der Wert wirkt auf Djangos eigene Texte
+    und auf die Datums- und Zahlenformate.
+    """
+    from django.conf import global_settings, settings
+
+    roh = get_config("SPRACHE")
+    if not roh:
+        return settings.LANGUAGE_CODE
+    bekannt = {code.lower() for code, _ in global_settings.LANGUAGES}
+    if roh.lower() in bekannt:
+        return roh.lower()
+    # "de-de" ist kein eigener Eintrag in LANGUAGES, "de" schon — Django fällt
+    # intern ohnehin auf den Hauptsprachcode zurück, also hier genauso.
+    if roh.lower().split("-")[0] in bekannt:
+        return roh.lower()
+    return settings.LANGUAGE_CODE
+
+
 def get_config_list(key, default=""):
     """Kommaseparierten Konfigurationswert als Liste von Strings.
 

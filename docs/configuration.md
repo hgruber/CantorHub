@@ -113,12 +113,24 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `ANTRAG_EMAIL` (where membership applications are sent; empty → all active users with `intern.change_user`)
 - `MITGLIED_EINLADUNG_TAGE` (validity of the signed invite link to the join form, in days; default `7`)
 - `MITGLIED_BESTAETIGUNG_TAGE` (validity of the re-confirmation link, in days; default `30`)
-- `VEREINS_URL` (base URL of the portal, e.g. `https://portal.example.com`; supplies `{link}` in the activation mails)
+- `VEREINS_URL` (base URL of the portal, e.g. `https://portal.example.com`; supplies `{link}` in
+  the activation mails **and** `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` — one portal has one
+  address, and maintaining it twice only means one of the two is eventually wrong. On the very
+  first start it has to arrive as an environment variable, because `settings.py` is loaded
+  before there is a database; `InternConfig.ready()` reads it from here afterwards. Empty means
+  only `localhost` is accepted and every other request gets "Bad Request (400)" — the startup
+  log says so)
 - `ZEITZONE` (IANA time zone of the portal, default `Europe/Berlin`; a `select` of curated
   European + common world zones. Drives the iCal/CalDAV UTC conversion via
-  `intern.caldav.daten.zeitzone()` and is synced into `settings.TIME_ZONE` at app start so the
-  legacy iCal feed and Django template time formatting follow the same zone. CalDAV picks up a
-  change immediately; the rest follows on the next process restart)
+  `intern.caldav.daten.zeitzone()` and is synced into `settings.TIME_ZONE` **and the process
+  time zone** (`TZ` + `time.tzset()`) at app start, so the legacy iCal feed, Django template
+  formatting and `datetime.now()` all follow the same zone. CalDAV picks up a change
+  immediately; the rest follows on the next process restart)
+- `SPRACHE` (language of the portal, default `de-de`; a `select` of the languages Django ships
+  translations for. Governs Django's own texts — admin, form errors — and the date and number
+  formats. **The portal's own texts are German and are not translated**, so this is not a
+  language switch for the site. Applied in `InternConfig.ready()` via `translation.activate()`,
+  because the project runs without `LocaleMiddleware`; takes effect on the next restart)
 
 ### Datenschutz-Texte
 

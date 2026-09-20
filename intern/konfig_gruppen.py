@@ -119,8 +119,9 @@ FELDTYPEN: dict[str, str] = {
     "HOSTING_ANBIETER_ANSCHRIFT": "text",
     "DSB_NAME": "text",
     "DSB_ANSCHRIFT": "text",
-    # select (Optionen aus SELECT_OPTIONEN — hier IANA-Zeitzonen)
+    # select (Optionen aus SELECT_OPTIONEN — IANA-Zeitzonen, Sprachkennungen)
     "ZEITZONE": "select",
+    "SPRACHE": "select",
 }
 
 
@@ -152,6 +153,18 @@ SELECT_OPTIONEN: dict[str, tuple[tuple[str, str], ...]] = {
         ("America/New_York", "New York (US-Ost)"),
         ("America/Los_Angeles", "Los Angeles (US-West)"),
         ("UTC", "UTC"),
+    ),
+    # Die Portaltexte sind deutsch; diese Auswahl steuert Djangos eigene
+    # Texte sowie Datums- und Zahlenformate. Nur Sprachen, für die Django
+    # Übersetzungen mitbringt.
+    "SPRACHE": (
+        ("de-de", "Deutsch"),
+        ("de-at", "Deutsch (Österreich)"),
+        ("de-ch", "Deutsch (Schweiz)"),
+        ("en-gb", "Englisch (UK)"),
+        ("en-us", "Englisch (US)"),
+        ("fr-fr", "Französisch"),
+        ("nl-nl", "Niederländisch"),
     ),
 }
 
@@ -210,8 +223,8 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     "EJABBERD_API_TIMEOUT",
     "EJABBERD_BOT_JID", "EJABBERD_BOT_PASSWORD", "EJABBERD_BOT_PORT",
     "EJABBERD_BOT_RESCAN_SECONDS", "EJABBERD_BOT_RELAY_SECONDS",
-    # Portal, Karte & Benachrichtigungen — Zeitzone, Limits, Karte, OSM-Server, Benachrichtigungen
-    "ZEITZONE",
+    # Portal, Karte & Benachrichtigungen — Sprache, Zeitzone, Limits, Karte, OSM-Server, Benachrichtigungen
+    "SPRACHE", "ZEITZONE",
     "UPLOAD_MAX_MB", "PWRESET_MAX_PER_HOUR", "MAP_CENTER_ID", "MAP_DEFAULT_ZOOM",
     "MAP_CENTER_LAT", "MAP_CENTER_LNG", "OSM_TILE_URL", "OSM_NOMINATIM_URL",
     "NOTIFY_POLL_MS", "NOTIFY_DISMISS_MS", "TERMIN_BANNER_AKTIV", "FILE_PREFIX",
@@ -328,9 +341,10 @@ GRUPPEN: tuple[Gruppe, ...] = (
     Gruppe(
         id="portal",
         titel="Portal, Karte & Benachrichtigungen",
-        hinweis="Upload-Grenze, Karten-Mittelpunkt, OSM-Server, "
+        hinweis="Sprache und Zeitzone, Upload-Grenze, Karten-Mittelpunkt, OSM-Server, "
         "Benachrichtigungs-Intervalle und Terminerinnerung",
         keys=(
+            "SPRACHE",
             "ZEITZONE",
             "UPLOAD_MAX_MB",
             "PWRESET_MAX_PER_HOUR",

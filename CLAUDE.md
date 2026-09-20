@@ -27,12 +27,14 @@ DEBUG=1 ./start.sh                          # dev, incl. background jobs
 DEBUG=1 python manage.py test intern        # needs no database — see invariants
 python manage.py makemigrations intern --name <name> && python manage.py migrate
 python manage.py seitenmessung             # Seitenzeiten + Abfragezahl, gegen eine DB-Kopie
-docker build -t cantoreub . && docker run -p 8000:8000 cantoreub
+./build.sh                                  # image, tagged from `git describe --tags`
+podman run -p 8000:8000 -v cantorhub-data:/data \
+    -e DATABASE_URL=… -e VEREINS_URL=… cantorhub:latest
 ```
 
 The management commands an operator runs (reminders, re-confirmation mails, cleanup jobs,
-ejabberd admin) are listed in `README.md`. `./migrate.sh` wipes the database and belongs to the
-migration — see `migration.md`.
+ejabberd admin) are listed in `README.md`. `MIGRATE=1` selects the migration path in `start.sh`;
+it wipes the database and belongs to the migration — see `migration.md`.
 
 ## Where things are documented
 
@@ -124,6 +126,11 @@ reasoning where it matters.
 
 - **Migrations: never create `0004+`.** `0002_add_filer.py` is regenerated on every fresh install
   and must not be committed. All model changes go into `models.py` and are picked up from there.
+  The **image builds it at build time** (`makemigrations` in the `Dockerfile`, with `0003` moved
+  aside because it declares a dependency on `0002`) — otherwise whether the image can migrate at
+  all would depend on a gitignored file happening to sit in the build directory. Note the flip
+  side of the scheme: a database that already recorded `0002` never sees a later regeneration of
+  it, so model changes reach an existing instance only through the `MIGRATE` rebuild.
   See `migration.md`.
 - **All tests are `SimpleTestCase`.** A `TestCase` makes Django build a test database, which runs
   the data migration `0003_import`, which needs the legacy MySQL server. Keep logic free of DB
@@ -132,8 +139,29 @@ reasoning where it matters.
 - **`USE_TZ = False`.** Every datetime is naive local wall-clock time. Never call `localtime()`,
   and pass "now" in as an argument rather than reading the clock inside logic you want to test.
   The wall-clock zone is the `ZEITZONE` `Konfiguration` key (default `Europe/Berlin`), synced
-  into `settings.TIME_ZONE` at app start; `intern.caldav.daten.zeitzone()` reads it live for the
-  iCal/CalDAV UTC conversion.
+  into `settings.TIME_ZONE` **and into the process** (`os.environ["TZ"]` + `time.tzset()`) at app
+  start; `intern.caldav.daten.zeitzone()` reads it live for the iCal/CalDAV UTC conversion.
+  Setting `settings.TIME_ZONE` alone would only reach Django's formatting, not `datetime.now()`.
+  This also means the runtime image depends on the **system** `tzdata` package: without
+  `/usr/share/zoneinfo`, `tzset()` falls back to UTC without a word and every displayed time is
+  off. The base image happens to ship it, but the `Dockerfile` installs it explicitly because
+  the failure would be silent. The `tzdata` line in `requirements.txt` is the *Python* package
+  and serves `zoneinfo` only — it does not help `tzset()`.
+- **The image needs the `de_DE.UTF-8` locale.** `replacements.format_datetime` prints month
+  names through `%B` and sets `LC_TIME` for it; if that fails it swallows the error and returns
+  English names. Debian's `locale-gen` only reads `/etc/locale.gen` and ignores its argument, so
+  the locale has to be written into that file before generating. `MonatsnamenTest` guards it.
+- **Changing data lives under `CANTORHUB_DATA`, never next to the code.** `MEDIA_ROOT`, the
+  nginx tile cache, the generated secret key and a possible SQLite file all sit there (`/data`
+  in the image, a volume; the project directory in development). The code is part of the image
+  and read-only in spirit — `STATIC_ROOT` is the exception, because `collectstatic` runs at
+  build time and its output is a build artefact.
+- **Bootstrap settings come from at most one environment variable each**, parsed in
+  `config/datenbank.py` (`DATABASE_URL`, and `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` derived from
+  `VEREINS_URL`) and `config/geheimnis.py` (the secret key file). Both modules are free of
+  Django imports so that `settings.py` can load them early and `SimpleTestCase` can check them.
+  **`settings.py` must never touch the database at import time** — that is what would break the
+  whole test suite.
 - **Runtime settings come from the `Konfiguration` table**, read through `intern.app_settings`
   helpers — never `os.environ` or `settings` for these, and never at import time. Inside a
   request the helpers share one cached read of the whole table; outside one (management

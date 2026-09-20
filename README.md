@@ -24,11 +24,12 @@ legacy PHP portal is described in `migration.md`.
 
 ## Running it
 
-The container image carries the Python dependencies, nginx and its configuration; **the
-application code is bind-mounted, not copied into the image**. Inside the container, `start.sh`
-applies pending migrations, starts the background jobs and then runs nginx (port 8000) in front
-of gunicorn (three worker processes with four threads each — the threads matter because every
-file under `/media/` is checked by a Django subrequest, and short requests would otherwise wait
+The container image is self-contained: application code, collected static files, nginx and its
+configuration all live inside it, and it carries its version number. Nothing is bind-mounted
+except **one volume for the changing data** (`/data`). Inside the container, `start.sh` applies
+pending migrations, starts the background jobs and then runs nginx (port 8000) in front of
+gunicorn (three worker processes with four threads each — the threads matter because every file
+under `/media/` is checked by a Django subrequest, and short requests would otherwise wait
 behind a page being rendered).
 
 Nginx serves `/media/` with `Cache-Control: private, max-age=604800`, so a member's browser
@@ -38,35 +39,52 @@ a file writes a new blob and moves the references (see `docs/files.md`). If a fi
 replaced *in place* out of band, change its path — or the week has to pass.
 
 ```bash
-podman build -t cantorhub .
+./build.sh                               # names the image after `git describe --tags`
+
 podman run -d --name cantorhub -p 8000:8000 \
-    -v /srv/cantorhub:/app \
-    -e DB_HOST=db -e DB_NAME=cantorhub -e DB_USER=cantorhub -e DB_PASSWORD=secret \
-    -e CANTORHUB_VERSION="CantorHub v0.999" \
-    cantorhub
+    -v cantorhub-data:/data \
+    -e DATABASE_URL=mysql://cantorhub:secret@db:3306/cantorhub \
+    -e VEREINS_URL=https://chor.example.de \
+    cantorhub:v1.0.0
 ```
 
-Without `DB_HOST` the portal falls back to SQLite (`db.sqlite3` next to the code) — fine for a
-test instance, not for production. `CANTORHUB_VERSION` fills the version line in the sidebar
-(the image deliberately ships no `git`; without the variable it just shows „CantorHub").
+`VEREINS_URL` is only needed on the **first** start: it is written into the database during
+`post_migrate` and read from there afterwards, so later starts can leave it out and the address
+is changed under `/intern/konfiguration/`. Without `DATABASE_URL` the portal falls back to
+SQLite in `/data` — fine for a test instance, not for production.
 
-For local development:
+### The data volume
+
+Everything that changes lives under `/data`; nothing of it belongs in the image:
+
+```
+/data/media/              uploads, filer blobs and thumbnails (MEDIA_ROOT)
+/data/tiles/              nginx cache for the OSM map tiles
+/data/secret_key          generated on first start, mode 0600
+/data/db.sqlite3          only without DATABASE_URL
+/data/migration/          sources of the one-time import (see migration.md)
+```
+
+The secret key is **not** an environment variable: it is generated on the first start and kept
+in the volume, so it survives restarts and image updates — and with it every logged-in session.
+Setting `SECRET_KEY` still takes precedence if you would rather manage it yourself.
+
+For local development nothing changes; without `CANTORHUB_DATA` everything stays next to the
+code as before:
 
 ```bash
 DEBUG=1 ./start.sh                       # migrations, background jobs, dev server on :8001
 python manage.py runserver 0.0.0.0:8000  # dev server only
 ```
 
-`migrate.sh` exists as well — **it deletes the whole database** and belongs to the migration.
-Do not run it on a live instance.
+`MIGRATE=1` runs the one-time import from the legacy PHP portal and **deletes the whole
+database** — see `migration.md`. Do not set it on a live instance.
 
 ### Updating
 
-Application code: `git pull` in the mounted directory and restart the container.
-
-**`nginx.conf` is the exception — it lives inside the image.** Changes to it take effect only
-after a rebuild plus a container restart; a `git pull` alone silently keeps the old
-configuration. Verify what is actually loaded:
+Build a new image and restart the container — the code is part of the image, so there is no
+`git pull` on the server any more, and `nginx.conf` is no longer a special case. The volume is
+untouched by an update. To verify what is actually loaded:
 
 ```bash
 podman exec cantorhub nginx -T | grep real_ip
@@ -74,26 +92,41 @@ podman exec cantorhub nginx -T | grep real_ip
 
 ## Bootstrap environment variables
 
-Only the settings needed before the database is reachable are environment variables:
+Only what has to be known before the database is reachable is an environment variable — and
+only the first line is one you normally set:
 
 | Variable | Default | Description |
 |---|---|---|
+| `DATABASE_URL` | SQLite in `/data` | `mysql://user:password@host:3306/name` or `sqlite:////data/db.sqlite3`. Characters like `@` or `/` in the password must be percent-encoded (`%40`, `%2F`) |
+| `VEREINS_URL` | — | Base URL of the portal. Fills `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` and is seeded into the database; **needed on the first start only** |
+| `MIGRATE` | unset | set → the migration path runs first and the database is rebuilt |
 | `DEBUG` | unset | `1` enables development mode (dev server, debug pages) |
-| `SECRET_KEY` | — | Django secret key. **Required unless `DEBUG=1`** — without it the application refuses to start (`ImproperlyConfigured`); in development it falls back to a fixed insecure value |
-| `DB_HOST` | — | MySQL host; unset → SQLite |
-| `DB_NAME` | `cantorhub` | MySQL database name |
-| `DB_USER` | `cantorhub` | MySQL user |
-| `DB_PASSWORD` | — | MySQL password |
-| `DB_PORT` | `3306` | MySQL port |
+| `SECRET_KEY` | generated | overrides the generated key in `/data/secret_key` |
+| `CANTORHUB_DATA` | `/data` | set inside the image; the directory for everything changing |
 
-Two settings are still hardcoded in `config/settings.py` and need editing when the portal moves
-to a new hostname: `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`. A missing entry shows up as
-"Bad Request (400)" or as rejected form submissions.
+If `VEREINS_URL` is neither set nor configured, only `localhost` and `127.0.0.1` are accepted
+and every request under the real hostname is answered with "Bad Request (400)". The startup log
+says so in plain words.
 
-Everything else — mail server, XMPP, map, upload limits, all mail texts — lives in the database
-and is edited at runtime under `/intern/konfiguration/`. As a convenience, any such key may also
-be passed as an environment variable on first start: it is then written into the database during
-`post_migrate`, after which the variable can be dropped again.
+Everything else — mail server, XMPP, map, upload limits, language, time zone, all mail texts —
+lives in the database and is edited at runtime under `/intern/konfiguration/`. As a convenience,
+any such key may also be passed as an environment variable on first start: it is then written
+into the database during `post_migrate`, after which the variable can be dropped again.
+
+## Language and time zone
+
+German is the default throughout, and the image is built for it: the `de_DE.UTF-8` locale is
+generated, `LANG`/`LC_ALL` and `TZ=Europe/Berlin` are set, and the system time zone database is
+installed explicitly. Neither is cosmetic. Without the locale, the month names in the portal
+come out English — Debian's `locale-gen` ignores its argument and reads `/etc/locale.gen`, so
+simply asking for a locale on the command line generates nothing. And every timestamp in the
+portal is naive local wall-clock time (`USE_TZ = False`), so without `/usr/share/zoneinfo` the
+process would silently fall back to UTC and every displayed time would be off by an hour or two.
+
+Both are configuration keys and can be changed at runtime: `SPRACHE` (default `de-de`) and
+`ZEITZONE` (default `Europe/Berlin`). A changed time zone takes effect for CalDAV at once and
+for the rest of the portal on the next restart. The portal's own texts are German and are not
+translated; `SPRACHE` governs Django's own messages plus the date and number formats.
 
 ## Reverse proxy
 

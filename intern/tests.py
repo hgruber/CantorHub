@@ -1345,13 +1345,12 @@ class KonfigTypenTest(SimpleTestCase):
                 msg=f"Bool-Schlüssel {key!r} hat Default {defaults[key]!r}, nicht 0/1",
             )
 
-    def test_select_optionen_sind_gueltig_und_vollstaendig(self):
+    def test_select_optionen_sind_vollstaendig(self):
         # Jeder select-Typ braucht eine nicht-leere Optionliste in SELECT_OPTIONEN,
-        # und jeder Optionwert muss eine gültige IANA-Zone sein — sonst rendert das
-        # Template ein leeres Dropdown oder daten.zeitzone() schlägt fehl.
-        from zoneinfo import available_timezones
+        # sonst rendert das Template ein leeres Dropdown. Ob die *Werte* gültig
+        # sind, prüfen die beiden folgenden Tests je Schlüssel — die Maßstäbe
+        # sind verschieden (IANA-Zonen hier, Djangos Sprachliste dort).
         from intern.konfig_gruppen import FELDTYPEN, SELECT_OPTIONEN
-        zonen = available_timezones()
         for key, typ in FELDTYPEN.items():
             if typ != "select":
                 continue
@@ -1359,10 +1358,37 @@ class KonfigTypenTest(SimpleTestCase):
                 key, SELECT_OPTIONEN,
                 msg=f"select-Schlüssel {key!r} fehlt in SELECT_OPTIONEN",
             )
-            optionen = SELECT_OPTIONEN[key]
-            self.assertGreater(len(optionen), 0, msg=f"{key!r} hat keine Optionen")
-            for wert, _label in optionen:
-                self.assertIn(wert, zonen, msg=f"{key!r}: {wert!r} ist keine IANA-Zone")
+            self.assertGreater(
+                len(SELECT_OPTIONEN[key]), 0, msg=f"{key!r} hat keine Optionen"
+            )
+
+    def test_zeitzone_optionen_sind_iana_zonen(self):
+        # Ein Tippfehler hier ließe daten.zeitzone() beim iCal-Export scheitern.
+        from zoneinfo import available_timezones
+        from intern.konfig_gruppen import SELECT_OPTIONEN
+        zonen = available_timezones()
+        for wert, _label in SELECT_OPTIONEN["ZEITZONE"]:
+            self.assertIn(wert, zonen, msg=f"{wert!r} ist keine IANA-Zone")
+
+    def test_sprach_optionen_kennt_django(self):
+        # Eine Sprache, für die Django keine Übersetzung mitbringt, führte zu
+        # englischen Formularfehlern trotz anderer Auswahl. Django fällt vom
+        # Regionalcode auf die Hauptsprache zurück ("de-at" -> "de"), deshalb
+        # genügt es, wenn eine der beiden Formen bekannt ist.
+        from django.conf.global_settings import LANGUAGES
+        from intern.konfig_gruppen import SELECT_OPTIONEN
+        bekannt = {code.lower() for code, _name in LANGUAGES}
+        for wert, _label in SELECT_OPTIONEN["SPRACHE"]:
+            self.assertTrue(
+                wert in bekannt or wert.split("-")[0] in bekannt,
+                msg=f"{wert!r} kennt Django nicht",
+            )
+
+    def test_sprache_default_steht_in_optionen(self):
+        from intern.konfig_gruppen import SELECT_OPTIONEN
+        defaults = {key: value for key, value, _desc in self._defaults()}
+        optionen = {wert for wert, _label in SELECT_OPTIONEN["SPRACHE"]}
+        self.assertIn(defaults["SPRACHE"], optionen)
 
     def test_zeitzone_default_steht_in_optionen(self):
         # Der Defaultwert aus _CONFIG_DEFAULTS muss eine der Auswahl-Optionen sein,
@@ -1426,6 +1452,52 @@ class ZeitzoneTest(SimpleTestCase):
         from intern.caldav.daten import zeitzone
         from zoneinfo import ZoneInfo
         self.assertEqual(zeitzone(), ZoneInfo(settings.TIME_ZONE))
+
+
+class SpracheTest(SimpleTestCase):
+    """SPRACHE-Konfiguration — wie ZeitzoneTest DB-frei über Env geprüft."""
+
+    def test_env_vorrang(self):
+        from intern.app_settings import get_sprache
+        with mock.patch.dict(os.environ, {"SPRACHE": "fr-fr"}):
+            self.assertEqual(get_sprache(), "fr-fr")
+
+    def test_regionalcode_wird_akzeptiert(self):
+        # "de-at" steht nicht in Djangos LANGUAGES, "de" schon — Django fällt
+        # intern auf die Hauptsprache zurück, also darf der Wert durch.
+        from intern.app_settings import get_sprache
+        with mock.patch.dict(os.environ, {"SPRACHE": "de-at"}):
+            self.assertEqual(get_sprache(), "de-at")
+
+    def test_ungueltiger_wert_faellt_zurueck(self):
+        from django.conf import settings
+        from intern.app_settings import get_sprache
+        with mock.patch.dict(os.environ, {"SPRACHE": "kl-ingon"}):
+            self.assertEqual(get_sprache(), settings.LANGUAGE_CODE)
+
+    def test_fallback_ohne_env_und_ohne_db(self):
+        from django.conf import settings
+        from intern.app_settings import get_sprache
+        env = {k: v for k, v in os.environ.items() if k != "SPRACHE"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertEqual(get_sprache(), settings.LANGUAGE_CODE)
+
+
+class MonatsnamenTest(SimpleTestCase):
+    """Wächter für die deutsche Locale — lokal wie im Container.
+
+    ``replacements.format_datetime`` gibt Monatsnamen über ``%B`` aus und setzt
+    dafür ``LC_TIME`` auf ``de_DE``; schlägt das fehl, fängt es den Fehler ab und
+    liefert stillschweigend englische Namen. Im Abbild ist genau das passiert,
+    weil ``locale-gen`` in Debian sein Argument ignoriert und deshalb nie eine
+    Locale erzeugt wurde. Dieser Test schlägt dann fehl, statt dass es irgendwann
+    jemandem auf einer Seite auffällt.
+    """
+
+    def test_monatsname_ist_deutsch(self):
+        from intern.replacements import format_datetime
+        ausgabe = format_datetime(datetime(2026, 1, 15, 20, 0))
+        self.assertIn("Januar", ausgabe, msg=f"Deutsche Locale fehlt: {ausgabe!r}")
 
 
 class KonfigurierteHelperTest(SimpleTestCase):
@@ -2558,3 +2630,132 @@ class StatikQuellkartenTest(SimpleTestCase):
             "collectstatic bricht an diesen Referenzen ab — .map beilegen "
             "oder die Zeile entfernen:\n" + "\n".join(gefunden),
         )
+
+
+class DatenbankUrlTest(SimpleTestCase):
+    """Die eine Datenbank-Variable — Parser aus config/datenbank.py.
+
+    Ersetzt DB_HOST/DB_NAME/DB_USER/DB_PASSWORD/DB_PORT. Ein Fehler hier trifft
+    jeden Start, deshalb sind auch die Fehlerfälle geprüft: ein unvollständiger
+    Wert soll laut abbrechen und nicht stillschweigend auf SQLite ausweichen.
+    """
+
+    def test_mysql_vollstaendig(self):
+        from config.datenbank import datenbank_aus_url
+        cfg = datenbank_aus_url("mysql://chor:geheim@db:3307/cantorhub", "/data")
+        self.assertEqual(cfg["ENGINE"], "django.db.backends.mysql")
+        self.assertEqual(cfg["NAME"], "cantorhub")
+        self.assertEqual(cfg["USER"], "chor")
+        self.assertEqual(cfg["PASSWORD"], "geheim")
+        self.assertEqual(cfg["HOST"], "db")
+        self.assertEqual(cfg["PORT"], "3307")
+        self.assertEqual(cfg["OPTIONS"]["charset"], "utf8mb4")
+
+    def test_mysql_ohne_port_nimmt_3306(self):
+        from config.datenbank import datenbank_aus_url
+        self.assertEqual(
+            datenbank_aus_url("mysql://u:p@db/ch", "/data")["PORT"], "3306"
+        )
+
+    def test_sonderzeichen_im_passwort(self):
+        # Ein @ im Passwort muss als %40 kodiert sein, sonst zerfiele die URL an
+        # der falschen Stelle — hier zählt, dass wir es wieder auspacken.
+        from config.datenbank import datenbank_aus_url
+        cfg = datenbank_aus_url("mysql://u:p%40ss%2Fwort@db:3306/ch", "/data")
+        self.assertEqual(cfg["PASSWORD"], "p@ss/wort")
+
+    def test_sqlite_absoluter_pfad(self):
+        # Drei und vier Schrägstriche bedeuten dasselbe; der Unterschied ist eine
+        # Fussangel der URL-Form, keine Absicht des Betreibers.
+        from config.datenbank import datenbank_aus_url
+        for url in ("sqlite:////data/db.sqlite3", "sqlite:///data/db.sqlite3"):
+            cfg = datenbank_aus_url(url, "/anderswo")
+            self.assertEqual(cfg["ENGINE"], "django.db.backends.sqlite3")
+            self.assertEqual(cfg["NAME"], "/data/db.sqlite3", msg=url)
+
+    def test_leere_url_nimmt_datenverzeichnis(self):
+        from config.datenbank import datenbank_aus_url
+        cfg = datenbank_aus_url("", "/data")
+        self.assertEqual(cfg["ENGINE"], "django.db.backends.sqlite3")
+        self.assertEqual(cfg["NAME"], "/data/db.sqlite3")
+        self.assertEqual(cfg["OPTIONS"]["timeout"], 20)
+
+    def test_unbekanntes_schema_bricht_ab(self):
+        from config.datenbank import KonfigurationsFehler, datenbank_aus_url
+        with self.assertRaises(KonfigurationsFehler):
+            datenbank_aus_url("postgres://u:p@db/ch", "/data")
+
+    def test_unvollstaendige_angaben_brechen_ab(self):
+        from config.datenbank import KonfigurationsFehler, datenbank_aus_url
+        for url in ("mysql://u:p@db/", "mysql:///ch", "sqlite://", "sqlite://host/x"):
+            with self.assertRaises(KonfigurationsFehler, msg=url):
+                datenbank_aus_url(url, "/data")
+
+
+class HostsAusUrlTest(SimpleTestCase):
+    """ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS aus VEREINS_URL."""
+
+    def test_hostname_und_origin(self):
+        from config.datenbank import hosts_aus_url
+        hosts, origins = hosts_aus_url("https://chor.example.de")
+        self.assertIn("chor.example.de", hosts)
+        self.assertIn("https://chor.example.de", origins)
+
+    def test_lokale_eintraege_bleiben_immer(self):
+        # nginx spricht gunicorn über 127.0.0.1 an — die auth_request-Unteranfrage
+        # für jede Datei unter /media/ trägt diesen Host.
+        from config.datenbank import hosts_aus_url
+        hosts, _ = hosts_aus_url("https://chor.example.de")
+        self.assertIn("localhost", hosts)
+        self.assertIn("127.0.0.1", hosts)
+
+    def test_port_bleibt_im_origin(self):
+        from config.datenbank import hosts_aus_url
+        hosts, origins = hosts_aus_url("http://narsil:8000")
+        self.assertIn("narsil", hosts)          # ALLOWED_HOSTS ohne Port
+        self.assertIn("http://narsil:8000", origins)   # Origin mit Port
+
+    def test_leere_url_nur_lokal(self):
+        from config.datenbank import hosts_aus_url
+        hosts, origins = hosts_aus_url("")
+        self.assertEqual(hosts, ["localhost", "127.0.0.1"])
+        self.assertEqual(len(origins), 2)
+
+    def test_unbrauchbare_url_bricht_nicht(self):
+        # Ein verstellter Wert darf den Start nicht verhindern; apps.ready()
+        # protokolliert stattdessen eine Warnung.
+        from config.datenbank import hosts_aus_url
+        for url in ("kein-schema.de", "ftp://x.de", "   "):
+            hosts, _ = hosts_aus_url(url)
+            self.assertEqual(hosts, ["localhost", "127.0.0.1"], msg=url)
+
+
+class GeheimnisTest(SimpleTestCase):
+    """Die Schlüsseldatei im Datenverzeichnis (config/geheimnis.py)."""
+
+    def test_erzeugt_und_liest_denselben_wert(self):
+        import tempfile
+        from config.geheimnis import schluessel_lesen_oder_erzeugen
+        with tempfile.TemporaryDirectory() as verzeichnis:
+            pfad = Path(verzeichnis) / "secret_key"
+            erster = schluessel_lesen_oder_erzeugen(pfad)
+            self.assertTrue(erster)
+            # Zweiter Start: derselbe Schlüssel, sonst wären alle Sitzungen weg.
+            self.assertEqual(schluessel_lesen_oder_erzeugen(pfad), erster)
+
+    def test_rechte_sind_0600(self):
+        import stat
+        import tempfile
+        from config.geheimnis import schluessel_lesen_oder_erzeugen
+        with tempfile.TemporaryDirectory() as verzeichnis:
+            pfad = Path(verzeichnis) / "secret_key"
+            schluessel_lesen_oder_erzeugen(pfad)
+            modus = stat.S_IMODE(pfad.stat().st_mode)
+            self.assertEqual(modus, 0o600, msg=f"Rechte {modus:o}")
+
+    def test_unbeschreibbares_verzeichnis_meldet_sich(self):
+        # Fehlendes oder nur lesbares Datenverzeichnis: lieber ein lesbarer
+        # Fehler als ein Portal, das bei jedem Neustart alle Sitzungen verwirft.
+        from config.geheimnis import GeheimnisFehler, schluessel_lesen_oder_erzeugen
+        with self.assertRaises(GeheimnisFehler):
+            schluessel_lesen_oder_erzeugen("/gibt/es/nicht/secret_key")

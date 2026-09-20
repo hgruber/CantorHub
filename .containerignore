@@ -1,0 +1,48 @@
+# Was nicht ins Abbild gehoert. Ohne diese Datei zoege das COPY im Dockerfile
+# mehrere Gigabyte Alt- und Betriebsdaten mit — public/ allein 2,5 GB.
+#
+# Achtung bei den Schraegstrichen: "/static/" mit fuehrendem Schraegstrich meint
+# ausschliesslich STATIC_ROOT im Wurzelverzeichnis. Ohne ihn verschwaende auch
+# intern/static/ — und damit jede Datei, die collectstatic einsammeln soll.
+
+# Betriebsdaten (gehoeren ins Volume unter /data)
+/media/
+/static/
+/tiles/
+/db.sqlite3
+*.sqlite3
+*.sqlite3-journal
+
+# Quellen des Einmal-Imports (MIGRATIONSPFAD, liegen unter /data/migration/)
+/public/
+/Avatare/
+
+# Versionsverwaltung und Werkzeuge
+.git/
+.gitignore
+.claude/
+.containerignore
+.vscode/
+.idea/
+
+# Wird im Dockerfile frisch erzeugt. Laege sie hier mit im Bauverzeichnis, kaeme
+# je nach Rechner eine andere — womoeglich veraltete — Fassung ins Abbild.
+intern/migrations/0002_add_filer.py
+
+# Python-Zwischenstaende
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.coverage
+coverage.xml
+
+# Entwuerfe und Notizen, die im Betrieb niemand braucht.
+# Die SVG-Entwuerfe liegen im Wurzelverzeichnis — deshalb "/*.svg" und nicht
+# "*.svg": das Branding unter intern/static/intern/brand/ muss mit ins Abbild.
+/icons.html
+/*.svg
+/beitragsordnung_vorlaeufig.pdf
+*~
+*.swp
+*.orig
+*.log

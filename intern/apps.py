@@ -31,6 +31,10 @@ _CONFIG_DEFAULTS = [
     ("ZEITZONE", "Europe/Berlin",
      "Zeitzone des Portals (IANA-Name); steuert iCal/CalDAV-Uhrzeitumrechnung "
      "und Django-Zeitformatierung"),
+    ("SPRACHE", "de-de",
+     "Sprache des Portals; steuert Datums- und Zahlenformate sowie Djangos "
+     "eigene Texte (Verwaltung, Formularfehler). Die Portaltexte selbst sind "
+     "deutsch und werden nicht übersetzt"),
     ("UPLOAD_MAX_MB", "50", "Maximale Upload-Größe in MB"),
     ("MAP_CENTER_ID", "1", "ID des Orts, der als Karten-Mittelpunkt dient"),
     ("MAP_DEFAULT_ZOOM", "12", "Standard-Zoomstufe der Gesamtkarte"),
@@ -613,6 +617,72 @@ def _seed_config(sender, **kwargs):
         _migrating.active = False
 
 
+def _zeitzone_uebernehmen(zone):
+    """Die Zone auch für den Prozess setzen, nicht nur für Django.
+
+    ``time.tzset()`` gibt es auf Windows nicht — dort bleibt es bei dem, was
+    Django beim Laden der Einstellungen gesetzt hat.
+    """
+    import os
+    import time
+
+    if not hasattr(time, "tzset"):
+        return
+    if os.environ.get("TZ") == zone:
+        return
+    os.environ["TZ"] = zone
+    time.tzset()
+
+
+def _erlaubte_hosts_nachziehen():
+    """``ALLOWED_HOSTS``/``CSRF_TRUSTED_ORIGINS`` aus ``VEREINS_URL`` der Datenbank.
+
+    ``settings.py`` kennt beim Laden nur die Umgebungsvariable — eine Datenbank
+    gibt es dort noch nicht. Steht die Adresse bereits in der Konfiguration (der
+    Normalfall ab dem zweiten Start), holen wir sie hier nach; die Variable darf
+    dann entfallen.
+
+    Der Zeitpunkt trägt: ``ready()`` läuft vor der ersten Anfrage, also bevor
+    ``CsrfViewMiddleware`` die Origins in seine ``cached_property`` übernimmt.
+    """
+    import logging
+    import os
+    import warnings
+
+    from django.conf import settings
+
+    if os.environ.get("VEREINS_URL"):
+        return  # settings.py hat den Wert bereits verarbeitet.
+
+    try:
+        from config.datenbank import hosts_aus_url
+
+        from .app_settings import get_base_url
+
+        # Der DB-Zugriff in ready() ist Absicht; die RuntimeWarning dazu stünde
+        # sonst in jedem Startprotokoll (wie beim Zeitzonenblock oben).
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            url = get_base_url()
+        if url:
+            settings.ALLOWED_HOSTS, settings.CSRF_TRUSTED_ORIGINS = hosts_aus_url(url)
+            return
+    except Exception:
+        # Kein Grund, den Start zu verhindern: ohne Datenbank (Testlauf, erster
+        # migrate) bleibt es bei den lokalen Einträgen aus settings.py.
+        pass
+
+    # Hierher kommt man mit leerer VEREINS_URL. Das Portal läuft, ist unter
+    # seinem eigenen Namen aber nicht erreichbar — und ein „Bad Request (400)"
+    # sagt niemandem, woran es liegt.
+    logging.getLogger(__name__).warning(
+        "VEREINS_URL ist weder gesetzt noch konfiguriert: es gelten nur "
+        "localhost und 127.0.0.1. Zugriffe unter dem echten Hostnamen "
+        "beantwortet Django mit 400. Beim ersten Start VEREINS_URL als "
+        "Umgebungsvariable mitgeben."
+    )
+
+
 class InternConfig(AppConfig):
     name = "intern"
     default_auto_field = "django.db.models.BigAutoField"
@@ -653,5 +723,33 @@ class InternConfig(AppConfig):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", RuntimeWarning)
                 settings.TIME_ZONE = get_zeitzone()
+                # settings.TIME_ZONE allein erreicht nur Djangos Formatierung.
+                # datetime.now() folgt der Zone des Prozesses, und die setzt
+                # Django einmalig beim Laden der Einstellungen — also vor
+                # diesem Nachziehen. Ohne tzset() liefe das Portal bei einer
+                # abweichend konfigurierten ZEITZONE mit zwei Zeitbegriffen.
+                # Bei USE_TZ = False ist jede gespeicherte Zeit naive Ortszeit;
+                # eine Abweichung wäre also nicht zu bemerken, nur falsch.
+                _zeitzone_uebernehmen(settings.TIME_ZONE)
         except Exception:
             pass
+
+        # Sprache aus der Konfiguration. Ohne LocaleMiddleware bestimmt allein
+        # die beim Start aktivierte Sprache, was Django ausgibt — ein Setzen
+        # von settings.LANGUAGE_CODE bliebe folgenlos, deshalb activate().
+        # RuntimeWarning wie oben unterdrückt: der DB-Zugriff in ready() ist
+        # Absicht, und die Warnung stünde sonst in jedem Startprotokoll.
+        try:
+            import warnings
+            from django.conf import settings
+            from django.utils import translation
+            from .app_settings import get_sprache
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                settings.LANGUAGE_CODE = get_sprache()
+                translation.activate(settings.LANGUAGE_CODE)
+        except Exception:
+            pass
+
+        _erlaubte_hosts_nachziehen()

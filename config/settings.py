@@ -14,19 +14,32 @@ import os
 import subprocess
 from pathlib import Path
 
+from config.datenbank import KonfigurationsFehler, datenbank_aus_url, hosts_aus_url
+from config.geheimnis import GeheimnisFehler, schluessel_lesen_oder_erzeugen
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Alles Veränderliche — Uploads, Kachelcache, Schlüssel, eine etwaige
+# SQLite-Datei — liegt unter DATEN, niemals neben dem Code: im Container ist der
+# Code Teil des unveränderlichen Abbilds, DATEN das eingehängte Volume
+# (CANTORHUB_DATA=/data, im Image vorgesetzt). Ohne die Variable — also in der
+# Entwicklung — bleibt es wie bisher beim Projektverzeichnis.
+DATEN = Path(os.environ.get("CANTORHUB_DATA", BASE_DIR))
+
 
 def _versionsstring():
     """CantorHub vX.Y — aus CANTORHUB_VERSION, sonst git, sonst Platzhalter.
 
-    Der Container hat kein git mehr im Image; dort setzt der Betreiber
-    CANTORHUB_VERSION beim Start. Fehlt das .git-Verzeichnis (etwa weil der
-    Bind-Mount es nicht enthält), startete das Portal bisher gar nicht erst.
+    Im Image steckt die Version als Bauargument (build.sh füllt sie aus
+    `git describe --tags`, also „v1.0.0" bzw. „v1.0.0-7-g7c8b717"); git selbst
+    ist dort nicht vorhanden. In der Entwicklung zählt der git-Zweig die Commits.
     """
     aus_env = os.environ.get("CANTORHUB_VERSION")
     if aus_env:
-        return aus_env
+        # Nur die nackte Versionsnummer steht in der Variable; der Produktname
+        # gehört nicht in ein Bauargument.
+        return "CantorHub " + aus_env.strip()
     try:
         anzahl = subprocess.check_output(
             ["git", "rev-list", "--count", "HEAD"],
@@ -48,18 +61,29 @@ VERSION = _versionsstring()
 DEBUG = os.environ.get("DEBUG", False) == "1"
 
 # SECURITY WARNING: keep the secret key used in production secret!
+#
+# Reihenfolge: gesetzte Umgebungsvariable, sonst in der Entwicklung die feste
+# unsichere Konstante (so schreibt der Testlauf nichts ins Dateisystem), sonst
+# die Schlüsseldatei im Datenverzeichnis — sie wird beim ersten Start angelegt.
+# Siehe config/geheimnis.py, warum das keine Zeile in `Konfiguration` ist.
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     if DEBUG:
         SECRET_KEY = "django-insecure-96c((62k0dknm__v%zrw3#3=7pc^$tc)&#w1m50#5ly)o71#la"
     else:
-        from django.core.exceptions import ImproperlyConfigured
+        try:
+            SECRET_KEY = schluessel_lesen_oder_erzeugen(DATEN / "secret_key")
+        except GeheimnisFehler as fehler:
+            from django.core.exceptions import ImproperlyConfigured
 
-        raise ImproperlyConfigured(
-            "SECRET_KEY environment variable must be set when DEBUG is off."
-        )
+            raise ImproperlyConfigured(str(fehler)) from fehler
 
-ALLOWED_HOSTS = ["test.example.org", "narsil", "localhost", "127.0.0.1"]
+# Aus VEREINS_URL abgeleitet — derselbe Wert trägt die Links in den E-Mails.
+# Beim allerersten Start kommt er als Umgebungsvariable und wird von
+# `_seed_config` (intern/apps.py) in die Datenbank geschrieben; ab dann zieht
+# `InternConfig.ready()` ihn von dort nach und die Variable kann entfallen.
+# Darum steht hier nur der Bootstrap-Fall: ohne Variable zunächst nur lokal.
+ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS = hosts_aus_url(os.environ.get("VEREINS_URL", ""))
 
 # Weder USE_X_FORWARDED_HOST noch USE_X_FORWARDED_PORT: X-Forwarded-Host und
 # -Port setzt in der Kette haproxy → nginx → gunicorn niemand.  Beide waeren
@@ -68,12 +92,6 @@ ALLOWED_HOSTS = ["test.example.org", "narsil", "localhost", "127.0.0.1"]
 # Passwort-Reset-Mail.  Den echten Host reicht nginx als Host-Header durch;
 # nginx loescht die beiden Header zusaetzlich.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-CSRF_TRUSTED_ORIGINS = [
-    "https://test.example.org",
-    "http://narsil:8000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
@@ -147,31 +165,18 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-if os.environ.get("DB_HOST"):
+# Eine Variable statt fünf: mysql://benutzer:passwort@host:3306/name oder
+# sqlite:////data/db.sqlite3. Ohne sie SQLite im Datenverzeichnis — in der
+# Entwicklung also weiterhin db.sqlite3 neben dem Code. Parser und Fehlertexte
+# in config/datenbank.py.
+try:
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": os.environ.get("DB_NAME", "cantorhub"),
-            "USER": os.environ.get("DB_USER", "cantorhub"),
-            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-            "HOST": os.environ["DB_HOST"],
-            "PORT": os.environ.get("DB_PORT", "3306"),
-            "OPTIONS": {
-                "charset": "utf8mb4",
-                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
-        }
+        "default": datenbank_aus_url(os.environ.get("DATABASE_URL", ""), DATEN)
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-            "OPTIONS": {
-                "timeout": 20,
-            },
-        }
-    }
+except KonfigurationsFehler as fehler:
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(str(fehler)) from fehler
 
 
 # Cache
@@ -224,13 +229,27 @@ PASSWORD_HASHERS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
+# Deutsch und Europe/Berlin sind die Vorgaben — es ist ein deutsches Projekt.
+# Beide Werte sind zur Laufzeit änderbar: `SPRACHE` und `ZEITZONE` in der
+# Tabelle `Konfiguration`, nachgezogen in InternConfig.ready() (intern/apps.py).
+# Was hier steht, gilt bis dahin und immer dann, wenn die Datenbank schweigt.
+#
+# Die Portaltexte selbst sind fest deutsch und nicht übersetzt; SPRACHE wirkt
+# auf Djangos Eigentexte (Admin, Formularfehler) sowie Datums- und Zahlenformate.
 LANGUAGE_CODE = "de-de"
 
 TIME_ZONE = "Europe/Berlin"
 
 USE_I18N = True
 
+# Jede Zeit im Portal ist naive Ortszeit. Das setzt voraus, dass der Prozess in
+# der richtigen Zone läuft: Django setzt aus TIME_ZONE die Umgebungsvariable TZ
+# und ruft time.tzset(), was ohne /usr/share/zoneinfo still auf UTC zurückfällt.
+# Deshalb gehört das Systempaket tzdata ins Laufzeitabbild — siehe Dockerfile.
 USE_TZ = False
+
+# USE_THOUSAND_SEPARATOR bleibt bewusst aus: es würde jede Zahl in jeder Vorlage
+# gruppieren, auch Datensatznummern („1.234" statt 1234).
 
 LOGIN_URL = "/intern/login/"
 
@@ -239,8 +258,10 @@ LOGIN_URL = "/intern/login/"
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = []
+# STATIC_ROOT bleibt beim Code: collectstatic läuft im Container zur Bauzeit,
+# das Ergebnis gehört damit ins Abbild und nicht ins Datenvolumen.
 STATIC_ROOT = BASE_DIR / "static"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = DATEN / "media"
 MEDIA_URL = "/media/"
 
 STORAGES = {
