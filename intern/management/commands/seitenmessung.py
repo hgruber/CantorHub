@@ -153,7 +153,12 @@ class Command(BaseCommand):
         laeufe = max(1, optionen["laeufe"])
         filter_text = (optionen.get("seite") or "").lower()
 
-        client = Client()
+        # Der Test-Client meldet sich von Haus aus als Host „testserver“ — ein
+        # Name, den nur `setup_test_environment()` an ALLOWED_HOSTS anhängt, und
+        # das läuft hier nicht. Ohne diesen Schalter endet jede Messung in einem
+        # DisallowedHost. `localhost` steht immer in ALLOWED_HOSTS (siehe
+        # `config/datenbank.hosts_aus_url`), auch in der fertigen Instanz.
+        client = Client(SERVER_NAME="localhost")
         client.force_login(nutzer)
         self.stdout.write(
             f"Mitglied: {nutzer.username} "

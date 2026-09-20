@@ -40,7 +40,13 @@ def _project_meta_berechnen(request):
         "vereinsname_kurz": get_vereinsname_kurz(),
         "brand_farbe":      get_brand_farbe(),
     }
-    if request.user.is_authenticated:
+    # Fehlerseiten rendern durch denselben Prozessor, und ein Fehler aus
+    # `CommonMiddleware` (etwa ein unerlaubter Host) tritt auf, bevor
+    # `AuthenticationMiddleware` das Attribut gesetzt hat. Django macht es in
+    # seinem eigenen `auth`-Prozessor genauso — ohne den Umweg würde aus jeder
+    # 400er-Antwort ein nackter Traceback.
+    nutzer = getattr(request, "user", None)
+    if nutzer is not None and nutzer.is_authenticated:
         from django.utils.timezone import now
         from intern.models import ChangeLog, Termin, Zusage
         from intern.terminzeit import kommende_q
