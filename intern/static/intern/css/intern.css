@@ -2947,8 +2947,12 @@ table.mitglied-table tr.stimme-group-start td {
 [data-theme="dark"] .zusage-state-na    { background: rgba(255,255,255,.05); color: var(--t4); border-color: rgba(255,255,255,.08); }
 
 /* Next-event banner */
+/* Liegt als Geschwister von .content direkt unter der Topbar (siehe base.html),
+   damit der Rollbereich .content nicht um die Bannerhöhe überläuft. Als
+   Flex-Element von .app-main darf es deshalb nicht schrumpfen. */
 .termin-banner[hidden] { display: none; }
 .termin-banner {
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -6373,8 +6377,8 @@ body.join-page {
 }
 
 /* === Kalender === */
-/* Kalenderseite füllt den Rest von .content – auch neben dem Termin-Banner,
-   der als Geschwister im selben .content sitzt. */
+/* Kalenderseite füllt den Rest von .content: .cal-page ist das einzige Kind und
+   trägt flex:1, damit das Monatsraster mitwächst statt .content zu überlaufen. */
 .content:has(.cal-page) { display: flex; flex-direction: column; }
 .cal-page {
     flex: 1;

@@ -155,8 +155,13 @@ overrides the `--aufst-*` size variables). The card has to follow every change o
 drag-and-drop editor does not go through htmx, so `anwesenheit.js` swaps `#aufstellung-section`
 from the same response by hand.
 
-A slim banner is shown site-wide at the top of `<main class="content">` in `base.html`
-(`_termin_banner.html`), highlighting the next upcoming event (`banner_termin` /
+A slim banner is shown site-wide in `base.html` (`_termin_banner.html`), directly below the
+top bar and — deliberately — *next to* `<main class="content">`, not inside it: `.content` is the
+scroll container, and a page that fills it (`.table-view`, `.forum-layout`, `.article-editor`,
+`.history-view`, `.diff-view` all carry `height: 100%`) would overflow it by exactly the banner's
+height, giving the page a second scrollbar beside the scrolling table body. Sitting outside also
+keeps it clear of the full-bleed map (`.karte-wrap` is `position: absolute; inset: 0` in
+`.content`), which used to cover it. It highlights the next upcoming event (`banner_termin` /
 `banner_my_option`, computed in `config/context_processors.py`'s `project_meta`) with a
 countdown, location and — when `anwesenheit=True` — the same quick Zusage buttons
 (governed by `ZUSAGE_TRANSITIONS`). The buttons POST to `termin_zusage` with a hidden

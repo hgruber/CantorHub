@@ -382,9 +382,16 @@
                 </div>
             </header>
 
+            {% comment %}
+            Der Banner sitzt neben .content, nicht darin: .content ist der Rollbereich,
+            und ein Kind mit height:100% (.table-view, .forum-layout, …) würde dort
+            zusammen mit dem Banner genau um dessen Höhe überlaufen — ein zweiter
+            Rollbalken neben dem Tabellenkörper.
+            {% endcomment %}
+            {% if banner_termin %}{% include "_termin_banner.html" %}{% endif %}
+
             <!-- Page Content -->
             <main class="content">
-                {% if banner_termin %}{% include "_termin_banner.html" %}{% endif %}
                 {% block content %}{% endblock %}
             </main>
         </div>
