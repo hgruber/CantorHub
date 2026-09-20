@@ -90,6 +90,29 @@ untouched by an update. To verify what is actually loaded:
 podman exec cantorhub nginx -T | grep real_ip
 ```
 
+If the server hosts the bare repository the project is pushed to, `post-receive.sh` does the
+build there. Install it once:
+
+```bash
+scp post-receive.sh root@server:/root/podman/CantorHub.git/hooks/post-receive
+ssh root@server chmod +x /root/podman/CantorHub.git/hooks/post-receive
+```
+
+From then on a push to `master` changes nothing on the server; **a version tag builds the
+image**. The hook accepts a tag only if it is named `v<major>.<minor>.<patch>` (optionally with
+a pre-release suffix, `v1.0.0-rc1`) and sits on `master`, exports that tag with `git archive`
+into a scratch directory, and builds `cantorhub:<tag>` plus `cantorhub:latest` from it. Older
+version images beyond the newest three are removed, and the build log is appended to
+`/var/log/cantorhub-build.log`. The settings at the top of the script decide whether a
+pre-release also moves `:latest` and whether the container is restarted afterwards
+(`NEUSTART=1`) — leave the restart off until the unit no longer mounts the old working copy
+over `/app`.
+
+```bash
+git tag -a v1.0.1 -m "Release 1.0.1"
+git push origin master v1.0.1     # the build runs on the server, output comes back as `remote:`
+```
+
 ## Bootstrap environment variables
 
 Only what has to be known before the database is reachable is an environment variable — and
