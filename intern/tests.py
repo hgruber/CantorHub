@@ -28,6 +28,7 @@ from intern.anfragespeicher import gemerkt
 from intern.anfragespeicher import leeren as anfrage_leeren
 from intern.anfragespeicher import verwerfen as anfrage_verwerfen
 from intern.aufstellung import aufstellung
+from intern.blob_aufraeumen import verwaiste_pfade, zugeordnetes_verzeichnis
 from intern.forms import SchnellSelect, SchnellSelectMultiple
 from intern.middleware import muss_auffrischen
 from intern.tables2_beschleunigung import (
@@ -3130,3 +3131,78 @@ class GeheimnisTest(SimpleTestCase):
         from config.geheimnis import GeheimnisFehler, schluessel_lesen_oder_erzeugen
         with self.assertRaises(GeheimnisFehler):
             schluessel_lesen_oder_erzeugen("/gibt/es/nicht/secret_key")
+
+
+class VerwaisteBlobsTest(SimpleTestCase):
+    """Die Regel hinter ``cleanup_verwaiste_blobs`` (intern/blob_aufraeumen.py).
+
+    Sie entscheidet über unwiederbringliches Löschen und muss deshalb in beide
+    Richtungen festgenagelt sein: kein lebender Blob darf fallen, und keine
+    Leiche darf durchkommen.
+    """
+
+    BLOB = "filer_public/de/ad/deadf6ff-8436-467d-8e98-04314a39226b/126.jpg"
+    THUMB = (
+        "filer_public_thumbnails/filer_public/de/ad/"
+        "deadf6ff-8436-467d-8e98-04314a39226b/126.jpg__32x32_q85_crop.jpg"
+    )
+    ALT = "filer_public/11/22/11223344-0000-0000-0000-000000000000/126.jpg"
+
+    def test_bekannter_blob_bleibt(self):
+        self.assertEqual(verwaiste_pfade([self.BLOB], {self.BLOB}), [])
+
+    def test_unbekannter_blob_faellt(self):
+        self.assertEqual(verwaiste_pfade([self.BLOB], set()), [self.BLOB])
+
+    def test_thumbnail_faellt_mit_seiner_quelle(self):
+        # Quelle bekannt: das Thumbnail bleibt. Quelle weg: es geht mit.
+        self.assertEqual(verwaiste_pfade([self.THUMB], {self.BLOB}), [])
+        self.assertEqual(verwaiste_pfade([self.THUMB], set()), [self.THUMB])
+
+    def test_thumbnail_ueberlebt_andere_datei_im_quellverzeichnis(self):
+        # Verglichen wird das Verzeichnis, nicht der zurueckgerechnete Name:
+        # ein Originalname darf selbst „__" tragen.
+        heikel = (
+            "filer_public_thumbnails/filer_public/de/ad/"
+            "deadf6ff-8436-467d-8e98-04314a39226b/a__b.jpg__32x32_q85.jpg"
+        )
+        self.assertEqual(verwaiste_pfade([heikel], {self.BLOB}), [])
+
+    def test_versionsvorschau_neben_ihrem_blob_bleibt(self):
+        # Die 96x96-Vorschauen der Dateiversionen landen mangels
+        # Storage-Konfiguration innerhalb von filer_public/ statt unter der
+        # Thumbnail-base_dir (docs/files.md). Sie stehen in keiner Spalte:
+        # pfadweise verglichen waeren sie Waisen und fielen bei jedem Lauf weg.
+        vorschau = (
+            "filer_public/de/ad/deadf6ff-8436-467d-8e98-04314a39226b/"
+            "126.jpg__96x96_q85_crop.jpg"
+        )
+        self.assertEqual(verwaiste_pfade([vorschau], {self.BLOB}), [])
+        # Ist der Blob weg, geht die Vorschau mit.
+        self.assertEqual(verwaiste_pfade([vorschau], set()), [vorschau])
+
+    def test_dateiversion_haelt_ihren_blob(self):
+        # Der Fall, an dem filer_check --delete-orphans scheitert: eine alte
+        # Fassung hat keine File-Zeile, ihr Pfad steht nur in DateiVersion.
+        self.assertEqual(
+            verwaiste_pfade([self.BLOB, self.ALT], {self.BLOB, self.ALT}), []
+        )
+        self.assertEqual(
+            verwaiste_pfade([self.BLOB, self.ALT], {self.BLOB}), [self.ALT]
+        )
+
+    def test_fremde_pfade_bleiben_unangetastet(self):
+        # Was nicht unter den filer-Praefixen liegt, geht die Regel nichts an.
+        fremd = ["tiles/12/34/56.png", "secret_key", "filer_publicX/a.jpg"]
+        self.assertEqual(verwaiste_pfade(fremd, set()), [])
+
+    def test_thumbnailpraefix_ist_kein_blobpraefix(self):
+        # Ohne den Trenner im Vergleich waere „filer_public_thumbnails/…" ein
+        # Treffer auf „filer_public" — jedes Thumbnail gaelte dann als Blob,
+        # den die Datenbank nicht kennt.
+        quelle = "filer_public/de/ad/deadf6ff-8436-467d-8e98-04314a39226b"
+        self.assertEqual(zugeordnetes_verzeichnis(self.THUMB), quelle)
+        # Der Blob selbst landet im Blob-Zweig und zeigt auf dasselbe
+        # Verzeichnis — nicht auf eines unterhalb des Thumbnail-Praefixes.
+        self.assertEqual(zugeordnetes_verzeichnis(self.BLOB), quelle)
+        self.assertIsNone(zugeordnetes_verzeichnis("tiles/12/34/56.png"))

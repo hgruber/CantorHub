@@ -34,9 +34,19 @@ with connection.cursor() as c:
 print('Database cleared.')
 "
     else
-        rm -rf "${CANTORHUB_DATA}/db.sqlite3" "${CANTORHUB_DATA}/media"
-        mkdir -p "${CANTORHUB_DATA}/media"
+        rm -rf "${CANTORHUB_DATA}/db.sqlite3"
     fi
+
+    # Die Blobs gehoeren zu der Datenbank, die gerade verworfen wurde, und
+    # muessen mit ihr weg. filer vergibt jeder Datei einen frischen UUID-Pfad
+    # (generate_filename.randomized): der naechste Import ueberschreibt nichts,
+    # er legt den gesamten Bestand daneben. Ohne dieses rm wuechse das Volume
+    # bei jedem Migrationslauf um den vollen Datenbestand (public/ allein
+    # 2,5 GB), und aufzuraeumen waere das hinterher nur noch mit
+    # "cleanup_verwaiste_blobs" — filer_check --delete-orphans ist hier
+    # verboten. Steht ausserhalb des if: es gilt fuer beide Datenbanken.
+    rm -rf "${CANTORHUB_DATA}/media"
+    mkdir -p "${CANTORHUB_DATA}/media"
 
     # 0002 wird bei jedem Lauf neu erzeugt und nie eingecheckt (siehe CLAUDE.md);
     # 0003 muss dafuer kurz beiseite, sonst haengt es an einer Migration, die es

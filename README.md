@@ -307,6 +307,7 @@ Run with `podman exec cantorhub python manage.py <command>`.
 | `send_auftritt_erinnerungen [--dry-run] [--now ISO] [--termin ID] [--force]` | One pass of the gig reminders. `--now` tests the timing without touching the clock; `--force` ignores existing send markers (use after a crashed batch) |
 | `cleanup_changelog [--days N] [--dry-run]` | Delete audit-log entries past the retention period (config key `AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE`, default 1095 days) |
 | `cleanup_dateiversionen [--keep N] [--days N] [--dry-run]` | Prune old file revisions and their blobs (config keys `DATEIVERSION_AUFBEWAHRUNG_ANZAHL` / `DATEIVERSION_AUFBEWAHRUNG_TAGE`; command defaults: keep 10, 730 days) |
+| `cleanup_verwaiste_blobs [--loeschen] [--min-alter MINUTEN] [--liste]` | Report files under `MEDIA_ROOT` that no database row references any more, and delete them on an explicit `--loeschen`. Without that flag nothing happens. This is the safe stand-in for `filer_check --delete-orphans` (see below): it knows about `DateiVersion` blobs and about the previews that sit next to their blob. `--min-alter` (default 60) spares files younger than that, so a concurrent upload whose row is not committed yet survives. Not wired into `start.sh` — run it by hand |
 | `cleanup_erinnerung_versand [--days N] [--dry-run]` | Delete `ErinnerungVersand` send markers past the retention period (config key `ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE`, default 365 days). Wire into `start.sh` alongside the other cleanup jobs |
 | `ejabberd_admin sync` | Full XMPP startup sync — bot account, room JIDs, room configuration |
 | `ejabberd_admin <group> <verb>` | XMPP admin operations: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
@@ -316,7 +317,19 @@ Run with `podman exec cantorhub python manage.py <command>`.
 | `createsuperuser` | Django's own — create an administrator |
 
 **Never run `filer_check --delete-orphans`.** File revisions are stored without a database row on
-purpose, so that command would delete the entire version history.
+purpose, so that command would delete the entire version history. Use `cleanup_verwaiste_blobs`
+instead — same job, but it consults `DateiVersion` as well.
+
+**If the volume keeps growing across migration runs**, that was a bug in `start.sh` up to
+v1.0.0-rc2: with `DATABASE_URL` set it dropped every table but left `media/` in place, and since
+filer hands each imported file a fresh UUID path, the next import added the whole set again
+instead of overwriting it. Fixed — but a volume that already carries those leftovers needs
+`cleanup_verwaiste_blobs` once to get the space back:
+
+```bash
+podman exec cantorhub python manage.py cleanup_verwaiste_blobs        # report only
+podman exec cantorhub python manage.py cleanup_verwaiste_blobs --loeschen
+```
 
 ## Logs and troubleshooting
 

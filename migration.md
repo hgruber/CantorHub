@@ -24,7 +24,12 @@ and `/data/migration/Avatare/` in the container. They are needed for this one ru
 deleted afterwards; `public/` alone is 2.5 GB and has no business in the image.
 
 It **discards all data**: with `DATABASE_URL` pointing at MySQL it drops every table, otherwise it
-deletes the SQLite file and the whole `media/` tree. That is acceptable only during the current
+deletes the SQLite file — and in both cases the whole `media/` tree goes with it. The blobs belong
+to the database that was just thrown away: filer gives every imported file a fresh UUID path, so a
+second run would not overwrite them but pile a complete second set on top, growing the volume by
+the full data set each time (`public/` alone is 2.5 GB). Until v1.0.0-rc2 the `rm` sat inside the
+SQLite branch and the MySQL side did exactly that; `cleanup_verwaiste_blobs` cleans up a volume
+where it already happened (see „Orphaned blobs" in `docs/files.md`). That is acceptable only during the current
 test phase, where every run rebuilds the portal from the legacy data. Afterwards the test system
 simply receives a copy of the production database and starts without `MIGRATE`.
 

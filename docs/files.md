@@ -67,7 +67,8 @@ path. Reached from the `#id` badge in the folder listing.
 A version blob has **no `File` row** — that is the whole point, and it makes the blob an
 orphan by filer's reckoning. **Never run `filer_check --delete-orphans` on this project:** it
 walks `filer_public/` and deletes every blob without a matching row, i.e. the entire version
-history.
+history. When blobs really do need collecting, `cleanup_verwaiste_blobs` is the command that
+may: it reads `DateiVersion.pfad` alongside `File.file` (see „Orphaned blobs" below).
 
 Every row of the version table carries a preview (`_vorschau()` in `views/files.py`, 96×96
 crop, `.v-vorschau` in `intern.css`); versions are addressed by path, which
@@ -274,6 +275,38 @@ exhaustion; each thread closes its DB connection when done. The signal is suppre
 
 Folder IDs are hard-coded constants in `settings.py` (`FOLDER_AVATARE = 1`, `FOLDER_MUSIK = 5`
 etc.).
+
+## Orphaned blobs: `cleanup_verwaiste_blobs`
+
+A blob can outlive every row that named it. The way that happens in practice is the migration
+path: `MIGRATE=1` throws the database away, and because filer gives each imported file a fresh
+UUID path (`generate_filename.randomized`), the next import does not overwrite the old set — it
+puts a second one beside it. Up to v1.0.0-rc2 `start.sh` deleted `media/` only in the SQLite
+branch, so on the MySQL side the volume grew by the full data set on every run. `start.sh` now
+clears `media/` for both, and this command recovers what earlier runs left behind.
+
+The rule sits in `intern/blob_aufraeumen.py`, free of database and filesystem so it can be
+tested (`VerwaisteBlobsTest`); the command holds the two halves that touch either. It decides by
+**directory**, not by individual path, and that is what makes it safe where
+`filer_check --delete-orphans` is not:
+
+- **`DateiVersion.pfad` counts as a reference.** A superseded revision has no `File` row by
+  construction — the very thing `--delete-orphans` mistakes for garbage.
+- **A blob's directory shelters its neighbours.** The 96×96 version previews land *inside*
+  `filer_public/` rather than under the thumbnail `base_dir` (see above) and appear in no column
+  at all; compared path by path they would look orphaned and be deleted on every run. Since each
+  UUID directory belongs to exactly one file, „a known blob lives here" is the right question.
+  It also sidesteps reconstructing a thumbnail's source name, which is ambiguous when the
+  original name contains `__`.
+- **Only the two filer prefixes are considered.** Anything else under `MEDIA_ROOT` is none of
+  this command's business.
+- **`--min-alter` (default 60 minutes) spares fresh files.** An upload has written its blob
+  before its row is committed; without the grace period a cleanup running at that moment deletes
+  it out from under the request.
+
+Nothing is deleted without `--loeschen`; the default run only reports count and size. It is
+deliberately **not** wired into `start.sh` — unlike the retention jobs it is a repair tool, and
+a bad run costs files that no version history holds.
 
 ## Retention: what the cleanup jobs actually delete
 

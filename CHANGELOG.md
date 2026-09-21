@@ -9,6 +9,21 @@ Vorabversionen (`v1.0.0-rc3`) brauchen keinen eigenen Abschnitt: für sie genüg
 oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen. Einen eigenen bekommen
 dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
+## Unveröffentlicht
+
+- Migration: ein Lauf mit `MIGRATE=1` gegen MySQL verwarf die Datenbank, ließ `media/` aber
+  stehen. Weil filer jeder Datei beim Import einen frischen UUID-Pfad gibt, überschrieb der
+  nächste Import nichts, sondern legte den gesamten Bestand daneben — das Volume wuchs bei
+  jeder Migration um den vollen Datenbestand (allein `public/` sind 2,5 GB), und die Blobs des
+  vorherigen Laufs waren anschließend von keiner Zeile mehr auffindbar. `start.sh` räumt
+  `media/` jetzt für beide Datenbanken ab, nicht nur im SQLite-Zweig
+- Neues Kommando `cleanup_verwaiste_blobs`: meldet Dateien unter `MEDIA_ROOT`, zu denen es
+  keine Datenbankzeile mehr gibt, und löscht sie auf ausdrückliches `--loeschen`. Für die
+  Volumes gedacht, auf denen sich das oben beschriebene Wachstum bereits angesammelt hat.
+  Es ist **kein** Ersatz für `filer_check --delete-orphans`, sondern dessen sichere Fassung:
+  es kennt die `DateiVersion`-Blobs, die bewusst ohne `filer.File`-Zeile liegen, und ebenso
+  die Vorschauen, die neben ihrem Blob statt unter der Thumbnail-`base_dir` landen
+
 ## v1.0.0-rc2 — 2026-09-21
 
 - Foren: der Trenner „Neu seit Deinem letzten Besuch" stand bei Nachrichten aus derselben

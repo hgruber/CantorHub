@@ -80,6 +80,8 @@ Cross-cutting modules: `models.py`, `forms.py`, `signals.py` (audit log, activat
 indexing, MUC room assignment), `app_settings.py` (runtime config), `folders.py` (the standard
 folders under Backstage), `folder_access.py` / `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
 shared by the folder browser and the wiki media bar), `verwendung.py` (what a delete would break),
+`blob_aufraeumen.py` (which files under `MEDIA_ROOT` no row references any more — the rule
+behind `cleanup_verwaiste_blobs`, see `docs/files.md`),
 `terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
 events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
 `docs/forum.md`), `aufstellung.py` (the stage picture of the answers
@@ -182,7 +184,9 @@ reasoning where it matters.
   it to `OPTIONAL_LEER` with the reason. See „Completeness" in `docs/configuration.md`.
 - **A file's identity is its storage path**, not its row: several `filer.File` rows may share one
   blob. Use the helpers in `views/files.py` instead of touching `File.file`/`name`. Never run
-  `filer_check --delete-orphans` — it would delete the whole version history.
+  `filer_check --delete-orphans` — it would delete the whole version history;
+  `cleanup_verwaiste_blobs` is the safe stand-in, and `intern/blob_aufraeumen.py` holds the rule
+  it decides by.
 - **Every write path on a file must call `darf_avatar_aendern()`**, or one member can overwrite
   another's profile picture.
 - **A folder without `FolderPermission` rows is open.** Code that creates a folder must set rows
