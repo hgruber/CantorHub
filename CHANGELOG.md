@@ -10,6 +10,9 @@ oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
 
 ## Unveröffentlicht
 
+- Rundmail an Mitglieder: ohne konfigurierten SMTP-Server ist der Senden-Knopf ausgegraut und
+  nennt im Tooltip den Grund, statt eine Mail zu melden, die nur im Log landet. Die Seite selbst
+  bleibt erreichbar, Text und Anhänge lassen sich weiter vorbereiten
 - Changelog-Pflicht: das Bare-Repo weist ein Versions-Tag ab, dessen Commit keinen gefüllten
   `CHANGELOG.md`-Abschnitt für genau diese Version trägt (`update.sh`); Vorabversionen dürfen sich
   auf „Unveröffentlicht" oder den Abschnitt ihrer Endfassung stützen

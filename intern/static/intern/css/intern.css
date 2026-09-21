@@ -938,6 +938,20 @@ a.btn:hover {
     box-shadow: 0 2px 10px color-mix(in srgb, var(--brand) 28%, transparent);
 }
 
+/* Gesperrter Knopf — die Deckkraft traegt die Themefarbe mit, hell wie dunkel.
+   Bewusst an einer eigenen Klasse statt an button:disabled: global wuerde
+   pointer-events den Tooltip am gesperrten Loeschen-Knopf (gruppen.html) und
+   den cursor: wait der Anwesenheitsspeicherung schlucken.
+   pointer-events statt :hover:not(:disabled), weil ein solcher Ausschluss an
+   den Hover-Regeln oben deren Spezifitaet ueber .btn-danger:hover hoebe und den
+   Loeschen-Knopf beim Ueberfahren markenfarben faerbte.  Der erklaerende
+   Tooltip haengt ohnehin am umschliessenden Element, nicht am Knopf. */
+.btn.btn-gesperrt:disabled {
+    opacity: 0.45;
+    box-shadow: none;
+    pointer-events: none;
+}
+
 .btn-secondary,
 a.btn-secondary {
     background: transparent;

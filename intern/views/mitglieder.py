@@ -20,7 +20,7 @@ from filer.models import File, Folder
 from intern import ejabberd, folders
 from intern.app_settings import (
     get_config_bool, get_map_center, get_vereinsname_lang, is_ejabberd_configured,
-    konfiguration_gepuffert,
+    is_email_configured, konfiguration_gepuffert,
 )
 from intern.mail import neu_verbinden, send_config_mail, versende_serie
 
@@ -541,6 +541,11 @@ def mitglied_benachrichtigen(request):
     notify_groups_data = _notify_groups_data(notify_groups)
     valid_group_ids = {g.pk for g in notify_groups}
 
+    # Ohne SMTP-Server schreibt intern/email_backend.py die Nachricht nur ins Log.
+    # Die Seite bleibt erreichbar — Text und Anhaenge lassen sich vorbereiten —,
+    # nur der Versand ist gesperrt.
+    mail_konfiguriert = is_email_configured()
+
     if request.method == "POST":
         subject = request.POST.get("subject", "").strip()
         body = request.POST.get("body", "").strip()
@@ -555,6 +560,13 @@ def mitglied_benachrichtigen(request):
             errors.append("Keine Empfänger mit E-Mail-Adresse gefunden.")
         if len(notify_groups) > 1 and not selected_group_id:
             errors.append("Bitte eine Gruppe für die Signatur wählen.")
+        if not mail_konfiguriert:
+            # Der Senden-Knopf ist ausgegraut; wer trotzdem abschickt, soll nicht
+            # die Erfolgsmeldung fuer eine nie verschickte Mail bekommen.
+            errors.append(
+                "E-Mail-Versand ist nicht eingerichtet — in der Konfiguration "
+                "fehlt der SMTP-Server (EMAIL_HOST)."
+            )
 
         signature_group_name = ""
         signature_members = []
@@ -611,6 +623,7 @@ def mitglied_benachrichtigen(request):
             "notify_groups": notify_groups,
             "notify_groups_data": notify_groups_data,
             "selected_group_id": selected_group_id,
+            "mail_konfiguriert": mail_konfiguriert,
             "errors": errors,
         })
 
@@ -627,6 +640,7 @@ def mitglied_benachrichtigen(request):
         "notify_groups": notify_groups,
         "notify_groups_data": notify_groups_data,
         "selected_group_id": "",
+        "mail_konfiguriert": mail_konfiguriert,
         "errors": [],
     })
 

@@ -115,6 +115,7 @@
 
     <!-- Action bar -->
     <div class="form-actions">
+      {% if mail_konfiguriert %}
       <button type="submit" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="toolicon"
              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -123,6 +124,28 @@
         </svg>
         Senden
       </button>
+      {% else %}
+      {% comment %}
+        Der Hinweis haengt am umschliessenden <span>, nicht am Knopf: Chrome
+        unterdrueckt Mausereignisse auf deaktivierten Bedienelementen, ein title
+        direkt am <button> zeigte dort keinen Tooltip.  Der sichtbare Satz
+        daneben ist fuer Touch-Geraete, die gar keinen Hover kennen.
+      {% endcomment %}
+      <span style="cursor: not-allowed;"
+            title="E-Mail-Versand ist nicht eingerichtet — in der Konfiguration fehlt der SMTP-Server (EMAIL_HOST).">
+        <button type="submit" class="btn btn-primary btn-gesperrt" disabled aria-disabled="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="toolicon"
+               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          Senden
+        </button>
+      </span>
+      <span class="text-muted" style="font-size: calc(12rem / 14);">
+        E-Mail-Versand ist nicht eingerichtet — in der Konfiguration fehlt der SMTP-Server (EMAIL_HOST).
+      </span>
+      {% endif %}
       <a href="{% url 'mitglied_list' %}{% if filter_params %}?{{ filter_params }}{% endif %}"
          class="btn btn-secondary">Abbrechen</a>
     </div>
