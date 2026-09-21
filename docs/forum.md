@@ -76,10 +76,25 @@ wrapper below it):
   member opens the forum in the portal. Counting own posts as unread, or dragging the marker
   along to the member's newest own message, were both considered and rejected: the first
   contradicts the rule above, the second would silently mark older messages from others as read.
+- **Order.** Everything here speaks ids: the marker, `trenner_id` (the smallest unread id),
+  the poll (`forum_get`, `id__gt`) and the paging (`forum_more`, `id__lt`) — and so does the
+  display, `Mitteilung.Meta.ordering = ["-id"]`. It used to order by `-datum`, which has no
+  tiebreaker: `datum` is stored at second resolution, so messages sharing a second came back in
+  an undefined order — SQLite returns such a group *ascending* inside a descending list. The
+  divider then landed in the middle of that group, and the number of messages visible above it
+  differed from the badge by one — upwards or downwards, depending on where the marker sat
+  inside the group. The same mismatch could hide a message for good: `forum_view` cut the first
+  25 by date and handed on the smallest id it had loaded, while `forum_more` pages by
+  `id__lt`, so a tie straddling that boundary left a message in neither half. Ordering by id
+  also matches what the live view already did — `forum_get` prepends what arrives
+  (`hx-swap="afterbegin"`), regardless of its `datum`. `ForumGelesenTest` pins it.
 - **Starting point.** A member without any row yet (feature just deployed, fresh database, new
   member) gets one per forum at its current newest message (`sichere_ausgangspunkt`), so the
   history doesn't show up as new. A forum that appears later without a row — newly created, or
-  newly readable after a permission change — counts from 0.
+  newly readable after a permission change — counts from 0. `forum_view` calls
+  `sichere_ausgangspunkt` as well, but only when the forum it opens has no marker at all:
+  opening a forum directly as the very first forum action would otherwise leave the member with
+  that single row, and the `exists()` short-circuit would never set up the others.
 - **Restricted forums** are excluded through `_hidden_forum_ids`, like everywhere else.
 - **Cost.** The sidebar dot is one `exists()` query in `config/context_processors.py`, skipped
   for requests carrying `HX-Request` — partials have no sidebar. `forum_get` goes further and

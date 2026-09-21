@@ -365,10 +365,12 @@ class FolderPermission(models.Model):
 
 class ForumQuerySet(models.QuerySet):
     def extra_data(self):
-        # Get the full name of the sender of the most recent message
+        # Get the full name of the sender of the most recent message.
+        # Nach id wie ``Forum.letzte()``, damit die Spalte denselben Beitrag meint,
+        # den das Forum oben zeigt.
         last_sender_subquery = (
             Mitteilung.objects.filter(forum=OuterRef("pk"))
-            .order_by("-datum")
+            .order_by("-id")
             .values(
                 besitzer=Concat("sender__first_name", Value(" "), "sender__last_name")
             )[:1]
@@ -435,7 +437,13 @@ class Mitteilung(models.Model):
 
     class Meta:
         verbose_name_plural = "Mitteilungen"
-        ordering = ["-datum"]
+        # By id, not by datum: the read marker (ForumGelesen.bis_id), the divider
+        # (trenner_id), the poll (forum_get: id__gt) and the paging (forum_more:
+        # id__lt) all speak ids. datum is stored at second resolution and has no
+        # tiebreaker, so messages sharing a second came back in an undefined order
+        # — the divider landed inside that group and the visible number of new
+        # messages differed from the badge by one. See docs/forum.md.
+        ordering = ["-id"]
 
     def __str__(self):
         return f"Message from {self.sender} in forum {self.forum}"

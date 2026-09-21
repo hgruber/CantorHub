@@ -10,6 +10,14 @@ oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
 
 ## Unveröffentlicht
 
+- Foren: der Trenner „Neu seit Deinem letzten Besuch" stand bei Nachrichten aus derselben
+  Sekunde an der falschen Stelle, wodurch die Zahl der sichtbar neuen Beiträge um eins vom
+  Badge abwich — mal einer zu viel, mal einer zu wenig. Die Liste sortierte nach dem Zeitpunkt,
+  der nur sekundengenau gespeichert wird; Lesemarker, Trenner, Nachladen und der
+  Fünf-Sekunden-Poll rechnen dagegen alle mit der laufenden Nummer. Jetzt tut es die Anzeige
+  auch. Nebenbei behoben: fiel ein solcher Gleichstand genau auf die Grenze der ersten 25
+  Nachrichten, wurde eine Nachricht beim Hochscrollen übersprungen und war gar nicht mehr zu
+  sehen
 - Forenliste: die Zahl ungelesener Nachrichten steht jetzt als Badge in der Spalte „Anzahl",
   vor der Gesamtzahl, die dafür gedämpft gesetzt ist. Bisher hing sie hinter dem Themennamen
   und wanderte je nach dessen Länge über die Zeile, weit weg von der Zahl, auf die sie sich

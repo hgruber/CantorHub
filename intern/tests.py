@@ -2461,6 +2461,42 @@ class ForumGelesenTest(SimpleTestCase):
 
         self.assertEqual(trenner_id([(3, 8), (2, 9), (1, 8)], 0, 7), 1)
 
+    def test_mitteilungen_sind_nach_id_sortiert(self):
+        """Gepinnt: ``trenner_id`` liefert die kleinste ungelesene id, und
+        ``_messages.html`` setzt den Trenner hinter genau diese Nachricht. Das
+        trennt nur dann sauber, wenn die Liste selbst nach id absteigt. ``datum``
+        taugt dafür nicht — es hat Sekundenauflösung, und bei Gleichstand ist die
+        Reihenfolge undefiniert."""
+        from intern.models import Mitteilung
+
+        self.assertEqual(list(Mitteilung._meta.ordering), ["-id"])
+
+    def test_trenner_teilt_absteigende_liste_sauber(self):
+        """Der Vertrag, den ``_messages.html`` rendert: über dem Trenner steht nur
+        Neues (fremd-ungelesen oder eigenes), darunter nur Gelesenes. Die Daten
+        sind der Gleichstand aus Forum 146 — vier Nachrichten in einer Sekunde."""
+        from intern.forum_gelesen import ist_ungelesen, trenner_id
+
+        ich = 7
+        bis = 115
+        nachrichten = [(119, 29), (118, 29), (117, 29), (116, 29), (115, 8)]
+        trenner = trenner_id(nachrichten, bis, ich)
+        self.assertEqual(trenner, 116)
+
+        ueber = [n for n in nachrichten if n[0] >= trenner]
+        darunter = [n for n in nachrichten if n[0] < trenner]
+        self.assertEqual(len(ueber), 4)
+        for nid, sender in ueber:
+            self.assertTrue(
+                ist_ungelesen(nid, sender, bis, ich) or sender == ich,
+                f"#{nid} steht über dem Trenner, ist aber gelesen",
+            )
+        for nid, sender in darunter:
+            self.assertFalse(
+                ist_ungelesen(nid, sender, bis, ich),
+                f"#{nid} steht unter dem Trenner, ist aber ungelesen",
+            )
+
 
 class ForumTabelleTest(SimpleTestCase):
     """Die Anzahl-Spalte der Forenliste (``intern/tables.py``).

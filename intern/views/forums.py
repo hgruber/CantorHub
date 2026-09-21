@@ -258,9 +258,16 @@ def forum_view(request, forum):
     last_id = max((msg.id for msg in messages), default=0)
     oldest_id = min((msg.id for msg in messages), default=0)
     # Read the old marker before raising it: the divider shows what was new on arrival.
+    alt_bis_id = lese_bis_id(request.user, forum)
+    if alt_bis_id is None:
+        # Wer als allererste Forumsaktion ein Forum direkt öffnet, hätte danach
+        # genau eine Zeile — und ``sichere_ausgangspunkt`` käme wegen seines
+        # ``exists()``-Kurzschlusses für die übrigen Foren nie mehr zum Zug. Nur
+        # in diesem Fall, sonst kostete es jeden Forumsaufruf eine Abfrage.
+        sichere_ausgangspunkt(request.user)
     trenner_nach = trenner_id(
         [(msg.id, msg.sender_id) for msg in messages],
-        lese_bis_id(request.user, forum),
+        alt_bis_id,
         request.user.id,
     )
     markiere_gelesen(request.user, forum, last_id)

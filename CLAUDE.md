@@ -187,6 +187,11 @@ reasoning where it matters.
   another's profile picture.
 - **A folder without `FolderPermission` rows is open.** Code that creates a folder must set rows
   explicitly.
+- **Forum messages are ordered by `id`, not `datum`.** The read marker (`ForumGelesen.bis_id`),
+  the „Neu seit Deinem letzten Besuch" divider, the 5 s poll (`id__gt`) and the paging
+  (`id__lt`) all speak ids, so the display must too. `datum` has second resolution and no
+  tiebreaker: a tie put the divider inside the tied group, one off the badge. See „Order" in
+  `docs/forum.md`; `ForumGelesenTest` pins `Mitteilung.Meta.ordering`.
 - **Mail bodies live entirely in `MAIL_*` config keys**, never in templates. Subjects stay in
   Python.
 - **DAV: bump `_SERIALISIERUNG`** in `carddav/vcard.py` / `caldav/ical.py` on every change to the
