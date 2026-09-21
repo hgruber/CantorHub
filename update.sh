@@ -9,6 +9,11 @@
 # ihn ginge eine Fassung in Betrieb, von der niemand mehr nachlesen kann, was
 # sich geaendert hat.
 #
+# Streng gilt das fuer Endfassungen. Eine Vorabversion (v1.0.0-rc2) darf sich
+# auch auf den Abschnitt ihrer Endfassung oder auf die Sammlung
+# "## Unveroeffentlicht" stuetzen — in der rc-Phase wird oft getaggt, und wer
+# jeden Zwischenstand einzeln beschreiben muss, beschreibt am Ende gar nichts.
+#
 # Warum update und nicht pre-receive: pre-receive laeuft einmal fuer den ganzen
 # Push und kennt nur alles oder nichts. update laeuft je Ref, also landet master
 # und nur das Tag wird verweigert — und ohne Tag baut post-receive nicht. Die
@@ -48,6 +53,11 @@ set -uo pipefail
 readonly TAG_MUSTER='^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$'
 
 readonly DATEI='CHANGELOG.md'
+
+# Die Sammelueberschrift. Der Umlaut steht hier, weil der Wert wortwoertlich mit
+# der Ueberschrift in der Datei uebereinstimmen muss — Kommentare bleiben ASCII.
+readonly SAMMELT='Unveröffentlicht'
+
 readonly NOTAUSGANG='changelog=skip'
 readonly TAGMARKE='[ohne-changelog]'
 readonly PROTOKOLL='/var/log/cantorhub-build.log'
@@ -89,6 +99,11 @@ abweisung() {
     melde ""
     melde "    - was sich geaendert hat"
     melde ""
+    if [ "${tag}" != "${tag%%-*}" ]; then
+        melde "Fuer eine Vorabversion genuegt auch ein gefuellter Abschnitt \"## ${tag%%-*}\""
+        melde "oder \"## ${SAMMELT}\" — dort sammelt sich, was noch kein Tag hat."
+        melde ""
+    fi
     melde "Nachtragen, committen, Tag daraufsetzen, neu pushen:"
     melde ""
     melde "    git tag -f -a ${tag} -m \"Release ${tag#v}\""
@@ -118,6 +133,25 @@ notausgang_gesetzt() {
 tagmarke_gesetzt() {
     [ "$(git cat-file -t "${newrev}" 2>/dev/null)" = "tag" ] || return 1
     git cat-file tag "${newrev}" 2>/dev/null | grep -qF "${TAGMARKE}"
+}
+
+# Traegt ${inhalt} einen Abschnitt "## <kopf>" mit mindestens einem Stichpunkt?
+#   0 = ja, 1 = Ueberschrift da, aber ohne Stichpunkt, 2 = keine solche Ueberschrift
+#
+# Verglichen wird das zweite Feld der Ueberschriftzeile ("## v1.0.1 — 2026-09-21"
+# ergibt "v1.0.1"): kein Maskieren der Punkte, kein Zweifel an der Abgrenzung.
+# Eine "###"-Zeile beendet den Abschnitt nicht, sie gehoert hinein. Exit 3 aus awk
+# heisst: gar keine solche Ueberschrift.
+abschnitt_gefuellt() {
+    local kopf="$1" abschnitt
+    abschnitt="$(awk -v kopf="${kopf}" '
+        /^##[[:space:]]/ { drin = ($2 == kopf); if (drin) gefunden = 1; next }
+        drin
+        END { if (!gefunden) exit 3 }
+    ' <<<"${inhalt}")"
+    [ $? -eq 3 ] && return 2
+    grep -Eq '^[[:space:]]*[-*][[:space:]]+[^[:space:]]' <<<"${abschnitt}" || return 1
+    return 0
 }
 
 # --------------------------------------------------------------------- Ablauf
@@ -150,20 +184,33 @@ git cat-file -e "${commit}:${DATEI}" 2>/dev/null \
 inhalt="$(git cat-file -p "${commit}:${DATEI}" 2>/dev/null)" \
     || abweisung "${tag}" "${DATEI} liess sich nicht lesen"
 
-# Der Abschnitt des Tags, ohne seine Ueberschrift. Verglichen wird das zweite
-# Feld der Ueberschriftzeile ("## v1.0.1 — 2026-09-21" -> "v1.0.1"): kein
-# Maskieren der Punkte, kein Zweifel an der Abgrenzung. Eine "###"-Zeile beendet
-# den Abschnitt nicht, sie gehoert hinein. Exit 3 heisst: gar keine Ueberschrift.
-abschnitt="$(awk -v tag="${tag}" '
-    /^##[[:space:]]/ { drin = ($2 == tag); if (drin) gefunden = 1; next }
-    drin
-    END { if (!gefunden) exit 3 }
-' <<<"${inhalt}")"
-if [ $? -eq 3 ]; then
-    abweisung "${tag}" "in ${DATEI} steht kein Abschnitt \"## ${tag}\""
+# Welche Ueberschrift darf dieses Tag tragen? Eine Endfassung nur ihre eigene —
+# sie ist die Schranke, die zaehlt. Eine Vorabversion darf sich auch auf den
+# Abschnitt ihrer Endfassung oder auf die Sammlung stuetzen: in der rc-Phase wird
+# oft getaggt, und die Zwischenstaende liest hinterher niemand.
+endfassung="${tag%%-*}"
+kandidaten=("${tag}")
+if [ "${tag}" != "${endfassung}" ]; then
+    kandidaten+=("${endfassung}" "${SAMMELT}")
+    erwartet="\"## ${tag}\", \"## ${endfassung}\" oder \"## ${SAMMELT}\""
+else
+    erwartet="\"## ${tag}\""
 fi
 
-grep -Eq '^[[:space:]]*[-*][[:space:]]+[^[:space:]]' <<<"${abschnitt}" \
-    || abweisung "${tag}" "der Abschnitt \"## ${tag}\" in ${DATEI} ist leer"
+# Ein leerer Abschnitt ist etwas anderes als ein fehlender; die Meldung soll das
+# nicht verwischen. Trifft beides zu, wiegt der leere schwerer — dort hat jemand
+# angefangen und den Inhalt vergessen.
+leer=0
+for kopf in "${kandidaten[@]}"; do
+    abschnitt_gefuellt "${kopf}"
+    case $? in
+        0) exit 0 ;;
+        1) leer=1 ;;
+    esac
+done
 
-exit 0
+if [ "${leer}" -eq 1 ]; then
+    abweisung "${tag}" "der Abschnitt ${erwartet} in ${DATEI} ist leer"
+else
+    abweisung "${tag}" "in ${DATEI} steht kein Abschnitt ${erwartet}"
+fi

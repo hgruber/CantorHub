@@ -2667,9 +2667,19 @@ class ChangelogTest(SimpleTestCase):
 
     @classmethod
     def _ordnung(cls, version):
-        """Sortierschlüssel; die Endfassung steht über ihren Vorabversionen."""
+        """Sortierschlüssel; die Endfassung steht über ihren Vorabversionen.
+
+        Die Vorabkennung wird blockweise verglichen, Ziffernfolgen als Zahl — wie
+        ``sort -V`` es auf dem Server tut. Rein lexikografisch stünde ``rc10``
+        unter ``rc2``, und der Hook, der nach demselben Schema sortiert, wäre
+        anderer Meinung als dieser Test.
+        """
         gross, klein, flick, vorab = cls.VERSION.match(version).groups()
-        return (int(gross), int(klein), int(flick), 0 if vorab else 1, vorab or "")
+        bloecke = tuple(
+            (0, int(teil), "") if teil.isdigit() else (1, 0, teil)
+            for teil in re.findall(r"\d+|\D+", vorab or "")
+        )
+        return (int(gross), int(klein), int(flick), 0 if vorab else 1, bloecke)
 
     def test_datei_mit_titel(self):
         pfad = self._pfad()
@@ -2713,6 +2723,13 @@ class ChangelogTest(SimpleTestCase):
             versionen, sorted(versionen, key=self._ordnung, reverse=True),
             f"Die jüngste Auslieferung steht oben: {versionen}",
         )
+
+    def test_ordnung_setzt_endfassung_ueber_ihre_vorabversionen(self):
+        # Die Gegenprobe zur Sortierung, ohne auf den Inhalt der Datei zu warten:
+        # genau diese Reihenfolge erzeugt der Server mit
+        # "sed 's/-/~/' | sort -V". rc10 gehört über rc2.
+        erwartet = ["v1.1.0", "v1.0.1", "v1.0.0", "v1.0.0-rc10", "v1.0.0-rc2", "v1.0.0-rc1"]
+        self.assertEqual(sorted(erwartet, key=self._ordnung, reverse=True), erwartet)
 
     def test_sammelabschnitt_hoechstens_einmal_und_oben(self):
         koepfe = [kopf for kopf, _, _ in self._abschnitte()]

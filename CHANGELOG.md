@@ -5,10 +5,16 @@ Ein Abschnitt je Auslieferung. Was noch kein Tag hat, sammelt sich unter
 erst dann getaggt. Das Bare-Repo nimmt ein Versions-Tag ohne gefüllten Abschnitt nicht an —
 siehe `update.sh` und `README.md`.
 
+Vorabversionen (`v1.0.0-rc2`) brauchen keinen eigenen Abschnitt: für sie genügt „Unveröffentlicht"
+oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
+
 ## Unveröffentlicht
 
 - Changelog-Pflicht: das Bare-Repo weist ein Versions-Tag ab, dessen Commit keinen gefüllten
-  `CHANGELOG.md`-Abschnitt für genau diese Version trägt (`update.sh`)
+  `CHANGELOG.md`-Abschnitt für genau diese Version trägt (`update.sh`); Vorabversionen dürfen sich
+  auf „Unveröffentlicht" oder den Abschnitt ihrer Endfassung stützen
+- `:latest` folgt einer Vorabversion nur, solange noch keine Endfassung getaggt ist — der Schalter
+  `LATEST_FUER_VORAB` im `post-receive`-Hook entfällt
 
 ## v1.0.0-rc1 — 2026-09-20
 

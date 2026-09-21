@@ -136,8 +136,9 @@ reasoning where it matters.
   repository's `update` hook (`update.sh`) refuses `v<x.y.z>` whose commit carries no filled
   `## v<x.y.z>` section, so `post-receive` never builds an undocumented delivery. Only the tag is
   refused — `master` lands either way. Collect under `## Unveröffentlicht` and rename that heading
-  at release time; `ChangelogTest` guards the format the hook parses, the release steps and the
-  escape hatch are in `README.md`.
+  at release time; a pre-release (`v1.0.0-rc2`) may lean on that section or on the one of its final
+  version, a final version may not. `ChangelogTest` guards the format the hook parses, the release
+  steps and the escape hatch are in `README.md`.
 - **All tests are `SimpleTestCase`.** A `TestCase` makes Django build a test database, which runs
   the data migration `0003_import`, which needs the legacy MySQL server. Keep logic free of DB
   access and isolate the DB half in a thin wrapper so it stays testable (`lese_abmelde_token()`

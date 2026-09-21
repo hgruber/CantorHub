@@ -103,10 +103,14 @@ image**. The hook accepts a tag only if it is named `v<major>.<minor>.<patch>` (
 a pre-release suffix, `v1.0.0-rc1`) and sits on `master`, exports that tag with `git archive`
 into a scratch directory, and builds `cantorhub:<tag>` plus `cantorhub:latest` from it. Older
 version images beyond the newest three are removed, and the build log is appended to
-`/var/log/cantorhub-build.log`. The settings at the top of the script decide whether a
-pre-release also moves `:latest` and whether the container is restarted afterwards
-(`NEUSTART=1`) — leave the restart off until the unit no longer mounts the old working copy
-over `/app`.
+`/var/log/cantorhub-build.log`. `NEUSTART=1` at the top of the script restarts the container after
+a successful build — leave that off until the unit no longer mounts the old working copy over
+`/app`.
+
+A pre-release moves `:latest` **only while no final version is tagged yet**: during the run-up to
+1.0.0 the service, which starts `:latest`, follows every `v1.0.0-rcN`; once `v1.0.0` exists,
+`:latest` belongs to final versions and a later `v1.1.0-rc1` no longer drags production along.
+The hook decides that from the tags in the repository, so there is no switch to remember.
 
 ```bash
 git tag -a v1.0.1 -m "Release 1.0.1"
@@ -132,6 +136,12 @@ therefore never waits for the changelog, the delivery does. A release is:
 2. commit it
 3. `git tag -a v1.0.1 -m "Release 1.0.1"`
 4. `git push origin master v1.0.1`
+
+**Pre-releases are cheap.** `v1.0.0-rc2` is accepted if a filled `## v1.0.0-rc2`, `## v1.0.0` or
+`## Unveröffentlicht` section exists — whichever comes first. So during an rc phase you keep
+collecting under `## Unveröffentlicht` and tag as often as you like; the section that has to be
+written is the one for the final version, and writing it is the release step above. The rc
+sections already in the file simply stay where they are, below the final version.
 
 A rejection names the missing section and the way out; forgetting it costs one commit and a
 `git tag -f`. In an emergency the marker `[ohne-changelog]` in the message of an annotated tag

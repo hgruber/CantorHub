@@ -32,10 +32,8 @@ readonly ZWEIG='refs/heads/master'
 
 readonly ABBILD='cantorhub'
 
-# Traegt eine Vorabversion (v1.0.0-rc1) auch die Marke :latest? Solange das
-# Portal in der rc-Phase laeuft: ja — sonst hat ein rc-Tag keine Wirkung, weil
-# der Dienst :latest startet. Nach der 1.0.0 auf 0 setzen.
-readonly LATEST_FUER_VORAB=1
+# Ob eine Vorabversion die Marke :latest mitnimmt, entscheidet nicht mehr ein
+# Schalter, sondern der Zustand des Repos — siehe endfassung_existiert().
 
 # Aeltere Versionsabbilder abraeumen, sobald mehr als so viele liegen. Auf dem
 # Server sind keine 10 GB frei; jedes Abbild kostet einige hundert MB.
@@ -120,6 +118,19 @@ tag_gueltig() {
     return 0
 }
 
+# Liegt im Repo schon eine Endfassung? Daran haengt, ob eine Vorabversion die
+# Marke :latest mitnimmt. In der rc-Phase soll sie das — sonst hat ein rc-Tag
+# keine Wirkung, weil der Dienst :latest startet. Sobald die erste Endfassung
+# getaggt ist, gehoert :latest den Endfassungen: ein spaeteres v1.1.0-rc1 darf
+# den Betrieb nicht mehr mitziehen.
+#
+# Gefragt wird nach Tags, nicht nach Abbildern — raeume_auf loescht alte
+# Abbilder, ein Tag bleibt. Frueher stand hier ein Schalter, der nach der 1.0.0
+# von Hand umzulegen war; genau die Art Schalter, die man vergisst.
+endfassung_existiert() {
+    git_ tag --list 'v[0-9]*' | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'
+}
+
 platz_reicht() {
     local frei
     frei="$(df -Pm /var/lib/containers 2>/dev/null | awk 'NR==2 {print $4}')"
@@ -148,15 +159,16 @@ baue() {
     fi
 
     # Dieselben Marken, die build.sh setzt — der Hook baut aber selbst, weil er
-    # ueber :latest entscheidet (siehe LATEST_FUER_VORAB) und build.sh sie
+    # ueber :latest entscheidet (siehe endfassung_existiert) und build.sh sie
     # bedingungslos vergibt.
     local marken=(-t "${ABBILD}:${tag}")
-    local vorab=0
-    [[ "${tag}" == *-* ]] && vorab=1
-    if [ "${vorab}" -eq 0 ] || [ "${LATEST_FUER_VORAB}" -eq 1 ]; then
+    if [[ "${tag}" != *-* ]]; then
         marken+=(-t "${ABBILD}:latest")
+    elif endfassung_existiert; then
+        melde "Vorabversion, und eine Endfassung gibt es schon: ${ABBILD}:latest bleibt, wo es ist."
     else
-        melde "Vorabversion: ${ABBILD}:latest bleibt, wo es ist."
+        melde "Vorabversion vor der ersten Endfassung: ${ABBILD}:latest folgt ihr."
+        marken+=(-t "${ABBILD}:latest")
     fi
 
     melde "Baue ${ABBILD}:${tag} …"
