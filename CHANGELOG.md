@@ -17,6 +17,10 @@ oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
   `LATEST_FUER_VORAB` im `post-receive`-Hook entfällt
 - Auftritts-Erinnerungen: die Warnung über fehlende Mailkonfiguration erscheint nur noch, wenn
   wirklich eine Erinnerung fällig ist — kein Dauerrauschen im Log mehr
+- Mitgliederliste: die Stimme steht jetzt in einem kräftigen Farbbalken am linken Zeilenrand
+  statt in einem blassen Flächen-Tint — die Zeilen sind wieder neutral und haben ihre
+  Zebrastreifen zurück. Sopran bis Bass bekommen eine eigene Palette mit klar getrennten
+  Farbtönen und nach Tonhöhe abnehmender Helligkeit, Chorleiter und Musiker einen neutralen Ton
 
 ## v1.0.0-rc1 — 2026-09-20
 

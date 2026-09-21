@@ -284,17 +284,43 @@ neutral "keine Angabe" state does. Destructive buttons use `--error-solid` /
 `--error-solid-hover`; do **not** reach for `--error-bg` there, that is a pale surface colour
 and carries no white text.
 
-**Categorical palette** — voice types (Stimmen S/A/T/B/C/M) and permission categories
-(Artikel/Forum/Dateien/Orte/Termine/Repertoire/Mitglieder) share one token family
-`--kat-1..6`, with the dark-mode block redefining all six. Stimme A and the category „Termine"
-are the accent colour (`var(--brand)`, not a `--kat-*`), so a `BRAND_FARBE` override reaches
-them too. Tints are written inline as `color-mix(in srgb, var(--kat-N) X%, transparent)` —
-the row tints (`.row-stimme-*`) and permission column tints (`.perm-stimme-*`,
-`.perm-col-cat-*`) keep their light/dark opacity difference (7 %/15 % light vs 10 %/20 %
-dark) via explicit `[data-theme="dark"]` rules; the `.perm-cat-*` colour bar needs none,
-because it uses the full-tone token that the dark block already overrides. The palette is
-domain-fixed (soprano/alto/tenor/bass are not a per-choir setting) and not exposed in
-`Konfiguration`.
+**Categorical palette** — the permission categories
+(Artikel/Forum/Dateien/Orte/Termine/Repertoire/Mitglieder) use `--kat-1..6`, with the
+dark-mode block redefining all six. The category „Termine" is the accent colour
+(`var(--brand)`, not a `--kat-*`), so a `BRAND_FARBE` override reaches it too. Tints are
+written inline as `color-mix(in srgb, var(--kat-N) X%, transparent)`; the permission column
+tints (`.perm-col-cat-*`) keep their light/dark opacity difference (5 % light vs 8 % dark)
+via explicit `[data-theme="dark"]` rules, while the `.perm-cat-*` colour bar needs none,
+because it uses the full-tone token that the dark block already overrides.
+
+**Voice palette** — `--stimme-{s,a,t,b}`, a family of its own. The voices used to share
+`--kat-*`, which cost them both ways: three of the six tones sat inside a 40° arc of the hue
+circle, so at the 7 % row-tint opacity Tenor and Musiker were 3.7 sRGB units apart — nothing —
+and the shared tokens meant the voices could not be retuned without moving the permission
+matrix with them. The replacement is built in OKLCH for two properties at once: even hue
+spacing (smallest pair distance 100) **and** a lightness ladder falling monotonically from
+Sopran to Bass (0.282 > 0.201 > 0.171 > 0.090), so the pitch order survives red-green
+colour blindness, greyscale printing and a bad projector. Alt is deliberately *not* on
+`var(--brand)` any more: against a full-tone bar a choir setting `BRAND_FARBE` to teal would
+render Alt and Tenor identical. Chorleiter and Musiker are roles, not voice types, and get
+the neutral `--t4` rather than a hue of their own — which also keeps the hue circle from
+crowding again.
+
+Each tone comes with a derived `--stimme-X-text` (`color-mix(… 80%, black)` in light, the
+tone itself in dark, following `--brand-dark`), because a Sopran bright enough for the
+lightness ladder is too bright to be text on white. All four text variants clear 4.5:1 in
+both themes.
+
+**The voices are carried by a bar, not a surface.** In the member list the row stays neutral
+— `.mitglied-table` is back in the zebra striping — and `.row-stimme-*` sets a local
+`--stimme-farbe` that `td:first-child` paints as `box-shadow: inset 4px 0 0`. A box-shadow
+draws over the cell background, so zebra, hover and the row-fresh animation need no special
+rules, and `.row-inactive` keeps winning for free because it simply never sets the variable.
+When the list is sorted by voice, `tabelle.js` merges equal voices into the vertical
+`.stimme-merged-cell`, which tints itself at 16 % of the same variable. The narrow permission
+column in `aufgaben.html` keeps a surface tint (`.perm-stimme-*`): it is vertical and narrow,
+where a bar would have nothing to delimit. Both palettes are domain-fixed
+(soprano/alto/tenor/bass are not a per-choir setting) and not exposed in `Konfiguration`.
 
 ## Explanation tooltips
 

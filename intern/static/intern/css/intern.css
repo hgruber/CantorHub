@@ -14,17 +14,42 @@
     --cal-geb-bg:      rgba(21, 128, 61, 0.13);
     --cal-weekend:     #dc2626;
 
-    /* Kategoriale Palette — Stimmen (S/A/T/B/C/M) und Berechtigungskategorien.
-       Stimme A / Kategorie „Termine" sind die Akzentfarbe (var(--brand)), alle
-       weiteren sind domain-feste Kategoriefarben, nicht pro Verein konfigurierbar.
-       Tints entstehen per color-mix() direkt an der Verwendungsstelle, damit
-       Opazitaetsunterschiede (Light/Dark, Base/Hover) ohne weitere Tokens greifen. */
-    --kat-1:           #7c3aed;   /* violett  — Stimme S / Artikel        */
-    --kat-2:           #0369a1;   /* blau    — Stimme T / Forum          */
-    --kat-3:           #059669;   /* gruen   — Stimme B / Dateien        */
-    --kat-4:           #b45309;   /* orange  — Stimme C / Orte          */
-    --kat-5:           #0891b2;   /* cyan    — Stimme M / Repertoire    */
-    --kat-6:           #65a30d;   /* limette — (nur Berechtigungskategorie Mitglieder) */
+    /* Kategoriale Palette — Berechtigungskategorien (Artikel/Forum/Dateien/
+       Orte/Termine/Repertoire/Mitglieder). Kategorie „Termine" ist die
+       Akzentfarbe (var(--brand)), alle weiteren sind domain-feste
+       Kategoriefarben, nicht pro Verein konfigurierbar. Tints entstehen per
+       color-mix() direkt an der Verwendungsstelle, damit
+       Opazitaetsunterschiede (Light/Dark, Base/Hover) ohne weitere Tokens greifen.
+       Die Stimmen hatten hier frueher mitgewohnt — siehe --stimme-* darunter. */
+    --kat-1:           #7c3aed;   /* violett  — Artikel     */
+    --kat-2:           #0369a1;   /* blau    — Forum       */
+    --kat-3:           #059669;   /* gruen   — Dateien     */
+    --kat-4:           #b45309;   /* orange  — Orte        */
+    --kat-5:           #0891b2;   /* cyan    — Repertoire  */
+    --kat-6:           #65a30d;   /* limette — Mitglieder   */
+
+    /* Stimmpalette — eigene Familie, damit die Stimmen unabhaengig von den
+       Berechtigungskategorien gestaltbar sind und eine BRAND_FARBE-Ueberschreibung
+       keine zwei Stimmen gleich faerben kann.
+       In OKLCH konstruiert, mit zwei Eigenschaften, die beide gebraucht werden:
+       gleichmaessiger Farbtonabstand (kleinster Paarabstand 100 statt der 3,7 der
+       alten Flaechen-Tints) UND von Sopran nach Bass monoton fallende Helligkeit
+       (0.282 > 0.201 > 0.171 > 0.090). Die Helligkeitstreppe traegt die Tonhoehe
+       auch dort, wo die Farbe nicht ankommt: Rot-Gruen-Schwaeche, Graustufendruck,
+       schlechter Beamer.
+       Chorleiter und Musiker sind keine Stimmlage, sondern Rollen, und bekommen
+       deshalb bewusst keinen eigenen Farbton, sondern den neutralen --t4.
+       Vollton ist fuer den Zeilenbalken gedacht, auf dem kein Text steht; die
+       Textvariante wird daraus abgeleitet statt gepflegt (wie --brand-dark),
+       weil Sopran als Balken hell sein muss, als Text auf Weiss aber nicht darf. */
+    --stimme-s:        #c28500;   /* Sopran — Gold   */
+    --stimme-a:        #d05255;   /* Alt    — Rot    */
+    --stimme-t:        #007f8d;   /* Tenor  — Petrol */
+    --stimme-b:        #5347a4;   /* Bass   — Indigo */
+    --stimme-s-text:   color-mix(in srgb, var(--stimme-s) 80%, black);
+    --stimme-a-text:   color-mix(in srgb, var(--stimme-a) 80%, black);
+    --stimme-t-text:   color-mix(in srgb, var(--stimme-t) 80%, black);
+    --stimme-b-text:   color-mix(in srgb, var(--stimme-b) 80%, black);
 
     /* Sidebar */
     --sb-bg:           #ffffff;
@@ -161,6 +186,21 @@
     --kat-4:           #fbbf24;
     --kat-5:           #22d3ee;
     --kat-6:           #86efac;
+
+    /* Stimmpalette, Dark: gleiche Farbtoene, auf die dunkle Karte gehoben
+       (Kontrast 7,4-10,2:1 auf --bg-card). Die Helligkeitstreppe der Light-
+       Palette kehrt sich hier nicht um — sie traegt dort die Tonhoehe, hier
+       traegt sie der Farbton, weil auf dunklem Grund alle vier hell sein
+       muessen. Die Textvariante ist der Vollton selbst: er steht auf --bg-card
+       hell genug, ein Abdunkeln waere hier verkehrt herum. */
+    --stimme-s:        #ebb353;
+    --stimme-a:        #fc8987;
+    --stimme-t:        #5ed9e6;
+    --stimme-b:        #a8a4f9;
+    --stimme-s-text:   var(--stimme-s);
+    --stimme-a-text:   var(--stimme-a);
+    --stimme-t-text:   var(--stimme-t);
+    --stimme-b-text:   var(--stimme-b);
 
     --sb-bg:           #111117;
     --sb-hover:        rgba(255, 255, 255, 0.05);
@@ -1124,8 +1164,10 @@ tr[data-href] { cursor: pointer; }
 /* Zebrastreifen zur Zeilenverfolgung. :where() zaehlt nicht mit, die Regel
    wiegt so viel wie der Hover darunter und verliert gegen ihn, gegen
    Drag-over (!important) und die row-fresh-Animation.
-   Tabellen mit eigener Zeilenfaerbung stehen in der :not()-Liste. */
-:where(table:not(.mitglied-table, .wiki-table, .perm-matrix, .diff-unified, .diff))
+   Tabellen mit eigener Zeilenfaerbung stehen in der :not()-Liste. Die
+   Mitgliederliste stand frueher hier, faerbt ihre Zeilen aber nicht mehr —
+   die Stimme sitzt jetzt im Balken (siehe .row-stimme-*). */
+:where(table:not(.wiki-table, .perm-matrix, .diff-unified, .diff))
     tbody tr:nth-child(even) td { background: var(--bg-row-alt); }
 
 tbody tr:hover td { background: var(--bg-row-hover); }
@@ -2249,41 +2291,40 @@ div.avatar { cursor: pointer; }
     color: var(--t1);
 }
 
-/* Member list row tints — same palette as aufgaben perm-stimme-X.
-   --kat-1..5 bzw. var(--brand) fuer Stimme A; die Dark-Tints brauchen etwas
-   mehr Opazitaet (10 %/20 %) als die Light-Tints (7 %/15 %). */
-.row-stimme-s { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-1) 7%, transparent), color-mix(in srgb, var(--kat-1) 7%, transparent)), var(--bg-card); }
-.row-stimme-a { --stimme-bg: linear-gradient(color-mix(in srgb, var(--brand) 7%, transparent), color-mix(in srgb, var(--brand) 7%, transparent)), var(--bg-card); }
-.row-stimme-t { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-2) 7%, transparent), color-mix(in srgb, var(--kat-2) 7%, transparent)), var(--bg-card); }
-.row-stimme-b { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-3) 7%, transparent), color-mix(in srgb, var(--kat-3) 7%, transparent)), var(--bg-card); }
-.row-stimme-c { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-4) 7%, transparent), color-mix(in srgb, var(--kat-4) 7%, transparent)), var(--bg-card); }
-.row-stimme-m { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-5) 7%, transparent), color-mix(in srgb, var(--kat-5) 7%, transparent)), var(--bg-card); }
-.row-stimme-s td, .row-stimme-a td, .row-stimme-t td,
-.row-stimme-b td, .row-stimme-c td, .row-stimme-m td { background: var(--stimme-bg); }
+/* Stimme in der Mitgliederliste: Farbbalken statt Flaechen-Tint.
+
+   Vorher faerbte die Stimme die ganze Zeile mit 7 % Deckkraft ein. Das hatte
+   zwei Probleme: die sechs Toene der Kategorie-Palette standen zu dicht
+   beieinander (Tenor und Musiker trennten auf Weiss 3,7 sRGB-Einheiten, also
+   nichts), und .mitglied-table musste dafuer aus den Zebrastreifen
+   aussteigen — womit die Zeilenverfolgung ueber die sehr breite Tabelle an
+   ebendiesen 3,7 Einheiten hing.
+
+   Jetzt bleibt die Zeile neutral (Zebra greift wieder, siehe die
+   :where()-Regel weiter oben) und die Stimme sitzt in einem 4-px-Balken am
+   linken Rand. Weil auf dem Balken kein Text steht, darf er Vollton sein —
+   der kleinste Paarabstand liegt damit bei 100 statt 3,7.
+
+   Der Balken ist ein inset-box-shadow, kein border: box-shadow malt ueber den
+   Zellhintergrund und ueberlebt Zebra, Hover und die row-fresh-Animation ohne
+   eine einzige Sonderregel. Inaktive Zeilen tragen row-inactive statt
+   row-stimme-*, --stimme-farbe bleibt dort ungesetzt, der Fallback greift —
+   die Vorrangregel „inaktiv schlaegt Stimme" bleibt so von selbst erhalten.
+
+   Chorleiter und Musiker sind keine Stimmlage, sondern Rollen: neutraler Ton. */
+.row-stimme-s { --stimme-farbe: var(--stimme-s); --stimme-farbe-text: var(--stimme-s-text); }
+.row-stimme-a { --stimme-farbe: var(--stimme-a); --stimme-farbe-text: var(--stimme-a-text); }
+.row-stimme-t { --stimme-farbe: var(--stimme-t); --stimme-farbe-text: var(--stimme-t-text); }
+.row-stimme-b { --stimme-farbe: var(--stimme-b); --stimme-farbe-text: var(--stimme-b-text); }
+.row-stimme-c,
+.row-stimme-m { --stimme-farbe: var(--t4);       --stimme-farbe-text: var(--t4); }
+
+table.mitglied-table tbody td:first-child {
+    box-shadow: inset 4px 0 0 var(--stimme-farbe, transparent);
+}
+
 .row-inactive td { background: var(--bg-app); }
 
-[data-theme="dark"] .row-stimme-s { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-1) 10%, transparent), color-mix(in srgb, var(--kat-1) 10%, transparent)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-a { --stimme-bg: linear-gradient(color-mix(in srgb, var(--brand) 10%, transparent), color-mix(in srgb, var(--brand) 10%, transparent)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-t { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-2) 10%, transparent), color-mix(in srgb, var(--kat-2) 10%, transparent)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-b { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-3) 10%, transparent), color-mix(in srgb, var(--kat-3) 10%, transparent)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-c { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-4) 10%, transparent), color-mix(in srgb, var(--kat-4) 10%, transparent)), var(--bg-card); }
-[data-theme="dark"] .row-stimme-m { --stimme-bg: linear-gradient(color-mix(in srgb, var(--kat-5) 10%, transparent), color-mix(in srgb, var(--kat-5) 10%, transparent)), var(--bg-card); }
-
-tr.row-stimme-s:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-1) 15%, transparent), color-mix(in srgb, var(--kat-1) 15%, transparent)), var(--bg-card); }
-tr.row-stimme-a:hover td { background: linear-gradient(color-mix(in srgb, var(--brand) 15%, transparent), color-mix(in srgb, var(--brand) 15%, transparent)), var(--bg-card); }
-tr.row-stimme-t:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-2) 15%, transparent), color-mix(in srgb, var(--kat-2) 15%, transparent)), var(--bg-card); }
-tr.row-stimme-b:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-3) 15%, transparent), color-mix(in srgb, var(--kat-3) 15%, transparent)), var(--bg-card); }
-tr.row-stimme-c:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-4) 15%, transparent), color-mix(in srgb, var(--kat-4) 15%, transparent)), var(--bg-card); }
-tr.row-stimme-m:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-5) 15%, transparent), color-mix(in srgb, var(--kat-5) 15%, transparent)), var(--bg-card); }
-
-[data-theme="dark"] tr.row-stimme-s:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-1) 20%, transparent), color-mix(in srgb, var(--kat-1) 20%, transparent)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-a:hover td { background: linear-gradient(color-mix(in srgb, var(--brand) 20%, transparent), color-mix(in srgb, var(--brand) 20%, transparent)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-t:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-2) 20%, transparent), color-mix(in srgb, var(--kat-2) 20%, transparent)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-b:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-3) 20%, transparent), color-mix(in srgb, var(--kat-3) 20%, transparent)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-c:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-4) 20%, transparent), color-mix(in srgb, var(--kat-4) 20%, transparent)), var(--bg-card); }
-[data-theme="dark"] tr.row-stimme-m:hover td { background: linear-gradient(color-mix(in srgb, var(--kat-5) 20%, transparent), color-mix(in srgb, var(--kat-5) 20%, transparent)), var(--bg-card); }
-
-tr:hover td.stimme-merged-cell { background: var(--stimme-bg, var(--bg-card)); }
 
 .avatar-circle {
     border-radius: 50%;
@@ -2299,12 +2340,16 @@ table.mitglied-table tr.stimme-group-start td {
     border-top: 2px solid var(--border);
 }
 
+/* Der senkrecht beschriftete Gruppenstreifen, den tabelle.js beim Sortieren
+   nach Stimme per rowSpan aufzieht. Er traegt die Stimmfarbe als kraeftigen
+   Tint — der Streifen grenzt damit selbst ab und braucht die frueheren grauen
+   Raender nicht mehr. 16 % ist die Obergrenze, bei der die abgeleitete
+   Textfarbe darauf noch ihre 4,5:1 haelt. */
 .stimme-merged-cell {
     position: relative;
     padding: 0;
     width: 24px;
-    border-left: 2px solid var(--border) !important;
-    border-right: 2px solid var(--border) !important;
+    background: color-mix(in srgb, var(--stimme-farbe, var(--bg-card)) 16%, var(--bg-card)) !important;
 }
 
 .stimme-merged-inner {
@@ -2317,6 +2362,7 @@ table.mitglied-table tr.stimme-group-start td {
     align-items: center;
     justify-content: center;
     writing-mode: vertical-rl;
+    color: var(--stimme-farbe-text, var(--t2));
     font-weight: 700;
     font-size: calc(11rem / 14);
     letter-spacing: 0.12em;

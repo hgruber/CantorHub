@@ -2739,6 +2739,75 @@ class ChangelogTest(SimpleTestCase):
                              f"„{self.SAMMELT}\" gehört nach oben: {koepfe}")
 
 
+class FarbTokenTest(SimpleTestCase):
+    """Jede Farbe ist ein Custom Property mit einem ``[data-theme="dark"]``-Wert.
+
+    Die Regel steht in ``CLAUDE.md``, war aber bisher von keinem Test gedeckt —
+    ein im Dark-Block vergessenes Token fällt sonst erst dem Mitglied auf, das
+    nachts ins Portal schaut, und auch dann nur als „sieht komisch aus".
+    Geprüft werden die Stimmpalette, die Kategorienpalette und die
+    Ampel-Familie; der Aufbau trägt jede weitere Familie, die dazukommt.
+
+    Absichtlich *nicht* geprüft: dass der Dark-Wert ein anderer ist. ``--brand``
+    ist in beiden Themes derselbe und ``--aufst-eventuell`` ebenfalls — beides
+    ist so gewollt.
+    """
+
+    PRAEFIXE = ("--stimme-", "--kat-", "--status-")
+    DEKLARATION = re.compile(r"^\s*(--[a-z0-9-]+)\s*:", re.MULTILINE)
+
+    #: Absichtlich themenunabhängig. Der Ampel-Vollton ist die kräftige Füllung
+    #: für Hover- und Aktiv-Zustände und trägt dort weißen Text; er bleibt in
+    #: beiden Themes derselbe, während bg/text/border im Dark-Block weicher
+    #: werden. Steht so in docs/frontend.md, Abschnitt „Status (Ampel) colours".
+    #: Wer hier etwas einträgt, nimmt es aus der Prüfung — also nur mit Grund.
+    OHNE_DARK_WERT = {
+        "--status-success-solid",
+        "--status-warning-solid",
+        "--status-danger-solid",
+    }
+
+    def _bloecke(self):
+        """Die Token-Namen aus ``:root`` und aus dem Dark-Block."""
+        css = (Path(__file__).resolve().parent
+               / "static" / "intern" / "css" / "intern.css").read_text(encoding="utf-8")
+        # Der Dark-Block ist der erste [data-theme="dark"] { … } im Dokument;
+        # danach folgen nur noch einzelne [data-theme="dark"] .selektor-Regeln.
+        start = css.index('[data-theme="dark"] {')
+        hell = css[:start]
+        hell = hell[hell.index(":root {"):hell.index("\n}")]
+        dunkel = css[start:css.index("\n}", start)]
+        return (
+            {m.group(1) for m in self.DEKLARATION.finditer(hell)},
+            {m.group(1) for m in self.DEKLARATION.finditer(dunkel)},
+        )
+
+    def test_jedes_farbtoken_hat_einen_dark_wert(self):
+        hell, dunkel = self._bloecke()
+        relevant = {t for t in hell
+                    if t.startswith(self.PRAEFIXE) and t not in self.OHNE_DARK_WERT}
+        self.assertTrue(relevant, ":root enthält keine Farbtokens — Parser kaputt?")
+        self.assertEqual(
+            sorted(relevant - dunkel), [],
+            'Diese Tokens fehlen im [data-theme="dark"]-Block',
+        )
+
+    def test_stimmpalette_ist_vollstaendig(self):
+        """Vier Stimmlagen, je Vollton und abgeleitete Textfarbe.
+
+        Chorleiter und Musiker stehen bewusst nicht dabei: sie sind Rollen,
+        keine Stimmlage, und tragen den neutralen ``--t4``.
+        """
+        erwartet = {f"--stimme-{lage}{art}"
+                    for lage in "satb" for art in ("", "-text")}
+        for name, block in zip((":root", '[data-theme="dark"]'), self._bloecke()):
+            self.assertEqual(erwartet - block, set(), f"unvollständig in {name}")
+            self.assertNotIn(
+                "--stimme-c", block,
+                "Chorleiter ist eine Rolle, keine Stimmlage — neutral lassen",
+            )
+
+
 class DatenbankUrlTest(SimpleTestCase):
     """Die eine Datenbank-Variable — Parser aus config/datenbank.py.
 

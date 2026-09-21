@@ -112,29 +112,38 @@
     white-space: nowrap;
 }
 
-/* Voice badges */
-.badge-stimme-s { background: color-mix(in srgb, var(--kat-1) 12%, transparent); color: var(--kat-1); }
-.badge-stimme-a { background: color-mix(in srgb, var(--brand) 12%, transparent);  color: var(--brand); }
-.badge-stimme-t { background: color-mix(in srgb, var(--kat-2) 12%, transparent); color: var(--kat-2); }
-.badge-stimme-b { background: color-mix(in srgb, var(--kat-3) 12%, transparent); color: var(--kat-3); }
-.badge-stimme-c { background: color-mix(in srgb, var(--kat-4) 12%, transparent); color: var(--kat-4); }
-.badge-stimme-m { background: color-mix(in srgb, var(--kat-5) 12%, transparent); color: var(--kat-5); }
-.badge-stimme-n { background: var(--bg-row-hover);                                           color: var(--t4); }
+{% comment %}
+Stimm-Badges auf der Stimmpalette (--stimme-*, definiert in intern.css). Flaeche
+aus dem Vollton gemischt, Text aus der abgeleiteten Textvariante — die haelt in
+beiden Themes ihre 4,5:1. Weil die Tokens den Theme-Unterschied selbst tragen,
+genuegt hier eine Deckkraft fuer hell und dunkel; die frueheren sechs
+[data-theme="dark"]-Regeln sind dadurch entfallen.
+Chorleiter und Musiker sind keine Stimmlage: neutral wie „keine Angabe".
+{% endcomment %}
+.badge-stimme-s { background: color-mix(in srgb, var(--stimme-s) 14%, transparent); color: var(--stimme-s-text); }
+.badge-stimme-a { background: color-mix(in srgb, var(--stimme-a) 14%, transparent); color: var(--stimme-a-text); }
+.badge-stimme-t { background: color-mix(in srgb, var(--stimme-t) 14%, transparent); color: var(--stimme-t-text); }
+.badge-stimme-b { background: color-mix(in srgb, var(--stimme-b) 14%, transparent); color: var(--stimme-b-text); }
+.badge-stimme-c,
+.badge-stimme-m,
+.badge-stimme-n { background: var(--bg-row-hover); color: var(--t4); }
 
-/* Stimme tint for user column */
-.perm-stimme-s { --stimme-tint: color-mix(in srgb, var(--kat-1) 7%, transparent); }
-.perm-stimme-a { --stimme-tint: color-mix(in srgb, var(--brand) 7%, transparent); }
-.perm-stimme-t { --stimme-tint: color-mix(in srgb, var(--kat-2) 7%, transparent); }
-.perm-stimme-b { --stimme-tint: color-mix(in srgb, var(--kat-3) 7%, transparent); }
-.perm-stimme-c { --stimme-tint: color-mix(in srgb, var(--kat-4) 7%, transparent); }
-.perm-stimme-m { --stimme-tint: color-mix(in srgb, var(--kat-5) 7%, transparent); }
+{% comment %}
+Stimm-Tint der Mitgliederspalte. Anders als in der Mitgliederliste bleibt hier
+die Flaeche der Traeger: die Spalte ist schmal und senkrecht, ein Balken haette
+nichts zu begrenzen. Die Toene der Stimmpalette stehen weit genug auseinander,
+dass die Flaeche jetzt auch traegt. Dark braucht mehr Deckkraft, weil die
+dunklen Tokens heller sind und sich sonst in der Karte verlieren.
+{% endcomment %}
+.perm-stimme-s { --stimme-tint: color-mix(in srgb, var(--stimme-s) 8%, transparent); }
+.perm-stimme-a { --stimme-tint: color-mix(in srgb, var(--stimme-a) 8%, transparent); }
+.perm-stimme-t { --stimme-tint: color-mix(in srgb, var(--stimme-t) 8%, transparent); }
+.perm-stimme-b { --stimme-tint: color-mix(in srgb, var(--stimme-b) 8%, transparent); }
 
-[data-theme="dark"] .perm-stimme-s { --stimme-tint: color-mix(in srgb, var(--kat-1) 10%, transparent); }
-[data-theme="dark"] .perm-stimme-a { --stimme-tint: color-mix(in srgb, var(--brand) 10%, transparent); }
-[data-theme="dark"] .perm-stimme-t { --stimme-tint: color-mix(in srgb, var(--kat-2) 10%, transparent); }
-[data-theme="dark"] .perm-stimme-b { --stimme-tint: color-mix(in srgb, var(--kat-3) 10%, transparent); }
-[data-theme="dark"] .perm-stimme-c { --stimme-tint: color-mix(in srgb, var(--kat-4) 10%, transparent); }
-[data-theme="dark"] .perm-stimme-m { --stimme-tint: color-mix(in srgb, var(--kat-5) 10%, transparent); }
+[data-theme="dark"] .perm-stimme-s { --stimme-tint: color-mix(in srgb, var(--stimme-s) 11%, transparent); }
+[data-theme="dark"] .perm-stimme-a { --stimme-tint: color-mix(in srgb, var(--stimme-a) 11%, transparent); }
+[data-theme="dark"] .perm-stimme-t { --stimme-tint: color-mix(in srgb, var(--stimme-t) 11%, transparent); }
+[data-theme="dark"] .perm-stimme-b { --stimme-tint: color-mix(in srgb, var(--stimme-b) 11%, transparent); }
 
 /* Permission cell */
 .perm-cell-td {
@@ -237,12 +246,6 @@
 [data-theme="dark"] .perm-cell-admin.granted { background: #d97706; border-color: #d97706; }
 [data-theme="dark"] .perm-cell.pending::after,
 [data-theme="dark"] .perm-cell-admin.pending::after { border-color: var(--bg-card); }
-[data-theme="dark"] .badge-stimme-s { background: color-mix(in srgb, var(--kat-1) 15%, transparent); color: var(--kat-1); }
-[data-theme="dark"] .badge-stimme-a { background: color-mix(in srgb, var(--brand) 20%, transparent); color: var(--brand); }
-[data-theme="dark"] .badge-stimme-t { background: color-mix(in srgb, var(--kat-2) 15%, transparent); color: var(--kat-2); }
-[data-theme="dark"] .badge-stimme-b { background: color-mix(in srgb, var(--kat-3) 15%, transparent); color: var(--kat-3); }
-[data-theme="dark"] .badge-stimme-c { background: color-mix(in srgb, var(--kat-4) 15%, transparent); color: var(--kat-4); }
-[data-theme="dark"] .badge-stimme-m { background: color-mix(in srgb, var(--kat-5) 15%, transparent); color: var(--kat-5); }
 
 /* Apply bar */
 .perm-apply-bar {
