@@ -2030,7 +2030,10 @@ time {
 
 /* Unread markers (intern/forum_gelesen.py) */
 tr.ungelesen td { font-weight: 600; color: var(--t1); }
-tr.ungelesen .badge { margin-left: 4px; vertical-align: 1px; }
+/* Ungelesen-Badge und Gesamtzahl stehen zusammen in der Zahlenspalte. Die Gesamtzahl
+   braucht eine eigene Regel, weil die Zeile darüber fett und dunkel gesetzt ist. */
+td.zahl .badge { margin-right: 6px; vertical-align: 1px; }
+td.zahl .gesamtzahl { color: var(--text-muted); font-weight: 400; }
 
 .forum-neu-trenner {
     display: flex;

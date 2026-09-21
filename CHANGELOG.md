@@ -10,6 +10,11 @@ oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
 
 ## Unveröffentlicht
 
+- Forenliste: die Zahl ungelesener Nachrichten steht jetzt als Badge in der Spalte „Anzahl",
+  vor der Gesamtzahl, die dafür gedämpft gesetzt ist. Bisher hing sie hinter dem Themennamen
+  und wanderte je nach dessen Länge über die Zeile, weit weg von der Zahl, auf die sie sich
+  bezieht. Die fett gesetzte Zeile, der Punkt am Menüeintrag „Forum" und der Trenner „Neu seit
+  Deinem letzten Besuch" bleiben unverändert
 - Konfigurationsseite: ein Banner über den Gruppen zählt, wie viele Pflicht-Einstellungen noch
   leer sind, und nennt die Schlüssel, zu denen es gar keine Zeile gibt. Nach einer frischen
   Installation sind das die fünf, die der Betreiber liefern muss: `VEREINS_URL`, `VEREINSNAME`,

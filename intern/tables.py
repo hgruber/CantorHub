@@ -78,12 +78,21 @@ class ForumTabelle(tables.Table):
             "class": lambda record: "ungelesen" if getattr(record, "ungelesen", 0) else "",
         }
 
-    def render_thema(self, record, value):
+    def render_anzahl_mitteilungen(self, record, value):
+        """Ungelesene als Badge, dahinter die Gesamtzahl gedämpft.
+
+        Beides steht in derselben Spalte, weil die Ungelesen-Zahl hinter dem Thema je
+        nach Länge des Namens über die Zeile wanderte und weit weg von der Zahl stand,
+        auf die sie sich bezieht.
+        """
         anzahl = getattr(record, "ungelesen", 0)
         if not anzahl:
-            return value
+            return format_html('<span class="gesamtzahl">{}</span>', value)
         return format_html(
-            '{} <span class="badge badge-primary" title="ungelesen">{}</span>', value, anzahl
+            '<span class="badge badge-primary" title="ungelesen">{}</span>'
+            '<span class="gesamtzahl">{}</span>',
+            anzahl,
+            value,
         )
 
     def render_zugriff(self, record):

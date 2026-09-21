@@ -50,7 +50,8 @@ the origin-id stanza-id capture are documented in `xmpp.md`.
 ## Unread markers
 
 Members see where new messages arrived since their last visit, in three places: the forum row in
-`/intern/forum/` is set in bold with a count badge (`ForumTabelle`, row class `ungelesen`), the
+`/intern/forum/` is set in bold and its „Anzahl" column shows the unread count as a badge in
+front of the dimmed total (`ForumTabelle.render_anzahl_mitteilungen`, row class `ungelesen`), the
 „Forum" sidebar entry gets the same pulsing dot as „Termine" (`nav-item-offen`), and the forum
 page draws a „Neu seit Deinem letzten Besuch" divider below the oldest unread message of the
 first 25 (none if it lies further back).

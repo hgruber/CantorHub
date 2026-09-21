@@ -2461,6 +2461,39 @@ class ForumGelesenTest(SimpleTestCase):
 
         self.assertEqual(trenner_id([(3, 8), (2, 9), (1, 8)], 0, 7), 1)
 
+
+class ForumTabelleTest(SimpleTestCase):
+    """Die Anzahl-Spalte der Forenliste (``intern/tables.py``).
+
+    Reine Formatierung: der Datensatz ist ein Dummy, kein Datenbankzugriff.
+    """
+
+    def _zelle(self, record, gesamt):
+        from intern.tables import ForumTabelle
+
+        return ForumTabelle([]).render_anzahl_mitteilungen(record=record, value=gesamt)
+
+    def test_ohne_ungelesene_nur_die_gesamtzahl(self):
+        html = self._zelle(SimpleNamespace(ungelesen=0), 17)
+
+        self.assertNotIn("badge", html)
+        self.assertIn('<span class="gesamtzahl">17</span>', html)
+
+    def test_badge_steht_vor_der_gesamtzahl(self):
+        html = self._zelle(SimpleNamespace(ungelesen=3), 17)
+
+        self.assertIn('<span class="badge badge-primary" title="ungelesen">3</span>', html)
+        self.assertIn('<span class="gesamtzahl">17</span>', html)
+        self.assertLess(html.index("badge"), html.index("gesamtzahl"))
+
+    def test_ohne_annotation_kein_badge(self):
+        # Ein Aufrufer ohne ForumQuerySet.mit_ungelesen() darf die Spalte nicht sprengen.
+        html = self._zelle(SimpleNamespace(), 17)
+
+        self.assertNotIn("badge", html)
+        self.assertIn('<span class="gesamtzahl">17</span>', html)
+
+
 class SitzungAuffrischenTest(SimpleTestCase):
     """Die Drosselung der Sitzungsfrist (``intern/middleware.py``).
 
