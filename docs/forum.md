@@ -68,7 +68,14 @@ wrapper below it):
   `markiere_gelesen` only ever raises — an in-flight poll with an older `last_id` cannot undo
   a visit.
 - **Own messages never count**, whether posted on the web or from the member's XMPP client.
-  Messages without a sender (unmapped JIDs) do count.
+  Messages without a sender (unmapped JIDs) do count. This makes the badge and the divider
+  disagree by the number of own posts above the marker: the count leaves them out, the divider
+  shows them, because they really did arrive since the last visit. Posting in the portal cannot
+  produce that gap — `forum_send` runs through `forum_get` and raises the marker past the new
+  message — but posting from the XMPP client does, and the difference stays visible until the
+  member opens the forum in the portal. Counting own posts as unread, or dragging the marker
+  along to the member's newest own message, were both considered and rejected: the first
+  contradicts the rule above, the second would silently mark older messages from others as read.
 - **Starting point.** A member without any row yet (feature just deployed, fresh database, new
   member) gets one per forum at its current newest message (`sichere_ausgangspunkt`), so the
   history doesn't show up as new. A forum that appears later without a row — newly created, or
