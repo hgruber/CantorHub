@@ -101,6 +101,27 @@ class Command(BaseCommand):
         if not dry_run:
             cleanup_unbestaetigte(jetzt)
 
+        termine = Termin.objects.filter(repertoire=True, datum__gte=jetzt)
+        if options["termin"]:
+            termine = termine.filter(pk=options["termin"])
+        termine = list(termine.select_related("ort"))
+
+        wochen_liste = parse_wochen()
+        faellig = faellige_erinnerungen(termine, wochen_liste, jetzt, versandzeit())
+
+        # Faelligkeit zuerst, Konfigurationspruefung danach: im Dauerbetrieb liefe
+        # sonst alle MAILINGLISTE_INTERVALL_MIN Minuten dieselbe Warnung durchs Log,
+        # obwohl die fehlende Konfiguration gerade gar keinen Versand verhindert.
+        if not faellig:
+            if termine and not wochen_liste:
+                # Der einzige Fall, den die Faelligkeit selbst verschluckt:
+                # faellige_erinnerungen() laeuft ueber wochen_liste, ohne Vorlaufzeit
+                # wird also nie etwas faellig — die Meldung bliebe sonst fuer immer aus.
+                self._warnen("MAILINGLISTE_WOCHEN ergibt keine gültigen Vorlaufzeiten.")
+            else:
+                self.stdout.write("0 Erinnerungen fällig.")
+            return
+
         base_url = basis_url()
         if not base_url:
             self._warnen(
@@ -110,21 +131,6 @@ class Command(BaseCommand):
             return
         if not is_email_configured():
             self._warnen("EMAIL_HOST ist nicht gesetzt — kein Versand.")
-            return
-
-        wochen_liste = parse_wochen()
-        if not wochen_liste:
-            self._warnen("MAILINGLISTE_WOCHEN ergibt keine gültigen Vorlaufzeiten.")
-            return
-
-        termine = Termin.objects.filter(repertoire=True, datum__gte=jetzt)
-        if options["termin"]:
-            termine = termine.filter(pk=options["termin"])
-        termine = list(termine.select_related("ort"))
-
-        faellig = faellige_erinnerungen(termine, wochen_liste, jetzt, versandzeit())
-        if not faellig:
-            self.stdout.write("0 Erinnerungen fällig.")
             return
 
         for termin, wochen, faellig_am in faellig:

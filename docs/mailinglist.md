@@ -62,7 +62,9 @@ general public.
 
 Without `VEREINS_URL` or `EMAIL_HOST` the daemon **warns and writes no marker** rather than
 sending — a mail with a relative, i.e. dead, unsubscribe link is not defensible. Both are re-read
-every iteration, so fixing the config takes effect without restarting the loop.
+every iteration, so fixing the config takes effect without restarting the loop. The warning is
+raised only once a reminder is actually due — an idle loop stays quiet instead of repeating the
+same line every interval.
 
 Privacy-policy coverage is the „Auftritts-Mailingliste" section of `datenschutz.html` — the
 only section that is not about members; open operational points (no bounce

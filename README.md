@@ -329,8 +329,9 @@ host-side setting.
 - **Mails are not arriving** → check `EMAIL_HOST`; with an empty host, mail is only logged. The
   log line names the recipient.
 - **The gig reminders do nothing** → the daemon warns and writes no send marker when `VEREINS_URL`
-  or `EMAIL_HOST` is missing. Both are re-read every iteration, so fixing the configuration is
-  enough — no restart needed.
+  or `EMAIL_HOST` is missing — but only once a reminder is actually due, so a quiet log means
+  nothing was due. Both are re-read every iteration, so fixing the configuration is enough — no
+  restart needed.
 - **One member locks everyone out of password reset** → the realip configuration is not in effect,
   so all requests are counted against the proxy's address.
 - **A phone will not connect to CardDAV/CalDAV** → the service switch is still `0`; the URLs then

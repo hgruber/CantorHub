@@ -15,6 +15,8 @@ oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
   auf „Unveröffentlicht" oder den Abschnitt ihrer Endfassung stützen
 - `:latest` folgt einer Vorabversion nur, solange noch keine Endfassung getaggt ist — der Schalter
   `LATEST_FUER_VORAB` im `post-receive`-Hook entfällt
+- Auftritts-Erinnerungen: die Warnung über fehlende Mailkonfiguration erscheint nur noch, wenn
+  wirklich eine Erinnerung fällig ist — kein Dauerrauschen im Log mehr
 
 ## v1.0.0-rc1 — 2026-09-20
 
