@@ -5,10 +5,11 @@ Ein Abschnitt je Auslieferung. Was noch kein Tag hat, sammelt sich unter
 erst dann getaggt. Das Bare-Repo nimmt ein Versions-Tag ohne gefüllten Abschnitt nicht an —
 siehe `update.sh` und `README.md`.
 
-Vorabversionen (`v1.0.0-rc2`) brauchen keinen eigenen Abschnitt: für sie genügt „Unveröffentlicht"
-oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
+Vorabversionen (`v1.0.0-rc3`) brauchen keinen eigenen Abschnitt: für sie genügt „Unveröffentlicht"
+oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen. Einen eigenen bekommen
+dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
-## Unveröffentlicht
+## v1.0.0-rc2 — 2026-09-21
 
 - Foren: der Trenner „Neu seit Deinem letzten Besuch" stand bei Nachrichten aus derselben
   Sekunde an der falschen Stelle, wodurch die Zahl der sichtbar neuen Beiträge um eins vom
@@ -23,6 +24,11 @@ oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
   und wanderte je nach dessen Länge über die Zeile, weit weg von der Zahl, auf die sie sich
   bezieht. Die fett gesetzte Zeile, der Punkt am Menüeintrag „Forum" und der Trenner „Neu seit
   Deinem letzten Besuch" bleiben unverändert
+- Mitgliederliste: die Stimme steht jetzt in einem kräftigen Farbbalken am linken Zeilenrand
+  statt in einem blassen Flächen-Tint — die Zeilen sind wieder neutral und haben ihre
+  Zebrastreifen zurück. Sopran bis Bass bekommen eine eigene Palette mit klar getrennten
+  Farbtönen und nach Tonhöhe abnehmender Helligkeit, Chorleiter und Musiker einen neutralen
+  Ton; dieselben Farben tragen auch die Stimm-Kennzeichen auf der Aufgabenseite
 - Konfigurationsseite: ein Banner über den Gruppen zählt, wie viele Pflicht-Einstellungen noch
   leer sind, und nennt die Schlüssel, zu denen es gar keine Zeile gibt. Nach einer frischen
   Installation sind das die fünf, die der Betreiber liefern muss: `VEREINS_URL`, `VEREINSNAME`,
@@ -34,17 +40,13 @@ oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
 - Rundmail an Mitglieder: ohne konfigurierten SMTP-Server ist der Senden-Knopf ausgegraut und
   nennt im Tooltip den Grund, statt eine Mail zu melden, die nur im Log landet. Die Seite selbst
   bleibt erreichbar, Text und Anhänge lassen sich weiter vorbereiten
+- Auftritts-Erinnerungen: die Warnung über fehlende Mailkonfiguration erscheint nur noch, wenn
+  wirklich eine Erinnerung fällig ist — kein Dauerrauschen im Log mehr
 - Changelog-Pflicht: das Bare-Repo weist ein Versions-Tag ab, dessen Commit keinen gefüllten
   `CHANGELOG.md`-Abschnitt für genau diese Version trägt (`update.sh`); Vorabversionen dürfen sich
   auf „Unveröffentlicht" oder den Abschnitt ihrer Endfassung stützen
 - `:latest` folgt einer Vorabversion nur, solange noch keine Endfassung getaggt ist — der Schalter
   `LATEST_FUER_VORAB` im `post-receive`-Hook entfällt
-- Auftritts-Erinnerungen: die Warnung über fehlende Mailkonfiguration erscheint nur noch, wenn
-  wirklich eine Erinnerung fällig ist — kein Dauerrauschen im Log mehr
-- Mitgliederliste: die Stimme steht jetzt in einem kräftigen Farbbalken am linken Zeilenrand
-  statt in einem blassen Flächen-Tint — die Zeilen sind wieder neutral und haben ihre
-  Zebrastreifen zurück. Sopran bis Bass bekommen eine eigene Palette mit klar getrennten
-  Farbtönen und nach Tonhöhe abnehmender Helligkeit, Chorleiter und Musiker einen neutralen Ton
 
 ## v1.0.0-rc1 — 2026-09-20
 
