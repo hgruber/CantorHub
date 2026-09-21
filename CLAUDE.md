@@ -132,6 +132,12 @@ reasoning where it matters.
   side of the scheme: a database that already recorded `0002` never sees a later regeneration of
   it, so model changes reach an existing instance only through the `MIGRATE` rebuild.
   See `migration.md`.
+- **A version tag needs its `CHANGELOG.md` section.** The tag is the release: the bare
+  repository's `update` hook (`update.sh`) refuses `v<x.y.z>` whose commit carries no filled
+  `## v<x.y.z>` section, so `post-receive` never builds an undocumented delivery. Only the tag is
+  refused — `master` lands either way. Collect under `## Unveröffentlicht` and rename that heading
+  at release time; `ChangelogTest` guards the format the hook parses, the release steps and the
+  escape hatch are in `README.md`.
 - **All tests are `SimpleTestCase`.** A `TestCase` makes Django build a test database, which runs
   the data migration `0003_import`, which needs the legacy MySQL server. Keep logic free of DB
   access and isolate the DB half in a thin wrapper so it stays testable (`lese_abmelde_token()`

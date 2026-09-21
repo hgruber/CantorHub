@@ -2632,6 +2632,96 @@ class StatikQuellkartenTest(SimpleTestCase):
         )
 
 
+class ChangelogTest(SimpleTestCase):
+    """``CHANGELOG.md`` in genau der Form, auf die der ``update``-Hook parst.
+
+    Das Bare-Repo nimmt ein Versions-Tag nur an, wenn der getaggte Commit einen
+    gefüllten Abschnitt für diese Version trägt (``update.sh``). Der Hook
+    vergleicht dazu das zweite Feld der Überschriftzeile mit dem Tagnamen —
+    ``## v1.0.1 — 2026-09-21`` ergibt ``v1.0.1``. Verrutscht das Format, fällt
+    das sonst erst beim Freigeben auf, und dann steht der Auftritt schon im
+    Kalender. „Unveröffentlicht" ist der Sammelabschnitt und darf leer sein;
+    ihn zur Freigabe auf die Version umzubenennen ist der ganze Trick.
+    """
+
+    UEBERSCHRIFT = re.compile(r"^##\s+(\S+)(.*)$")
+    VERSION = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z][0-9A-Za-z.-]*))?$")
+    DATUM = re.compile(r"^\s+—\s+\d{4}-\d{2}-\d{2}\s*$")
+    STICHPUNKT = re.compile(r"^\s*[-*]\s+\S")
+    SAMMELT = "Unveröffentlicht"
+
+    @classmethod
+    def _pfad(cls):
+        return Path(__file__).resolve().parent.parent / "CHANGELOG.md"
+
+    def _abschnitte(self):
+        """[(Kopf, Rest der Überschriftzeile, Zeilen), …] in Dateireihenfolge."""
+        abschnitte = []
+        for zeile in self._pfad().read_text(encoding="utf-8").splitlines():
+            treffer = self.UEBERSCHRIFT.match(zeile)
+            if treffer:
+                abschnitte.append((treffer.group(1), treffer.group(2), []))
+            elif abschnitte:
+                abschnitte[-1][2].append(zeile)
+        return abschnitte
+
+    @classmethod
+    def _ordnung(cls, version):
+        """Sortierschlüssel; die Endfassung steht über ihren Vorabversionen."""
+        gross, klein, flick, vorab = cls.VERSION.match(version).groups()
+        return (int(gross), int(klein), int(flick), 0 if vorab else 1, vorab or "")
+
+    def test_datei_mit_titel(self):
+        pfad = self._pfad()
+        self.assertTrue(pfad.exists(), f"{pfad.name} fehlt — der Hook weist jedes Tag ab.")
+        erste = pfad.read_text(encoding="utf-8").splitlines()[0]
+        self.assertEqual(erste, "# Änderungen")
+
+    def test_jede_ueberschrift_ist_lesbar(self):
+        falsch = []
+        for kopf, rest, _ in self._abschnitte():
+            if kopf == self.SAMMELT:
+                continue
+            if not self.VERSION.match(kopf):
+                falsch.append(f"## {kopf}{rest} — kein v<x.y.z> und nicht „{self.SAMMELT}\"")
+            elif not self.DATUM.match(rest):
+                falsch.append(f"## {kopf}{rest} — es fehlt „ — JJJJ-MM-TT\"")
+        self.assertEqual(
+            falsch, [],
+            "Der update-Hook findet diese Abschnitte nicht:\n" + "\n".join(falsch),
+        )
+
+    def test_jeder_versionsabschnitt_ist_gefuellt(self):
+        leer = [
+            kopf for kopf, _, zeilen in self._abschnitte()
+            if kopf != self.SAMMELT
+            and not any(self.STICHPUNKT.match(z) for z in zeilen)
+        ]
+        self.assertEqual(
+            leer, [],
+            "Ohne Stichpunkt weist der Hook das Tag ab: " + ", ".join(leer),
+        )
+
+    def test_versionen_stehen_absteigend(self):
+        versionen = [
+            kopf for kopf, _, _ in self._abschnitte()
+            if kopf != self.SAMMELT and self.VERSION.match(kopf)
+        ]
+        self.assertEqual(len(versionen), len(set(versionen)),
+                         f"Version doppelt aufgeführt: {versionen}")
+        self.assertEqual(
+            versionen, sorted(versionen, key=self._ordnung, reverse=True),
+            f"Die jüngste Auslieferung steht oben: {versionen}",
+        )
+
+    def test_sammelabschnitt_hoechstens_einmal_und_oben(self):
+        koepfe = [kopf for kopf, _, _ in self._abschnitte()]
+        self.assertLessEqual(koepfe.count(self.SAMMELT), 1)
+        if self.SAMMELT in koepfe:
+            self.assertEqual(koepfe[0], self.SAMMELT,
+                             f"„{self.SAMMELT}\" gehört nach oben: {koepfe}")
+
+
 class DatenbankUrlTest(SimpleTestCase):
     """Die eine Datenbank-Variable — Parser aus config/datenbank.py.
 

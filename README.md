@@ -113,6 +113,39 @@ git tag -a v1.0.1 -m "Release 1.0.1"
 git push origin master v1.0.1     # the build runs on the server, output comes back as `remote:`
 ```
 
+### The changelog is part of the release
+
+A second hook makes sure a release says what changed. Install it next to the first one:
+
+```bash
+scp update.sh root@server:/root/podman/CantorHub.git/hooks/update
+ssh root@server chmod +x /root/podman/CantorHub.git/hooks/update
+```
+
+`update` runs once per ref, before the ref is written, and **refuses a version tag whose commit
+carries no filled section for exactly that version in `CHANGELOG.md`** — a heading
+`## v1.0.1 — 2026-09-21` followed by at least one bullet. Only the tag is refused; `master` still
+lands, and since a branch push changes nothing on the server, nothing is built. The work
+therefore never waits for the changelog, the delivery does. A release is:
+
+1. rename the `## Unveröffentlicht` heading in `CHANGELOG.md` to `## v1.0.1 — <date>`
+2. commit it
+3. `git tag -a v1.0.1 -m "Release 1.0.1"`
+4. `git push origin master v1.0.1`
+
+A rejection names the missing section and the way out; forgetting it costs one commit and a
+`git tag -f`. In an emergency the marker `[ohne-changelog]` in the message of an annotated tag
+lets the tag through, and that is written to `/var/log/cantorhub-build.log`:
+
+```bash
+git tag -f -a v1.0.1 -m "Release 1.0.1 [ohne-changelog]"
+git push --force origin v1.0.1
+```
+
+`git push -o changelog=skip` would be the more convenient escape hatch and the hook does look for
+it, but git hands push options to `pre-receive` and `post-receive` only — measured with 2.55, the
+`update` hook sees none — so the tag message is the escape hatch that works.
+
 ## Bootstrap environment variables
 
 Only what has to be known before the database is reachable is an environment variable — and
