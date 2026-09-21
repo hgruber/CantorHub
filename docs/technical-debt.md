@@ -17,6 +17,47 @@ compliance items are tracked separately in `datenschutz.md`.
   `HOSTING_ANBIETER_NAME`), English for purely technical admin values
   (`EJABBERD_API_TIMEOUT`, `OSM_TILE_URL`).
 
+## Configuration structure (low risk) — measured September 2026
+
+The `Konfiguration` catalog itself is in good shape: 91 keys, 11 groups plus the rest group,
+no duplicates, and **no undeclared key** — every key the code reads through `get_config*` with a
+literal name is in `_CONFIG_DEFAULTS`. That is not discipline but a forcing function: adding a key
+to `apps.py` alone fails exactly four tests — verified by doing it —
+`KonfigGruppenTest.test_jeder_default_schluessel_hat_eine_gruppe`,
+`.test_reihenfolge_ist_vollstaendig`, `.test_gruppiere_invarianten` and
+`KonfigTypenTest.test_jeder_default_schluessel_hat_einen_typ`. The items below are the places where
+that mechanism does *not* reach. All four fixes are mechanical; none changes behaviour. Related:
+„Config key naming is mixed" above.
+
+- **`apps.py` is 72 % data.** 547 of 755 lines are `_CONFIG_DEFAULTS` (502) and
+  `_LEGACY_MAIL_DEFAULTS` (45); `InternConfig` itself starts at line 686. Whoever opens the file to
+  see what happens at startup scrolls past 500 lines of mail texts first. Moving the catalog to its
+  own Django-free module (`intern/konfig_katalog.py`) would also remove a redundancy: the key list
+  exists twice today — as `_CONFIG_DEFAULTS` and as `SCHLUESSEL_REIHENFOLGE` in
+  `konfig_gruppen.py` — because that module must stay importable without Django for
+  `SimpleTestCase`. With the catalog in a Django-free module both could import it, and
+  `test_reihenfolge_ist_vollstaendig` would become unnecessary.
+- **Four keys are invisible to `grep`.** `intern/dav/auth.py:163,178` composes names at runtime —
+  `get_config_int(f"{dienst.prefix}_AUTH_TTL")` and `get_config_bool(f"{dienst.prefix}_AKTIV")` —
+  so `CARDDAV_AUTH_TTL`, `CALDAV_AUTH_TTL` and the two `_MAX_FEHLVERSUCHE_PRO_STUNDE` never appear
+  as a literal anywhere outside the catalog. Rename one and nothing fails: the service silently
+  falls back to the default. A test that crosses the prefixes with the suffixes and checks the
+  result against the catalog closes this. Same pattern, but harmless because it is a scan rather
+  than a lookup: `verwendung.py:107` selects on `key__endswith="_FILE_ID"`.
+- **`docs/configuration.md` is guarded by nothing.** The catalog can drift from the reference
+  without a test noticing — the one place in this area where pure discipline carries the load.
+  Today the five `EMAIL_*` keys are only covered collectively („the `EMAIL_*` set"), which is
+  defensible; a test should therefore allow a family form alongside individual mentions.
+- **`_LEGACY_MAIL_DEFAULTS` has no expiry.** 45 lines of superseded mail texts so that an upgrade
+  lifts never-edited values to the current default (`apps.py:520-564`). Correct as built, but
+  untested and without a rule for when it goes away. Lists like this grow. Cheapest fix is a
+  version in the comment rather than a removal now.
+
+Not a defect, but worth knowing: `get_config` consults `os.environ` **at runtime** before the
+table, so an environment variable set after startup wins over any stored value — and the settings
+page shows no sign of it. `_seed_config` does write env values into the table at startup, so the
+usual deployment case is visible; only a later change is not.
+
 ## Query counts (low risk) — measured, left alone on purpose
 
 N+1 hotspots were swept in September 2026; the four with measurable weight were fixed (see
