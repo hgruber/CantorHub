@@ -241,6 +241,112 @@ def _sortierschluessel(key: str) -> tuple:
     return (_REIHENFOLGE_INDEX.get(key, _REIHENFOLGE_ENDE), key)
 
 
+# --- Vollständigkeit ------------------------------------------------------
+#
+# Welche Schlüssel überhaupt zum Katalog gehören, steht in
+# ``SCHLUESSEL_REIHENFOLGE`` — ``KonfigGruppenTest`` hält die Menge deckungsgleich
+# mit ``_CONFIG_DEFAULTS``. Deshalb reicht die Konstante hier als Katalog, und das
+# Modul bleibt ohne Import aus ``apps.py``.
+_KATALOG: frozenset[str] = frozenset(SCHLUESSEL_REIHENFOLGE)
+
+# Schlüssel, bei denen ein leerer Wert **kein** Mangel ist. Die Regel dahinter:
+# leer darf bleiben, wo der Code einen arbeitsfähigen Ersatz kennt
+# (``CARDDAV_ADRESSBUCH_NAME`` → Vereinsname) oder wo leer eine gemeinte
+# Betriebsart ist, die eine Funktion abschaltet (``EMAIL_HOST`` → kein Versand).
+# Pflicht ist alles andere — auch das, was der Code zwar mit einem hartkodierten
+# Wert auffängt, aber mit einem fremden (``VEREINSNAME``).
+#
+# Bewusst eine Ausnahmeliste, keine Pflichtliste: ein neuer Schlüssel gilt damit
+# erst einmal als Pflicht und fällt im Banner auf, statt still leer zu bleiben.
+# Wer ihn optional meint, trägt ihn hier mit der Begründung ein.
+OPTIONAL_LEER: frozenset[str] = frozenset({
+    # Abschalter — leer ist die dokumentierte „Funktion aus"-Stellung
+    "EMAIL_HOST",            # leer = kein E-Mail-Versand (is_email_configured)
+    "ICAL_SECRET",           # leer = kein öffentlicher iCal-Feed
+    "EJABBERD_HOST",         # leer = keine XMPP-Brücke (is_ejabberd_configured)
+    "EJABBERD_MUC_SERVICE",
+    "EJABBERD_BOT_JID",
+    "EJABBERD_BOT_PASSWORD",
+    # SMTP ohne Anmeldung ist ein normaler Fall
+    "EMAIL_HOST_USER",
+    "EMAIL_HOST_PASSWORD",
+    # Ersatz im Code dokumentiert
+    "CARDDAV_ADRESSBUCH_NAME",   # → „<Vereinsname> – Mitglieder"
+    "CARDDAV_ORGANISATION",      # → langer Vereinsname
+    "CALDAV_KALENDER_NAME",      # → „<Vereinsname> – Termine"
+    "CALDAV_GEBURTSTAGE_NAME",   # → „<Vereinsname> – Geburtstage"
+    "VEREINSADRESSE",            # → es werden nur die Vorstandsnamen genannt
+    "ANTRAG_EMAIL",              # → Mitglieder mit change_user-Recht
+    "SATZUNG_FILE_ID",           # → kein Link in den Formularen
+    "BEITRAGSORDNUNG_FILE_ID",   # → kein Link in den Formularen
+    "MAP_CENTER_ID",             # → MAP_CENTER_LAT / MAP_CENTER_LNG
+    # Textbausteine, die nur ergänzen
+    "MAIL_FOOTER",                      # leer = keine Fußzeile
+    "MAIL_ANTRAG_ADMIN_MINDERJAEHRIG",  # Zusatz zu MAIL_ANTRAG_ADMIN
+    "MAIL_ANTRAG_ADMIN_FOERDER",        # Zusatz zu MAIL_ANTRAG_ADMIN
+})
+
+
+def ist_pflicht(key: str) -> bool:
+    """Muss dieser Schlüssel einen Wert tragen?
+
+    Nur Katalogschlüssel: ein manuell angelegter Schlüssel (Gruppe „sonstiges")
+    ist nie Pflicht — das Portal kennt ihn nicht und kann ihn nicht vermissen.
+    """
+    return key in _KATALOG and key not in OPTIONAL_LEER
+
+
+def ist_unvollstaendig(key: str, value) -> bool:
+    """Pflichtschlüssel ohne Wert — reine Leerzeichen zählen als leer."""
+    return ist_pflicht(key) and not (value or "").strip()
+
+
+def fehlende_schluessel(vorhanden) -> tuple[str, ...]:
+    """Katalogschlüssel ohne eigene Zeile, in Anzeigereihenfolge.
+
+    Normalerweise leer: ``_seed_config`` legt beim Start jeden Katalogschlüssel
+    an. Übrig bleibt, wer eine Zeile von Hand aus der Tabelle entfernt hat — für
+    diesen Schlüssel greift dann still der Vorgabewert im Code.
+    """
+    da = set(vorhanden)
+    return tuple(k for k in SCHLUESSEL_REIHENFOLGE if k not in da)
+
+
+def zaehle_unvollstaendig(rows) -> int:
+    """Wie viele Pflichtschlüssel ohne Wert dastehen."""
+    return sum(1 for r in rows if ist_unvollstaendig(r["key"], r.get("value")))
+
+
+# Dienste, die ohne ihre Schlüssel schlicht nicht laufen. Das ist **kein Mangel** —
+# der Verzicht kann gewollt sein, deshalb stehen dieselben Schlüssel auch in
+# OPTIONAL_LEER — aber der Betreiber soll es auf der Konfigurationsseite sehen
+# statt es im Betrieb zu merken: ohne SMTP gibt es keine Aktivierung, kein
+# Passwort-Zurücksetzen, keine Rückbestätigung und keine Auftritts-Erinnerung.
+#
+# Die Bedingungen sind dieselben wie in ``app_settings.is_email_configured()`` und
+# ``is_ejabberd_configured()`` — eine Abweichung wäre ein stiller Widerspruch
+# zwischen Anzeige und Laufzeit. ``DienstTest`` hält beides zusammen.
+DIENSTE: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("E-Mail-Versand", ("EMAIL_HOST",)),
+    ("XMPP-Brücke der Foren", ("EJABBERD_HOST", "EJABBERD_BOT_JID")),
+)
+
+
+def abgeschaltete_dienste(rows) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """``(Name, fehlende Schlüssel)`` je Dienst, dem mindestens ein Schlüssel fehlt.
+
+    Genannt werden nur die **leeren** Schlüssel, nicht alle des Dienstes: der Banner
+    soll auf das zeigen, was zu füllen ist.
+    """
+    werte = {r["key"]: (r.get("value") or "").strip() for r in rows}
+    ergebnis = []
+    for name, keys in DIENSTE:
+        fehlend = tuple(k for k in keys if not werte.get(k))
+        if fehlend:
+            ergebnis.append((name, fehlend))
+    return tuple(ergebnis)
+
+
 class Gruppe(NamedTuple):
     id: str
     titel: str

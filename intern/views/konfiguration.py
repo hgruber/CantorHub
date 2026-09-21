@@ -4,7 +4,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
-from ..konfig_gruppen import gruppiere
+from ..konfig_gruppen import (
+    abgeschaltete_dienste, fehlende_schluessel, gruppiere, zaehle_unvollstaendig,
+)
 from ..models import Konfiguration
 
 __all__ = ["konfiguration"]
@@ -53,8 +55,23 @@ def konfiguration(request):
     rows = list(
         Konfiguration.objects.order_by("key").values("id", "key", "value", "description")
     )
+    # Drei Dinge, die der Banner oben auf der Seite meldet — die ersten beiden sind
+    # Mängel, das dritte ist es ausdrücklich nicht:
+    #   leer    = Pflichtschlüssel ohne Wert
+    #   fehlend = Katalogschlüssel ohne Zeile; hier nicht füllbar (kein Feld dafür),
+    #             deshalb namentlich genannt statt nur gezählt
+    #   dienste = Dienste, die mangels Schlüssel nicht laufen. Kann gewollt sein,
+    #             erscheint deshalb als Hinweis und färbt den Banner nicht warnend.
+    leer = zaehle_unvollstaendig(rows)
+    fehlend = fehlende_schluessel(row["key"] for row in rows)
+    dienste = abgeschaltete_dienste(rows)
     return render(request, "konfiguration.html", {
         "seitentitel": "Konfiguration",
         "gruppen": gruppiere(rows),
+        "mangel_leer": leer,
+        "mangel_fehlend": fehlend,
+        "dienste_aus": dienste,
+        "banner_warnung": leer > 0 or bool(fehlend),
+        "banner_zeigen": leer > 0 or bool(fehlend) or bool(dienste),
         "show_search": True,
     })

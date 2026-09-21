@@ -177,7 +177,9 @@ reasoning where it matters.
   loop. See `docs/architecture.md`. A new key needs
   three edits: `_CONFIG_DEFAULTS` in `apps.py`, a group in `konfig_gruppen.py`, and a `FELDTYPEN`
   entry. `KonfigGruppenTest` and `KonfigTypenTest` enforce the last two. A `select`-typed key
-  additionally needs an entry in `SELECT_OPTIONEN` (same file).
+  additionally needs an entry in `SELECT_OPTIONEN` (same file). **A new key counts as required**
+  — the settings page's banner reports it while blank; if blank is a legitimate state for it, add
+  it to `OPTIONAL_LEER` with the reason. See „Completeness" in `docs/configuration.md`.
 - **A file's identity is its storage path**, not its row: several `filer.File` rows may share one
   blob. Use the helpers in `views/files.py` instead of touching `File.file`/`name`. Never run
   `filer_check --delete-orphans` — it would delete the whole version history.

@@ -151,6 +151,46 @@ The cleanup jobs read these as their default; each has a `--days` (or `--keep`) 
 - `DATEIVERSION_AUFBEWAHRUNG_ANZAHL` (number of revisions kept per file regardless of age; default `10`)
 - `ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE` (retention of the `ErinnerungVersand` send markers in days; default `365`. The markers only guard against double sends, so after the event they are no longer needed)
 
+## Completeness: what the settings page flags
+
+`/intern/konfiguration/` carries a banner above the groups. It reports three things, all
+computed in `intern/konfig_gruppen.py` and therefore DB-free and testable
+(`KonfigVollstaendigkeitTest`). The first two are defects and colour the banner with the
+`--warn-*` tokens; the third is not, and renders it in neutral greys
+(`.kf-mangel--hinweis`):
+
+- **empty required key** — a key that must carry a value but whose row is blank. The list of
+  keys where blank is *legitimate* is the explicit exception set `OPTIONAL_LEER`; everything
+  else in the catalog counts as required. A blank required key is not an error — the code
+  falls back to its own default — it just means that default is in force, and for
+  `VEREINSNAME` and friends that default is another choir's name.
+- **missing key** — a catalog key with no row at all. Normally impossible (`_seed_config`
+  creates every key on `post_migrate`); it shows up only after a row was deleted by hand, and
+  the next restart re-creates it. These are named in the banner because the page has no field
+  for them.
+- **disabled service** — a feature that cannot run because its keys are blank. Listed in
+  `DIENSTE`, today `EMAIL_HOST` (no mail at all) and `EJABBERD_HOST` + `EJABBERD_BOT_JID`
+  (no forum bridge). This is deliberately **not** a defect: the same keys are in
+  `OPTIONAL_LEER`, because running without mail or without XMPP is a legitimate setup. But
+  the consequences are large enough — no activation, no password reset, no re-confirmation,
+  no gig reminder — that an operator should not have to discover them in production. The
+  conditions mirror `app_settings.is_email_configured()` and `is_ejabberd_configured()`
+  exactly, including that XMPP needs *both* keys; two tests hold the two definitions
+  together, and a third forbids a key from being a defect and a notice at once.
+
+A key belongs in `OPTIONAL_LEER` when the code has a working substitute
+(`CARDDAV_ADRESSBUCH_NAME` → `VEREINSNAME_LANG`) or when blank is an intended off-switch
+(`EMAIL_HOST` → no mail at all, `EJABBERD_HOST` → no XMPP bridge). The set is an exception
+list rather than a required list so that a **new** key counts as required by default and gets
+noticed instead of staying silently blank.
+
+After a fresh install the banner names exactly the five keys the operator has to supply:
+`VEREINS_URL`, `VEREINSNAME`, `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME`.
+
+The banner is **server-rendered only** — no JavaScript, no per-group or per-field markers. Its
+number describes the state that was loaded, which is the state that matters: saving goes
+through „Änderungen anwenden", and that reloads the page.
+
 ## Mail texts: markup and placeholders
 
 `MAIL_*` texts carry the **complete** visible mail body — greeting, buttons, notes, closing.

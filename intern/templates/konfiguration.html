@@ -16,6 +16,48 @@
 {% endblock %}
 {% block content %}
 <div class="kf-page">
+    {% if banner_zeigen %}
+    {% comment %}
+    Der Banner steht über allem anderen, weil er der Grund ist, warum jemand die
+    Seite überhaupt aufschlägt. Zwei Tonlagen: warnend, solange ein Pflichtfeld
+    leer ist oder eine Zeile fehlt — sonst neutral, denn ein abgeschalteter Dienst
+    ist kein Fehler, sondern eine Auskunft. Rein serverseitig, kein JS: die Zahl
+    stimmt für den geladenen Stand, und gespeichert wird ohnehin erst über
+    „Änderungen anwenden", was die Seite neu lädt.
+    {% endcomment %}
+    <div class="kf-mangel{% if not banner_warnung %} kf-mangel--hinweis{% endif %}">
+        {% if banner_warnung %}
+        <svg class="kf-mangel-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        {% else %}
+        <svg class="kf-mangel-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        {% endif %}
+        <div class="kf-mangel-text">
+            {% if mangel_leer %}
+            <span class="kf-mangel-titel">{{ mangel_leer }} {{ mangel_leer|pluralize:"Einstellung ist,Einstellungen sind" }} unvollständig</span>
+            <span class="kf-mangel-detail">Solange ein Pflichtfeld leer bleibt, greift dort still der Vorgabewert aus dem Code.</span>
+            {% endif %}
+            {% if mangel_fehlend %}
+            <span class="kf-mangel-detail">
+                {{ mangel_fehlend|length }} {{ mangel_fehlend|length|pluralize:"Schlüssel fehlt,Schlüssel fehlen" }} ganz in der Tabelle und {{ mangel_fehlend|length|pluralize:"ist,sind" }} hier nicht zu sehen:
+                {% for key in mangel_fehlend %}<code>{{ key }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}.
+                Ein Neustart des Portals legt {{ mangel_fehlend|length|pluralize:"ihn,sie" }} mit dem Vorgabewert wieder an.
+            </span>
+            {% endif %}
+            {% if dienste_aus %}
+            <span class="kf-mangel-detail">
+                Nicht konfiguriert und deshalb abgeschaltet:
+                {% for name, keys in dienste_aus %}{{ name }} ({% for key in keys %}<code>{{ key }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}){% if not forloop.last %}, {% endif %}{% endfor %}.
+                Das kann so gewollt sein.
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="kf-neu" id="kf-neu" hidden></div>
 
     {% for gruppe in gruppen %}

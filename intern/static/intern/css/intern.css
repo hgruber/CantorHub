@@ -7317,6 +7317,58 @@ body.join-page {
     padding: 4px 16px;
 }
 
+/* Mängel-Banner ganz oben: Pflichtschlüssel ohne Wert. Warn-Töne, nicht
+   Fehler-Töne — das Portal läuft, es fehlt nur die eigene Angabe. */
+.kf-mangel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: var(--r);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    color: var(--warn-text);
+}
+.kf-mangel-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--warn-icon);
+}
+.kf-mangel-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 260px;
+}
+.kf-mangel-titel {
+    font-size: calc(14rem / 14);
+    font-weight: 700;
+    color: var(--warn-strong);
+}
+.kf-mangel-detail {
+    font-size: calc(12rem / 14);
+    line-height: 1.45;
+}
+.kf-mangel-detail code {
+    font-family: var(--mono);
+    font-size: calc(11rem / 14);
+    color: var(--warn-strong);
+}
+/* Neutrale Tonlage: ein abgeschalteter Dienst ist kein Fehler, sondern eine
+   Auskunft. Bewusst aus vorhandenen Tokens gebaut — für eine graue Zeile lohnt
+   kein eigenes --info-Set, und diese vier haben ihre Dark-Mode-Werte schon. */
+.kf-mangel--hinweis {
+    background: var(--bg-thead);
+    border-color: var(--border);
+    color: var(--t2);
+}
+.kf-mangel--hinweis .kf-mangel-icon { color: var(--t3); }
+.kf-mangel--hinweis .kf-mangel-detail code { color: var(--t2); }
+
 /* Akkordeon-Karten im Stil von .detail-card, Marker-Rezept von .ae-help. */
 .kf-gruppe {
     background: var(--bg-card);

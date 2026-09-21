@@ -1417,6 +1417,132 @@ class KonfigTypenTest(SimpleTestCase):
             )
 
 
+class KonfigVollstaendigkeitTest(SimpleTestCase):
+    """Mängelzählung des Konfigurations-Banners — DB-frei."""
+
+    def _defaults_keys(self):
+        from intern.apps import _CONFIG_DEFAULTS
+        return {row[0] for row in _CONFIG_DEFAULTS}
+
+    def test_optional_leer_kennt_nur_katalogschluessel(self):
+        # Ein Tippfehler in OPTIONAL_LEER bliebe sonst unbemerkt — der Schlüssel
+        # gälte weiter als Pflicht und der Banner meldete ihn ewig.
+        from intern.konfig_gruppen import OPTIONAL_LEER
+        defaults = self._defaults_keys()
+        for key in OPTIONAL_LEER:
+            self.assertIn(
+                key, defaults,
+                msg=f"OPTIONAL_LEER kennt {key!r}, _CONFIG_DEFAULTS nicht",
+            )
+
+    def test_pflicht_gilt_nur_fuer_katalogschluessel(self):
+        # Manuell angelegte Schlüssel (Gruppe „sonstiges") sind nie Pflicht.
+        from intern.konfig_gruppen import ist_pflicht
+        self.assertFalse(ist_pflicht("FOO_BAR"))
+        self.assertTrue(ist_pflicht("VEREINSNAME"))
+        self.assertFalse(ist_pflicht("EMAIL_HOST"))  # leer = kein Versand
+
+    def test_unvollstaendig_zaehlt_leerzeichen_als_leer(self):
+        from intern.konfig_gruppen import ist_unvollstaendig
+        self.assertTrue(ist_unvollstaendig("VEREINSNAME", ""))
+        self.assertTrue(ist_unvollstaendig("VEREINSNAME", "   "))
+        self.assertTrue(ist_unvollstaendig("VEREINSNAME", None))
+        self.assertFalse(ist_unvollstaendig("VEREINSNAME", "Chor"))
+        # Optionaler Schlüssel bleibt auch leer vollständig.
+        self.assertFalse(ist_unvollstaendig("MAIL_FOOTER", ""))
+        # Unbekannter Schlüssel ebenso.
+        self.assertFalse(ist_unvollstaendig("FOO_BAR", ""))
+
+    def test_zaehlt_leere_pflichtfelder(self):
+        from intern.konfig_gruppen import zaehle_unvollstaendig
+        rows = [
+            {"id": 1, "key": "VEREINSNAME", "value": "", "description": ""},
+            {"id": 2, "key": "VEREINSNAME_KURZ", "value": "JG", "description": ""},
+            {"id": 3, "key": "MAIL_FOOTER", "value": "", "description": ""},   # optional
+            {"id": 4, "key": "FOO_BAR", "value": "", "description": ""},       # kein Katalog
+        ]
+        self.assertEqual(zaehle_unvollstaendig(rows), 1)
+        self.assertEqual(zaehle_unvollstaendig([]), 0)
+
+    def test_abgeschaltete_dienste(self):
+        from intern.konfig_gruppen import abgeschaltete_dienste
+
+        def rows(**werte):
+            vorgabe = {"EMAIL_HOST": "", "EJABBERD_HOST": "", "EJABBERD_BOT_JID": ""}
+            vorgabe.update(werte)
+            return [{"id": i, "key": k, "value": v, "description": ""}
+                    for i, (k, v) in enumerate(vorgabe.items())]
+
+        # Beides aus: beide Dienste gemeldet, je mit ihren leeren Schlüsseln.
+        aus = abgeschaltete_dienste(rows())
+        self.assertEqual(
+            aus,
+            (("E-Mail-Versand", ("EMAIL_HOST",)),
+             ("XMPP-Brücke der Foren", ("EJABBERD_HOST", "EJABBERD_BOT_JID"))),
+        )
+        # Mail konfiguriert: nur noch XMPP.
+        aus = abgeschaltete_dienste(rows(EMAIL_HOST="smtp.example.com"))
+        self.assertEqual([name for name, _ in aus], ["XMPP-Brücke der Foren"])
+        # Halb konfiguriertes XMPP bleibt abgeschaltet — genau wie
+        # is_ejabberd_configured() es sieht; genannt wird nur der leere Schlüssel.
+        aus = abgeschaltete_dienste(rows(EJABBERD_HOST="xmpp.example.com"))
+        self.assertEqual(aus, (("E-Mail-Versand", ("EMAIL_HOST",)),
+                               ("XMPP-Brücke der Foren", ("EJABBERD_BOT_JID",))))
+        # Alles gesetzt: nichts zu melden. Leerraum zählt als leer.
+        self.assertEqual(abgeschaltete_dienste(rows(
+            EMAIL_HOST="smtp.example.com",
+            EJABBERD_HOST="xmpp.example.com",
+            EJABBERD_BOT_JID="bot@xmpp.example.com",
+        )), ())
+        self.assertNotEqual(abgeschaltete_dienste(rows(EMAIL_HOST="   ")), ())
+
+    def test_dienst_schluessel_stehen_im_katalog_und_sind_optional(self):
+        # Ein Dienst-Schlüssel darf nie zugleich als Mangel gezählt und als
+        # Hinweis genannt werden — sonst meldete der Banner dasselbe zweimal,
+        # einmal gelb und einmal grau.
+        from intern.konfig_gruppen import DIENSTE, OPTIONAL_LEER, ist_pflicht
+        defaults = self._defaults_keys()
+        for name, keys in DIENSTE:
+            self.assertTrue(keys, msg=f"Dienst {name!r} nennt keinen Schlüssel")
+            for key in keys:
+                self.assertIn(key, defaults, msg=f"{key!r} ({name}) fehlt in _CONFIG_DEFAULTS")
+                self.assertIn(key, OPTIONAL_LEER, msg=f"{key!r} ({name}) fehlt in OPTIONAL_LEER")
+                self.assertFalse(ist_pflicht(key))
+
+    def test_dienst_bedingungen_decken_sich_mit_app_settings(self):
+        # Die Anzeige darf nicht behaupten, ein Dienst laufe, während der Code
+        # ihn für unkonfiguriert hält. Beide Kriterien stehen in app_settings.
+        import inspect
+        from intern import app_settings
+        from intern.konfig_gruppen import DIENSTE
+        dienst_keys = {name: set(keys) for name, keys in DIENSTE}
+        self.assertEqual(dienst_keys["E-Mail-Versand"], {"EMAIL_HOST"})
+        self.assertEqual(dienst_keys["XMPP-Brücke der Foren"],
+                         {"EJABBERD_HOST", "EJABBERD_BOT_JID"})
+        # Gegenprobe am Quelltext: genau diese Schlüssel prüfen die Helfer.
+        for funktion, keys in ((app_settings.is_email_configured, dienst_keys["E-Mail-Versand"]),
+                               (app_settings.is_ejabberd_configured,
+                                dienst_keys["XMPP-Brücke der Foren"])):
+            quelle = inspect.getsource(funktion)
+            for key in keys:
+                self.assertIn(key, quelle,
+                              msg=f"{funktion.__name__} prüft {key!r} nicht (mehr)")
+
+    def test_fehlende_schluessel(self):
+        from intern.konfig_gruppen import SCHLUESSEL_REIHENFOLGE, fehlende_schluessel
+        # Vollständige Tabelle: nichts fehlt.
+        self.assertEqual(fehlende_schluessel(SCHLUESSEL_REIHENFOLGE), ())
+        # Zwei entfernte Zeilen kommen in Anzeigereihenfolge zurück, nicht
+        # alphabetisch — der Banner nennt sie in derselben Ordnung wie die Seite.
+        rest = [k for k in SCHLUESSEL_REIHENFOLGE if k not in ("VEREINSNAME", "EMAIL_PORT")]
+        fehlend = fehlende_schluessel(rest)
+        self.assertEqual(set(fehlend), {"VEREINSNAME", "EMAIL_PORT"})
+        pos = {k: i for i, k in enumerate(SCHLUESSEL_REIHENFOLGE)}
+        self.assertEqual(list(fehlend), sorted(fehlend, key=lambda k: pos[k]))
+        # Ein Fremdschlüssel in der Tabelle ändert nichts.
+        self.assertEqual(fehlende_schluessel(list(SCHLUESSEL_REIHENFOLGE) + ["FOO_BAR"]), ())
+
+
 class ZeitzoneTest(SimpleTestCase):
     """ZEITZONE-Konfiguration — DB-frei über Env-Variablen und Fallback geprüft."""
 

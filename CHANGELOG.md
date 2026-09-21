@@ -10,6 +10,14 @@ oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen.
 
 ## Unveröffentlicht
 
+- Konfigurationsseite: ein Banner über den Gruppen zählt, wie viele Pflicht-Einstellungen noch
+  leer sind, und nennt die Schlüssel, zu denen es gar keine Zeile gibt. Nach einer frischen
+  Installation sind das die fünf, die der Betreiber liefern muss: `VEREINS_URL`, `VEREINSNAME`,
+  `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME`. Getrennt davon, in neutralem
+  Grau statt als Warnung, nennt derselbe Banner Dienste, die mangels Schlüssel nicht laufen —
+  E-Mail-Versand und XMPP-Brücke. Das ist kein Fehler und kann so gewollt sein, aber ohne
+  Mailversand gibt es weder Aktivierung noch Passwort-Zurücksetzen, Rückbestätigung oder
+  Auftritts-Erinnerung; das sollte man nicht erst im Betrieb merken
 - Rundmail an Mitglieder: ohne konfigurierten SMTP-Server ist der Senden-Knopf ausgegraut und
   nennt im Tooltip den Grund, statt eine Mail zu melden, die nur im Log landet. Die Seite selbst
   bleibt erreichbar, Text und Anhänge lassen sich weiter vorbereiten
