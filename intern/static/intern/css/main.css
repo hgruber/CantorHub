@@ -4,15 +4,39 @@
 
 :root {
     --brand: #c14468;
-    --brand-dark: #a83a5a;
-    --brand-soft: #f6eaee;
-    --ink: #1b1a1c;
-    --ink-soft: #4a4750;
-    --muted: #78737e;
-    --line: #e6e2e6;
+    /* Von --brand abgeleitet, nicht literal — seit die Startseite
+       _brand_boot.html einbindet, zieht eine konfigurierte BRAND_FARBE hier
+       durch. Vorbild ist intern.css, das dieselbe Ableitung führt. */
+    --brand-dark: color-mix(in srgb, var(--brand) 85%, black);
+    --brand-soft: color-mix(in srgb, var(--brand) 8%, white);
+
+    /* Zweitfarbe: die Schals im Chor-Foto tragen Gold und Orange. Bewusst NICHT
+       aus --brand abgeleitet — bei einer anders konfigurierten Marke soll der
+       Kontrapunkt bleiben. --gold trägt nur Flächen und Ränder (2,7:1 auf Weiß),
+       Schrift braucht --gold-text; --gold-band ist für das Roséband gerechnet
+       (4,6:1 darauf). --gold ist derselbe Wert, den intern.css als --stimme-s
+       führt („Sopran — Gold"). */
+    --gold: #c28500;
+    --gold-text: color-mix(in srgb, var(--gold) 78%, black);
+    --gold-soft: color-mix(in srgb, var(--gold) 45%, white);
+    --gold-band: color-mix(in srgb, var(--gold) 22%, white);
+
+    /* Warm statt neutral: das alte Violett-Schwarz wirkte neben Creme grau. */
+    --ink: #241d1a;
+    --ink-soft: #4b433e;
+    --muted: #6f665f;
+    --line: #e8dfd4;
     --paper: #ffffff;
-    --paper-alt: #faf7f8;
-    --dark: #17151a;
+    --paper-alt: #fbf6ef;
+
+    /* Das Kontaktband. Der Abschlag von 10 % ist kein Geschmack: auf reinem
+       --brand trägt Weiß nur 4,89:1, dann dürfte kein Zeichen mehr transparent
+       sein; bei 90 % sind es 5,79:1 und die Fläche bleibt rosé. */
+    --band: color-mix(in srgb, var(--brand) 90%, black);
+
+    /* Warmes Schleierdunkel über dem Foto — ersetzt das kalte rgba(12,10,14,…),
+       das dem Bild Rosa und Gold ausgesogen hat. */
+    --hero-shade: #2a1a12;
 
     --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
         "Times New Roman", serif;
@@ -111,7 +135,9 @@ a {
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+    text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.8),
+        0 1px 10px rgba(0, 0, 0, 0.55);
     transition: color 0.25s ease;
 }
 
@@ -187,7 +213,7 @@ a {
     align-items: flex-end;
     padding: 8rem var(--pad) clamp(3rem, 8vh, 6rem);
     overflow: hidden;
-    background: var(--dark);
+    background: var(--hero-shade);
 }
 
 .hero-media,
@@ -200,24 +226,57 @@ a {
     object-position: 50% 42%;
 }
 
+/* Eigener Stacking-Kontext, damit die Schleier in ::before/::after über dem Foto
+   liegen. Ohne ihn läge ::before als erstes Kind unter dem Bild — ::after liegt
+   heute nur deshalb darüber, weil es das letzte Kind ist. */
+.hero-media {
+    z-index: 0;
+}
+
+/* Kopfschleier über die volle Breite: die feste Navigation steht mit weißer
+   Schrift auf dem hellen Gewölbe des Fotos — dort wäre sie ohne Schutz unlesbar.
+   Gemessen gegen die hellste Stelle der Kopfzeile: mit 0,55/0,46 standen die
+   Navigationslinks bei 4,41:1 und damit knapp unter AA. Er hält bis 11 % (die
+   Kopfzeile ist 62–84 px hoch und damit 8,7–10,7 % jeder Hero-Höhe) und ist bei
+   19 % ganz weg. */
 .hero-media::after {
     content: "";
     position: absolute;
     inset: 0;
-    background:
-        linear-gradient(
-            100deg,
-            rgba(12, 10, 14, 0.9) 0%,
-            rgba(12, 10, 14, 0.62) 40%,
-            rgba(12, 10, 14, 0) 78%
-        ),
-        linear-gradient(
-            to bottom,
-            rgba(12, 10, 14, 0.55) 0%,
-            rgba(12, 10, 14, 0.12) 32%,
-            rgba(12, 10, 14, 0.7) 80%,
-            rgba(12, 10, 14, 0.9) 100%
-        );
+    z-index: 2;
+    background: linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--hero-shade) 66%, transparent) 0%,
+        color-mix(in srgb, var(--hero-shade) 56%, transparent) 11%,
+        transparent 19%
+    );
+}
+
+/* Die Textzone — nur unter dem Text, nicht über die ganze Breite. Sie ist der
+   einzige Grund für den Schleier: hinter dem Block liegen weiße Roben, der helle
+   Holzboden und die helle Wand, und weißer Text braucht darauf 4,5:1. Seit der
+   Label in „Über uns" steht, endet der Block bei 54 % von unten (Wortmarke
+   33,5–54 %, Anrisstext 19,2–31,1 %, Buttons 8,7–14,9 %). Die Maske blendet nach
+   rechts aus, damit die rechte Bildhälfte unberührt bleibt; bei ≤ 768 px füllt
+   der Text die Breite und die Maske entfällt (siehe unten). */
+.hero-media::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+        to top,
+        color-mix(in srgb, var(--hero-shade) 76%, transparent) 0%,
+        color-mix(in srgb, var(--hero-shade) 74%, transparent) 18%,
+        color-mix(in srgb, var(--hero-shade) 72%, transparent) 36%,
+        color-mix(in srgb, var(--hero-shade) 70%, transparent) 52%,
+        color-mix(in srgb, var(--hero-shade) 50%, transparent) 62%,
+        color-mix(in srgb, var(--hero-shade) 26%, transparent) 70%,
+        color-mix(in srgb, var(--hero-shade) 6%, transparent) 78%,
+        transparent 84%
+    );
+    -webkit-mask-image: linear-gradient(to right, #000 0 52%, transparent 64%);
+    mask-image: linear-gradient(to right, #000 0 52%, transparent 64%);
 }
 
 .hero-inner {
@@ -234,10 +293,15 @@ a {
     font-weight: 600;
     letter-spacing: 0.28em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.82);
+    color: rgba(255, 255, 255, 0.9);
     padding-bottom: 0.9rem;
     margin-bottom: 1.1rem;
-    border-bottom: 2px solid var(--brand);
+    border-bottom: 2px solid var(--gold);
+}
+
+/* Der Halo trägt die kleinen Versalien auch dort, wo der Schleier dünn ist. */
+.hero .eyebrow {
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
 }
 
 .hero h1 {
@@ -254,14 +318,15 @@ a {
 .hero-wordmark img {
     width: clamp(240px, 38vw, 480px);
     height: auto;
-    filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 6px 22px rgba(26, 12, 6, 0.7));
 }
 
 .hero-sub {
     margin-top: 1.25rem;
     max-width: 46ch;
     font-size: clamp(1rem, 2vw, 1.2rem);
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
 .hero-actions {
@@ -365,7 +430,7 @@ h3 {
     border-top: 3px solid var(--brand);
     border-radius: 2px;
     padding: clamp(1.75rem, 4vw, 2.5rem);
-    box-shadow: 0 12px 30px rgba(27, 26, 28, 0.05);
+    box-shadow: 0 12px 30px rgba(42, 26, 20, 0.06);
 }
 
 .card h2 {
@@ -376,11 +441,19 @@ h3 {
 .card a {
     color: var(--brand);
     text-decoration: none;
-    border-bottom: 1px solid rgba(193, 68, 104, 0.35);
+    border-bottom: 1px solid color-mix(in srgb, var(--brand) 35%, transparent);
 }
 
 .card a:hover {
     border-bottom-color: var(--brand);
+}
+
+/* Die Karte, die zum Mitmachen einlädt, trägt Gold statt Markenrosa: sie ist die
+   einzige Stelle im Fließteil, die eine Einladung ausspricht, und soll nicht wie
+   eine weitere Textkarte aussehen. Nur die Oberkante — drei Pixel sind ein
+   Akzent, kein Anstrich. */
+.card-aufnahme {
+    border-top-color: var(--gold);
 }
 
 /* === Concerts ============================================================ */
@@ -400,7 +473,7 @@ h3 {
 }
 
 .concert-item:hover {
-    background: rgba(193, 68, 104, 0.04);
+    background: color-mix(in srgb, var(--brand) 4%, transparent);
 }
 
 .concert-item .date {
@@ -455,7 +528,7 @@ h3 {
     margin-top: clamp(1.5rem, 4vw, 2.5rem);
     border-radius: 2px;
     overflow: hidden;
-    background: var(--dark);
+    background: var(--hero-shade);
 }
 
 .gallery-band img {
@@ -472,9 +545,12 @@ h3 {
 
 /* === Contact ============================================================= */
 
+/* Ein warmes Markenband statt der schwarzen Fläche. Alle Werte sind auf Weiß
+   gerechnet: --band trägt 5,79:1, deshalb steht hier durchgehend volles Weiß.
+   Die alte 0,78-Deckung wäre auf dem Band nur 4,39:1 gewesen. */
 #contact {
-    background: var(--dark);
-    color: rgba(255, 255, 255, 0.78);
+    background: var(--band);
+    color: #fff;
 }
 
 #contact h2,
@@ -482,8 +558,12 @@ h3 {
     color: #fff;
 }
 
+/* Gold als Zweitfarbe. Als Schrift braucht es hier das sehr helle --gold-band
+   (4,6:1); die Linie darf kräftiger sein — --gold-soft liegt mit 3,57:1 über
+   der 3:1-Schwelle für Nicht-Text. */
 #contact .eyebrow {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--gold-band);
+    border-bottom-color: var(--gold-soft);
 }
 
 .contact-info {
@@ -494,7 +574,8 @@ h3 {
 
 .contact-card {
     padding-top: 1.5rem;
-    border-top: 2px solid rgba(255, 255, 255, 0.16);
+    /* 0,16 war schon gegen Schwarz kaum zu sehen, gegen Rosé erst recht nicht. */
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .contact-card h3 {
@@ -506,20 +587,26 @@ h3 {
 .contact-card a {
     color: #fff;
     text-decoration: none;
-    border-bottom: 1px solid var(--brand);
+    /* war var(--brand) — auf einem Markenband unsichtbar */
+    border-bottom: 1px solid var(--gold-soft);
 }
 
 .contact-card a:hover {
-    color: var(--brand);
+    /* war var(--brand) — auf einem Markenband unsichtbar */
+    color: var(--gold-band);
+    border-bottom-color: var(--gold-band);
 }
 
 /* === Footer ============================================================== */
 
+/* Hell statt schwarz: Foto und Roséband tragen den Auftritt, der Fuß ist der
+   ruhige Abschluss — Creme wie .section-alt, damit die Seite mit einer Fläche
+   endet, die sie oben schon zeigt. */
 footer {
-    background: #100e12;
-    color: rgba(255, 255, 255, 0.55);
+    background: var(--paper-alt);
+    color: var(--ink-soft);
     padding: 2.5rem var(--pad);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--line);
 }
 
 .footer-content {
@@ -532,9 +619,11 @@ footer {
     gap: 1.25rem;
 }
 
+/* Die schwarze Wortmarke (JG-Frankfurt.svg) — die helle des Heros wäre auf
+   Creme unsichtbar. Voll deckend statt 0,85: die Transparenz war für Weiß auf
+   Schwarz gedacht und macht Schwarz auf Creme nur grau. */
 .footer-logo img {
     width: 150px;
-    opacity: 0.85;
 }
 
 .footer-links {
@@ -544,21 +633,23 @@ footer {
 }
 
 .footer-links a {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--ink-soft);
     text-decoration: none;
 }
 
 .footer-links a:hover {
-    color: #fff;
+    color: var(--brand);
 }
 
 .copyright {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.45);
+    /* 5,22:1 auf Creme — das alte rgba(255,255,255,0.45) auf Schwarz stand
+       bei 3,4:1 und damit unter WCAG AA. */
+    color: var(--muted);
     width: 100%;
     text-align: center;
     padding-top: 1.25rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--line);
 }
 
 /* === Responsive ========================================================== */
@@ -588,6 +679,14 @@ footer {
     .hero {
         min-height: 84vh;
         padding-top: 6rem;
+    }
+
+    /* Auf schmalen Displays füllt der Text die Breite — die Spaltenbegrenzung
+       der Textzone wäre dort falsch und würde rechts abdunkeln, wo gar kein
+       Text steht. */
+    .hero-media::before {
+        -webkit-mask-image: none;
+        mask-image: none;
     }
 
     .concert-item {

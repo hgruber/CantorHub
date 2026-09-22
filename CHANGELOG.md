@@ -11,6 +11,47 @@ dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
 ## Unveröffentlicht
 
+- Startseite: die Einstiegsseite soff am Seitenende in Schwarz ab — der Hero lag unter zwei
+  kalten Schleiern (zusammen bis 0,9 Deckung), die Kontaktsektion auf `#17151a`, der Fuß auf
+  dem noch dunkleren, hartkodierten `#100e12`. Das Foto trug den Auftritt damit nur noch in
+  der Mitte; wer die Seite aufrief, sah zuerst eine Trauerfläche. Der Hero schleiert jetzt warm
+  getönt und nur noch dort, wo Text steht. Nach einer ersten Runde, in der er noch über die
+  ganze Breite lag (84,7 % der Fläche berührt, 70,7 % kräftig gedämpft), sitzt die Textzone in
+  einer eigenen Fläche (`.hero-media::before`) und ist per `mask-image` auf die linke Spalte
+  begrenzt; der Kopfschleier bleibt als Band über die volle Breite in `::after`, weil dort die
+  feste Navigation in weißer Schrift über dem hellen Gewölbe steht. So werden noch 49,5 % der
+  Fläche berührt und 37,3 % kräftig gedämpft. Die weiche Kante kostet gegenüber einem harten
+  Schnitt rund fünf Punkte: die 41 %, die eine Rechnung mit harter Kante ergab, sind mit einer
+  Kante, die man nicht sieht, nicht zu haben. Der Vereinszusatz über der Wortmarke ist in den
+  Abschnitt „Über uns" gewandert — er war die kleinste Schrift im Hero (0,75 rem Versalien,
+  also 4,5:1), stand ganz oben und zog den Schleier bis dorthin, obwohl die Wortmarke den Namen
+  direkt darunter ohnehin nennt. Der Hero hat damit gar keinen kleinen Text mehr; die Wortmarke
+  ist ein Logotyp und nach WCAG 1.4.3 von der Kontrastanforderung ausgenommen, liegt aber
+  weiterhin auf dem Schleier, damit sie nicht ausgewaschen wirkt
+
+  Die Stufen sind gegen das Foto gemessen und nicht geschätzt: hinter dem Textblock liegen
+  weiße Roben, der helle Holzboden und die helle Wand, an denen weißer Text 4,5:1 halten muss.
+  Mit den ersten Schätzwerten standen Wortmarke und Label ganz ohne Schleier da, und ein
+  zweiter Entwurf legte 0,88 auf, ein Fünftel mehr Deckung als nötig. Am gerenderten Bild
+  gemessen halten Anrisstext 6,9:1, Ghost-Button 9,7:1 und Navigationslinks 5,8:1 — die
+  standen mit 4,41:1 knapp unter AA, weshalb der Kopfschleier von 0,55/0,46 auf 0,66/0,56 ging.
+  Ein zweiter Fund aus derselben Messung: `.hero-media` braucht einen eigenen
+  Stacking-Kontext, sonst läge die neue Fläche als erstes Kind unter dem Foto — die alte kam
+  nur deshalb darüber, weil sie das letzte Kind war. Die Alternative „Text ganz vom Foto
+  nehmen" bleibt verworfen: eine Zellkarte des Fotos zeigt, dass es dort keine Stelle gibt, an
+  der Text ohne Schleier lesbar wäre — die einzige dunkle Zone ist 120 px breit, und im
+  Textband sind nur 12–41 % der Pixel hell, dunkle Schrift bräuchte also 55 % Aufhellung
+
+  Das Kontaktband ist markenrosé mit weißer Schrift (`--band`: `--brand` um 10 % abgedunkelt,
+  denn auf reinem `--brand` trägt Weiß nur 4,89:1 und dann dürfte kein Zeichen mehr transparent
+  sein), der Fuß ist hell auf warmem Creme mit der schwarzen Wortmarke. Dazu eine zweite Farbe:
+  Gold, wie die Schals im Foto, an zwei Stellen (Oberkante der Karte „Wir suchen Sängerinnen
+  und Sänger", Augenbraue und Link im Kontaktband — die dritte, die Zierlinie unter dem
+  Hero-Label, ist mit dem Label entfallen). Nebenbefund aus derselben Ecke: `--brand-dark`,
+  `--brand-soft` und zwei Rosé-Tints standen hier als Literale, und die Startseite lud
+  `_brand_boot.html` gar nicht — eine konfigurierte `BRAND_FARBE` blieb auf der öffentlichen
+  Seite wirkungslos und wirkt jetzt. Die Copyright-Zeile stand mit 3,4:1 unter WCAG AA und
+  steht jetzt bei 5,2:1
 - Repertoire: die Suche der Titelliste war an die Spalte `titel` gebunden und fand weder
   Komponist noch Bearbeiter, obwohl beide am Modell stehen und als Spalten angeboten werden.
   Sie greift jetzt über alle drei (ODER-verknüpft, `RepertoireFilter.filter_suche`). Parameter

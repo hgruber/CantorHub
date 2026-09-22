@@ -267,6 +267,8 @@ numbers/headers use `--cal-weekend` (red) — all with dark-mode values.
 All colours use CSS custom properties defined in `:root` (light mode). Dark mode is a
 `[data-theme="dark"]` block that overrides all colour tokens. When adding new colours, always
 use CSS variables and add dark-mode values; avoid hardcoded hex values in component styles.
+`intern/static/intern/css/main.css`, the public homepage, is the one stylesheet outside this
+rule — it has a single theme and its own token block; see „Public homepage" below.
 
 The accent colour is the one exception worth calling out explicitly: never hardcode `#c14468`
 or `rgba(193, 68, 104, …)` in component styles — always reference `var(--brand)`, one of its
@@ -530,24 +532,96 @@ Every new view that renders `table.html` needs the decorator.
 
 `templates/index.html` + `intern/static/intern/css/main.css`. The public landing page does
 **not** extend `base.html` and does **not** use `intern.css` — it is a standalone one-pager
-with its own stylesheet (light mode only, own token block in `:root`). Structure: fixed header
-over a full-bleed photo hero (transparent at the top, `.is-solid` white after 60 px of scroll —
-set by a small inline script at the end of the page), then Über uns (cards), Konzerte
-(date/title/place rows), Galerie (single wide photo band) and a dark Kontakt section plus
-footer.
+with its own stylesheet and its own token block in `:root`. It is light mode only: no
+`[data-theme="dark"]` block and no `_theme_boot.html`, because the photo hero, the white
+`.is-solid` header state and the rose Kontakt band are a composed look, not a token swap. The
+`--gold*` tokens are the one deliberate exception to the dark-value rule in `CLAUDE.md`: that
+rule governs `intern.css`, where two themes share one set of component styles, while `main.css`
+has only one. The page **does** include `_brand_boot.html`, directly after the `main.css` link,
+so `--brand` follows `BRAND_FARBE`; `--brand-dark`, `--brand-soft` and `--band` are derived from
+it with `color-mix()`, exactly as in `intern.css`. What does *not* follow is every logo: the
+`JG-Frankfurt*.svg` files carry `#c14468`/`#000000` as literals, so a deployer with an unrelated
+brand gets a rose logo (an open point in `docs/branding.md`).
 
-It is the one page that stays **light only** on purpose, and therefore the one page that does
-*not* include `_theme_boot.html`: the photo hero, the white `.is-solid` header state and the
-already-dark Kontakt section are a composed look, not a token swap. Do not bolt a
-`[data-theme="dark"]` block onto `main.css` without redesigning those three.
+Structure: fixed header over a full-bleed photo hero (transparent at the top, `.is-solid` white
+after 60 px of scroll — set by a small inline script at the end of the page), then Über uns (the
+club tagline as its eyebrow, then two cards), Konzerte (date/title/place rows), Galerie (single
+wide photo band), a Kontakt section on a warm rose band and a light footer. The tagline sits
+there rather than in the hero because it was the smallest type up there and pulled the scrim to
+the top of the picture, although the wordmark states the name directly beneath it.
 
-Logo usage: the header shows the round mark (`intern/images/JG-Frankfurt-wG-color.svg`) over
-the photo and swaps to the black wordmark (`intern/brand/JG-Frankfurt.svg`) once the header
-turns white — below 460 px the mark stays. Hero headline and footer use the light wordmark
-(`intern/brand/JG-Frankfurt-transparent.svg`) as an image inside the `<h1>`; its font (Showcard
-Gothic) exists only as outlines in the SVG, so the lettering can only be used as an asset,
-never as a webfont. The favicon redirect in `config/urls.py` relies on the tracked source copy
-of `JG-Frankfurt-wG-color.svg` in `intern/static/intern/images/`.
+The palette is warm — cream instead of white-grey, a warm dark instead of black. `--gold` is a
+second colour standing for the invitation rather than the brand, and it appears in exactly two
+places: the top border of the „Wir suchen Sängerinnen und Sänger" card (`.card-aufnahme`) and the
+eyebrow plus link of the Kontakt section. (It was three until the hero eyebrow moved to the Über
+uns section, where `.section-head .eyebrow` colours it in the brand rose like every other
+section label.) It is a fixed value and deliberately **not** derived from `--brand`: a deployer
+who sets an unrelated brand colour has to retune it by hand, which is the price of having a
+counterweight to the brand at all. `--gold` itself carries only surfaces and rules (2.7:1 on
+white); wherever it has to be read it is `--gold-text` or `--gold-band`.
+
+**The hero photo is toned in two places and free in between.** The two scrims live in separate
+pseudo-elements because they have different shapes. `.hero-media::after` is the flat band over
+the top 19 % only — the fixed navigation sits on the photo in white type and the church vault
+behind it reaches 0.85 brightness. `.hero-media::before` is the text zone itself: a
+bottom-anchored gradient limited to the left column by `mask-image`, which fades out to the
+right so the photo's right half stays untouched. A mask rather than a second gradient because
+two gradients cannot be intersected in CSS, and `background-blend-mode: multiply` would blend
+the colour along with the alpha. `mask-image` is new to this project but conservative next to
+`color-mix()`, which is the newer feature (Chrome 111 / Safari 16.2 against Chrome 4 / Safari 4).
+`.hero-media` carries `z-index: 0` to give itself a stacking context — without it `::before`, as
+the element's first child, would paint *under* the photo (`::after` gets away with it only by
+being the last child). Below 768 px the text fills the width and the mask is switched off.
+
+Together the two scrims touch 49.5 % of the hero where the previous full-width gradient touched
+84.7 %, and dim 37.3 % of it heavily rather than 70.7 %. The mask's soft edge costs about five
+points against a hard cut — the ideal 41 % is not reachable with an edge you cannot see. The
+text block now spans 8.7 % (buttons) to 54 % (wordmark) of the hero's height: since the club
+name moved to the Über uns section, the wordmark is the topmost element in the hero. The
+wordmark is a logotype and therefore **exempt** from the contrast requirement (WCAG 1.4.3), but
+it still sits on the scrim so it does not look washed out.
+
+Those alphas are measured, not chosen by eye: behind the text sit white robes, the light wooden
+floor and the bright wall, so white type has to hold 4.5:1 against them. Measured on the
+rendered page they hold 6.9:1 (hero subline), 9.7:1 (ghost button) and 5.8:1 (navigation links).
+The tuning is worth redoing the same way if the photo is ever replaced — render the page with
+`.hero-inner` hidden (keep the scrims), read the brightest pixel under each text element, and
+solve for the alpha that brings it under 0.18. Two traps that recipe has already caught: a
+gradient ending at 58 % *looks* plausible but leaves the wordmark with no scrim at all, and the
+navigation links sat at 4.41:1 — just under AA — until the header band went from 0.55/0.46 to
+0.66/0.56. The design this replaced flooded the whole picture at up to 0.9 alpha, over a photo
+whose mean brightness is 0.343.
+
+A note on the alternative: there is no position in this frame where text needs no scrim at all.
+A 12 × 10 map of the brightest pixel per cell shows the only dark region (≤ 0.10) is 120 px wide
+in the top-left, too narrow for the 480 px wordmark, and the text band is a *mix* — only 12–41 %
+of its pixels are bright, the rest is the choir's black clothing — so dark type would need ~55 %
+of lightening instead. The three real levers are the dimmed **area**, the required alpha via
+type size (3:1 instead of 4.5:1 from 24 px up), and taking the text off the photo altogether.
+
+**The Kontakt section is a brand band, not a dark surface.** `--band` is `--brand` at 90 %
+towards black, and those 10 % are load-bearing: plain `--brand` carries white at only 4.89:1, so
+not one character on it may be transparent, while 90 % gives 5.79:1 and leaves room. All type on
+the band is full white; gold appears only as `--gold-band` (a pale gold, 4.6:1) for the eyebrow
+and the link, and as `--gold-soft` (3.57:1, above the 3:1 bar for non-text) for their rules.
+This is the one place where a pale `BRAND_FARBE` bites first, since `--band` follows it down — a
+brand too light to carry white is broken elsewhere already: `intern.css` and `.btn-primary` have
+put white on `--brand` all along.
+
+**The footer is light** — cream background, warm ink, and the *black* wordmark
+(`intern/brand/JG-Frankfurt.svg`); the light `JG-Frankfurt-transparent.svg` of the hero would be
+invisible on it. `intern/images/JG-Frankfurt-wG-color.svg` is not an alternative there: its
+white backing ellipse shows as a pale disc on cream. The copyright line uses `--muted` (5.2:1
+on cream); the old `rgba(255, 255, 255, 0.45)` on near-black was 3.4:1 and missed AA.
+
+Logo usage in the header is unchanged: the round mark
+(`intern/images/JG-Frankfurt-wG-color.svg`) over the photo, swapped for the black wordmark
+(`intern/brand/JG-Frankfurt.svg`) once the header turns white — below 460 px the mark stays. The
+hero headline uses the light wordmark (`intern/brand/JG-Frankfurt-transparent.svg`) as an image
+inside the `<h1>`; its font (Showcard Gothic) exists only as outlines in the SVG, so the
+lettering can only be used as an asset, never as a webfont. The favicon redirect in
+`config/urls.py` relies on the tracked source copy of `JG-Frankfurt-wG-color.svg` in
+`intern/static/intern/images/`.
 
 All copy comes from `Konfiguration` (`HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME`, `VEREINSNAME*`,
 `VEREINSADRESSE`, `DEFAULT_FROM_EMAIL`) — `home()` in `views/auth.py` additionally passes

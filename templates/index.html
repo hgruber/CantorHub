@@ -8,6 +8,8 @@
         <meta name="description"
               content="{{ vereinsname_lang }} — {{ vereinsname }}" />
         <link rel="stylesheet" href="{% static 'intern/css/main.css' %}" />
+        {# überschreibt --brand mit BRAND_FARBE — muss nach dem main.css-Link stehen #}
+        {% include "_brand_boot.html" %}
         <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
     </head>
     <body>
@@ -39,7 +41,6 @@
                      fetchpriority="high" />
             </div>
             <div class="hero-inner">
-                <span class="eyebrow">{{ vereinsname }}</span>
                 <h1 class="hero-wordmark">
                     <img src="{% static 'intern/brand/JG-Frankfurt-transparent.svg' %}"
                          alt="{{ vereinsname_lang }}" />
@@ -56,13 +57,21 @@
 
         <section id="about">
             <div class="content">
+                {% comment %}
+                Der Vereinszusatz steht hier statt im Hero: dort war er die
+                kleinste Schrift und erzwang den Schleier bis ganz nach oben,
+                obwohl die Wortmarke den Namen direkt darunter nennt.
+                {% endcomment %}
+                <div class="section-head">
+                    <span class="eyebrow">{{ vereinsname }}</span>
+                </div>
                 <div class="about">
                     <div class="card">
                         <h2>Über uns</h2>
                         <p>{{ homepage_ueber_uns|linebreaksbr }}</p>
                     </div>
                     {% if homepage_aufnahme %}
-                    <div class="card">
+                    <div class="card card-aufnahme">
                         <h2>Wir suchen Sängerinnen und Sänger</h2>
                         <p>
                             {{ homepage_aufnahme|linebreaksbr }}
@@ -167,7 +176,7 @@
         <footer>
             <div class="footer-content">
                 <div class="footer-logo">
-                    <img src="{% static 'intern/brand/JG-Frankfurt-transparent.svg' %}"
+                    <img src="{% static 'intern/brand/JG-Frankfurt.svg' %}"
                          alt="{{ vereinsname_lang }}" />
                 </div>
                 <div class="footer-links">
