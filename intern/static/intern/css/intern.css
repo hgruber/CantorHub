@@ -2577,6 +2577,14 @@ table.mitglied-table tr.stimme-group-start td {
     color: var(--t2);
 }
 
+/* Die Karte „Extern“ zeigt den Ankündigungstext aus dem Altsystem, und der
+   bringt eigenes Markup mit. Die Umbruchregel ist keine Kosmetik: die Altdaten
+   enthalten URLs von über 100 Zeichen, die in der halben Karte sonst rechts
+   aus dem Kasten laufen. */
+.extern-text {
+    overflow-wrap: anywhere;
+}
+
 /* Forms inside detail cards */
 .detail-card .form-group {
     margin-bottom: 12px;

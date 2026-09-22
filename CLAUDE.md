@@ -136,8 +136,10 @@ M2M of everyone taking part in an event · `user` = the actor in the audit log a
 `Konzert` is **not** a concert: it is the through model of `Lied` ↔ `Termin` and holds a song's
 `position` in one event's running order. What the choir calls a concert is
 `Termin.repertoire = True`. Its plural label „Konzerte" is therefore misleading — the display
-labels already say „Ablauf". Also note `Termin.wiederholung`, `Termin.extern` and `Termin.ctag`
-are legacy columns that are imported and never read.
+labels already say „Ablauf". Of the three legacy `Termin` columns, `extern` is the revived one: it
+holds the public announcement text and decides which events `home()` lists (a non-empty value, both
+empty forms counted) and whether the Terminseite shows the card „Extern". `Termin.wiederholung` and
+`Termin.ctag` are imported and never read.
 
 ## URL structure
 

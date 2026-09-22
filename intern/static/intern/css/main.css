@@ -446,6 +446,16 @@ h3 {
     font-size: 0.95rem;
 }
 
+/* Der öffentliche Ankündigungstext aus `Termin.extern`. `grid-column: 2` wie
+   `.location` — ohne das rutscht der Block in Spalte 1 unter das Datum. Die
+   Altdaten enthalten URLs von über 100 Zeichen. */
+.concert-info {
+    grid-column: 2;
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+}
+
 .no-events {
     padding: 1.6rem 0.75rem;
     border-bottom: 1px solid var(--line);
@@ -642,6 +652,10 @@ footer {
     }
 
     .concert-item .location {
+        grid-column: 1;
+    }
+
+    .concert-info {
         grid-column: 1;
     }
 

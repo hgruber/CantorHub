@@ -56,6 +56,7 @@ FIELD_LABELS = {
     "datum": "Datum",
     "datum_bis": "Datum bis",
     "lang": "Beschreibung",
+    "extern": "Extern",
     "ort_id": "Veranstaltungsort",
     "anwesenheit": "Anwesenheit",
     "repertoire": "Repertoire",

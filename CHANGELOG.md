@@ -9,6 +9,32 @@ Vorabversionen (`v1.0.0-rc3`) brauchen keinen eigenen Abschnitt: für sie genüg
 oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen. Einen eigenen bekommen
 dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
+## Unveröffentlicht
+
+- Startseite: unter „Konzerte" standen alle Termine mit „Repertoire" — jetzt stehen dort die mit
+  einem **Ankündigungstext** (`Termin.extern`), und der Text wird mit ausgegeben (Adresse, Einlass,
+  Eintritt, Links). Die Spalte stammt aus dem alten PHP-Portal und wurde dort für genau das
+  gefüllt (74 Zeilen, in der laufenden Saison keine einzige); sie war im neuen Portal nie gelesen
+  worden. **Zum Ausrollen:** ein Auftritt ohne Eintrag fehlt auf der Startseite. Für einen
+  Auftritt ohne Text genügt ein Leerzeichen — er wird dann gelistet, aber ohne Ankündigungsblock;
+  die drei Auftritte der laufenden Saison (1320, 1321, 1324) bekommen das beim Neuaufbau aus dem
+  Altsystem automatisch, in einer gewachsenen Datenbank wird es einmalig über die Kachel
+  nachgetragen.
+- Terminseite: `Termin.extern` bekommt eine eigene Karte „Extern". Sie fehlt, solange das Feld
+  leer ist — die Bedingung ist das Ergebnis der Auszeichnung, damit ein reiner Leerwert keinen
+  leeren Kasten erzeugt, während die Auswahl der Startseite denselben Termin listet.
+- Termin bearbeiten: neue Kachel „Extern" mit dem Ankündigungstext (mehrzeilig, HTML erlaubt). Der
+  Hilfetext am Feld erklärt, wann die Karte erscheint und dass der Text über die Startseite
+  entscheidet; Änderungen stehen im Änderungsprotokoll. Aus dem Kalender-Offcanvas bleibt das Feld
+  draußen — ein fünfzeiliges Textfeld wäre dort unbedienbar.
+- Die Altdaten bringen eigenes HTML mit; beim Anzeigen werden Zeilenumbrüche zu `<br>`,
+  `style`-Angaben entfernt (drei Zeilen, darunter ein hellblauer Link mit 1,5:1 Kontrast auf dem
+  Cremeband) und Überschriften zu `<strong>` (55 der 74 Zeilen beginnen mit `<h1>`). Der
+  gespeicherte Wert bleibt unberührt; das ist keine Sanitisierung, sondern eine Anzeigeregel für
+  Inhalte, die nur mit der Berechtigung „Termine ändern" geschrieben werden können.
+- Die Erinnerungsmails der Auftritts-Mailingliste hängen weiterhin an „Repertoire" — die beiden
+  Mengen sind jetzt unabhängig. Wer beides zusammen haben will, setzt beide Zeichen.
+
 ## v1.0.0-rc3 — 2026-09-22
 
 - Passwort zurücksetzen: ohne SMTP-Server (`EMAIL_HOST`) nahm die Seite eine Anfrage an, die

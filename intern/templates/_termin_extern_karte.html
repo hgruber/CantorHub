@@ -1,0 +1,7 @@
+{% load ui_tags termin_tags %}
+{% if termin.extern|extern_html %}
+<div class="detail-card" id="extern-section">
+    <h3>Extern {% hilfe "Termin.extern" "Extern" %}</h3>
+    <div class="detail-card-content extern-text">{{ termin.extern|extern_html }}</div>
+</div>
+{% endif %}

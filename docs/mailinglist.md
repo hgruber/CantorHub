@@ -2,9 +2,10 @@
 
 A public, membership-independent mailing list: visitors sign up at `/auftritte/` and are
 reminded before each public gig. The triggering events are `Termin.objects.filter(
-repertoire=True)` — exactly the ones `home()` already shows publicly; no model change on
-`Termin`. Linked from the homepage in `#concerts` (`.concert-cta`) and as a third
-`.contact-card` in `#contact`.
+repertoire=True)` — independent of what `home()` lists, which follows the announcement text
+(`Termin.extern`); a gig can therefore be mailed without standing on the homepage and vice versa.
+No model change on `Termin`. Linked from the homepage in `#concerts` (`.concert-cta`) and as a
+third `.contact-card` in `#contact`.
 
 **Layers:** domain logic in `intern/mailingliste.py` (tokens, URLs, due-date arithmetic,
 placeholders, sending), views in `intern/views/auftritte.py`, the daemon in

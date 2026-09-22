@@ -486,16 +486,25 @@ class Termin(models.Model):
     kurz = models.CharField(max_length=64)
     lang = models.TextField(blank=True, null=True)
     ort = models.ForeignKey("Ort", null=True, blank=True, on_delete=models.SET_NULL)
-    extern = models.TextField(blank=True, null=True)
+    extern = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Der öffentliche Ankündigungstext: Adresse, Einlass und Links für "
+        "das Publikum. Er steht auf der öffentlichen Startseite unter „Konzerte“ und "
+        "auf der Terminseite in der Karte „Extern“. Ist das Feld leer, fehlt die "
+        "Karte und der Termin steht nicht auf der Startseite. HTML ist erlaubt "
+        "(Links, Zeilenumbrüche).",
+    )
     ctag = models.IntegerField(default=0)
-    # Die beiden help_texts sind die einzige Quelle der Erklärungs-Tooltips:
+    # Die help_texts sind die einzige Quelle der Erklärungs-Tooltips:
     # das Formular erbt sie, die Anzeigeseiten holen sie über {% hilfe %}.
     repertoire = models.BooleanField(
         default=False,
-        help_text="Der Termin ist ein öffentlicher Auftritt: Er erscheint auf der "
-        "öffentlichen Startseite unter „Konzerte“ und löst die Erinnerungsmails der "
-        "Auftritts-Mailingliste aus. Außerdem bekommt er auf der Terminseite die "
-        "Karte „Lieder“ für den Ablauf.",
+        help_text="Der Termin ist ein öffentlicher Auftritt: Er löst die "
+        "Erinnerungsmails der Auftritts-Mailingliste aus und bekommt auf der "
+        "Terminseite die Karte „Lieder“ für den Ablauf. Für die öffentliche "
+        "Ankündigung auf der Startseite ist der Ankündigungstext in „Extern“ "
+        "zuständig.",
     )
     anwesenheit = models.BooleanField(
         default=False,

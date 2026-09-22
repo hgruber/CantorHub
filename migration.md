@@ -67,7 +67,12 @@ environment variable — only network access. Without it the migration calls `ex
 - sets `_migrating.active = True` around file creation so the `post_save` signal on `filer.File`
   does not spawn an indexing and three thumbnail threads per imported file — a large import would
   otherwise exhaust the MySQL connection limit. The overridden `import_files` command
-  (`intern/management/commands/import_files.py`) does the same.
+  (`intern/management/commands/import_files.py`) does the same;
+- writes a space into `Termin.extern` for the three upcoming gigs listed in
+  `_STARTSEITE_OHNE_TEXT`. They have no announcement text in the legacy system, but the public
+  homepage lists events by a non-empty `extern` — and a `MIGRATE=1` run discards everything typed
+  into the portal, so that mark has to come from here. The list is a stopgap: a real announcement
+  text replaces it entry by entry, and it disappears with this file.
 
 **This dependency on the legacy MySQL server is why every test in `intern/tests.py` is a
 `SimpleTestCase`:** a `TestCase` makes Django build a test database, which runs `0003_import`,

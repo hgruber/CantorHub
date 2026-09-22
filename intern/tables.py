@@ -998,7 +998,7 @@ _CHANGELOG_FIELD_LABELS = {
     "telefon": "Telefon", "telefon_mobil": "Mobil", "geburtstag": "Geburtstag",
     "avatar_id": "Avatar",
     "kurz": "Kurzbezeichnung", "datum": "Datum", "datum_bis": "Datum bis",
-    "lang": "Beschreibung", "ort_id": "Veranstaltungsort",
+    "lang": "Beschreibung", "extern": "Extern", "ort_id": "Veranstaltungsort",
     "anwesenheit": "Anwesenheit", "repertoire": "Repertoire",
     "titel": "Titel", "aktiv": "Aktiv", "tempo": "Tempo", "beats": "Beats",
     "hymne": "Hymne", "acapella": "A cappella", "weihnacht": "Weihnachten",

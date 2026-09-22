@@ -57,6 +57,16 @@
             </div>
 
             <div class="detail-card">
+                <h3>Extern</h3>
+                <div class="form-group">
+                    {# Das Icon steht wie bei den Optionen ausserhalb des <label> #}
+                    <label for="{{ form.extern.id_for_label }}">Ankündigungstext</label>{% hilfe form.extern "Extern" %}
+                    {{ form.extern }}
+                    {% if form.extern.errors %}<div class="invalid-feedback">{{ form.extern.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="detail-card">
                 <h3>Optionen</h3>
                 <div class="form-grid">
                     {# Das Icon steht bewusst ausserhalb des <label> – darin wuerde ein Klick die Checkbox umschalten. #}

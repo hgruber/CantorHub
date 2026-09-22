@@ -55,6 +55,14 @@
         </div>
         {% endif %}
 
+        {% comment %}
+        Das Partial bringt seine {% load %}-Zeile mit und fehlt von sich aus,
+        solange das Feld leer ist. Der htmx-Tausch der Anwesenheit fasst sie
+        nicht an — er ersetzt nur #zusage-widget, #aufstellung-section und
+        #attendance-section.
+        {% endcomment %}
+        {% include "_termin_extern_karte.html" %}
+
         {% if termin.ort and termin.ort.breite is not None and termin.ort.laenge is not None %}
         <div class="detail-card">
             <h3>Karte</h3>

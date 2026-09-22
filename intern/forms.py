@@ -464,7 +464,10 @@ class TerminForm(forms.ModelForm):
 
     class Meta:
         model = Termin
-        fields = ["kurz", "datum", "uhrzeit", "datum_bis", "lang", "ort", "anwesenheit", "repertoire"]
+        fields = [
+            "kurz", "datum", "uhrzeit", "datum_bis", "lang", "extern", "ort",
+            "anwesenheit", "repertoire",
+        ]
         widgets = {
             "kurz": forms.TextInput(attrs={"class": "form-control"}),
             "datum": forms.DateInput(
@@ -476,6 +479,7 @@ class TerminForm(forms.ModelForm):
                 attrs={"class": "form-control", "type": "datetime-local"},
             ),
             "lang": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "extern": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
             "ort": forms.Select(attrs={"class": "form-control"}),
         }
 

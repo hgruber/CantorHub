@@ -115,7 +115,7 @@ mechanism:
   earlier one, which is how `FIELD_LABELS["gruppe"]` lost the notification page's
   "Signatur" label to the Group page's "Gruppe". That is fixed with a model-specific
   `_MODELL_FELD_LABELS` consulted first. `_AUDIT_FIELDS` also has **coverage gaps**
-  (`Termin.extern`/`wiederholung`/`ctag`, `Lied.bearbeiter`, five `User` fields) — the test
+  (`Termin.wiederholung`/`ctag`, `Lied.bearbeiter`, five `User` fields) — the test
   does not require completeness, only that nothing named there has vanished.
 - **`TabellenPreferenzen`**: `person=None` is the global default row, and a
   `unique_together` does **not** cover it — NULLs count as distinct in a unique index, and
@@ -132,11 +132,21 @@ mechanism:
 
 Deliberately **not** done, so the next audit does not raise it again:
 
-- **The three dead `Termin` columns stay** (`extern`, `wiederholung`, `ctag`). They are
-  written only by `0003_import.py` and read nowhere — but they **carry data**: 179 rows with
-  `ctag <> 0`, 74 with `extern`, 9 with `wiederholung ≠ 'e'`. Dropping them would be a
-  deliberate, unrecoverable data loss for no gain. `wiederholung` is also declared
-  `CharField(max_length=1)` while the CalDAV serialisation ignores it on purpose.
+- **The two dead `Termin` columns stay** (`wiederholung`, `ctag`). They are written only by
+  `0003_import.py` and read nowhere — but they **carry data**: 179 rows with `ctag <> 0`, 9 with
+  `wiederholung ≠ 'e'`. Dropping them would be a deliberate, unrecoverable data loss for no gain.
+  `wiederholung` is also declared `CharField(max_length=1)` while the CalDAV serialisation ignores
+  it on purpose.
+- **`Termin.extern` is not one of them any more.** The column was revived in 2026: it holds the
+  public announcement text, decides which events `home()` lists (`intern/views/auth.py`; the
+  imported data has 74 filled, 248 `''` and 27 `NULL`, and `exclude(extern="")` alone would keep the
+  `NULL` rows) and fills the card „Extern" on the Terminseite. It is also the project's **only
+  public HTML output from the database** — `extern_html` in `intern/templatetags/termin_tags.py`
+  strips `style` attributes and rewrites `<h1>`–`<h3>` to `<strong>`, but it is deliberately **not
+  a sanitizer** and must not be read as one. Trust boundary: only holders of `intern.change_termin`
+  (and the admin) can write the field, and there is neither a CSP nor an allowlist library in the
+  project — should the field ever be opened to another circle, an allowlist (`nh3`) has to come
+  first.
 - **No field renames.** The member FK is called `autor`, `sender`, `person`, `mitglied` or
   `user` depending on the model, and timestamps are `datum`, `*_am`, `timestamp`,
   `indexed_at` or `aktualisiert`. The gain would be purely cosmetic; the risk is high and

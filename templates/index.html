@@ -1,4 +1,4 @@
-{% load static %}
+{% load static termin_tags %}
 <!DOCTYPE html>
 <html lang="de">
     <head>
@@ -97,6 +97,13 @@
                         </span>
                         <h3>{{ t.kurz }}</h3>
                         {% if t.ort %}<p class="location">{{ t.ort.name }}</p>{% endif %}
+                        {% comment %}
+                        Der öffentliche Ankündigungstext (Adresse, Einlass, Links).
+                        Die Bedingung ist das Filterergebnis, nicht das Feld: ein
+                        einzelnes Leerzeichen hebt den Termin in die Liste, soll
+                        hier aber keinen leeren Block erzeugen.
+                        {% endcomment %}
+                        {% if t.extern|extern_html %}<div class="concert-info">{{ t.extern|extern_html }}</div>{% endif %}
                     </div>
                     {% empty %}
                     <p class="no-events">

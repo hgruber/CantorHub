@@ -369,7 +369,7 @@ class HilfeTagTest(SimpleTestCase):
     Tags müssen denselben Text liefern.
     """
 
-    FELDER = ("anwesenheit", "repertoire")
+    FELDER = ("anwesenheit", "extern", "repertoire")
 
     def _render(self, ausdruck, **kontext):
         return Template("{% load ui_tags %}" + ausdruck).render(Context(kontext))
@@ -2051,6 +2051,22 @@ class TerminCountdownTest(SimpleTestCase):
         )
 
 
+class StartseitenExternTest(SimpleTestCase):
+    """Das Kriterium der Startseite ist ein nicht-leerer Ankündigungstext.
+
+    Die beiden Leerformen sehen redundant aus und sind es nicht: Django setzt
+    bei der Negation auf einer nullable-Spalte ein ``IS NOT NULL`` in die
+    Bedingung (``NOT (extern = '' AND extern IS NOT NULL)``), ein
+    ``NULL``-Datensatz überlebt ``exclude(extern="")`` also. Der Test pinnt
+    genau diese Regel, damit sie nicht wegoptimiert wird.
+    """
+
+    def test_beide_leerformen_zaehlen(self):
+        from intern.views.auth import _OHNE_ANKUENDIGUNG
+
+        self.assertEqual(_OHNE_ANKUENDIGUNG, Q(extern__isnull=True) | Q(extern=""))
+
+
 class KommendeTermineQTest(SimpleTestCase):
     """``kommende_q`` ohne Datenbank — ueber die strukturelle Q-Gleichheit."""
 
@@ -2105,6 +2121,58 @@ class TerminCountdownFilterTest(SimpleTestCase):
 
     def test_none_bleibt_leer(self):
         self.assertEqual(self._rendern(None, MONTAG), "")
+
+
+class ExternHtmlFilterTest(SimpleTestCase):
+    """Der Ankündigungstext aus dem Altsystem, beim Rendern nachbearbeitet.
+
+    Nacharbeiten nur beim Rendern — der gespeicherte Wert und damit das
+    Änderungsprotokoll bleiben roh. Was der Filter *nicht* tut, ist
+    sanitisieren; das ist eine bewusste Grenze und steht in seinem Docstring.
+    """
+
+    def _rendern(self, wert):
+        return Template("{% load termin_tags %}{{ t|extern_html }}").render(
+            Context({"t": wert})
+        )
+
+    def test_ohne_inhalt_bleibt_leer(self):
+        # Leerraum zaehlt auf der Startseite als „gefuellt" (die Auswahl prueft
+        # das rohe Feld), die Anzeige soll daraus aber keinen leeren Kasten
+        # machen.
+        for wert in (None, "", " ", "\r\n"):
+            with self.subTest(wert=wert):
+                self.assertEqual(self._rendern(wert), "")
+
+    def test_zeilenumbrueche_werden_zu_br(self):
+        self.assertEqual(self._rendern("a\r\nb\rc\nd"), "a<br>b<br>c<br>d")
+
+    def test_adressblock_der_alten_zeilen(self):
+        text = "Evangelische Kirchengemeinde Fechenheim Pfortenstraße 4 \r\n60386 Frankfurt am Main"
+        self.assertEqual(
+            self._rendern(text),
+            "Evangelische Kirchengemeinde Fechenheim Pfortenstraße 4 <br>"
+            "60386 Frankfurt am Main",
+        )
+
+    def test_links_bleiben(self):
+        text = '<a href="https://example.org/x" target="_blank">example</a>'
+        self.assertEqual(self._rendern(text), text)
+
+    def test_style_verschwindet(self):
+        self.assertEqual(
+            self._rendern('<a href="/x" style="color:#bacee6;">x</a>'),
+            '<a href="/x">x</a>',
+        )
+
+    def test_ueberschriften_werden_strong(self):
+        self.assertEqual(
+            self._rendern("<h1>Konzert</h1>"), "<strong>Konzert</strong>"
+        )
+        self.assertEqual(self._rendern("<h3>Eintritt frei</h3>"), "<strong>Eintritt frei</strong>")
+
+    def test_font_wird_span(self):
+        self.assertEqual(self._rendern('<font size=-1>x</font>'), "<span>x</span>")
 
 
 class ZeitraumBisFilterTest(SimpleTestCase):
@@ -2209,6 +2277,29 @@ class AufstellungTest(SimpleTestCase):
         self.assertRegex(html, r'id="aufstellung-section"[^>]*hx-swap-oob="true"')
         html = render_to_string("_termin_zusage.html", {**kontext, "widget_only": True})
         self.assertNotIn("aufstellung-section", html)
+
+
+class ExternKarteTest(SimpleTestCase):
+    """Die Karte „Extern" der Terminseite erscheint nur bei gefuelltem Feld."""
+
+    def _karte(self, wert):
+        return render_to_string(
+            "_termin_extern_karte.html", {"termin": SimpleNamespace(extern=wert)}
+        )
+
+    def test_ohne_text_keine_karte(self):
+        for wert in (None, "", " "):
+            with self.subTest(wert=wert):
+                self.assertEqual(self._karte(wert).strip(), "")
+
+    def test_mit_text_karte_mit_ueberschrift_und_tooltip(self):
+        html = self._karte("<h1>Konzert</h1>")
+        self.assertIn('id="extern-section"', html)
+        self.assertIn("<strong>Konzert</strong>", html)
+        self.assertIn("data-hilfe=", html)
+        # Der Hilfetooltip nennt das Feld beim Namen (sonst stuende dort das
+        # kleine verbose_name „extern").
+        self.assertIn("Erklärung: Extern", html)
 
 
 class RundmailSerieTest(SimpleTestCase):

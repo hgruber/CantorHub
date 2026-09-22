@@ -330,10 +330,14 @@ A small info icon whose bubble explains what an option means and what it does. T
 it work:
 
 - **The text lives as `help_text` on the model field, never in a template.** The form inherits
-  it for free, and display-only pages read the same string. `Termin.repertoire` and
-  `Termin.anwesenheit` are the current users — both options have effects a member cannot guess
-  from the word alone, and `repertoire` even publishes to the homepage and mails the external
-  gig list.
+  it for free, and display-only pages read the same string. `Termin.repertoire`,
+  `Termin.anwesenheit` and `Termin.extern` are the current users — each has effects a member cannot
+  guess from the word alone: `repertoire` mails the external gig list and brings the card
+  „Lieder", `anwesenheit` the Zusage buttons, and `extern` decides the entry on the public homepage
+  (see „Public homepage"). `extern` is also the one field whose content is rendered as HTML —
+  `extern_html` in `intern/templatetags/termin_tags.py` turns its line breaks into `<br>`, strips
+  `style` attributes and rewrites `<h1>`–`<h3>` to `<strong>`, and is explicitly not a sanitizer
+  („Trust boundary" in `docs/technical-debt.md`).
 - **One component, two entry points.** `{% hilfe form.repertoire %}` takes a `BoundField`
   inside a form; `{% hilfe "Termin.repertoire" %}` takes a `"Model.field"` string on a display
   page (`intern/templatetags/ui_tags.py` → `_hilfe_icon.html`). A wrong field name raises
@@ -546,10 +550,17 @@ brand gets a rose logo (an open point in `docs/branding.md`).
 Structure: fixed header over a full-bleed photo hero (a frosted-glass pill behind the navigation
 at the top, `.is-solid` white after 60 px of scroll — set by a small inline script at the end of
 the page), then Über uns (the club tagline as its eyebrow, then two cards), Konzerte
-(date/title/place rows), Galerie (single wide photo band), a Kontakt section on a warm rose band
+(date/title/place rows, each followed by the public announcement text when `Termin.extern` is set),
+Galerie (single wide photo band), a Kontakt section on a warm rose band
 and a light footer. The hero carries nothing but the wordmark and the two buttons: the tagline
 went to the Über uns section first (it was the smallest type up there and pulled a scrim to the
 top of the picture), and the subline followed it out of the picture entirely.
+
+**The Konzerte list follows `Termin.extern`, not `Termin.repertoire`:** `home()` excludes only the
+two empty forms of the announcement text, so an event without one stays off the page even when it
+is a public gig (the gig-reminder mails still go by `repertoire`, see `docs/mailinglist.md`). The
+selection deliberately checks the raw field while the rendered block checks the filter result —
+that is how a single space lists an event without producing an empty box.
 
 The palette is warm — cream instead of white-grey, a warm dark instead of black. `--gold` is a
 second colour standing for the invitation rather than the brand, and it appears in exactly two
