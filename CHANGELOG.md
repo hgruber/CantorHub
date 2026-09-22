@@ -9,7 +9,7 @@ Vorabversionen (`v1.0.0-rc3`) brauchen keinen eigenen Abschnitt: für sie genüg
 oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen. Einen eigenen bekommen
 dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
-## Unveröffentlicht
+## v1.0.0-rc3 — 2026-09-22
 
 - Passwort zurücksetzen: ohne SMTP-Server (`EMAIL_HOST`) nahm die Seite eine Anfrage an, die
   nichts bewirkte. `send_config_mail` schreibt die Nachricht dann nur ins Log, also erreichte
