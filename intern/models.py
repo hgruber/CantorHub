@@ -1,6 +1,4 @@
 import re
-from datetime import datetime
-from types import SimpleNamespace
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -22,92 +20,12 @@ from django.utils import timezone
 from django.utils.html import format_html
 from filer.fields.file import FilerFileField
 
+from . import zusage
+from .avatare import avatar_vorschau_url, fallback_avatar_datei
 from .replacements import apply_replacements, format_datetime
-
-# Contact and address fields a member may individually hide from other members.
-# When ANY of ADDRESS_TRIGGER_FIELDS is hidden, breite/laenge are nulled at save
-# time so the address cannot be reconstructed from the coordinates.
-PRIVACY_FIELDS = [
-    "email", "xmpp",
-    "telefon", "telefon_job", "telefon_mobil", "telefon_job_mobil", "fax",
-    "geburtstag", "strasse", "plz", "ort",
-]
-ADDRESS_TRIGGER_FIELDS = {"strasse", "plz", "ort"}
 
 # MUC-Nickname des XMPP-Brücken-Bots (muss mit ejabberd_bot.join_muc übereinstimmen).
 BOT_NICK = "CantorBot"
-
-
-def fallback_avatar_datei(original_filename):
-    """Die per ``import_files`` (django-filer) importierte Fallback-Datei
-    (z. B. ``kein_photo.png`` / ``bot.png``), oder ``None``.
-
-    Je Anfrage einmal ermittelt: im Forum braucht sie jede Nachricht des
-    XMPP-Bots und jede Nachricht ohne Absenderbild."""
-    from filer.models import File
-
-    from .anfragespeicher import gemerkt
-
-    return gemerkt(
-        ("fallback_avatar", original_filename),
-        lambda: File.objects.filter(original_filename=original_filename).first(),
-    )
-
-
-def fallback_avatar_url(original_filename):
-    """URL eines Fallback-Avatars. Leerer String, falls nicht vorhanden."""
-    f = fallback_avatar_datei(original_filename)
-    return f.url if f else ""
-
-
-# Kantenlaenge des Avatar-Vorschaubilds. Angezeigt werden 38 Pixel im Forum und
-# 40 in der Mitgliederliste; das Doppelte deckt Bildschirme mit hoher
-# Punktdichte ab. Eine Groesse fuer beide Stellen, damit nicht zwei fast gleiche
-# Vorschaubilder je Avatar entstehen.
-AVATAR_VORSCHAU = (76, 76)
-
-
-def vorschau_url(pfad, groesse=AVATAR_VORSCHAU, oeffentlich=True):
-    """Quadratisches Vorschaubild zu einem Speicherpfad — ohne die Dateizeile zu laden.
-
-    Eine Liste braucht von einem Avatar nur die URL. Der Weg ueber ``File``
-    kostet dafuer **zwei** Abfragen je Zeile: die Dateizeile und, weil filer
-    polymorph speichert, die zugehoerige ``Image``-Zeile. Gemessen an der
-    Mitgliederliste mit eingeblendeter Avatar-Spalte: 63 Abfragen und 52,5 ms
-    ueber die Objekte, 1 Abfrage und 8,8 ms ueber die Pfade — bei denselben URLs.
-
-    Der Ablageort muss filers eigener sein (``filer_public_thumbnails/``), sonst
-    entstehen neben den vorhandenen Vorschaubildern zweite. Deshalb wird das
-    Dateiobjekt des Feldes gebaut statt ``get_thumbnailer(pfad)`` benutzt: nur
-    ``is_public`` entscheidet ueber Ablage und Speicher, und genau das gibt der
-    Platzhalter mit.
-
-    Schlaegt das Erzeugen fehl (kein Bild, fehlende Datei), bleibt es beim
-    Original — ein fehlendes Bild waere schlimmer als ein zu grosses.
-    """
-    if not pfad:
-        return ""
-    from filer.models import File
-
-    from .views.files import datei_url
-
-    feld = File._meta.get_field("file")
-    try:
-        datei = feld.attr_class(SimpleNamespace(is_public=oeffentlich), feld, pfad)
-        return datei.get_thumbnail(
-            {"size": groesse, "crop": True, "quality": 85}
-        ).url
-    except Exception:
-        return datei_url(pfad)
-
-
-def avatar_vorschau_url(datei):
-    """Wie ``vorschau_url``, fuer eine bereits geladene ``File``-Zeile."""
-    if not datei:
-        return ""
-    return vorschau_url(
-        datei.file.name, oeffentlich=getattr(datei, "is_public", True)
-    )
 
 
 class User(AbstractUser):
@@ -274,29 +192,6 @@ class Artikel(models.Model):
         return roh.strip().strip("\"'").strip()
 
     @classmethod
-    def datei_referenzen(cls):
-        """
-        Gibt alle Dateien zurück, die mindestens einen Dateireferenz‑Link
-        haben (z. B. [[Datei:Bild.jpg|Beschreibung]]).
-        """
-        qs = cls.objects.filter(text__contains="[[Datei:")
-        dateien = set()
-        for artikel in qs:
-            dateien.update(
-                cls.dateiname_aus_link(n)
-                for n in cls.DATEI_LINK_RE.findall(artikel.text)
-            )
-        return sorted(d for d in dateien if d)
-
-    @classmethod
-    def aktuelle_datei_referenzen(cls):
-        """
-        Gibt alle Dateien zurück, die mindestens einen Dateireferenz‑Link
-        in einem aktuellen Artikel haben (z. B. [[Datei:Bild.jpg|Beschreibung]]).
-        """
-        return sorted(cls.aktuelle_datei_verweise())
-
-    @classmethod
     def aktuelle_datei_verweise(cls):
         """{dateiname: [artikelname, …]} over each article's **latest** version.
 
@@ -427,9 +322,15 @@ class Mitteilung(models.Model):
     forum = models.ForeignKey("Forum", on_delete=models.CASCADE)
     sender = models.ForeignKey("User", null=True, on_delete=models.SET_NULL)
     datum = models.DateTimeField()
+    # null erlaubt, aber `formatiert()` verträgt es — siehe dort. Die Spalte auf
+    # NOT NULL zu ziehen wäre der sauberere Schnitt, ließe aber `makemigrations`
+    # interaktiv nachfragen (Django: „It is impossible to change a nullable field
+    # to non-nullable without a default"); genau dieses `makemigrations` läuft im
+    # Dockerfile und in start.sh ohne `--no-input` und bräche den Bau ab.
     mitteilung = models.TextField(blank=True, null=True)
+    # unique legt den Index bereits an; ein zusätzliches db_index wäre wirkungslos.
     xmpp_stanza_id = models.CharField(
-        max_length=255, null=True, blank=True, unique=True, db_index=True
+        max_length=255, null=True, blank=True, unique=True
     )
     # Set by forum_react when a web user's reaction set changed; the bot relays
     # the new web-reaction union to the MUC and clears the flag (see ejabberd_bot).
@@ -449,7 +350,9 @@ class Mitteilung(models.Model):
         return f"Message from {self.sender} in forum {self.forum}"
 
     def formatiert(self):
-        return apply_replacements(self.mitteilung)
+        # `or ""`: die Spalte erlaubt NULL (Altdaten, Import), `apply_replacements`
+        # scheitert aber an None. Der leere Text ist die richtige Anzeige dafür.
+        return apply_replacements(self.mitteilung or "")
 
     def is_from_bot(self):
         """True, wenn diese Nachricht vom XMPP-Brücken-Bot stammt."""
@@ -539,8 +442,9 @@ class Reaktion(models.Model):
 
     REACTION_EMOJIS = ["👍", "❤️", "😂", "🎉", "😮", "😢", "🙏", "👏"]
 
+    # Der FK bringt seinen Index selbst mit; db_index wäre hier wirkungslos.
     mitteilung = models.ForeignKey(
-        "Mitteilung", on_delete=models.CASCADE, related_name="reaktionen", db_index=True
+        "Mitteilung", on_delete=models.CASCADE, related_name="reaktionen"
     )
     sender = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL)
     reactor_jid = models.CharField(max_length=255, null=True, blank=True)
@@ -572,7 +476,11 @@ class Ort(models.Model):
 
 
 class Termin(models.Model):
-    datum = models.DateTimeField()
+    # db_index: fast jede Abfrage filtert oder sortiert nach dem Datum (Terminliste,
+    # Kalender, CalDAV, Erinnerungsversand). Kein Meta.ordering — das würde jede
+    # ungeordnete Query stillschweigend umsortieren, u. a. die Basis für
+    # paginate_ordered; .order_by() steht dort bereits explizit.
+    datum = models.DateTimeField(db_index=True)
     datum_bis = models.DateTimeField(blank=True, null=True)
     wiederholung = models.CharField(max_length=1, default="e")
     kurz = models.CharField(max_length=64)
@@ -738,65 +646,14 @@ class Lied(models.Model):
     def __str__(self):
         return self.titel
 
-    @classmethod
-    def find_similar_titles(cls, search_string, limit=5):
-        """
-        Find similar song titles using fuzzy matching.
-
-        Args:
-            search_string (str): The string to search for
-            limit (int): Number of results to return (default: 5)
-
-        Returns:
-            list: List of tuples (song, similarity_score) sorted by similarity
-        """
-        try:
-            from .fuzzy import find_similar_titles
-
-            # Get all song objects from the database
-            songs = cls.objects.all()
-            return find_similar_titles(search_string, songs, limit)
-        except ImportError:
-            # If rapidfuzz is not available, return empty list
-            return []
-
-    @classmethod
-    def get_similar_titles(cls, search_string, limit=5):
-        """
-        Get similar song titles in a user-friendly format.
-
-        Args:
-            search_string (str): The string to search for
-            limit (int): Number of results to return (default: 5)
-
-        Returns:
-            list: List of dictionaries with song information and similarity score
-        """
-        try:
-            from .fuzzy import get_similar_titles
-
-            # Get all song objects from the database
-            songs = cls.objects.all()
-            return get_similar_titles(search_string, songs, limit)
-        except ImportError:
-            # If rapidfuzz is not available, return empty list
-            return []
-
-    @classmethod
-    def datei_referenzen(cls):
-        """
-        Return all needed filenames for all songs
-        """
-        from .app_settings import get_config
-
-        titel = list(Lied.objects.values_list("titel", flat=True))
-        praefix = get_config("FILE_PREFIX", "JG")
-        return [x for t in titel for x in (t, f"{praefix}-{t}")]
-
 
 class Konzert(models.Model):
     termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
-    lied = models.ForeignKey("Lied", null=True, on_delete=models.CASCADE)
+    # SET_NULL, nicht CASCADE: ein gelöschtes Lied soll seinen Platz im Ablauf
+    # verlieren, nicht den ganzen Programmpunkt mitnehmen — dieselbe Linie wie die
+    # übrigen nullbaren FKs im Projekt. on_delete erzeugt kein DDL, die Änderung
+    # wirkt also sofort.
+    lied = models.ForeignKey("Lied", null=True, on_delete=models.SET_NULL)
     position = models.IntegerField(default=1)
 
     class Meta:
@@ -810,12 +667,31 @@ class Konzert(models.Model):
 class Zusage(models.Model):
     person = models.ForeignKey("User", on_delete=models.CASCADE)
     termin = models.ForeignKey("Termin", on_delete=models.CASCADE)
-    option = models.CharField(max_length=255, default="1")
+    # choices nur zur Validierung/Formularanzeige — der Katalog liegt in
+    # intern/zusage.py, weil ihn fünf Stellen lesen. max_length bleibt bei 255:
+    # unter MySQL (STRICT_TRANS_TABLES) risse ein einziger Legacy-Wert außerhalb
+    # der Liste den Import um, und Django schneidet nicht ab.
+    option = models.CharField(
+        max_length=255,
+        default="1",
+        choices=[(wert, zusage.OPTION_LABELS[wert]) for wert in zusage.OPTIONEN],
+    )
 
-    OPTION_LABELS = {"1": "Zusage", "2": "Absage", "3": "Eventuell", "": "Keine Angabe"}
+    OPTION_LABELS = zusage.OPTION_LABELS
 
     class Meta:
         verbose_name_plural = "Zusagen"
+        constraints = [
+            # Genau eine Antwort je Mitglied und Termin. Der Constraint ist nicht
+            # nur Datenhygiene: ModelForm validiert Meta.constraints, also meldet
+            # das Admin-Inline eine Dublette als Formularfehler statt sie still
+            # anzulegen, und update_or_create (views/termine.py) wird race-sicher,
+            # weil get_or_create den IntegrityError selbst abfängt. Ohne ihn wirft
+            # update_or_create bei vorhandenen Dubletten MultipleObjectsReturned.
+            models.UniqueConstraint(
+                fields=["person", "termin"], name="uniq_zusage_person_termin"
+            )
+        ]
 
     def __str__(self):
         label = self.OPTION_LABELS.get(self.option, self.option or "Keine Angabe")
@@ -823,12 +699,37 @@ class Zusage(models.Model):
 
 
 class Abstimmung(models.Model):
+    """Eine Stimme in einer Wiki-Abstimmung.
+
+    ``abstimmung`` ist der Schlüssel ``"seite:titel"`` aus der Direktive im
+    Artikeltext (``intern/replacements.py``), kein FK — die Abstimmung lebt im Text,
+    nicht in einer eigenen Zeile.
+
+    Bewusst **kein** Unique-Constraint auf ``(person, abstimmung)``: eine Abstimmung
+    ist mehrfach-wählbar (``max_stimmen``, ``views/abstimmung.py``). Verboten ist nur
+    die doppelte *gleiche* Stimme — deshalb der Dreier-Constraint. Er trägt, weil
+    die Stimmabgabe ``delete()`` + ``bulk_create()`` ist und damit nicht atomar: zwei
+    gleichzeitige POSTs könnten dieselbe Option sonst zweimal einfügen, und die
+    Auswertung zählte sie doppelt.
+    """
+
     person = models.ForeignKey("User", on_delete=models.CASCADE)
     abstimmung = models.CharField(max_length=256)
     option = models.CharField(max_length=256)
 
     class Meta:
         verbose_name_plural = "Abstimmungen"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["person", "abstimmung", "option"],
+                name="uniq_abstimmung_person_abstimmung_option",
+            )
+        ]
+        indexes = [
+            # Für das Filter in views/abstimmung.py und die Auswertung in
+            # replacements.py (values("option").annotate(Count)).
+            models.Index(fields=["abstimmung", "person"]),
+        ]
 
 
 class Standort(models.Model):
@@ -846,6 +747,18 @@ class Standort(models.Model):
 
 
 class TabellenPreferenzen(models.Model):
+    """Sichtbare Spalten einer Tabelle je Mitglied.
+
+    ``person=None`` ist **kein** verwaister Wert, sondern die globale Vorgabezeile,
+    auf die zurückgefallen wird, wenn ein Mitglied nichts eigenes gesetzt hat
+    (``views/files.py``). Der ``unique_together`` schützt nur die Mitgliedszeilen:
+    auf MySQL und SQLite gelten NULLs im Unique-Index als verschieden, eine zweite
+    Vorgabezeile für dieselbe Tabelle wäre also möglich. Django kann das nur auf
+    PostgreSQL über ``UniqueConstraint(nulls_distinct=False)`` ändern und wirft auf
+    den anderen Backends. Deshalb liest ``views/files.py`` bewusst mit ``first()``
+    statt ``get()`` — siehe „Data model" in `docs/technical-debt.md`.
+    """
+
     person = models.ForeignKey("User", on_delete=models.CASCADE, null=True)
     tabelle = models.CharField(max_length=100)
     sichtbare_spalten = models.JSONField(default=list)
@@ -937,7 +850,7 @@ class ChangeLog(models.Model):
         (ACTION_NOTIFY, "E-Mail gesendet"),
     ]
 
-    timestamp = models.DateTimeField(default=datetime.now)
+    timestamp = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(
         "User", null=True, on_delete=models.SET_NULL, related_name="changelog_entries"
     )
@@ -952,5 +865,7 @@ class ChangeLog(models.Model):
         ordering = ["-timestamp"]
         indexes = [
             models.Index(fields=["model_name", "object_id"]),
-            models.Index(fields=["user"]),
+            # Aufsteigend, nicht -timestamp: MySQL vor 8 ignoriert DESC stillschweigend.
+            # cleanup_changelog filtert timestamp__lt, die Protokollansicht sortiert danach.
+            models.Index(fields=["timestamp"]),
         ]

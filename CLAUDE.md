@@ -86,6 +86,10 @@ behind `cleanup_verwaiste_blobs`, see `docs/files.md`),
 events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
 `docs/forum.md`), `aufstellung.py` (the stage picture of the answers
 in the event list),
+`zusage.py` (the value set and labels of `Zusage.option` — the one source the model, the
+stage picture, the table column, the filter and the audit labels all read; guarded by
+`ZusageOptionenTest`), `avatare.py` (fallback avatar files and thumbnails, so lists do not
+load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TRIGGER_FIELDS`),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
 `ejabberd.py`, `konfig_gruppen.py`, `middleware.py` (the throttled session refresh, see
 `docs/architecture.md`), `anfragespeicher.py` (values worth computing once per request —
@@ -115,6 +119,26 @@ visible folders, fallback avatars), `tables2_beschleunigung.py` (two caches over
 | `TabellenPreferenzen` | Per-user table column visibility |
 | `Auftrittsabo` / `ErinnerungVersand` | Gig-reminder subscribers and the per-event send markers |
 
+### Naming of the member reference and of `Konzert`
+
+Two names invite confusion, so they are spelled out here instead of being renamed — a rename
+would reach persisted strings (`ChangeLog.model_name`), the string-keyed `_AUDIT_FIELDS`, and
+reverse accessors used in templates, and the gain would be cosmetic. See „Data model" in
+`docs/technical-debt.md`.
+
+The foreign key to `User` carries a different name depending on the role it plays: `autor` =
+who wrote a file revision or article version · `sender` = who sent a forum message (a reaction
+uses `sender` for the web case and `reactor_jid` for XMPP) · `person` = the member who
+answers or votes (`Zusage`, `Abstimmung`, `Standort`, `TabellenPreferenzen`) · `mitglied` = the
+M2M of everyone taking part in an event · `user` = the actor in the audit log and the reader in
+`ForumGelesen`.
+
+`Konzert` is **not** a concert: it is the through model of `Lied` ↔ `Termin` and holds a song's
+`position` in one event's running order. What the choir calls a concert is
+`Termin.repertoire = True`. Its plural label „Konzerte" is therefore misleading — the display
+labels already say „Ablauf". Also note `Termin.wiederholung`, `Termin.extern` and `Termin.ctag`
+are legacy columns that are imported and never read.
+
 ## URL structure
 
 `/` homepage · `/datenschutz/` · `/auftritte/*` gig mailing list · `/carddav/*` · `/caldav/*` ·
@@ -133,6 +157,11 @@ reasoning where it matters.
   all would depend on a gitignored file happening to sit in the build directory. Note the flip
   side of the scheme: a database that already recorded `0002` never sees a later regeneration of
   it, so model changes reach an existing instance only through the `MIGRATE` rebuild.
+  **A nullable → non-nullable field is off limits**: Django then asks a question interactively
+  ("It is impossible to change a nullable field to non-nullable without a default"), and the
+  `makemigrations` runs in `Dockerfile` and `start.sh` have no stdin — the build dies with
+  `EOFError`. Either leave the column nullable and guard the reading code, or add `--no-input`
+  (or an explicit default) to *both* call sites.
   See `migration.md`.
 - **A version tag needs its `CHANGELOG.md` section.** The tag is the release: the bare
   repository's `update` hook (`update.sh`) refuses `v<x.y.z>` whose commit carries no filled

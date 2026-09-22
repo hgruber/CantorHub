@@ -74,7 +74,6 @@ browser from the DOM, not from a `json_script`. See `frontend.md`.
 Forum messages deliberately keep the plain link: `Mitteilung.formatiert()` renders without a
 `request`, and `internal_links` passes that through as `spieler=False`.
 
-`fuzzy.py` provides the fuzzy song-title matching used when an article references a `Lied`.
 `abstimmung.js` binds the `{abstimmung:...}` directive to the `Abstimmung` model.
 
 The same markup vocabulary — plus the mail-only `{button:…}` directive — is re-implemented for

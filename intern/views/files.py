@@ -669,15 +669,22 @@ def file_search(request):
 def visible_fields(request, tabelle):
     visible_fields = request.POST.getlist("columns")
     if len(visible_fields) == 0:
-        try:
-            pref = TabellenPreferenzen.objects.get(person=request.user, tabelle=tabelle)
-            return pref.sichtbare_spalten
-        except TabellenPreferenzen.DoesNotExist:
-            try:
-                pref = TabellenPreferenzen.objects.get(person=None, tabelle=tabelle)
-                return pref.sichtbare_spalten
-            except TabellenPreferenzen.DoesNotExist:
-                return []
+        # Bewusst first() statt get(): der unique_together deckt die globale
+        # Vorgabezeile (person=None) nicht ab, weil NULLs im Unique-Index als
+        # verschieden gelten (siehe TabellenPreferenzen in models.py). Eine zweite
+        # Vorgabezeile darf die Tabelle nicht mit MultipleObjectsReturned zerlegen.
+        pref = (
+            TabellenPreferenzen.objects.filter(person=request.user, tabelle=tabelle)
+            .order_by("pk")
+            .first()
+        )
+        if pref is None:
+            pref = (
+                TabellenPreferenzen.objects.filter(person=None, tabelle=tabelle)
+                .order_by("pk")
+                .first()
+            )
+        return pref.sichtbare_spalten if pref else []
     else:
         TabellenPreferenzen.objects.update_or_create(
             person=request.user,

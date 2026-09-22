@@ -264,7 +264,6 @@ The full key catalog and the mail-placeholder reference live in `configuration.m
   second of CPU per login. The module docstring carries the reasoning and the constraint.
 - `php_pbkdf2_hasher.py` — legacy password hasher for users migrated from the prior PHP
   system; listed in `PASSWORD_HASHERS`. See `../migration.md`.
-- `fuzzy.py` — fuzzy song title matching used in article references.
 - `context_processors.py` — global template context (`VERSION`, `upload_max_mb`, notify
   poll/dismiss intervals, `vereinsname`, the next-event banner). **Computed once per
   request** and remembered on the request object: the processor costs about eleven

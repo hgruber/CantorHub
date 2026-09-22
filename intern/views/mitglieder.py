@@ -25,7 +25,8 @@ from intern.app_settings import (
 from intern.mail import neu_verbinden, send_config_mail, versende_serie
 
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
-from ..models import Abstimmung, Artikel, Mitteilung, PRIVACY_FIELDS, User, Zusage
+from ..mitglied_felder import PRIVACY_FIELDS
+from ..models import Abstimmung, Artikel, Mitteilung, User, Zusage
 from ..tables import MitgliederFilter, MitgliederTabelle
 from .auth import make_invite_token
 from .files import _get_file_extension, besitz_uebertragen

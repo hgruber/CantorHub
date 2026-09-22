@@ -12,11 +12,12 @@ from django.utils.safestring import mark_safe
 from django_tables2.data import TableListData
 
 from intern.app_settings import get_vereinsname_kurz
-from .models import (
-    Artikel, ChangeLog, Lied, Ort, PRIVACY_FIELDS, Termin, User, vorschau_url,
-)
+from .avatare import vorschau_url
+from .mitglied_felder import PRIVACY_FIELDS
+from .models import Artikel, ChangeLog, Lied, Ort, Termin, User
 from .forms import ChipMultiSelect, SchnellSelect, TriStateToggle
 from .replacements import format_bytes, format_datetime
+from .zusage import OPTION_LABELS, OPTIONEN, STATUS_TITEL, status_von
 
 
 class _Datumsspalte(tables.Column):
@@ -302,14 +303,10 @@ class TerminTabelle(tables.Table):
     def render_anwesenheit_option(self, value, record):
         if not record.anwesenheit:
             return ""
-        if value == "1":
-            return mark_safe('<span class="att-inline att-inline-yes">Zusage</span>')
-        elif value == "2":
-            return mark_safe('<span class="att-inline att-inline-no">Absage</span>')
-        elif value == "3":
-            return mark_safe('<span class="att-inline att-inline-maybe">Eventuell</span>')
-        else:
-            return mark_safe('<span class="att-inline att-inline-na">Offen</span>')
+        status = status_von(value)
+        return mark_safe(
+            f'<span class="att-inline att-inline-{status}">{STATUS_TITEL[status]}</span>'
+        )
 
     class Meta:
         row_attrs = {"data-href": lambda record: reverse("termin_view", args=[record.id])}
@@ -760,12 +757,10 @@ class MitgliederFilter(filters.FilterSet):
     status = filters.ChoiceFilter(
         label="Status",
         widget=SchnellSelect(),
-        choices=[
-            ("1", "Zusage"),
-            ("2", "Absage"),
-            ("3", "Eventuell"),
-            ("0", "keine Auswahl"),
-        ],
+        # Alle Antwortoptionen außer „keine Angabe" (eine leere Auswahl filtert
+        # ohnehin nicht, siehe filter_status) plus der Sentinel "0" = „nicht geantwortet".
+        choices=[(wert, OPTION_LABELS[wert]) for wert in OPTIONEN if wert]
+        + [("0", "keine Auswahl")],
         method="filter_status",
     )
     konzert = filters.ModelChoiceFilter(

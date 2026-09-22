@@ -46,7 +46,6 @@ CantorHub is a Django 6 member portal for 'Just Gospel Frankfurt'. All applicati
 
 ### Notable Utilities
 - `replacements.py` — wiki-like markup processor
-- `fuzzy.py` — fuzzy song title matching
 - `context_processors.py` — injects `VERSION` into all templates
 - `ejabberd.py` — external XMPP bridge client (use carefully; side effects)
 

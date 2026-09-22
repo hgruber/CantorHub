@@ -12,13 +12,12 @@ from django.db import models
 from filer.fields.file import FilerFileField
 from filer.fields.image import AdminImageWidget
 
+from .mitglied_felder import ADDRESS_TRIGGER_FIELDS, PRIVACY_FIELDS
 from .models import (
-    ADDRESS_TRIGGER_FIELDS,
     Forum,
     Konfiguration,
     Lied,
     Ort,
-    PRIVACY_FIELDS,
     Termin,
     User,
 )

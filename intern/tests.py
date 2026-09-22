@@ -5,6 +5,7 @@ Für Termine reicht ein winziges Stellvertreter-Objekt — ``faelligkeit`` und
 ``faellige_erinnerungen`` lesen nur ``datum``.
 """
 
+import ast
 import os
 import re
 from pathlib import Path
@@ -637,7 +638,7 @@ class AdressbuchOptOutTest(SimpleTestCase):
         self.assertIn('data-hilfe="' + escape(str(self._feld().help_text)) + '"', html)
 
     def test_ist_kein_feld_fuer_feld_schalter(self):
-        from intern.models import PRIVACY_FIELDS
+        from intern.mitglied_felder import PRIVACY_FIELDS
 
         # Stuende es dort, baute UserEditForm ein sinnloses priv_-Haekchen dazu.
         self.assertNotIn("adressbuch_verborgen", PRIVACY_FIELDS)
@@ -2515,6 +2516,326 @@ class ForumGelesenTest(SimpleTestCase):
                 ist_ungelesen(nid, sender, bis, ich),
                 f"#{nid} steht unter dem Trenner, ist aber ungelesen",
             )
+
+
+class ZusageConstraintTest(SimpleTestCase):
+    """Der Antwort-Constraint aus ``intern/models.py``.
+
+    Gepinnt, weil er wie eine bloße Deklaration aussieht und ein späterer
+    Aufräumer ihn sonst für entbehrlich hält. Ohne ihn wirft
+    ``Zusage.objects.update_or_create(person=…, termin=…)`` in
+    ``views/termine.py`` bei vorhandenen Dubletten ``MultipleObjectsReturned``,
+    und ein angezeigter Zähler zählt dieselbe Antwort doppelt.
+    """
+
+    def test_genau_ein_unique_constraint_auf_person_und_termin(self):
+        from intern.models import Zusage
+
+        constraints = list(Zusage._meta.constraints)
+        self.assertEqual(len(constraints), 1)
+        [constraint] = constraints
+        self.assertEqual(tuple(constraint.fields), ("person", "termin"))
+        self.assertEqual(constraint.name, "uniq_zusage_person_termin")
+
+    def test_kein_zweiter_mechanismus_daneben(self):
+        from intern.models import Zusage
+
+        self.assertEqual(list(Zusage._meta.unique_together), [])
+
+
+class AbstimmungConstraintTest(SimpleTestCase):
+    """Der Stimmen-Constraint — bewusst ein Dreier.
+
+    Ein Constraint auf ``(person, abstimmung)`` wäre falsch: die Abstimmung ist
+    mehrfach-wählbar (``max_stimmen``, ``views/abstimmung.py``). Verboten ist nur
+    die doppelte *gleiche* Stimme, und die kann entstehen, weil die Stimmabgabe
+    ``delete()`` + ``bulk_create()`` ist und damit nicht atomar.
+    """
+
+    def test_dreier_constraint_erlaubt_mehrfachwahl(self):
+        from intern.models import Abstimmung
+
+        constraints = list(Abstimmung._meta.constraints)
+        self.assertEqual(len(constraints), 1)
+        [constraint] = constraints
+        self.assertEqual(
+            tuple(constraint.fields), ("person", "abstimmung", "option")
+        )
+
+    def test_index_fuer_filter_und_auswertung(self):
+        from intern.models import Abstimmung
+
+        felder = [tuple(index.fields) for index in Abstimmung._meta.indexes]
+        self.assertIn(("abstimmung", "person"), felder)
+
+
+class ZusageOptionenTest(SimpleTestCase):
+    """Der Optionskatalog (``intern/zusage.py``) — die Drift-Bremse.
+
+    Dieselben Werte und Beschriftungen lagen vorher an fünf Stellen, und zwei
+    Kopien waren bereits auseinandergelaufen. Dieser Test kreuzt sie gegeneinander,
+    damit eine sechste Kopie oder ein neuer Wert nicht unbemerkt daneben entsteht.
+    """
+
+    def test_optionen_und_labels_decken_sich(self):
+        from intern import zusage
+
+        self.assertEqual(set(zusage.OPTIONEN), set(zusage.OPTION_LABELS))
+        self.assertEqual(len(zusage.OPTIONEN), len(set(zusage.OPTIONEN)))
+
+    def test_labels_wortgleich_zu_den_protokoll_schnappschuessen(self):
+        """``str(Zusage)`` liegt als ``ChangeLog.object_repr`` in den Altdaten,
+        und ``views/aenderungen.py`` rekonstruiert daraus alte Einträge — eine
+        geänderte Beschriftung schriebe die Anzeige der Vergangenheit um."""
+        from intern import zusage
+
+        self.assertEqual(
+            zusage.OPTION_LABELS,
+            {"1": "Zusage", "2": "Absage", "3": "Eventuell", "": "Keine Angabe"},
+        )
+
+    def test_transitions_ziele_liegen_im_wertebereich(self):
+        from intern import zusage
+
+        for start, ziele in zusage.TRANSITIONS.items():
+            self.assertIn(start, zusage.OPTIONEN)
+            for ziel in ziele:
+                self.assertIn(ziel, zusage.OPTIONEN)
+
+    def test_jede_status_kennung_hat_einen_titel(self):
+        from intern import zusage
+
+        for kennung in [*zusage.STATUS.values(), zusage.STATUS_OFFEN]:
+            self.assertIn(kennung, zusage.STATUS_TITEL)
+
+    def test_leerstring_none_und_unbekanntes_sind_offen(self):
+        from intern import zusage
+
+        self.assertEqual(zusage.status_von(""), "na")
+        self.assertEqual(zusage.status_von(None), "na")
+        self.assertEqual(zusage.status_von("quatsch"), "na")
+        self.assertEqual(zusage.titel_von("1"), "Zusage")
+
+    def test_modell_traegt_denselben_katalog_ohne_kopie(self):
+        from intern import zusage
+        from intern.models import Zusage
+
+        self.assertIs(Zusage.OPTION_LABELS, zusage.OPTION_LABELS)
+        self.assertEqual(
+            dict(Zusage._meta.get_field("option").choices), zusage.OPTION_LABELS
+        )
+
+    def test_filter_bietet_die_antworten_plus_sentinel(self):
+        """Der Statusfilter zeigt genau die Antworten (ohne „keine Angabe", denn
+        eine leere Auswahl filtert nicht) plus ``"0"`` = „nicht geantwortet"."""
+        from intern import zusage
+        from intern.tables import MitgliederFilter
+
+        choices = MitgliederFilter.base_filters["status"].extra["choices"]
+        self.assertEqual([wert for wert, _ in choices], ["1", "2", "3", "0"])
+        erwartet = {wert: label for wert, label in zusage.OPTION_LABELS.items() if wert}
+        erwartet["0"] = "keine Auswahl"
+        self.assertEqual(dict(choices), erwartet)
+
+
+class TabellenPreferenzenTest(SimpleTestCase):
+    """Die globale Vorgabezeile (``person=None``) ist vom ``unique_together``
+    **nicht** gedeckt: NULLs gelten im Unique-Index als verschieden, und Django
+    kann das nur auf PostgreSQL über ``nulls_distinct=False`` ändern — auf MySQL
+    und SQLite wirft es. Deshalb muss der Lesepfad Dubletten aushalten.
+    """
+
+    def test_vorgabezeile_bleibt_nullable(self):
+        from intern.models import TabellenPreferenzen
+
+        self.assertTrue(TabellenPreferenzen._meta.get_field("person").null)
+
+    def test_unique_together_gilt_fuer_mitgliedszeilen(self):
+        from intern.models import TabellenPreferenzen
+
+        self.assertEqual(
+            [tuple(t) for t in TabellenPreferenzen._meta.unique_together],
+            [("person", "tabelle")],
+        )
+
+    def test_lesepfad_haelt_dubletten_aus(self):
+        """``visible_fields`` darf kein ``get()`` auf die Vorgabezeile machen —
+        eine zweite Vorgabezeile würde sonst jede Tabelle mit
+        ``MultipleObjectsReturned`` zerlegen."""
+        import inspect
+
+        from intern.views import files
+
+        quelle = inspect.getsource(files.visible_fields)
+        self.assertNotIn("objects.get(", quelle)
+        self.assertIn(".first()", quelle)
+
+
+class KonzertOnDeleteTest(SimpleTestCase):
+    def test_geloeschtes_lied_nullt_den_ablaufplatz(self):
+        """``SET_NULL`` statt ``CASCADE``: ein gelöschtes Lied nimmt seinen Platz im
+        Ablauf mit, aber nicht den ganzen Programmpunkt. ``on_delete`` erzeugt kein
+        DDL — die Änderung wirkt ohne Schema-Neuaufbau."""
+        from django.db import models as django_models
+
+        from intern.models import Konzert
+
+        self.assertIs(
+            Konzert._meta.get_field("lied").remote_field.on_delete,
+            django_models.SET_NULL,
+        )
+
+
+class ChangeLogIndexTest(SimpleTestCase):
+    def test_zeitstempel_indiziert_ohne_doppelten_user_index(self):
+        from intern.models import ChangeLog
+
+        felder = [tuple(index.fields) for index in ChangeLog._meta.indexes]
+        self.assertIn(("timestamp",), felder)
+        # Der FK bringt seinen Index selbst mit; ein zweiter wäre eine Kopie.
+        self.assertNotIn(("user",), felder)
+
+
+class RegisterKonsistenzTest(SimpleTestCase):
+    """Die handgepflegten Feldkarten gegen ``_meta``.
+
+    Pro Modell und Feld werden mehrere Karten von Hand nachgeführt
+    (``_AUDIT_FIELDS``, ``FIELD_LABELS``, ``_CHANGELOG_FIELD_LABELS``,
+    ``_LIED_FELDER``, ``_FILE_ID_FIELDS``). Ein Feldname darin ist eine
+    **Zeichenkette**: wird ein Feld umbenannt und die Karte nicht, verstummt das
+    Änderungsprotokoll für dieses Feld still, ohne dass etwas rot wird. Dieser Test
+    kreuzt darum jede Karte gegen die Modelle — und sucht doppelte Dict-Schlüssel,
+    denn ein wiederholter Schlüssel im Literal überschreibt den früheren lautlos
+    (so geschehen bei ``FIELD_LABELS["gruppe"]``).
+    """
+
+    @staticmethod
+    def _feldnamen(modell):
+        """Alle ansprechbaren Feldnamen eines Modells, inkl. ``*_id``-Attnamen."""
+        namen = set()
+        for feld in modell._meta.get_fields():
+            namen.add(feld.name)
+            if hasattr(feld, "attname"):
+                namen.add(feld.attname)
+        return namen
+
+    def _auditierte_feldnamen(self):
+        from django.apps import apps
+
+        from intern.signals import _AUDIT_FIELDS
+
+        alle = set()
+        for modellname in _AUDIT_FIELDS:
+            alle |= self._feldnamen(apps.get_model("intern", modellname))
+        return alle
+
+    def test_audit_felder_gibt_es_wirklich(self):
+        from django.apps import apps
+
+        from intern.signals import _AUDIT_FIELDS
+
+        for modellname, felder in _AUDIT_FIELDS.items():
+            with self.subTest(modell=modellname):
+                vorhanden = self._feldnamen(apps.get_model("intern", modellname))
+                self.assertEqual([f for f in felder if f not in vorhanden], [])
+
+    def test_lab_karten_nennen_keine_verschwundenen_felder(self):
+        from intern.views.aenderungen import _FK_RESOLVE, _FILE_ID_FIELDS
+
+        vorhanden = self._auditierte_feldnamen()
+        for karte, namen in (
+            ("_FK_RESOLVE", [k for k in _FK_RESOLVE]),
+            ("_FILE_ID_FIELDS", sorted(_FILE_ID_FIELDS)),
+        ):
+            with self.subTest(karte=karte):
+                self.assertEqual([n for n in namen if n not in vorhanden], [])
+
+    def test_lied_felder_gibt_es_am_modell(self):
+        from intern.models import Lied
+        from intern.verwendung import _LIED_FELDER
+
+        vorhanden = self._feldnamen(Lied)
+        self.assertEqual([f for f in _LIED_FELDER if f not in vorhanden], [])
+
+    def test_wert_uebersetzungen_zielen_auf_auditierte_felder(self):
+        from django.apps import apps
+
+        from intern.signals import _AUDIT_FIELDS
+        from intern.views.aenderungen import _VALUE_TRANSLATIONS
+
+        for (modellname, feld) in _VALUE_TRANSLATIONS:
+            with self.subTest(ziel=f"{modellname}.{feld}"):
+                self.assertIn(modellname, _AUDIT_FIELDS)
+                vorhanden = self._feldnamen(apps.get_model("intern", modellname))
+                self.assertIn(feld, vorhanden)
+
+    def test_modellgenaue_label_weichen_vom_flachen_ab(self):
+        """Sonst wäre der Eintrag überflüssig — und genau das Verdrängen, das er
+        verhindert, fiele niemandem auf."""
+        from intern.views.aenderungen import FIELD_LABELS, _MODELL_FELD_LABELS
+
+        for (modellname, feld), label in _MODELL_FELD_LABELS.items():
+            with self.subTest(ziel=f"{modellname}.{feld}"):
+                self.assertIn(feld, FIELD_LABELS)
+                self.assertNotEqual(label, FIELD_LABELS[feld])
+
+    @staticmethod
+    def _dict_schluessel(module, name):
+        """Die Schlüssel eines Dict-Literals, gelesen aus der **Quelle** — nur so
+        sind doppelte Schlüssel sichtbar, denn nach dem Import hat das Literal den
+        früheren Eintrag längst verworfen."""
+        quelle = Path(module.__file__).read_text(encoding="utf-8")
+        for knoten in ast.walk(ast.parse(quelle)):
+            if isinstance(knoten, ast.Assign) and any(
+                getattr(ziel, "id", None) == name for ziel in knoten.targets
+            ):
+                schluessel = []
+                for k in knoten.value.keys:
+                    try:
+                        schluessel.append(ast.literal_eval(k))
+                    except ValueError:
+                        pass
+                return schluessel
+        raise AssertionError(f"{name} nicht als Dict-Literal gefunden")
+
+    def test_keine_doppelten_schluessel_in_den_karten(self):
+        import intern.signals as signals
+        from intern import tables, verwendung
+        from intern.views import aenderungen
+
+        karten = [
+            (aenderungen, "FIELD_LABELS"),
+            (aenderungen, "MODEL_LABELS"),
+            (aenderungen, "_MODELL_FELD_LABELS"),
+            (tables, "_CHANGELOG_FIELD_LABELS"),
+            (tables, "_CHANGELOG_MODEL_LABELS"),
+            (verwendung, "_LIED_FELDER"),
+            (signals, "_AUDIT_FIELDS"),
+        ]
+        for module, name in karten:
+            with self.subTest(karte=name):
+                schluessel = self._dict_schluessel(module, name)
+                doppelt = {s for s in schluessel if schluessel.count(s) > 1}
+                self.assertEqual(doppelt, set())
+
+
+class MitteilungFormatiertTest(SimpleTestCase):
+    """``formatiert()`` muss leeren und fehlenden Text aushalten.
+
+    Die Spalte erlaubt NULL (Altdaten, Nachrichten aus dem XMPP-Bot), und
+    ``apply_replacements`` scheitert an ``None`` — auf der Forenseite ein Crash.
+    """
+
+    def test_ohne_text_kein_crash(self):
+        from intern.models import Mitteilung
+
+        self.assertEqual(Mitteilung(mitteilung=None).formatiert(), "")
+        self.assertEqual(Mitteilung(mitteilung="").formatiert(), "")
+
+    def test_text_wird_weiterhin_ersetzt(self):
+        from intern.models import Mitteilung
+
+        self.assertIn("<h4>Titel</h4>", Mitteilung(mitteilung="=====Titel=====").formatiert())
 
 
 class ForumTabelleTest(SimpleTestCase):

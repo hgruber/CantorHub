@@ -11,6 +11,56 @@ dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
 ## Unveröffentlicht
 
+- Datenmodell: `Zusage` konnte zwei Antworten desselben Mitglieds für denselben Termin
+  nebeneinander halten. Sichtbar wurde das an einem aufgeblähten Zähler und an zwei
+  `update_or_create`-Aufrufen, die bei einem Duplikat mit `MultipleObjectsReturned`
+  abgebrochen wären; fünf weitere Stellen sicherten sich mit `order_by("-id").first()` ab.
+  Ein `UniqueConstraint(person, termin)` schließt die Lücke. Am Bestand ändert er nichts —
+  geprüft vor dem Setzen: 2873 Zusagen, keine einzige Doppelung. Der Import aus dem
+  Altsystem legt Zusagen künftig unverändert an; die Datenquelle ist ebenfalls dublettenfrei.
+  `views/termine.py` kann seine Behelfe behalten, sie schaden nun aber nicht mehr
+- Datenmodell: `Abstimmung` schrieb beim Abstimmen erst alle Stimmen weg und legte dann die
+  neuen an, ohne Transaktion. Zwei gleichzeitige Klicks konnten dieselbe Stimme doppelt
+  eintragen, was die Auswertung mitzählte. `UniqueConstraint(person, abstimmung, option)`
+  verbietet genau das — bewusst nicht `(person, abstimmung)`, denn eine Abstimmung darf
+  mehrere Kreuze zulassen (`max_stimmen`). Dazu ein Index für das Abstimmungsfilter
+- Foren: `Mitteilung.formatiert()` schickt den Nachrichtentext durch die Wiki-Ersetzung
+  und wäre an einer leeren Nachricht gescheitert — die Spalte erlaubt `null` (Altdaten,
+  Nachrichten aus dem XMPP-Bot). Sie behandelt fehlenden Text jetzt als leeren Text. Die
+  Spalte auf `NOT NULL` zu ziehen wäre der sauberere Schnitt, ließe aber `makemigrations`
+  interaktiv nachfragen; genau dieser Aufruf läuft im `Dockerfile` und in `start.sh` ohne
+  Eingabe und bräche den Bau ab — siehe „Migrations: never create `0004+`" in `CLAUDE.md`
+- Datenmodell: `Konzert.lied` löschte bei einem entfernten Lied den ganzen Programmpunkt mit
+  (`CASCADE`, obwohl das Feld `null` erlaubt). Jetzt `SET_NULL` wie bei allen übrigen
+  nullbaren Verweisen — ein gelöschtes Lied verliert seinen Platz im Ablauf, nicht den
+  Programmpunkt. `on_delete` erzeugt kein DDL, die Änderung wirkt sofort
+- `Zusage.option` ist ein `choices`-Feld geworden, und der Wertebereich liegt jetzt in
+  `intern/zusage.py`. Dieselben vier Antworten samt Beschriftung standen vorher an fünf
+  Stellen, und zwei Kopien waren schon auseinandergelaufen (Änderungsprotokoll,
+  Aufstellung, Tabellenspalte, Statusfilter). Beschriftungen sind wortgleich geblieben:
+  `str(Zusage)` liegt als Schnappschuss im Änderungsprotokoll, eine Änderung schriebe die
+  Anzeige vergangener Einträge um
+- Änderungsprotokoll: `FIELD_LABELS` nannte den Schlüssel `gruppe` zweimal — einmal als
+  „Signatur" der Benachrichtigungsseite, einmal als „Gruppe" der Berechtigungsseite. Im
+  Dict-Literal verdrängt der spätere Eintrag den früheren lautlos, die E-Mail-Seite zeigte
+  also „Gruppe". Ein modellgenauer Eintrag wird jetzt zuerst befragt
+- Das Änderungsprotokoll, die Feldbeschriftungen und die Dateikarten werden gegen die
+  Modelle geprüft (`RegisterKonsistenzTest`). Ihre Feldnamen sind Zeichenketten: wurde ein
+  Feld umbenannt und die Karte nicht, verstummte das Protokoll für dieses Feld, ohne dass
+  etwas auffiel. Der Test liest die Karten außerdem aus der Quelle und findet doppelte
+  Schlüssel, die der Import verschweigt
+- Indizes: `db_index=True` neben `unique=True` (`Mitteilung.xmpp_stanza_id`) und auf einem
+  Fremdschlüssel (`Reaktion.mitteilung`) war wirkungslos — es gab dort nie zwei Indizes.
+  `ChangeLog` hatte dagegen zwei Indizes auf `user` und keinen auf `timestamp`, obwohl die
+  Liste danach sortiert; das ist getauscht. `Termin.datum` ist jetzt indiziert — danach
+  filtern und sortieren Terminliste, Kalender, CalDAV und Erinnerungsversand
+- `Konzert`- und `Lied`-Hilfsmethoden sowie `intern/fuzzy.py` entfernt. Der Titelvergleich
+  hatte keinen Aufrufer mehr, und `fuzzy.py` ließ sich nicht einmal importieren: seine
+  Abhängigkeit `rapidfuzz` stand nie in `requirements.txt`
+- Aufräumen ohne Wirkung nach außen: die Avatar-Helfer und die beiden Listen der
+  verbergbaren Mitgliedsfelder liegen jetzt in `intern/avatare.py` und
+  `intern/mitglied_felder.py` statt in `models.py`; `ChangeLog.timestamp` benutzt
+  `timezone.now` wie der Rest des Projekts statt `datetime.now`
 - Foren: die Trennlinie „Neu seit Deinem letzten Besuch" erschien nach dem vorigen Fix gar
   nicht mehr, wenn der älteste ungelesene Beitrag hinter den ersten 25 lag — auch dann nicht,
   wenn das Scrollen die Grenze nachgeladen hatte. Die erste nachgeladene Seite, die den

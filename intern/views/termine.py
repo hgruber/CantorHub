@@ -30,6 +30,7 @@ from ..aufstellung import aufstellung
 from ..forms import TerminForm
 from ..models import Konzert, Lied, Ort, Termin, User, Zusage
 from ..tables import TerminTabelle
+from ..zusage import OPTIONEN, TRANSITIONS
 
 __all__ = [
     "termin_list",
@@ -48,17 +49,12 @@ __all__ = [
     "konzert_noten_zip",
 ]
 
-ZUSAGE_TRANSITIONS = {
-    "": ["1", "2", "3"],
-    "3": ["1", "2"],
-    "1": [],
-    "2": ["1", "3"],
-}
-
 
 def _build_stimme_groups(termin):
-    STIMMEN_ORDER = ["S", "A", "T", "B", "C", "M"]
-    STIMMEN_LABELS = {"S": "Sopran", "A": "Alt", "T": "Tenor", "B": "Bass", "C": "Chorleiter", "M": "Musiker"}
+    # Reihenfolge und Beschriftungen kommen aus dem Modell, damit sie nicht
+    # neben User.STIMME_ORDER / User.STIMMEN auseinanderlaufen können.
+    STIMMEN_ORDER = User.STIMME_ORDER
+    STIMMEN_LABELS = dict(User.STIMMEN)
     active_users = User.objects.filter(is_active=True).order_by("last_name", "first_name")
     zusagen = {z.person_id: z.option for z in Zusage.objects.filter(termin=termin)}
     groups = []
@@ -66,7 +62,7 @@ def _build_stimme_groups(termin):
         users = [u for u in active_users if u.stimme == stimme]
         if not users:
             continue
-        g = {"1": [], "2": [], "3": [], "": []}
+        g = {option: [] for option in OPTIONEN}
         for u in users:
             g[zusagen.get(u.id, "")].append(u)
         groups.append({
@@ -356,7 +352,7 @@ def termin_zusage(request, id):
     current_option = current.option if current else ""
     old_option = current_option
 
-    if new_option in ZUSAGE_TRANSITIONS.get(current_option, []):
+    if new_option in TRANSITIONS.get(current_option, []):
         obj, created = Zusage.objects.update_or_create(
             person=request.user, termin=termin,
             defaults={"option": new_option},

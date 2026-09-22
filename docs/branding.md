@@ -54,10 +54,11 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
   cannot be licensed as a webfont, so a deployer replacing the branding replaces the SVG.
 
 ### Data convention (NOT pure branding — handle separately)
-- `intern/replacements.py` / `intern/models.py` `datei_referenzen()` build song
-  filenames with a literal `JG-` prefix. This is a content/naming convention, not
-  display branding. Either make the prefix a config key (`FILE_PREFIX`) or leave
-  it; decide explicitly rather than lumping it into branding.
+- Song filenames carry a literal `JG-` prefix (`JG-Titel` and `JG - Titel` are historically
+  equivalent). This is a content/naming convention, not display branding — but it is **already
+  configurable**: `FILE_PREFIX` in the `Konfiguration` table, read by
+  `intern/views/files.py` (`_aufnahme_prefixes`). The two separators stay fixed. Nothing left
+  to decide here; the key is what a deployer changes.
 
 ## Proposed approach
 

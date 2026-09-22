@@ -5,7 +5,8 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
 from ..app_settings import get_config, get_config_int, get_map_center
-from ..models import ADDRESS_TRIGGER_FIELDS, Ort, Standort, User
+from ..mitglied_felder import ADDRESS_TRIGGER_FIELDS
+from ..models import Ort, Standort, User
 
 __all__ = [
     "karte_view",

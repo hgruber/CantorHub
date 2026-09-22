@@ -12,6 +12,7 @@ from django_tables2 import RequestConfig
 
 from ..models import ChangeLog, Forum, Lied, Ort, Termin, Zusage
 from ..models import User as MitgliedUser
+from ..zusage import OPTION_LABELS
 from ._decorators import perm_or_home
 from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
@@ -31,7 +32,6 @@ FIELD_LABELS = {
     "empfaenger": "Empfänger",
     "text": "Text",
     "anhaenge": "Anhänge",
-    "gruppe": "Signatur",
     "fehlgeschlagen": "Nicht zugestellt",
     # User
     "first_name": "Vorname",
@@ -105,11 +105,28 @@ _FK_RESOLVE = {
 }
 
 
-_OPTION_LABELS = {"1": "Zusage", "2": "Absage", "3": "Eventuell", "None": "Keine Angabe", None: "Keine Angabe", "": "Keine Angabe"}
+_OPTION_LABELS = {
+    **OPTION_LABELS,
+    # ChangeLog.changes ist JSON — eine fehlende Antwort kommt als null an.
+    "None": "Keine Angabe",
+    None: "Keine Angabe",
+}
 
 _VALUE_TRANSLATIONS = {
     ("Zusage", "option"): _OPTION_LABELS,
 }
+
+# Feldnamen, die in zwei Modellen Verschiedenes bedeuten. ``FIELD_LABELS`` ist flach
+# und kann nur eine Bedeutung halten — vorher stand hier zweimal ``"gruppe"``, und
+# das spätere (Gruppen/Berechtigungen) verdrängte still das frühere (Signatur der
+# Benachrichtigung). Die modellgenaue Angabe gewinnt.
+_MODELL_FELD_LABELS = {
+    ("Benachrichtigung", "gruppe"): "Signatur",
+}
+
+
+def _feld_label(model_name, feld):
+    return _MODELL_FELD_LABELS.get((model_name, feld)) or FIELD_LABELS.get(feld, feld)
 
 MODEL_LABELS = {
     "Termin": "Termin",
@@ -205,7 +222,7 @@ def _annotate_entries(entries):
 
     for entry in entries:
         entry.change_rows = [
-            (FIELD_LABELS.get(k, k),
+            (_feld_label(entry.model_name, k),
              _resolve_file(k, _translate(entry.model_name, k, v[0])),
              _resolve_file(k, _translate(entry.model_name, k, v[1])))
             for k, v in entry.changes.items()

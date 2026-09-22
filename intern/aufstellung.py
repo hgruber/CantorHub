@@ -10,9 +10,7 @@ Ohne Datenbankzugriff, damit es ein ``SimpleTestCase`` prüfen kann; die Abfrage
 stehen in ``views.termine._aufstellungen_anhaengen``.
 """
 
-# Zusage.option → Status-Kürzel der CSS-Klassen (.aufst-yes …)
-_STATUS = {"1": "yes", "3": "maybe", "2": "no"}
-_TITEL = {"yes": "Zusage", "maybe": "Eventuell", "na": "Offen", "no": "Absage"}
+from .zusage import STATUS_TITEL, status_von
 
 # Reihenfolge von der Mitte nach außen
 _VON_DER_MITTE = ["yes", "maybe", "na", "no"]
@@ -39,10 +37,10 @@ def aufstellung(mitglieder, zusagen, ich_id=None):
     for pid, vorname, nachname, stimme in mitglieder:
         if stimme not in stimmen:
             continue
-        status = _STATUS.get(option_von.get(pid, ""), "na")
+        status = status_von(option_von.get(pid, ""))
         stimmen[stimme][status].append({
             "status": status,
-            "titel": f"{vorname} {nachname} – {_TITEL[status]}",
+            "titel": f"{vorname} {nachname} – {STATUS_TITEL[status]}",
             "ich": pid == ich_id,
         })
 
