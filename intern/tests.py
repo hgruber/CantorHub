@@ -2462,6 +2462,24 @@ class ForumGelesenTest(SimpleTestCase):
 
         self.assertEqual(trenner_id([(3, 8), (2, 9), (1, 8)], 0, 7), 1)
 
+    def test_trenner_bleibt_weg_wenn_aeltere_ungelesene_steht(self):
+        """Mehr als 25 ungelesene Nachrichten: der älteste Ungelesene liegt hinter dem
+        25er-Fenster von ``forum_view``, die Linie ließe sich dort nicht wahrheitsgemäß
+        platzieren — sie bleibt ganz weg (docs/forum.md, „none if it lies further back").
+        Daten wie in Forum 250: alles ungelesen bei ``bis_id=12``."""
+        from intern.forum_gelesen import trenner_id
+
+        nachrichten = [(68, 4), (67, 4), (61, 4), (25, 9), (24, 9), (23, 9)]
+        self.assertIsNone(trenner_id(nachrichten, 12, 2, aeltere_ungelesen=True))
+
+    def test_trenner_bleibt_bei_nur_aelteren_gelesenen(self):
+        """Gegenstück: ohne ältere Ungelesene verhält sich ``trenner_id`` wie bisher."""
+        from intern.forum_gelesen import trenner_id
+
+        nachrichten = [(68, 4), (67, 4), (61, 4), (60, 4), (12, 3), (10, 31)]
+        self.assertEqual(trenner_id(nachrichten, 60, 2, aeltere_ungelesen=False), 61)
+        self.assertEqual(trenner_id(nachrichten, 12, 2, aeltere_ungelesen=False), 60)
+
     def test_mitteilungen_sind_nach_id_sortiert(self):
         """Gepinnt: ``trenner_id`` liefert die kleinste ungelesene id, und
         ``_messages.html`` setzt den Trenner hinter genau diese Nachricht. Das

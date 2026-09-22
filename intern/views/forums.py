@@ -18,6 +18,7 @@ from filer.models import File
 from intern import ejabberd, folders
 from intern.app_settings import get_config, get_from_email, is_ejabberd_configured
 from intern.forum_gelesen import (
+    hat_aeltere_ungelesene,
     lese_bis_id,
     markiere_gelesen,
     sichere_ausgangspunkt,
@@ -269,6 +270,14 @@ def forum_view(request, forum):
         [(msg.id, msg.sender_id) for msg in messages],
         alt_bis_id,
         request.user.id,
+        # Unterhalb des Fensters (erste 25) noch Ungelesene? Dann lässt sich die Linie
+        # nicht wahrheitsgemäß platzieren und bleibt weg — docs/forum.md, „none if it
+        # lies further back".
+        aeltere_ungelesen=(
+            alt_bis_id is not None
+            and oldest_id
+            and hat_aeltere_ungelesene(request.user, forum, oldest_id, alt_bis_id)
+        ),
     )
     markiere_gelesen(request.user, forum, last_id)
     permissions_url = (
@@ -286,6 +295,8 @@ def forum_view(request, forum):
             "oldest_id": oldest_id,
             "messages": messages,
             "trenner_nach": trenner_nach,
+            # Für die Sentinel-Kette von forum_more: ohne Lesestand wird 0 gereicht.
+            "alt_bis_id": alt_bis_id or 0,
             "upload_folder_id": folders.forum(),
             "upload_folder_name": folders.FORENBILDER,
             "up": "forum_list",
@@ -331,6 +342,9 @@ def forum_more(request, forum):
     if not _forum_access(request.user, forum):
         raise PermissionDenied
     oldest_id = request.GET.get("oldest_id", 0)
+    # Der Lesestand vor dem Seitenaufruf: forum_view hat den Marker längst auf last_id
+    # angehoben, der Sentinel-Kette ist der einzige Weg, ihn hierher zu bringen.
+    alt_bis_id = int(request.GET.get("bis_id") or 0) or None
     messages = list(
         Mitteilung.objects.filter(forum_id=forum, id__lt=oldest_id)
         .select_related("sender", "sender__avatar")[:FORUM_MORE_BATCH]
@@ -340,6 +354,20 @@ def forum_more(request, forum):
         len(messages) == FORUM_MORE_BATCH
         and Mitteilung.objects.filter(forum_id=forum, id__lt=new_oldest_id).exists()
     )
+    trenner_nach = None
+    if alt_bis_id is not None:
+        trenner_nach = trenner_id(
+            [(msg.id, msg.sender_id) for msg in messages],
+            alt_bis_id,
+            request.user.id,
+            # Liegt der älteste Ungelesene noch unterhalb dieses Batches, bleibt die
+            # Linie weiter weg — sie würde sonst eine Lüge über noch nicht Geladenes
+            # zeichnen. Gleiche Regel wie in forum_view.
+            aeltere_ungelesen=(
+                new_oldest_id
+                and hat_aeltere_ungelesene(request.user, forum, new_oldest_id, alt_bis_id)
+            ),
+        )
     return render(
         request,
         "_forum_more.html",
@@ -348,6 +376,8 @@ def forum_more(request, forum):
             "oldest_id": new_oldest_id,
             "messages": messages,
             "has_more": has_more,
+            "bis_id": alt_bis_id or 0,
+            "trenner_nach": trenner_nach,
         },
     )
 

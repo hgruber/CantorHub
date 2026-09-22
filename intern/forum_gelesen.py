@@ -21,13 +21,16 @@ def ist_ungelesen(nachricht_id, sender_id, bis_id, user_id):
     return nachricht_id > bis_id and sender_id != user_id
 
 
-def trenner_id(nachrichten, alt_bis_id, user_id):
+def trenner_id(nachrichten, alt_bis_id, user_id, aeltere_ungelesen=False):
     """Id of the oldest unread message among `nachrichten` (`(id, sender_id)` pairs), or None.
 
     The divider „Neu seit Deinem letzten Besuch" is rendered below that message. Without a
     previous marker (`alt_bis_id is None`) there is no last visit and therefore no divider.
+    The same goes for `aeltere_ungelesen`: when unread messages lie below the loaded window
+    (the first 25), the divider could not be placed truthfully there — pages loaded by
+    `forum_more` would show as read below it.
     """
-    if alt_bis_id is None:
+    if alt_bis_id is None or aeltere_ungelesen:
         return None
     ungelesen = [
         nid for nid, sender_id in nachrichten
@@ -37,6 +40,24 @@ def trenner_id(nachrichten, alt_bis_id, user_id):
 
 
 # --- DB wrapper -------------------------------------------------------------------------
+
+def hat_aeltere_ungelesene(user, forum_id, aeltere_grenze, alt_bis_id):
+    """True when an unread foreign message lies below the loaded window (first 25).
+
+    Mirrors `ist_ungelesen`'s sender rule: `exclude(sender=user)` would also drop rows with
+    `sender=None` (unmapped JIDs count as foreign), so the Q combination is explicit —
+    same as `ForumQuerySet.mit_ungelesen`.
+    """
+    from .models import Mitteilung
+
+    return (
+        Mitteilung.objects.filter(
+            forum_id=forum_id, id__lt=aeltere_grenze, id__gt=alt_bis_id
+        )
+        .filter(Q(sender__isnull=True) | ~Q(sender=user))
+        .exists()
+    )
+
 
 def lese_bis_id(user, forum_id):
     """The member's read marker for a forum, or None if there is none yet."""

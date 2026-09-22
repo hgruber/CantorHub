@@ -54,7 +54,12 @@ Members see where new messages arrived since their last visit, in three places: 
 front of the dimmed total (`ForumTabelle.render_anzahl_mitteilungen`, row class `ungelesen`), the
 „Forum" sidebar entry gets the same pulsing dot as „Termine" (`nav-item-offen`), and the forum
 page draws a „Neu seit Deinem letzten Besuch" divider below the oldest unread message of the
-first 25 (none if it lies further back).
+first 25 (none if it lies further back — `forum_view` asks `hat_aeltere_ungelesene()` with one
+`exists()` query whether an unread foreign message lies below the window, and `trenner_id()`
+stays `None` then). While the oldest unread lies beyond the loaded window, the divider is not
+drawn at all; the first `forum_more` page that loads it draws it below that message — `forum_
+more` recomputes with the same `trenner_id`/`hat_aeltere_ungelesene` pair, the read marker for
+that runs along the sentinel chain as a `bis_id` GET parameter.
 
 Model `ForumGelesen(user, forum, bis_id)` holds, per member and forum, the id of the newest
 message seen — an id rather than a date, because `forum_get` polls by `id__gt` and the `datum`
@@ -97,7 +102,9 @@ wrapper below it):
   that single row, and the `exists()` short-circuit would never set up the others.
 - **Restricted forums** are excluded through `_hidden_forum_ids`, like everywhere else.
 - **Cost.** The sidebar dot is one `exists()` query in `config/context_processors.py`, skipped
-  for requests carrying `HX-Request` — partials have no sidebar. `forum_get` goes further and
+  for requests carrying `HX-Request` — partials have no sidebar. `forum_view` pays one more
+  `exists()` (`hat_aeltere_ungelesene`) to decide whether the divider can be placed at all, and
+  every `forum_more` batch pays it once against its own bottom edge. `forum_get` goes further and
   renders through `render_to_string` **without** a request, so the context processor does not
   run at all: the partial only needs `user`. Both polls carry `[!document.hidden]` /
   a `document.hidden` check, so a forgotten tab stops asking. The poll costs 24 ms and seven

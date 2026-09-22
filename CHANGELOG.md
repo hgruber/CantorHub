@@ -11,6 +11,18 @@ dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
 ## Unveröffentlicht
 
+- Foren: die Trennlinie „Neu seit Deinem letzten Besuch" erschien nach dem vorigen Fix gar
+  nicht mehr, wenn der älteste ungelesene Beitrag hinter den ersten 25 lag — auch dann nicht,
+  wenn das Scrollen die Grenze nachgeladen hatte. Die erste nachgeladene Seite, die den
+  ältesten Ungelesenen enthält, zeichnet sie jetzt unter ihm; solange noch ältere Ungelesene
+  unterhalb liegen, bleibt sie weg. Der Lesestand läuft dafür über die Sentinel-Kette als
+  `bis_id`-Parameter mit (`forum_more` rechnet mit demselben `trenner_id`/
+  `hat_aeltere_ungelesene`-Paar nach)
+- Foren: die Trennlinie „Neu seit Deinem letzten Besuch" erschien auch, wenn der älteste
+  ungelesene Beitrag älter als die 25 neuesten war — sie saß dann nach der 25.-neuesten
+  Nachricht, und die beim Scrollen nachgeladenen, ebenfalls ungelesenen Beiträge erschienen
+  unter ihr. Sie bleibt jetzt ganz weg, wenn unterhalb des Fensters noch Ungelesene liegen
+  (`hat_aeltere_ungelesene`, eine `exists()`-Abfrage), wie in `docs/forum.md` vorgesehen
 - Migration: ein Lauf mit `MIGRATE=1` gegen MySQL verwarf die Datenbank, ließ `media/` aber
   stehen. Weil filer jeder Datei beim Import einen frischen UUID-Pfad gibt, überschrieb der
   nächste Import nichts, sondern legte den gesamten Bestand daneben — das Volume wuchs bei

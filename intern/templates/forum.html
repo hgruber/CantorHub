@@ -38,7 +38,7 @@
             <div id="load-more"
                  class="sentinel"
                  style="height:1px;background:transparent"
-                 hx-get="{% url 'forum_more' forum=forum %}?oldest_id={{ oldest_id }}"
+                 hx-get="{% url 'forum_more' forum=forum %}?oldest_id={{ oldest_id }}&amp;bis_id={{ alt_bis_id|default:0 }}"
                  hx-swap="outerHTML"
                  hx-trigger="intersect once root:#messages"></div>
         {% endif %}
