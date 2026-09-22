@@ -543,12 +543,13 @@ it with `color-mix()`, exactly as in `intern.css`. What does *not* follow is eve
 `JG-Frankfurt*.svg` files carry `#c14468`/`#000000` as literals, so a deployer with an unrelated
 brand gets a rose logo (an open point in `docs/branding.md`).
 
-Structure: fixed header over a full-bleed photo hero (transparent at the top, `.is-solid` white
-after 60 px of scroll — set by a small inline script at the end of the page), then Über uns (the
-club tagline as its eyebrow, then two cards), Konzerte (date/title/place rows), Galerie (single
-wide photo band), a Kontakt section on a warm rose band and a light footer. The tagline sits
-there rather than in the hero because it was the smallest type up there and pulled the scrim to
-the top of the picture, although the wordmark states the name directly beneath it.
+Structure: fixed header over a full-bleed photo hero (a frosted-glass pill behind the navigation
+at the top, `.is-solid` white after 60 px of scroll — set by a small inline script at the end of
+the page), then Über uns (the club tagline as its eyebrow, then two cards), Konzerte
+(date/title/place rows), Galerie (single wide photo band), a Kontakt section on a warm rose band
+and a light footer. The hero carries nothing but the wordmark and the two buttons: the tagline
+went to the Über uns section first (it was the smallest type up there and pulled a scrim to the
+top of the picture), and the subline followed it out of the picture entirely.
 
 The palette is warm — cream instead of white-grey, a warm dark instead of black. `--gold` is a
 second colour standing for the invitation rather than the brand, and it appears in exactly two
@@ -560,44 +561,41 @@ who sets an unrelated brand colour has to retune it by hand, which is the price 
 counterweight to the brand at all. `--gold` itself carries only surfaces and rules (2.7:1 on
 white); wherever it has to be read it is `--gold-text` or `--gold-band`.
 
-**The hero photo is toned in two places and free in between.** The two scrims live in separate
-pseudo-elements because they have different shapes. `.hero-media::after` is the flat band over
-the top 19 % only — the fixed navigation sits on the photo in white type and the church vault
-behind it reaches 0.85 brightness. `.hero-media::before` is the text zone itself: a
-bottom-anchored gradient limited to the left column by `mask-image`, which fades out to the
-right so the photo's right half stays untouched. A mask rather than a second gradient because
-two gradients cannot be intersected in CSS, and `background-blend-mode: multiply` would blend
-the colour along with the alpha. `mask-image` is new to this project but conservative next to
-`color-mix()`, which is the newer feature (Chrome 111 / Safari 16.2 against Chrome 4 / Safari 4).
-`.hero-media` carries `z-index: 0` to give itself a stacking context — without it `::before`, as
-the element's first child, would paint *under* the photo (`::after` gets away with it only by
-being the last child). Below 768 px the text fills the width and the mask is switched off.
+**Nothing is laid over the hero photo any more.** The two scrims are gone. The top one
+(`.hero-media::after`) is now a frosted-glass pill on the navigation itself
+(`rgba(255, 255, 255, 0.75)` plus a 10 px `backdrop-filter`): the header crosses the dark roof
+on the left and the bright vault, gable and organ pipes on the right, and no single type colour
+survives both — white stood at 4.41:1 on the bright parts until the band was raised to 0.66/0.56,
+dark ink drops to about 1.6:1 on the roof. Behind the glass the ground is bright and even, so ink
+type holds on both, and the pill travels with the navigation instead of shading a band across the
+whole picture. The text-zone gradient (`::before` with its `mask-image`) is gone as well: it
+existed for the hero subline, and that subline was dropped. That also removed the reason for
+`.hero-media`'s `z-index: 0` stacking context — with no pseudo-elements left there is nothing to
+paint under the photo. `.is-solid` switches the pill off (`background: transparent`, no filter)
+once the white header carries the type on its own. What is left on the picture is the wordmark,
+which is a logotype and therefore **exempt** from the contrast requirement (WCAG 1.4.3) — its
+drop shadow is decoration, not protection — and the two buttons, which carry their own surfaces:
+`.btn-primary` is brand-filled, and `.btn-ghost` has a 42 % dark glass, because over the bright
+wooden floor a white border on its own would vanish.
 
-Together the two scrims touch 49.5 % of the hero where the previous full-width gradient touched
-84.7 %, and dim 37.3 % of it heavily rather than 70.7 %. The mask's soft edge costs about five
-points against a hard cut — the ideal 41 % is not reachable with an edge you cannot see. The
-text block now spans 8.7 % (buttons) to 54 % (wordmark) of the hero's height: since the club
-name moved to the Über uns section, the wordmark is the topmost element in the hero. The
-wordmark is a logotype and therefore **exempt** from the contrast requirement (WCAG 1.4.3), but
-it still sits on the scrim so it does not look washed out.
+Nothing on the photo is measured in alphas any more, so the recipe that used to live here (hide
+`.hero-inner`, keep the scrims, read the brightest pixel under each text element, solve for an
+alpha that brings it under 0.18) is retired with the scrims. Its findings are worth keeping for
+anyone who puts type back on the picture: the navigation links held 4.41:1 with a 0.55/0.46 band
+and 5.8:1 at 0.66/0.56, the subline 6.9:1 and the ghost button 9.7:1. Two traps it caught: a
+gradient ending at 58 % *looks* plausible but leaves the wordmark with no scrim at all, and dark
+type is not an option anywhere in this frame — the choir's black clothing and the dark roof sit
+behind the text band. The design this replaced flooded the whole picture at up to 0.9 alpha, over
+a photo whose mean brightness is 0.343.
 
-Those alphas are measured, not chosen by eye: behind the text sit white robes, the light wooden
-floor and the bright wall, so white type has to hold 4.5:1 against them. Measured on the
-rendered page they hold 6.9:1 (hero subline), 9.7:1 (ghost button) and 5.8:1 (navigation links).
-The tuning is worth redoing the same way if the photo is ever replaced — render the page with
-`.hero-inner` hidden (keep the scrims), read the brightest pixel under each text element, and
-solve for the alpha that brings it under 0.18. Two traps that recipe has already caught: a
-gradient ending at 58 % *looks* plausible but leaves the wordmark with no scrim at all, and the
-navigation links sat at 4.41:1 — just under AA — until the header band went from 0.55/0.46 to
-0.66/0.56. The design this replaced flooded the whole picture at up to 0.9 alpha, over a photo
-whose mean brightness is 0.343.
-
-A note on the alternative: there is no position in this frame where text needs no scrim at all.
+A note on the alternative: there is no position in this frame where type needs no scrim at all.
 A 12 × 10 map of the brightest pixel per cell shows the only dark region (≤ 0.10) is 120 px wide
 in the top-left, too narrow for the 480 px wordmark, and the text band is a *mix* — only 12–41 %
 of its pixels are bright, the rest is the choir's black clothing — so dark type would need ~55 %
 of lightening instead. The three real levers are the dimmed **area**, the required alpha via
 type size (3:1 instead of 4.5:1 from 24 px up), and taking the text off the photo altogether.
+This page has now taken the third one twice: the subline is gone, and the header moved its
+protection off the picture and into a surface of its own.
 
 **The Kontakt section is a brand band, not a dark surface.** `--band` is `--brand` at 90 %
 towards black, and those 10 % are load-bearing: plain `--brand` carries white at only 4.89:1, so
@@ -624,8 +622,8 @@ lettering can only be used as an asset, never as a webfont. The favicon redirect
 `intern/static/intern/images/`.
 
 All copy comes from `Konfiguration` (`HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME`, `VEREINSNAME*`,
-`VEREINSADRESSE`, `DEFAULT_FROM_EMAIL`) — `home()` in `views/auth.py` additionally passes
-`homepage_intro`, the first sentence of `HOMEPAGE_UEBER_UNS`, used as the hero subline. The
+`VEREINSADRESSE`, `DEFAULT_FROM_EMAIL`); `home()` in `views/auth.py` passes `HOMEPAGE_UEBER_UNS`
+whole to the Über uns card. The
 hero and gallery images are pre-scaled derivatives of the choir photo in
 `intern/static/intern/img/` (`chor-{800,1400,2000}.jpg` for the hero `srcset`,
 `chor-band-{1100,1800}.jpg` for the gallery band); regenerate them from the original with

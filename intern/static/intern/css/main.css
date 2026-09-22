@@ -34,8 +34,10 @@
        sein; bei 90 % sind es 5,79:1 und die Fläche bleibt rosé. */
     --band: color-mix(in srgb, var(--brand) 90%, black);
 
-    /* Warmes Schleierdunkel über dem Foto — ersetzt das kalte rgba(12,10,14,…),
-       das dem Bild Rosa und Gold ausgesogen hat. */
+    /* Warmes Dunkel für den Hero — Hintergrund hinter dem Foto (Ladezustand)
+       und die Fläche des Ghost-Buttons. Über dem Bild selbst liegt kein
+       Schleier mehr; ersetzt das kalte rgba(12,10,14,…), das dem Bild Rosa und
+       Gold ausgesogen hat. */
     --hero-shade: #2a1a12;
 
     --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
@@ -125,19 +127,28 @@ a {
     display: flex;
     align-items: center;
     gap: clamp(1rem, 3vw, 2.25rem);
+    /* Milchglas statt Kopfschleier. Die Leiste liegt mal über der dunklen Decke,
+       mal über dem hellen Giebel; unter dem Glas ist der Grund hell und ruhig,
+       und dunkle Schrift trägt über beiden. Kein dunkler Verlauf über dem Foto
+       mehr — nur die Fläche hinter der Navigation. */
+    padding: 0.55rem 1.4rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.75);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    transition:
+        background 0.3s ease,
+        box-shadow 0.3s ease;
 }
 
 .site-nav a {
     position: relative;
-    color: #fff;
+    color: var(--ink);
     text-decoration: none;
     font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    text-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.8),
-        0 1px 10px rgba(0, 0, 0, 0.55);
     transition: color 0.25s ease;
 }
 
@@ -158,9 +169,9 @@ a {
 
 .site-nav .nav-login {
     padding: 0.5rem 1.1rem;
-    border: 1px solid rgba(255, 255, 255, 0.65);
+    border: 1px solid var(--brand);
     border-radius: 2px;
-    text-shadow: none;
+    color: var(--brand);
 }
 
 .site-nav .nav-login::after {
@@ -186,22 +197,16 @@ a {
     filter: none;
 }
 
-.site-header.is-solid .site-nav a {
-    color: var(--ink);
-    text-shadow: none;
+/* Auf weißem Grund trägt der Kopf selbst — das Glas hätte dort nichts mehr zu
+   tun und würde nur als Kante stehen. */
+.site-header.is-solid .site-nav {
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
 .site-header.is-solid .site-nav a:hover {
     color: var(--brand);
-}
-
-.site-header.is-solid .nav-login {
-    border-color: var(--brand);
-    color: var(--brand);
-}
-
-.site-header.is-solid .nav-login:hover {
-    color: #fff;
 }
 
 /* === Hero ================================================================ */
@@ -226,59 +231,10 @@ a {
     object-position: 50% 42%;
 }
 
-/* Eigener Stacking-Kontext, damit die Schleier in ::before/::after über dem Foto
-   liegen. Ohne ihn läge ::before als erstes Kind unter dem Bild — ::after liegt
-   heute nur deshalb darüber, weil es das letzte Kind ist. */
-.hero-media {
-    z-index: 0;
-}
-
-/* Kopfschleier über die volle Breite: die feste Navigation steht mit weißer
-   Schrift auf dem hellen Gewölbe des Fotos — dort wäre sie ohne Schutz unlesbar.
-   Gemessen gegen die hellste Stelle der Kopfzeile: mit 0,55/0,46 standen die
-   Navigationslinks bei 4,41:1 und damit knapp unter AA. Er hält bis 11 % (die
-   Kopfzeile ist 62–84 px hoch und damit 8,7–10,7 % jeder Hero-Höhe) und ist bei
-   19 % ganz weg. */
-.hero-media::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    background: linear-gradient(
-        to bottom,
-        color-mix(in srgb, var(--hero-shade) 66%, transparent) 0%,
-        color-mix(in srgb, var(--hero-shade) 56%, transparent) 11%,
-        transparent 19%
-    );
-}
-
-/* Die Textzone — nur unter dem Text, nicht über die ganze Breite. Sie ist der
-   einzige Grund für den Schleier: hinter dem Block liegen weiße Roben, der helle
-   Holzboden und die helle Wand, und weißer Text braucht darauf 4,5:1. Seit der
-   Label in „Über uns" steht, endet der Block bei 54 % von unten (Wortmarke
-   33,5–54 %, Anrisstext 19,2–31,1 %, Buttons 8,7–14,9 %). Die Maske blendet nach
-   rechts aus, damit die rechte Bildhälfte unberührt bleibt; bei ≤ 768 px füllt
-   der Text die Breite und die Maske entfällt (siehe unten). */
-.hero-media::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background: linear-gradient(
-        to top,
-        color-mix(in srgb, var(--hero-shade) 76%, transparent) 0%,
-        color-mix(in srgb, var(--hero-shade) 74%, transparent) 18%,
-        color-mix(in srgb, var(--hero-shade) 72%, transparent) 36%,
-        color-mix(in srgb, var(--hero-shade) 70%, transparent) 52%,
-        color-mix(in srgb, var(--hero-shade) 50%, transparent) 62%,
-        color-mix(in srgb, var(--hero-shade) 26%, transparent) 70%,
-        color-mix(in srgb, var(--hero-shade) 6%, transparent) 78%,
-        transparent 84%
-    );
-    -webkit-mask-image: linear-gradient(to right, #000 0 52%, transparent 64%);
-    mask-image: linear-gradient(to right, #000 0 52%, transparent 64%);
-}
-
+/* Das Foto steht ungeschleiert im Hero: der Kopf trägt sein Glas an der
+   Navigation selbst, die beiden Buttons ihre eigene Fläche, und sonst liegt
+   nichts mehr über dem Bild. Was bleibt, ist die Wortmarke — sie ist ein
+   Logotyp und trägt sich mit ihrem Schlagschatten von allein. */
 .hero-inner {
     position: relative;
     width: 100%;
@@ -299,11 +255,6 @@ a {
     border-bottom: 2px solid var(--gold);
 }
 
-/* Der Halo trägt die kleinen Versalien auch dort, wo der Schleier dünn ist. */
-.hero .eyebrow {
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
-}
-
 .hero h1 {
     font-family: var(--serif);
     font-weight: 400;
@@ -319,14 +270,6 @@ a {
     width: clamp(240px, 38vw, 480px);
     height: auto;
     filter: drop-shadow(0 6px 22px rgba(26, 12, 6, 0.7));
-}
-
-.hero-sub {
-    margin-top: 1.25rem;
-    max-width: 46ch;
-    font-size: clamp(1rem, 2vw, 1.2rem);
-    color: rgba(255, 255, 255, 0.92);
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
 .hero-actions {
@@ -364,8 +307,14 @@ a {
 }
 
 .btn-ghost {
-    border-color: rgba(255, 255, 255, 0.6);
+    /* Der einzige Schutz, den ein Button selbst trägt: über dem hellen Holzboden
+       wäre ein weißer Rand ohne Fläche nicht zu sehen. Das Glas ist dunkel, weil
+       die Schrift weiß bleibt — helles Glas hieße dunkle Schrift nur hier. */
+    border-color: rgba(255, 255, 255, 0.7);
     color: #fff;
+    background: color-mix(in srgb, var(--hero-shade) 42%, transparent);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
 }
 
 .btn-ghost:hover {
@@ -665,6 +614,7 @@ footer {
 
     .site-nav {
         gap: 1rem;
+        padding: 0.45rem 1rem;
     }
 
     .site-nav a {
@@ -679,14 +629,6 @@ footer {
     .hero {
         min-height: 84vh;
         padding-top: 6rem;
-    }
-
-    /* Auf schmalen Displays füllt der Text die Breite — die Spaltenbegrenzung
-       der Textzone wäre dort falsch und würde rechts abdunkeln, wo gar kein
-       Text steht. */
-    .hero-media::before {
-        -webkit-mask-image: none;
-        mask-image: none;
     }
 
     .concert-item {

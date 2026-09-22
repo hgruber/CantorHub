@@ -45,9 +45,6 @@
                     <img src="{% static 'intern/brand/JG-Frankfurt-transparent.svg' %}"
                          alt="{{ vereinsname_lang }}" />
                 </h1>
-                {% if homepage_intro %}
-                <p class="hero-sub">{{ homepage_intro }}</p>
-                {% endif %}
                 <div class="hero-actions">
                     <a href="#concerts" class="btn btn-primary">Konzerte</a>
                     <a href="#contact" class="btn btn-ghost">Kontakt</a>
@@ -59,8 +56,8 @@
             <div class="content">
                 {% comment %}
                 Der Vereinszusatz steht hier statt im Hero: dort war er die
-                kleinste Schrift und erzwang den Schleier bis ganz nach oben,
-                obwohl die Wortmarke den Namen direkt darunter nennt.
+                kleinste Schrift und der Grund für einen Schleier bis ganz nach
+                oben, den das Foto heute gar nicht mehr trägt.
                 {% endcomment %}
                 <div class="section-head">
                     <span class="eyebrow">{{ vereinsname }}</span>

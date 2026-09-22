@@ -170,11 +170,8 @@ def home(request):
         .select_related("ort")[:10]
     )
     ueber_uns = get_config("HOMEPAGE_UEBER_UNS", "")
-    # erster Satz als Anrisstext im Hero-Bereich
-    kopf, punkt, _ = ueber_uns.partition(".")
     return render(request, "index.html", {
         "termine": termine,
-        "homepage_intro": (kopf + punkt).strip(),
         "homepage_ueber_uns": ueber_uns,
         "homepage_aufnahme": get_config("HOMEPAGE_AUFNAHME", ""),
         "vereinsadresse": get_config("VEREINSADRESSE", ""),
