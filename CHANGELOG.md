@@ -11,6 +11,12 @@ dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
 ## Unveröffentlicht
 
+- Repertoire: die Suche der Titelliste war an die Spalte `titel` gebunden und fand weder
+  Komponist noch Bearbeiter, obwohl beide am Modell stehen und als Spalten angeboten werden.
+  Sie greift jetzt über alle drei (ODER-verknüpft, `RepertoireFilter.filter_suche`). Parameter
+  (`titel`), Beschriftung („Suche") und Formular bleiben unverändert — bestehende Links und der
+  gemerkte Tabellenzustand greifen weiter. Die Wiedergabelisten des Mini-Players folgen
+  derselben Suche, weil sie denselben Filter benutzen
 - Datenmodell: `Zusage` konnte zwei Antworten desselben Mitglieds für denselben Termin
   nebeneinander halten. Sichtbar wurde das an einem aufgeblähten Zähler und an zwei
   `update_or_create`-Aufrufen, die bei einem Duplikat mit `MultipleObjectsReturned`

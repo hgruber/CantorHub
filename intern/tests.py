@@ -2638,6 +2638,41 @@ class ZusageOptionenTest(SimpleTestCase):
         self.assertEqual(dict(choices), erwartet)
 
 
+class RepertoireSucheTest(SimpleTestCase):
+    """Die Suche der Titelliste greift über Titel, Komponist und Bearbeiter.
+
+    Das QuerySet wird nie ausgewertet — der ``method=``-Filter liefert ein
+    faules QuerySet, geprüft wird das kompilierte SQL.
+    """
+
+    def _query(self, wert):
+        from intern.models import Lied
+        from intern.tables import RepertoireFilter
+
+        return RepertoireFilter().filter_suche(Lied.objects.all(), "titel", wert)
+
+    def test_suche_umfasst_komponist_und_bearbeiter(self):
+        sql = str(self._query("bach").query)
+        for spalte in ("titel", "komponist", "bearbeiter"):
+            self.assertIn(f'"{spalte}" LIKE', sql)
+
+    def test_leere_suche_filtert_nicht(self):
+        from intern.models import Lied
+
+        self.assertEqual(
+            str(self._query("").query), str(Lied.objects.all().query)
+        )
+
+    def test_filter_bleibt_benannt_und_beschriftet(self):
+        """Parameter und Label bleiben wie bisher, damit alte Links und die
+        gemerkten Filter je Seite weiter greifen."""
+        from intern.tables import RepertoireFilter
+
+        feld = RepertoireFilter.base_filters["titel"]
+        self.assertEqual(feld.label, "Suche")
+        self.assertEqual(feld.method, "filter_suche")
+
+
 class TabellenPreferenzenTest(SimpleTestCase):
     """Die globale Vorgabezeile (``person=None``) ist vom ``unique_together``
     **nicht** gedeckt: NULLs gelten im Unique-Index als verschieden, und Django

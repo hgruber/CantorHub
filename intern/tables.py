@@ -313,9 +313,7 @@ class TerminTabelle(tables.Table):
 
 
 class RepertoireFilter(filters.FilterSet):
-    titel = filters.CharFilter(
-        field_name="titel", lookup_expr="icontains", label="Suche"
-    )
+    titel = filters.CharFilter(method="filter_suche", label="Suche")
     tempo = filters.ChoiceFilter(
         field_name="tempo", choices=Lied.CHOICES, label="Tempo",
         widget=SchnellSelect(attrs={"class": "filter-inline"}),
@@ -427,6 +425,16 @@ class RepertoireFilter(filters.FilterSet):
         for name in self.BOOLEAN_FILTER_FIELDS:
             if name in self.form.fields:
                 self.form.fields[name].widget = TriStateToggle()
+
+    def filter_suche(self, qs, name, value):
+        """Die Suche greift über Titel, Komponist und Bearbeiter."""
+        if not value:
+            return qs
+        return qs.filter(
+            Q(titel__icontains=value)
+            | Q(komponist__icontains=value)
+            | Q(bearbeiter__icontains=value)
+        )
 
     @property
     def form(self):
