@@ -21,6 +21,7 @@ from intern.app_settings import (
     get_from_email,
     get_vereinsname,
     is_ejabberd_configured,
+    is_email_configured,
 )
 from intern.pdf import (
     draw_checkbox,
@@ -251,7 +252,19 @@ def register(request):
     Setzt das Passwort nicht direkt, sondern verschickt einen Bestätigungslink
     (Django-Token). Antwortet unabhängig vom Treffer mit derselben neutralen
     Meldung, damit keine Konten enumeriert werden können, und drosselt pro IP.
+
+    Ohne SMTP-Server (``EMAIL_HOST``) kann kein Link verschickt werden: dann
+    bleibt der Knopf gesperrt und die Seite erklärt den Grund, statt eine
+    Anfrage anzunehmen, die nichts bewirkt. ``send_config_mail`` würde die
+    Nachricht sonst nur ins Log schreiben — siehe intern/email_backend.py.
     """
+    if not is_email_configured():
+        return render(
+            request,
+            "register.html",
+            {"form": RegisterForm(), "mail_konfiguriert": False},
+        )
+
     if request.method == "POST":
         form = RegisterForm(request.POST)
 
@@ -261,7 +274,7 @@ def register(request):
             form.add_error(
                 None, "Zu viele Anfragen. Bitte versuche es später erneut."
             )
-            return render(request, "register.html", {"form": form})
+            return render(request, "register.html", {"form": form, "mail_konfiguriert": True})
 
         if form.is_valid():
             cache.set(throttle_key, attempts + 1, 3600)
@@ -292,7 +305,7 @@ def register(request):
             return redirect("register_success")
     else:
         form = RegisterForm()
-    return render(request, "register.html", {"form": form})
+    return render(request, "register.html", {"form": form, "mail_konfiguriert": True})
 
 
 class PasswordResetForm(SetPasswordForm):

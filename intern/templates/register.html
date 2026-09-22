@@ -7,7 +7,31 @@
         {% csrf_token %} {{ form.as_div }}
         <br />
         <div class="form-group">
-            <button type="submit" class="login-button">zurücksetzen</button>
+            {% if mail_konfiguriert %}
+                <button type="submit" class="login-button">zurücksetzen</button>
+            {% else %}
+                {% comment %}
+                  Der Hinweis haengt am umschliessenden <span>, nicht am Knopf:
+                  Chrome unterdrueckt Mausereignisse auf deaktivierten
+                  Bedienelementen, ein title direkt am <button> zeigte dort
+                  keinen Tooltip.  Der sichtbare Satz darunter ist fuer
+                  Touch-Geraete, die gar keinen Hover kennen.
+                {% endcomment %}
+                <span style="cursor: not-allowed;"
+                      title="E-Mail-Versand ist nicht eingerichtet — in der Konfiguration fehlt der SMTP-Server (EMAIL_HOST).">
+                    <button type="submit" class="login-button login-button-gesperrt"
+                            disabled aria-disabled="true">zurücksetzen</button>
+                </span>
+            {% endif %}
         </div>
     </form>
+    {% if not mail_konfiguriert %}
+        <div class="register-link">
+            <p>
+                Der E-Mail-Versand ist in diesem Portal nicht eingerichtet.
+                Ein Link zum Zurücksetzen kann Dir deshalb nicht zugeschickt
+                werden. Bitte wende Dich an den Vorstand.
+            </p>
+        </div>
+    {% endif %}
 {% endblock %}

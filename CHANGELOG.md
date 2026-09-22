@@ -11,6 +11,14 @@ dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
 ## Unveröffentlicht
 
+- Passwort zurücksetzen: ohne SMTP-Server (`EMAIL_HOST`) nahm die Seite eine Anfrage an, die
+  nichts bewirkte. `send_config_mail` schreibt die Nachricht dann nur ins Log, also erreichte
+  kein Link die Mitglieder — die neutrale Erfolgsmeldung („Anfrage erhalten") behauptete das
+  Gegenteil, und wer sein Passwort vergessen hatte, wartete auf eine Mail, die nie kam. Die Seite
+  sperrt den Knopf jetzt sichtbar: ausgegraut, mit dem Grund als Tooltip am umschließenden `<span>`
+  (Chrome zeigt auf deaktivierten Bedienelementen keinen) und als Satz darunter für Geräte ohne
+  Hover. Ein POST wird gar nicht mehr angenommen, und statt der Erfolgsmeldung steht dort, dass
+  der E-Mail-Versand nicht eingerichtet ist und man sich an den Vorstand wendet.
 - Startseite: die Einstiegsseite soff am Seitenende in Schwarz ab — der Hero lag unter zwei
   kalten Schleiern (zusammen bis 0,9 Deckung), die Kontaktsektion auf `#17151a`, der Fuß auf
   dem noch dunkleren, hartkodierten `#100e12`. Das Foto trug den Auftritt damit nur noch in

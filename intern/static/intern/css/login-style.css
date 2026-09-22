@@ -67,6 +67,18 @@
     font-weight: 600;
 }
 
+/* Gesperrter Knopf, wenn der E-Mail-Versand fehlt (register.html).  Eine
+   eigene Regel statt der generischen .btn.btn-gesperrt aus intern.css: der
+   Reset-Knopf traegt kein .btn, und ihm .btn anzuhängen aenderte Layout und
+   Innenabstand.  pointer-events statt :hover:not(:disabled), damit die
+   Hover-Regel aus intern.css den gesperrten Knopf nicht einfaerbt; der
+   erklaerende Tooltip haengt ohnehin am umschliessenden <span>. */
+.login-button-gesperrt:disabled {
+    opacity: 0.45;
+    box-shadow: none;
+    pointer-events: none;
+}
+
 .register-link {
     margin-top: 16px;
     text-align: center;

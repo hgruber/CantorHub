@@ -239,7 +239,7 @@ is in `docs/configuration.md`; these are the ones that decide whether things wor
 | Key | Why it matters |
 |---|---|
 | `VEREINS_URL` | Base URL used to build links in mails. **Unset, the gig-reminder daemon refuses to send at all** (an unsubscribe link must be absolute), and activation mails lose their button |
-| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`/`_SSL` | SMTP. Empty host → mail is logged, not sent |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`/`_SSL` | SMTP. Empty host → mail is logged, not sent, and the „Passwort zurücksetzen" page locks its button (no link can reach a member) |
 | `DEFAULT_FROM_EMAIL` | Sender address of every outgoing mail |
 | `MAIL_BEI_AKTIVIERUNG` | `0` suppresses activation and reactivation mails — useful while testing |
 | `ANTRAG_EMAIL` | Where new membership applications are announced; empty → everyone who may edit members |
