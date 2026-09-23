@@ -9,7 +9,7 @@ Vorabversionen (`v1.0.0-rc3`) brauchen keinen eigenen Abschnitt: für sie genüg
 oder der Abschnitt ihrer Endfassung. Verlangt wird er für Endfassungen. Einen eigenen bekommen
 dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
-## Unveröffentlicht
+## v1.0.0-rc4 — 2026-09-23
 
 - Mitgliedskarte: die Seite ist kein umrandeter Kasten mehr, sondern folgt dem Muster der übrigen
   Detailseiten — Seitenkopf mit Porträt und Namen, die Abschnitte als Karten in zwei Spalten. Die
