@@ -77,6 +77,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Die Markenfarbe als Schrift auf einer Karte ist ein eigener Token (`--brand-text`): im dunklen
   Thema stand sie dort bei 2,7:1. Vier Stellen, die sich dafür ein hartkodiertes Rosa gegeben
   hatten, folgen jetzt ebenfalls der Markenfarbe.
+- Migration: `{abstimmung:…}`-Direktiven aus dem Altportal bekommen beim Import die Frist
+  30.06.2026. Ohne Ablaufdatum bliebe die Abstimmung im Portal für immer offen, statt ihr
+  Ergebnis zu zeigen — im Altbestand trägt keine einzige eine Frist. Ergänzt wird nur, was der
+  Renderer auswertet; die Syntax-Beispiele in „Hilfe:Wiki" bleiben unangetastet.
 
 ## v1.0.0-rc3 — 2026-09-22
 

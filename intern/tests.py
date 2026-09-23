@@ -2869,6 +2869,96 @@ class AbstimmungConstraintTest(SimpleTestCase):
         self.assertIn(("abstimmung", "person"), felder)
 
 
+class AbstimmungFristImportTest(SimpleTestCase):
+    """Die nachgetragene Abstimmungsfrist des Imports (``0003_import.py``).
+
+    Keine Abstimmung des Altportals trägt ein Ablaufdatum; ohne eines bliebe sie
+    im Portal für immer offen. Der Import ergänzt es — aber nur dort, wo
+    ``ABSTIMMUNG_DIRECTIVE`` auch wirklich greift, damit die Syntax-Beispiele in
+    „Hilfe:Wiki“ unangetastet bleiben. Reine Textarbeit, kein Datenbankzugriff.
+    """
+
+    @staticmethod
+    def _ergaenzen(text):
+        import importlib
+
+        modul = importlib.import_module("intern.migrations.0003_import")
+        return modul.abstimmungsfrist_ergaenzen(text)
+
+    def test_frist_wird_eingesetzt(self):
+        quelle = "{abstimmung:Namenswahl:4:Alpha;Beta}"
+
+        self.assertEqual(
+            self._ergaenzen(quelle), "{abstimmung:Namenswahl:4:30.06.2026:Alpha;Beta}"
+        )
+
+    def test_renderer_liest_die_frist_ohne_die_optionen_zu_verlieren(self):
+        # Die eigentliche Zusicherung: Ergänzung und Renderer-Regex passen
+        # zusammen — Stimmenzahl und Optionen bleiben, die Frist kommt hinzu.
+        from intern.replacements import parse_abstimmung_directive
+
+        quelle = "{abstimmung:Namenswahl:4:Alpha;Beta}"
+        vorher = parse_abstimmung_directive(quelle, "Namenswahl")
+        nachher = parse_abstimmung_directive(self._ergaenzen(quelle), "Namenswahl")
+
+        self.assertEqual(vorher, (4, ["Alpha", "Beta"], None))
+        self.assertEqual(nachher, (4, ["Alpha", "Beta"], date(2026, 6, 30)))
+
+    def test_vorhandene_frist_bleibt(self):
+        quelle = "{abstimmung:Namenswahl:4:31.12.2027:Alpha;Beta}"
+
+        self.assertEqual(self._ergaenzen(quelle), quelle)
+
+    def test_zweimal_angewandt_aendert_nichts(self):
+        einmal = self._ergaenzen("{abstimmung:Namenswahl:4:Alpha;Beta}")
+
+        self.assertEqual(self._ergaenzen(einmal), einmal)
+
+    def test_datumsartige_option_ist_keine_frist(self):
+        # Die Terminabstimmung beginnt mit „15.03. 18:00“ — ohne Jahr und
+        # ohne Doppelpunkt dahinter, also keine Frist, sondern die erste Option.
+        quelle = "{abstimmung:Terminabstimmung:0:15.03. 18:00;16.03. 17:00}"
+
+        self.assertEqual(
+            self._ergaenzen(quelle),
+            "{abstimmung:Terminabstimmung:0:30.06.2026:15.03. 18:00;16.03. 17:00}",
+        )
+
+    def test_doku_beispiele_bleiben_unberuehrt(self):
+        # Was der Renderer nicht auswertet, darf der Import nicht anfassen:
+        # die mit einem Leerzeichen geschützte Zeile, das Beispiel mitten im
+        # Fließtext und die Altform ohne Stimmenzahl — alle drei in „Hilfe:Wiki“.
+        for quelle in (
+            " {abstimmung:Terminabstimmung:0:Alpha;Beta}",
+            "Die Syntax ist ${abstimmung:Name der Abstimmung:max:V1;V2}$.",
+            "{abstimmung:Terminabstimmung:15.03. 18:00;16.03. 17:00}",
+            "{abstimmung:Namenswahl:4:Alpha;Beta",
+        ):
+            with self.subTest(quelle=quelle):
+                self.assertEqual(self._ergaenzen(quelle), quelle)
+
+    def test_mehrere_direktiven_in_einem_artikel(self):
+        quelle = (
+            "{abstimmung:Erste:1:ja;nein}\n"
+            "Zwischentext\n"
+            "{abstimmung:Zweite:2:31.12.2027:a;b}\n"
+            "{abstimmung:Dritte:0:x;y}"
+        )
+
+        self.assertEqual(
+            self._ergaenzen(quelle),
+            "{abstimmung:Erste:1:30.06.2026:ja;nein}\n"
+            "Zwischentext\n"
+            "{abstimmung:Zweite:2:31.12.2027:a;b}\n"
+            "{abstimmung:Dritte:0:30.06.2026:x;y}",
+        )
+
+    def test_leerer_text_geht_durch(self):
+        # ``artikel_versionen.text`` kann im Altbestand NULL sein.
+        self.assertIsNone(self._ergaenzen(None))
+        self.assertEqual(self._ergaenzen(""), "")
+
+
 class ZusageOptionenTest(SimpleTestCase):
     """Der Optionskatalog (``intern/zusage.py``) — die Drift-Bremse.
 
