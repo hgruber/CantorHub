@@ -10,7 +10,7 @@
         <div class="detail-info">
             {% if id %}
             <h1>{{ termin.kurz }}</h1>
-            <p class="detail-subtitle">{{ termin.datum|date:"l, d. F Y" }}</p>
+            <p class="detail-subtitle">{{ termin.datum|date:"D, d.m.Y" }}</p>
             {% else %}
             <h1>Neuer Termin</h1>
             {% endif %}

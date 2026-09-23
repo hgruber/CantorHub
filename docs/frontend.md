@@ -147,6 +147,21 @@ the pure `intern/aufstellung.py`; `_aufstellungen_anhaengen()` in `views/termine
 half and needs two queries per page, for the first load and the infinite-scroll reloads alike.
 The viewer's own square carries a `--brand` outline, every square a name tooltip.
 
+**A missing answer blinks.** Has the viewer not answered an upcoming event, the `--brand`
+outline of their own square pulses (`offen-puls`, `1.6 s`, `intern.css`) *and* the event's own
+name in the list carries the same pulsing outline (`render_kurz` → `span.termin-offen`). Only
+the name is framed, not the row: the marker belongs to the event, not to its date and
+aufstellung cells. The span has no padding — it would push the name out of line with the
+unmarked events; the outline sits outside the text via `outline-offset` instead. Both elements share **one** animation, which is what keeps them in step —
+same duration, same easing, same start, and both are rendered in the same fragment (a reloaded
+page or an htmx batch brings square and name together). The class comes from the
+`meine_antwort_fehlt` annotation, which `termin_list` sets **only for upcoming events** — an
+open answer to a past event is meaningless — and `render_kurz` gates it on `record.anwesenheit`
+because events without an attendance poll have no aufstellung at all. The rest of the phase
+stays visible (the outline fades out and in rather than switching between two states), so the
+square remains recognisable as one's own; `prefers-reduced-motion: reduce` stops the animation
+and leaves both outlines standing.
+
 The termin detail page repeats it larger as the wide card „Aufstellung" right above
 „Anwesenheit" (`_termin_aufstellung_karte.html`, `gross=True` → `.aufst-gross`, which only
 overrides the `--aufst-*` size variables). The card has to follow every change of the answers:
@@ -277,7 +292,7 @@ derived tokens (`--brand-dark`, `--brand-light`, `--brand-ring`), or a fresh
 override (see `_brand_boot.html`) reaches every surface that uses it.
 
 **Status ("Ampel") colours** — the green/yellow/red used by the attendance badges
-(`.att-count`, `.att-inline-*`) and the Zusage widgets (`.zusage-state-*`, `.zusage-btn-*`)
+(`.att-count`, `.aufst-{yes,maybe,no}`) and the Zusage widgets (`.zusage-state-*`, `.zusage-btn-*`)
 come from one token family:
 `--status-{success,warning,danger}-{bg,text,border,solid}`. `bg`/`text`/`border` are the soft
 surface, `solid` the strong fill used on hover/active; the dark-mode block redefines the first

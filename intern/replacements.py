@@ -675,7 +675,12 @@ def get_references(article_list):
 
 def format_datetime(dt: Union[datetime, date]) -> str:
     """
-    Formatiert ein datetime-Objekt mit deutscher Sprache
+    Formatiert ein datetime-Objekt mit deutscher Sprache.
+
+    Datumsangaben tragen den **kurzen Wochentag** voran (``%a``) und den **Monat als
+    Zahl** (``%m``) — beides braucht ``LC_TIME`` genauso wie früher der Monatsname;
+    fehlt die deutsche Locale, kommen englische Kürzel heraus (``WochentagsnamenTest``
+    wacht darüber).
     """
     # Setze locale auf Deutsch (falls nicht bereits gesetzt)
     try:
@@ -696,13 +701,13 @@ def format_datetime(dt: Union[datetime, date]) -> str:
 
     if dt_date > today:
         if with_time and same_year:
-            return dt.strftime("%d.\u00a0%B\u00a0 %H:%M")
+            return dt.strftime("%a,\u00a0%d.%m.\u00a0 %H:%M")
         elif with_time:
-            return dt.strftime("%d.\u00a0%B\u00a0%Y %H:%M")
+            return dt.strftime("%a,\u00a0%d.%m.%Y %H:%M")
         elif same_year:
-            return dt.strftime("%d.\u00a0%B")
+            return dt.strftime("%a,\u00a0%d.%m.")
         else:
-            return dt.strftime("%d.\u00a0%B\u00a0%Y")
+            return dt.strftime("%a,\u00a0%d.%m.%Y")
 
     # Heute
     if dt_date == today:
@@ -714,14 +719,14 @@ def format_datetime(dt: Union[datetime, date]) -> str:
 
     # Wochentag
     if dt_date > today - timedelta(days=7):
-        return dt.strftime("%A\u00a0%H:%M")
+        return dt.strftime("%a\u00a0%H:%M")
 
     # Datum mit Monat
     if dt_date.year == today.year:
-        return dt.strftime("%d.\u00a0%B")
+        return dt.strftime("%a,\u00a0%d.%m.")
 
     # Datum mit Jahr
-    return dt.strftime("%d.%m.%Y")
+    return dt.strftime("%a,\u00a0%d.%m.%Y")
 
 
 def format_bytes(size_bytes: int) -> str:

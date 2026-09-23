@@ -187,10 +187,10 @@ reasoning where it matters.
   off. The base image happens to ship it, but the `Dockerfile` installs it explicitly because
   the failure would be silent. The `tzdata` line in `requirements.txt` is the *Python* package
   and serves `zoneinfo` only — it does not help `tzset()`.
-- **The image needs the `de_DE.UTF-8` locale.** `replacements.format_datetime` prints month
-  names through `%B` and sets `LC_TIME` for it; if that fails it swallows the error and returns
+- **The image needs the `de_DE.UTF-8` locale.** `replacements.format_datetime` prints the short
+  weekday through `%a` and sets `LC_TIME` for it; if that fails it swallows the error and returns
   English names. Debian's `locale-gen` only reads `/etc/locale.gen` and ignores its argument, so
-  the locale has to be written into that file before generating. `MonatsnamenTest` guards it.
+  the locale has to be written into that file before generating. `WochentagsnamenTest` guards it.
 - **Changing data lives under `CANTORHUB_DATA`, never next to the code.** `MEDIA_ROOT`, the
   nginx tile cache, the generated secret key and a possible SQLite file all sit there (`/data`
   in the image, a volume; the project directory in development). The code is part of the image

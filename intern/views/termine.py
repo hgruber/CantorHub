@@ -9,8 +9,7 @@ from datetime import date, datetime, timedelta
 
 from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import OuterRef, Q, Subquery, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Exists, OuterRef, Q
 from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -128,16 +127,16 @@ def _aufstellungen_anhaengen(termine, ich):
 @tabellenzustand
 def termin_list(request):
     past = request.GET.get("past") == "1"
-    annotations = {
-        "anwesenheit_option": Coalesce(
-            Subquery(
-                Zusage.objects.filter(
-                    termin=OuterRef("pk"), person=request.user
-                ).values("option")[:1]
-            ),
-            Value(""),
-        ),
-    }
+    annotations = {}
+    if not past:
+        # „Meine Antwort fehlt": die Zeile pulsiert dann (siehe ``TerminTabelle``).
+        # Für vergangene Termine bleibt die Annotation weg — eine offene Antwort
+        # ist dort gegenstandslos. Der leere Wert ist ein echter gespeicherter
+        # Zustand (``zusage.TRANSITIONS``), deshalb schließt ihn ``exclude`` aus.
+        annotations["meine_antwort_fehlt"] = ~Exists(
+            Zusage.objects.filter(termin=OuterRef("pk"), person=request.user)
+            .exclude(option="")
+        )
     if past:
         qs = Termin.objects.filter(datum__lte=timezone_now()).order_by("-datum")
     else:

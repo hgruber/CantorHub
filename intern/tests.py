@@ -1611,21 +1611,58 @@ class SpracheTest(SimpleTestCase):
             self.assertEqual(get_sprache(), settings.LANGUAGE_CODE)
 
 
-class MonatsnamenTest(SimpleTestCase):
+class WochentagsnamenTest(SimpleTestCase):
     """Wächter für die deutsche Locale — lokal wie im Container.
 
-    ``replacements.format_datetime`` gibt Monatsnamen über ``%B`` aus und setzt
-    dafür ``LC_TIME`` auf ``de_DE``; schlägt das fehl, fängt es den Fehler ab und
-    liefert stillschweigend englische Namen. Im Abbild ist genau das passiert,
-    weil ``locale-gen`` in Debian sein Argument ignoriert und deshalb nie eine
-    Locale erzeugt wurde. Dieser Test schlägt dann fehl, statt dass es irgendwann
-    jemandem auf einer Seite auffällt.
+    ``replacements.format_datetime`` gibt den kurzen Wochentag über ``%a`` aus und
+    setzt dafür ``LC_TIME`` auf ``de_DE``; schlägt das fehl, fängt es den Fehler ab
+    und liefert stillschweigend englische Kürzel („Thu" statt „Do"). Im Abbild ist
+    genau das passiert, weil ``locale-gen`` in Debian sein Argument ignoriert und
+    deshalb nie eine Locale erzeugt wurde. Dieser Test schlägt dann fehl, statt
+    dass es irgendwann jemandem auf einer Seite auffällt.
     """
 
-    def test_monatsname_ist_deutsch(self):
+    def test_wochentag_ist_deutsch(self):
         from intern.replacements import format_datetime
         ausgabe = format_datetime(datetime(2026, 1, 15, 20, 0))
-        self.assertIn("Januar", ausgabe, msg=f"Deutsche Locale fehlt: {ausgabe!r}")
+        self.assertIn("Do,", ausgabe, msg=f"Deutsche Locale fehlt: {ausgabe!r}")
+
+
+class DatumsformatTest(SimpleTestCase):
+    """Wochentag voran, Monat als Zahl — kein Monatsname mehr.
+
+    Geprüft wird relativ zur Uhr (``format_datetime`` liest sie selbst), damit der
+    Test zu jedem Zeitpunkt läuft — auch über einen Jahreswechsel hinweg.
+    """
+
+    def test_wochentag_voran_und_monat_als_zahl(self):
+        from intern.replacements import format_datetime
+        ziel = (datetime.now() + timedelta(days=30)).replace(
+            hour=19, minute=30, second=0, microsecond=0
+        )
+        ausgabe = format_datetime(ziel)
+        self.assertTrue(
+            ausgabe.startswith(ziel.strftime("%a") + ","),
+            msg=f"Wochentag fehlt: {ausgabe!r}",
+        )
+        self.assertIn(f"{ziel.day:02d}.{ziel.month:02d}.", ausgabe)
+        self.assertIn("19:30", ausgabe)
+        self.assertNotIn(ziel.strftime("%B"), ausgabe)
+
+    def test_anderes_jahr_nennt_das_jahr(self):
+        from intern.replacements import format_datetime
+        ziel = datetime(datetime.now().year + 1, 6, 3, 20, 0)
+        ausgabe = format_datetime(ziel)
+        self.assertIn(f"03.06.{ziel.year}", ausgabe)
+        self.assertTrue(ausgabe.startswith(ziel.strftime("%a") + ","), ausgabe)
+
+    def test_heute_und_gestern_bleiben_wie_sie_waren(self):
+        from intern.replacements import format_datetime
+        jetzt = datetime.now().replace(hour=20, minute=0, second=0, microsecond=0)
+        self.assertEqual(format_datetime(jetzt), "20:00")
+        self.assertEqual(
+            format_datetime(jetzt - timedelta(days=1)), "gestern 20:00"
+        )
 
 
 class KonfigurierteHelperTest(SimpleTestCase):

@@ -34,6 +34,23 @@ dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
   Inhalte, die nur mit der Berechtigung „Termine ändern" geschrieben werden können.
 - Die Erinnerungsmails der Auftritts-Mailingliste hängen weiterhin an „Repertoire" — die beiden
   Mengen sind jetzt unabhängig. Wer beides zusammen haben will, setzt beide Zeichen.
+- Datumsangaben nennen jetzt den kurzen Wochentag und den Monat als Zahl („Mi, 24.09.2026 19:30"
+  statt „24. September 19:30"). Für eine Probe ist der Wochentag die Information, nach der man
+  sucht; den Monatsnamen trägt der Termin-Banner seit jeher als Zahl (`D, d.m.`), die übrigen
+  Seiten ziehen nach. Betroffen sind alle Ausgaben über `replacements.format_datetime` — neben der
+  Terminliste also auch Datei-, Artikel- und Protokolllisten sowie die Termin-Detailseite; die
+  Verzweigungen für „heute" (nur Uhrzeit) und „gestern" bleiben wie sie waren.
+- Terminliste: die Spalte „Du" ist entfallen. Sie trug die eigene Zu-/Absage als Wort, und im
+  Zustand „offen" bereits einen blinkenden Rahmen — das Signal sitzt jetzt dort, wo man es sucht:
+  das eigene Kästchen der Aufstellung pulsiert, und mit ihm der Terminname selbst (nicht die
+  ganze Zeile — gemeint ist der Termin, nicht seine Datums- und Aufstellungszellen). Der Rahmen
+  liegt außerhalb des Textes (`outline`), damit der Name in der Fluchtlinie der übrigen Termine
+  bleibt. Beide
+  Rahmen laufen in **einer** Animation und damit im Gleichtakt; die Ruhephase bleibt sichtbar,
+  das Kästchen also weiter als „meins" erkennbar. Beides gilt nur für kommende Termine ohne
+  eigene Antwort: zu einem vergangenen Termin ist eine offene Zusage gegenstandslos, und Termine
+  ohne Anwesenheitsabfrage haben gar keine Aufstellung. Wer Bewegung reduziert haben will,
+  bekommt die Rahmen stehend statt blinkend.
 
 ## v1.0.0-rc3 — 2026-09-22
 

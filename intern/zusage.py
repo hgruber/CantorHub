@@ -23,7 +23,7 @@ OPTION_LABELS = {
 }
 
 # Option → Status-Kürzel der CSS-Klassen (``.aufst-*`` in der Aufstellung,
-# ``.att-inline-*`` in der Terminliste). Alles Unbekannte ist „offen".
+# ``.zusage-state-*`` auf der Terminseite). Alles Unbekannte ist „offen".
 STATUS = {"1": "yes", "3": "maybe", "2": "no"}
 STATUS_OFFEN = "na"
 

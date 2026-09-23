@@ -17,7 +17,7 @@ from .mitglied_felder import PRIVACY_FIELDS
 from .models import Artikel, ChangeLog, Lied, Ort, Termin, User
 from .forms import ChipMultiSelect, SchnellSelect, TriStateToggle
 from .replacements import format_bytes, format_datetime
-from .zusage import OPTION_LABELS, OPTIONEN, STATUS_TITEL, status_von
+from .zusage import OPTION_LABELS, OPTIONEN
 
 
 class _Datumsspalte(tables.Column):
@@ -278,11 +278,6 @@ class TerminTabelle(tables.Table):
         orderable=False,
         attrs={"td": {"style": "font-weight: 600;"}},
     )
-    anwesenheit_option = tables.Column(
-        verbose_name="Du",
-        orderable=False,
-        empty_values=(),
-    )
     # Bewusst keine TemplateColumn: die rendert jede Zelle mit ``request=`` und
     # ließ damit den Kontextprozessor (elf Millisekunden, sieben Abfragen) pro
     # Zeile noch einmal laufen — 17 Läufe für eine Terminliste.
@@ -295,18 +290,20 @@ class TerminTabelle(tables.Table):
     def render_datum(self, value):
         return format_datetime(value)
 
+    def render_kurz(self, value, record):
+        """Der Terminname allein trägt den pulsierenden Rahmen, nicht die Zeile:
+        fehlt die eigene Antwort, umrahmt er ihn im Gleichtakt mit dem eigenen
+        Kästchen der Aufstellung (siehe ``offen-puls`` in der CSS). Die Annotation
+        setzt die View nur für kommende Termine, daher ``getattr``.
+        """
+        if record.anwesenheit and getattr(record, "meine_antwort_fehlt", False):
+            return format_html('<span class="termin-offen">{}</span>', value)
+        return value
+
     def render_aufstellung(self, value):
         if not value:
             return ""
         return mark_safe(render_to_string("_aufstellung.html", {"value": value}))
-
-    def render_anwesenheit_option(self, value, record):
-        if not record.anwesenheit:
-            return ""
-        status = status_von(value)
-        return mark_safe(
-            f'<span class="att-inline att-inline-{status}">{STATUS_TITEL[status]}</span>'
-        )
 
     class Meta:
         row_attrs = {"data-href": lambda record: reverse("termin_view", args=[record.id])}
