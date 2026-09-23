@@ -339,6 +339,43 @@ column in `aufgaben.html` keeps a surface tint (`.perm-stimme-*`): it is vertica
 where a bar would have nothing to delimit. Both palettes are domain-fixed
 (soprano/alto/tenor/bass are not a per-choir setting) and not exposed in `Konfiguration`.
 
+**The voice follows the member to their page.** The setter rows are the single place that maps a
+voice to a tone, so they carry a second selector (`.row-stimme-s, .stimme-s`, and so on) rather
+than a second table: one setter, four consumers — the list bar, the member page's edge, the
+portrait ring and the topbar pill. That page is *not* a card: it follows the `.detail-page` /
+`.detail-cards` pattern of its thirteen siblings, and its accent is the list bar one level up —
+`.detail-page.member-voice` carries `border-left: 4px solid var(--stimme-farbe)`, damped to 55 %
+in the dark theme, with the portrait wearing a 3 px ring in the full tone inside `.detail-icon`
+(the one place with no text on it). No surface takes the tone: a full-tone *surface* fails
+contrast (white on Sopran 3.2:1, on Alt 4.2:1; black on Tenor 4.4:1, on Bass 2.8:1), and tinting
+sections would turn the accent into decoration.
+
+The card went because of its *shape*, not its colour: a card claims four visible corners, and this
+page is longer than the scroll area, so its top and bottom edge were never on screen at once — the
+white block with its corners scrolled away read as broken, and its `margin: 20px auto` lived
+*inside* the scroll area, so the gap above it vanished after one wheel turn. The page edge has
+neither problem: it belongs to the container, so it scrolls with the content and never
+re-establishes a gap. `padding-left: 20px` plus the 4 px edge keeps the first card on exactly the
+same x as `mitglied_edit.html`'s. Its fallback is `transparent`, not `--border`: a 4 px grey page
+margin would be a design element without a statement, and „no tone, no marker" is the rule the row
+and the pill already follow. The grid is what makes the page short — halving the stack took it from
+1256 px to 909 px (the map's own card uses the 250 px `min-height` of `.detail-map` instead of a
+handed-down 400 px), but a grid row also stretches to its tallest member, so the two song lists are
+`detail-card-wide`: 92 songs in half a column had doubled the height *and* stretched Personalien
+into an 825 px box holding four rows.
+
+The `(S)` that used to ride along inside `seitentitel` is now a `.stimme-pille` in the topbar's
+`topbar_after` slot, beside the title instead of inside it — `.top-bar .title` has
+`text-overflow: ellipsis`, so a long name used to eat exactly that letter. It wears the tone as
+its surface and `--bg-card` as the letter, the reverse of what a pill would use on a coloured
+bar: the topbar is `--bg-card` in both themes (`--tb-bg`), where a card-coloured pill would be
+invisible. Contrast is direction-independent, so the documented 4.5:1 pair holds either way
+(light 4.7–9.8:1, dark 7.4–10.2:1). The letter is template text rather than generated content,
+so a stray legacy code (`"X"`) still prints one and screen readers keep it. Roles take `--t3`
+where their text in the list takes `--t4` (2.2:1 on the tint of the merged strip): a line may be
+quiet, a letter may not. `stimme = "N"` gets no pill at all — no tone, no marker — matching
+`tables.py`, which gives such rows no class and is why there is no `.stimme-n`.
+
 ## Explanation tooltips
 
 A small info icon whose bubble explains what an option means and what it does. Two rules make

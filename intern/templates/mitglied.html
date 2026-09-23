@@ -1,178 +1,191 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block topbar_after %}{% comment %}
+   Der Buchstabe der Stimme als Pille neben dem Namen (siehe .stimme-pille in
+   intern.css). Als Template-Text und nicht als generierter Inhalt, damit er
+   auch bei einem unbekannten Code dasteht und fuer Screenreader lesbar bleibt.
+   „keine Stimme" (N) wird per CSS ausgeblendet — kein Ton, kein Marker.
+{% endcomment %}<span class="stimme-pille stimme-{{ user.stimme|lower|default:'n' }}" title="Stimme: {{ user.get_stimme_display }}">{{ user.stimme|default:"N" }}</span>{% endblock %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{% endblock %}
 {% block extra_js %}{% include "_leaflet_assets.html" %}{% endblock %}
 {% block content %}
-    <div class="member-profile">
-        <div class="profile-header">
-            <div class="profile-image">
-                <img src="{{ user.avatar.url }}"
-                     alt="{{ user.first_name }} {{ user.last_name }}" />
+{% comment %}
+   Aufbau nach dem Detailseiten-Muster (.detail-page / .detail-header /
+   .detail-cards) statt als umrandete Karte. Eine Karte behauptet vier
+   sichtbare Ecken; diese Seite ist laenger als der Rollbereich, also waren
+   Ober- und Unterkante nie gleichzeitig im Bild und der weisse Block las sich
+   als kaputt. Das zweispaltige Raster halbiert zusaetzlich die Laenge.
+
+   Die Stimme sitzt jetzt an zwei Stellen statt am Kartenruecken: als
+   Seitenkante am .detail-page (border-left, siehe .member-voice in intern.css)
+   und als Ring um das Portraet im .detail-icon.
+
+   Die vier Kopfzeilen des alten Kopfes sind entfallen — der h1 traegt den
+   Namen, Stimme und Gruppen stehen im .detail-subtitle. Das Stimmenwort dort
+   nur bei echter Stimmlage: get_stimme_display gibt fuer „N" das englische
+   „None" aus.
+
+   Die Zeilen sind .detail-card-row, wie auf allen Detailseiten: Label ohne
+   Doppelpunkt, Trenner aus --bg-row-hover, Labelbreite 100 px.
+{% endcomment %}
+    <div class="detail-page member-voice stimme-{{ user.stimme|lower|default:'n' }}">
+        <div class="detail-header">
+            <div class="detail-icon">
+                <img src="{{ user.avatar.url }}" alt="" />
             </div>
-            <div class="profile-info">
-                <div class="contact-item">
-                    <span class="label">Vorname:</span>
-                    <span class="value">{{ user.first_name }}</span>
+            <div class="detail-info">
+                <h1>{{ user.first_name }} {{ user.last_name }}</h1>
+                <p class="detail-subtitle">
+                    {% if user.stimme != "N" %}<span>{{ user.get_stimme_display }}</span>{% if member_groups %} ·{% endif %}{% endif %}
+                    {% for group in member_groups %}<span class="tag">{{ group.name }}</span>{% endfor %}
+                </p>
+            </div>
+        </div>
+
+        <div class="detail-cards">
+            <div class="detail-card">
+                <h3>Kontaktdaten</h3>
+                {% if visible.email %}
+                <div class="detail-card-row">
+                    <span class="label">E-Mail</span>
+                    <span class="value">{{ user.email }}</span>
                 </div>
-                <div class="contact-item">
-                    <span class="label">Nachname:</span>
-                    <span class="value">{{ user.last_name }}</span>
+                {% endif %}
+                {% if visible.xmpp %}
+                <div class="detail-card-row">
+                    <span class="label">XMPP</span>
+                    <span class="value">{{ user.xmpp }}</span>
                 </div>
-                <div class="contact-item">
-                    <span class="label">Stimme:</span>
-                    <span class="value">{{ user.get_stimme_display }}</span>
+                {% endif %}
+                {% if visible.telefon %}
+                <div class="detail-card-row">
+                    <span class="label">Telefon (Privat)</span>
+                    <span class="value">{{ user.telefon }}</span>
                 </div>
-                {% if member_groups %}
-                <div class="contact-item">
-                    <span class="label">Gruppen:</span>
-                    <span class="value">
-                        <span class="tag-list">
-                            {% for group in member_groups %}<span class="tag">{{ group.name }}</span>{% endfor %}
-                        </span>
-                    </span>
+                {% endif %}
+                {% if visible.telefon_job %}
+                <div class="detail-card-row">
+                    <span class="label">Telefon (Beruf)</span>
+                    <span class="value">{{ user.telefon_job }}</span>
+                </div>
+                {% endif %}
+                {% if visible.telefon_mobil %}
+                <div class="detail-card-row">
+                    <span class="label">Mobil (Privat)</span>
+                    <span class="value">{{ user.telefon_mobil }}</span>
+                </div>
+                {% endif %}
+                {% if visible.telefon_job_mobil %}
+                <div class="detail-card-row">
+                    <span class="label">Mobil (Beruf)</span>
+                    <span class="value">{{ user.telefon_job_mobil }}</span>
+                </div>
+                {% endif %}
+                {% if visible.fax %}
+                <div class="detail-card-row">
+                    <span class="label">Fax</span>
+                    <span class="value">{{ user.fax }}</span>
                 </div>
                 {% endif %}
             </div>
-        </div>
-        <div class="profile-content">
-            <div class="profile-section">
-                <h2>Kontaktdaten</h2>
-                <div class="contact-info">
-                    {% if visible.email %}
-                    <div class="contact-item">
-                        <span class="label">E-Mail:</span>
-                        <span class="value">{{ user.email }}</span>
-                    </div>
-                    {% endif %}
-                    {% if visible.xmpp %}
-                    <div class="contact-item">
-                        <span class="label">XMPP:</span>
-                        <span class="value">{{ user.xmpp }}</span>
-                    </div>
-                    {% endif %}
-                    {% if visible.telefon %}
-                    <div class="contact-item">
-                        <span class="label">Telefon (Privat):</span>
-                        <span class="value">{{ user.telefon }}</span>
-                    </div>
-                    {% endif %}
-                    {% if visible.telefon_job %}
-                    <div class="contact-item">
-                        <span class="label">Telefon (Beruf):</span>
-                        <span class="value">{{ user.telefon_job }}</span>
-                    </div>
-                    {% endif %}
-                    {% if visible.telefon_mobil %}
-                    <div class="contact-item">
-                        <span class="label">Mobil (Privat):</span>
-                        <span class="value">{{ user.telefon_mobil }}</span>
-                    </div>
-                    {% endif %}
-                    {% if visible.telefon_job_mobil %}
-                    <div class="contact-item">
-                        <span class="label">Mobil (Beruf):</span>
-                        <span class="value">{{ user.telefon_job_mobil }}</span>
-                    </div>
-                    {% endif %}
-                    {% if visible.fax %}
-                    <div class="contact-item">
-                        <span class="label">Fax:</span>
-                        <span class="value">{{ user.fax }}</span>
-                    </div>
-                    {% endif %}
+            {% if visible.strasse or visible.plz or visible.ort %}
+            <div class="detail-card">
+                <h3>Adresse</h3>
+                {% if visible.strasse %}
+                <div class="detail-card-row">
+                    <span class="label">Straße</span>
+                    <span class="value">{{ user.strasse }}</span>
+                </div>
+                {% endif %}
+                {% if visible.plz or visible.ort %}
+                <div class="detail-card-row">
+                    <span class="label">PLZ / Ort</span>
+                    <span class="value">{% if visible.plz %}{{ user.plz }}{% endif %} {% if visible.ort %}{{ user.ort }}{% endif %}</span>
+                </div>
+                {% endif %}
+                {% if visible.strasse and visible.plz and visible.ort and user.breite and user.laenge %}
+                <div class="detail-card-row">
+                    <span class="label">Koordinaten</span>
+                    <span class="value">Breite: {{ user.breite }}, Länge: {{ user.laenge }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            <div class="detail-card">
+                <h3>Personalien</h3>
+                {% if visible.geburtstag %}
+                <div class="detail-card-row">
+                    <span class="label">Geburtstag</span>
+                    <span class="value">{{ user.geburtstag|date:"d.m.Y" }}</span>
+                </div>
+                {% endif %}
+                <div class="detail-card-row">
+                    <span class="label">Mitglied seit</span>
+                    <span class="value">{{ user.date_joined|date:"d.m.Y" }}</span>
+                </div>
+                {% comment %}
+                   Nur fuer die betroffene Person: fuer andere waere es keine Information ueber
+                   sie, sondern ueber ihre Praeferenz — und das erzeugt sozialen Druck.
+                {% endcomment %}
+                {% if request.user.id == id and carddav_aktiv and user.adressbuch_verborgen %}
+                <div class="detail-card-row">
+                    <span class="label">Adressbuch</span>
+                    <span class="value">Nicht übertragen</span>
+                </div>
+                {% endif %}
+                <div class="detail-card-row">
+                    <span class="label">Benutzername</span>
+                    <span class="value">{{ user.username }}</span>
+                </div>
+                <div class="detail-card-row">
+                    <span class="label">Legacy ID</span>
+                    <span class="value">{{ user.legacy_id }}</span>
                 </div>
             </div>
-            {% if visible.strasse or visible.plz or visible.ort %}
-            <div class="profile-section">
-                <h2>Adresse</h2>
-                <div class="address-info">
-                    {% if visible.strasse %}
-                    <div class="address-item">
-                        <span class="label">Straße:</span>
-                        <span class="value">{{ user.strasse }}</span>
-                    </div>
-                    {% endif %}
-                    {% if visible.plz or visible.ort %}
-                    <div class="address-item">
-                        <span class="label">PLZ / Ort:</span>
-                        <span class="value">{% if visible.plz %}{{ user.plz }}{% endif %} {% if visible.ort %}{{ user.ort }}{% endif %}</span>
-                    </div>
-                    {% endif %}
-                    {% if visible.strasse and visible.plz and visible.ort and user.breite and user.laenge %}
-                    <div class="address-item">
-                        <span class="label">Koordinaten:</span>
-                        <span class="value">Breite: {{ user.breite }}, Länge: {{ user.laenge }}</span>
-                    </div>
-                    {% endif %}
+            {% comment %}
+               Die beiden Liedkarten laufen ueber die volle Breite: eine Liste
+               92 Lieder ist in einer halben Spalte nicht nur doppelt so hoch,
+               sie zieht im Raster auch die Karte daneben — Personalien stand
+               dann mit vier Zeilen in einem 825 px hohen Kasten. Voll breit
+               fuellt die Liste die Zeile und niemand wird gestreckt.
+            {% endcomment %}
+            {% if user.dirigent.exists %}
+            <div class="detail-card detail-card-wide">
+                <h3>Dirigent bei <span class="badge">{{ user.dirigent.count }}</span></h3>
+                <div class="tag-list">
+                    {% for lied in user.dirigent.all %}
+                    <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if user.solist.exists %}
+            <div class="detail-card detail-card-wide">
+                <h3>Solist bei <span class="badge">{{ user.solist.count }}</span></h3>
+                <div class="tag-list">
+                    {% for lied in user.solist.all %}
+                    <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
+                    {% endfor %}
                 </div>
             </div>
             {% endif %}
             {% if visible.strasse and visible.plz and visible.ort and user.breite and user.laenge %}
-            <div class="profile-section">
-                <h2>Kartenansicht</h2>
-                {% include "_leaflet_map.html" with lat=user.breite lng=user.laenge zoom=13 pin="mitglied" popup=user.get_full_name hoehe="400px" %}
+            <div class="detail-card detail-card-wide">
+                <h3>Kartenansicht</h3>
+                {% comment %}
+                   Ohne hoehe: die Angabe in _leaflet_map.html ist fuer Karten
+                   ausserhalb einer .detail-card. In der Karte traegt .detail-map
+                   seine eigene min-height (250 px) und die Karte wird voll breit
+                   statt 400 px hoch in halber Breite.
+                {% endcomment %}
+                {% include "_leaflet_map.html" with lat=user.breite lng=user.laenge zoom=13 pin="mitglied" popup=user.get_full_name %}
             </div>
             {% endif %}
-            <div class="profile-section">
-                <h2>Personalien</h2>
-                <div class="personal-info">
-                    {% if visible.geburtstag %}
-                    <div class="personal-item">
-                        <span class="label">Geburtstag:</span>
-                        <span class="value">{{ user.geburtstag|date:"d.m.Y" }}</span>
-                    </div>
-                    {% endif %}
-                    <div class="personal-item">
-                        <span class="label">Mitglied seit:</span>
-                        <span class="value">{{ user.date_joined|date:"d.m.Y" }}</span>
-                    </div>
-                    {% comment %}
-                       Nur fuer die betroffene Person: fuer andere waere es keine Information ueber
-                       sie, sondern ueber ihre Praeferenz — und das erzeugt sozialen Druck.
-                    {% endcomment %}
-                    {% if request.user.id == id and carddav_aktiv and user.adressbuch_verborgen %}
-                    <div class="personal-item">
-                        <span class="label">Adressbuch:</span>
-                        <span class="value">Nicht übertragen</span>
-                    </div>
-                    {% endif %}
-                    <div class="personal-item">
-                        <span class="label">Benutzername:</span>
-                        <span class="value">{{ user.username }}</span>
-                    </div>
-                    <div class="personal-item">
-                        <span class="label">Legacy ID:</span>
-                        <span class="value">{{ user.legacy_id }}</span>
-                    </div>
-                </div>
-            </div>
             {% if user.text %}
-                <div class="profile-section">
-                    <h2>Bemerkungen</h2>
-                    <div class="notes">
-                        <p>{{ user.text|linebreaks }}</p>
-                    </div>
-                </div>
-            {% endif %}
-            {% if user.dirigent.exists %}
-                <div class="profile-section">
-                    <h2>Dirigent bei <span class="badge">{{ user.dirigent.count }}</span></h2>
-                    <div class="tag-list">
-                        {% for lied in user.dirigent.all %}
-                        <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-            {% if user.solist.exists %}
-                <div class="profile-section">
-                    <h2>Solist bei <span class="badge">{{ user.solist.count }}</span></h2>
-                    <div class="tag-list">
-                        {% for lied in user.solist.all %}
-                        <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
-                        {% endfor %}
-                    </div>
-                </div>
+            <div class="detail-card detail-card-wide">
+                <h3>Bemerkungen</h3>
+                <div class="detail-card-content">{{ user.text|linebreaks }}</div>
+            </div>
             {% endif %}
         </div>
     </div>

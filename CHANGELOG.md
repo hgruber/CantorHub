@@ -11,6 +11,37 @@ dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
 
 ## Unveröffentlicht
 
+- Mitgliedskarte: die Seite ist kein umrandeter Kasten mehr, sondern folgt dem Muster der übrigen
+  Detailseiten — Seitenkopf mit Porträt und Namen, die Abschnitte als Karten in zwei Spalten. Die
+  Karte war länger als der Rollbereich: ihre Ober- und Unterkante waren nie gleichzeitig im Bild,
+  und ihr Abstand von 20 px lag *im* Rollbereich, verschwand also beim ersten Scrollen — beides
+  zusammen las sich als kaputt. Zweispaltig ist die Seite rund ein Viertel kürzer (gemessen 1256
+  auf 909 px); die Landkarte bekommt dabei die 250 px Mindesthöhe ihrer eigenen Karte statt der
+  übergebenen 400. Die vier Kopfzeilen „Vorname: / Nachname: / Stimme: / Gruppen:" sind entfallen:
+  der Name stand dort doppelt, er ist jetzt die Überschrift des Kopfes, die Stimme steht als Wort
+  neben den Gruppen-Marken im Untertitel. Die Liedlisten „Dirigent bei" und „Solist bei" laufen
+  über die volle Breite — 92 Lieder brauchen in einer halben Spalte die doppelte Höhe und ziehen
+  im Raster die Nachbarkarte auf 825 px mit vier Zeilen Inhalt.
+- Die Stimme bleibt der Akzent der Seite, nur ohne Kasten: als 4 px breite Kante am linken
+  Seitenrand (im dunklen Thema auf 55 % gedämpft — dieselbe Regel wie der Zeilenbalken der
+  Mitgliederliste, und sie läuft hier von Oberkante bis Unterkante) und als 3-px-Ring um das
+  Porträt. Auf beiden steht kein Text, sie dürfen deshalb den Vollton tragen. Eine Volltonfläche
+  mit Text bleibt verboten: weiß auf Sopran 3,2:1, auf Alt 4,2:1; dunkle Schrift auf Tenor 4,4:1,
+  auf Bass 2,8:1. Ohne Stimme („N") bleibt die Kante unsichtbar statt grau.
+- Das `(S)` neben dem Namen ist eine Pille in derselben Stimmenfarbe geworden. Sie sitzt jetzt
+  **neben** dem Titel statt darin, wo sie bisher stand: der Titel kürzt lange Namen mit einer
+  Ellipsis ab und fraß dabei genau das `(S)`. Die Pille trägt den Ton als Fläche und den
+  Buchstaben in der Kartenfarbe — eine kartenfarbene Pille wäre in der Topbar unsichtbar, weil
+  diese in beiden Themen dieselbe Farbe hat wie die Karte; das Kontrastverhältnis ist
+  richtungsunabhängig, es gilt getauscht unverändert (hell 4,7 bis 9,8:1, dunkel 7,4 bis 10,2:1).
+  Mitglieder ohne Stimme bekommen keine Pille — kein Ton, kein Marker, genau wie die Liste solche
+  Zeilen ohne Stimmenfarbe lässt —, Chorleiter und Musiker eine neutrale.
+- Korrektur bei den Rollen: der senkrecht beschriftete Gruppenstreifen, den die Liste beim
+  Sortieren nach Stimme für Chorleiter und Musiker aufzieht, beschriftete sich in `--t4` und
+  erreichte auf seiner Tintfläche nur 2,2:1. Dieselbe Variable speist jetzt auch die neutrale
+  Topbar-Pille; beide stehen in `--t3` (4,8:1 hell, 6,8:1 dunkel gegen Weiß, rund 4,2:1 auf der
+  Tintfläche). Der Balken und die Kartenkante bleiben bei `--t4`: ein Strich darf leise sein, ein
+  Buchstabe nicht.
 - Startseite: unter „Konzerte" standen alle Termine mit „Repertoire" — jetzt stehen dort die mit
   einem **Ankündigungstext** (`Termin.extern`), und der Text wird mit ausgegeben (Adresse, Einlass,
   Eintritt, Links). Die Spalte stammt aus dem alten PHP-Portal und wurde dort für genau das

@@ -39,9 +39,12 @@
        schlechter Beamer.
        Chorleiter und Musiker sind keine Stimmlage, sondern Rollen, und bekommen
        deshalb bewusst keinen eigenen Farbton, sondern den neutralen --t4.
-       Vollton ist fuer den Zeilenbalken gedacht, auf dem kein Text steht; die
-       Textvariante wird daraus abgeleitet statt gepflegt (wie --brand-dark),
-       weil Sopran als Balken hell sein muss, als Text auf Weiss aber nicht darf. */
+       Der Vollton ist die Markierungsfarbe (Zeilenbalken, Kartenkante,
+       Portraetring, Flaechen des Gruppenstreifens); wo aber der Buchstabe der
+       Stimme auf der Kartenflaeche steht — die Pille in der Topbar der
+       Mitgliedskarte — braucht derselbe Ton eine dunklere Fassung. Sie wird deshalb abgeleitet statt gepflegt (wie
+       --brand-dark), weil Sopran als Flaeche kraeftig sein muss, als Text auf
+       Weiss aber nicht darf. */
     --stimme-s:        #c28500;   /* Sopran — Gold   */
     --stimme-a:        #d05255;   /* Alt    — Rot    */
     --stimme-t:        #007f8d;   /* Tenor  — Petrol */
@@ -575,6 +578,50 @@ body {
     padding: 0 6px;
     letter-spacing: -0.01em;
 }
+
+/* Die Stimme in der Topbar: die Pille neben dem Namen.
+
+   Sie traegt den Ton als Flaeche und den Buchstaben in --bg-card. Die Umkehr
+   ist noetig, weil die Topbar in beiden Themen dieselbe Farbe hat wie die
+   Karte (--tb-bg = --bg-card, #ffffff bzw. #1a1a2e): eine kartenfarbene Pille
+   waere dort unsichtbar, waehrend sie gegen den Ton in beiden Themes liest.
+   Das Verhaeltnis ist richtungsunabhaengig, die 4,5:1 des Tokenkommentars
+   gelten also getauscht weiter (hell Sopran 4,7 · Alt 6,0 · Tenor 6,7 ·
+   Bass 9,8; dunkel dunkle Schrift auf Pastell 7,4-10,2).
+
+   In calc(Nrem / 14) wie alles, was Text traegt, damit Pille und Buchstabe mit
+   der Schriftgroessen-Einstellung der Sidebar mitwachsen.
+
+   Der Buchstabe steht im Template und nicht als generierter Inhalt: so steht er
+   auch bei einem unbekannten Code (stimme-x) da, und fuer Screenreader und
+   Copy-Paste bleibt er erhalten.
+
+   Chorleiter und Musiker sind Rollen: neutraler Ton. Weil --t4 als Flaeche die
+   4,5:1 nicht haelt (hell 2,5:1 gegen Weiss), hier --t3 (hell 4,8:1, dunkel
+   6,8:1) — nur die Pille weicht ab, ein Strich und ein Rahmen duerfen leise
+   sein, ein Buchstabe nicht. „Keine Stimme" (N) bekommt gar keine Pille: kein
+   Ton heisst kein Marker, genau wie tables.py solche Zeilen ohne Klasse
+   laesst. */
+.stimme-pille {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    flex: none;
+    margin-left: calc(2rem / 14);
+    min-width: calc(18rem / 14);
+    height: calc(17rem / 14);
+    padding: 0 calc(2rem / 14);
+    border-radius: 999px;
+    font-size: calc(10rem / 14);
+    font-weight: 700;
+    line-height: 1;
+    background: var(--stimme-farbe-text, var(--t3));
+    color: var(--bg-card);
+}
+.stimme-pille.stimme-c,
+.stimme-pille.stimme-m { background: var(--t3); }
+.stimme-pille.stimme-n { display: none; }
 
 /* Section icon left of the topbar title */
 .topbar-icon {
@@ -2293,19 +2340,66 @@ div.avatar { cursor: pointer; }
 }
 
 /* =================================================== */
-/* Member Profile                                      */
+/* Stimme: Mitgliederliste und Mitgliedskarte          */
 /* =================================================== */
-.member-profile {
-    max-width: 760px;
-    margin: 20px auto;
-    padding: 24px;
-    background: var(--bg-card);
-    box-shadow: var(--shadow-sm);
-    border-radius: var(--r-lg);
-    border: 1px solid var(--border);
-    font-size: calc(13.5rem / 14);
-    line-height: 1.6;
-    color: var(--t1);
+/* Stimme auf der Mitgliedskarte: die Seitenkante und der Portraetring.
+
+   Vorher trug die Karte den Ruecken: eine 4-px-Kante am linken Rand eines
+   760 px breiten Kastens mit Rand, Radius und Schatten. Der Kasten musste
+   fallen — diese Seite ist laenger als der Rollbereich, also sind Ober- und
+   Unterkante nie gleichzeitig im Bild und der weisse Block las sich als
+   kaputt. Die Kante bleibt: sie wandert von der Karte eine Ebene hoch auf die
+   Seite selbst und laeuft dort von Oberkante bis Unterkante, statt 20 px
+   eingerueckt zu beginnen. Damit steht die Stimme bei jeder Scrollposition am
+   Rand — genau die Eigenschaft, die den Ruecken vorher getragen hat.
+
+   Auf der Kante steht kein Text, sie darf deshalb den Vollton tragen und
+   stellt keine Kontrastfrage. padding-left 20 px + 4 px Kante = 24 px, also
+   buendig mit dem padding von .detail-page auf allen anderen Detailseiten.
+
+   Der Fallback ist transparent, nicht --border: ein 4-px-grauer Seitenrand
+   waere ein Gestaltungselement ohne Aussage. „Kein Ton, kein Marker" gilt hier
+   wie fuer die Zeile und die Pille. Die Geometrie bleibt gleich (die Kante ist
+   immer 4 px breit), die Ausrichtung also unveraendert; nur die Farbe fehlt.
+
+   Im dunklen Thema derselbe Ton zu 55 %, woertlich die Regel des Zeilenbalkens
+   in der Mitgliederliste: die hellen Pastelle grellen als Vollton, und dieser
+   Streifen ist ein Vielfaches so lang wie der Balken einer Zeile. C/M/N bleiben
+   unberuehrt, --t4 ist bereits gedaempft.
+
+   Der Ring um das Portraet ist die Stelle, an der die Stimme zuerst auffaellt,
+   und die einzige ganz ohne Text — er traegt deshalb auch im dunklen Thema den
+   Vollton, wie der Pillenbuchstabe in der Topbar. Das Portraet sitzt im
+   .detail-icon der Detailseiten (56 px, border-radius var(--r)); die 3-px-Kante
+   wirkt auf dieser kleineren Flaeche kraeftiger als auf dem alten 110-px-Bild.
+   Sein Fallback bleibt --border: ein Fotorahmen ist auch ohne Ton unauffaellig.
+
+   max-width ohne margin:auto: der Deckel haelt die Zeilenlaenge im Lesbaren
+   (das zweispaltige Raster gaebe auf breiten Schirmen ueber 100 Zeichen je
+   Zeile, .detail-card-content ist Fliesstext), aber die Seite bleibt
+   linksbuendig wie ihre Geschwister und wird nicht wieder zur zentrierten
+   Insel.
+
+   --stimme-farbe kommt aus dem Setter weiter unten. Der Fallback haelt die
+   Seite ohne Stimme („N") und bei unbekanntem Code (stimme-x) genau wie heute:
+   gleiche Geometrie, nur ohne Ton. */
+.detail-page.member-voice {
+    max-width: 1100px;
+    border-left: calc(4rem / 14) solid var(--stimme-farbe, transparent);
+    padding-left: 20px;
+}
+[data-theme="dark"] .detail-page.member-voice {
+    border-left-color: color-mix(in srgb, var(--stimme-farbe, transparent) 55%, transparent);
+}
+.member-voice .detail-icon {
+    overflow: hidden;
+    border: calc(3rem / 14) solid var(--stimme-farbe, var(--border));
+}
+.member-voice .detail-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* Stimme in der Mitgliederliste: Farbbalken statt Flaechen-Tint.
@@ -2328,13 +2422,25 @@ div.avatar { cursor: pointer; }
    row-stimme-*, --stimme-farbe bleibt dort ungesetzt, der Fallback greift —
    die Vorrangregel „inaktiv schlaegt Stimme" bleibt so von selbst erhalten.
 
-   Chorleiter und Musiker sind keine Stimmlage, sondern Rollen: neutraler Ton. */
-.row-stimme-s { --stimme-farbe: var(--stimme-s); --stimme-farbe-text: var(--stimme-s-text); }
-.row-stimme-a { --stimme-farbe: var(--stimme-a); --stimme-farbe-text: var(--stimme-a-text); }
-.row-stimme-t { --stimme-farbe: var(--stimme-t); --stimme-farbe-text: var(--stimme-t-text); }
-.row-stimme-b { --stimme-farbe: var(--stimme-b); --stimme-farbe-text: var(--stimme-b-text); }
-.row-stimme-c,
-.row-stimme-m { --stimme-farbe: var(--t4);       --stimme-farbe-text: var(--t4); }
+   Derselbe Setter bedient auch die Mitgliedskarte (Ruecken und Portraetring)
+   und die Pille in ihrer Topbar; deshalb steht jede Zeile mit beiden Klassen
+   da, statt die Zuordnung zweimal zu pflegen — die Deklarationen sind
+   unveraendert. --stimme-farbe ist der Markierungston (Balken, Ruecken, Ring),
+   --stimme-farbe-text der Ton, der als Flaeche lesbar bleibt (die Pille der
+   Topbar). Kein .stimme-n: kein Ton, kein Marker — genau wie tables.py die
+   Zeilenklasse fuer „keine Stimme" leer laesst.
+
+   Chorleiter und Musiker sind keine Stimmlage, sondern Rollen: neutraler Ton.
+   Sie tragen ihren Text in --t3 statt --t4, weil --t4 als Textfarbe die 4,5:1
+   nicht haelt (hell 2,2:1 auf der Tintflaeche, die .stimme-merged-inner
+   beschriftet). --stimme-farbe bleibt --t4: Balken und Ruecken duerfen leise
+   sein, ein Buchstabe nicht. */
+.row-stimme-s, .stimme-s { --stimme-farbe: var(--stimme-s); --stimme-farbe-text: var(--stimme-s-text); }
+.row-stimme-a, .stimme-a { --stimme-farbe: var(--stimme-a); --stimme-farbe-text: var(--stimme-a-text); }
+.row-stimme-t, .stimme-t { --stimme-farbe: var(--stimme-t); --stimme-farbe-text: var(--stimme-t-text); }
+.row-stimme-b, .stimme-b { --stimme-farbe: var(--stimme-b); --stimme-farbe-text: var(--stimme-b-text); }
+.row-stimme-c, .stimme-c { --stimme-farbe: var(--t4);       --stimme-farbe-text: var(--t3); }
+.row-stimme-m, .stimme-m { --stimme-farbe: var(--t4);       --stimme-farbe-text: var(--t3); }
 
 table.mitglied-table tbody td:first-child {
     box-shadow: inset 4px 0 0 var(--stimme-farbe, transparent);
@@ -2385,83 +2491,6 @@ table.mitglied-table tr.stimme-group-start td {
     letter-spacing: 0.12em;
     text-transform: uppercase;
     white-space: nowrap;
-}
-
-.profile-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-}
-
-.profile-image img {
-    width: 110px;
-    height: auto;
-    border-radius: var(--r);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-}
-
-.profile-info h1 {
-    margin: 0 0 4px;
-    font-size: 1.4rem;
-    color: var(--t1);
-}
-
-.member-title {
-    font-weight: 600;
-    color: var(--brand-dark);
-    font-size: calc(12.5rem / 14);
-    margin: 2px 0;
-}
-
-.member-id {
-    color: var(--t4);
-    font-size: calc(11.5rem / 14);
-}
-
-.profile-section {
-    margin-bottom: 20px;
-}
-
-.profile-section h2 {
-    font-size: calc(10.5rem / 14);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--t3);
-    margin: 0 0 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
-}
-
-.contact-info,
-.address-info,
-.personal-info {
-    display: grid;
-    gap: 6px;
-}
-
-.contact-item,
-.address-item,
-.personal-item {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    font-size: calc(13rem / 14);
-}
-
-.label {
-    font-weight: 500;
-    min-width: 155px;
-    color: var(--t3);
-}
-
-.value {
-    flex: 1;
-    color: var(--t1);
 }
 
 /* =================================================== */
@@ -2618,6 +2647,22 @@ table.mitglied-table tr.stimme-group-start td {
 .detail-card-row:last-child { border-bottom: none; }
 .detail-card-row .label {
     min-width: 100px;
+}
+
+/* Die Zeilenform der Detailseiten. .label und .value stehen hier, weil
+   .detail-card-row ihr Hauptverbraucher ist (datei, titel, termin, ort_detail,
+   mitglied); die alte Mitgliedskarte war der letzte Nutzer ausserhalb einer
+   .detail-card und ist entfallen. In der Zeile gilt die 100-px-Labelbreite
+   oben, ausserhalb die 155 px hier. */
+.label {
+    font-weight: 500;
+    min-width: 155px;
+    color: var(--t3);
+}
+
+.value {
+    flex: 1;
+    color: var(--t1);
 }
 
 /* Badges */

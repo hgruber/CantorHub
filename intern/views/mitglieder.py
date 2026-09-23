@@ -142,7 +142,7 @@ def mitglied_view(request, id):
     map_center = get_map_center()
     context = {
         "user": user,
-        "seitentitel": f"{user.first_name} {user.last_name} ({user.stimme})",
+        "seitentitel": f"{user.first_name} {user.last_name}",
         "up": "mitglied_list",
         "edit": "mitglied_edit" if can_edit else None,
         "history": "mitglied_aenderungen" if can_view_history else None,
