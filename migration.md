@@ -79,6 +79,19 @@ environment variable — only network access. Without it the migration calls `ex
   written freehand and do not match `Lied.titel`, hence songids rather than titles. The
   Christmas songs are deliberately absent — they carry the separate `weihnacht` flag and the
   table filter „Weihnachten" finds them. Another stopgap that disappears with this file.
+- gives **only the members of „Gründer" an Eintrittsdatum** — the founding date 17.06.2026
+  (`_GRUENDUNGSDATUM`, `import_gruendungsdatum`). Every other account arrives with
+  `date_joined=None`; the legacy column `aktiv_seit` is no longer read, because it was
+  inconsistent, partly empty and meant the login in the old portal rather than the join date.
+  A `date_joined` of `None` is what the portal reads as „never activated": whoever gets
+  activated later in the member administration receives the welcome mail and is stamped with
+  that day as their Eintrittsdatum (see `docs/members.md`).
+- **starts every account outside „Gründer" deactivated** (`deaktiviere_nicht_gruender`). The
+  fresh installation therefore has exactly the founding members as active users; the rest are
+  switched on one by one. The step has to run after `import_avatars`, which checks
+  `u.is_active` and would otherwise give those accounts the placeholder picture instead of
+  their photo, and after `import_gruendungsmitglieder`, which fills the group the two steps
+  work on.
 
 **This dependency on the legacy MySQL server is why every test in `intern/tests.py` is a
 `SimpleTestCase`:** a `TestCase` makes Django build a test database, which runs `0003_import`,

@@ -34,6 +34,16 @@ dürfen sie trotzdem — er bleibt dann unter der Endfassung stehen.
   Inhalte, die nur mit der Berechtigung „Termine ändern" geschrieben werden können.
 - Die Erinnerungsmails der Auftritts-Mailingliste hängen weiterhin an „Repertoire" — die beiden
   Mengen sind jetzt unabhängig. Wer beides zusammen haben will, setzt beide Zeichen.
+- Der Neuaufbau aus dem Altsystem startet jetzt mit den Gründerinnen und Gründern als einzigen
+  aktiven Konten: sie tragen den 17.06.2026 als Eintrittsdatum, jeder andere Zugang kommt ohne
+  Eintrittsdatum und deaktiviert an. Das bisher übernommene `aktiv_seit` taugt nicht als
+  Eintritt — es war uneinheitlich, teils leer und meinte die Anmeldung im alten Portal, nicht den
+  Vereinseintritt. Die übrigen Mitglieder werden einzeln über die Mitgliederverwaltung
+  freigeschaltet; dabei setzt das Portal das Eintrittsdatum auf diesen Tag und verschickt die
+  Willkommensmail (`date_joined = NULL` ist sein Merker für „nie aktiviert"). Bis dahin bleibt die
+  Zeile „Mitglied seit" auf ihrer Karte leer. Die Reihenfolge im Import ist dabei nicht
+  beliebig: die Deaktivierung läuft nach dem Avatar-Import, der `is_active` prüft und den
+  übrigen sonst das Ersatzbild statt ihres Fotos gegeben hätte.
 - Datumsangaben nennen jetzt den kurzen Wochentag und den Monat als Zahl („Mi, 24.09.2026 19:30"
   statt „24. September 19:30"). Für eine Probe ist der Wochentag die Information, nach der man
   sucht; den Monatsnamen trägt der Termin-Banner seit jeher als Zahl (`D, d.m.`), die übrigen

@@ -54,6 +54,13 @@ first-time activation → sends the `MAIL_WILLKOMMEN` text and stamps `date_join
 login URL derived from `VEREINS_URL`; without it the `{button:…}` in the text renders nothing.
 No mail is sent if the user has no email address.
 
+Applicants are not the only source of that `None`: the legacy import brings **every** member in
+without an Eintrittsdatum and deactivates all but the founding members (`migration.md`, „What
+`0003_import.py` does"). The members switched on later therefore take exactly this path — they
+receive the welcome mail, and the day of their activation becomes their Eintrittsdatum. Until
+then „Mitglied seit" is empty on their card (`mitglied.html`) and the CardDAV note omits the
+line (`carddav/vcard.py`; both handle the `None`).
+
 ## Re-confirmation flow (Datenbestätigung)
 
 Lets the board ask existing members to re-confirm their stored data and re-acknowledge the
