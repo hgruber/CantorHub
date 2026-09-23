@@ -3711,6 +3711,54 @@ class VorlagenKommentarTest(SimpleTestCase):
         self.assertEqual(sauber.strip(), "<p>Inhalt</p>")
 
 
+class SyntaxhilfeTest(SimpleTestCase):
+    """Die Leiste im Artikel-Editor ist zum Anklicken da, nicht zum Abtippen.
+
+    Jede Pille trägt ihr Muster selbst (``data-einfuegen``); ``wiki-einfuegen.js``
+    setzt es an der Cursorposition ein. Wird eine Pille wieder zum ``<span>``
+    oder verliert sie ihr Muster, fällt sie stumm auf Lesen zurück — das fiele
+    sonst niemandem auf. Liest die Vorlage als Text, keine Datenbank.
+    """
+
+    # Gruppe 1 das Element, Gruppe 2 alle Attribute — auch die vor ``class``.
+    PILLE = re.compile(r"<(\w+)([^>]*\bclass=\"ae-cheat\"[^>]*)>")
+
+    @classmethod
+    def _leiste(cls):
+        wurzel = Path(__file__).resolve().parent.parent
+        vorlage = wurzel / "intern" / "templates" / "artikel.html"
+        return vorlage.read_text(encoding="utf-8")
+
+    def _pillen(self):
+        return self.PILLE.findall(self._leiste())
+
+    def test_jede_pille_ist_ein_knopf(self):
+        # Ohne type="button" schickt ein Klick im Editor-Formular den Artikel ab.
+        for element, attribute in self._pillen():
+            with self.subTest(pille=attribute[:40]):
+                self.assertEqual(element, "button")
+                self.assertIn('type="button"', attribute)
+
+    def test_jede_pille_bringt_ihr_muster_mit(self):
+        pillen = self._pillen()
+
+        self.assertGreaterEqual(len(pillen), 12)
+        for _element, attribute in pillen:
+            with self.subTest(pille=attribute[:40]):
+                self.assertIn("data-einfuegen=", attribute)
+
+    def test_abstimmung_zeigt_die_pflichtform(self):
+        # Das Ende ist Pflicht (ABSTIMMUNG_DIRECTIVE) — die Leiste darf keine
+        # Form zeigen, die im Artikel nichts anzeigen würde.
+        leiste = self._leiste()
+
+        self.assertIn("{abstimmung:Titel:1:TT.MM.JJJJ:A;B}", leiste)
+        self.assertIn('data-geruest="abstimmung"', leiste)
+
+    def test_einfuegeskript_ist_eingebunden(self):
+        self.assertIn("intern/js/wiki-einfuegen.js", self._leiste())
+
+
 class StatikQuellkartenTest(SimpleTestCase):
     """Eine ``sourceMappingURL`` ohne die zugehörige ``.map`` legt den Start lahm.
 

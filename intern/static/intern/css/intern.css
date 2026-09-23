@@ -3694,12 +3694,26 @@ span.not_found {
     gap: 7px 14px;
     padding: 2px 20px 14px;
 }
+/* Ein Knopf, kein Text: der Klick fuegt das Muster ein (wiki-einfuegen.js) */
 .ae-cheat {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    font: inherit;
     font-size: calc(11.5rem / 14);
     color: var(--t3);
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+}
+.ae-cheat:hover { color: var(--brand-text); }
+.ae-cheat:focus-visible {
+    outline: 2px solid var(--brand-dark);
+    outline-offset: 2px;
 }
 .ae-cheat code {
     font-family: var(--mono);
@@ -3710,7 +3724,13 @@ span.not_found {
     padding: 2px 6px;
     color: var(--t1);
     white-space: nowrap;
+    transition: border-color var(--ease), background var(--ease);
 }
+.ae-cheat:hover code {
+    border-color: var(--brand-dark);
+    background: var(--code-bg);
+}
+.ae-cheat:active code { transform: translateY(1px); }
 
 /* Editor body — textarea fills remaining height */
 .ae-body {

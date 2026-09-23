@@ -31,6 +31,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
+- Syntax-Hilfe im Artikel-Editor: die Pillen sind Knöpfe — ein Klick setzt das Muster an der
+  Cursorposition ein und markiert den Platzhalter. Über einer Markierung umschließen Fett, Kursiv
+  und der interne Link sie, statt sie zu ersetzen; die beiden Datei-Pillen übergeben an die
+  Dateisuche, und beim Medienplayer steht danach `|Titel` markiert da.
 - Abstimmungen: das Ende ist Pflicht — `{abstimmung:Titel:1:TT.MM.JJJJ:A;B}`. Eine Abstimmung ohne
   Datum bliebe für immer offen; das Bearbeiten-Formular speichert sie deshalb nicht mehr, sondern
   nennt die Zeile und lässt den Text im Editor stehen. Syntaxhilfe, Editor-Gerüst (Datum in zwei

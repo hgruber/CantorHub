@@ -1923,18 +1923,29 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!match) return;
     const text = ta.value;
     let replacement;
+    // Die Pille „Medienplayer" der Syntax-Hilfe hinterlegt hier ihren Zusatz
+    // (wiki-einfuegen.js): der Verweis schließt dann mit |Titel]], und der
+    // Titel wird markiert. Der Merker gilt nur für diesen einen Abschluss.
+    const suffix = item.kind === "datei" ? ta.dataset.wikiSuffix || "" : "";
     if (item.kind === "datei-prefix") {
       // Complete just the "Datei:" prefix; the file search takes over as the
       // user keeps typing the filename.
       replacement = "[[Datei:";
     } else if (item.kind === "datei") {
-      replacement = "[[Datei:" + item.name + "]]";
+      replacement = "[[Datei:" + item.name + suffix + "]]";
     } else {
       replacement = "[[" + item.name + "]]";
     }
     ta.value = text.substring(0, match.prefixStart) + replacement + text.substring(ta.selectionStart);
     const newPos = match.prefixStart + replacement.length;
-    ta.setSelectionRange(newPos, newPos);
+    if (suffix) {
+      delete ta.dataset.wikiSuffix;
+      // Auswahl auf den Zusatz ohne sein führendes "|".
+      const suffixStart = newPos - 2 - suffix.length + 1;
+      ta.setSelectionRange(suffixStart, newPos - 2);
+    } else {
+      ta.setSelectionRange(newPos, newPos);
+    }
     ta.dispatchEvent(new Event("input", { bubbles: true }));
   }
 

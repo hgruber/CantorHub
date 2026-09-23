@@ -97,6 +97,10 @@
     );
   }
 
+  // Die Syntax-Hilfe fügt dasselbe Gerüst ein (wiki-einfuegen.js) — die
+  // Datumsrechnung steht deshalb nur hier.
+  window.abstimmungGeruest = skelett;
+
   // Hidden mirror div for caret pixel position (same technique as the
   // [[Datei:]] autocomplete in intern.js).
   var mirror = document.createElement("div");

@@ -20,6 +20,15 @@ The editor (`artikel.html`, edit branch) renders the `.article-editor` shell: an
 collapsible `.ae-help` syntax cheat-sheet, the textarea inside a `.wiki` container (kept so
 `abstimmung.js`'s `{abstimmung:...}` helper still binds), and a footer action bar.
 
+Every `.ae-cheat` in that cheat-sheet is a `<button type="button">` carrying its own snippet in
+`data-einfuegen`, so the markup lives in exactly one place; `wiki-einfuegen.js` inserts it at the
+caret and selects the `${…}` placeholder. `data-block` puts the snippet on its own line,
+`data-umschliessen` wraps the selection instead of replacing it (bold, italic, internal link), and
+the two file pills insert `[[Datei:` alone so the existing file search in `intern.js` supplies the
+name — the media-player pill adds `data-suffix="|Titel"`, which `completeItem()` consumes once to
+close the reference as `[[Datei:<name>|Titel]]`. The poll pill asks `abstimmung.js` for its
+scaffold (`window.abstimmungGeruest`) so the two-week end date is computed in one place.
+
 New articles are created from the `+` in the article-list topbar (`article_list` sets
 `add`/`add_panel_include`). It opens the off-canvas panel `templates/artikel_add_panel.html`,
 which has **no** server form — a small vanilla script reads the entered page name and navigates

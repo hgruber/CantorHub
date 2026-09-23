@@ -2,6 +2,7 @@
 {% load static %}
 {% block extra_js %}
 <script src="{% static 'intern/js/abstimmung.js' %}" defer></script>
+<script src="{% static 'intern/js/wiki-einfuegen.js' %}" defer></script>
 {% endblock %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>{% endblock %}
 {% block topbar_actions_extra %}
@@ -68,18 +69,36 @@
   <details class="ae-help">
     <summary>Syntax-Hilfe</summary>
     <div class="ae-cheats">
-      <span class="ae-cheat"><code>== Titel ==</code> Überschrift</span>
-      <span class="ae-cheat"><code>'''fett'''</code> Fett</span>
-      <span class="ae-cheat"><code>''kursiv''</code> Kursiv</span>
-      <span class="ae-cheat"><code>* Punkt</code> Aufzählung</span>
-      <span class="ae-cheat"><code># Punkt</code> Nummeriert</span>
-      <span class="ae-cheat"><code>[[Datei:Name]]</code> Datei einbetten</span>
-      <span class="ae-cheat"><code>[[Datei:Song.mp3|Titel]]</code> Medienplayer</span>
-      <span class="ae-cheat"><code>[[Artikel]]</code> Interner Link</span>
-      <span class="ae-cheat"><code>[https://… Name]</code> Externer Link</span>
-      <span class="ae-cheat"><code>! A ! B</code> Tabellenkopf</span>
-      <span class="ae-cheat"><code>| A | B</code> Tabellenzeile</span>
-      <span class="ae-cheat"><code>{abstimmung:Titel:1:TT.MM.JJJJ:A;B}</code> Abstimmung (Ende ist Pflicht)</span>
+      {% comment %}
+        Ein Klick setzt data-einfuegen an der Cursorposition ein und markiert
+        den Platzhalter ${…} — siehe wiki-einfuegen.js. Die beiden Datei-Pillen
+        fügen nur „[[Datei:“ ein, den Namen sucht die Dateiliste aus intern.js.
+      {% endcomment %}
+      <button type="button" class="ae-cheat" title="Überschrift einfügen"
+              data-einfuegen="== ${Titel} ==" data-block><code>== Titel ==</code> Überschrift</button>
+      <button type="button" class="ae-cheat" title="Fett einfügen"
+              data-einfuegen="'''${fett}'''" data-umschliessen><code>'''fett'''</code> Fett</button>
+      <button type="button" class="ae-cheat" title="Kursiv einfügen"
+              data-einfuegen="''${kursiv}''" data-umschliessen><code>''kursiv''</code> Kursiv</button>
+      <button type="button" class="ae-cheat" title="Aufzählungspunkt einfügen"
+              data-einfuegen="* ${Punkt}" data-block><code>* Punkt</code> Aufzählung</button>
+      <button type="button" class="ae-cheat" title="Nummerierten Punkt einfügen"
+              data-einfuegen="# ${Punkt}" data-block><code># Punkt</code> Nummeriert</button>
+      <button type="button" class="ae-cheat" title="Datei einbetten — Namen aus der Liste wählen"
+              data-einfuegen="[[Datei:"><code>[[Datei:Name]]</code> Datei einbetten</button>
+      <button type="button" class="ae-cheat" title="Medienplayer einfügen — Namen aus der Liste wählen"
+              data-einfuegen="[[Datei:" data-suffix="|Titel"><code>[[Datei:Song.mp3|Titel]]</code> Medienplayer</button>
+      <button type="button" class="ae-cheat" title="Internen Link einfügen"
+              data-einfuegen="[[${Artikel}]]" data-umschliessen><code>[[Artikel]]</code> Interner Link</button>
+      <button type="button" class="ae-cheat" title="Externen Link einfügen"
+              data-einfuegen="[${https://…} Name]"><code>[https://… Name]</code> Externer Link</button>
+      <button type="button" class="ae-cheat" title="Tabellenkopf einfügen"
+              data-einfuegen="! ${A} ! B" data-block><code>! A ! B</code> Tabellenkopf</button>
+      <button type="button" class="ae-cheat" title="Tabellenzeile einfügen"
+              data-einfuegen="| ${A} | B" data-block><code>| A | B</code> Tabellenzeile</button>
+      <button type="button" class="ae-cheat" title="Abstimmung einfügen — mit Ende in zwei Wochen"
+              data-einfuegen="{abstimmung:${Titel}:1:TT.MM.JJJJ:Option A;Option B}"
+              data-geruest="abstimmung" data-block><code>{abstimmung:Titel:1:TT.MM.JJJJ:A;B}</code> Abstimmung (Ende ist Pflicht)</button>
     </div>
   </details>
 
