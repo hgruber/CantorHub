@@ -237,12 +237,24 @@ confirmation URL; in the other three `{link}` falls back to the unsubscribe URL.
 
 `MAIL_MAILINGLISTE_ERINNERUNG` additionally gets: `{titel}` (`Termin.kurz`), `{datum}`,
 `{wochentag}`, `{uhrzeit}` (empty at 00:00), `{uhrzeit_text}` (`" um 20:00 Uhr"` or empty),
-`{ort}`, `{ort_adresse}`, `{wochen}`, `{wochen_text}` (`"vier Wochen"` / `"einer Woche"`).
+`{ort}`, `{ort_adresse}`, `{extern}`, `{wochen}`, `{wochen_text}` (`"vier Wochen"` / `"einer Woche"`).
 
-There is deliberately **no `{beschreibung}`**: `mail_markup._substitute()` runs *before* the
-line parser, so substituted values are HTML-escaped but not markup-neutralised. A multi-line
-`Termin.lang` containing a `{button:…:URL}` line would render as a real button in a mail sent
-to the general public. `Termin.kurz` (single line, max 64) and `Ort.name` are safe.
+There is deliberately **no `{beschreibung}`** (`Termin.lang`): `mail_markup._substitute()` runs
+*before* the line parser, so substituted values are HTML-escaped but not markup-neutralised. A
+multi-line `Termin.lang` containing a `{button:…:URL}` line would render as a real button in a
+mail sent to the general public. `Termin.kurz` (single line, max 64) and `Ort.name` are safe.
+
+`{extern}` is the same kind of field — multi-line, HTML — and is allowed only because
+`mailingliste._ankuendigung_als_text()` flattens it to one directive-free paragraph *before* the
+substitution: tags become gaps, whitespace collapsed, `{}` and `[]` removed. Neither a button nor
+a named link can be smuggled in. Bare URLs survive and are auto-linked (the ticket link in an
+announcement); an `<a>` link keeps only its text, the target is dropped.
+
+**`MAIL_MAILINGLISTE_ERINNERUNG` carries an empty default on purpose.** Its text is
+choir-specific, so it is seeded by `seed_konfiguration` in `migrations/0003_import.py` — the same
+rule as `VEREINSNAME` and `HOMEPAGE_UEBER_UNS`, and the reason those keys have `""` in
+`_CONFIG_DEFAULTS`. The key stays in the catalogue and stays required; the migration disappears
+once the migration is done, and a new installation writes its own text.
 
 **To add a new automated email:** add the key to `_CONFIG_DEFAULTS` in `apps.py` (description
 mentioning the placeholders), then call `mail.send_config_mail(subject, to, key, user=…,

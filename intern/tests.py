@@ -159,6 +159,54 @@ class AbmeldeTokenTest(SimpleTestCase):
         self.assertIsNone(lese_abmelde_token(make_abmelde_token(self._abo()) + "x"))
         self.assertIsNone(lese_abmelde_token("unsinn"))
 
+
+class AnkuendigungAlsTextTest(SimpleTestCase):
+    """``{extern}`` in der Erinnerungsmail: der Ankündigungstext wird zum Fließtext.
+
+    ``mail_markup`` setzt Platzhalter *vor* dem Zeilen- und Inline-Parser ein.
+    Ohne die Reduktion könnte ein Termin-Bearbeiter über ``Termin.extern`` einen
+    ``{button:…:URL}`` oder ein ``[URL Name]`` in eine Mail an die Öffentlichkeit
+    schmuggeln — dieselbe Gefahr, wegen der ``{beschreibung}`` dort fehlt.
+    """
+
+    def _frei(self, extern):
+        from intern.models import Termin
+        from intern.mailingliste import _ankuendigung_als_text
+
+        return _ankuendigung_als_text(Termin(extern=extern))     # nicht gespeichert
+
+    def test_html_wird_ein_absatz(self):
+        self.assertEqual(
+            self._frei("Eintritt frei<br>Einlass 16:30"), "Eintritt frei Einlass 16:30"
+        )
+
+    def test_link_bleibt_als_text(self):
+        # Das Ziel geht verloren — der Preis für die schlanke Reduktion. Die
+        # nackte URL im Text bleibt dagegen verlinkbar (siehe unten).
+        self.assertEqual(
+            self._frei('<a href="https://x.example/t">Tickets</a>'), "Tickets"
+        )
+
+    def test_kein_button_aus_geschweiften_klammern(self):
+        self.assertNotIn("{", self._frei("{button:Kaufen:http://evil.example}"))
+
+    def test_kein_benannter_link_aus_eckigen_klammern(self):
+        self.assertNotIn("[", self._frei("[http://evil.example Phishing]"))
+
+    def test_linktext_ist_die_url(self):
+        # Der Linktext darf nicht der frei gewählte des Ankündigungstexts sein.
+        from intern.mail_markup import render_mail_markup
+
+        html, _ = render_mail_markup("{extern}", {"extern": self._frei(
+            "[https://x.example Phishing]"
+        )})
+        self.assertNotIn(">Phishing</a>", html)
+        self.assertIn('href="https://x.example"', html)
+
+    def test_leerwert(self):
+        self.assertEqual(self._frei("   "), "")
+        self.assertEqual(self._frei(None), "")
+
     def test_fingerabdruck_trennt_adressen(self):
         """Der Schutz gegen wiederverwendete Primärschlüssel.
 

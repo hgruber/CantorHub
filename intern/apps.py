@@ -372,16 +372,11 @@ _CONFIG_DEFAULTS = [
     ),
     (
         "MAIL_MAILINGLISTE_ERINNERUNG",
-        "== {titel} ==\n\n"
-        "{wochentag}, {datum}{uhrzeit_text}\n"
-        ": {ort}\n"
-        ": {ort_adresse}\n\n"
-        "In {wochen_text} ist es soweit — wir freuen uns, wenn Du dabei bist.\n\n"
-        "Herzliche Grüße\n{vereinsname_lang}",
+        "",
         "Erinnerung an einen Auftritt. Wiki-Markup erlaubt. Platzhalter: {titel}, "
         "{datum}, {wochentag}, {uhrzeit}, {uhrzeit_text}, {ort}, {ort_adresse}, "
-        "{wochen}, {wochen_text}, {name}, {abmelden}. Die Terminbeschreibung gibt "
-        "es bewusst NICHT.",
+        "{extern} (der Ankündigungstext als Fließtext, ohne Markup), {wochen}, "
+        "{wochen_text}, {name}, {abmelden}.",
     ),
     (
         "MAIL_FOOTER",

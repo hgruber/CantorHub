@@ -58,9 +58,13 @@ separator, and `emails/mailingliste.html` renders it structurally in the HTML pa
 `MAIL_MAILINGLISTE_ERINNERUNG` does not remove it. `List-Unsubscribe-Post` is deliberately
 **not** set: providers then send an unauthenticated POST that the CSRF middleware rejects.
 
-**No `{beschreibung}` placeholder** — see `configuration.md`; `mail_markup` substitutes before
-parsing, so a multi-line `Termin.lang` could smuggle a `{button:…:URL}` into a mail to the
-general public.
+**`{extern}` exists, `{beschreibung}` does not** — see `configuration.md`. `mail_markup`
+substitutes before parsing, so the announcement text is flattened by
+`mailingliste._ankuendigung_als_text()` to a single directive-free paragraph (tags to gaps,
+`{}`/`[]` removed) before it is substituted; a `{button:…:URL}` or `[URL Name]` in `Termin.extern`
+therefore cannot reach the mail as a real link. `Termin.lang` keeps no placeholder at all, for the
+same reason. The text of the reminder itself is choir-specific and is seeded by
+`seed_konfiguration` (`migrations/0003_import.py`) — `_CONFIG_DEFAULTS` carries `""` for it.
 
 Without `VEREINS_URL` or `EMAIL_HOST` the daemon **warns and writes no marker** rather than
 sending — a mail with a relative, i.e. dead, unsubscribe link is not defensible. Both are re-read

@@ -11,7 +11,9 @@ lokale Wanduhrzeit.  ``localtime()`` darf hier nirgends aufgerufen werden.
 """
 
 import hashlib
+import html as _html
 import logging
+import re
 from datetime import datetime, time, timedelta
 
 from django.core.signing import BadSignature, SignatureExpired, Signer, TimestampSigner
@@ -217,10 +219,9 @@ def faellige_erinnerungen(termine, wochen_liste, jetzt, fallback_zeit,
 def termin_platzhalter(termin, wochen):
     """Platzhalter für ``MAIL_MAILINGLISTE_ERINNERUNG``.
 
-    Bewusst **kein** ``{beschreibung}``: ``mail_markup`` setzt Platzhalter vor
-    dem Zeilen-Parsing ein, ein mehrzeiliges ``Termin.lang`` könnte damit einen
-    ``{button:…:URL}`` in eine Mail an die Öffentlichkeit schmuggeln.
-    ``Termin.kurz`` (einzeilig, max. 64) und ``Ort.name`` sind unkritisch.
+    ``Termin.extern`` kommt über ``_ankuendigung_als_text()`` herein — der rohe
+    Wert darf nicht in den Mailtext, siehe dort.  ``Termin.kurz`` (einzeilig,
+    max. 64) und ``Ort.name`` sind dagegen unkritisch.
 
     Wochentagsnamen kommen aus einem eigenen Tupel und nicht aus
     ``replacements.format_datetime`` — das ruft ``locale.setlocale()`` und wäre
@@ -244,9 +245,42 @@ def termin_platzhalter(termin, wochen):
         "uhrzeit_text": f" um {uhrzeit} Uhr" if hat_uhrzeit else "",
         "ort":          ort.name if ort else "",
         "ort_adresse":  adresse,
+        "extern":       _ankuendigung_als_text(termin),
         "wochen":       str(wochen),
         "wochen_text":  wochen_text(wochen),
     }
+
+
+_TAG_RE = re.compile(r"<[^>]+>")
+# Klammern, die dem Mail-Markup eine Direktive öffnen: {button:…}, [URL Name].
+_MARKUP_KLAMMERN_RE = re.compile(r"[{}\[\]]")
+
+
+def _ankuendigung_als_text(termin):
+    """``Termin.extern`` als Fließtext für die Erinnerungsmail.
+
+    Das Feld ist mehrzeilig und HTML-erlaubt (Altdaten-Spalte: ``<a>`` und
+    ``<br>`` sind gedacht).  Roh darf es nicht in den Mailtext:
+    ``mail_markup._substitute()`` setzt Platzhalter *vor* dem Zeilen-Parser ein,
+    ein ``{button:…:URL}`` im Ankündigungstext würde damit als eigene Zeile zu
+    einem echten Link in einer Mail an die Öffentlichkeit — dieselbe Gefahr,
+    wegen der ``{beschreibung}`` (``Termin.lang``) dort bewusst fehlt.
+
+    Deshalb wird der Wert auf **einen Absatz ohne Markup-Direktiven** reduziert:
+    Tags zu Lücken (``strip_tags`` allein ließe ``<br>`` die Wörter
+    zusammenkleben), Entities aufgelöst, jeder Whitespace zu einem Leerzeichen,
+    die Klammern ``{}`` und ``[]`` entfernt.  Beide öffnen dem Zeilen- bzw.
+    Inline-Parser sonst eine Direktive (``{button:…:URL}``, ``[https://… Name]``)
+    — ein Termin-Bearbeiter soll keine Links in eine Mail an die Öffentlichkeit
+    schmuggeln können.  Nackte URLs bleiben stehen und werden vom Parser
+    verlinkt; das ist der gewollte Fall (Ticket-Link im Ankündigungstext).  Ein
+    ``<a>``-Link verliert sein Ziel und bleibt nur als Text stehen.
+    """
+    roh = termin.extern or ""
+    if not roh.strip():
+        return ""
+    text = _html.unescape(_TAG_RE.sub(" ", roh))
+    return _MARKUP_KLAMMERN_RE.sub("", " ".join(text.split()))
 
 
 def wochen_text(wochen):

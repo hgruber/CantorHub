@@ -23,6 +23,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Ankündigungstext und, bei „Repertoire", eine Pille mit der Zahl der Lieder im Ablauf. Die Zahl
   kommt als Annotation mit der Liste, das Datum bricht nicht mehr um. Dieselbe Marke trägt im
   Kalender der Termin-Chip, dort nur am ersten Tag eines mehrtägigen Termins.
+- Die Erinnerungsmail der Auftritts-Mailingliste kennt den Platzhalter `{extern}` — den
+  Ankündigungstext des Termins, auf einen Absatz Fließtext reduziert (ohne Markup und ohne
+  Linkziele). Den Text der Mail führt nicht mehr der Code, sondern `seed_konfiguration` in der
+  Migration; `_CONFIG_DEFAULTS` hält den Schlüssel leer wie die übrigen vereinsspezifischen Texte.
 
 ### Geändert
 
