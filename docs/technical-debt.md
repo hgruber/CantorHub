@@ -58,6 +58,45 @@ table, so an environment variable set after startup wins over any stored value �
 page shows no sign of it. `_seed_config` does write env values into the table at startup, so the
 usual deployment case is visible; only a later change is not.
 
+## First install vs. legacy import (deferred September 2026)
+
+`0003_import.py` (1384 lines, 21 `RunPython` operations, no schema) mixes two things that belong
+apart: the import from the legacy MySQL database, and the values **every** installation needs.
+`migration.md:163-168` already names the consequence — the permission groups (`create_groups`), the
+standard folders under `Backstage` and the first administrator exist today *only* because this
+migration creates them, so a fresh database has no groups, no folders and nobody who can log in.
+Because `0003_import` disappears with the migration, that gap becomes permanent.
+
+The split is planned and deliberately not built yet — while the migration is still pending, the
+current arrangement works and the rework is not worth its cost:
+
+- **A — an init script for the first start:** groups, standard folders, first admin, and the choir
+  values from `seed_konfiguration` (`0003_import.py:1303-1354`).
+- **B — the reduced migration:** only what the legacy MySQL actually supplies. Eleven functions
+  carry `@with_legacy_db_connection` (`0003_import.py:282`); that decorator is the real boundary.
+  Nine operations need no MySQL at all, but only `create_groups`, the folder tree and
+  `seed_konfiguration` are installation-independent — `import_gruendungsmitglieder` (24 legacy ids),
+  `import_vorstand_und_kassenprufer`, `deaktiviere_nicht_gruender`, `make_holger_superuser` and
+  `set_tonarten` (matches imported song titles) describe *this* installation and stay in B.
+- **The first admin has no answer yet.** `make_holger_superuser` (`0003_import.py:1080-1083`) sets a
+  hardcoded username that only exists because B imported it. An install after A alone has nobody
+  who can log in; `README.md:326` points at `createsuperuser`.
+
+Two inconsistencies surfaced while measuring this:
+
+- **`VEREINSNAME` is spelled three ways:** `""` in the catalog (`apps.py:121`), `"Join us singing
+  the Gospel e.V."` as the code fallback (`app_settings.py:211`) and `"Join Us Singing The Gospel
+  e.V."` in the seed (`0003_import.py:1307`). `VEREINSNAME_KURZ` has the same double default.
+- **Mail texts live in two places.** `MAIL_MAILINGLISTE_ERINNERUNG` sits in `seed_konfiguration`
+  with an empty catalog default (`apps.py:373`), while `MAIL_FOOTER` and the three other
+  Mailingliste mails still carry their full text in `_CONFIG_DEFAULTS`. They should follow one rule,
+  and that rule belongs with A.
+
+Hardcoded organisation values that have no business in the code — same bucket, to be settled with A
+or in `branding.md`: `DEFAULT_FROM_EMAIL` (`apps.py:30`, and again in `config/settings.py:275`),
+`VEREINSNAME_LANG` (`apps.py:122`), `BRAND_FARBE` (`apps.py:128`), `FILE_PREFIX` (`apps.py:475`),
+`MAP_CENTER_LAT`/`_LNG` (`apps.py:462,468`) and the hardcoded fallbacks in `app_settings.py:211,215,219,223,269-270`.
+
 ## Data model (audited September 2026)
 
 The model is in good shape and needs no rework. 23 models, 956 lines in
