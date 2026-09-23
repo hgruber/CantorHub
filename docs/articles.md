@@ -74,7 +74,14 @@ browser from the DOM, not from a `json_script`. See `frontend.md`.
 Forum messages deliberately keep the plain link: `Mitteilung.formatiert()` renders without a
 `request`, and `internal_links` passes that through as `spieler=False`.
 
-`abstimmung.js` binds the `{abstimmung:...}` directive to the `Abstimmung` model.
+`abstimmung.js` binds the `{abstimmung:...}` directive to the `Abstimmung` model. The form is
+`{abstimmung:<Titel>:<max>:<TT.MM.JJJJ>:<Option>;<Option>}` and the **end date is mandatory**:
+without one a poll would never lock, so `ABSTIMMUNG_DIRECTIVE` does not match, `article_edit`
+refuses to write the version and names the offending lines (`replacements.abstimmungen_ohne_ende`),
+and a date that matches the pattern but is no calendar day (`31.02.2026`) leaves the line as
+written. The editor snippet (two weeks out), its field hints and the cheat sheet in `artikel.html`
+all show that form; the legacy import fills the date in for the old articles — `30.06.2026` for the
+bulk, `31.12.2039` for the examples in „Hilfe:Wiki", both in `0003_import.py`.
 
 The same markup vocabulary — plus the mail-only `{button:…}` directive — is re-implemented for
 mail bodies in `mail_markup.py`; see `mail.md`.

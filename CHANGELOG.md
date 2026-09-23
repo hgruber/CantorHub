@@ -31,6 +31,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
+- Abstimmungen: das Ende ist Pflicht — `{abstimmung:Titel:1:TT.MM.JJJJ:A;B}`. Eine Abstimmung ohne
+  Datum bliebe für immer offen; das Bearbeiten-Formular speichert sie deshalb nicht mehr, sondern
+  nennt die Zeile und lässt den Text im Editor stehen. Syntaxhilfe, Editor-Gerüst (Datum in zwei
+  Wochen) und die Feld-Hinweise zeigen die neue Form, „Hilfe:Wiki" erklärt sie mit Beispielen zum
+  31.12.2039.
 - Mitgliedskarte: kein umrandeter Kasten mehr, sondern das Muster der übrigen Detailseiten —
   Seitenkopf mit Porträt und Namen, darunter die Abschnitte als Karten in zwei Spalten. Die vier
   Kopfzeilen „Vorname: / Nachname: / Stimme: / Gruppen:" sind entfallen: der Name ist die

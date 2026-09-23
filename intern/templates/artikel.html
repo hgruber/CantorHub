@@ -47,6 +47,24 @@
     </div>
   </div>
 
+  {% if abstimmungsfehler %}
+  <div class="ae-fehler" role="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <div>
+      <strong>Nicht gespeichert: einer Abstimmung fehlt das Ende.</strong>
+      <span>Eine Abstimmung braucht hinter der Stimmenzahl ihr Ende als Datum:
+        <code>{abstimmung:Titel:1:TT.MM.JJJJ:Option A;Option B}</code></span>
+      <ul class="ae-fehler-zeilen">
+        {% for nummer, zeile in abstimmungsfehler %}
+        <li><span class="ae-fehler-nr">Zeile {{ nummer }}</span><code>{{ zeile }}</code></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
   <details class="ae-help">
     <summary>Syntax-Hilfe</summary>
     <div class="ae-cheats">
@@ -61,7 +79,7 @@
       <span class="ae-cheat"><code>[https://… Name]</code> Externer Link</span>
       <span class="ae-cheat"><code>! A ! B</code> Tabellenkopf</span>
       <span class="ae-cheat"><code>| A | B</code> Tabellenzeile</span>
-      <span class="ae-cheat"><code>{abstimmung:…}</code> Abstimmung</span>
+      <span class="ae-cheat"><code>{abstimmung:Titel:1:TT.MM.JJJJ:A;B}</code> Abstimmung (Ende ist Pflicht)</span>
     </div>
   </details>
 
@@ -72,7 +90,7 @@
   </div>
 
   <div class="ae-bar ae-bar-foot">
-    <input type="text" name="kommentar" class="ae-comment" placeholder="Was hast du geändert? (optional)" autocomplete="off">
+    <input type="text" name="kommentar" class="ae-comment" placeholder="Was hast du geändert? (optional)" autocomplete="off" value="{{ edit_kommentar }}">
     {% if artikel %}
     <a href="{% url 'article_view' name=id %}" class="btn btn-secondary">Abbrechen</a>
     {% else %}

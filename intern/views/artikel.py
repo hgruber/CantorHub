@@ -12,7 +12,7 @@ from django.utils.timezone import now
 from django_tables2 import RequestConfig
 
 from intern import folders
-from intern.replacements import apply_replacements
+from intern.replacements import abstimmungen_ohne_ende, apply_replacements
 
 from ..models import Artikel, ArtikelPermission
 from ..tables import ArtikelTabelle
@@ -126,23 +126,34 @@ def article_edit(request, name):
         if not can_edit:
             raise PermissionDenied
 
+    edit_text = artikel.text if artikel else ""
+    kommentar = ""
+    abstimmungsfehler = []
+
     if request.method == "POST":
-        text = request.POST.get("text", "")
+        edit_text = request.POST.get("text", "")
         kommentar = request.POST.get("kommentar", "")
-        next_version = (artikel.version + 1) if artikel else 1
-        Artikel.objects.create(
-            name=name,
-            version=next_version,
-            datum=now(),
-            autor=request.user,
-            kommentar=kommentar,
-            text=text,
-        )
-        return redirect("article_view", name=name)
+        # Eine Abstimmung ohne Ende bliebe für immer offen. Statt sie zu
+        # speichern und im Artikel als rohe Zeile stehen zu lassen, kommt der
+        # Text ungespeichert zurück in den Editor.
+        abstimmungsfehler = abstimmungen_ohne_ende(edit_text)
+        if not abstimmungsfehler:
+            next_version = (artikel.version + 1) if artikel else 1
+            Artikel.objects.create(
+                name=name,
+                version=next_version,
+                datum=now(),
+                autor=request.user,
+                kommentar=kommentar,
+                text=edit_text,
+            )
+            return redirect("article_view", name=name)
 
     context = {
         "artikel": artikel,
-        "edit_text": artikel.text if artikel else "",
+        "edit_text": edit_text,
+        "edit_kommentar": kommentar,
+        "abstimmungsfehler": abstimmungsfehler,
         "seitentitel": f"bearbeiten: {name}",
         "up": "article_list",
         "view": "article_view",

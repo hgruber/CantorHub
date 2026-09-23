@@ -81,8 +81,21 @@
 // the field the caret is in. Pure editing aid — markup is still parsed by
 // replacements.py unchanged.
 (function initAbstimmungAssist() {
-  var SKELETON = "{abstimmung:Titel:1:Option A;Option B}";
   var PREFIX = "{abstimmung:";
+
+  // Das Ende ist Pflicht (replacements.py). Das Gerüst bringt deshalb ein
+  // Datum mit, das schon passen könnte — in zwei Wochen —, statt eines
+  // Platzhalters, den die Feldnavigation nicht als Datum erkennen würde.
+  function skelett() {
+    var d = new Date(Date.now() + 14 * 86400000);
+    var tag = String(d.getDate()).padStart(2, "0");
+    var monat = String(d.getMonth() + 1).padStart(2, "0");
+    return (
+      "{abstimmung:Titel:1:" +
+      tag + "." + monat + "." + d.getFullYear() +
+      ":Option A;Option B}"
+    );
+  }
 
   // Hidden mirror div for caret pixel position (same technique as the
   // [[Datei:]] autocomplete in intern.js).
@@ -209,7 +222,7 @@
       return "<strong>Max. Stimmen</strong> pro Person — Zahl (0 = unbegrenzt)";
     }
     if (f.kind === "deadline") {
-      return "<strong>Deadline</strong> — Datum im Format TT.MM.JJJJ";
+      return "<strong>Ende</strong> — Pflicht, Datum im Format TT.MM.JJJJ";
     }
     var hasDeadline = parsed.fields.some(function (x) {
       return x.kind === "deadline";
@@ -220,9 +233,9 @@
       })[0] === f;
     if (firstOption && !hasDeadline) {
       return (
-        "<strong>Optionen</strong> — optional zuerst Deadline " +
-        "<strong>TT.MM.JJJJ:</strong>, dann Optionen mit <strong>;</strong> " +
-        "trennen, mit <strong>}</strong> abschließen"
+        "<strong>Hier fehlt das Ende</strong> — erst das Datum " +
+        "<strong>TT.MM.JJJJ:</strong>, dann die Optionen mit " +
+        "<strong>;</strong> trennen, mit <strong>}</strong> abschließen"
       );
     }
     return "<strong>Option</strong> — mehrere mit <strong>;</strong> trennen, mit <strong>}</strong> abschließen";
@@ -304,7 +317,7 @@
     hideDropdown();
     if (!snip) return;
     var text = ta.value;
-    ta.value = text.substring(0, snip.start) + SKELETON + text.substring(snip.end);
+    ta.value = text.substring(0, snip.start) + skelett() + text.substring(snip.end);
     var titleStart = snip.start + PREFIX.length;
     ta.focus();
     ta.setSelectionRange(titleStart, titleStart + "Titel".length);

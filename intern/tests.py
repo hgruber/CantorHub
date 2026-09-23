@@ -2874,8 +2874,9 @@ class AbstimmungFristImportTest(SimpleTestCase):
 
     Keine Abstimmung des Altportals trägt ein Ablaufdatum; ohne eines bliebe sie
     im Portal für immer offen. Der Import ergänzt es — aber nur dort, wo
-    ``ABSTIMMUNG_DIRECTIVE`` auch wirklich greift, damit die Syntax-Beispiele in
-    „Hilfe:Wiki“ unangetastet bleiben. Reine Textarbeit, kein Datenbankzugriff.
+    ``ABSTIMMUNG_DIRECTIVE`` auch wirklich greift, damit Syntax-Beispiele
+    unangetastet bleiben. „Hilfe:Wiki“ geht einen eigenen Weg, siehe
+    ``HilfeWikiBeispieleTest``. Reine Textarbeit, kein Datenbankzugriff.
     """
 
     @staticmethod
@@ -2894,14 +2895,16 @@ class AbstimmungFristImportTest(SimpleTestCase):
 
     def test_renderer_liest_die_frist_ohne_die_optionen_zu_verlieren(self):
         # Die eigentliche Zusicherung: Ergänzung und Renderer-Regex passen
-        # zusammen — Stimmenzahl und Optionen bleiben, die Frist kommt hinzu.
+        # zusammen. Ohne Frist liest der Renderer die Zeile gar nicht mehr —
+        # das Ende ist Pflicht —, mit ihr stehen Stimmenzahl und Optionen
+        # unverändert da.
         from intern.replacements import parse_abstimmung_directive
 
         quelle = "{abstimmung:Namenswahl:4:Alpha;Beta}"
         vorher = parse_abstimmung_directive(quelle, "Namenswahl")
         nachher = parse_abstimmung_directive(self._ergaenzen(quelle), "Namenswahl")
 
-        self.assertEqual(vorher, (4, ["Alpha", "Beta"], None))
+        self.assertIsNone(vorher)
         self.assertEqual(nachher, (4, ["Alpha", "Beta"], date(2026, 6, 30)))
 
     def test_vorhandene_frist_bleibt(self):
@@ -2957,6 +2960,155 @@ class AbstimmungFristImportTest(SimpleTestCase):
         # ``artikel_versionen.text`` kann im Altbestand NULL sein.
         self.assertIsNone(self._ergaenzen(None))
         self.assertEqual(self._ergaenzen(""), "")
+
+
+class AbstimmungEndePflichtTest(SimpleTestCase):
+    """Das Ende der Abstimmung ist Pflicht (``intern/replacements.py``).
+
+    Ohne Datum bliebe die Abstimmung für immer offen — die Direktive greift
+    deshalb nicht mehr, und die Zeile steht im Artikel, wie sie geschrieben
+    wurde. Reine Textarbeit, kein Datenbankzugriff.
+    """
+
+    def test_mit_ende_wird_gelesen(self):
+        from intern.replacements import parse_abstimmung_directive
+
+        self.assertEqual(
+            parse_abstimmung_directive("{abstimmung:Wahl:2:31.12.2027:a;b}", "Wahl"),
+            (2, ["a", "b"], date(2027, 12, 31)),
+        )
+
+    def test_ohne_ende_kein_treffer(self):
+        from intern.replacements import parse_abstimmung_directive
+
+        self.assertIsNone(
+            parse_abstimmung_directive("{abstimmung:Wahl:2:a;b}", "Wahl")
+        )
+
+    def test_unmoegliches_datum_zaehlt_nicht(self):
+        # „31.02.2027“ passt aufs Muster, ist aber kein Tag im Kalender. Ohne
+        # diesen Zweig stünde dort eine Abstimmung ganz ohne Ende.
+        from intern.replacements import parse_abstimmung_directive
+
+        self.assertIsNone(
+            parse_abstimmung_directive("{abstimmung:Wahl:2:31.02.2027:a;b}", "Wahl")
+        )
+
+    def test_unmoegliches_datum_bleibt_rohtext(self):
+        from unittest.mock import Mock
+
+        from intern.replacements import ABSTIMMUNG_DIRECTIVE, abstimmung
+
+        zeile = "{abstimmung:Wahl:2:31.02.2027:a;b}"
+        treffer = re.match(ABSTIMMUNG_DIRECTIVE, zeile, re.IGNORECASE)
+        request = Mock()
+        request.resolver_match.kwargs = {"name": "Seite"}
+
+        self.assertEqual(abstimmung(treffer, request), zeile)
+
+
+class AbstimmungOhneEndeTest(SimpleTestCase):
+    """Was die Bearbeiten-Seite vor dem Speichern beanstandet.
+
+    ``abstimmungen_ohne_ende`` sieht nur auf den Zeilenanfang: die geschützten
+    und die im Fließtext zitierten Beispiele rendern ohnehin nicht und dürfen
+    niemanden aufhalten.
+    """
+
+    @staticmethod
+    def _pruefen(text):
+        from intern.replacements import abstimmungen_ohne_ende
+
+        return abstimmungen_ohne_ende(text)
+
+    def test_zeile_ohne_ende_wird_gemeldet(self):
+        text = "Vorspann\n{abstimmung:Wahl:2:a;b}\nNachsatz"
+
+        self.assertEqual(self._pruefen(text), [(2, "{abstimmung:Wahl:2:a;b}")])
+
+    def test_gueltige_zeile_geht_durch(self):
+        self.assertEqual(self._pruefen("{abstimmung:Wahl:2:31.12.2027:a;b}"), [])
+
+    def test_unmoegliches_datum_wird_gemeldet(self):
+        text = "{abstimmung:Wahl:2:31.02.2027:a;b}"
+
+        self.assertEqual(self._pruefen(text), [(1, text)])
+
+    def test_beispiele_halten_niemanden_auf(self):
+        # Geschützte Zeile, Zitat im Fließtext, Platzhalterform der Erklärung.
+        text = (
+            " {abstimmung:Wahl:2:a;b}\n"
+            "Die Syntax ist ${abstimmung:Name der Abstimmung:max:V1;V2}$.\n"
+        )
+
+        self.assertEqual(self._pruefen(text), [])
+
+    def test_leerer_text_geht_durch(self):
+        self.assertEqual(self._pruefen(None), [])
+        self.assertEqual(self._pruefen(""), [])
+
+
+class HilfeWikiBeispieleTest(SimpleTestCase):
+    """„Hilfe:Wiki“ beim Import (``0003_import.py``).
+
+    Der Artikel erklärt die Syntax, statt abzustimmen: seine Beispiele bekommen
+    ein Datum weit in der Zukunft statt der abgelaufenen Frist des übrigen
+    Bestands, und die Erklärung nennt das Pflichtfeld. Der Auszug unten ist der
+    Wortlaut des Altbestands.
+    """
+
+    AUSZUG = (
+        "Die Syntax ist fest vorgegeben:"
+        " ${abstimmung:Name der Abstimmung:max:Vorschlag1;Vorschlag2;usw}$."
+        " max gibt dabei an, wie viele Häkchen maximal gesetzt werden dürfen,"
+        " '0' bedeutet dabei: beliebig viele. Die Vorschläge werden durch"
+        " Semikolons getrennt.\n"
+        " {abstimmung:Terminabstimmung:0:15.03. 18:00;16.03. 17:00}\n"
+        "{abstimmung:Terminabstimmung:0:15.03. 18:00;16.03. 17:00}\n"
+    )
+
+    @staticmethod
+    def _aufbereiten(name, text):
+        import importlib
+
+        modul = importlib.import_module("intern.migrations.0003_import")
+        return modul.artikeltext_aufbereiten(name, text)
+
+    def setUp(self):
+        self.neu = self._aufbereiten("Hilfe:Wiki", self.AUSZUG)
+
+    def test_beispiele_tragen_das_ferne_datum(self):
+        self.assertEqual(self.neu.count("31.12.2039:"), 2)
+        self.assertNotIn("30.06.2026", self.neu)
+
+    def test_auch_die_geschuetzte_zeile(self):
+        # Sie zeigt dem Leser die Syntax — also muss sie die gültige zeigen.
+        self.assertIn(
+            " {abstimmung:Terminabstimmung:0:31.12.2039:15.03. 18:00;16.03. 17:00}",
+            self.neu,
+        )
+
+    def test_platzhalterform_bekommt_den_platzhalter(self):
+        self.assertIn("{abstimmung:Name der Abstimmung:max:TT.MM.JJJJ:", self.neu)
+
+    def test_erklaerung_nennt_das_pflichtfeld(self):
+        self.assertIn("Danach folgt das Ende der Abstimmung", self.neu)
+
+    def test_ergebnis_wird_vom_renderer_gelesen(self):
+        from intern.replacements import parse_abstimmung_directive
+
+        self.assertEqual(
+            parse_abstimmung_directive(self.neu, "Terminabstimmung"),
+            (0, ["15.03. 18:00", "16.03. 17:00"], date(2039, 12, 31)),
+        )
+
+    def test_zweimal_angewandt_aendert_nichts(self):
+        self.assertEqual(self._aufbereiten("Hilfe:Wiki", self.neu), self.neu)
+
+    def test_andere_artikel_bekommen_die_alte_frist(self):
+        anderer = self._aufbereiten("Namenswahl", "{abstimmung:Wahl:2:a;b}")
+
+        self.assertEqual(anderer, "{abstimmung:Wahl:2:30.06.2026:a;b}")
 
 
 class ZusageOptionenTest(SimpleTestCase):

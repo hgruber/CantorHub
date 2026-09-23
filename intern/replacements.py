@@ -316,8 +316,13 @@ def insert_file_object(f, label=None, spieler=False):
 
 
 ABSTIMMUNG_DIRECTIVE = (
-    r"^{abstimmung:([^:]+):(\d+):(?:(\d{1,2}\.\d{1,2}\.\d{4}):)?([^\}]+)\}"
+    r"^{abstimmung:([^:]+):(\d+):(\d{1,2}\.\d{1,2}\.\d{4}):([^\}]+)\}"
 )
+
+# Womit eine Abstimmung beginnt. Was hiermit anfängt und nicht auf
+# ``ABSTIMMUNG_DIRECTIVE`` passt, würde im Artikel nichts anzeigen —
+# ``abstimmungen_ohne_ende`` hält es beim Speichern auf.
+_ABSTIMMUNG_ANFANG = re.compile(r"^\{abstimmung:", re.IGNORECASE)
 
 
 def _parse_deadline(value):
@@ -339,11 +344,33 @@ def parse_abstimmung_directive(text, titel):
     ):
         if match.group(1).strip() != titel:
             continue
-        max_stimmen = int(match.group(2))
         deadline = _parse_deadline(match.group(3))
+        if deadline is None:
+            # Aufs Muster passend, aber kein Tag im Kalender („31.02.2026“).
+            continue
+        max_stimmen = int(match.group(2))
         options = [o.strip() for o in match.group(4).split(";") if o.strip()]
         return max_stimmen, options, deadline
     return None
+
+
+def abstimmungen_ohne_ende(text):
+    """Zeilen, die eine Abstimmung beginnen, aber nicht auf die Direktive passen.
+
+    Liefert ``[(zeilennummer, zeile), …]``; die Bearbeiten-Seite nennt sie beim
+    Speichern. Geprüft wird nur am Zeilenanfang — die geschützten und die im
+    Fließtext zitierten Beispiele in „Hilfe:Wiki“ rendern ohnehin nicht und
+    dürfen niemanden aufhalten.
+    """
+    treffer = []
+    for nummer, zeile in enumerate((text or "").splitlines(), start=1):
+        if not _ABSTIMMUNG_ANFANG.match(zeile):
+            continue
+        vollstaendig = re.match(ABSTIMMUNG_DIRECTIVE, zeile, re.IGNORECASE)
+        if vollstaendig and _parse_deadline(vollstaendig.group(3)):
+            continue
+        treffer.append((nummer, zeile))
+    return treffer
 
 
 def render_abstimmung(
@@ -425,8 +452,13 @@ def abstimmung(match, request):
         return ""
     seite = request.resolver_match.kwargs.get("name", "")
     titel = match.group(1).strip()
-    max_stimmen = int(match.group(2))
     deadline = _parse_deadline(match.group(3))
+    if deadline is None:
+        # „31.02.2026“ passt aufs Muster, ist aber kein Datum. Die Abstimmung
+        # bliebe sonst ohne Ende und damit für immer offen; stattdessen steht
+        # die Zeile im Artikel, wie sie geschrieben wurde.
+        return match.group(0)
+    max_stimmen = int(match.group(2))
     options = [o.strip() for o in match.group(4).split(";") if o.strip()]
 
     # Voting is only allowed on the most recent article version.
