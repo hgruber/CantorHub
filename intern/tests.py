@@ -29,6 +29,10 @@ from intern.anfragespeicher import gemerkt
 from intern.anfragespeicher import leeren as anfrage_leeren
 from intern.anfragespeicher import verwerfen as anfrage_verwerfen
 from intern.aufstellung import aufstellung
+from intern.auslieferungen import (
+    ABSCHNITTE_PRO_CHARGE, Auslieferung, Gruppe, Stichpunkt, auszeichnen, charge,
+    laufende_kennung, lies_auslieferungen, zerlege,
+)
 from intern.blob_aufraeumen import verwaiste_pfade, zugeordnetes_verzeichnis
 from intern.forms import SchnellSelect, SchnellSelectMultiple
 from intern.middleware import muss_auffrischen
@@ -3437,32 +3441,472 @@ class ChangelogTest(SimpleTestCase):
                              f"„{self.SAMMELT}\" gehört nach oben: {koepfe}")
 
 
+class AuslieferungenZerlegungTest(SimpleTestCase):
+    """``zerlege`` — Text rein, Auslieferungen raus. Ohne Dateizugriff."""
+
+    TEXT = (
+        "# Änderungen\n"
+        "\n"
+        "Ein Abschnitt je Auslieferung. Was noch kein Tag hat, sammelt sich unter\n"
+        "„Unveröffentlicht\"; zur Freigabe wird diese Überschrift umbenannt.\n"
+        "\n"
+        "## v1.0.0-rc4 — 2026-09-23\n"
+        "\n"
+        "- Erster Punkt über\n"
+        "  drei Zeilen verteilt\n"
+        "\n"
+        "  Zweiter Absatz desselben Punktes.\n"
+        "\n"
+        "- Zweiter Punkt mit `code` und **fett**.\n"
+    )
+
+    def test_vorspann_ist_kein_releaseinhalt(self):
+        (erste,) = zerlege(self.TEXT)
+        self.assertEqual(erste.kennung, "v1.0.0-rc4")
+        for punkt in erste.stichpunkte:
+            for absatz in punkt.absaetze:
+                self.assertNotIn("zur Freigabe", absatz)
+
+    def test_datum_und_absaetze(self):
+        (erste,) = zerlege(self.TEXT)
+        self.assertEqual(erste.datum, date(2026, 9, 23))
+        self.assertEqual(len(erste.stichpunkte), 2)
+        self.assertEqual(
+            erste.stichpunkte[0].absaetze,
+            ("Erster Punkt über drei Zeilen verteilt",
+             "Zweiter Absatz desselben Punktes."),
+        )
+        self.assertEqual(
+            erste.stichpunkte[1].absaetze,
+            ("Zweiter Punkt mit `code` und **fett**.",),
+        )
+
+    def test_fortsetzungszeilen_werden_ein_absatz(self):
+        (erste,) = zerlege("## v1.0.0 — 2026-01-02\n\n- a\n  b\n  c\n")
+        self.assertEqual(erste.stichpunkte[0].absaetze, ("a b c",))
+
+    def test_leerzeile_im_punkt_bleibt_derselbe_punkt(self):
+        # In der echten Datei kommt das vor (v1.0.0-rc3, der Punkt über die
+        # Startseite): eine Leerzeile trennt den Absatz ab, nicht den Punkt.
+        (erste,) = zerlege("## v1.0.0 — 2026-01-02\n\n- a\n\n  b\n")
+        self.assertEqual(len(erste.stichpunkte), 1)
+        self.assertEqual(erste.stichpunkte[0].absaetze, ("a", "b"))
+
+    def test_abschnitt_ohne_datum_und_ohne_punkte(self):
+        (erste,) = zerlege("## Unveröffentlicht\n")
+        self.assertEqual(erste.kennung, "Unveröffentlicht")
+        self.assertIsNone(erste.datum)
+        self.assertEqual(erste.stichpunkte, ())
+
+    def test_gruppen_werden_erkannt(self):
+        (erste,) = zerlege(
+            "## v1.0.0 — 2026-01-02\n"
+            "\n"
+            "### Hinzugefügt\n"
+            "\n"
+            "- Ein neuer Punkt.\n"
+            "- Noch einer.\n"
+            "\n"
+            "### Behoben\n"
+            "\n"
+            "- Ein Fehler weniger.\n"
+        )
+        self.assertEqual([g.name for g in erste.gruppen], ["Hinzugefügt", "Behoben"])
+        self.assertEqual(
+            erste.gruppen[0].stichpunkte,
+            (Stichpunkt(("Ein neuer Punkt.",)), Stichpunkt(("Noch einer.",))),
+        )
+        self.assertEqual(
+            erste.gruppen[1].stichpunkte, (Stichpunkt(("Ein Fehler weniger.",)),)
+        )
+        # ``stichpunkte`` klopft die Gruppen flach — alles, was nur den Text
+        # braucht, muss die Gruppierung nicht kennen.
+        self.assertEqual(len(erste.stichpunkte), 3)
+
+    def test_punkte_vor_der_ersten_gruppe_haben_keinen_namen(self):
+        # Der update-Hook verlangt keine Gruppe; die Anzeige muss auch mit einer
+        # Datei ohne ``###`` funktionieren.
+        (erste,) = zerlege("## v1.0.0 — 2026-01-02\n\n- Ohne Gruppe.\n")
+        self.assertEqual([g.name for g in erste.gruppen], [""])
+        self.assertEqual(erste.gruppen[0].stichpunkte, (Stichpunkt(("Ohne Gruppe.",)),))
+
+    def test_leere_gruppe_entfaellt(self):
+        (erste,) = zerlege(
+            "## v1.0.0 — 2026-01-02\n"
+            "\n"
+            "### Sicherheit\n"
+            "\n"
+            "### Behoben\n"
+            "\n"
+            "- Ein Fehler weniger.\n"
+        )
+        self.assertEqual([g.name for g in erste.gruppen], ["Behoben"])
+
+    def test_tiefere_ueberschrift_ist_kein_inhalt(self):
+        (erste,) = zerlege(
+            "## v1.0.0 — 2026-01-02\n\n#### Zwischentitel\n\n- Ein Punkt.\n"
+        )
+        self.assertEqual(erste.stichpunkte, (Stichpunkt(("Ein Punkt.",)),))
+
+    def test_unbrauchbarer_text_ergibt_leere_liste(self):
+        self.assertEqual(zerlege(""), [])
+        self.assertEqual(zerlege("# Änderungen\n\nnur Prosa\n"), [])
+        self.assertEqual(zerlege("## \n"), [])
+
+
+class AuslieferungenAuszeichnungTest(SimpleTestCase):
+    """``auszeichnen`` — code, fett, kursiv; escape-first."""
+
+    def test_code_fett_kursiv(self):
+        self.assertEqual(auszeichnen("`Termin.extern`"), "<code>Termin.extern</code>")
+        self.assertEqual(auszeichnen("**neben**"), "<strong>neben</strong>")
+        self.assertEqual(auszeichnen("*im*"), "<em>im</em>")
+
+    def test_escapen_steht_vor_allem_anderen(self):
+        self.assertEqual(auszeichnen("a < b & c"), "a &lt; b &amp; c")
+        self.assertNotIn("<script", auszeichnen("<script>alert(1)</script>"))
+
+    def test_stern_im_codespan_wird_kein_em(self):
+        # Das Code-Span wird zuerst herausgenommen; sonst würde aus dem
+        # Sternchen des Codeinhalts ein <em>.
+        self.assertEqual(auszeichnen("`--status-*`"), "<code>--status-*</code>")
+
+    def test_realer_punkt_aus_der_datei(self):
+        # v1.0.0-rc4, der Punkt über die (S)-Pille — code und fett gemischt.
+        absatz = None
+        for auslieferung in lies_auslieferungen():
+            for punkt in auslieferung.stichpunkte:
+                for text in punkt.absaetze:
+                    if "`(S)`" in text:
+                        absatz = text
+        self.assertIsNotNone(absatz)
+        markup = auszeichnen(absatz)
+        self.assertIn("<code>(S)</code>", markup)
+        self.assertIn("<strong>neben</strong>", markup)
+        self.assertNotIn("**", markup)
+        self.assertNotIn("`", markup)
+
+    def test_absaetze_der_datei_haben_keine_umbrueche(self):
+        for auslieferung in lies_auslieferungen():
+            for punkt in auslieferung.stichpunkte:
+                for absatz in punkt.absaetze:
+                    self.assertNotIn("\n", absatz)
+                    self.assertNotIn("<br", auszeichnen(absatz))
+
+    def test_html_im_text_bleibt_sichtbar(self):
+        # Die Datei beschreibt HTML mit Worten — ``<br>`` und ``<h1>`` stehen in
+        # Backticks. Kein Zeichen davon darf als Tag in der Ausgabe landen: nach
+        # dem Entfernen der drei Tags, die ``auszeichnen`` selbst setzt, bleibt
+        # kein rohes ``<`` übrig, und was im Rohtext stand, steht dort escaped.
+        erlaubt = ("<code>", "</code>", "<strong>", "</strong>", "<em>", "</em>")
+        geprueft = 0
+        for auslieferung in lies_auslieferungen():
+            for punkt in auslieferung.stichpunkte:
+                for absatz in punkt.absaetze:
+                    markup = auszeichnen(absatz)
+                    rest = markup
+                    for tag in erlaubt:
+                        rest = rest.replace(tag, "")
+                    self.assertNotIn("<", rest, absatz)
+                    if "<" in absatz:
+                        self.assertIn("&lt;", markup, absatz)
+                        geprueft += 1
+        self.assertGreater(
+            geprueft, 0, "kein Absatz mit HTML im Text — die Probe greift ins Leere"
+        )
+
+
+class AuslieferungenFilterTest(SimpleTestCase):
+    """Der Filter ``auszeichnung`` setzt ``mark_safe``."""
+
+    def test_auszeichnung_wird_nicht_escaped(self):
+        gerendert = Template(
+            "{% load auslieferungen_tags %}{{ t|auszeichnung }}"
+        ).render(Context({"t": "`x`"}))
+        self.assertEqual(gerendert, "<code>x</code>")
+
+    def test_rohtext_bleibt_escaped(self):
+        gerendert = Template(
+            "{% load auslieferungen_tags %}{{ t|auszeichnung }}"
+        ).render(Context({"t": "a < b"}))
+        self.assertEqual(gerendert, "a &lt; b")
+
+
+class AuslieferungenChargeTest(SimpleTestCase):
+    """``charge`` und der Nachlade-Vertrag aus ``views/_pagination.py``."""
+
+    @staticmethod
+    def _abschnitte(anzahl):
+        return [Auslieferung(f"v1.0.{i}", None, ()) for i in range(anzahl)]
+
+    def test_erste_mittlere_letzte_charge(self):
+        abschnitte = self._abschnitte(5)
+
+        fenster, has_more, next_offset = charge(abschnitte, 0)
+        self.assertEqual(fenster, abschnitte[0:2])
+        self.assertTrue(has_more)
+        self.assertEqual(next_offset, 2)
+
+        fenster, has_more, next_offset = charge(abschnitte, 2)
+        self.assertEqual(fenster, abschnitte[2:4])
+        self.assertTrue(has_more)
+        self.assertEqual(next_offset, 4)
+
+        fenster, has_more, next_offset = charge(abschnitte, 4)
+        self.assertEqual(fenster, abschnitte[4:5])
+        self.assertFalse(has_more)
+        self.assertEqual(next_offset, 6)
+
+    def test_offset_jenseits_des_endes_ist_leer(self):
+        self.assertEqual(charge(self._abschnitte(3), 99), ([], False, 101))
+        self.assertEqual(charge([], 0), ([], False, ABSCHNITTE_PRO_CHARGE))
+
+    def test_chargen_der_echten_datei_verlieren_nichts(self):
+        alle = lies_auslieferungen()
+        gesammelt = []
+        offset = 0
+        while True:
+            fenster, has_more, offset = charge(alle, offset)
+            gesammelt.extend(fenster)
+            if not has_more:
+                break
+        self.assertEqual(gesammelt, alle)
+
+    def test_parse_offset_und_ist_nachladen(self):
+        from django.test import RequestFactory
+        from intern.views._pagination import _MAX_OFFSET, ist_nachladen, parse_offset
+
+        rf = RequestFactory()
+        self.assertEqual(parse_offset(rf.get("/intern/changelog/")), 0)
+        self.assertEqual(parse_offset(rf.get("/intern/changelog/", {"offset": "abc"})), 0)
+        self.assertEqual(parse_offset(rf.get("/intern/changelog/", {"offset": "-5"})), 0)
+        self.assertEqual(parse_offset(rf.get("/intern/changelog/", {"offset": "4"})), 4)
+        self.assertEqual(
+            parse_offset(rf.get("/intern/changelog/", {"offset": "10**30"})), 0
+        )
+        # Ein Wert über der 64-Bit-Grenze liefert der Datenbank keinen leeren
+        # Ergebnissatz, sondern einen Fehler — deshalb die Deckelung.
+        self.assertEqual(
+            parse_offset(rf.get("/intern/changelog/", {"offset": "99" * 20})),
+            _MAX_OFFSET,
+        )
+        self.assertEqual(parse_offset(rf.get("/intern/changelog/", {"offset": "1e9"})), 0)
+        self.assertFalse(ist_nachladen(rf.get("/intern/changelog/")))
+        self.assertTrue(ist_nachladen(
+            rf.get("/intern/changelog/", HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        ))
+
+
+class LaufendeKennungTest(SimpleTestCase):
+    """``laufende_kennung`` — welche Auslieferung läuft."""
+
+    KENNUNGEN = ["v1.0.0", "v1.0.0-rc4", "v0.9"]
+
+    def test_exakter_treffer(self):
+        self.assertEqual(
+            laufende_kennung("CantorHub v1.0.0-rc4", self.KENNUNGEN), "v1.0.0-rc4"
+        )
+
+    def test_git_describe_nimmt_das_laengste_praefix(self):
+        # Ohne die Längenregel träfe "v1.0.0-rc4-3-g7c8b717" auch auf "v1.0.0".
+        self.assertEqual(
+            laufende_kennung("CantorHub v1.0.0-rc4-3-g7c8b717", self.KENNUNGEN),
+            "v1.0.0-rc4",
+        )
+        self.assertEqual(
+            laufende_kennung("CantorHub v1.0.0-rc4-dirty", self.KENNUNGEN),
+            "v1.0.0-rc4",
+        )
+
+    def test_ohne_treffer_keine_marke(self):
+        # Die Entwicklung kennt kein git describe — dann lieber keine Marke
+        # als eine falsche.
+        self.assertIsNone(laufende_kennung("CantorHub v0.1234", self.KENNUNGEN))
+        self.assertIsNone(laufende_kennung("CantorHub", self.KENNUNGEN))
+        self.assertIsNone(laufende_kennung("CantorHub v9.9.9", self.KENNUNGEN))
+
+    def test_gegenprobe_an_der_echten_datei(self):
+        kennungen = [a.kennung for a in lies_auslieferungen()]
+        for kennung in kennungen:
+            if kennung == ChangelogTest.SAMMELT:
+                continue
+            self.assertEqual(laufende_kennung("CantorHub " + kennung, kennungen), kennung)
+
+
+class AuslieferungenDateiTest(SimpleTestCase):
+    """Die Zerlegung der echten Datei — im Gleichlauf mit ``ChangelogTest``."""
+
+    def test_jede_auslieferung_ist_lesbar(self):
+        abschnitte = lies_auslieferungen()
+        self.assertGreater(len(abschnitte), 0)
+        for auslieferung in abschnitte:
+            if auslieferung.kennung == ChangelogTest.SAMMELT:
+                continue
+            self.assertRegex(auslieferung.kennung, ChangelogTest.VERSION.pattern)
+            self.assertIsNotNone(auslieferung.datum, auslieferung.kennung)
+
+    def test_jeder_eintrag_hat_hoechstens_drei_saetze(self):
+        # Die Schreibregel der Datei (siehe Vorspann): ein Eintrag sagt, *was*
+        # sich ändert. Wie es dazu kam, steht im Commit — dort ist Platz, hier
+        # nicht.
+        zu_lang = []
+        for auslieferung in lies_auslieferungen():
+            for gruppe in auslieferung.gruppen:
+                for punkt in gruppe.stichpunkte:
+                    for absatz in punkt.absaetze:
+                        saetze = [
+                            satz for satz in re.split(r"(?<=[.!?])\s+", absatz.strip())
+                            if satz
+                        ]
+                        if len(saetze) > 3:
+                            zu_lang.append(
+                                f"{auslieferung.kennung}: {len(saetze)} Sätze — "
+                                f"{absatz[:70]}…"
+                            )
+        self.assertEqual(zu_lang, [], "Einträge zu lang:\n" + "\n".join(zu_lang))
+
+    def test_eintraege_enthalten_keine_markdown_links(self):
+        # Der Zerleger kennt keine Links: ``[x](y)`` stünde als roher Klammertext
+        # auf der Seite. Der Vorspann darf sie tragen (er wird nicht angezeigt),
+        # die Einträge nicht — und Tabellen, Zäune und Zitate ebenso wenig.
+        gefunden = []
+        for auslieferung in lies_auslieferungen():
+            for gruppe in auslieferung.gruppen:
+                for punkt in gruppe.stichpunkte:
+                    for absatz in punkt.absaetze:
+                        if "](" in absatz:
+                            gefunden.append(
+                                f"{auslieferung.kennung}: {absatz[:70]}…"
+                            )
+        self.assertEqual(
+            gefunden, [],
+            "Der Zerleger rendert keine Links — sie stünden als Rohtext:\n"
+            + "\n".join(gefunden),
+        )
+
+    def test_zerlegung_stimmt_mit_dem_waechter_ueberein(self):
+        # Die Datei ist zweimal beschrieben: hier für die Anzeige, in
+        # ChangelogTest für den update-Hook. Laufen die Muster auseinander,
+        # zerfällt die Anzeige still — deshalb die Gegenprobe mit den Mustern
+        # des Wächters, statt sie hier ein zweites Mal zu tippen.
+        aus_parser = [
+            (a.kennung, a.datum.isoformat() if a.datum else None,
+             sum(1 for p in a.stichpunkte))
+            for a in lies_auslieferungen()
+        ]
+        aus_waechter = []
+        for kopf, rest, zeilen in ChangelogTest()._abschnitte():
+            aus_waechter.append((
+                kopf,
+                rest.strip().removeprefix("—").strip() or None,
+                sum(1 for z in zeilen if ChangelogTest.STICHPUNKT.match(z)),
+            ))
+        self.assertEqual(aus_parser, aus_waechter)
+
+
+class AuslieferungenFragmentTest(SimpleTestCase):
+    """Das Fragment — es trägt den Erstaufruf und die nachgeladene Charge."""
+
+    ABSCHNITTE = [
+        Auslieferung("v1.0.0", date(2026, 1, 2), (
+            Gruppe("Hinzugefügt", (Stichpunkt(("Ein Punkt.",)),)),
+            Gruppe("Behoben", (Stichpunkt(("Ein Fehler weniger.",)),)),
+        )),
+        Auslieferung("Unveröffentlicht", None, (
+            Gruppe("", (Stichpunkt(("Noch nichts.",)),)),
+        )),
+    ]
+
+    def _rendern(self, laufende):
+        return render_to_string(
+            "_auslieferungen_abschnitte.html",
+            {"abschnitte": self.ABSCHNITTE, "laufende": laufende},
+        )
+
+    def test_laufende_ist_markiert(self):
+        markup = self._rendern("v1.0.0")
+        self.assertIn("auslieferung--laufend", markup)
+        self.assertIn("Deine Version", markup)
+        self.assertIn(
+            '<time class="auslieferung-datum" datetime="2026-01-02">02.01.2026</time>',
+            markup,
+        )
+        self.assertIn("<p>Ein Punkt.</p>", markup)
+
+    def test_ohne_treffer_keine_marke(self):
+        markup = self._rendern(None)
+        self.assertNotIn("auslieferung--laufend", markup)
+        self.assertNotIn("Deine Version", markup)
+
+    def test_gruppenueberschrift_nur_mit_namen(self):
+        markup = self._rendern("v1.0.0")
+        self.assertIn('<h3 class="auslieferung-gruppe">Hinzugefügt</h3>', markup)
+        self.assertIn('<h3 class="auslieferung-gruppe">Behoben</h3>', markup)
+        # Die namenlose Gruppe (Punkte ohne ``###`` in der Datei) bekommt keine
+        # Überschrift, ihre Punkte aber stehen da.
+        self.assertEqual(markup.count('<h3 class="auslieferung-gruppe">'), 2)
+        self.assertIn("<p>Noch nichts.</p>", markup)
+
+    def test_abschnitt_ohne_datum_hat_keine_zeitzeile(self):
+        markup = render_to_string(
+            "_auslieferungen_abschnitte.html",
+            {"abschnitte": [self.ABSCHNITTE[1]], "laufende": None},
+        )
+        self.assertNotIn("<time", markup)
+        self.assertIn("Unveröffentlicht", markup)
+
+
+class AuslieferungenSchaleTest(SimpleTestCase):
+    """Die Seitenschale hält den Nachlade-Vertrag ein."""
+
+    def test_schale_bindet_dasselbe_fragment_ein_und_haelt_die_sentinel_id(self):
+        # Erstaufruf und Nachladen müssen dasselbe Markup erzeugen; die id des
+        # Sentinels steht im Markup und im Skript und muss beide Male gleich
+        # lauten.
+        quelle = (
+            Path(__file__).resolve().parent / "templates" / "auslieferungen.html"
+        ).read_text(encoding="utf-8")
+        self.assertIn('{% include "_auslieferungen_abschnitte.html"', quelle)
+        self.assertGreaterEqual(quelle.count("auslieferungen-sentinel"), 2)
+        self.assertIn("X-Requested-With", quelle)
+
+
 class FarbTokenTest(SimpleTestCase):
     """Jede Farbe ist ein Custom Property mit einem ``[data-theme="dark"]``-Wert.
 
     Die Regel steht in ``CLAUDE.md``, war aber bisher von keinem Test gedeckt —
     ein im Dark-Block vergessenes Token fällt sonst erst dem Mitglied auf, das
     nachts ins Portal schaut, und auch dann nur als „sieht komisch aus".
-    Geprüft werden die Stimmpalette, die Kategorienpalette und die
-    Ampel-Familie; der Aufbau trägt jede weitere Familie, die dazukommt.
+    Geprüft werden die Stimmpalette, die Kategorienpalette, die Ampel-Familie
+    und die abgeleiteten Marken-Töne; der Aufbau trägt jede weitere Familie, die
+    dazukommt. Der Fall, an dem er sich bewährt hat: ``--brand-dark`` stand
+    monatelang ohne Dark-Wert da und war als Schrift auf der dunklen Karte 2,7:1
+    — siehe ``--brand-text``.
 
     Absichtlich *nicht* geprüft: dass der Dark-Wert ein anderer ist. ``--brand``
     ist in beiden Themes derselbe und ``--aufst-eventuell`` ebenfalls — beides
     ist so gewollt.
     """
 
-    PRAEFIXE = ("--stimme-", "--kat-", "--status-")
+    PRAEFIXE = ("--brand-", "--stimme-", "--kat-", "--status-")
     DEKLARATION = re.compile(r"^\s*(--[a-z0-9-]+)\s*:", re.MULTILINE)
 
     #: Absichtlich themenunabhängig. Der Ampel-Vollton ist die kräftige Füllung
     #: für Hover- und Aktiv-Zustände und trägt dort weißen Text; er bleibt in
     #: beiden Themes derselbe, während bg/text/border im Dark-Block weicher
     #: werden. Steht so in docs/frontend.md, Abschnitt „Status (Ampel) colours".
+    #: ``--brand-dark/light/ring`` sind ebenfalls themenunabhängig: sie mischen
+    #: allein ``--brand`` und kennen den Untergrund nicht. Nur ``--brand-text``
+    #: führt einen eigenen Dark-Wert, weil die Markenfarbe als *Schrift* auf der
+    #: dunklen Karte einen anderen Ton braucht als als *Fläche*.
     #: Wer hier etwas einträgt, nimmt es aus der Prüfung — also nur mit Grund.
     OHNE_DARK_WERT = {
         "--status-success-solid",
         "--status-warning-solid",
         "--status-danger-solid",
+        "--brand-dark",
+        "--brand-light",
+        "--brand-ring",
     }
 
     def _bloecke(self):

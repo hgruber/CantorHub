@@ -1,0 +1,20 @@
+{% load auslieferungen_tags %}
+{% for auslieferung in abschnitte %}
+<article class="auslieferung{% if auslieferung.kennung == laufende %} auslieferung--laufend{% endif %}">
+    <header class="auslieferung-kopf">
+        <h2 class="auslieferung-version">{{ auslieferung.kennung }}</h2>
+        {% if auslieferung.datum %}<time class="auslieferung-datum" datetime="{{ auslieferung.datum|date:'Y-m-d' }}">{{ auslieferung.datum|date:"d.m.Y" }}</time>{% endif %}
+        {% if auslieferung.kennung == laufende %}<span class="badge badge-primary auslieferung-marke">Deine Version</span>{% endif %}
+    </header>
+    {% for gruppe in auslieferung.gruppen %}
+    {% if gruppe.name %}<h3 class="auslieferung-gruppe">{{ gruppe.name }}</h3>{% endif %}
+    <ul class="auslieferung-liste">
+        {% for punkt in gruppe.stichpunkte %}
+        <li>
+            {% for absatz in punkt.absaetze %}<p>{{ absatz|auszeichnung }}</p>{% endfor %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+</article>
+{% endfor %}

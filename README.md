@@ -143,6 +143,15 @@ collecting under `## Unveröffentlicht` and tag as often as you like; the sectio
 written is the one for the final version, and writing it is the release step above. The rc
 sections already in the file simply stay where they are, below the final version.
 
+**How a section is written.** The file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/):
+inside a version, the entries are grouped by the kind of change, under `### Hinzugefügt` /
+`### Geändert` / `### Behoben` / `### Entfernt` (also `Veraltet` and `Sicherheit` if they apply),
+and each entry is **at most three sentences** — what changed, not why. The reasoning, the
+measurements, the alternatives that were rejected: that belongs in the commit message, which is
+where anyone wanting the details should look. Three hashes for the groups, never two: `## Added`
+would be read as a release section and would reach the portal as a card. The hook does not care —
+it only looks for `## ` headings and at least one bullet inside — but the page does.
+
 A rejection names the missing section and the way out; forgetting it costs one commit and a
 `git tag -f`. In an emergency the marker `[ohne-changelog]` in the message of an annotated tag
 lets the tag through, and that is written to `/var/log/cantorhub-build.log`:

@@ -60,7 +60,7 @@ it wipes the database and belongs to the migration — see `migration.md`.
 All application logic lives in the `intern/` app; `config/` holds only settings and URL routing.
 Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`,
 `forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`,
-`gallerie.py`, `auftritte.py`, `konfiguration.py`, `notify.py`). The package's `__init__.py`
+`gallerie.py`, `auftritte.py`, `auslieferungen.py`, `konfiguration.py`, `notify.py`). The package's `__init__.py`
 re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
 
 Three underscore-prefixed modules hold what the view modules share:
@@ -85,7 +85,9 @@ behind `cleanup_verwaiste_blobs`, see `docs/files.md`),
 `terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
 events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
 `docs/forum.md`), `aufstellung.py` (the stage picture of the answers
-in the event list),
+in the event list), `auslieferungen.py` (the release notes from `CHANGELOG.md` — decomposition
+into release sections and change groups, plus inline markup, without a Markdown dependency,
+behind `/intern/changelog/`; **not** the audit log `ChangeLog`, see `docs/frontend.md`),
 `zusage.py` (the value set and labels of `Zusage.option` — the one source the model, the
 stage picture, the table column, the filter and the audit labels all read; guarded by
 `ZusageOptionenTest`), `avatare.py` (fallback avatar files and thumbnails, so lists do not
@@ -170,7 +172,12 @@ reasoning where it matters.
   `## v<x.y.z>` section, so `post-receive` never builds an undocumented delivery. Only the tag is
   refused — `master` lands either way. Collect under `## Unveröffentlicht` and rename that heading
   at release time; a pre-release (`v1.0.0-rc2`) may lean on that section or on the one of its final
-  version, a final version may not. `ChangelogTest` guards the format the hook parses, the release
+  version, a final version may not. Inside a version the entries sit in `###` groups by the kind
+  of change (Keep a Changelog: `Hinzugefügt`, `Geändert`, `Behoben`, `Entfernt`, `Veraltet`,
+  `Sicherheit`) and stay within three sentences — *what* changed, not why, the reasoning belongs in
+  the commit message. Three hashes for a group, never two: `## Added` is a release heading and
+  would reach the portal as a card without a date. `ChangelogTest` guards the format the hook
+  parses, `AuslieferungenDateiTest` the group structure and the sentence rule, the release
   steps and the escape hatch are in `README.md`.
 - **All tests are `SimpleTestCase`.** A `TestCase` makes Django build a test database, which runs
   the data migration `0003_import`, which needs the legacy MySQL server. Keep logic free of DB
@@ -238,7 +245,10 @@ reasoning where it matters.
   (`adressbuch_verborgen`) needs a single filter and reaches collection, single card and CTag at
   once.
 - **CSS uses tokens only.** Every new colour is a custom property with a `[data-theme="dark"]`
-  value; no hardcoded hex in component styles.
+  value; no hardcoded hex in component styles. The accent has two roles and therefore two tokens:
+  `--brand-text` for a brand-coloured *letter* on a surface, `--brand-dark` for a *fill* (white
+  text on it) and for lines. `--brand-text` is the light theme's `--brand-dark` and a lightened
+  mix in the dark one; `FarbTokenTest` covers the `--brand-*` family for exactly this reason.
 - **Font sizes in `rem`, never `px`** — write `calc(13rem / 14)` for 13px, also in template
   `<style>` blocks (mail templates excepted). The sidebar font-size setting scales the root; a
   `px` size silently ignores it. See „Theme boot" in `docs/frontend.md`.

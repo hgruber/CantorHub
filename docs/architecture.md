@@ -70,6 +70,10 @@ The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
   is never sent to OSM.
 - `/admin/` — Django admin
 - `/intern/*` — all authenticated views (`intern/urls.py`)
+- `/intern/changelog/` — the release notes from `CHANGELOG.md` (`auslieferungen` in
+  `views/auslieferungen.py`, login required); the version line in the sidebar footer links here,
+  older releases are loaded in batches. Not to be confused with `/intern/aenderungsprotokoll/`,
+  which is the audit trail. See `frontend.md`.
 - `/intern/karte/geocode/` — Nominatim geocoding proxy (`geocode_proxy` in `karte.py`, login
   required); passes query params server-side so the user's IP is never sent to Nominatim.
 
@@ -256,6 +260,9 @@ The full key catalog and the mail-placeholder reference live in `configuration.m
 - `mail.py`, `mail_markup.py` — see `mail.md`.
 - `replacements.py` — wiki-like markup processor (lists, code blocks, `[[Datei:...]]` file
   links); see `articles.md`.
+- `auslieferungen.py` — the release notes from `CHANGELOG.md`: decomposition, inline markup and
+  the batch slice behind `/intern/changelog/`. No Markdown dependency, no Django import; the
+  file is an image artefact, so there is no sanitizer in the path. See `frontend.md`.
 - `verwendung.py` — which references a file has, and which of them a delete or rename would
   break; see `files.md`.
 - `folder_access.py`, `avatar_access.py` — the two access axes over files; see `files.md`.

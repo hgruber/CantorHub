@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/></svg>{% endblock %}
+{% block content %}
+<div class="auslieferungen">
+    <p class="auslieferungen-intro">Was sich je Auslieferung geändert hat — neueste zuerst.</p>
+
+    <div class="auslieferungen-liste" id="auslieferungen-liste">
+        {% include "_auslieferungen_abschnitte.html" with abschnitte=abschnitte laufende=laufende %}
+    </div>
+
+    {% if not abschnitte %}
+    <p class="auslieferungen-leer">Die Änderungsdatei ist in dieser Installation nicht zu finden.</p>
+    {% endif %}
+
+    {% if has_more %}
+    <div id="auslieferungen-sentinel" class="table-sentinel" data-next-offset="{{ next_offset }}"></div>
+    <script>
+    (function () {
+      var sentinel = document.getElementById('auslieferungen-sentinel');
+      var liste = document.getElementById('auslieferungen-liste');
+      if (!sentinel || !liste) return;
+      var loading = false, done = false;
+      function loadMore() {
+        if (loading || done) return;
+        var offset = parseInt(sentinel.dataset.nextOffset, 10);
+        loading = true;
+        sentinel.classList.add('loading');
+        fetch(window.location.pathname + '?offset=' + offset, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (data) {
+          liste.insertAdjacentHTML('beforeend', data.html);
+          if (data.has_more) {
+            sentinel.dataset.nextOffset = data.next_offset;
+          } else {
+            done = true;
+            observer.disconnect();
+            sentinel.remove();
+          }
+        })
+        .catch(function (e) { console.error('Auslieferungen scroll error:', e); })
+        .finally(function () {
+          loading = false;
+          if (!done) sentinel.classList.remove('loading');
+        });
+      }
+      var observer = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting) loadMore();
+      }, { rootMargin: '200px' });
+      observer.observe(sentinel);
+    })();
+    </script>
+    {% endif %}
+</div>
+{% endblock %}

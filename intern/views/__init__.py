@@ -4,6 +4,7 @@ from .auth import *
 from .auftritte import *
 from .artikel import *
 from .aufgaben import *
+from .auslieferungen import *
 from .gallerie import *
 from .gruppen import *
 from .files import *

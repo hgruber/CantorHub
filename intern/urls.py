@@ -33,6 +33,8 @@ urlpatterns = [
     path("konfiguration/", views.konfiguration, name="konfiguration"),
     path("aufgaben/", views.aufgaben, name="aufgaben"),
     path("gruppen/", views.gruppen, name="gruppen"),
+    # Die Release-Notizen aus CHANGELOG.md (nicht das Aenderungsprotokoll)
+    path("changelog/", views.auslieferungen, name="auslieferungen"),
     path("aenderungsprotokoll/", views.aenderungsprotokoll_list, name="aenderungsprotokoll_list"),
     # Media access control
     path("media-auth/", views.media_auth, name="media_auth"),

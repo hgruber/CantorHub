@@ -287,9 +287,17 @@ rule — it has a single theme and its own token block; see „Public homepage" 
 
 The accent colour is the one exception worth calling out explicitly: never hardcode `#c14468`
 or `rgba(193, 68, 104, …)` in component styles — always reference `var(--brand)`, one of its
-derived tokens (`--brand-dark`, `--brand-light`, `--brand-ring`), or a fresh
+derived tokens (`--brand-dark`, `--brand-light`, `--brand-ring`, `--brand-text`), or a fresh
 `color-mix(in srgb, var(--brand) X%, transparent|white|black)` expression, so a `BRAND_FARBE`
 override (see `_brand_boot.html`) reaches every surface that uses it.
+
+`--brand-dark` and `--brand-text` are the same tone in the light theme and **differ in the dark
+one** — the accent as a *surface* (a button fill carrying white text) and the accent as *text on a
+card* pull in opposite directions: lightening the surface costs its white label, darkening the
+letter loses it on the dark card. This is the same split the voice palette makes with
+`--stimme-X` and `--stimme-X-text`. Use `--brand-text` for every brand-coloured letter on a
+surface (`--brand-dark` there was 2.7:1 on `--bg-card`); `--brand-dark` stays for fills and for
+lines, which may be quiet.
 
 **Status ("Ampel") colours** — the green/yellow/red used by the attendance badges
 (`.att-count`, `.aufst-{yes,maybe,no}`) and the Zusage widgets (`.zusage-state-*`, `.zusage-btn-*`)
@@ -564,6 +572,37 @@ next_offset, request=None, **extra)` renders the row fragment and returns the JS
 script expects (`html`, `has_more`, `next_offset`, plus any `extra`). Pass `request` only when
 the fragment really needs the context processors — otherwise they (and their termin-banner
 queries) run on every scroll. `paginate_ordered()` applies `?sort=` before slicing.
+
+The contract is not tied to tables: `/intern/changelog/` loads whole *release sections* through
+it (`charge()` in `intern/auslieferungen.py`, two sections per batch), and `paginate_ordered()` is
+simply not used there — the sections are a list, so the slice is a `liste[a:b]`.
+
+## Release notes (Änderungen)
+
+`/intern/changelog/` shows `CHANGELOG.md`, which travels inside the image. One card per release:
+the version as the heading, the date as `d.m.Y` text — no month names, the house left those
+behind in `replacements.format_datetime` — and below that the entries, **grouped by the kind of
+change** (`### Hinzugefügt`, `### Geändert`, `### Behoben`, …) exactly as the file groups them.
+The group heading is a small uppercase label; a group without a name — entries written before the
+first `###` line, or a file without any — gets no heading, its list follows the card header
+directly. A bullet may consist of several paragraphs: a blank line in the file separates the
+paragraph, not the bullet.
+
+The release that is running — `laufende_kennung(settings.VERSION, …)`, the **longest** section
+token that the `git describe` string equals or starts with, so `v1.0.0-rc4-3-g7c8b717` finds
+`v1.0.0-rc4` and not a `v1.0.0` — carries a 3 px `--brand` edge on the left and the badge
+„Deine Version". Nothing else is marked: the list runs newest first, so everything above it is
+newer by definition, and a second badge would only repeat the position. Without git (development,
+`CantorHub v0.<n>`) there is no match, and therefore no marker rather than a wrong one.
+
+The file is not Markdown in general: `intern/auslieferungen.py` decomposes exactly the constructs
+it uses (`##` release headings, `###` change groups, `- ` items with hard-wrapped continuation
+lines, inline `` `code` `` , `**bold**`, `*italic*`) and escapes first, then inserts its fixed
+tags — the same order as `apply_replacements`. The change groups are three hashes, never two:
+`## Added` would be read as a release heading, and the card would appear in the portal without a
+date. `ChangelogTest` guards the same file for the `update` hook; `AuslieferungenDateiTest`
+cross-checks the two decompositions and keeps every entry to three sentences, so neither the
+duplicate patterns nor the writing rule can drift apart silently.
 
 ## Remembered list state
 

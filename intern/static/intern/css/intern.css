@@ -10,6 +10,14 @@
     --brand-dark:      color-mix(in srgb, var(--brand) 85%, black);
     --brand-light:     color-mix(in srgb, var(--brand) 10%, transparent);
     --brand-ring:      color-mix(in srgb, var(--brand) 22%, transparent);
+    /* Dieselbe Markenfarbe in zwei Rollen: als *Fläche* (--brand-dark, weiße
+       Schrift darauf) und als *Schrift* auf einer Karte (--brand-text). Im hellen
+       Thema ist das derselbe Ton; im dunklen gehen die Rollen auseinander, weil
+       eine hellere Fläche ihre weiße Schrift verlöre und der abgedunkelte Ton als
+       Buchstabe auf der dunklen Karte verschwände. Vorbild ist die Stimmpalette,
+       die für dieselbe Lage ebenfalls zwei Tokens führt (--stimme-X und
+       --stimme-X-text). */
+    --brand-text:      var(--brand-dark);
     --cal-geb:         #157347;
     --cal-geb-bg:      rgba(21, 128, 61, 0.13);
     --cal-weekend:     #dc2626;
@@ -179,6 +187,14 @@
 
 /* ─── Dark Mode ──────────────────────────────────── */
 [data-theme="dark"] {
+    /* Die Markenfarbe als Schrift auf der dunklen Karte. ``--brand-dark`` ist die
+       für Flächen abgedunkelte Marke und bliebe hier bei 2,7:1 — bei 10,5 px
+       Beschriftung zu wenig. 70 % Marke mit Weiß trägt 5,8:1 und bleibt eine
+       Ableitung von --brand, folgt also einer konfigurierten BRAND_FARBE mit.
+       Die Flächen (a.btn:hover, .cal-today-btn:hover …) bleiben bei --brand-dark:
+       dort steht weiße Schrift darauf, eine hellere Fläche nähme ihr den Grund. */
+    --brand-text:      color-mix(in srgb, var(--brand) 70%, white);
+
     --cal-geb:         #4ade80;
     --cal-geb-bg:      rgba(74, 222, 128, 0.16);
     --cal-weekend:     #f87171;
@@ -512,6 +528,27 @@ body {
     opacity: 0.35;
     padding: 2px 20px 6px;
     white-space: nowrap;
+}
+
+/* Beide Zeilen des Fußes sind Links — „Datenschutz" und die Kennung der
+   laufenden Version (führt auf die Änderungsseite). Sie teilen sich die Klasse,
+   damit sie in einer Fluchtlinie stehen und dieselbe Trefferbreite haben:
+   display: block zieht die Zeile über den ganzen Fuß, das senkrechte Padding
+   wird dadurch erst wirksam. Der Ruhezustand bleibt opacity 0.35 auf
+   --sb-text (oben) — eine Unterstreichung wäre dort unsichtbar, deshalb trägt
+   hier der Farbwechsel den Zustand. Kein Rahmen, kein Hintergrund, wie
+   .offcanvas-close/.dialog-close und wie .nav-item ohne Unterstreichung. */
+a.version-string {
+    display: block;
+    cursor: pointer;
+    transition: color var(--ease), opacity var(--ease);
+}
+
+a.version-string:hover,
+a.version-string:focus-visible {
+    color: var(--brand);
+    opacity: 0.85;
+    text-decoration: none;
 }
 
 /* =================================================== */
@@ -2564,7 +2601,7 @@ table.mitglied-table tr.stimme-group-start td {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: var(--brand-dark);
+    color: var(--brand-text);
     margin: 0 0 12px;
     padding-bottom: 8px;
     border-bottom: 2px solid var(--brand);
@@ -3358,7 +3395,7 @@ table.mitglied-table tr.stimme-group-start td {
 
 .wiki h1 {
     font-size: 1.45em;
-    color: var(--brand-dark);
+    color: var(--brand-text);
     border-bottom: 2px solid var(--brand);
     padding-bottom: 0.3em;
     margin-bottom: 0.9em;
@@ -3366,7 +3403,7 @@ table.mitglied-table tr.stimme-group-start td {
 
 .wiki h2 {
     font-size: 1.2em;
-    color: var(--brand-dark);
+    color: var(--brand-text);
     margin-top: 1.5em;
 }
 
@@ -3710,7 +3747,7 @@ span.not_found {
 
 .wiki-table tbody th {
     background: var(--brand-light);
-    color: var(--brand-dark);
+    color: var(--brand-text);
     font-weight: 600;
     border-color: color-mix(in srgb, var(--brand) 18%, transparent);
     white-space: nowrap;
@@ -3737,7 +3774,7 @@ span.not_found {
 
 [data-theme="dark"] .wiki-table tbody th {
     background: color-mix(in srgb, var(--brand) 14%, transparent);
-    color: #e89ab5;
+    color: var(--brand-text);
     border-color: color-mix(in srgb, var(--brand) 20%, transparent);
 }
 
@@ -3779,7 +3816,7 @@ span.not_found {
 
 .wiki-page .wiki h2 {
     font-size: 1.2em;
-    color: var(--brand-dark);
+    color: var(--brand-text);
     border-bottom: 2px solid var(--brand);
     padding-bottom: 0.25em;
     margin: 2em 0 0.75em;
@@ -3929,7 +3966,7 @@ span.not_found {
 .wiki-page .wiki .mention {
     background: color-mix(in srgb, var(--brand) 10%, transparent);
     border-color: color-mix(in srgb, var(--brand) 25%, transparent);
-    color: var(--brand-dark);
+    color: var(--brand-text);
     border-radius: 99px;
 }
 
@@ -3969,7 +4006,7 @@ span.not_found {
 }
 [data-theme="dark"] .wiki-page .wiki .mention {
     background: color-mix(in srgb, var(--brand) 15%, transparent);
-    color: #e89ab5;
+    color: var(--brand-text);
     border-color: color-mix(in srgb, var(--brand) 25%, transparent);
 }
 
@@ -4122,7 +4159,7 @@ span.not_found {
 .audio-btn--jg:hover {
     background: color-mix(in srgb, var(--brand) 20%, transparent);
     border-color: var(--brand-dark);
-    color: var(--brand-dark);
+    color: var(--brand-text);
 }
 .audio-btn--jg.playing {
     background: var(--brand);
@@ -4133,12 +4170,12 @@ span.not_found {
 [data-theme="dark"] .audio-btn--jg {
     background: color-mix(in srgb, var(--brand) 15%, transparent);
     border-color: color-mix(in srgb, var(--brand) 40%, transparent);
-    color: #d97a96;
+    color: var(--brand-text);
 }
 [data-theme="dark"] .audio-btn--jg:hover {
     background: color-mix(in srgb, var(--brand) 28%, transparent);
     border-color: color-mix(in srgb, var(--brand) 60%, transparent);
-    color: #eba8be;
+    color: var(--brand-text);
 }
 [data-theme="dark"] .audio-btn--jg.playing {
     background: color-mix(in srgb, var(--brand) 55%, transparent);
@@ -5681,7 +5718,7 @@ span.not_found {
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--brand-dark);
+    color: var(--brand-text);
     border-bottom: 2px solid var(--brand);
     padding-bottom: 6px;
     margin: 0 0 12px;
@@ -6702,7 +6739,7 @@ body.join-page {
 
 .cal-chip--termin {
     background: var(--brand-light);
-    color: var(--brand-dark);
+    color: var(--brand-text);
     border-left-color: var(--brand);
 }
 .cal-chip--termin.is-konzert {
@@ -6710,8 +6747,9 @@ body.join-page {
     color: #fff;
     border-left-color: var(--brand-dark);
 }
-[data-theme="dark"] .cal-chip--termin { color: #f0b8c7; }
-[data-theme="dark"] .cal-chip--termin.is-konzert { color: #fff; }
+/* Die Termin- und die Konzert-Marke brauchen keine eigene Dunkelregel mehr:
+   ``--brand-text`` ist im dunklen Thema der aufgehellte Ton, und das Konzert
+   trägt ohnehin Weiß auf dem Vollton. */
 .cal-chip--geb {
     background: var(--cal-geb-bg);
     color: var(--cal-geb);
@@ -7471,7 +7509,7 @@ body.join-page {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: var(--brand-dark);
+    color: var(--brand-text);
     transition: color var(--ease);
 }
 .kf-gruppen-count {
@@ -7753,4 +7791,174 @@ body.join-page {
         flex-wrap: nowrap;
         overflow-x: auto;
     }
+}
+
+/* =================================================== */
+/* Auslieferungen (Seite „Änderungen")                 */
+/* =================================================== */
+/* Die Release-Notizen aus CHANGELOG.md, aufbereitet von intern/auslieferungen.py:
+   eine Folge kurzer Karten, kein langer Textblock. Deshalb trägt jede
+   Auslieferung ihren eigenen Kasten — beim Scrollen kommt die Kante wieder ins
+   Bild. Ein einzelner, viele Seiten langer Kasten hätte Ober- und Unterkante nie
+   gleichzeitig auf dem Schirm, genau der Grund, aus dem die Mitgliedskarte 2026
+   ihren Kasten verloren hat (siehe docs/frontend.md).
+
+   Der Kasten ist gepolstert wie seine Geschwister (.detail-page, 20/24 px) und
+   trägt einen Deckel von 1280 px — ohne ``margin: 0 auto``: der Deckel hält die
+   Zeilenlänge im Lesbaren, aber die Seite bleibt linksbündig wie ihre Geschwister
+   und wird nicht wieder zur zentrierten Insel (dieselbe Begründung wie bei
+   .detail-page.member-voice). ``box-sizing: border-box`` gilt global (Reset), der
+   Deckel schließt das Polster also ein: die Karten messen höchstens 1232 px.
+
+   Die Abschnitte tragen eine eigene Kopfzeile statt .detail-card h3 („Auslieferung"
+   statt „Detailkarte"): dessen text-transform: uppercase machte aus der Kennung
+   V1.0.0-RC4. */
+
+.auslieferungen {
+    max-width: 1280px;
+    /* Unten mehr als oben: die letzte Karte soll nicht am Fensterrand kleben. */
+    padding: 20px 24px 40px;
+}
+
+.auslieferungen-intro,
+.auslieferungen-leer {
+    margin: 0;
+    color: var(--t3);
+    font-size: calc(13rem / 14);
+}
+
+.auslieferungen-intro { margin-bottom: 18px; }
+
+/* Der Abstand sitzt zwischen den Karten, nicht in ihnen — so bleibt die Kante
+   jeder Karte an allen vier Seiten sichtbar. */
+.auslieferungen-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.auslieferung {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 20px;
+    /* Flex-Kinder schrumpfen sonst nicht unter ihre Inhaltsbreite, und lange
+       Bezeichner wie --status-success-border ragen sonst aus dem Bild. */
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Die laufende Version trägt links eine 3-px-Kante in der Akzentfarbe — dieselbe
+   Aussage wie die Stimmenkante der Mitgliedskarte, eine Ebene tiefer (dort die
+   Seite, hier die Karte). Auf der Kante steht kein Text, sie darf deshalb den
+   Vollton tragen; eine Volltonfläche MIT Text wäre auf mehreren Stimmenfarben
+   unlesbar, das ist im Haus so entschieden (siehe docs/frontend.md).
+
+   Das Innenpolster links ist 18 statt 20 px, damit der Text der Karten in
+   derselben Fluchtlinie bleibt: 3 px Kante + 18 px = 21 px, die Nachbarkarte
+   kommt über ihre 1 px Kante + 20 px Polster auf dieselben 21 px. (Die
+   Kantenbreite allein abzuziehen ergäbe 17 px und damit einen um 1 px
+   verschobenen Text — sichtbar erst im gerenderten Vergleich, siehe
+   .auslieferungen weiter oben.) */
+.auslieferung--laufend {
+    border-left: 3px solid var(--brand);
+    padding-left: 18px;
+}
+
+/* Eigene Kopfzeile statt .detail-card h3: dessen text-transform: uppercase
+   machte aus der Kennung V1.0.0-RC4. Der Nachfahren-Selektor ist nötig, nicht
+   kosmetisch: ``.content header`` (Grundgerüst) setzt genau diesem Element
+   Hintergrund und ``padding: 12px 20px`` und trägt eine Klasse mehr als
+   ``.auslieferung-kopf`` allein — die Padding-Seiten sind deshalb alle vier
+   ausgeschrieben, sonst blieben oben/rechts/links die 12 bzw. 20 px stehen. */
+.auslieferung .auslieferung-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    margin: 0 0 12px;
+    padding: 0 0 10px;
+    background: none;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Aus demselben Grund mit .auslieferung davor: ``.content h2`` setzt jedem h2
+   im Rollbereich font-size: 1.2rem und schlägt eine einzelne Klasse. */
+.auslieferung .auslieferung-version {
+    margin: 0;
+    min-width: 0;
+    font-size: calc(15rem / 14);
+    font-weight: 700;
+    color: var(--t1);
+}
+
+.auslieferung-datum {
+    font-size: calc(12rem / 14);
+    color: var(--t3);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Nur der Abstand nach rechts; Farbe und Dark-Mode-Wert bringt
+   .badge.badge-primary mit. Bei schmaler Breite darf die Marke umbrechen. */
+.auslieferung-marke {
+    margin-left: auto;
+}
+
+/* Die Gruppenüberschrift („Hinzugefügt", „Behoben", „Entfernt") — das Hausrezept
+   für eine Zwischenüberschrift in einer Karte, wie .kf-gruppen-titel und
+   .detail-card h3. Uppercase ist hier richtig: es ist eine Beschriftung, keine
+   Kennung. Die Versionszeile darüber bleibt klein, siehe .auslieferung-version.
+
+   Eine einzelne Klasse genügt — anders als beim Kartenkopf. Nachgemessen im
+   Browser: ``.content h3`` gibt es nicht, es greifen nur ``.content h2`` (anderes
+   Element) und ``.content header`` (Vorfahre, Hintergrund/Polster), und beide
+   schlagen ein ``<h3>`` nicht. Zu schlagen sind allein die Vorgaben des Browsers
+   (``margin: 1em 0``, ``font-size: 1.17em``); eine Klasse tut das.
+
+   Die Abstände tragen den Rhythmus der Karte: 18 px Luft vor der Überschrift,
+   8 px bis zu ihrer Liste. Die 18 px gelten auch für die erste Gruppe, denn der
+   ``margin-bottom`` des Kartenkopfs (12 px) und dieses ``margin-top`` fallen
+   zusammen und der Randzusammenfall nimmt den größeren — die erste Überschrift
+   bekommt also weder 12 + 18 noch das Doppelte einer mittleren. Steht gar keine
+   Überschrift (Gruppe ohne Namen), folgt die Liste direkt und mit den 12 px des
+   Kopfes; dort fehlt nichts, was abgesetzt werden müsste. */
+.auslieferung-gruppe {
+    margin: 18px 0 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--brand-text);
+}
+
+/* Die Schriftfarbe kommt aus ``--brand-text`` — im hellen Thema die abgedunkelte
+   Marke, im dunklen die aufgehellte (5,8:1 auf ``--bg-card`` statt 2,7:1). Die
+   beiden Rollen der Markenfarbe stehen bei ``--brand-text`` in ``:root`` und im
+   Dark-Block erklärt; hier ist deshalb keine eigene Dunkelregel nötig. */
+
+.auslieferung-liste {
+    margin: 0;
+    padding-left: 20px;
+    font-size: calc(14rem / 14);
+    line-height: 1.65;
+    color: var(--t2);
+}
+
+/* Ein Punkt kann mehrere Absätze haben (der nächste Punkt beginnt erst mit dem
+   nächsten <li>): der Abstand zwischen zwei Punkten bleibt größer als der
+   zwischen zwei Absätzen desselben Punktes. */
+.auslieferung-liste li + li { margin-top: 12px; }
+.auslieferung-liste li p { margin: 0; }
+.auslieferung-liste li p + p { margin-top: 5px; }
+
+/* Inline-Auszeichnung des Absatzes (`code`, **fett**, *kursiv*) — die Betonungen
+   erben ihre Schrift vom Fließtext, nur der Code tritt heraus. */
+.auslieferung-liste code {
+    font-family: var(--mono);
+    font-size: calc(13rem / 14);
+    background: var(--code-bg);
+    color: var(--code-color);
+    border-radius: var(--r-sm);
+    padding: 1px 5px;
 }
