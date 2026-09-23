@@ -11,76 +11,83 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Hinzugefügt
 
-- Änderungen: die Versionszeile in der Seitenleiste führt auf die neue Seite `/intern/changelog/`,
-  die `CHANGELOG.md` zeigt — je Auslieferung eine Karte mit Kennung und Datum, die laufende Version
-  mit Markenkante und der Pille „Deine Version". Ältere Auslieferungen lädt ein Sentinel zu zweien
-  nach (`views/_pagination.py`). Gelesen wird die Datei von `intern/auslieferungen.py`, einem
-  eigenen Zerleger ohne Markdown-Abhängigkeit im Abbild.
-- Terminseite: `Termin.extern` bekommt eine eigene Karte „Extern"; sie fehlt, solange das Feld leer
-  ist. Termin bearbeiten bekommt eine Kachel „Extern" mit dem Ankündigungstext (mehrzeilig, HTML
-  erlaubt) — aus dem Kalender-Offcanvas bleibt das Feld draußen.
-- Terminliste: zwei schmale Spalten zwischen Datum und Termin — ein Mikrofon für Termine mit
-  Ankündigungstext und, bei „Repertoire", eine Pille mit der Zahl der Lieder im Ablauf. Die Zahl
-  kommt als Annotation mit der Liste, das Datum bricht nicht mehr um. Dieselbe Marke trägt im
+- Änderungen: die Versionszeile in der Seitenleiste führt auf die neue Seite `/intern/changelog/`.
+  Sie zeigt je Auslieferung eine Karte mit Kennung und Datum — die laufende Version mit Markenkante
+  und der Pille „Deine Version" —, ältere lädt sie beim Scrollen zu zweien nach. Gelesen wird
+  `CHANGELOG.md` von `intern/auslieferungen.py`, einem eigenen Zerleger ohne Markdown-Abhängigkeit
+  im Abbild.
+- Terminseite: der öffentliche Ankündigungstext (`Termin.extern`) steht in einer eigenen Karte
+  „Extern", die fehlt, solange das Feld leer ist. Gepflegt wird er über die gleichnamige Kachel im
+  Bearbeiten-Formular (mehrzeilig, HTML erlaubt); aus dem Kalender-Offcanvas bleibt das Feld
+  draußen.
+- Terminliste: zwischen Datum und Termin stehen zwei schmale Spalten — ein Mikrofon für Termine mit
+  Ankündigungstext, bei „Repertoire" eine Pille mit der Zahl der Lieder im Ablauf. Die Zahl kommt
+  als Annotation mit der Liste, und das Datum bricht nicht mehr um. Dasselbe Mikrofon trägt im
   Kalender der Termin-Chip, dort nur am ersten Tag eines mehrtägigen Termins.
-- Die Erinnerungsmail der Auftritts-Mailingliste kennt den Platzhalter `{extern}` — den
-  Ankündigungstext des Termins, auf einen Absatz Fließtext reduziert (ohne Markup und ohne
-  Linkziele). Den Text der Mail führt nicht mehr der Code, sondern `seed_konfiguration` in der
-  Migration; `_CONFIG_DEFAULTS` hält den Schlüssel leer wie die übrigen vereinsspezifischen Texte.
+- Erinnerungsmail der Auftritts-Mailingliste: der Platzhalter `{extern}` setzt den Ankündigungstext
+  des Termins ein, auf einen Absatz Fließtext reduziert (ohne Markup und ohne Linkziele). Den Text
+  der Mail führt nicht mehr der Code, sondern `seed_konfiguration` in der Migration;
+  `_CONFIG_DEFAULTS` hält den Schlüssel leer wie die übrigen vereinsspezifischen Texte.
 
 ### Geändert
 
-- Mitgliedskarte: die Seite ist kein umrandeter Kasten mehr, sondern folgt dem Muster der übrigen
-  Detailseiten — Seitenkopf mit Porträt und Namen, die Abschnitte als Karten in zwei Spalten. Die
-  vier Kopfzeilen „Vorname: / Nachname: / Stimme: / Gruppen:" sind entfallen, die Stimme steht als
-  Wort neben den Gruppen-Marken, und die Liedlisten laufen über die volle Breite.
-- Die Stimme ist der Akzent der Seite, jetzt ohne Kasten: eine 4 px breite Kante am linken
+- Mitgliedskarte: kein umrandeter Kasten mehr, sondern das Muster der übrigen Detailseiten —
+  Seitenkopf mit Porträt und Namen, darunter die Abschnitte als Karten in zwei Spalten. Die vier
+  Kopfzeilen „Vorname: / Nachname: / Stimme: / Gruppen:" sind entfallen: der Name ist die
+  Überschrift, die Stimme steht als Wort neben den Gruppen-Marken, und die Liedlisten laufen über
+  die volle Breite.
+- Die Stimme bleibt der Akzent dieser Seite, nur ohne Kasten: eine 4 px breite Kante am linken
   Seitenrand und ein 3-px-Ring um das Porträt. Das `(S)` neben dem Namen ist eine Pille in der
   Stimmenfarbe und sitzt **neben** dem Titel statt darin — der Titel kürzt lange Namen mit einer
-  Ellipsis ab und fraß genau das `(S)`.
+  Ellipsis ab, und die traf zuvor genau das `(S)`.
 - Startseite: unter „Konzerte" stehen jetzt die Termine mit einem **Ankündigungstext**
-  (`Termin.extern`), und der Text wird mit ausgegeben (Adresse, Einlass, Eintritt, Links). **Zum
-  Ausrollen:** ein Auftritt ohne Eintrag fehlt auf der Startseite — für einen Auftritt ohne Text
-  genügt ein Leerzeichen, er wird dann ohne Ankündigungsblock gelistet.
-- Die Erinnerungsmails der Auftritts-Mailingliste hängen am Ankündigungstext (`Termin.extern`)
-  statt an „Repertoire": erinnert wird, was öffentlich angekündigt ist. „Repertoire" steuert
-  jetzt nur noch die Karte „Lieder" auf der Terminseite. **Zum Ausrollen:** ein Auftritt mit
-  „Repertoire", aber ohne Ankündigungstext wird nicht mehr erinnert — er braucht einen Text.
-- Datumsangaben nennen den kurzen Wochentag und den Monat als Zahl („Mi, 24.09.2026 19:30" statt
-  „24. September 19:30") — betroffen sind alle Ausgaben über `replacements.format_datetime`. Die
-  Verzweigungen für „heute" (nur Uhrzeit) und „gestern" bleiben wie sie waren.
-- Terminliste: die Spalte „Du" ist entfallen; statt ihrer pulsiert bei offener Antwort das eigene
-  Kästchen der Aufstellung und mit ihm der Terminname. Beides gilt nur für kommende Termine ohne
-  eigene Antwort, und wer Bewegung reduziert haben will, bekommt die Rahmen stehend statt blinkend.
-- Der Neuaufbau aus dem Altsystem startet mit den Gründerinnen und Gründern als einzigen aktiven
-  Konten (Eintrittsdatum 17.06.2026); jeder andere Zugang kommt ohne Eintrittsdatum und deaktiviert
-  an und wird einzeln über die Mitgliederverwaltung freigeschaltet. Die Deaktivierung läuft dabei
-  nach dem Avatar-Import, der `is_active` prüft.
-- Die Altdaten bringen eigenes HTML mit; beim Anzeigen werden Zeilenumbrüche zu `<br>`,
+  (`Termin.extern`) statt die mit „Repertoire", und der Text wird mit ausgegeben (Adresse, Einlass,
+  Eintritt, Links). **Zum Ausrollen:** ein Auftritt ohne Eintrag fehlt auf der Startseite — für
+  einen Auftritt ohne Text genügt ein Leerzeichen, er wird dann ohne Ankündigungsblock gelistet.
+- Erinnerungsmails der Auftritts-Mailingliste: erinnert wird, was öffentlich angekündigt ist —
+  Kriterium ist der Ankündigungstext (`Termin.extern`) statt „Repertoire", das jetzt nur noch die
+  Karte „Lieder" auf der Terminseite steuert. **Zum Ausrollen:** ein Auftritt mit „Repertoire",
+  aber ohne Ankündigungstext bekommt keine Erinnerung mehr; er braucht einen Text.
+- Datumsangaben nennen den kurzen Wochentag und den Monat als Zahl: „Mi, 24.09.2026 19:30" statt
+  „24. September 19:30". Das gilt überall, wo `replacements.format_datetime` ausgibt; die Zweige
+  für „heute" (nur Uhrzeit) und „gestern" bleiben wie sie waren.
+- Terminliste: die Spalte „Du" ist entfallen. Stattdessen pulsiert bei offener Antwort das eigene
+  Kästchen der Aufstellung und mit ihm der Terminname — beides nur bei kommenden Terminen ohne
+  eigene Antwort. Wer Bewegung reduziert haben will, bekommt die Rahmen stehend statt blinkend.
+- Migration: der Neuaufbau startet mit den Gründerinnen und Gründern als einzigen aktiven Konten,
+  Eintrittsdatum 17.06.2026; jeder andere Zugang kommt deaktiviert und ohne Eintrittsdatum an.
+  **Zum Ausrollen:** diese Konten werden einzeln über die Mitgliederverwaltung freigeschaltet — das
+  verschickt die Willkommensmail und stempelt den Tag der Aktivierung als Eintritt.
+- Migration: welche Lieder nach dem Import aktiv sind, sagt der Wiki-Artikel „Aktuell" mit seinem
+  Abschnitt „Repertoire für 2026/27" (18 Titel) — die Altsystem-Spalte `repertoire.aktiv` hatte die
+  Auswahl mehrerer Spielzeiten angesammelt (32 Titel). Alles andere ist archiviert; die sieben
+  Weihnachtslieder bleiben davon unberührt und stehen weiter über den Filter „Weihnachten".
+- Die Altdaten bringen eigenes HTML mit: beim Anzeigen werden Zeilenumbrüche zu `<br>`,
   `style`-Angaben entfernt und Überschriften zu `<strong>` (55 der 74 Zeilen beginnen mit `<h1>`).
   Der gespeicherte Wert bleibt unberührt — eine Anzeigeregel, keine Sanitisierung.
 - Diese Datei folgt jetzt Keep a Changelog: je Auslieferung eine Gruppe nach Art der Änderung, je
-  Eintrag höchstens drei Sätze. Die Überschriften bleiben wie sie waren, der `update`-Hook
-  vergleicht das zweite Feld der Zeile mit dem Tagnamen.
-- Die Karten der Änderungsseite sind auf 1280 px gedeckelt und bleiben linksbündig.
+  Eintrag höchstens drei Sätze. Die Überschriften der Auslieferungen bleiben unverändert — der
+  `update`-Hook vergleicht das zweite Feld der Zeile mit dem Tagnamen.
+- Änderungsseite: die Karten sind auf 1280 px gedeckelt und bleiben linksbündig.
 - Bekannte technische Schuld: der neue Abschnitt „First install vs. legacy import" hält fest, dass
-  die Erst-Installation ohne die Migration keine Gruppen, Ordner und keinen Administrator hat, und
-  die geplante Trennung von Altdaten-Import und Installationsvorgaben. Gebaut wird sie nach der
-  Migration.
+  eine Erst-Installation ohne die Migration ohne Gruppen, Ordner und Administrator dasteht, und
+  beschreibt die geplante Trennung von Altdaten-Import und Installationsvorgaben. Gebaut wird sie
+  nach der Migration.
 
 ### Behoben
 
 - Chorleiter und Musiker: der senkrecht beschriftete Gruppenstreifen der Mitgliederliste und die
-  neutrale Topbar-Pille stehen jetzt in `--t3`, weil `--t4` auf seiner Tintfläche nur 2,2:1
-  erreichte. Balken und Kartenkante bleiben bei `--t4`: ein Strich darf leise sein, ein Buchstabe
-  nicht.
-- Die Markenfarbe als Schrift auf einer Karte ist ein eigener Token (`--brand-text`): im dunklen
+  neutrale Topbar-Pille stehen jetzt in `--t3` — auf ihrer Tintfläche erreichte `--t4` nur 2,2:1.
+  Balken und Kartenkante bleiben bei `--t4`: ein Strich darf leise sein, ein Buchstabe nicht.
+- Die Markenfarbe als Schrift auf einer Karte hat einen eigenen Token (`--brand-text`); im dunklen
   Thema stand sie dort bei 2,7:1. Vier Stellen, die sich dafür ein hartkodiertes Rosa gegeben
   hatten, folgen jetzt ebenfalls der Markenfarbe.
+- Startseite: im Impressum steht der Vereinsname jetzt über der Vereinsadresse — war eine Adresse
+  konfiguriert, nannte die Karte „Verantwortlich für den Webauftritt" nur die Adresse.
 - Migration: `{abstimmung:…}`-Direktiven aus dem Altportal bekommen beim Import die Frist
-  30.06.2026. Ohne Ablaufdatum bliebe die Abstimmung im Portal für immer offen, statt ihr
-  Ergebnis zu zeigen — im Altbestand trägt keine einzige eine Frist. Ergänzt wird nur, was der
-  Renderer auswertet; die Syntax-Beispiele in „Hilfe:Wiki" bleiben unangetastet.
+  30.06.2026. Ohne Ablaufdatum bliebe die Abstimmung im Portal für immer offen, statt ihr Ergebnis
+  zu zeigen — im Altbestand trägt keine einzige eine Frist. Ergänzt wird nur, was der Renderer
+  auswertet; die Syntax-Beispiele in „Hilfe:Wiki" bleiben unangetastet.
 
 ## v1.0.0-rc3 — 2026-09-22
 
