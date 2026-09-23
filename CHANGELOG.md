@@ -63,6 +63,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Eintrag höchstens drei Sätze. Die Überschriften bleiben wie sie waren, der `update`-Hook
   vergleicht das zweite Feld der Zeile mit dem Tagnamen.
 - Die Karten der Änderungsseite sind auf 1280 px gedeckelt und bleiben linksbündig.
+- Bekannte technische Schuld: der neue Abschnitt „First install vs. legacy import" hält fest, dass
+  die Erst-Installation ohne die Migration keine Gruppen, Ordner und keinen Administrator hat, und
+  die geplante Trennung von Altdaten-Import und Installationsvorgaben. Gebaut wird sie nach der
+  Migration.
 
 ### Behoben
 
