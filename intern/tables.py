@@ -35,6 +35,11 @@ class _Datumsspalte(tables.Column):
         if format is None:
             format = self.standard_format if short else self.langes_format
         self.datums_format = format
+        # Ein Datum gehört in eine Zeile: sonst zerbricht „18:30 Di, 24. Nov."
+        # mitten im Wochentag, sobald die Spalte eng wird. Die Klasse ``nowrap``
+        # steht in der ``intern.css``; wer eigene ``attrs`` mitgibt, bleibt selbst
+        # zuständig (``setdefault`` überschreibt sie nicht).
+        kwargs.setdefault("attrs", {"td": {"class": "nowrap"}})
         super().__init__(**kwargs)
 
     def render(self, value, bound_column):
@@ -273,6 +278,30 @@ class OrdnerTabelle(tables.Table):
 
 class TerminTabelle(tables.Table):
     datum = DatumZeitSpalte()
+    # Zwei ganz schmale Markerspalten zwischen Datum und Terminnamen — getrennt,
+    # damit Mikrofon und Pille über die Zeilen hinweg in derselben Flucht stehen.
+    # Das Mikrofon markiert einen öffentlich angekündigten Auftritt, die Pille
+    # nennt die Zahl der Lieder im Ablauf. Keine Modellfelder — wie ``aufstellung``
+    # brauchen sie ``empty_values=()``, damit der Leerfall leer bleibt statt „—".
+    auftritt = tables.Column(
+        verbose_name="",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"class": "marker-cell-head", "aria-label": "Auftritt"},
+            "td": {"class": "marker-cell"},
+        },
+    )
+    lieder = tables.Column(
+        accessor="lieder_anzahl",
+        verbose_name="",
+        orderable=False,
+        empty_values=(),
+        attrs={
+            "th": {"class": "marker-cell-head", "aria-label": "Lieder im Ablauf"},
+            "td": {"class": "marker-cell"},
+        },
+    )
     kurz = tables.Column(
         verbose_name="Termin",
         orderable=False,
@@ -286,6 +315,32 @@ class TerminTabelle(tables.Table):
         orderable=False,
         empty_values=(),
     )
+
+    def render_auftritt(self, record):
+        """Das Mikrofon für einen öffentlich angekündigten Auftritt.
+
+        Kriterium ist das **rohe** ``Termin.extern`` — dasselbe, nach dem ``home()``
+        die Startseite listet (``intern/views/auth.py``), und nicht der Anzeige-Filter
+        ``extern_html``, der reinen Leerraum fallen lässt.
+        """
+        if not record.extern:
+            return ""
+        return format_html(
+            '<span class="marker-icon" title="Öffentlicher Auftritt" '
+            'aria-label="Öffentlicher Auftritt">{}</span>',
+            mark_safe(_MIC_SVG),
+        )
+
+    def render_lieder(self, value, record):
+        """Die Zahl der Einträge im Ablauf als Pille — nur zum Repertoire-Flag und
+        nur, wenn Einträge da sind. Die Zahl kommt als ``Count``-Annotation aus der
+        View, also ohne eine Abfrage je Zeile."""
+        if not record.repertoire or not value:
+            return ""
+        return format_html(
+            '<span class="badge" title="Lieder im Ablauf: {}">{}</span>',
+            value, value,
+        )
 
     def render_datum(self, value):
         return format_datetime(value)

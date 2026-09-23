@@ -36,6 +36,7 @@ from intern.auslieferungen import (
 from intern.blob_aufraeumen import verwaiste_pfade, zugeordnetes_verzeichnis
 from intern.forms import SchnellSelect, SchnellSelectMultiple
 from intern.middleware import muss_auffrischen
+from intern.tables import TerminTabelle
 from intern.tables2_beschleunigung import (
     _original as tables2_original, attrs_gepuffert, signature_gepuffert,
 )
@@ -2341,6 +2342,123 @@ class ExternKarteTest(SimpleTestCase):
         # Der Hilfetooltip nennt das Feld beim Namen (sonst stuende dort das
         # kleine verbose_name „extern").
         self.assertIn("Erklärung: Extern", html)
+
+
+class TerminMarkerSpaltenTest(SimpleTestCase):
+    """Die zwei Markerspalten der Terminliste: Mikrofon und Repertoire-Pille."""
+
+    def _auftritt(self, **felder):
+        vorgabe = {"extern": None, "repertoire": False}
+        vorgabe.update(felder)
+        return TerminTabelle([]).render_auftritt(SimpleNamespace(**vorgabe))
+
+    def _lieder(self, value, **felder):
+        vorgabe = {"extern": None, "repertoire": False}
+        vorgabe.update(felder)
+        return TerminTabelle([]).render_lieder(value, SimpleNamespace(**vorgabe))
+
+    def test_mikrofon_nur_bei_ankuendigungstext(self):
+        self.assertIn("marker-icon",
+                      self._auftritt(extern="<h1>Konzert</h1>"))
+        for wert in (None, ""):
+            with self.subTest(wert=wert):
+                self.assertNotIn("marker-icon", self._auftritt(extern=wert))
+
+    def test_leerraum_zaehlt_als_ankuendigung(self):
+        """Das **rohe** Feld entscheidet, nicht der Anzeige-Filter ``extern_html``:
+        ein einzelnes Leerzeichen listet den Termin auf der Startseite
+        (``intern/views/auth.py``) und traegt daher auch hier das Mikrofon."""
+        self.assertIn("marker-icon", self._auftritt(extern=" "))
+
+    def test_pille_nur_bei_repertoire_und_eintraegen(self):
+        html = self._lieder(3, repertoire=True)
+        self.assertIn('class="badge"', html)
+        self.assertIn(">3</span>", html)
+        self.assertIn('title="Lieder im Ablauf: 3"', html)
+        for wert, felder in ((0, {"repertoire": True}),
+                             (3, {"repertoire": False})):
+            with self.subTest(wert=wert, **felder):
+                self.assertNotIn("badge", self._lieder(wert, **felder))
+
+    def test_beide_spalten_getrennt(self):
+        """Mikrofon und Pille liegen in eigenen Spalten — jede Zelle traegt nur
+        ihre eigene Auszeichnung, keine die andere mit."""
+        self.assertNotIn("badge", self._auftritt(extern="Konzert", repertoire=True))
+        self.assertNotIn("marker-icon", self._lieder(2, extern="Konzert", repertoire=True))
+
+    def test_beide_spalten_schmal_und_in_flucht(self):
+        """Beide Spalten sind gleich gebaut (dieselben CSS-Klassen), damit ihre
+        Zellen untereinander fluchten; der Leerfall bleibt leer statt „—"."""
+        tabelle = TerminTabelle([])
+        for name in ("auftritt", "lieder"):
+            with self.subTest(spalte=name):
+                attrs = tabelle.base_columns[name].attrs
+                self.assertEqual(attrs["td"]["class"], "marker-cell")
+                self.assertEqual(attrs["th"]["class"], "marker-cell-head")
+                self.assertFalse(tabelle.base_columns[name].orderable)
+        self.assertEqual(self._auftritt(), "")
+        self.assertEqual(self._lieder(0, repertoire=True), "")
+
+
+class KalenderAuftrittIconTest(SimpleTestCase):
+    """Das Mikrofon im Kalender-Chip: bei Ankuendigungstext, nur am Starttag."""
+
+    def _termin(self, **felder):
+        vorgabe = {
+            "id": 7,
+            "kurz": "Konzert Lutherkirche",
+            "repertoire": False,
+            "extern": None,
+            "datum": datetime(2026, 11, 1, 18, 30),
+        }
+        vorgabe.update(felder)
+        return SimpleNamespace(**vorgabe)
+
+    def _tag(self, termin, mehrtaegig=False, start=True, ende=True):
+        occ = SimpleNamespace(t=termin, mehrtaegig=mehrtaegig, start=start, ende=ende)
+        return SimpleNamespace(tag=1, label="Sonntag, 1. November 2026",
+                               iso="2026-11-01", im_monat=True, ist_heute=False,
+                               wochenende=True, termine=[occ], geburtstage=[])
+
+    def _grid(self, tag):
+        """Eine Woche mit einem belegten Tag; die uebrigen bleiben leer, damit
+        kein Geburtstags-Chip sein eigenes ``cal-chip-icon`` beisteuert."""
+        leer = [
+            SimpleNamespace(tag=i, label="", iso="", im_monat=False, ist_heute=False,
+                            wochenende=False, termine=[], geburtstage=[])
+            for i in (2, 3, 4, 5, 6, 7)
+        ]
+        return render_to_string("_kalender_grid.html", {
+            "wochen": [[tag, *leer]],
+            "wochentage": ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+            "monatsname": "November", "jahr": 2026,
+            "prev_jahr": 2026, "prev_monat": 10,
+            "next_jahr": 2026, "next_monat": 12,
+            "heute_jahr": 2026, "heute_monat": 11,
+            "ist_aktueller_monat": True,
+        })
+
+    def test_icon_nur_bei_ankuendigungstext(self):
+        self.assertIn("cal-chip-icon",
+                      self._grid(self._tag(self._termin(extern="Konzert"))))
+        for wert in (None, ""):
+            with self.subTest(wert=wert):
+                self.assertNotIn("cal-chip-icon",
+                                 self._grid(self._tag(self._termin(extern=wert))))
+
+    def test_icon_nur_am_ersten_tag_eines_balkens(self):
+        termin = self._termin(extern="Chorfreizeit")
+        fort = self._tag(termin, mehrtaegig=True, start=False, ende=False)
+        self.assertNotIn("cal-chip-icon", self._grid(fort))
+        anfang = self._tag(termin, mehrtaegig=True, start=True, ende=False)
+        self.assertIn("cal-chip-icon", self._grid(anfang))
+
+    def test_konzertfarbe_haengt_nicht_am_mikrofon(self):
+        """``is-konzert`` folgt ``repertoire``, das Mikrofon ``extern`` — die
+        beiden Merkmale sind unabhaengig voneinander."""
+        html = self._grid(self._tag(self._termin(repertoire=True, extern=None)))
+        self.assertIn("is-konzert", html)
+        self.assertNotIn("cal-chip-icon", html)
 
 
 class RundmailSerieTest(SimpleTestCase):

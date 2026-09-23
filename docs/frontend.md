@@ -162,6 +162,22 @@ stays visible (the outline fades out and in rather than switching between two st
 square remains recognisable as one's own; `prefers-reduced-motion: reduce` stops the animation
 and leaves both outlines standing.
 
+**Two narrow columns between date and name mark a public gig.** `TerminTabelle.render_auftritt`
+fills the first one with a microphone when `Termin.extern` is non-empty; `render_lieder` fills the
+second with a `.badge` pill carrying the number of Ablauf entries when `repertoire` is set and
+entries exist. They are two columns rather than one so that icon and pill line up down the list.
+The microphone's criterion is the
+microphone when `Termin.extern` is non-empty and, to its right, a `.badge` pill with the number of
+Ablauf entries when `repertoire` is set and entries exist. The microphone's criterion is the
+**raw** field — the very one `home()` lists by (`_OHNE_ANKUENDIGUNG` in `views/auth.py`) — and not
+the display filter `extern_html`, which drops pure whitespace; a lone space therefore marks the
+event, exactly as it lists it on the homepage. The count arrives as a `Count("konzert")` annotation
+from `termin_list`, one query for the whole page, and is deliberately **not** filtered on `lied`
+so that it equals the pill on the termin page's card „Lieder". The calendar chip carries the same
+microphone (`cal-chip-icon`, so the offcanvas day list inherits it — it copies the cell's
+`innerHTML`), but only on the first day of a multi-day event; the chip's `is-konzert` colour still
+follows `repertoire` alone and is independent of the microphone.
+
 The termin detail page repeats it larger as the wide card „Aufstellung" right above
 „Anwesenheit" (`_termin_aufstellung_karte.html`, `gross=True` → `.aufst-gross`, which only
 overrides the `--aufst-*` size variables). The card has to follow every change of the answers:

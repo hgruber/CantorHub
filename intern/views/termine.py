@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 
 from django.utils.timezone import now as timezone_now
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Count, Exists, OuterRef, Q
 from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -127,7 +127,11 @@ def _aufstellungen_anhaengen(termine, ich):
 @tabellenzustand
 def termin_list(request):
     past = request.GET.get("past") == "1"
-    annotations = {}
+    # Die Zahl der Ablauf-Einträge für die Markerspalte — für beide Listen, und
+    # ohne Filter auf ``lied``: die Terminseite zählt ihre Karte „Lieder" genauso
+    # (``Konzert.objects.filter(termin=termin)``), die beiden Zahlen sollen gleich
+    # bleiben. Eine Query für die ganze Seite statt eines ``count()`` je Zeile.
+    annotations = {"lieder_anzahl": Count("konzert")}
     if not past:
         # „Meine Antwort fehlt": die Zeile pulsiert dann (siehe ``TerminTabelle``).
         # Für vergangene Termine bleibt die Annotation weg — eine offene Antwort

@@ -6266,6 +6266,34 @@ tr.row-fresh td {
     .termin-offen { animation: none; }
 }
 
+/* ── Terminliste: Markerspalten zwischen Datum und Termin ──
+   Zwei sehr schmale Spalten, getrennt geführt, damit Mikrofon und Pille über die
+   Zeilen hinweg in derselben Flucht stehen. Das Mikrofon markiert einen öffentlich
+   angekündigten Auftritt (rohes ``Termin.extern`` — dasselbe Kriterium, nach dem
+   die Startseite listet), die Pille nennt die Zahl der Lieder im Ablauf.
+   ``width: 1%`` ist die Projektkonvention für „so breit wie ihr Inhalt"; die Größe
+   des Icons kommt als SVG-Attribut mit. Die Farbe des Icons ist ``--brand-dark``,
+   der Token für **Linien** (nicht ``--brand-text``, das für brandfarbene Lettern
+   auf einer Fläche steht); gezeichnet wird mit ``currentColor``, also gilt sie in
+   beiden Themes. Die Pille bringt ihre Farbe aus ``.badge`` mit. */
+th.marker-cell-head { width: 1%; }
+td.marker-cell {
+    width: 1%;
+    white-space: nowrap;
+    text-align: center;
+    /* Enger als die globalen ``9px 12px`` der Zellen: die beiden Markerspalten
+       stehen nebeneinander, und ihr doppeltes Polster schob Mikrofon und Pille
+       unnötig auseinander. 4px je Seite lässt 8px zwischen ihnen und hält
+       trotzdem Abstand zu Datum und Terminnamen. */
+    padding: 5px 4px;
+}
+.marker-icon {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    color: var(--brand-dark);
+}
+
 /* ── Upload progress card ── */
 .upload-card {
     position: fixed;

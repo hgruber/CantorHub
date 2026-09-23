@@ -19,6 +19,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Terminseite: `Termin.extern` bekommt eine eigene Karte „Extern"; sie fehlt, solange das Feld leer
   ist. Termin bearbeiten bekommt eine Kachel „Extern" mit dem Ankündigungstext (mehrzeilig, HTML
   erlaubt) — aus dem Kalender-Offcanvas bleibt das Feld draußen.
+- Terminliste: zwei schmale Spalten zwischen Datum und Termin — ein Mikrofon für Termine mit
+  Ankündigungstext und, bei „Repertoire", eine Pille mit der Zahl der Lieder im Ablauf. Die Zahl
+  kommt als Annotation mit der Liste, das Datum bricht nicht mehr um. Dieselbe Marke trägt im
+  Kalender der Termin-Chip, dort nur am ersten Tag eines mehrtägigen Termins.
 
 ### Geändert
 

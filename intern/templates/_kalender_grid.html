@@ -41,7 +41,13 @@
       </div>
       <div class="cal-day-detail">
         {% for occ in d.termine %}
-        <a class="cal-chip cal-chip--termin{% if occ.t.repertoire %} is-konzert{% endif %}{% if occ.mehrtaegig %} is-span{% if occ.start %} is-span-start{% endif %}{% if occ.ende %} is-span-end{% endif %}{% endif %}" href="{% url 'termin_view' id=occ.t.id %}" title="{{ occ.t.kurz }}">
+        <a class="cal-chip cal-chip--termin{% if occ.t.repertoire %} is-konzert{% endif %}{% if occ.mehrtaegig %} is-span{% if occ.start %} is-span-start{% endif %}{% if occ.ende %} is-span-end{% endif %}{% endif %}" href="{% url 'termin_view' id=occ.t.id %}" title="{% if occ.t.extern %}Öffentlicher Auftritt: {% endif %}{{ occ.t.kurz }}">
+          {% comment %}
+          Mikrofon für einen öffentlich angekündigten Auftritt: das rohe ``Termin.extern``,
+          dasselbe Kriterium wie auf der Startseite. Nur am ersten Tag eines mehrtägigen
+          Termins, sonst stünde es in jedem Segment des Balkens (wie die Uhrzeit).
+          {% endcomment %}
+          {% if occ.t.extern %}{% if not occ.mehrtaegig or occ.start %}<svg class="cal-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>{% endif %}{% endif %}
           {% if occ.start and occ.t.datum|time:"H:i" != "00:00" %}<span class="cal-chip-time">{{ occ.t.datum|time:"H:i" }}</span>{% endif %}
           {% if occ.mehrtaegig and not occ.start %}<span class="cal-chip-cont" aria-hidden="true">‹</span>{% endif %}
           <span class="cal-chip-text">{{ occ.t.kurz }}</span>
