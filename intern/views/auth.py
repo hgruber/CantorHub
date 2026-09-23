@@ -33,7 +33,7 @@ from intern.pdf import (
 from intern.mail import send_config_mail
 
 from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
-from ..models import Termin, User
+from ..models import OHNE_ANKUENDIGUNG, Termin, User
 
 __all__ = [
     "CantorLoginView",
@@ -163,22 +163,10 @@ def _pdf_ablegen(user, pdf_bytes, fname):
     )
 
 
-# Kriterium der Startseite: ein nicht-leerer Ankündigungstext (`Termin.extern`).
-# Beide Leerformen zählen — die Altdaten führen 248×"" und 27×NULL —, und
-# `exclude(extern="")` allein genügt nicht: Django setzt bei der Negation auf
-# einer nullable-Spalte ein `IS NOT NULL` in die Bedingung
-# (`NOT (extern = '' AND extern IS NOT NULL)`), ein NULL-Datensatz überlebt sie.
-# Bewusst ohne `.strip()`: ein einzelnes Leerzeichen soll einen Auftritt listen,
-# ohne dass ein Text erfunden wird — siehe `_STARTSEITE_OHNE_TEXT` in
-# `intern/migrations/0003_import.py`. Die *Anzeige* hängt dagegen am
-# Template-Filter `extern_html`, der reinen Leerraum fallen lässt.
-_OHNE_ANKUENDIGUNG = Q(extern__isnull=True) | Q(extern="")
-
-
 def home(request):
     termine = (
         Termin.objects.filter(datum__gte=tz_now())
-        .exclude(_OHNE_ANKUENDIGUNG)
+        .exclude(OHNE_ANKUENDIGUNG)
         .order_by("datum")
         .select_related("ort")[:10]
     )

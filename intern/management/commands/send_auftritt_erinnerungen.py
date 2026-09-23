@@ -27,16 +27,16 @@ from intern.mailingliste import (
     termin_platzhalter,
     versandzeit,
 )
-from intern.models import Auftrittsabo, ErinnerungVersand, Termin
+from intern.models import Auftrittsabo, ErinnerungVersand, OHNE_ANKUENDIGUNG, Termin
 
 logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
     help = (
-        "Verschickt Erinnerungen an öffentliche Auftritte (Termine mit "
-        "repertoire=True) an die bestätigten Adressen der Auftritts-Mailingliste. "
-        "Ohne --loop läuft genau ein Durchlauf."
+        "Verschickt Erinnerungen an öffentlich angekündigte Auftritte (Termine mit "
+        "Ankündigungstext, Termin.extern) an die bestätigten Adressen der "
+        "Auftritts-Mailingliste. Ohne --loop läuft genau ein Durchlauf."
     )
 
     def add_arguments(self, parser):
@@ -101,7 +101,7 @@ class Command(BaseCommand):
         if not dry_run:
             cleanup_unbestaetigte(jetzt)
 
-        termine = Termin.objects.filter(repertoire=True, datum__gte=jetzt)
+        termine = Termin.objects.filter(datum__gte=jetzt).exclude(OHNE_ANKUENDIGUNG)
         if options["termin"]:
             termine = termine.filter(pk=options["termin"])
         termine = list(termine.select_related("ort"))

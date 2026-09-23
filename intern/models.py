@@ -475,6 +475,22 @@ class Ort(models.Model):
         return self.name
 
 
+# Kriterium für „öffentlich angekündigt": ein nicht-leerer Ankündigungstext
+# (`Termin.extern`). Die Startseite listet danach (`home()` in `views/auth.py`),
+# und die Auftritts-Erinnerungen verschickt danach der Daemon
+# (`send_auftritt_erinnerungen`) — beide lesen diese eine Menge.
+#
+# Beide Leerformen zählen — die Altdaten führen 248×"" und 27×NULL —, und
+# `exclude(extern="")` allein genügt nicht: Django setzt bei der Negation auf
+# einer nullable-Spalte ein `IS NOT NULL` in die Bedingung
+# (`NOT (extern = '' AND extern IS NOT NULL)`), ein NULL-Datensatz überlebt sie.
+# Bewusst ohne `.strip()`: ein einzelnes Leerzeichen soll einen Auftritt listen,
+# ohne dass ein Text erfunden wird — siehe `_STARTSEITE_OHNE_TEXT` in
+# `intern/migrations/0003_import.py`. Die *Anzeige* hängt dagegen am
+# Template-Filter `extern_html`, der reinen Leerraum fallen lässt.
+OHNE_ANKUENDIGUNG = Q(extern__isnull=True) | Q(extern="")
+
+
 class Termin(models.Model):
     # db_index: fast jede Abfrage filtert oder sortiert nach dem Datum (Terminliste,
     # Kalender, CalDAV, Erinnerungsversand). Kein Meta.ordering — das würde jede
@@ -490,21 +506,21 @@ class Termin(models.Model):
         blank=True,
         null=True,
         help_text="Der öffentliche Ankündigungstext: Adresse, Einlass und Links für "
-        "das Publikum. Er steht auf der öffentlichen Startseite unter „Konzerte“ und "
-        "auf der Terminseite in der Karte „Extern“. Ist das Feld leer, fehlt die "
-        "Karte und der Termin steht nicht auf der Startseite. HTML ist erlaubt "
-        "(Links, Zeilenumbrüche).",
+        "das Publikum. Er steht auf der öffentlichen Startseite unter „Konzerte“, "
+        "auf der Terminseite in der Karte „Extern“ und löst die Erinnerungsmails "
+        "der Auftritts-Mailingliste aus. Ist das Feld leer, fehlt die Karte, der "
+        "Termin steht nicht auf der Startseite und die Mailingliste wird nicht "
+        "erinnert. HTML ist erlaubt (Links, Zeilenumbrüche).",
     )
     ctag = models.IntegerField(default=0)
     # Die help_texts sind die einzige Quelle der Erklärungs-Tooltips:
     # das Formular erbt sie, die Anzeigeseiten holen sie über {% hilfe %}.
     repertoire = models.BooleanField(
         default=False,
-        help_text="Der Termin ist ein öffentlicher Auftritt: Er löst die "
-        "Erinnerungsmails der Auftritts-Mailingliste aus und bekommt auf der "
-        "Terminseite die Karte „Lieder“ für den Ablauf. Für die öffentliche "
-        "Ankündigung auf der Startseite ist der Ankündigungstext in „Extern“ "
-        "zuständig.",
+        help_text="Der Termin ist ein Auftritt mit einem Ablauf: Er bekommt auf der "
+        "Terminseite die Karte „Lieder“. Für die öffentliche Ankündigung auf der "
+        "Startseite und die Erinnerungsmails der Auftritts-Mailingliste ist der "
+        "Ankündigungstext in „Extern“ zuständig.",
     )
     anwesenheit = models.BooleanField(
         default=False,

@@ -167,9 +167,7 @@ fills the first one with a microphone when `Termin.extern` is non-empty; `render
 second with a `.badge` pill carrying the number of Ablauf entries when `repertoire` is set and
 entries exist. They are two columns rather than one so that icon and pill line up down the list.
 The microphone's criterion is the
-microphone when `Termin.extern` is non-empty and, to its right, a `.badge` pill with the number of
-Ablauf entries when `repertoire` is set and entries exist. The microphone's criterion is the
-**raw** field — the very one `home()` lists by (`_OHNE_ANKUENDIGUNG` in `views/auth.py`) — and not
+**raw** field — the very one `home()` lists by (`OHNE_ANKUENDIGUNG` in `intern/models.py`) — and not
 the display filter `extern_html`, which drops pure whitespace; a lone space therefore marks the
 event, exactly as it lists it on the homepage. The count arrives as a `Count("konzert")` annotation
 from `termin_list`, one query for the whole page, and is deliberately **not** filtered on `lied`
@@ -408,8 +406,8 @@ it work:
 - **The text lives as `help_text` on the model field, never in a template.** The form inherits
   it for free, and display-only pages read the same string. `Termin.repertoire`,
   `Termin.anwesenheit` and `Termin.extern` are the current users — each has effects a member cannot
-  guess from the word alone: `repertoire` mails the external gig list and brings the card
-  „Lieder", `anwesenheit` the Zusage buttons, and `extern` decides the entry on the public homepage
+  guess from the word alone: `repertoire` brings the card „Lieder", `anwesenheit` the Zusage
+  buttons, and `extern` decides the entry on the public homepage *and* the gig-reminder mails
   (see „Public homepage"). `extern` is also the one field whose content is rendered as HTML —
   `extern_html` in `intern/templatetags/termin_tags.py` turns its line breaks into `<br>`, strips
   `style` attributes and rewrites `<h1>`–`<h3>` to `<strong>`, and is explicitly not a sanitizer
@@ -665,7 +663,8 @@ top of the picture), and the subline followed it out of the picture entirely.
 
 **The Konzerte list follows `Termin.extern`, not `Termin.repertoire`:** `home()` excludes only the
 two empty forms of the announcement text, so an event without one stays off the page even when it
-is a public gig (the gig-reminder mails still go by `repertoire`, see `docs/mailinglist.md`). The
+is a public gig. The gig-reminder mails follow the same set — `OHNE_ANKUENDIGUNG` in
+`intern/models.py` (see `docs/mailinglist.md`). The
 selection deliberately checks the raw field while the rendered block checks the filter result —
 that is how a single space lists an event without producing an empty box.
 

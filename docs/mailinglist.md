@@ -1,9 +1,10 @@
 # Auftritts-Mailingliste (public gig reminders)
 
 A public, membership-independent mailing list: visitors sign up at `/auftritte/` and are
-reminded before each public gig. The triggering events are `Termin.objects.filter(
-repertoire=True)` — independent of what `home()` lists, which follows the announcement text
-(`Termin.extern`); a gig can therefore be mailed without standing on the homepage and vice versa.
+reminded before each public gig. The triggering events are the publicly announced gigs —
+`Termin.objects.exclude(OHNE_ANKUENDIGUNG)` — the same set the homepage lists: a gig without an
+announcement text (`Termin.extern`) is neither mailed nor shown, and one with a text is both.
+`OHNE_ANKUENDIGUNG` lives in `intern/models.py` and is read by `home()` and the daemon alike.
 No model change on `Termin`. Linked from the homepage in `#concerts` (`.concert-cta`) and as a
 third `.contact-card` in `#contact`.
 

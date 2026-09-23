@@ -2093,10 +2093,12 @@ class TerminCountdownTest(SimpleTestCase):
         )
 
 
-class StartseitenExternTest(SimpleTestCase):
-    """Das Kriterium der Startseite ist ein nicht-leerer Ankündigungstext.
+class AnkuendigungLeerformenTest(SimpleTestCase):
+    """Das Kriterium für „öffentlich angekündigt" ist ein nicht-leerer Ankündigungstext.
 
-    Die beiden Leerformen sehen redundant aus und sind es nicht: Django setzt
+    Startseite (`home()`) und Auftritts-Erinnerungen teilen sich diese Menge
+    (`OHNE_ANKUENDIGUNG` in `intern/models.py`). Die beiden Leerformen sehen
+    redundant aus und sind es nicht: Django setzt
     bei der Negation auf einer nullable-Spalte ein ``IS NOT NULL`` in die
     Bedingung (``NOT (extern = '' AND extern IS NOT NULL)``), ein
     ``NULL``-Datensatz überlebt ``exclude(extern="")`` also. Der Test pinnt
@@ -2104,9 +2106,9 @@ class StartseitenExternTest(SimpleTestCase):
     """
 
     def test_beide_leerformen_zaehlen(self):
-        from intern.views.auth import _OHNE_ANKUENDIGUNG
+        from intern.models import OHNE_ANKUENDIGUNG
 
-        self.assertEqual(_OHNE_ANKUENDIGUNG, Q(extern__isnull=True) | Q(extern=""))
+        self.assertEqual(OHNE_ANKUENDIGUNG, Q(extern__isnull=True) | Q(extern=""))
 
 
 class KommendeTermineQTest(SimpleTestCase):

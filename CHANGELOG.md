@@ -38,8 +38,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   (`Termin.extern`), und der Text wird mit ausgegeben (Adresse, Einlass, Eintritt, Links). **Zum
   Ausrollen:** ein Auftritt ohne Eintrag fehlt auf der Startseite — für einen Auftritt ohne Text
   genügt ein Leerzeichen, er wird dann ohne Ankündigungsblock gelistet.
-- Die Erinnerungsmails der Auftritts-Mailingliste hängen weiterhin an „Repertoire"; die beiden
-  Mengen sind unabhängig. Wer beides zusammen haben will, setzt beide Zeichen.
+- Die Erinnerungsmails der Auftritts-Mailingliste hängen am Ankündigungstext (`Termin.extern`)
+  statt an „Repertoire": erinnert wird, was öffentlich angekündigt ist. „Repertoire" steuert
+  jetzt nur noch die Karte „Lieder" auf der Terminseite. **Zum Ausrollen:** ein Auftritt mit
+  „Repertoire", aber ohne Ankündigungstext wird nicht mehr erinnert — er braucht einen Text.
 - Datumsangaben nennen den kurzen Wochentag und den Monat als Zahl („Mi, 24.09.2026 19:30" statt
   „24. September 19:30") — betroffen sind alle Ausgaben über `replacements.format_datetime`. Die
   Verzweigungen für „heute" (nur Uhrzeit) und „gestern" bleiben wie sie waren.
