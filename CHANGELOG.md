@@ -7,6 +7,30 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## v1.0.0-rc5 — 2026-09-27
+
+### Hinzugefügt
+
+- Mitgliedschaft: die Gruppe „Mitglied" trägt ab jetzt die Vereinsmitgliedschaft, `is_active` nur
+  noch den Zugang zum Portal. Die Aktion „Mitgliedschaft genehmigen" auf der Mitgliedsseite setzt
+  beides in einem Schritt — bei einem Fördermitglied nur das Tag —, und die Karte „Mitgliedschaft"
+  zeigt die zwei Zustände als Pillen. Eine ruhende Mitgliedschaft behält ihr Tag.
+
+### Geändert
+
+- Willkommensmail und Eintrittsdatum hängen am Tag „Mitglied": ein Konto ohne Mitgliedschaft gilt
+  beim Einschalten als Reaktivierung und bekommt beides nicht. Der Schalter „Ruhend setzen" bzw.
+  „Zugang freischalten" fasst Tags nicht mehr an.
+- Gruppenmatrix: sie listet auch ruhende Konten, gekennzeichnet mit „ruhend" — sonst wäre das Tag
+  einer ruhenden Mitgliedschaft dort nicht pflegbar. Anonymisierte Konten bleiben draußen.
+- Startseite: das Menüband oben rechts trägt nur noch „Login". „Konzerte" und „Kontakt" stehen als
+  Buttons unter dem Schriftzug, „Home" ist die Bildmarke links. Das Milchglas sitzt jetzt am
+  Login-Knopf statt hinter der ganzen Leiste.
+- Ein von Hand angelegtes Mitglied bekommt das Tag „Mitglied" und den Anlagetag als
+  Eintrittsdatum.
+- Migration: die Gründungsmitglieder bekommen zusätzlich das Tag „Mitglied", das Chorleiter-Konto
+  bleibt aktiv und ohne Mitgliedschaft. „Gründer" ist damit ein Etikett ohne weitere Funktion.
+
 ## v1.0.0-rc4 — 2026-09-23
 
 ### Hinzugefügt
