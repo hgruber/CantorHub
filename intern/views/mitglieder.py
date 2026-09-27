@@ -10,6 +10,7 @@ from django.db.models import Count, F, OuterRef
 from django.http import HttpResponseForbidden, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from ._decorators import tabellenzustand
@@ -26,6 +27,7 @@ from intern.mail import neu_verbinden, send_config_mail, versende_serie
 
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..mitglied_felder import PRIVACY_FIELDS
+from ..mitgliedschaft import ist_mitglied, nimm_auf
 from ..models import Abstimmung, Artikel, Mitteilung, User, Zusage
 from ..tables import MitgliederFilter, MitgliederTabelle
 from .auth import make_invite_token
@@ -170,14 +172,29 @@ def mitglied_edit(request, id):
     carddav_aktiv = get_config_bool("CARDDAV_AKTIV", False)
 
     if request.method == "POST":
+        # Die Aufnahme in den Verein: sie setzt das Tag „Mitglied" und — außer bei
+        # Fördermitgliedern — den Portalzugang. Der Schalter darunter fasst das Tag
+        # bewusst nicht an, damit eine ruhende Mitgliedschaft eine bleibt.
+        if request.POST.get("action") == "aufnehmen" and request.user.has_perm("intern.change_user"):
+            if nimm_auf(user, request.user):
+                messages.success(request, "Mitgliedschaft genehmigt.")
+            else:
+                messages.success(
+                    request, "Fördermitgliedschaft genehmigt — ohne Portalzugang."
+                )
+            return redirect("mitglied_edit", id=id)
+
         if request.POST.get("action") == "deactivate" and request.user.has_perm("intern.change_user"):
             user.is_active = not user.is_active
             user._audit_user = request.user
             user.save(update_fields=["is_active"])
             if user.is_active:
-                messages.success(request, "Mitgliedschaft reaktiviert.")
+                messages.success(request, "Zugang wieder freigeschaltet.")
             else:
-                messages.success(request, "Mitgliedschaft ist jetzt ruhend.")
+                messages.success(
+                    request,
+                    "Ruhend gesetzt — der Zugang ist gesperrt, die Mitgliedschaft bleibt.",
+                )
             return redirect("mitglied_edit", id=id)
 
         form = UserEditForm(
@@ -230,6 +247,7 @@ def mitglied_edit(request, id):
         "carddav_aktiv": carddav_aktiv,
         "privacy_fields": PRIVACY_FIELDS,
         "member_groups": list(user.groups.order_by("name")),
+        "ist_mitglied": ist_mitglied(user),
     }
     return render(request, "mitglied_edit.html", context)
 
@@ -369,8 +387,14 @@ def mitglied_add(request):
         form = MitgliedAddForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
+            # Der manuelle Weg ist die Abkürzung für einen genehmigten Antrag: das
+            # Konto ist sofort aktiv, also gehört das Eintrittsdatum dazu. Ohne
+            # Stempel bliebe „Mitglied seit" leer — die Willkommensmail hängt am
+            # Umschalten von ``is_active`` und bleibt hier ohnehin aus.
+            user.date_joined = timezone.now()
             user._audit_user = request.user
             user.save()
+            nimm_auf(user, request.user)
             return redirect("mitglied_view", id=user.id)
     else:
         form = MitgliedAddForm()

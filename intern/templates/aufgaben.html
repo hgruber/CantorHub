@@ -278,6 +278,14 @@ dunklen Tokens heller sind und sich sonst in der Karte verlieren.
 [data-theme="dark"] .perm-corner,
 [data-theme="dark"] .perm-col-head { background: var(--bg-thead); }
 
+/* Ruhende Konten stehen mit in der Matrix, damit das Tag „Mitglied" auch dort
+   pflegbar ist, wo es am haeufigsten hingehoert. Kenntlich am Namen statt am
+   Zellhintergrund: die Namensspalte hat eigene Fuellungen (perm-user-col, auch
+   im dunklen Thema), die row-inactive aus der Mitgliederliste ueberschreiben
+   wuerden. */
+.perm-row-ruhend .perm-name { color: var(--t3); }
+.perm-row-ruhend .perm-ruhend { font-size: calc(11rem / 14); }
+
 @media (max-width: 768px) {
     .perm-apply-bar { left: 0; }
     .perm-user-col { min-width: 0; }

@@ -33,6 +33,7 @@ from intern.pdf import (
 from intern.mail import send_config_mail
 
 from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
+from ..mitgliedschaft import GRUPPE_FOERDERMITGLIED
 from ..models import OHNE_ANKUENDIGUNG, Termin, User
 
 __all__ = [
@@ -406,9 +407,9 @@ def mitglied_beitritt(request, token):
             if foerdermitglied:
                 from django.contrib.auth.models import Group as AuthGroup
                 try:
-                    user.groups.add(AuthGroup.objects.get(name="Fördermitglied"))
+                    user.groups.add(AuthGroup.objects.get(name=GRUPPE_FOERDERMITGLIED))
                 except AuthGroup.DoesNotExist:
-                    logger.warning("Gruppe 'Fördermitglied' nicht gefunden")
+                    logger.warning("Gruppe '%s' nicht gefunden", GRUPPE_FOERDERMITGLIED)
 
             minderjaehrig = False
             if user.geburtstag:

@@ -83,12 +83,22 @@ environment variable — only network access. Without it the migration calls `ex
   (`_GRUENDUNGSDATUM`, `import_gruendungsdatum`). Every other account arrives with
   `date_joined=None`; the legacy column `aktiv_seit` is no longer read, because it was
   inconsistent, partly empty and meant the login in the old portal rather than the join date.
-  A `date_joined` of `None` is what the portal reads as „never activated": whoever gets
-  activated later in the member administration receives the welcome mail and is stamped with
-  that day as their Eintrittsdatum (see `docs/members.md`).
-- **starts every account outside „Gründer" deactivated** (`deaktiviere_nicht_gruender`). The
-  fresh installation therefore has exactly the founding members as active users; the rest are
-  switched on one by one. The step has to run after `import_avatars`, which checks
+  A `date_joined` of `None` plus the tag „Mitglied" is what the portal reads as „never
+  taken in": whoever is admitted later through „Mitgliedschaft genehmigen" receives the
+  welcome mail and is stamped with that day as their Eintrittsdatum (see `docs/members.md`).
+- gives the founding members the **tag „Mitglied"** on top of „Gründer"
+  (`import_mitglieder_tag`). The legacy system had no notion of club membership — only
+  „aktiv" and the rights table — so the hardcoded founding list is the only membership the
+  import knows. „Gründer" itself keeps no function beyond this migration: it steers these
+  three steps and is a bare label afterwards, free to be deleted.
+- **starts every account outside „Gründer" deactivated** (`deaktiviere_nicht_gruender`), with
+  one exception: `legacy_id=232`, the conductor's account, stays active — it needs the portal
+  right after the switch. It is deliberately **not** given the tag „Mitglied": the conductor is
+  not a club member, and without the tag a later re-activation counts as a reactivation rather
+  than a first admission (no welcome mail, no Eintrittsdatum — see `intern/mitgliedschaft.py`).
+  The fresh installation therefore has the founding members plus that one account as active
+  users; the rest are admitted one by one through „Mitgliedschaft genehmigen", which sets tag
+  and `is_active` together. The step has to run after `import_avatars`, which checks
   `u.is_active` and would otherwise give those accounts the placeholder picture instead of
   their photo, and after `import_gruendungsmitglieder`, which fills the group the two steps
   work on.

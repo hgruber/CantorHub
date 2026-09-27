@@ -1,9 +1,10 @@
 {% for user in users %}
-<tr class="perm-row" data-user-id="{{ user.pk }}">
+<tr class="perm-row{% if not user.is_active %} perm-row-ruhend{% endif %}" data-user-id="{{ user.pk }}">
     <td class="perm-user-col perm-user-name{% if user.stimme and user.stimme != 'N' %} perm-stimme-{{ user.stimme|lower }}{% endif %}">
         <div class="perm-user-info">
             <span class="badge badge-stimme-{{ user.stimme|lower|default:'n' }}">{{ user.stimme|default:"N" }}</span>
             <span class="perm-name">{{ user.first_name }} {{ user.last_name }}</span>
+            {% if not user.is_active %}<span class="badge perm-ruhend" title="Ruhend — kein Zugang zum Portal">ruhend</span>{% endif %}
         </div>
     </td>
     {% for group in groups %}

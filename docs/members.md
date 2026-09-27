@@ -1,5 +1,41 @@
 # Members: joining, re-confirmation, leaving
 
+## Membership and portal access: two axes
+
+`is_active` and the group **„Mitglied"** answer two different questions, and
+`intern/mitgliedschaft.py` is the one place that spells them out:
+
+| | meaning |
+|---|---|
+| `is_active` | actively taking part — and therefore allowed into the portal. Nothing else. |
+| group „Mitglied" | club membership. It survives a dormant membership: whoever pauses loses the access (`is_active=False`) but keeps the tag. |
+
+The two combine freely. A dormant member is „tag, no access"; the conductor's account from the
+legacy portal is „access, no tag" (`legacy_id=232`, see `migration.md`); „Fördermitglied"
+(supporting member) is a member who does not take part, so tag without access.
+
+The tag carries **no permissions** — like „Gründer", „Fördermitglied" and „Kassenprüfer" it is a
+bare label in `GROUPS` (`0003_import.py`). „Gründer" has lost its function entirely: it steers
+the import and nothing else, and may be deleted later.
+
+**Admission** is its own action, „Mitgliedschaft genehmigen" in `mitglied_edit`
+(`action="aufnehmen"`, perm `intern.change_user`). `mitgliedschaft.nimm_auf()` adds the tag,
+writes a `ChangeLog` row for it (`changes={"gruppe": …}`) and — unless the account carries
+„Fördermitglied" — switches `is_active` on in the same step. The tag is set **before** the save,
+because the signal below reads it. The dormant/reactivate switch next to it never touches tags,
+which is what makes a dormant membership stay one.
+
+**First admission vs. reactivation.** `signals._send_activation_mail()` asks
+`ist_erstaufnahme(user.date_joined, ist_mitglied(user))`: only a member (tag) without an
+Eintrittsdatum yet is a first admission and gets `MAIL_WILLKOMMEN` plus the stamp. A missing
+`date_joined` alone is not enough — an account without the tag never had one, and would
+otherwise be greeted as a newcomer every time it is switched back on. Such accounts take the
+`MAIL_REAKTIVIERT` path and keep an empty „Mitglied seit", which is correct for a non-member.
+
+Because a dormant account keeps its tags, the group matrix `/intern/aufgaben/` lists dormant
+accounts too (marked „ruhend"); only anonymised ones (`geloescht_*`) stay out. Otherwise a
+dormant member's tag could be neither seen nor corrected.
+
 ## Member application flow (Mitglieds-Beitritt)
 
 Two ways to add a member, both behind the `+` in `/intern/mitglied/` (perm `intern.add_user`).
@@ -12,7 +48,10 @@ context var in `table.html`) is two-step:
    (salt `intern.mitglied_invite`, **7-day** validity) — `make_invite_token()` /
    `_read_invite_token()` in `views/auth.py`. Stateless: no DB model, no placeholder user.
 2. **Manuell anlegen** (JS-revealed): `MitgliedAddForm` posting to `mitglied_add`, which creates
-   an **active** member immediately.
+   an **active** member immediately — the shortcut for an application already approved, so it
+   also sets the tag „Mitglied" (`nimm_auf()`) and stamps `date_joined` with that day. Without
+   the stamp „Mitglied seit" would stay empty for good: the welcome mail hangs on `is_active`
+   *changing*, which never happens for an account that starts out active.
 
 The public join form lives at `/intern/beitritt/<token>/` (`mitglied_beitritt` in
 `views/auth.py`, **no** `login_required`). `MitgliedBeitrittForm` (`forms.py`) validates all
@@ -46,20 +85,26 @@ saving and `signals._write_audit_log` maps that to the application action (the a
 ≤8 chars to fit `action`'s `max_length`).
 
 **Applicants are created with `date_joined=None`** (the field is overridden on `User` to be
-nullable). This is the discriminator for the activation mail: when an admin later sets
-`is_active=True`, `signals._send_activation_mail()` checks `user.date_joined is None` →
-first-time activation → sends the `MAIL_WILLKOMMEN` text and stamps `date_joined` via
-`User.objects.filter(pk=...).update(date_joined=timezone.now())` (avoids a recursive signal). If
-`date_joined` is already set → reactivation → `MAIL_REAKTIVIERT`. Both texts get `{link}` = the
-login URL derived from `VEREINS_URL`; without it the `{button:…}` in the text renders nothing.
-No mail is sent if the user has no email address.
+nullable) and **without** the tag „Mitglied" — an application is not yet a membership. The
+approval is the „Mitgliedschaft genehmigen" action above: it sets the tag and `is_active`
+together, and only that combination makes `signals._send_activation_mail()` treat the change as
+a first admission → sends the `MAIL_WILLKOMMEN` text and stamps `date_joined` via
+`User.objects.filter(pk=...).update(date_joined=timezone.now())` (avoids a recursive signal).
+With a `date_joined` already set, or without the tag, it is a reactivation →
+`MAIL_REAKTIVIERT`. Both texts get `{link}` = the login URL derived from `VEREINS_URL`; without
+it the `{button:…}` in the text renders nothing. No mail is sent if the user has no email
+address — and then no `date_joined` is stamped either, since the whole branch hangs on the mail.
+
+An application marked `foerdermitglied` is approved by the same action: the account gets the tag
+„Mitglied" beside „Fördermitglied" and stays inactive, so no mail and no Eintrittsdatum.
 
 Applicants are not the only source of that `None`: the legacy import brings **every** member in
-without an Eintrittsdatum and deactivates all but the founding members (`migration.md`, „What
-`0003_import.py` does"). The members switched on later therefore take exactly this path — they
-receive the welcome mail, and the day of their activation becomes their Eintrittsdatum. Until
-then „Mitglied seit" is empty on their card (`mitglied.html`) and the CardDAV note omits the
-line (`carddav/vcard.py`; both handle the `None`).
+without an Eintrittsdatum, gives the tag „Mitglied" to the founding members alone and
+deactivates everyone outside „Gründer" (`migration.md`, „What `0003_import.py` does"). The
+accounts admitted later therefore take exactly this path — „Mitgliedschaft genehmigen" gives
+them tag and access, they receive the welcome mail, and the day of their admission becomes their
+Eintrittsdatum. Until then „Mitglied seit" is empty on their card (`mitglied.html`) and the
+CardDAV note omits the line (`carddav/vcard.py`; both handle the `None`).
 
 ## Re-confirmation flow (Datenbestätigung)
 

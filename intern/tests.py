@@ -28,6 +28,13 @@ from intern.anfragespeicher import anlegen as anfrage_anlegen
 from intern.anfragespeicher import gemerkt
 from intern.anfragespeicher import leeren as anfrage_leeren
 from intern.anfragespeicher import verwerfen as anfrage_verwerfen
+from intern.mitgliedschaft import (
+    GRUPPE_FOERDERMITGLIED,
+    GRUPPE_GRUENDER,
+    GRUPPE_MITGLIED,
+    aufnahme_setzt_aktiv,
+    ist_erstaufnahme,
+)
 from intern.aufstellung import aufstellung
 from intern.auslieferungen import (
     ABSCHNITTE_PRO_CHARGE, Auslieferung, Gruppe, Stichpunkt, auszeichnen, charge,
@@ -4610,3 +4617,47 @@ class VerwaisteBlobsTest(SimpleTestCase):
         # Verzeichnis — nicht auf eines unterhalb des Thumbnail-Praefixes.
         self.assertEqual(zugeordnetes_verzeichnis(self.BLOB), quelle)
         self.assertIsNone(zugeordnetes_verzeichnis("tiles/12/34/56.png"))
+
+
+class MitgliedschaftTest(SimpleTestCase):
+    """Die zwei Achsen aus ``intern/mitgliedschaft.py``.
+
+    ``is_active`` traegt den Portalzugang, das Tag „Mitglied" die
+    Vereinsmitgliedschaft — vorher steckte beides in einem Feld. Die Entscheidungen
+    stehen deshalb als reine Funktionen da, und dieser Test haelt sie fest: vor allem
+    den Fall, der den Anlass gab (ein Konto **ohne** Tag ist auch ohne Eintrittsdatum
+    keine Neuaufnahme, sonst bekaeme das Chorleiter-Konto beim Wiedereinschalten
+    Willkommensmail und ein Eintrittsdatum).
+    """
+
+    EIN_DATUM = datetime(2026, 6, 17, 20, 0)
+
+    def test_erstaufnahme_nur_mit_tag_und_ohne_datum(self):
+        self.assertTrue(ist_erstaufnahme(None, True))
+        # Kein Tag: Wiedereinschalten ist eine Reaktivierung, keine Aufnahme.
+        self.assertFalse(ist_erstaufnahme(None, False))
+        # Datum vorhanden: die Person war schon einmal aufgenommen.
+        self.assertFalse(ist_erstaufnahme(self.EIN_DATUM, True))
+        self.assertFalse(ist_erstaufnahme(self.EIN_DATUM, False))
+
+    def test_erstaufnahme_gibt_wahrheitswert(self):
+        # ``ist_mitglied`` kommt aus einem QuerySet-``exists()``; der Rueckgabewert
+        # muss trotzdem ein echtes bool sein, weil er die Mailauswahl steuert.
+        self.assertIs(ist_erstaufnahme(None, 1), True)
+        self.assertIs(ist_erstaufnahme(None, 0), False)
+
+    def test_foerdermitglied_bekommt_keinen_zugang(self):
+        self.assertTrue(aufnahme_setzt_aktiv(False))
+        self.assertFalse(aufnahme_setzt_aktiv(True))
+
+    def test_gruppennamen_stehen_im_import(self):
+        """Die drei Gruppennamen muessen im ``GROUPS``-Dict der Migration stehen.
+
+        Sonst legt ``create_groups`` sie bei einer Neuinstallation nicht an und die
+        Aufnahme laufe gegen eine Gruppe, die es nur per ``get_or_create`` gibt.
+        """
+        quelle = (
+            Path(__file__).resolve().parent / "migrations" / "0003_import.py"
+        ).read_text(encoding="utf-8")
+        for name in (GRUPPE_MITGLIED, GRUPPE_FOERDERMITGLIED, GRUPPE_GRUENDER):
+            self.assertIn(f'"{name}": [', quelle, f"{name} fehlt in GROUPS")

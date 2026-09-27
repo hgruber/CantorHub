@@ -187,10 +187,14 @@ def _send_activation_mail(user):
         if not get_config_bool("MAIL_BEI_AKTIVIERUNG"):
             return
         from .mail import send_config_mail
+        from .mitgliedschaft import ist_erstaufnahme, ist_mitglied
         from .models import User
 
         vereinsname = get_vereinsname()
-        first_activation = user.date_joined is None
+        # Nur eine echte Aufnahme ins Vereinsleben bekommt Willkommensmail und
+        # Eintrittsdatum. Ein Konto ohne Tag „Mitglied" (Chorleiter, Gast) hat nie
+        # eines gehabt und gilt beim Wiedereinschalten als Reaktivierung.
+        first_activation = ist_erstaufnahme(user.date_joined, ist_mitglied(user))
         if first_activation:
             User.objects.filter(pk=user.pk).update(date_joined=timezone.now())
             text_key = "MAIL_WILLKOMMEN"

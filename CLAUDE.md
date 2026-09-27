@@ -90,7 +90,9 @@ into release sections and change groups, plus inline markup, without a Markdown 
 behind `/intern/changelog/`; **not** the audit log `ChangeLog`, see `docs/frontend.md`),
 `zusage.py` (the value set and labels of `Zusage.option` — the one source the model, the
 stage picture, the table column, the filter and the audit labels all read; guarded by
-`ZusageOptionenTest`), `avatare.py` (fallback avatar files and thumbnails, so lists do not
+`ZusageOptionenTest`), `mitgliedschaft.py` (the two axes of belonging: `is_active` = portal
+access, the group „Mitglied" = club membership, plus the admission itself — guarded by
+`MitgliedschaftTest`, see `docs/members.md`), `avatare.py` (fallback avatar files and thumbnails, so lists do not
 load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TRIGGER_FIELDS`),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
 `ejabberd.py`, `konfig_gruppen.py`, `middleware.py` (the throttled session refresh, see
@@ -225,6 +227,12 @@ reasoning where it matters.
   `filer_check --delete-orphans` — it would delete the whole version history;
   `cleanup_verwaiste_blobs` is the safe stand-in, and `intern/blob_aufraeumen.py` holds the rule
   it decides by.
+- **`is_active` is portal access, the group „Mitglied" is the club membership.** Two axes, one
+  source: `intern/mitgliedschaft.py`. A dormant membership is „tag, no access"; the conductor's
+  legacy account is „access, no tag"; a Fördermitglied is „tag, no access" by design. Admission
+  („Mitgliedschaft genehmigen") sets both, the dormant switch never touches tags, and welcome
+  mail plus Eintrittsdatum need the tag — `date_joined is None` alone would greet a non-member
+  as a newcomer on every reactivation. See `docs/members.md`.
 - **Every write path on a file must call `darf_avatar_aendern()`**, or one member can overwrite
   another's profile picture.
 - **A folder without `FolderPermission` rows is open.** Code that creates a folder must set rows

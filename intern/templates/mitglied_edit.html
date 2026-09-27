@@ -99,21 +99,36 @@
             <div>
                 <p style="display:flex;align-items:center;gap:8px;margin:0 0 8px;">
                     <strong>Mitgliedschaft</strong>
+                    {% if ist_mitglied %}
+                    <span class="badge badge-primary">Mitglied</span>
+                    {% else %}
+                    <span class="badge">Kein Mitglied</span>
+                    {% endif %}
                     {% if user.is_active %}
                     <span class="badge badge-primary">Aktiv</span>
                     {% else %}
                     <span class="badge">Ruhend</span>
                     {% endif %}
                 </p>
-                <p class="text-muted">Sperrt die Anmeldung, ohne Daten zu löschen. Das Mitglied ist für andere nicht mehr sichtbar. Die Aktion ist jederzeit umkehrbar — alle Daten bleiben vollständig erhalten.</p>
+                {% if not ist_mitglied %}
+                <p class="text-muted">Die Aufnahme vergibt das Tag „Mitglied" und schaltet den Zugang frei; bei einem Fördermitglied bleibt der Zugang aus. Ist es die erste Aufnahme, gehen Willkommensmail und Eintrittsdatum mit.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="aufnehmen">
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Mitgliedschaft genehmigen</button>
+                    </div>
+                </form>
+                {% endif %}
+                <p class="text-muted">Ruhend heißt: die Anmeldung ist gesperrt und die Person für andere nicht mehr sichtbar, ohne dass Daten verloren gehen. Die Mitgliedschaft selbst bleibt unberührt, und die Aktion ist jederzeit umkehrbar.</p>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="deactivate">
                     <div class="form-actions">
                         {% if user.is_active %}
-                        <button type="submit" class="btn btn-danger">Ruhende Mitgliedschaft</button>
+                        <button type="submit" class="btn btn-danger">Ruhend setzen</button>
                         {% else %}
-                        <button type="submit" class="btn btn-primary">Mitgliedschaft aktivieren</button>
+                        <button type="submit" class="btn btn-primary">Zugang freischalten</button>
                         {% endif %}
                     </div>
                 </form>
