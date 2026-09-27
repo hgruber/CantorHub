@@ -7,6 +7,13 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Startseite: der Schriftzug, der beim Scrollen an die Stelle der Bildmarke tritt, steht in der
+  Markenfarbe statt in Schwarz.
+
 ## v1.0.0-rc5 — 2026-09-27
 
 ### Hinzugefügt

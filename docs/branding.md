@@ -48,8 +48,11 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
   dir `intern/static/intern/images/`; the other two still need the same treatment.
 
 ### Wordmark (`intern/static/intern/brand/`)
-- `JG-Frankfurt.svg` (black) / `JG-Frankfurt-transparent.svg` (light, for dark grounds) —
+- `JG-Frankfurt.svg` (black, homepage footer) / `JG-Frankfurt-color.svg` (solid brand
+  colour, the scrolled homepage header) / `JG-Frankfurt-transparent.svg` (a gradient
+  running into white, for dark grounds — the homepage hero) —
   the "Just Gospel! Frankfurt" lettering, used as headline image on the homepage.
+  The three differ only in the fill of their single path.
   The letters are outlines; the original typeface (Showcard Gothic) is not embedded and
   cannot be licensed as a webfont, so a deployer replacing the branding replaces the SVG.
 

@@ -100,7 +100,11 @@ a {
     align-items: center;
 }
 
-/* über dem Foto die runde Bildmarke, im weissen Zustand der Schriftzug */
+/* Über dem Foto die runde Bildmarke, im weissen Zustand der Schriftzug — und
+   zwar die markenfarbene Wortmarke (JG-Frankfurt-color.svg): die schwarze
+   stünde neben der farbigen Bildmarke als Bruch, und die helle des Heros
+   (JG-Frankfurt-transparent.svg) verläuft nach rechts ins Weiße und verlöre
+   auf dem weißen Kopf „FRANKFURT" und das Ausrufezeichen. */
 .site-header .brand-word {
     display: none;
     width: 132px;
