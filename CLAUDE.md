@@ -185,6 +185,13 @@ reasoning where it matters.
   the data migration `0003_import`, which needs the legacy MySQL server. Keep logic free of DB
   access and isolate the DB half in a thin wrapper so it stays testable (`lese_abmelde_token()`
   vs. `read_abmelde_token()` is the pattern).
+- **The production database compares strings with `PAD SPACE`.** MariaDB's
+  `utf8mb4_general_ci` treats `' ' = ''` as true; SQLite does not. A filter that has to tell a
+  blank from an empty string therefore compares the **length** — `Length` is registered as a
+  lookup on `TextField`, so `extern__length=0` — and never `= ""`. `OHNE_ANKUENDIGUNG` in
+  `models.py` depends on it, because a single space in `Termin.extern` deliberately lifts a gig
+  onto the homepage. The DB-less suite cannot see the difference, so `AnkuendigungLeerformenTest`
+  pins the shape of the condition rather than its result.
 - **`USE_TZ = False`.** Every datetime is naive local wall-clock time. Never call `localtime()`,
   and pass "now" in as an argument rather than reading the clock inside logic you want to test.
   The wall-clock zone is the `ZEITZONE` `Konfiguration` key (default `Europe/Berlin`), synced

@@ -31,6 +31,13 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Migration: die Gründungsmitglieder bekommen zusätzlich das Tag „Mitglied", das Chorleiter-Konto
   bleibt aktiv und ohne Mitgliedschaft. „Gründer" ist damit ein Etikett ohne weitere Funktion.
 
+### Behoben
+
+- Startseite: die Auftritte, deren Ankündigungstext nur aus einem Leerzeichen besteht, fehlten
+  unter MySQL/MariaDB in der Konzertliste. Deren Kollation vergleicht Zeichenketten mit
+  `PAD SPACE`, wo `' ' = ''` gilt; das Kriterium prüft jetzt die Länge des Feldes. Dieselben
+  Auftritte lösten darum auch keine Erinnerungsmail der Auftritts-Mailingliste aus.
+
 ## v1.0.0-rc4 — 2026-09-23
 
 ### Hinzugefügt

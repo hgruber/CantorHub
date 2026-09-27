@@ -666,7 +666,11 @@ two empty forms of the announcement text, so an event without one stays off the 
 is a public gig. The gig-reminder mails follow the same set — `OHNE_ANKUENDIGUNG` in
 `intern/models.py` (see `docs/mailinglist.md`). The
 selection deliberately checks the raw field while the rendered block checks the filter result —
-that is how a single space lists an event without producing an empty box.
+that is how a single space lists an event without producing an empty box. That is also why the
+condition measures the field's *length* instead of comparing it to `""`: MariaDB's
+`utf8mb4_general_ci` pads strings for comparison, so `' ' = ''` is true there and a `= ""` filter
+dropped exactly the gigs the space was meant to lift onto the page — visible only on the
+production database, never on SQLite.
 
 The palette is warm — cream instead of white-grey, a warm dark instead of black. `--gold` is a
 second colour standing for the invitation rather than the brand, and it appears in exactly two

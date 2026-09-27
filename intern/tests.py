@@ -2156,14 +2156,37 @@ class AnkuendigungLeerformenTest(SimpleTestCase):
     redundant aus und sind es nicht: Django setzt
     bei der Negation auf einer nullable-Spalte ein ``IS NOT NULL`` in die
     Bedingung (``NOT (extern = '' AND extern IS NOT NULL)``), ein
-    ``NULL``-Datensatz überlebt ``exclude(extern="")`` also. Der Test pinnt
-    genau diese Regel, damit sie nicht wegoptimiert wird.
+    ``NULL``-Datensatz überlebt ``exclude(extern="")`` also.
+
+    Die zweite Hälfte prüft die *Länge*, nicht den Wert. MySQL/MariaDB
+    vergleichen Zeichenketten unter den gängigen Kollationen mit ``PAD SPACE``,
+    dort ist ``' ' = ''`` wahr — ein ``Q(extern="")`` schließt also genau die
+    Auftritte aus, die das Leerzeichen aus ``_STARTSEITE_OHNE_TEXT`` listen
+    soll. Die Suite läuft ohne Datenbank und sieht das nicht; darum pinnt der
+    Test die Form der Bedingung, nicht ihr Ergebnis.
     """
 
     def test_beide_leerformen_zaehlen(self):
         from intern.models import OHNE_ANKUENDIGUNG
 
-        self.assertEqual(OHNE_ANKUENDIGUNG, Q(extern__isnull=True) | Q(extern=""))
+        self.assertEqual(
+            OHNE_ANKUENDIGUNG, Q(extern__isnull=True) | Q(extern__length=0)
+        )
+
+    def test_kein_vergleich_mit_leerstring(self):
+        """Kein ``extern=""`` in der Bedingung — das wäre die PAD-SPACE-Falle."""
+        from intern.models import OHNE_ANKUENDIGUNG
+
+        lookups = {kind[0] for kind in OHNE_ANKUENDIGUNG.children}
+        self.assertNotIn("extern", lookups)
+        self.assertNotIn("extern__exact", lookups)
+
+    def test_length_lookup_ist_registriert(self):
+        """``extern__length`` muss auflösbar sein, sonst wirft die Abfrage."""
+        from django.db.models import TextField
+        from django.db.models.functions import Length
+
+        self.assertIs(TextField.get_lookups().get("length"), Length)
 
 
 class KommendeTermineQTest(SimpleTestCase):

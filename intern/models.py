@@ -15,7 +15,7 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.functions import Coalesce, Concat
+from django.db.models.functions import Coalesce, Concat, Length
 from django.utils import timezone
 from django.utils.html import format_html
 from filer.fields.file import FilerFileField
@@ -488,7 +488,18 @@ class Ort(models.Model):
 # ohne dass ein Text erfunden wird — siehe `_STARTSEITE_OHNE_TEXT` in
 # `intern/migrations/0003_import.py`. Die *Anzeige* hängt dagegen am
 # Template-Filter `extern_html`, der reinen Leerraum fallen lässt.
-OHNE_ANKUENDIGUNG = Q(extern__isnull=True) | Q(extern="")
+#
+# Gemessen wird die Länge, nicht der Wert, und das ist der Kern der Sache:
+# MySQL/MariaDB vergleichen Zeichenketten unter den gängigen Kollationen mit
+# `PAD SPACE` (hier `utf8mb4_general_ci`), dort ist `' ' = ''` **wahr**. Ein
+# `Q(extern="")` hätte genau die Auftritte wieder ausgeschlossen, die das
+# Leerzeichen listen soll — auf SQLite unsichtbar, weil dort `' ' <> ''` gilt.
+# `CHAR_LENGTH()` zählt das Leerzeichen auf beiden Datenbanken als 1. Die
+# Suite läuft ohne Datenbank, kann den Unterschied also nicht sehen:
+# `AnkuendigungLeerformenTest` pinnt darum die Form der Bedingung.
+models.TextField.register_lookup(Length)
+
+OHNE_ANKUENDIGUNG = Q(extern__isnull=True) | Q(extern__length=0)
 
 
 class Termin(models.Model):
