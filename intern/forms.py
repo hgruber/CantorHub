@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils.crypto import get_random_string
@@ -421,6 +422,41 @@ class MitgliedBeitrittForm(forms.ModelForm):
             user.save()
             self.save_m2m()
         return user
+
+
+class CantorAuthenticationForm(AuthenticationForm):
+    """Login-Formular, das ein gesperrtes Konto beim Namen nennt.
+
+    Django lehnt ein inaktives Konto mit derselben Meldung ab wie ein falsches
+    Passwort. Wer zur Datenbestätigung angeschrieben wurde, ist bis zur
+    Bestätigung inaktiv und hielte sein Passwort sonst für falsch. Nur bei
+    **richtigem** Passwort setzt das Formular ``zugang_gesperrt``; ``login.html``
+    zeigt dann den Hinweis. Ein ruhendes Konto lässt sich davon nicht
+    unterscheiden, der Hinweis ist deshalb allgemein gehalten.
+    """
+
+    zugang_gesperrt = False
+
+    def clean(self):
+        try:
+            return super().clean()
+        except ValidationError:
+            self.zugang_gesperrt = self._inaktiv_mit_richtigem_passwort()
+            raise
+
+    def _inaktiv_mit_richtigem_passwort(self):
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
+        if not username or not password:
+            return False
+        try:
+            user = User._default_manager.get_by_natural_key(username)
+        except User.DoesNotExist:
+            # Gleich viel Hash-Arbeit wie bei einem vorhandenen Konto, damit die
+            # Antwortzeit nicht verrät, ob es den Namen gibt.
+            User().set_password(password)
+            return False
+        return not user.is_active and user.check_password(password)
 
 
 class MitgliedBestaetigungForm(forms.Form):

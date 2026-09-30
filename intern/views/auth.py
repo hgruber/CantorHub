@@ -539,6 +539,10 @@ def send_bestaetigung_mail(user, base_url):
 
     Wird vom Management-Command ``send_reconfirmation`` aufgerufen.
     ``base_url`` muss Schema + Host enthalten, z. B. ``https://portal.example.com``.
+
+    Nach dem Versand ist der Portalzugang gesperrt (``is_active=False``), bis das
+    Mitglied das Formular hinter dem Link abschickt. Scheitert der Versand, bleibt
+    das Konto unberührt.
     """
     token = _make_bestaetigung_token(user.pk)
     link = f"{base_url.rstrip('/')}/intern/bestaetigung/{token}/"
@@ -549,6 +553,9 @@ def send_bestaetigung_mail(user, base_url):
         user=user,
         link=link,
     )
+    if user.is_active:
+        user.is_active = False
+        user.save(update_fields=["is_active"])
 
 
 def mitglied_bestaetigung(request, token):
@@ -557,19 +564,29 @@ def mitglied_bestaetigung(request, token):
     Zeigt die aktuellen Mitgliedsdaten und vier Bestätigungs-Checkboxen.
     Bei Absenden wird ein PDF gespeichert und per Mail als Quittung versandt.
     Kein Login erforderlich, kein Vorstand-Notify.
+
+    Der Versand der Aufforderung sperrt das Konto; das Absenden schaltet es
+    wieder frei — ohne Eintrittsdatum und ohne Willkommens- oder
+    Reaktivierungsmail (``_ohne_aktivierungsmail``, siehe ``signals.py``).
     """
     user_pk = _read_bestaetigung_token(token)
     if user_pk is None:
         return render(request, "mitglied_bestaetigung_invalid.html", status=400)
 
     try:
-        user = User.objects.get(pk=user_pk, is_active=True)
+        user = User.objects.exclude(username__startswith="geloescht_").get(pk=user_pk)
     except User.DoesNotExist:
         return render(request, "mitglied_bestaetigung_invalid.html", status=400)
 
     if request.method == "POST":
         form = MitgliedBestaetigungForm(request.POST)
         if form.is_valid():
+            if not user.is_active:
+                user.is_active = True
+                user._audit_user = user
+                user._ohne_aktivierungsmail = True
+                user.save(update_fields=["is_active"])
+
             pdf_attachment = None
             try:
                 pdf_bytes, pdf_fname = _save_bestaetigung_pdf(user)

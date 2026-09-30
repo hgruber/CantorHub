@@ -4684,3 +4684,48 @@ class MitgliedschaftTest(SimpleTestCase):
         ).read_text(encoding="utf-8")
         for name in (GRUPPE_MITGLIED, GRUPPE_FOERDERMITGLIED, GRUPPE_GRUENDER):
             self.assertIn(f'"{name}": [', quelle, f"{name} fehlt in GROUPS")
+
+
+class LoginSperrhinweisTest(SimpleTestCase):
+    """Ein gesperrtes Konto bekommt beim Login den Sperrhinweis statt „Passwort falsch".
+
+    Die Datenbestätigung sperrt das Konto bis zum Absenden des Formulars
+    (``send_bestaetigung_mail``); ohne den Hinweis hielte das Mitglied sein
+    Passwort für falsch. Den Hinweis gibt es nur bei richtigem Passwort.
+    """
+
+    def _formular(self, konto, password="geheim"):
+        from intern.forms import CantorAuthenticationForm
+        from intern.models import User
+
+        modell = mock.Mock(DoesNotExist=User.DoesNotExist)
+        if konto is None:
+            modell._default_manager.get_by_natural_key.side_effect = User.DoesNotExist
+        else:
+            modell._default_manager.get_by_natural_key.return_value = konto
+        form = CantorAuthenticationForm(
+            data={"username": "anna", "password": password}
+        )
+        with mock.patch("django.contrib.auth.forms.authenticate", return_value=None), \
+                mock.patch("intern.forms.User", modell):
+            self.assertFalse(form.is_valid())
+        return form
+
+    def _konto(self, aktiv):
+        return SimpleNamespace(
+            is_active=aktiv, check_password=lambda pw: pw == "geheim"
+        )
+
+    def test_gesperrt_mit_richtigem_passwort(self):
+        self.assertTrue(self._formular(self._konto(aktiv=False)).zugang_gesperrt)
+
+    def test_gesperrt_mit_falschem_passwort(self):
+        form = self._formular(self._konto(aktiv=False), password="falsch")
+        self.assertFalse(form.zugang_gesperrt)
+
+    def test_aktiv_mit_falschem_passwort(self):
+        form = self._formular(self._konto(aktiv=True), password="falsch")
+        self.assertFalse(form.zugang_gesperrt)
+
+    def test_unbekannter_name(self):
+        self.assertFalse(self._formular(None).zugang_gesperrt)

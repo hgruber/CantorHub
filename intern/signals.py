@@ -167,13 +167,15 @@ def sync_xmpp_on_user_save(sender, instance, created, **kwargs):
 
     _write_audit_log(instance, created, "User")
 
-    # Welcome / reactivation mail when admin activates a user
+    # Welcome / reactivation mail when admin activates a user. The data
+    # re-confirmation re-enables its own lock: no mail and no Eintrittsdatum then.
     old_vals = getattr(instance, "_audit_old", None) or {}
     if (
         not created
         and old_vals.get("is_active") is False
         and instance.is_active
         and instance.email
+        and not getattr(instance, "_ohne_aktivierungsmail", False)
     ):
         _send_activation_mail(instance)
 

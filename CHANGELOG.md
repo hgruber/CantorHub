@@ -13,6 +13,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 - Startseite: der Schriftzug, der beim Scrollen an die Stelle der Bildmarke tritt, steht in der
   Markenfarbe statt in Schwarz.
+- Datenbestätigung: wer die Aufforderung per E-Mail bekommt, kann sich bis zum Absenden des
+  Bestätigungsformulars nicht mehr anmelden; das Absenden gibt den Zugang ohne Eintrittsdatum
+  und ohne Willkommensmail wieder frei. Die Anmeldeseite nennt bei richtigem Passwort die Sperre
+  statt eines falschen Passworts.
 
 ## v1.0.0-rc5 — 2026-09-27
 

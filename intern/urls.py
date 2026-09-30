@@ -2,13 +2,16 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views
+from .forms import CantorAuthenticationForm
 
 urlpatterns = [
     # Authentication URLs
     path(
         "login/",
         views.CantorLoginView.as_view(
-            template_name="login.html", next_page="/intern/artikel/Aktuell/"
+            template_name="login.html",
+            next_page="/intern/artikel/Aktuell/",
+            authentication_form=CantorAuthenticationForm,
         ),
         name="login",
     ),

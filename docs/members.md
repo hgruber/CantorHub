@@ -119,13 +119,29 @@ override with `--base-url URL`). The command calls `send_bestaetigung_mail(user,
    validity) encoding the user PK;
 2. reads the mail body from the `Konfiguration` key **`MAIL_BESTAETIGUNG`** — all standard
    placeholders plus `{link}`; an empty key means an empty mail body;
-3. sends it via `send_config_mail()`.
+3. sends it via `send_config_mail()`;
+4. switches `is_active` off once the mail went out — the member cannot log in (portal,
+   CardDAV/CalDAV; open sessions end) until the form is submitted. A failed send leaves the
+   account alone, and `--print-url` never locks.
+
+`--user` also finds an account that is already locked, so an expired link can be re-sent; `--all`
+covers active members only. The lock is `is_active` alone, without a marker: a dormant member
+holding a still valid link could unlock themselves through it.
+
+**Login hint:** `CantorAuthenticationForm` (`forms.py`) sets `zugang_gesperrt` when the password
+is right but the account is inactive, and `login.html` then asks the member to confirm through
+the mail link instead of claiming a wrong password. It cannot tell a pending confirmation from a
+dormant account, so the wording covers both. `LoginSperrhinweisTest` guards it.
 
 **Public form:** `/intern/bestaetigung/<token>/` (`mitglied_bestaetigung` in `views/auth.py`, no
-`login_required`). Shows the member's current data (read-only) plus three mandatory checkboxes
+`login_required`, inactive accounts accepted, anonymised `geloescht_*` ones not). Shows the member's current data (read-only) plus three mandatory checkboxes
 (`MitgliedBestaetigungForm`): data correct, Datenschutz, Satzung.
 
-**On submit:** `_save_bestaetigung_pdf(user)` generates a PDF (reportlab) with all stored data +
+**On submit:** an inactive account is switched back on first, flagged `_ohne_aktivierungsmail`
+so that `signals._send_activation_mail()` stays out: no welcome or reactivation mail and **no
+Eintrittsdatum** — the legacy import left most members with tag „Mitglied" and
+`date_joined=None`, which the signal would otherwise take for a first admission. Then
+`_save_bestaetigung_pdf(user)` generates a PDF (reportlab) with all stored data +
 confirmed checkboxes, saves it to „Mitglieder-Verwaltung" in filer, and attaches it to the
 quittance mail sent to the member (`MAIL_BESTAETIGUNG_BESTAETIGT`). No Vorstand notification.
 Three public templates extend `mitglied_public_base.html`: `mitglied_bestaetigung.html`,

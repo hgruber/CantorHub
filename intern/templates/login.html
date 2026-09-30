@@ -7,7 +7,12 @@
     </div>
     {% if form.errors %}
         <div class="error">
+            {% if form.zugang_gesperrt %}
+            <p>Dein Zugang ist derzeit gesperrt. Falls Du eine E-Mail zur Datenbestätigung
+            bekommen hast, bestätige bitte zuerst Deine Daten über den Link darin.</p>
+            {% else %}
             <p>Dein Benutzername oder Passwort sind nicht richtig.</p>
+            {% endif %}
         </div>
     {% endif %}
     <form class="login-form" method="post" action="{% url 'login' %}">

@@ -9,7 +9,8 @@ class Command(BaseCommand):
     help = (
         "Sendet die Datenbestätigungs-E-Mail an einzelne oder alle aktiven Mitglieder. "
         "Die E-Mail enthält einen 30 Tage gültigen Link zum öffentlichen Bestätigungsformular. "
-        "Mit --print-url wird nur die URL ausgegeben, ohne Mail zu senden."
+        "Nach dem Versand ist der Portalzugang bis zur Bestätigung gesperrt. "
+        "Mit --print-url wird nur die URL ausgegeben, ohne Mail zu senden und ohne Sperre."
     )
 
     def add_arguments(self, parser):
@@ -17,7 +18,10 @@ class Command(BaseCommand):
         group.add_argument(
             "--user",
             metavar="USERNAME",
-            help="Benutzername des Mitglieds, an das die Mail gesendet werden soll.",
+            help=(
+                "Benutzername des Mitglieds, an das die Mail gesendet werden soll — "
+                "auch ein bereits gesperrtes, etwa nach Ablauf des Links."
+            ),
         )
         group.add_argument(
             "--all",
@@ -47,12 +51,10 @@ class Command(BaseCommand):
 
         if options["user"]:
             try:
-                user = User.objects.get(username=options["user"], is_active=True)
+                user = User.objects.get(username=options["user"])
             except User.DoesNotExist:
                 self.stderr.write(
-                    self.style.ERROR(
-                        f"Benutzer '{options['user']}' nicht gefunden oder inaktiv."
-                    )
+                    self.style.ERROR(f"Benutzer '{options['user']}' nicht gefunden.")
                 )
                 return
             if print_url:
