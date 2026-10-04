@@ -7,6 +7,13 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Migration: Artikelversionen vor dem 12.12.2015 werden nicht übernommen; Artikel, die nur
+  ältere Versionen haben, entfallen ganz. Die Hilfe-Seiten kommen vollständig mit.
+
 ## v1.0.0-rc7 — 2026-10-04
 
 ### Hinzugefügt
