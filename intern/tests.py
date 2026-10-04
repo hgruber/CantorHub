@@ -33,6 +33,7 @@ from intern.mitgliedschaft import (
     GRUPPE_GRUENDER,
     GRUPPE_KEIN_BILD,
     GRUPPE_MITGLIED,
+    antragslink_gilt,
     aufnahme_setzt_aktiv,
     bestaetigungslink_zustand,
     kein_bild_aus_einwilligung,
@@ -4715,6 +4716,28 @@ class MitgliedschaftTest(SimpleTestCase):
         # Gesperrt ohne Tag (Mitgliedschaft beendet): ein laufender Link
         # darf das Konto nicht wieder oeffnen.
         self.assertEqual(bestaetigungslink_zustand(False, False), "ungueltig")
+
+    def test_antragslink_nur_ohne_zugang_und_ohne_tag(self):
+        # Das Konto, fuer das „Mitglied bearbeiten" die Aufnahme anbietet.
+        self.assertTrue(antragslink_gilt(False, False))
+        # Schon Mitglied — auch gesperrt (Bestaetigung offen, Foerdermitglied).
+        self.assertFalse(antragslink_gilt(False, True))
+        self.assertFalse(antragslink_gilt(True, True))
+        # Zugang ohne Tag (Chorleitung, Gast): nichts zu beantragen.
+        self.assertFalse(antragslink_gilt(True, False))
+
+    def test_antrag_bestand_ohne_benutzername_und_passwort(self):
+        from unittest import mock
+        from intern.forms import MitgliedAntragBestandForm, MitgliedBeitrittForm
+        with mock.patch("intern.app_settings.get_document_url", return_value="/x"):
+            bestand = MitgliedAntragBestandForm()
+            neu = MitgliedBeitrittForm()
+        for feld in ("username", "password1", "password2"):
+            self.assertNotIn(feld, bestand.fields)
+        # Sonst dieselben Felder wie der Neuantrag, Einwilligungen eingeschlossen.
+        self.assertEqual(
+            set(bestand.fields), set(neu.fields) - {"username", "password1", "password2"}
+        )
 
     def test_foerdermitglied_bekommt_keinen_zugang(self):
         self.assertTrue(aufnahme_setzt_aktiv(False))

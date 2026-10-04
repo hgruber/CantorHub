@@ -129,6 +129,28 @@ them tag and access, they receive the welcome mail, and the day of their admissi
 Eintrittsdatum. Until then „Mitglied seit" is empty on their card (`mitglied.html`) and the
 CardDAV note omits the line (`carddav/vcard.py`; both handle the `None`).
 
+### Application for an existing account
+
+Those legacy accounts — inactive, no tag — already have a username and a password, so the join
+form above would refuse them (username taken). `manage.py send_antragslink --user <username>`
+sends them `MAIL_EINLADUNG` with a link to `/intern/beitritt/konto/<token>/`
+(`mitglied_antrag_bestand` in `views/auth.py`). The token carries the user PK (salt
+`intern.mitglied_antrag_bestand`, validity `MITGLIED_EINLADUNG_TAGE` like an invitation);
+`--print-url` prints the link instead of mailing it.
+
+`MitgliedAntragBestandForm` is the join form without `username` and the two password fields,
+pre-filled from the account; username and password stay as they are. Submitting saves the data
+and then runs the same tail as a new application (`_antrag_abschliessen()`: photo tag, PDF,
+`MAIL_ANTRAG`, `MAIL_ANTRAG_ADMIN`). The account stays inactive and untagged; the board admits it
+with „Mitgliedschaft genehmigen" (or „wieder aufnehmen" if it carries an Eintrittsdatum). The
+ChangeLog shows the submission as an ordinary update, not as „Neuer Mitgliedsantrag", because
+that action is tied to creating the row.
+
+Whether a link still shows the form is decided by the account — `antragslink_gilt()` in
+`mitgliedschaft.py`, guarded by `MitgliedschaftTest`: only without access and without tag. Once
+admitted, the link shows „Kein Antrag nötig". Until then it can be submitted again, which files
+another PDF and sends the two mails again. The command refuses an account the link would reject.
+
 ## Re-confirmation flow (Datenbestätigung)
 
 Lets the board ask existing members to re-confirm their stored data and re-acknowledge the

@@ -436,6 +436,27 @@ class MitgliedBeitrittForm(forms.ModelForm):
         return user
 
 
+class MitgliedAntragBestandForm(MitgliedBeitrittForm):
+    """Der Mitgliedsantrag für ein Konto, das es schon gibt.
+
+    Benutzername und Passwort bleiben, wie sie sind; das Formular hat dafür keine
+    Felder. Wer das Passwort nicht mehr weiß, nimmt nach der Aufnahme „Passwort
+    vergessen".
+    """
+
+    class Meta(MitgliedBeitrittForm.Meta):
+        fields = [f for f in MitgliedBeitrittForm.Meta.fields if f != "username"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        del self.fields["password1"]
+        del self.fields["password2"]
+
+    def save(self, commit=True):
+        # Am Elternteil vorbei: dessen save() setzt das Passwort.
+        return forms.ModelForm.save(self, commit=commit)
+
+
 class CantorAuthenticationForm(AuthenticationForm):
     """Login-Formular, das ein gesperrtes Konto beim Namen nennt.
 

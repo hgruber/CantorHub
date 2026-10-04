@@ -18,6 +18,11 @@ urlpatterns = [
     path("register/", views.register, name="register"),
     path("register_success/", views.register_success, name="register_success"),
     path("beitritt/<str:token>/", views.mitglied_beitritt, name="mitglied_beitritt"),
+    path(
+        "beitritt/konto/<str:token>/",
+        views.mitglied_antrag_bestand,
+        name="mitglied_antrag_bestand",
+    ),
     path("bestaetigung/<str:token>/", views.mitglied_bestaetigung, name="mitglied_bestaetigung"),
     path(
         "reset/<uidb64>/<token>/",

@@ -84,6 +84,17 @@ def bestaetigungslink_zustand(is_active, ist_mitglied):
     return "ungueltig"
 
 
+def antragslink_gilt(is_active, ist_mitglied):
+    """Darf ein Antragslink für ein bestehendes Konto das Formular zeigen?
+
+    Nur bei einem Konto ohne Zugang und ohne Tag — das ist das Konto, für das
+    „Mitglied bearbeiten" „Mitgliedschaft genehmigen" oder „wieder aufnehmen"
+    anbietet. Mit Tag ist es schon Mitglied, mit Zugang (Chorleitung, Gast) gibt
+    es nichts zu beantragen.
+    """
+    return not is_active and not ist_mitglied
+
+
 def mitglied_gruppe():
     """Die Gruppe „Mitglied", notfalls neu angelegt.
 

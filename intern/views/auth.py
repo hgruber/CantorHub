@@ -32,17 +32,23 @@ from intern.pdf import (
 )
 from intern.mail import send_config_mail
 
-from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
+from ..forms import (
+    MitgliedAntragBestandForm,
+    MitgliedBeitrittForm,
+    MitgliedBestaetigungForm,
+    RegisterForm,
+)
 from ..mitgliedschaft import (
     FOERDERMITGLIED_IM_ANTRAG,
     GRUPPE_FOERDERMITGLIED,
+    antragslink_gilt,
     bestaetigungslink_zustand,
     hat_kein_bild,
     ist_mitglied,
     kein_bild_aus_einwilligung,
     setze_kein_bild,
 )
-from ..models import OHNE_ANKUENDIGUNG, Termin, User
+from ..models import NAMENSVERWEIS, OHNE_ANKUENDIGUNG, Termin, User
 
 __all__ = [
     "CantorLoginView",
@@ -54,6 +60,7 @@ __all__ = [
     "datenschutz",
     "home",
     "make_invite_token",
+    "mitglied_antrag_bestand",
     "mitglied_beitritt",
     "mitglied_bestaetigung",
     "register",
@@ -412,69 +419,132 @@ def mitglied_beitritt(request, token):
             user.save()
             form.save_m2m()
 
-            foerdermitglied = form.cleaned_data.get("foerdermitglied", False)
-            if foerdermitglied:
-                from django.contrib.auth.models import Group as AuthGroup
-                try:
-                    user.groups.add(AuthGroup.objects.get(name=GRUPPE_FOERDERMITGLIED))
-                except AuthGroup.DoesNotExist:
-                    logger.warning("Gruppe '%s' nicht gefunden", GRUPPE_FOERDERMITGLIED)
-
-            einwilligung_fotos = form.cleaned_data.get("einwilligung_fotos", False)
-            setze_kein_bild(user, kein_bild_aus_einwilligung(einwilligung_fotos), actor=user)
-
-            minderjaehrig = False
-            if user.geburtstag:
-                from datetime import date as _date
-                today = _date.today()
-                age = today.year - user.geburtstag.year
-                if (today.month, today.day) < (user.geburtstag.month, user.geburtstag.day):
-                    age -= 1
-                minderjaehrig = age < 18
-
-            pdf_attachment = None
-            try:
-                pdf_bytes, pdf_fname = _save_antrag_pdf(
-                    user, email,
-                    einwilligung_fotos=einwilligung_fotos,
-                    foerdermitglied=foerdermitglied,
-                )
-                pdf_attachment = [(pdf_fname, pdf_bytes, "application/pdf")]
-            except Exception:
-                logger.exception("Antrag-PDF konnte nicht erstellt werden fuer %s", user.username)
-
-            send_config_mail(
-                f"Dein Mitgliedsantrag bei {get_vereinsname()}",
-                email,
-                "MAIL_ANTRAG",
-                user=user,
-                attachments=pdf_attachment,
-            )
-
-            antrag_email = get_config("ANTRAG_EMAIL", "").strip()
-            empfaenger = [antrag_email] if antrag_email else [u.email for u in _member_managers() if u.email]
-            if empfaenger:
-                link = request.build_absolute_uri(
-                    reverse("mitglied_edit", args=[user.id])
-                )
-                hinweise = []
-                if minderjaehrig:
-                    hinweise.append("MAIL_ANTRAG_ADMIN_MINDERJAEHRIG")
-                if foerdermitglied:
-                    hinweise.append("MAIL_ANTRAG_ADMIN_FOERDER")
-                send_config_mail(
-                    "Neuer Mitgliedsantrag",
-                    empfaenger,
-                    "MAIL_ANTRAG_ADMIN",
-                    user=user,
-                    link=link,
-                    extra_keys=hinweise,
-                )
+            _antrag_abschliessen(request, user, email, form)
             return render(request, "mitglied_beitritt_success.html", {"user": user})
     else:
         form = MitgliedBeitrittForm()
 
     return render(request, "mitglied_beitritt.html", {"form": form, "email": email})
+
+
+def _antrag_abschliessen(request, user, email, form):
+    """Was nach dem Speichern eines Antrags folgt — neu wie für ein bestehendes Konto.
+
+    Fördermitglied-Tag, Foto-Einwilligung, Antrags-PDF, Eingangsmail an den
+    Antragsteller und Hinweis an die Mitglieder-Verwalter.
+    """
+    foerdermitglied = form.cleaned_data.get("foerdermitglied", False)
+    if foerdermitglied:
+        from django.contrib.auth.models import Group as AuthGroup
+        try:
+            user.groups.add(AuthGroup.objects.get(name=GRUPPE_FOERDERMITGLIED))
+        except AuthGroup.DoesNotExist:
+            logger.warning("Gruppe '%s' nicht gefunden", GRUPPE_FOERDERMITGLIED)
+
+    einwilligung_fotos = form.cleaned_data.get("einwilligung_fotos", False)
+    setze_kein_bild(user, kein_bild_aus_einwilligung(einwilligung_fotos), actor=user)
+
+    minderjaehrig = False
+    if user.geburtstag:
+        from datetime import date as _date
+        today = _date.today()
+        age = today.year - user.geburtstag.year
+        if (today.month, today.day) < (user.geburtstag.month, user.geburtstag.day):
+            age -= 1
+        minderjaehrig = age < 18
+
+    pdf_attachment = None
+    try:
+        pdf_bytes, pdf_fname = _save_antrag_pdf(
+            user, email,
+            einwilligung_fotos=einwilligung_fotos,
+            foerdermitglied=foerdermitglied,
+        )
+        pdf_attachment = [(pdf_fname, pdf_bytes, "application/pdf")]
+    except Exception:
+        logger.exception("Antrag-PDF konnte nicht erstellt werden fuer %s", user.username)
+
+    send_config_mail(
+        f"Dein Mitgliedsantrag bei {get_vereinsname()}",
+        email,
+        "MAIL_ANTRAG",
+        user=user,
+        attachments=pdf_attachment,
+    )
+
+    antrag_email = get_config("ANTRAG_EMAIL", "").strip()
+    empfaenger = [antrag_email] if antrag_email else [u.email for u in _member_managers() if u.email]
+    if empfaenger:
+        link = request.build_absolute_uri(
+            reverse("mitglied_edit", args=[user.id])
+        )
+        hinweise = []
+        if minderjaehrig:
+            hinweise.append("MAIL_ANTRAG_ADMIN_MINDERJAEHRIG")
+        if foerdermitglied:
+            hinweise.append("MAIL_ANTRAG_ADMIN_FOERDER")
+        send_config_mail(
+            "Neuer Mitgliedsantrag",
+            empfaenger,
+            "MAIL_ANTRAG_ADMIN",
+            user=user,
+            link=link,
+            extra_keys=hinweise,
+        )
+
+
+def make_antrag_bestand_token(user_pk):
+    """Signierter Token, der das bestehende Konto trägt (Antrag ohne neues Konto)."""
+    return _antrag_bestand_signer.sign(str(user_pk))
+
+
+def _read_antrag_bestand_token(token):
+    try:
+        return int(_antrag_bestand_signer.unsign(token, max_age=_invite_max_age()))
+    except (BadSignature, SignatureExpired, ValueError):
+        return None
+
+
+_antrag_bestand_signer = TimestampSigner(salt="intern.mitglied_antrag_bestand")
+
+
+def mitglied_antrag_bestand(request, token):
+    """Mitgliedsantrag für ein Konto, das es schon gibt (inaktiv, ohne Tag).
+
+    Dasselbe Formular wie der Neuantrag, vorausgefüllt, ohne Benutzername und
+    Passwort — das Konto behält beides. Das Absenden ändert am Zugang nichts:
+    das Konto bleibt inaktiv und ohne Tag, bis der Vorstand die Mitgliedschaft
+    genehmigt. Ob der Link noch wirkt, entscheidet ``antragslink_gilt()`` am Konto.
+    """
+    user_pk = _read_antrag_bestand_token(token)
+    user = None
+    if user_pk is not None:
+        user = (
+            User.objects.exclude(username__startswith="geloescht_")
+            .exclude(NAMENSVERWEIS)
+            .filter(pk=user_pk)
+            .first()
+        )
+    if user is None:
+        return render(request, "mitglied_beitritt_invalid.html", status=400)
+    if not antragslink_gilt(user.is_active, ist_mitglied(user)):
+        return render(request, "mitglied_beitritt_invalid.html", {"bereits_mitglied": True})
+
+    if request.method == "POST":
+        form = MitgliedAntragBestandForm(request.POST, instance=user)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user._audit_user = user
+            user.save()
+            _antrag_abschliessen(request, user, user.email, form)
+            return render(request, "mitglied_beitritt_success.html", {"user": user})
+    else:
+        form = MitgliedAntragBestandForm(instance=user)
+
+    return render(
+        request, "mitglied_beitritt.html",
+        {"form": form, "email": user.email, "bestand": True, "konto": user},
+    )
 
 
 # ---------------------------------------------------------------------------

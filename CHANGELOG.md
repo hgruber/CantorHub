@@ -9,6 +9,12 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Mitgliedsantrag für bestehende Konten: `send_antragslink --user NAME` schickt einem Konto ohne
+  Zugang und ohne Tag „Mitglied“ den Link zu einem vorausgefüllten Antragsformular. Benutzername
+  und Passwort bleiben, die Aufnahme folgt wie gewohnt über „Mitgliedschaft genehmigen“.
+
 ### Geändert
 
 - Datenbestätigung: Die Pflicht-Häkchen tragen ein Sternchen. Wer bestätigt, sagt bei nicht
