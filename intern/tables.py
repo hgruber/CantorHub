@@ -82,12 +82,12 @@ class ForumTabelle(tables.Table):
         row_attrs = {
             "data-href": lambda record: reverse("forum_view", args=[record.id]),
             # Deaktivierte Foren sieht nur, wer Forum-Berechtigungen verwaltet —
-            # grau wie inaktive Mitglieder (row-inactive).
+            # mit etwas hellerer Schrift, der Zeilenhintergrund bleibt.
             "class": lambda record: " ".join(
                 k
                 for k, an in (
                     ("ungelesen", getattr(record, "ungelesen", 0)),
-                    ("row-inactive", not record.aktiv),
+                    ("forum-inaktiv", not record.aktiv),
                 )
                 if an
             ),

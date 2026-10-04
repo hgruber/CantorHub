@@ -2114,6 +2114,9 @@ time {
 
 /* Unread markers (intern/forum_gelesen.py) */
 tr.ungelesen td { font-weight: 600; color: var(--t1); }
+/* Deaktiviertes Forum: nur die Schrift etwas heller, der Hintergrund bleibt. Steht
+   hinter tr.ungelesen, damit es auch dessen dunkle Farbe überschreibt. */
+tr.forum-inaktiv td { color: var(--t3); }
 /* Ungelesen-Badge und Gesamtzahl stehen zusammen in der Zahlenspalte. Die Gesamtzahl
    braucht eine eigene Regel, weil die Zeile darüber fett und dunkel gesetzt ist. */
 td.zahl .badge { margin-right: 6px; vertical-align: 1px; }

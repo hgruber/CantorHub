@@ -3477,14 +3477,14 @@ class ForumTabelleTest(SimpleTestCase):
         self.assertNotIn("badge", html)
         self.assertIn('<span class="gesamtzahl">17</span>', html)
 
-    def test_deaktiviertes_forum_grau(self):
+    def test_deaktiviertes_forum_heller(self):
         from intern.tables import ForumTabelle
 
         klasse = ForumTabelle._meta.row_attrs["class"]
         self.assertEqual(klasse(SimpleNamespace(aktiv=True, ungelesen=0)), "")
-        self.assertEqual(klasse(SimpleNamespace(aktiv=False, ungelesen=0)), "row-inactive")
+        self.assertEqual(klasse(SimpleNamespace(aktiv=False, ungelesen=0)), "forum-inaktiv")
         self.assertEqual(
-            klasse(SimpleNamespace(aktiv=False, ungelesen=2)), "ungelesen row-inactive"
+            klasse(SimpleNamespace(aktiv=False, ungelesen=2)), "ungelesen forum-inaktiv"
         )
 
 
