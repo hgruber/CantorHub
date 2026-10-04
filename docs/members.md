@@ -47,7 +47,9 @@ context var in `table.html`) is two-step:
    join form. No user is created yet. The link carries the e-mail in a `TimestampSigner` token
    (salt `intern.mitglied_invite`, **7-day** validity) — `make_invite_token()` /
    `_read_invite_token()` in `views/auth.py`. Stateless: no DB model, no placeholder user.
-2. **Manuell anlegen** (JS-revealed): `MitgliedAddForm` posting to `mitglied_add`, which creates
+2. **Manuell anlegen** (JS-revealed; button, form and view additionally require
+   `intern.manage_user_permissions`, which a superuser holds implicitly):
+   `MitgliedAddForm` posting to `mitglied_add`, which creates
    an **active** member immediately — the shortcut for an application already approved, so it
    also sets the tag „Mitglied" (`nimm_auf()`) and stamps `date_joined` with that day. Without
    the stamp „Mitglied seit" would stay empty for good: the welcome mail hangs on `is_active`

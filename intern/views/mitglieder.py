@@ -382,6 +382,7 @@ def mitglied_invite(request):
 
 
 @permission_required("intern.add_user", raise_exception=True)
+@permission_required("intern.manage_user_permissions", raise_exception=True)
 def mitglied_add(request):
     if request.method == "POST":
         form = MitgliedAddForm(request.POST)

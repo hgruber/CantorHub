@@ -16,12 +16,15 @@
             <div class="add-panel-actions">
                 <button type="submit" class="btn btn-primary">Senden</button>
                 <button type="button" class="btn btn-secondary" onclick="toggle('AddPanel')">Abbrechen</button>
+                {% if perms.intern.manage_user_permissions %}
                 <button type="button" class="btn btn-secondary" id="show-manual">manuell anlegen</button>
+                {% endif %}
             </div>
         </form>
     </div>
 
-    {# ── Schritt 2: Manuelles Anlegen ─────────────────────────── #}
+    {# ── Schritt 2: Manuelles Anlegen (nur mit manage_user_permissions) ── #}
+    {% if perms.intern.manage_user_permissions %}
     <div id="manual-step" style="display:none">
         <div class="add-panel-header">
             <strong>Mitglied manuell anlegen</strong>
@@ -47,6 +50,7 @@
             </div>
         </form>
     </div>
+    {% endif %}
 
     {# Vanilla-JS-Umschalter zwischen den beiden Schritten. #}
     <script>
@@ -57,7 +61,7 @@
         var manualStep = panel.querySelector('#manual-step');
         var toManual   = panel.querySelector('#show-manual');
         var toInvite   = panel.querySelector('#show-invite');
-        if (toManual) toManual.addEventListener('click', function () {
+        if (toManual && manualStep) toManual.addEventListener('click', function () {
             inviteStep.style.display = 'none';
             manualStep.style.display = '';
         });

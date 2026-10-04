@@ -7,6 +7,14 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Mitgliederliste: „manuell anlegen" im Einladungs-Panel steht nur noch Superusern und Inhabern
+  des Rechts „Kann Mitglieder-Berechtigungen verwalten" zur Verfügung; die Seite zum manuellen
+  Anlegen prüft dasselbe Recht.
+
 ## v1.0.0-rc6 — 2026-10-04
 
 ### Geändert
