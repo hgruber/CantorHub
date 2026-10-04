@@ -46,7 +46,7 @@ otherwise be greeted as a newcomer every time it is switched back on. Such accou
 `MAIL_REAKTIVIERT` path and keep an empty „Mitglied seit", which is correct for a non-member.
 
 Because a Fördermitglied carries the tag without access, the group matrix `/intern/aufgaben/`
-lists inactive accounts too (marked „ruhend"); only anonymised ones (`geloescht_*`) stay out.
+lists inactive accounts too (marked „kein Zugang"); only anonymised ones (`geloescht_*`) stay out.
 Otherwise such a member's tag could be neither seen nor corrected.
 
 ## Member application flow (Mitglieds-Beitritt)

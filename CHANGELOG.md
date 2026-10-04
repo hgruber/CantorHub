@@ -19,6 +19,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   aufnehmen" und setzt beides wieder. Beide Aktionen stehen nur Superusern und Inhabern des
   Rechts „Kann Mitglieder-Berechtigungen verwalten" zur Verfügung; ein ehemaliges Mitglied sieht
   statt „Mitgliedschaft genehmigen" nur noch „wieder aufnehmen".
+- Mitglied bearbeiten und Aufgaben: das Badge „Ruhend" heißt jetzt „Kein Zugang".
 
 ## v1.0.0-rc6 — 2026-10-04
 
