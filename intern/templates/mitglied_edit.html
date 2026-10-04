@@ -111,7 +111,7 @@
                     {% endif %}
                 </p>
                 {% if not ist_mitglied %}
-                <p class="text-muted">Die Aufnahme vergibt das Tag „Mitglied" und schaltet den Zugang frei; bei einem Fördermitglied bleibt der Zugang aus. Ist es die erste Aufnahme, gehen Willkommensmail und Eintrittsdatum mit.</p>
+                <p class="text-muted">Der Button „Mitgliedschaft genehmigen" schaltet den Zugang zum internen Bereich der Website frei (Hinweis: Bei einem Fördermitglied bleibt die Zugangsberechtigung zum internen Bereich der Website aus). Zudem geht mit Genehmigung der Mitgliedschaft durch Drücken des Buttons „Mitgliedschaft genehmigen" eine Willkommensmail an das neue Mitglied raus. Gleichzeitig wird das Eintrittsdatum auf den heutigen Tag gesetzt.</p>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="aufnehmen">
