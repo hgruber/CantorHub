@@ -7,6 +7,13 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Mitgliederliste: der Hinweis im Einladungs-Panel nennt den Vorstand statt eines Admins als
+  den, der das neue Mitglied freischaltet.
+
 ## v1.0.0-rc7 — 2026-10-04
 
 ### Hinzugefügt
