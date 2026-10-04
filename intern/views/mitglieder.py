@@ -27,14 +27,7 @@ from intern.mail import neu_verbinden, send_config_mail, versende_serie
 
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..mitglied_felder import PRIVACY_FIELDS
-from ..mitgliedschaft import (
-    beende,
-    hat_kein_bild,
-    ist_mitglied,
-    mitgliedschafts_aktion,
-    nimm_auf,
-    setze_kein_bild,
-)
+from ..mitgliedschaft import beende, ist_mitglied, mitgliedschafts_aktion, nimm_auf
 from ..models import NAMENSVERWEIS, Abstimmung, Artikel, Mitteilung, User, Zusage
 from ..tables import MitgliederFilter, MitgliederTabelle
 from .auth import make_invite_token
@@ -210,18 +203,6 @@ def mitglied_edit(request, id):
                     )
             return redirect("mitglied_edit", id=id)
 
-        # Tag „kein Bild" (keine Foto-Einwilligung): nur „Mitglieder bearbeiten";
-        # das Mitglied selbst aendert es allein ueber das Foto-Haekchen der Bestaetigung.
-        if aktion in ("kein_bild_an", "kein_bild_aus"):
-            if request.user.has_perm("intern.change_user"):
-                an = aktion == "kein_bild_an"
-                setze_kein_bild(user, an, request.user)
-                messages.success(
-                    request,
-                    'Tag „kein Bild" gesetzt.' if an else 'Tag „kein Bild" entfernt.',
-                )
-            return redirect("mitglied_edit", id=id)
-
         # Zugang ohne Mitgliedschaft (Chorleitung, Gast): nur ``is_active``, nur
         # ohne Tag — bei einem Mitglied gehen Tag und Zugang ueber „beenden".
         if aktion == "zugang":
@@ -290,7 +271,6 @@ def mitglied_edit(request, id):
         "privacy_fields": PRIVACY_FIELDS,
         "member_groups": list(user.groups.order_by("name")),
         "ist_mitglied": ist_mitglied(user),
-        "kein_bild": hat_kein_bild(user),
         "mitgliedschafts_aktion": mitgliedschafts_aktion(ist_mitglied(user), user.date_joined),
     }
     return render(request, "mitglied_edit.html", context)

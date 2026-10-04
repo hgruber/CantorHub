@@ -151,21 +151,6 @@
                     </div>
                 </form>
                 {% endif %}
-                <p class="text-muted" style="margin-top:1rem;">Das Tag „kein Bild" kennzeichnet Personen, die der Veröffentlichung von Fotos nicht zugestimmt haben. Es wird beim Mitgliedsantrag und bei der Datenschutz-Bestätigung nach dem Foto-Häkchen gesetzt; das Mitglied selbst kann es sonst nicht ändern.</p>
-                <form method="post">
-                    {% csrf_token %}
-                    {% if kein_bild %}
-                    <input type="hidden" name="action" value="kein_bild_aus">
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-secondary">Tag „kein Bild" entfernen</button>
-                    </div>
-                    {% else %}
-                    <input type="hidden" name="action" value="kein_bild_an">
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-secondary">Tag „kein Bild" setzen</button>
-                    </div>
-                    {% endif %}
-                </form>
             </div>
             {% endif %}
 

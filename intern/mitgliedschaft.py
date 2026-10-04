@@ -27,9 +27,8 @@ Die Entscheidungen stehen als reine Funktionen oben, ohne Datenbankzugriff, dami
 GRUPPE_MITGLIED = "Mitglied"
 GRUPPE_FOERDERMITGLIED = "Fördermitglied"
 GRUPPE_GRUENDER = "Gründer"
-# Keine Einwilligung zur Veröffentlichung von Fotos. Setzen darf es im Portal nur
-# „Mitglieder bearbeiten"; das Mitglied selbst nur über das Foto-Häkchen in Antrag
-# und Datenschutz-Bestätigung.
+# Keine Einwilligung zur Veröffentlichung von Fotos. Gesetzt und entfernt allein über
+# das Foto-Häkchen in Antrag und Datenschutz-Bestätigung.
 GRUPPE_KEIN_BILD = "kein Bild"
 
 # Bietet der Mitgliedsantrag die Fördermitgliedschaft an? Vorerst aus; True

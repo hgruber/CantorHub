@@ -15,7 +15,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 - Mitglieder: das Tag „kein Bild" kennzeichnet Personen ohne Einwilligung zur Veröffentlichung
   von Fotos. Mitgliedsantrag und Datenschutz-Bestätigung setzen oder entfernen es nach dem
-  Foto-Häkchen, sonst nur Inhaber von „Mitglieder bearbeiten" auf der Bearbeiten-Seite.
+  Foto-Häkchen.
 - Mitglied bearbeiten: Konten ohne Tag „Mitglied" (etwa Chorleitung oder Gäste) lassen sich mit
   „Zugang sperren" und „Zugang freischalten" sperren und entsperren, ohne die Mitgliedschaft zu
   berühren. Die Aktion steht nur Superusern und Inhabern des Rechts „Kann

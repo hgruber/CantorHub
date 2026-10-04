@@ -174,10 +174,9 @@ Three public templates extend `mitglied_public_base.html`: `mitglied_bestaetigun
 ## Photo consent: the tag „kein Bild"
 
 The group „kein Bild" (`GRUPPE_KEIN_BILD` in `mitgliedschaft.py`) marks members who have not
-consented to the publication of their photos. It is set from the photo checkbox of the
-application and of the re-confirmation form, and otherwise only by holders of
-`intern.change_user` through the „Tag „kein Bild" setzen/entfernen" button on the edit page —
-the member's own profile form has no group field. Every change goes through
+consented to the publication of their photos. It is set or removed only from the photo checkbox
+of the application and of the re-confirmation form; the portal has no button for it, and the
+member's own profile form has no group field. Every change goes through
 `setze_kein_bild()` and leaves a `ChangeLog` entry. Existing members start without the tag;
 their consent is unrecorded until they re-confirm.
 
