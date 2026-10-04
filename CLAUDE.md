@@ -96,7 +96,7 @@ access, the group „Mitglied" = club membership, plus the admission itself — 
 load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TRIGGER_FIELDS`),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
 `ejabberd.py`, `konfig_gruppen.py`, `middleware.py` (the throttled session refresh, see
-`docs/architecture.md`), `anfragespeicher.py` (values worth computing once per request —
+`docs/architecture.md`, and the privacy gate for access without membership, see `docs/members.md`), `anfragespeicher.py` (values worth computing once per request —
 visible folders, fallback avatars), `tables2_beschleunigung.py` (two caches over django_tables2's per-cell work —
 `signature()` and `BoundColumn.attrs`; guarded by `Tables2SignaturTest`,
 `Tables2AttributeTest` and a pinned version).

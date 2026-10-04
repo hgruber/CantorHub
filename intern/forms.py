@@ -436,6 +436,22 @@ class MitgliedBeitrittForm(forms.ModelForm):
         return user
 
 
+class DatenschutzBestaetigungForm(forms.Form):
+    """Bestätigung für Konten mit Zugang ohne Mitgliedschaft (Chorleitung, Gast)."""
+
+    zustimmung_datenschutz = forms.BooleanField(
+        required=True,
+        label=mark_safe(
+            'Ich habe die <a href="/datenschutz/" target="_blank" rel="noopener">'
+            "Datenschutzerklärung</a> gelesen und stimme ihr zu."
+        ),
+    )
+    einwilligung_fotos = forms.BooleanField(
+        required=False,
+        label=EINWILLIGUNG_FOTOS_LABEL,
+    )
+
+
 class MitgliedAntragBestandForm(MitgliedBeitrittForm):
     """Der Mitgliedsantrag für ein Konto, das es schon gibt.
 

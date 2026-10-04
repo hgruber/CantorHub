@@ -135,6 +135,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     # Direkt hinter der Authentifizierung: die Drosselung braucht request.user.
     "intern.middleware.SitzungAuffrischen",
+    # Konten mit Zugang ohne Mitgliedschaft bestätigen zuerst den Datenschutz.
+    "intern.middleware.DatenschutzPruefung",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.http.ConditionalGetMiddleware",

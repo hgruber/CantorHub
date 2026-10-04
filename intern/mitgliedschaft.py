@@ -30,6 +30,10 @@ GRUPPE_GRUENDER = "Gründer"
 # Keine Einwilligung zur Veröffentlichung von Fotos. Gesetzt und entfernt allein über
 # das Foto-Häkchen in Antrag und Datenschutz-Bestätigung.
 GRUPPE_KEIN_BILD = "kein Bild"
+# Portalzugang ohne Mitgliedschaft (Chorleitung, Gast): Datenschutzerklärung und
+# Foto-Einwilligung sind bestätigt. Gesetzt allein über die Seite
+# „Datenschutz bestätigen"; entfernt, um erneut zu fragen.
+GRUPPE_DATENSCHUTZ_BESTAETIGT = "Datenschutz bestätigt"
 
 # Bietet der Mitgliedsantrag die Fördermitgliedschaft an? Vorerst aus; True
 # bringt Checkbox, Hinweiskarte, Dialog und PDF-Abschnitt zurück.
@@ -93,6 +97,15 @@ def antragslink_gilt(is_active, ist_mitglied):
     es nichts zu beantragen.
     """
     return not is_active and not ist_mitglied
+
+
+def braucht_datenschutzbestaetigung(is_active, ist_mitglied, hat_bestaetigt):
+    """Muss dieses Konto erst Datenschutz und Foto-Einwilligung bestätigen?
+
+    Nur ein Konto mit Zugang ohne Mitgliedschaft, das noch nicht bestätigt hat.
+    Mitglieder bestätigen über Antrag und Datenbestätigung.
+    """
+    return bool(is_active and not ist_mitglied and not hat_bestaetigt)
 
 
 def mitglied_gruppe():
@@ -185,11 +198,25 @@ def hat_kein_bild(user):
 
 def setze_kein_bild(user, an, actor=None):
     """Setzt (``an``) oder entfernt das Tag „kein Bild" und protokolliert die Änderung."""
+    _setze_tag(user, GRUPPE_KEIN_BILD, an, actor)
+
+
+def hat_datenschutz_bestaetigt(user):
+    """Trägt ``user`` das Tag „Datenschutz bestätigt"?"""
+    return user.groups.filter(name=GRUPPE_DATENSCHUTZ_BESTAETIGT).exists()
+
+
+def setze_datenschutz_bestaetigt(user, an, actor=None):
+    """Setzt (``an``) oder entfernt das Tag „Datenschutz bestätigt", protokolliert."""
+    _setze_tag(user, GRUPPE_DATENSCHUTZ_BESTAETIGT, an, actor)
+
+
+def _setze_tag(user, name, an, actor):
     from django.contrib.auth.models import Group
 
     from .models import ChangeLog
 
-    gruppe, _ = Group.objects.get_or_create(name=GRUPPE_KEIN_BILD)
+    gruppe, _ = Group.objects.get_or_create(name=name)
     if user.groups.filter(pk=gruppe.pk).exists() == bool(an):
         return
     if an:

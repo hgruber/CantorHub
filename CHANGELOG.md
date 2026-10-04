@@ -11,6 +11,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Hinzugefügt
 
+- Datenschutz-Bestätigung: Konten mit Portalzugang ohne Tag „Mitglied“ bestätigen nach dem Login
+  einmalig die Datenschutzerklärung und die Foto-Einwilligung, mit PDF und Quittung. Erledigt ist
+  das mit dem Tag „Datenschutz bestätigt“; `datenschutz_zuruecksetzen` fragt erneut.
 - Mitgliedsantrag für bestehende Konten: `send_antragslink --user NAME` schickt einem Konto ohne
   Zugang und ohne Tag „Mitglied“ den Link zu einem vorausgefüllten Antragsformular. Benutzername
   und Passwort bleiben, die Aufnahme folgt wie gewohnt über „Mitgliedschaft genehmigen“.

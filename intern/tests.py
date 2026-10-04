@@ -31,11 +31,13 @@ from intern.anfragespeicher import verwerfen as anfrage_verwerfen
 from intern.mitgliedschaft import (
     GRUPPE_FOERDERMITGLIED,
     GRUPPE_GRUENDER,
+    GRUPPE_DATENSCHUTZ_BESTAETIGT,
     GRUPPE_KEIN_BILD,
     GRUPPE_MITGLIED,
     antragslink_gilt,
     aufnahme_setzt_aktiv,
     bestaetigungslink_zustand,
+    braucht_datenschutzbestaetigung,
     kein_bild_aus_einwilligung,
     mitgliedschafts_aktion,
     ist_erstaufnahme,
@@ -47,7 +49,11 @@ from intern.auslieferungen import (
 )
 from intern.blob_aufraeumen import verwaiste_pfade, zugeordnetes_verzeichnis
 from intern.forms import SchnellSelect, SchnellSelectMultiple
-from intern.middleware import muss_auffrischen
+from intern.middleware import (
+    DATENSCHUTZ_FREI,
+    datenschutz_pruefpflichtig,
+    muss_auffrischen,
+)
 from intern.tables import TerminTabelle
 from intern.tables2_beschleunigung import (
     _original as tables2_original, attrs_gepuffert, signature_gepuffert,
@@ -3507,6 +3513,41 @@ class ForumTabelleTest(SimpleTestCase):
         )
 
 
+class DatenschutzPruefungTest(SimpleTestCase):
+    """Welche Pfade die Datenschutz-Bestaetigung vorschaltet.
+
+    Die Bestaetigungsseite selbst und An-/Abmelden muessen frei bleiben, sonst
+    entsteht eine Umleitungsschleife oder man kommt nicht mehr hinaus; die
+    Medienpruefung, sonst scheitert jedes Bild an nginx' auth_request.
+    """
+
+    def test_interner_bereich_ist_pruefpflichtig(self):
+        self.assertTrue(datenschutz_pruefpflichtig("/intern/artikel/Aktuell/"))
+        self.assertTrue(datenschutz_pruefpflichtig("/intern/mitglied/"))
+
+    def test_ausserhalb_bleibt_frei(self):
+        for pfad in ("/", "/datenschutz/", "/carddav/", "/caldav/", "/admin/", "/static/x.css"):
+            self.assertFalse(datenschutz_pruefpflichtig(pfad), pfad)
+
+    def test_ausnahmen_bleiben_frei(self):
+        from django.urls import reverse
+        for name in ("datenschutz_bestaetigen", "login", "logout", "media_auth"):
+            self.assertFalse(datenschutz_pruefpflichtig(reverse(name)), name)
+
+    def test_ausnahmen_treffen_echte_pfade(self):
+        # Eine umbenannte URL liesse die Ausnahme ins Leere laufen.
+        from django.urls import reverse
+        pfade = [
+            reverse(n) for n in (
+                "datenschutz_bestaetigen", "login", "logout", "media_auth", "register",
+            )
+        ]
+        for praefix in ("/intern/datenschutz-bestaetigen/", "/intern/login/",
+                        "/intern/logout/", "/intern/media-auth/", "/intern/register"):
+            self.assertIn(praefix, DATENSCHUTZ_FREI)
+            self.assertTrue(any(p.startswith(praefix) for p in pfade), praefix)
+
+
 class SitzungAuffrischenTest(SimpleTestCase):
     """Die Drosselung der Sitzungsfrist (``intern/middleware.py``).
 
@@ -4739,6 +4780,15 @@ class MitgliedschaftTest(SimpleTestCase):
             set(bestand.fields), set(neu.fields) - {"username", "password1", "password2"}
         )
 
+    def test_datenschutzbestaetigung_nur_fuer_zugang_ohne_mitgliedschaft(self):
+        # Chorleitung, Gast: einmal bestaetigen, dann nicht mehr.
+        self.assertTrue(braucht_datenschutzbestaetigung(True, False, False))
+        self.assertFalse(braucht_datenschutzbestaetigung(True, False, True))
+        # Mitglieder bestaetigen ueber Antrag und Datenbestaetigung, nie hier.
+        self.assertFalse(braucht_datenschutzbestaetigung(True, True, False))
+        # Ohne Zugang gibt es keine Seite, auf die man geleitet wuerde.
+        self.assertFalse(braucht_datenschutzbestaetigung(False, False, False))
+
     def test_foerdermitglied_bekommt_keinen_zugang(self):
         self.assertTrue(aufnahme_setzt_aktiv(False))
         self.assertFalse(aufnahme_setzt_aktiv(True))
@@ -4754,6 +4804,7 @@ class MitgliedschaftTest(SimpleTestCase):
         ).read_text(encoding="utf-8")
         for name in (
             GRUPPE_MITGLIED, GRUPPE_FOERDERMITGLIED, GRUPPE_GRUENDER, GRUPPE_KEIN_BILD,
+            GRUPPE_DATENSCHUTZ_BESTAETIGT,
         ):
             self.assertIn(f'"{name}": [', quelle, f"{name} fehlt in GROUPS")
 

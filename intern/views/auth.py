@@ -2,6 +2,7 @@ import logging
 import threading
 from datetime import datetime
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
@@ -11,7 +12,7 @@ from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
+from django.utils.http import url_has_allowed_host_and_scheme, urlsafe_base64_encode
 from django.utils.timezone import now as tz_now
 from filer.models import File as FilerFile
 from intern import ejabberd, folders
@@ -33,6 +34,7 @@ from intern.pdf import (
 from intern.mail import send_config_mail
 
 from ..forms import (
+    DatenschutzBestaetigungForm,
     MitgliedAntragBestandForm,
     MitgliedBeitrittForm,
     MitgliedBestaetigungForm,
@@ -43,8 +45,11 @@ from ..mitgliedschaft import (
     GRUPPE_FOERDERMITGLIED,
     antragslink_gilt,
     bestaetigungslink_zustand,
+    braucht_datenschutzbestaetigung,
+    hat_datenschutz_bestaetigt,
     hat_kein_bild,
     ist_mitglied,
+    setze_datenschutz_bestaetigt,
     kein_bild_aus_einwilligung,
     setze_kein_bild,
 )
@@ -58,6 +63,7 @@ __all__ = [
     "custom_404",
     "custom_500",
     "datenschutz",
+    "datenschutz_bestaetigen",
     "home",
     "make_invite_token",
     "mitglied_antrag_bestand",
@@ -714,6 +720,103 @@ def mitglied_bestaetigung(request, token):
         )
 
     return render(request, "mitglied_bestaetigung.html", {"form": form, "user": user})
+
+
+# ---------------------------------------------------------------------------
+# Datenschutz-Bestätigung für Konten mit Zugang ohne Mitgliedschaft
+# ---------------------------------------------------------------------------
+
+def _save_datenschutz_pdf(user, einwilligung_fotos):
+    buf, c, y = new_letterhead_pdf(
+        title="Datenschutz-Bestätigung",
+        subtitle=f"Bestätigt am: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}",
+        vereinsname=get_vereinsname(),
+        vereinsadresse=get_config("VEREINSADRESSE", ""),
+    )
+    y = draw_section(c, y, "Konto")
+    for label, wert in (
+        ("Vorname:",      user.first_name),
+        ("Nachname:",     user.last_name),
+        ("Benutzername:", user.username),
+        ("E-Mail:",       user.email or ""),
+    ):
+        if wert:
+            y = draw_field(c, y, label, wert)
+
+    y = draw_section(c, y, "Bestätigungen")
+    y = draw_checkbox(c, y, "Datenschutzerklärung gelesen und akzeptiert")
+    y = draw_checkbox(c, y, "Einwilligung zur Veröffentlichung von Fotos bei Auftritten",
+                      checked=einwilligung_fotos)
+    draw_signature(c, y, f"{user.first_name} {user.last_name}")
+    c.save()
+
+    pdf_bytes = buf.getvalue()
+    fname = (
+        f"datenschutz_{user.first_name}_{user.last_name}_"
+        f"{datetime.now().strftime('%Y-%m-%d')}.pdf"
+    )
+    _pdf_ablegen(user, pdf_bytes, fname)
+    return pdf_bytes, fname
+
+
+def _weiter_nach(request):
+    ziel = request.POST.get("next") or request.GET.get("next") or ""
+    if ziel and url_has_allowed_host_and_scheme(
+        ziel, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return ziel
+    return reverse("article_view", kwargs={"name": "Aktuell"})
+
+
+@login_required
+def datenschutz_bestaetigen(request):
+    """Datenschutz und Foto-Einwilligung für Zugang ohne Mitgliedschaft.
+
+    ``DatenschutzPruefung`` (``middleware.py``) leitet hierher, solange
+    ``braucht_datenschutzbestaetigung()`` es verlangt. Das Absenden setzt das Tag
+    „Datenschutz bestätigt", setzt oder entfernt „kein Bild", legt ein PDF ab und
+    schickt es als Quittung (``MAIL_BESTAETIGUNG_BESTAETIGT``).
+    """
+    user = request.user
+    if not braucht_datenschutzbestaetigung(
+        user.is_active, ist_mitglied(user), hat_datenschutz_bestaetigt(user)
+    ):
+        return redirect(_weiter_nach(request))
+
+    if request.method == "POST":
+        form = DatenschutzBestaetigungForm(request.POST)
+        if form.is_valid():
+            einwilligung_fotos = form.cleaned_data.get("einwilligung_fotos", False)
+            setze_datenschutz_bestaetigt(user, True, actor=user)
+            setze_kein_bild(user, kein_bild_aus_einwilligung(einwilligung_fotos), actor=user)
+
+            pdf_attachment = None
+            try:
+                pdf_bytes, pdf_fname = _save_datenschutz_pdf(user, einwilligung_fotos)
+                pdf_attachment = [(pdf_fname, pdf_bytes, "application/pdf")]
+            except Exception:
+                logger.exception(
+                    "Datenschutz-PDF konnte nicht erstellt werden fuer %s", user.username
+                )
+            if user.email:
+                send_config_mail(
+                    f"Deine Datenschutz-Bestätigung – {get_vereinsname()}",
+                    user.email,
+                    "MAIL_BESTAETIGUNG_BESTAETIGT",
+                    user=user,
+                    attachments=pdf_attachment,
+                )
+            return redirect(_weiter_nach(request))
+    else:
+        form = DatenschutzBestaetigungForm(
+            initial={"einwilligung_fotos": not hat_kein_bild(user)}
+        )
+
+    return render(request, "datenschutz_bestaetigen.html", {
+        "form": form,
+        "user": user,
+        "next": request.GET.get("next", ""),
+    })
 
 
 def custom_400(request, exception):

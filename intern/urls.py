@@ -25,6 +25,11 @@ urlpatterns = [
     ),
     path("bestaetigung/<str:token>/", views.mitglied_bestaetigung, name="mitglied_bestaetigung"),
     path(
+        "datenschutz-bestaetigen/",
+        views.datenschutz_bestaetigen,
+        name="datenschutz_bestaetigen",
+    ),
+    path(
         "reset/<uidb64>/<token>/",
         views.CantorPasswordResetConfirmView.as_view(),
         name="password_reset_confirm",

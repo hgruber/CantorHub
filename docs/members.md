@@ -216,6 +216,30 @@ member's own profile form has no group field. Every change goes through
 `setze_kein_bild()` and leaves a `ChangeLog` entry. Existing members start without the tag;
 their consent is unrecorded until they re-confirm.
 
+## Privacy confirmation without membership
+
+Accounts with access but without the tag „Mitglied" (conductor, guests) never see the
+application or the re-confirmation, so the portal asks them itself. `DatenschutzPruefung`
+(`middleware.py`, right after `SitzungAuffrischen`) redirects every request under `/intern/` to
+`/intern/datenschutz-bestaetigen/` while `braucht_datenschutzbestaetigung(is_active,
+ist_mitglied, hat_bestaetigt)` in `mitgliedschaft.py` says so — active, no „Mitglied", no
+„Datenschutz bestätigt". GET requests keep their target in `next` (checked with
+`url_has_allowed_host_and_scheme`), htmx requests get `HX-Redirect`. `DATENSCHUTZ_FREI` lists
+the exempt prefixes: the page itself, login/logout, password reset, the public forms and
+`/media-auth/` (a redirect there would fail every image behind nginx' `auth_request`).
+`DatenschutzPruefungTest` checks that they match real URLs. Outside `/intern/` nothing is gated,
+so CardDAV/CalDAV keep working until the confirmation.
+
+The page (`datenschutz_bestaetigen` in `views/auth.py`) shows name, username and e-mail
+read-only, the mandatory Datenschutz checkbox and the photo consent pre-filled from „kein Bild".
+Submitting sets the group „Datenschutz bestätigt" (`GRUPPE_DATENSCHUTZ_BESTAETIGT`, via
+`setze_datenschutz_bestaetigt()`, logged), sets or removes „kein Bild", files a PDF under
+„Verein/Vorstand/Mitgliedsanträge" and mails it with the `MAIL_BESTAETIGUNG_BESTAETIGT` text.
+
+The tag says *that*, not *when* or *which version*; the date is in the PDF and the ChangeLog.
+To ask again (e.g. after the policy changed) remove it: `manage.py datenschutz_zuruecksetzen
+--all|--user NAME`. Members never carry it — the gate looks at „Mitglied" first.
+
 ## Leaving: anonymise or delete
 
 `mitglied_delete` (`views/mitglieder.py`) first hands the member's files and folders to a new

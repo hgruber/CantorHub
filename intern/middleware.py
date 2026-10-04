@@ -21,6 +21,17 @@ weggeklickte Termin-Banner): Django schreibt sie dann wie bisher sofort.
 """
 
 import time
+from urllib.parse import urlencode
+
+from django.http import HttpResponse
+from django.shortcuts import redirect
+from django.urls import reverse
+
+from .mitgliedschaft import (
+    GRUPPE_DATENSCHUTZ_BESTAETIGT,
+    GRUPPE_MITGLIED,
+    braucht_datenschutzbestaetigung,
+)
 
 AUFFRISCH_INTERVALL = 300  # Sekunden
 
@@ -69,3 +80,72 @@ class SitzungAuffrischen:
                 # sie am Ende der Anfrage und schiebt dabei ``expire_date`` vor.
                 sitzung[STAND_SCHLUESSEL] = jetzt
         return self.get_response(request)
+
+
+# Pfade unter /intern/, die ohne bestätigten Datenschutz erreichbar bleiben: die
+# Bestätigungsseite selbst, An- und Abmelden, die öffentlichen Formulare und die
+# Medienprüfung, die nginx per auth_request stellt (eine Umleitung dort ließe jedes
+# Bild scheitern).
+DATENSCHUTZ_FREI = (
+    "/intern/datenschutz-bestaetigen/",
+    "/intern/login/",
+    "/intern/logout/",
+    "/intern/reset/",
+    "/intern/register",
+    "/intern/beitritt/",
+    "/intern/bestaetigung/",
+    "/intern/media-auth/",
+)
+
+
+def datenschutz_pruefpflichtig(pfad):
+    """Führt eine Anfrage auf ``pfad`` über die Datenschutz-Bestätigung?
+
+    Nur der interne Bereich; Startseite, Datenschutzerklärung, CardDAV/CalDAV und
+    Admin liegen außerhalb und bleiben unberührt.
+    """
+    return pfad.startswith("/intern/") and not pfad.startswith(DATENSCHUTZ_FREI)
+
+
+class DatenschutzPruefung:
+    """Schickt Konten mit Zugang ohne Mitgliedschaft zuerst auf die Bestätigungsseite.
+
+    Die Entscheidung trifft ``braucht_datenschutzbestaetigung()`` in
+    ``mitgliedschaft.py``; erledigt ist sie mit dem Tag „Datenschutz bestätigt".
+    Gehört hinter ``AuthenticationMiddleware``.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        nutzer = getattr(request, "user", None)
+        if (
+            nutzer is not None
+            and nutzer.is_authenticated
+            and datenschutz_pruefpflichtig(request.path)
+            and self._braucht(nutzer)
+        ):
+            ziel = reverse("datenschutz_bestaetigen")
+            if request.headers.get("HX-Request"):
+                antwort = HttpResponse(status=204)
+                antwort["HX-Redirect"] = ziel
+                return antwort
+            if request.method == "GET":
+                ziel = f"{ziel}?{urlencode({'next': request.get_full_path()})}"
+            return redirect(ziel)
+        return self.get_response(request)
+
+    @staticmethod
+    def _braucht(nutzer):
+        # Eine Abfrage für beide Tags.
+        tags = set(
+            nutzer.groups.filter(
+                name__in=(GRUPPE_MITGLIED, GRUPPE_DATENSCHUTZ_BESTAETIGT)
+            ).values_list("name", flat=True)
+        )
+        return braucht_datenschutzbestaetigung(
+            nutzer.is_active,
+            GRUPPE_MITGLIED in tags,
+            GRUPPE_DATENSCHUTZ_BESTAETIGT in tags,
+        )

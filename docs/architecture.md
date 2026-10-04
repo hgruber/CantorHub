@@ -105,6 +105,11 @@ than to the second. Anything that changes the session anyway — logging in, dis
 banner — is saved immediately as before. The decision itself is the pure function
 `muss_auffrischen(stand, jetzt, intervall)`, tested without a database.
 
+`intern.middleware.DatenschutzPruefung` sits right behind it and sends an account with access
+but without membership to the privacy confirmation first; it costs one group query per request
+under `/intern/` and is described in `docs/members.md`, „Privacy confirmation without
+membership".
+
 ## Per-request cache
 
 Beyond the configuration cache described below, `intern/anfragespeicher.py` holds values that
