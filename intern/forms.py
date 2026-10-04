@@ -474,7 +474,11 @@ class CantorAuthenticationForm(AuthenticationForm):
 class MitgliedBestaetigungForm(forms.Form):
     bestaetigung_daten = forms.BooleanField(
         required=True,
-        label="Meine gespeicherten Daten sind korrekt und aktuell.",
+        label=(
+            "Meine gespeicherten Daten sind korrekt und aktuell. Falls nicht, "
+            "verpflichte ich mich, sie sofort nach der Freischaltung im Portal "
+            "zu korrigieren."
+        ),
     )
     zustimmung_datenschutz = forms.BooleanField(
         required=True,

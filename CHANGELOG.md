@@ -7,6 +7,14 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Datenbestätigung: Die drei Pflicht-Häkchen tragen ein Sternchen. Wer bestätigt, sagt bei nicht
+  mehr aktuellen Daten die sofortige Korrektur nach der Freischaltung zu, und das Quittungs-PDF
+  übernimmt diesen Wortlaut. Ein Hinweis erklärt, dass das Foto-Häkchen den gespeicherten Stand zeigt.
+
 ## v1.0.0 — 2026-10-04
 
 ### Hinzugefügt
