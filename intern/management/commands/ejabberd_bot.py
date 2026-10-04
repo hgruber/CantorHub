@@ -5,7 +5,8 @@ Long-running slixmpp bot that bridges ejabberd MUC rooms <-> CantorHub forum.
 Started as a background process by start.sh/migrate.sh; exits cleanly if ejabberd is not configured.
 
 Responsibilities:
-- Joins (and thereby creates) all MUC rooms listed in Forum.xmpp_muc_jid.
+- Joins (and thereby creates) all MUC rooms listed in Forum.xmpp_muc_jid of
+  active forums; a deactivated (archived) forum is left alone in every path.
 - Sets room title, persistent flag, and semi-anonymous mode (so clients don't
   default to OMEMO; the bot resolves real JIDs via presence events/REST API).
 - Resolves sender JIDs from MUC presence stanzas (cache) with REST API fallback.
@@ -31,21 +32,25 @@ logger = logging.getLogger(__name__)
 
 
 def _db_ensure_rooms(joined_rooms):
-    """Synchronous DB query: return forums that need MUC rooms joined."""
+    """Synchronous DB query: return the forums whose MUC room still needs to be
+    joined, and the set of room JIDs of all active forums."""
     from django.db.models import F, Max
     from intern.models import Forum
 
     forums = (
-        Forum.objects.exclude(xmpp_muc_jid=None)
+        Forum.objects.filter(aktiv=True)
+        .exclude(xmpp_muc_jid=None)
         .exclude(xmpp_muc_jid="")
         .annotate(_last=Max("mitteilung__datum"))
         .order_by(F("_last").desc(nulls_last=True))
     )
     to_join = []
+    aktive = set()
     for forum in forums:
+        aktive.add(forum.xmpp_muc_jid)
         if forum.xmpp_muc_jid not in joined_rooms:
             to_join.append((forum.pk, forum.xmpp_muc_jid, forum.thema))
-    return to_join
+    return to_join, aktive
 
 
 def _db_init_relay_cursor():
@@ -59,7 +64,7 @@ def _db_init_relay_cursor():
 
 def _db_pending_forum_messages(after_id):
     """Forum-originated messages (a local sender, no XMPP stanza id) newer than
-    after_id that belong to a forum with a MUC room. Returns a list of
+    after_id that belong to an active forum with a MUC room. Returns a list of
     (id, muc_jid, formatted_body) tuples ordered by id."""
     from intern.models import Mitteilung
     from intern.views.media import rewrite_media_urls
@@ -69,6 +74,7 @@ def _db_pending_forum_messages(after_id):
             id__gt=after_id,
             sender__isnull=False,
             xmpp_stanza_id__isnull=True,
+            forum__aktiv=True,
         )
         .exclude(forum__xmpp_muc_jid__isnull=True)
         .exclude(forum__xmpp_muc_jid="")
@@ -92,6 +98,9 @@ def _db_store_message(room_jid, body, sender_jid, stanza_id):
         forum = Forum.objects.get(xmpp_muc_jid=room_jid)
     except Forum.DoesNotExist:
         logger.warning("ejabberd_bot: unknown MUC room %s, ignoring", room_jid)
+        return
+    if not forum.aktiv:
+        logger.debug("ejabberd_bot: forum #%s is deactivated, ignoring", forum.pk)
         return
 
     # Deduplicate by stanza ID
@@ -154,6 +163,8 @@ def _db_invite_missing_users(room_jid):
     users = User.objects.filter(is_active=True).exclude(xmpp=None).exclude(xmpp="")
 
     forum = Forum.objects.filter(xmpp_muc_jid=room_jid).first()
+    if forum is not None and not forum.aktiv:
+        return
     if forum is not None:
         group_ids = list(
             ForumPermission.objects.filter(forum=forum).values_list(
@@ -206,7 +217,7 @@ def _db_store_xmpp_reaction(to_id, reactor_jid, emojis):
     this message is fully replaced. Never marks reactions_dirty (no rebroadcast)."""
     from intern.models import Mitteilung, Reaktion, User
 
-    mitteilung = Mitteilung.alle.filter(xmpp_stanza_id=to_id).first()
+    mitteilung = Mitteilung.alle.filter(xmpp_stanza_id=to_id, forum__aktiv=True).first()
     if mitteilung is None:
         logger.debug("ejabberd_bot: reaction for unknown stanza_id %s, skipping", to_id)
         return
@@ -242,7 +253,7 @@ def _db_dirty_reaction_candidates():
     from intern.models import Mitteilung
 
     return list(
-        Mitteilung.alle.filter(reactions_dirty=True)
+        Mitteilung.alle.filter(reactions_dirty=True, forum__aktiv=True)
         .exclude(xmpp_stanza_id__isnull=True)
         .exclude(xmpp_stanza_id="")
         .exclude(forum__xmpp_muc_jid__isnull=True)
@@ -481,8 +492,16 @@ class CantorBot:
             )
 
     async def _ensure_rooms(self):
-        """Join any MUC room that has a Forum mapping but hasn't been joined yet."""
-        to_join = await asyncio.to_thread(_db_ensure_rooms, self._joined_rooms)
+        """Join any MUC room of an active forum that hasn't been joined yet, and
+        leave the rooms whose forum was deactivated (or deleted) meanwhile."""
+        to_join, aktive = await asyncio.to_thread(_db_ensure_rooms, self._joined_rooms)
+
+        for muc_jid in self._joined_rooms - aktive:
+            self._client.plugin["xep_0045"].leave_muc(muc_jid, "CantorBot")
+            self._joined_rooms.discard(muc_jid)
+            self._invitation_done.discard(muc_jid)
+            self._nick_jid_cache.pop(muc_jid, None)
+            logger.info("ejabberd_bot: left %s (forum inactive or gone)", muc_jid)
 
         new_count = 0
         for forum_pk, muc_jid, thema in to_join:

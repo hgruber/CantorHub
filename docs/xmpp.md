@@ -107,6 +107,9 @@ This replaced an earlier per-message short-lived slixmpp connection that was unr
 
 1. Connects to ejabberd c2s (port from `EJABBERD_BOT_PORT`) using SASL PLAIN
 2. `session_start`: joins all MUC rooms from DB with `maxhistory="20"`, starts 60 s rescan timer
+   — only rooms of **active** forums. A deactivated (archived) forum is left alone throughout: no
+   join, no import of its MUC messages or reactions, no relay, no invitations. The rescan leaves
+   the room once its forum is deactivated or deleted and joins it again after reactivation.
 3. For each new room: waits 2 s for creation, then calls `configure_room(muc_jid, title)` which enforces (via REST `change_room_option`):
    - `title` = Forum topic name
    - `persistent` = `true` (room survives when empty, preserves history)

@@ -38,6 +38,12 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Foren: „Forum deaktivieren“ auf der Bearbeitungsseite archiviert ein Forum (Recht „Forum
   bearbeiten“).
 
+### Behoben
+
+- XMPP-Brücke: deaktivierte Foren bleiben außen vor — der Bot tritt ihren Räumen nicht mehr bei,
+  übernimmt keine Nachrichten oder Reaktionen daraus und lädt niemanden ein. Wird ein Forum
+  deaktiviert, verlässt er dessen Raum beim nächsten Abgleich.
+
 ## v1.0.0 — 2026-10-04
 
 ### Geändert
