@@ -896,13 +896,16 @@ class MitgliederTabelle(tables.Table):
     # vermieden werden soll. Nicht sortierbar, weil eine Sortierung nach
     # Speicherpfad so sinnlos ist wie die bisherige nach Datei-Id.
     avatar = tables.Column(accessor="avatar_pfad", orderable=False, empty_values=())
-    first_name = tables.Column()
-    last_name = tables.Column()
+    # Jede Überschrift ausdrücklich: die Liste bekommt eine Seite (list), kein
+    # Queryset, und ohne Queryset fiele django_tables2 auf den Feldnamen zurück
+    # („First name“) statt auf verbose_name. MitgliederSpaltenTest prüft das.
+    first_name = tables.Column(verbose_name="Vorname")
+    last_name = tables.Column(verbose_name="Nachname")
     stimme = tables.Column(order_by=("_stimme_pos", "last_name", "first_name"))
     email = tables.EmailColumn(verbose_name="E-Mail")
     xmpp = tables.EmailColumn(verbose_name="XMPP")
     geburtstag = DatumSpalte()
-    last_login = DatumZeitSpalte()
+    last_login = DatumZeitSpalte(verbose_name="Letzte Anmeldung")
     mitteilungen = tables.Column(
         attrs={"th": {"class": "zahl"}, "td": {"class": "zahl"}},
     )

@@ -4750,6 +4750,29 @@ class LoginSperrhinweisTest(SimpleTestCase):
         self.assertFalse(self._formular(None).zugang_gesperrt)
 
 
+class MitgliederSpaltenTest(SimpleTestCase):
+    """Die Mitgliederliste übergibt der Tabelle eine Seite als Liste, kein Queryset.
+
+    Ohne Queryset kennt django_tables2 das Modell nicht und bildet die Überschrift
+    aus dem Feldnamen („First name“). Jede Spalte braucht daher ihren deutschen
+    Namen in der Tabelle selbst.
+    """
+
+    def test_ueberschriften_ohne_queryset(self):
+        from intern.tables import MitgliederTabelle
+
+        koepfe = {c.name: str(c.header) for c in MitgliederTabelle([]).columns}
+        self.assertEqual(koepfe["first_name"], "Vorname")
+        self.assertEqual(koepfe["last_name"], "Nachname")
+        self.assertEqual(koepfe["last_login"], "Letzte Anmeldung")
+        self.assertEqual(koepfe["strasse"], "Straße")
+        self.assertEqual(koepfe["aktiv"], "Zugang")
+        # Der Rückfall auf den Feldnamen erzeugt „Wort wort“ aus einem Unterstrich.
+        for name, kopf in koepfe.items():
+            with self.subTest(name=name):
+                self.assertNotEqual(kopf, name.replace("_", " ").capitalize() if "_" in name else None)
+
+
 class ForumAnzeigeAbTest(SimpleTestCase):
     """``FORUM_ANZEIGE_AB``: ein Tippfehler darf keine Forenseite umwerfen."""
 
