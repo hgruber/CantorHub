@@ -9,6 +9,13 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Geändert
+
+- E-Mails: Kopf und Titel jeder Mail zeigen den Vereinsnamen (`VEREINSNAME`) statt des langen
+  Namens. Die Standardtexte von `MAIL_EINLADUNG`, `MAIL_MAILINGLISTE_OPTIN` und
+  `MAIL_MAILINGLISTE_WILLKOMMEN` setzen `{vereinsname}` statt `{vereinsname_lang}`; unveränderte
+  Texte werden beim Start nachgezogen.
+
 ## v1.0.0-rc7 — 2026-10-04
 
 ### Hinzugefügt

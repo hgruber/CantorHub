@@ -240,7 +240,7 @@ _CONFIG_DEFAULTS = [
     (
         "MAIL_EINLADUNG",
         "Hallo,\n\n"
-        "Du wurdest eingeladen, Mitglied bei '''{vereinsname_lang}''' zu werden. "
+        "Du wurdest eingeladen, Mitglied bei '''{vereinsname}''' zu werden. "
         "Über den folgenden Button kannst Du Deinen Antrag ausfüllen.\n\n"
         "{button:Jetzt Mitglied werden}\n\n"
         "% Dieser Einladungs-Link ist 7 Tage gültig. Wenn Du keine Einladung erwartet "
@@ -338,7 +338,7 @@ _CONFIG_DEFAULTS = [
     (
         "MAIL_MAILINGLISTE_OPTIN",
         "Hallo{name_anrede},\n\n"
-        "Du möchtest an die öffentlichen Auftritte von '''{vereinsname_lang}''' "
+        "Du möchtest an die öffentlichen Auftritte von '''{vereinsname}''' "
         "erinnert werden. Bitte bestätige das noch mit einem Klick — vorher "
         "tragen wir Dich nicht ein.\n\n"
         "{button:Eintrag bestätigen}\n\n"
@@ -356,7 +356,7 @@ _CONFIG_DEFAULTS = [
         "Du stehst jetzt auf unserer Auftritts-Liste. Wir melden uns rechtzeitig "
         "vor jedem öffentlichen Auftritt — und sonst nicht.\n\n"
         "Wir freuen uns, Dich bei einem Konzert zu sehen!\n\n"
-        "Herzliche Grüße\n{vereinsname_lang}",
+        "Herzliche Grüße\n{vereinsname}",
         "Willkommensmail nach bestätigter Anmeldung. " + _MARKUP_HINT
         + " Platzhalter: {name}, {name_anrede}, {email}, {abmelden}, "
         "{vereinsname}, {vereinsname_lang}",
@@ -548,6 +548,31 @@ _LEGACY_MAIL_DEFAULTS = {
     "MAIL_EINLADUNG": [
         "Hallo,\n\nDu wurdest eingeladen, Mitglied bei {vereinsname_lang} zu werden.\n"
         "Über diesen Link kannst Du Deinen Antrag ausfüllen (7 Tage gültig):\n\n{link}",
+        "Hallo,\n\n"
+        "Du wurdest eingeladen, Mitglied bei '''{vereinsname_lang}''' zu werden. "
+        "Über den folgenden Button kannst Du Deinen Antrag ausfüllen.\n\n"
+        "{button:Jetzt Mitglied werden}\n\n"
+        "% Dieser Einladungs-Link ist 7 Tage gültig. Wenn Du keine Einladung erwartet "
+        "hast, kannst Du diese E-Mail einfach ignorieren.\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen Browser: {link}",
+    ],
+    "MAIL_MAILINGLISTE_OPTIN": [
+        "Hallo{name_anrede},\n\n"
+        "Du möchtest an die öffentlichen Auftritte von '''{vereinsname_lang}''' "
+        "erinnert werden. Bitte bestätige das noch mit einem Klick — vorher "
+        "tragen wir Dich nicht ein.\n\n"
+        "{button:Eintrag bestätigen}\n\n"
+        "% Wenn Du das nicht warst, ignoriere diese E-Mail einfach. Ohne "
+        "Bestätigung passiert nichts.\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen "
+        "Browser: {link}",
+    ],
+    "MAIL_MAILINGLISTE_WILLKOMMEN": [
+        "Hallo{name_anrede},\n\n"
+        "Du stehst jetzt auf unserer Auftritts-Liste. Wir melden uns rechtzeitig "
+        "vor jedem öffentlichen Auftritt — und sonst nicht.\n\n"
+        "Wir freuen uns, Dich bei einem Konzert zu sehen!\n\n"
+        "Herzliche Grüße\n{vereinsname_lang}",
     ],
     "MAIL_NEUES_PASSWORT": [
         "Hallo {vorname},\n\nüber diesen Link kannst Du ein neues Passwort für Deinen "
