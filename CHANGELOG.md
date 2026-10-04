@@ -32,8 +32,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Rechts „Kann Mitglieder-Berechtigungen verwalten" zur Verfügung; ein ehemaliges Mitglied sieht
   statt „Mitgliedschaft genehmigen" nur noch „wieder aufnehmen".
 - Mitglied bearbeiten und Aufgaben: das Badge „Ruhend" heißt jetzt „Kein Zugang".
-- Mitgliederliste: der Filter „Aktiv" heißt jetzt „Kein Zugang"; ✓ zeigt die Konten ohne
-  Zugang, die Vorgabe zeigt wie bisher nur die mit Zugang.
+- Mitgliederliste: Filter und Spalte „Aktiv" heißen jetzt „Zugang", ihre Tooltips „Zugang
+  erlaubt" und „Zugang gesperrt". Die übrigen Spaltenüberschriften stehen auf Deutsch wie auf der
+  Profilseite (etwa „Straße", „E-Mail", „Mobil (Privat)").
 - Anmeldeseite: Titel und Begrüßung nennen den Vereinsnamen (`VEREINSNAME`) statt des langen
   Chornamens.
 - Migration: alle Foren und alle Beiträge des Altportals werden übernommen; Foren ohne Beitrag ab

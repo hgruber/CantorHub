@@ -7,7 +7,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils.crypto import get_random_string
 from django.forms.utils import flatatt
-from django.utils.html import format_html
+from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.db import models
 from filer.fields.file import FilerFileField
@@ -78,11 +78,14 @@ class TriStateToggle(SchnellSelect):
 
     Renders a hidden <select> (unknown/true/false) plus a pill-shaped
     sliding switch: red ✗ (exclude) | grey · (any) | green ✓ (include).
+    ``titel_ja``/``titel_nein`` are the tooltips of ✓ and ✗.
     """
 
-    def __init__(self, attrs=None):
+    def __init__(self, attrs=None, titel_ja="Einschließen", titel_nein="Ausschließen"):
         choices = [("unknown", "Egal"), ("true", "Ja"), ("false", "Nein")]
         super().__init__(attrs, choices)
+        self.titel_ja = titel_ja
+        self.titel_nein = titel_nein
 
     _OFFSETS = {"false": "0px", "unknown": "14px", "true": "28px"}
 
@@ -103,9 +106,9 @@ class TriStateToggle(SchnellSelect):
         toggle_html = (
             f'<div class="tri-toggle" data-value="{current}">'
             f'<span class="tri-toggle-thumb" {thumb_style}></span>'
-            f'<button type="button" class="tri-toggle-seg{" selected" if current == "false" else ""}" data-val="false" title="Ausschließen">&#x2717;</button>'
+            f'<button type="button" class="tri-toggle-seg{" selected" if current == "false" else ""}" data-val="false" title="{escape(self.titel_nein)}">&#x2717;</button>'
             f'<button type="button" class="tri-toggle-seg{" selected" if current == "unknown" else ""}" data-val="unknown" title="Egal"></button>'
-            f'<button type="button" class="tri-toggle-seg{" selected" if current == "true" else ""}" data-val="true" title="Einschließen">&#x2713;</button>'
+            f'<button type="button" class="tri-toggle-seg{" selected" if current == "true" else ""}" data-val="true" title="{escape(self.titel_ja)}">&#x2713;</button>'
             f'</div>'
         )
         return mark_safe(f'<div class="tri-toggle-wrap">{select_html}{toggle_html}</div>')

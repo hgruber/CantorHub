@@ -797,11 +797,7 @@ class MitgliederFilter(filters.FilterSet):
     )
     konzert_qs = Termin.objects.filter(anwesenheit=True).distinct().order_by("-datum")
 
-    # „Kein Zugang“ wie das Badge: ✓ zeigt die Konten ohne Zugang (exclude=True
-    # dreht den Wert um), ✗ die mit Zugang.
-    kein_zugang = filters.BooleanFilter(
-        field_name="is_active", exclude=True, label="Kein Zugang"
-    )
+    zugang = filters.BooleanFilter(field_name="is_active", label="Zugang")
     gruppen = filters.ModelMultipleChoiceFilter(
         field_name="groups",
         queryset=Group.objects.order_by("id"),
@@ -861,12 +857,12 @@ class MitgliederFilter(filters.FilterSet):
         model = User
         fields = [
             "stimme",
-            "kein_zugang",
+            "zugang",
             "gruppen",
         ]
 
-    BOOLEAN_FILTER_FIELDS = ["kein_zugang"]
-    MANAGE_ONLY_FIELDS = ["kein_zugang", "gruppen", "gruppen_nicht"]
+    BOOLEAN_FILTER_FIELDS = ["zugang"]
+    MANAGE_ONLY_FIELDS = ["zugang", "gruppen", "gruppen_nicht"]
 
     def __init__(self, *args, can_manage=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -878,11 +874,14 @@ class MitgliederFilter(filters.FilterSet):
         for name in self.BOOLEAN_FILTER_FIELDS:
             if name in self.form.fields:
                 self.form.fields[name].widget = TriStateToggle()
-        if "kein_zugang" in self.form.fields:
-            # Server injects kein_zugang=false as default when the param is absent.
+        if "zugang" in self.form.fields:
+            self.form.fields["zugang"].widget = TriStateToggle(
+                titel_ja="Zugang erlaubt", titel_nein="Zugang gesperrt"
+            )
+            # Server injects zugang=true as default when the param is absent.
             # Tell the toggle JS to keep "unknown" in the URL so users can
             # explicitly choose "Egal" instead of falling back to the default.
-            self.form.fields["kein_zugang"].widget.attrs["data-keep-unknown"] = "true"
+            self.form.fields["zugang"].widget.attrs["data-keep-unknown"] = "true"
 
 
 class MitgliederTabelle(tables.Table):
@@ -900,22 +899,24 @@ class MitgliederTabelle(tables.Table):
     first_name = tables.Column()
     last_name = tables.Column()
     stimme = tables.Column(order_by=("_stimme_pos", "last_name", "first_name"))
-    email = tables.EmailColumn()
-    xmpp = tables.EmailColumn()
+    email = tables.EmailColumn(verbose_name="E-Mail")
+    xmpp = tables.EmailColumn(verbose_name="XMPP")
     geburtstag = DatumSpalte()
     last_login = DatumZeitSpalte()
     mitteilungen = tables.Column(
         attrs={"th": {"class": "zahl"}, "td": {"class": "zahl"}},
     )
-    strasse = tables.Column()
-    plz = tables.Column()
+    # Überschriften wie auf der Profilseite (mitglied.html).
+    strasse = tables.Column(verbose_name="Straße")
+    plz = tables.Column(verbose_name="PLZ")
     ort = tables.Column()
-    telefon = tables.Column()
-    telefon_job = tables.Column()
-    telefon_mobil = tables.Column()
-    telefon_job_mobil = tables.Column()
+    telefon = tables.Column(verbose_name="Telefon (Privat)")
+    telefon_job = tables.Column(verbose_name="Telefon (Beruf)")
+    telefon_mobil = tables.Column(verbose_name="Mobil (Privat)")
+    telefon_job_mobil = tables.Column(verbose_name="Mobil (Beruf)")
     fax = tables.Column()
-    aktiv = tables.BooleanColumn(accessor="is_active", verbose_name="Aktiv")
+    # Name „aktiv“ bleibt: gespeicherte Spaltenauswahlen (TabellenPreferenzen) nennen ihn.
+    aktiv = tables.BooleanColumn(accessor="is_active", verbose_name="Zugang")
     gruppen = tables.Column(accessor="groups", verbose_name="Gruppen", orderable=False)
 
     class Meta:
@@ -932,7 +933,7 @@ class MitgliederTabelle(tables.Table):
         return ", ".join(g.name for g in record.groups.all())
 
     def render_aktiv(self, value):
-        label = "Aktiv" if value else "Inaktiv"
+        label = "Zugang erlaubt" if value else "Zugang gesperrt"
         cls = "status-dot--on" if value else "status-dot--off"
         return format_html(
             '<span class="status-dot {cls}" title="{label}" aria-label="{label}"></span>',
