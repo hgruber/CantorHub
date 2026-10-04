@@ -7,35 +7,7 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
-## Unveröffentlicht
-
-### Hinzugefügt
-
-- Datenschutz-Bestätigung: Konten mit Portalzugang ohne Tag „Mitglied“ bestätigen nach dem Login
-  einmalig die Datenschutzerklärung und die Foto-Einwilligung, mit PDF und Quittung. Erledigt ist
-  das mit dem Tag „DSGVO“; `datenschutz_zuruecksetzen` fragt erneut.
-- Mitgliedsantrag für bestehende Konten: `send_antragslink --user NAME` schickt einem Konto ohne
-  Zugang und ohne Tag „Mitglied“ den Link zu einem vorausgefüllten Antragsformular. Benutzername
-  und Passwort bleiben, die Aufnahme folgt wie gewohnt über „Mitgliedschaft genehmigen“.
-
-### Geändert
-
-- Einladungen: Eine E-Mail-Adresse, zu der es schon ein Konto gibt, wird abgelehnt, im Portal
-  wie in `make_invite_url`. Die Meldung nennt den Benutzer und verweist auf `send_antragslink`.
-- Datenbestätigung: Die Pflicht-Häkchen tragen ein Sternchen. Wer bestätigt, sagt bei nicht
-  mehr aktuellen Daten die sofortige Korrektur nach der Freischaltung zu, und das Quittungs-PDF
-  übernimmt diesen Wortlaut. Ein Hinweis erklärt, dass das Foto-Häkchen den gespeicherten Stand zeigt.
-- Datenbestätigung: Aufforderungsmail und Formular sagen, dass der Zugang zum internen Bereich bis
-  zur Bestätigung gesperrt bleibt. Ein nie geänderter Mailtext `MAIL_BESTAETIGUNG` wird beim Start
-  auf den neuen Standard gehoben.
-- Datenbestätigung: Das Formular fragt als viertes Pflicht-Häkchen die Anerkennung der
-  Beitragsordnung ab, wie es die Aufforderungsmail ankündigt; das Quittungs-PDF führt sie mit auf.
-- Datenbestätigung: Ein Link wirkt nur noch bei einem gesperrten Konto mit Tag „Mitglied“; nach dem
-  Absenden zeigt er „Bereits bestätigt“, nach „Mitgliedschaft beenden“ ist er ungültig.
-  `send_reconfirmation --print-url` sperrt jetzt wie der Mailversand, und Konten ohne Tag werden
-  weder angeschrieben noch gesperrt.
-
-## v1.0.0 — 2026-10-04
+## v1.0.0 — 2026-10-05
 
 ### Hinzugefügt
 
@@ -45,6 +17,12 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   ihn in einen Ordner zu verschieben.
 - Foren: „Forum deaktivieren“ auf der Bearbeitungsseite archiviert ein Forum (Recht „Forum
   bearbeiten“).
+- Datenschutz-Bestätigung: Konten mit Portalzugang ohne Tag „Mitglied“ bestätigen nach dem Login
+  einmalig die Datenschutzerklärung und die Foto-Einwilligung, mit PDF und Quittung. Erledigt ist
+  das mit dem Tag „DSGVO“; `datenschutz_zuruecksetzen` fragt erneut.
+- Mitgliedsantrag für bestehende Konten: `send_antragslink --user NAME` schickt einem Konto ohne
+  Zugang und ohne Tag „Mitglied“ den Link zu einem vorausgefüllten Antragsformular. Benutzername
+  und Passwort bleiben, die Aufnahme folgt wie gewohnt über „Mitgliedschaft genehmigen“.
 
 ### Geändert
 
@@ -70,6 +48,20 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Namens. Die Standardtexte von `MAIL_EINLADUNG`, `MAIL_MAILINGLISTE_OPTIN` und
   `MAIL_MAILINGLISTE_WILLKOMMEN` setzen `{vereinsname}` statt `{vereinsname_lang}`; unveränderte
   Texte werden beim Start nachgezogen.
+- Einladungen: Eine E-Mail-Adresse, zu der es schon ein Konto gibt, wird abgelehnt, im Portal
+  wie in `make_invite_url`. Die Meldung nennt den Benutzer und verweist auf `send_antragslink`.
+- Datenbestätigung: Die Pflicht-Häkchen tragen ein Sternchen. Wer bestätigt, sagt bei nicht
+  mehr aktuellen Daten die sofortige Korrektur nach der Freischaltung zu, und das Quittungs-PDF
+  übernimmt diesen Wortlaut. Ein Hinweis erklärt, dass das Foto-Häkchen den gespeicherten Stand zeigt.
+- Datenbestätigung: Aufforderungsmail und Formular sagen, dass der Zugang zum internen Bereich bis
+  zur Bestätigung gesperrt bleibt. Ein nie geänderter Mailtext `MAIL_BESTAETIGUNG` wird beim Start
+  auf den neuen Standard gehoben.
+- Datenbestätigung: Das Formular fragt als viertes Pflicht-Häkchen die Anerkennung der
+  Beitragsordnung ab, wie es die Aufforderungsmail ankündigt; das Quittungs-PDF führt sie mit auf.
+- Datenbestätigung: Ein Link wirkt nur noch bei einem gesperrten Konto mit Tag „Mitglied“; nach dem
+  Absenden zeigt er „Bereits bestätigt“, nach „Mitgliedschaft beenden“ ist er ungültig.
+  `send_reconfirmation --print-url` sperrt jetzt wie der Mailversand, und Konten ohne Tag werden
+  weder angeschrieben noch gesperrt.
 
 ### Behoben
 
