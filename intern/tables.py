@@ -81,7 +81,16 @@ class ForumTabelle(tables.Table):
     class Meta:
         row_attrs = {
             "data-href": lambda record: reverse("forum_view", args=[record.id]),
-            "class": lambda record: "ungelesen" if getattr(record, "ungelesen", 0) else "",
+            # Deaktivierte Foren sieht nur, wer Forum-Berechtigungen verwaltet —
+            # grau wie inaktive Mitglieder (row-inactive).
+            "class": lambda record: " ".join(
+                k
+                for k, an in (
+                    ("ungelesen", getattr(record, "ungelesen", 0)),
+                    ("row-inactive", not record.aktiv),
+                )
+                if an
+            ),
         }
 
     def render_anzahl_mitteilungen(self, record, value):

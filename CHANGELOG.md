@@ -19,6 +19,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   vor dem das Portal Forenbeiträge nirgends anzeigt; gelöscht wird nichts.
 - Forum bearbeiten: ein deaktiviertes Forum zeigt statt „Forum deaktivieren“ die Aktion
   „Reaktivieren“, die es wieder für alle Leser sichtbar macht.
+- Forenübersicht: deaktivierte Foren erscheinen grau hinterlegt wie inaktive Mitglieder.
 
 ### Geändert
 
