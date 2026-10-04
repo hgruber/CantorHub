@@ -797,7 +797,11 @@ class MitgliederFilter(filters.FilterSet):
     )
     konzert_qs = Termin.objects.filter(anwesenheit=True).distinct().order_by("-datum")
 
-    aktiv = filters.BooleanFilter(field_name="is_active", label="Aktiv")
+    # „Kein Zugang“ wie das Badge: ✓ zeigt die Konten ohne Zugang (exclude=True
+    # dreht den Wert um), ✗ die mit Zugang.
+    kein_zugang = filters.BooleanFilter(
+        field_name="is_active", exclude=True, label="Kein Zugang"
+    )
     gruppen = filters.ModelMultipleChoiceFilter(
         field_name="groups",
         queryset=Group.objects.order_by("id"),
@@ -857,12 +861,12 @@ class MitgliederFilter(filters.FilterSet):
         model = User
         fields = [
             "stimme",
-            "aktiv",
+            "kein_zugang",
             "gruppen",
         ]
 
-    BOOLEAN_FILTER_FIELDS = ["aktiv"]
-    MANAGE_ONLY_FIELDS = ["aktiv", "gruppen", "gruppen_nicht"]
+    BOOLEAN_FILTER_FIELDS = ["kein_zugang"]
+    MANAGE_ONLY_FIELDS = ["kein_zugang", "gruppen", "gruppen_nicht"]
 
     def __init__(self, *args, can_manage=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -874,11 +878,11 @@ class MitgliederFilter(filters.FilterSet):
         for name in self.BOOLEAN_FILTER_FIELDS:
             if name in self.form.fields:
                 self.form.fields[name].widget = TriStateToggle()
-        if "aktiv" in self.form.fields:
-            # Server injects aktiv=true as default when the param is absent.
+        if "kein_zugang" in self.form.fields:
+            # Server injects kein_zugang=false as default when the param is absent.
             # Tell the toggle JS to keep "unknown" in the URL so users can
             # explicitly choose "Egal" instead of falling back to the default.
-            self.form.fields["aktiv"].widget.attrs["data-keep-unknown"] = "true"
+            self.form.fields["kein_zugang"].widget.attrs["data-keep-unknown"] = "true"
 
 
 class MitgliederTabelle(tables.Table):

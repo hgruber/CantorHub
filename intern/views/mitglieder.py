@@ -74,9 +74,9 @@ def mitglied_list(request):
         .order_by("last_name", "first_name")
     )
     filter_data = request.GET
-    if can_manage and "aktiv" not in filter_data:
+    if can_manage and "kein_zugang" not in filter_data:
         filter_data = filter_data.copy()
-        filter_data["aktiv"] = "true"
+        filter_data["kein_zugang"] = "false"
     mitglieder_filter = MitgliederFilter(filter_data, queryset=queryset, can_manage=can_manage)
     from .files import visible_fields
 
@@ -369,9 +369,9 @@ def mitglied_emails(request):
         .order_by("_stimme_pos", "last_name", "first_name")
     )
     filter_data = request.GET
-    if can_manage and "aktiv" not in filter_data:
+    if can_manage and "kein_zugang" not in filter_data:
         filter_data = filter_data.copy()
-        filter_data["aktiv"] = "true"
+        filter_data["kein_zugang"] = "false"
     mitglieder_filter = MitgliederFilter(filter_data, queryset=queryset, can_manage=can_manage)
     entries = []
     for user in mitglieder_filter.qs:
@@ -581,9 +581,9 @@ def mitglied_benachrichtigen(request):
         filter_params = request.GET.urlencode()
         filter_data = request.GET
 
-    if can_manage and "aktiv" not in filter_data:
+    if can_manage and "kein_zugang" not in filter_data:
         filter_data = filter_data.copy()
-        filter_data["aktiv"] = "true"
+        filter_data["kein_zugang"] = "false"
     mitglieder_filter = MitgliederFilter(filter_data, queryset=queryset, can_manage=can_manage)
 
     recipients = [
