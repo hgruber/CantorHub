@@ -51,6 +51,7 @@ __all__ = [
     "forum_invite",
     "forum_add",
     "forum_delete",
+    "forum_reaktivieren",
     "forum_permissions",
 ]
 
@@ -565,6 +566,16 @@ def forum_delete(request, forum):
     forum_obj._audit_user = request.user
     forum_obj.delete()  # cascades: all Mitteilung rows deleted
     return redirect("forum_list")
+
+
+@permission_required("intern.change_forum", raise_exception=True)
+@require_POST
+def forum_reaktivieren(request, forum):
+    forum_obj = get_object_or_404(Forum, id=forum)
+    forum_obj.aktiv = True
+    forum_obj._audit_user = request.user
+    forum_obj.save(update_fields=["aktiv"])
+    return redirect("forum_edit", forum=forum)
 
 
 @permission_required("intern.add_forum", raise_exception=True)

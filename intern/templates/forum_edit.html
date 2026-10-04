@@ -136,11 +136,22 @@
         {% endif %}
         {% endif %}
 
+        {% if forum_obj.aktiv %}
         <div class="detail-card detail-card-danger">
             <h3>Forum deaktivieren</h3>
             <p class="text-muted danger-desc">Deaktiviert das Forum. Diese Aktion kann später rückgängig gemacht werden.</p>
             <button class="btn btn-danger" disabled>Forum deaktivieren</button>
         </div>
+        {% else %}
+        <div class="detail-card">
+            <h3>Forum reaktivieren</h3>
+            <p class="text-muted">Das Forum ist deaktiviert und nur für Mitglieder mit dem Recht zur Forum-Zugriffskontrolle sichtbar. Reaktivieren zeigt es wieder allen, die es lesen dürfen.</p>
+            <form method="post" action="{% url 'forum_reaktivieren' forum=id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Reaktivieren</button>
+            </form>
+        </div>
+        {% endif %}
 
         {% if perms.intern.delete_forum %}
         <div class="detail-card detail-card-danger">

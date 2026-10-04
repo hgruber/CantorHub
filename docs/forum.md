@@ -129,7 +129,9 @@ both per file; a new site fails the test until its cutoff handling has been revi
 `Forum.aktiv = False` hides a forum from the list, search, notification bubbles and unread dot,
 and `_forum_access` refuses it (403) — except for holders of `manage_forum_permissions`. The
 import deactivates every forum without a message on or after the cutoff, once; changing
-`FORUM_ANZEIGE_AB` later does not toggle forums.
+`FORUM_ANZEIGE_AB` later does not toggle forums. On the edit page a deactivated forum offers
+„Reaktivieren" (`forum_reaktivieren`, POST, `change_forum`); deactivating from the UI is not
+built yet — the card for it is still a disabled placeholder.
 
 ## Message display fallbacks
 

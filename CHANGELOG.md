@@ -17,6 +17,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Mitglieder-Berechtigungen verwalten" zur Verfügung.
 - Konfiguration: `FORUM_ANZEIGE_AB` unter „Aufbewahrung & Bereinigung“ legt den Stichtag fest,
   vor dem das Portal Forenbeiträge nirgends anzeigt; gelöscht wird nichts.
+- Forum bearbeiten: ein deaktiviertes Forum zeigt statt „Forum deaktivieren“ die Aktion
+  „Reaktivieren“, die es wieder für alle Leser sichtbar macht.
 
 ### Geändert
 

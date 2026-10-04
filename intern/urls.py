@@ -72,6 +72,7 @@ urlpatterns = [
     path("forum/<int:forum>/get/", views.forum_get, name="forum_get"),
     path("forum/<int:forum>/edit/", views.forum_edit, name="forum_edit"),
     path("forum/<int:forum>/delete/", views.forum_delete, name="forum_delete"),
+    path("forum/<int:forum>/reaktivieren/", views.forum_reaktivieren, name="forum_reaktivieren"),
     path("forum/<int:forum>/invite/<int:user_id>/", views.forum_invite, name="forum_invite"),
     path("forum/<int:forum>/more/", views.forum_more, name="forum_more"),
     path("forum/<int:forum>/send/", views.forum_send, name="forum_send"),
