@@ -6,17 +6,17 @@ Auslieferungen nachgeladen (``charge`` in ``intern/auslieferungen.py``).
 """
 
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from intern.auslieferungen import charge, laufende_kennung, lies_auslieferungen
 
+from ._decorators import perm_or_home
 from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
 __all__ = ["auslieferungen"]
 
 
-@login_required
+@perm_or_home("intern.manage_user_permissions")
 def auslieferungen(request):
     abschnitte = lies_auslieferungen()
     # Über alle Abschnitte bestimmen, nicht nur über die Charge — sonst trüge

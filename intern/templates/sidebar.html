@@ -203,6 +203,8 @@
         </button>
     </form>
     <a href="{% url 'datenschutz' %}" class="version-string" target="_blank" rel="noopener">Datenschutz</a>
+    {% if request.user.is_superuser or perms.intern.manage_user_permissions %}
     <a href="{% url 'auslieferungen' %}" class="version-string" title="Änderungen">{{ VERSION }}</a>
+    {% endif %}
 </div>
 

@@ -67,8 +67,8 @@ Three underscore-prefixed modules hold what the view modules share:
 
 - **`views/_pagination.py`** — the infinite-scroll contract: `parse_offset`, `ist_nachladen`,
   `nachlade_antwort`, `paginate_ordered`. Details in `docs/frontend.md`.
-- **`views/_decorators.py`** — `perm_or_home(perm)` guards the three management pages
-  (`aufgaben`, `gruppen`, `aenderungsprotokoll_list`): permission or superuser, else a silent
+- **`views/_decorators.py`** — `perm_or_home(perm)` guards the management pages
+  (`aufgaben`, `gruppen`, `aenderungsprotokoll_list`) and the release notes (`auslieferungen`): permission or superuser, else a silent
   redirect to „Aktuell" rather than a 403, because a member without the right never sees the menu
   entry. It includes `login_required`. `tabellenzustand` remembers a list's sort and filters in
   a per-path cookie and redirects before rendering; every view that renders `table.html` carries

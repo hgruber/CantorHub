@@ -11,6 +11,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
+- Navigation: der Versionslink zur Seite „Änderungen" erscheint nur noch mit dem Recht
+  „Mitglieder: Berechtigungen"; die Seite selbst ist nur noch damit zugänglich.
 - E-Mails: Kopf und Titel jeder Mail zeigen den Vereinsnamen (`VEREINSNAME`) statt des langen
   Namens. Die Standardtexte von `MAIL_EINLADUNG`, `MAIL_MAILINGLISTE_OPTIN` und
   `MAIL_MAILINGLISTE_WILLKOMMEN` setzen `{vereinsname}` statt `{vereinsname_lang}`; unveränderte

@@ -71,7 +71,8 @@ The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
 - `/admin/` — Django admin
 - `/intern/*` — all authenticated views (`intern/urls.py`)
 - `/intern/changelog/` — the release notes from `CHANGELOG.md` (`auslieferungen` in
-  `views/auslieferungen.py`, login required); the version line in the sidebar footer links here,
+  `views/auslieferungen.py`, `perm_or_home("intern.manage_user_permissions")`); the version
+  line in the sidebar footer links here and is shown under the same right only,
   older releases are loaded in batches. Not to be confused with `/intern/aenderungsprotokoll/`,
   which is the audit trail. See `frontend.md`.
 - `/intern/karte/geocode/` — Nominatim geocoding proxy (`geocode_proxy` in `karte.py`, login
