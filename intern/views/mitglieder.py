@@ -392,10 +392,18 @@ def mitglied_invite(request):
         return redirect("mitglied_list")
 
     email = form.cleaned_data["email"]
-    if User.objects.filter(email__iexact=email).exists():
-        messages.warning(
-            request, f"Es existiert bereits ein Mitglied mit der E-Mail {email}."
+    # Der Antrag legte sonst ein zweites Konto für dieselbe Person an; ein
+    # bestehendes Konto stellt seinen Antrag über ``send_antragslink``.
+    vorhanden = User.objects.filter(email__iexact=email).first()
+    if vorhanden:
+        messages.error(
+            request,
+            f"Es gibt bereits ein Konto mit der E-Mail {email} (Benutzer "
+            f"„{vorhanden.username}“). Keine Einladung verschickt — ein bestehendes "
+            "Konto stellt den Antrag über „send_antragslink --user "
+            f"{vorhanden.username}“.",
         )
+        return redirect("mitglied_list")
 
     token = make_invite_token(email)
     link = request.build_absolute_uri(reverse("mitglied_beitritt", args=[token]))

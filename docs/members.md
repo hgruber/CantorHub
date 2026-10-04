@@ -66,6 +66,10 @@ context var in `table.html`) is two-step:
    join form. No user is created yet. The link carries the e-mail in a `TimestampSigner` token
    (salt `intern.mitglied_invite`, **7-day** validity) — `make_invite_token()` /
    `_read_invite_token()` in `views/auth.py`. Stateless: no DB model, no placeholder user.
+   An address that already belongs to an account (case-insensitive) is refused, here and in
+   `make_invite_url`: the join form would create a second account for the same person, and
+   `User.email` is not unique. Such an account applies through `send_antragslink` (see
+   „Application for an existing account" below).
 2. **Manuell anlegen** (JS-revealed; button, form and view additionally require
    `intern.manage_user_permissions`, which a superuser holds implicitly):
    `MitgliedAddForm` posting to `mitglied_add`, which creates

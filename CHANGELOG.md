@@ -17,6 +17,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
+- Einladungen: Eine E-Mail-Adresse, zu der es schon ein Konto gibt, wird abgelehnt, im Portal
+  wie in `make_invite_url`. Die Meldung nennt den Benutzer und verweist auf `send_antragslink`.
 - Datenbestätigung: Die Pflicht-Häkchen tragen ein Sternchen. Wer bestätigt, sagt bei nicht
   mehr aktuellen Daten die sofortige Korrektur nach der Freischaltung zu, und das Quittungs-PDF
   übernimmt diesen Wortlaut. Ein Hinweis erklärt, dass das Foto-Häkchen den gespeicherten Stand zeigt.

@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from intern.app_settings import get_base_url
+from intern.models import User
 from intern.views.auth import make_invite_token
 
 
@@ -28,6 +29,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         email = options["email"]
+        vorhanden = User.objects.filter(email__iexact=email).first()
+        if vorhanden:
+            self.stderr.write(self.style.ERROR(
+                f"Es gibt bereits ein Konto mit der E-Mail {email} "
+                f"('{vorhanden.username}') — der Antrag legte ein zweites an. "
+                f"Stattdessen: send_antragslink --user {vorhanden.username}"
+            ))
+            return
         base_url = get_base_url(options["base_url"], fallback="http://localhost:8000")
         token = make_invite_token(email)
         self.stdout.write(f"{base_url}/intern/beitritt/{token}/")
