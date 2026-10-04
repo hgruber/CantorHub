@@ -27,6 +27,10 @@ GRUPPE_MITGLIED = "Mitglied"
 GRUPPE_FOERDERMITGLIED = "Fördermitglied"
 GRUPPE_GRUENDER = "Gründer"
 
+# Bietet der Mitgliedsantrag die Fördermitgliedschaft an? Vorerst aus; True
+# bringt Checkbox, Hinweiskarte, Dialog und PDF-Abschnitt zurück.
+FOERDERMITGLIED_IM_ANTRAG = False
+
 
 def ist_erstaufnahme(date_joined, ist_mitglied):
     """Ist das Einschalten von ``is_active`` die **erste** Aufnahme?

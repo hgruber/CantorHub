@@ -376,6 +376,9 @@ class MitgliedBeitrittForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for name in self.REQUIRED:
             self.fields[name].required = True
+        from intern.mitgliedschaft import FOERDERMITGLIED_IM_ANTRAG
+        if not FOERDERMITGLIED_IM_ANTRAG:
+            del self.fields["foerdermitglied"]
         from intern.app_settings import get_document_url
         satzung_url = get_document_url("SATZUNG_FILE_ID")
         self.fields["anerkennung_satzung"].label = mark_safe(

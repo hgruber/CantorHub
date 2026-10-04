@@ -74,7 +74,8 @@ On success:
   with `intern.change_user` via `_member_managers()` if empty). If the applicant is a minor at
   submission time, that mail contains a warning;
 - if `foerdermitglied` is checked, the user is added to the `"Fördermitglied"` group
-  immediately.
+  immediately. The checkbox (with its card, dialog and PDF section) is only offered while
+  `FOERDERMITGLIED_IM_ANTRAG` in `intern/mitgliedschaft.py` is `True`; it is currently off.
 
 The public pages (`mitglied_beitritt.html`, `_success.html`, `_invalid.html`) extend the
 standalone `mitglied_public_base.html` shell (no sidebar), not `base.html`.

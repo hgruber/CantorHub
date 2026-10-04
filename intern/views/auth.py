@@ -33,7 +33,7 @@ from intern.pdf import (
 from intern.mail import send_config_mail
 
 from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
-from ..mitgliedschaft import GRUPPE_FOERDERMITGLIED
+from ..mitgliedschaft import FOERDERMITGLIED_IM_ANTRAG, GRUPPE_FOERDERMITGLIED
 from ..models import OHNE_ANKUENDIGUNG, Termin, User
 
 __all__ = [
@@ -128,8 +128,9 @@ def _save_antrag_pdf(user, email, einwilligung_fotos=False, foerdermitglied=Fals
     y = draw_checkbox(c, y, "Einwilligung zur Veröffentlichung von Fotos bei Auftritten",
                      checked=einwilligung_fotos)
 
-    y = draw_section(c, y, "Fördermitgliedschaft")
-    y = draw_checkbox(c, y, "Ich möchte förderndes Mitglied werden", checked=foerdermitglied)
+    if FOERDERMITGLIED_IM_ANTRAG:
+        y = draw_section(c, y, "Fördermitgliedschaft")
+        y = draw_checkbox(c, y, "Ich möchte förderndes Mitglied werden", checked=foerdermitglied)
 
     draw_signature(c, y, f"{user.first_name} {user.last_name}")
 

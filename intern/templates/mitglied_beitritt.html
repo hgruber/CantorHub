@@ -83,7 +83,8 @@
         </div>
     </div>
 
-    {# ── Förderndes Mitglied ──────────────────────────────────── #}
+    {# ── Förderndes Mitglied (Schalter FOERDERMITGLIED_IM_ANTRAG) ── #}
+    {% if "foerdermitglied" in form.fields %}
     <div class="detail-card">
         <h3>Förderndes Mitglied</h3>
         <p class="join-foerder-info">
@@ -98,6 +99,7 @@
             {% if form.foerdermitglied.errors %}<div class="invalid-feedback">{{ form.foerdermitglied.errors }}</div>{% endif %}
         </div>
     </div>
+    {% endif %}
 
     <p class="join-required-note"><span class="req">*</span> Pflichtfeld</p>
 
@@ -114,6 +116,7 @@
     </div>
 </dialog>
 
+{% if "foerdermitglied" in form.fields %}
 <dialog id="foerder-dialog" class="app-dialog">
     <h3>Förderndes Mitglied werden?</h3>
     <p>Als förderndes Mitglied verzichtest du auf das aktive Mitsingen im Chor.<br>Bist du sicher, dass du <strong>nicht mitsingen</strong> möchtest?</p>
@@ -122,6 +125,7 @@
         <button type="button" class="btn btn-secondary" id="foerder-cancel">Nein, ich möchte mitsingen</button>
     </div>
 </dialog>
+{% endif %}
 
 <script>
 (function () {
@@ -138,6 +142,7 @@
         if (age < 18) minDlg.showModal();
     });
 
+    {% if "foerdermitglied" in form.fields %}
     var cb = document.getElementById('{{ form.foerdermitglied.id_for_label }}');
     var dlg = document.getElementById('foerder-dialog');
     cb.addEventListener('change', function () {
@@ -152,6 +157,7 @@
         cb.checked = false;
         dlg.close();
     });
+    {% endif %}
 })();
 </script>
 {% endblock %}

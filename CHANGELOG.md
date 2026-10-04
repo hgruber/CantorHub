@@ -19,6 +19,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   statt eines falschen Passworts.
 - Mitgliedsantrag: der Button „Antrag ansehen" in der Benachrichtigung an die Verwalter führt
   direkt auf die Bearbeiten-Seite mit „Mitgliedschaft genehmigen" statt auf das Profil.
+- Mitgliedsantrag: die Option, förderndes Mitglied zu werden, wird nicht mehr angeboten.
 
 ## v1.0.0-rc5 — 2026-09-27
 
