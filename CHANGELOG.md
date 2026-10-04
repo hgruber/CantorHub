@@ -7,27 +7,7 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
-## Unveröffentlicht
-
-### Geändert
-
-- Migration: neue Ausgangsrechte der Gruppen — Vorstand: Mitglieder anlegen/bearbeiten und
-  Termine; Webmaster: Mitglieder löschen sowie Dateien, Artikel und Forum vollständig; Termine:
-  Termine; Mitglied: Mitglieder benachrichtigen und Orte. Die Gruppe „Repertoire" heißt jetzt
-  „KonzertOrga" und darf Termine, Repertoire und Orte verwalten.
-- Migration: Webmaster und KonzertOrga werden mit festen Personen besetzt statt aus den Rechten
-  des Altsystems; die Gruppe „Termine" bleibt anfangs leer.
-- Migration: Petra Gruber wird neben Holger Gruber Superuser.
-- Dateien: Den Ordner „Eingang“ gibt es nicht mehr; Uploads ohne Zielordner landen in der
-  obersten Ebene. Antrags- und Bestätigungs-PDFs liegen in „Verein/Vorstand/Mitgliedsanträge“
-  statt in „Mitglieder-Verwaltung“, und die Rundmail bietet Anhänge aus „Verein“ an.
-- Migration: Altdateien ohne Zuordnung zu Lied oder Artikel werden nicht mehr importiert;
-  übrige Audiodateien landen weiterhin in „Probenmitschnitte“.
-- Dateien: „Backstage“ erscheint in der Ordneransicht nur noch für Webmaster; die Dateien darin
-  bleiben überall sonst erreichbar.
-- Foren: deaktivierte (archivierte) Foren sieht nur noch, wer das neue Recht „Forum: Archiv“
-  hat — auch Superuser brauchen es ausdrücklich. Nur dieses Recht erlaubt das Reaktivieren; in
-  der Forenliste tragen archivierte Foren ein Archiv-Symbol.
+## v1.0.0 — 2026-10-04
 
 ### Hinzugefügt
 
@@ -38,22 +18,36 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Foren: „Forum deaktivieren“ auf der Bearbeitungsseite archiviert ein Forum (Recht „Forum
   bearbeiten“).
 
-### Behoben
-
-- XMPP-Brücke: deaktivierte Foren bleiben außen vor — der Bot tritt ihren Räumen nicht mehr bei,
-  übernimmt keine Nachrichten oder Reaktionen daraus und lädt niemanden ein. Wird ein Forum
-  deaktiviert, verlässt er dessen Raum beim nächsten Abgleich.
-
-## v1.0.0 — 2026-10-04
-
 ### Geändert
 
+- Migration: neue Ausgangsrechte der Gruppen — Vorstand: Mitglieder anlegen/bearbeiten und
+  Termine; Webmaster: Mitglieder löschen sowie Dateien, Artikel und Forum vollständig; Termine:
+  Termine; Mitglied: Mitglieder benachrichtigen und Orte. Die Gruppe „Repertoire" heißt jetzt
+  „KonzertOrga" und darf Termine, Repertoire und Orte verwalten.
+- Migration: Webmaster und KonzertOrga werden mit festen Personen besetzt statt aus den Rechten
+  des Altsystems; die Gruppe „Termine" bleibt anfangs leer.
+- Dateien: Den Ordner „Eingang“ gibt es nicht mehr; Uploads ohne Zielordner landen in der
+  obersten Ebene. Antrags- und Bestätigungs-PDFs liegen in „Verein/Vorstand/Mitgliedsanträge“
+  statt in „Mitglieder-Verwaltung“, und die Rundmail bietet Anhänge aus „Verein“ an.
+- Migration: Altdateien ohne Zuordnung zu Lied oder Artikel werden nicht mehr importiert;
+  übrige Audiodateien landen weiterhin in „Probenmitschnitte“.
+- Dateien: „Backstage“ erscheint in der Ordneransicht nur noch für Webmaster; die Dateien darin
+  bleiben überall sonst erreichbar.
+- Foren: deaktivierte (archivierte) Foren sieht nur noch, wer das neue Recht „Forum: Archiv“
+  hat — auch Superuser brauchen es ausdrücklich. Nur dieses Recht erlaubt das Reaktivieren; in
+  der Forenliste tragen archivierte Foren ein Archiv-Symbol.
 - Navigation: der Versionslink zur Seite „Änderungen" erscheint nur noch mit dem Recht
   „Mitglieder: Berechtigungen"; die Seite selbst ist nur noch damit zugänglich.
 - E-Mails: Kopf und Titel jeder Mail zeigen den Vereinsnamen (`VEREINSNAME`) statt des langen
   Namens. Die Standardtexte von `MAIL_EINLADUNG`, `MAIL_MAILINGLISTE_OPTIN` und
   `MAIL_MAILINGLISTE_WILLKOMMEN` setzen `{vereinsname}` statt `{vereinsname_lang}`; unveränderte
   Texte werden beim Start nachgezogen.
+
+### Behoben
+
+- XMPP-Brücke: deaktivierte Foren bleiben außen vor — der Bot tritt ihren Räumen nicht mehr bei,
+  übernimmt keine Nachrichten oder Reaktionen daraus und lädt niemanden ein. Wird ein Forum
+  deaktiviert, verlässt er dessen Raum beim nächsten Abgleich.
 
 ## v1.0.0-rc7 — 2026-10-04
 
