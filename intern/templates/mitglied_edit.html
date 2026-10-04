@@ -137,6 +137,20 @@
                     </div>
                 </form>
                 {% endif %}
+                {% if not ist_mitglied and perms.intern.manage_user_permissions %}
+                <p class="text-muted" style="margin-top:1rem;">Zugang ohne Mitgliedschaft (etwa Chorleitung oder Gast): „{% if user.is_active %}Zugang sperren{% else %}Zugang freischalten{% endif %}" schaltet nur die Anmeldung, das Tag „Mitglied" bleibt unberührt.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="zugang">
+                    <div class="form-actions">
+                        {% if user.is_active %}
+                        <button type="submit" class="btn btn-danger">Zugang sperren</button>
+                        {% else %}
+                        <button type="submit" class="btn btn-secondary">Zugang freischalten</button>
+                        {% endif %}
+                    </div>
+                </form>
+                {% endif %}
             </div>
             {% endif %}
 

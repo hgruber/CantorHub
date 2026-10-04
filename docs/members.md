@@ -38,6 +38,11 @@ off; `date_joined` stays, which is what marks the former member. „Wieder aufne
 `nimm_auf()`, so a Fördermitglied stays without access, and the kept `date_joined` sends
 `MAIL_REAKTIVIERT` instead of the welcome mail.
 
+An account **without** the tag (the conductor, a guest) additionally gets „Zugang sperren" /
+„Zugang freischalten" (`action="zugang"`, same two perms). It flips `is_active` alone and is
+refused for an account with the tag; unlocking sends `MAIL_REAKTIVIERT`, because without the
+tag it never counts as a first admission.
+
 **First admission vs. reactivation.** `signals._send_activation_mail()` asks
 `ist_erstaufnahme(user.date_joined, ist_mitglied(user))`: only a member (tag) without an
 Eintrittsdatum yet is a first admission and gets `MAIL_WILLKOMMEN` plus the stamp. A missing

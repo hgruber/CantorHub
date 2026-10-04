@@ -199,6 +199,23 @@ def mitglied_edit(request, id):
                     )
             return redirect("mitglied_edit", id=id)
 
+        # Zugang ohne Mitgliedschaft (Chorleitung, Gast): nur ``is_active``, nur
+        # ohne Tag — bei einem Mitglied gehen Tag und Zugang ueber „beenden".
+        if aktion == "zugang":
+            if (
+                request.user.has_perm("intern.change_user")
+                and request.user.has_perm("intern.manage_user_permissions")
+                and not ist_mitglied(user)
+            ):
+                user.is_active = not user.is_active
+                user._audit_user = request.user
+                user.save(update_fields=["is_active"])
+                messages.success(
+                    request,
+                    "Zugang freigeschaltet." if user.is_active else "Zugang gesperrt.",
+                )
+            return redirect("mitglied_edit", id=id)
+
         form = UserEditForm(
             request.POST, request.FILES, instance=user,
             with_privacy=ist_selbst,

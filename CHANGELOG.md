@@ -9,6 +9,13 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Mitglied bearbeiten: Konten ohne Tag „Mitglied" (etwa Chorleitung oder Gäste) lassen sich mit
+  „Zugang sperren" und „Zugang freischalten" sperren und entsperren, ohne die Mitgliedschaft zu
+  berühren. Die Aktion steht nur Superusern und Inhabern des Rechts „Kann
+  Mitglieder-Berechtigungen verwalten" zur Verfügung.
+
 ### Geändert
 
 - Mitgliederliste: „manuell anlegen" im Einladungs-Panel steht nur noch Superusern und Inhabern
