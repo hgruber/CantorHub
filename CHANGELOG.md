@@ -22,6 +22,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Mitgliedsantrag: die Option, förderndes Mitglied zu werden, wird nicht mehr angeboten.
 - Mitgliedsseite: der Hinweistext zu „Mitgliedschaft genehmigen" beschreibt Zugang,
   Willkommensmail und Eintrittsdatum ausführlicher.
+- Mitgliedsantrag: die Begrüßung nennt den Vereinsnamen (`VEREINSNAME`) statt des langen
+  Chornamens.
 
 ## v1.0.0-rc5 — 2026-09-27
 
