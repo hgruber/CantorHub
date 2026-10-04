@@ -14,6 +14,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Datenbestätigung: Die drei Pflicht-Häkchen tragen ein Sternchen. Wer bestätigt, sagt bei nicht
   mehr aktuellen Daten die sofortige Korrektur nach der Freischaltung zu, und das Quittungs-PDF
   übernimmt diesen Wortlaut. Ein Hinweis erklärt, dass das Foto-Häkchen den gespeicherten Stand zeigt.
+- Datenbestätigung: Aufforderungsmail und Formular sagen, dass der Zugang zum internen Bereich bis
+  zur Bestätigung gesperrt bleibt. Ein nie geänderter Mailtext `MAIL_BESTAETIGUNG` wird beim Start
+  auf den neuen Standard gehoben.
 
 ## v1.0.0 — 2026-10-04
 

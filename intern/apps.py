@@ -220,6 +220,8 @@ _CONFIG_DEFAULTS = [
         "und zu bestätigen, dass sie korrekt und aktuell sind.\n\n"
         "Gleichzeitig bitten wir Dich, unsere Datenschutzerklärung, die Satzung "
         "sowie die Beitragsordnung des Chors erneut zu bestätigen.\n\n"
+        "Bis Du bestätigt hast, bleibt Dein Zugang zum internen Bereich des Portals "
+        "gesperrt.\n\n"
         "{button:Jetzt bestätigen}\n\n"
         "Herzliche Grüße\n"
         "Dein Vorstand von {vereinsname}\n\n"
@@ -540,6 +542,16 @@ _LEGACY_MAIL_DEFAULTS = {
         "{link}\n\n"
         "Herzliche Grüße\n"
         "Dein Vorstand von {vereinsname}",
+        "Liebe/r {vorname},\n\n"
+        "wir bitten Dich, Deine im Mitgliederportal gespeicherten Daten zu prüfen "
+        "und zu bestätigen, dass sie korrekt und aktuell sind.\n\n"
+        "Gleichzeitig bitten wir Dich, unsere Datenschutzerklärung, die Satzung "
+        "sowie die Beitragsordnung des Chors erneut zu bestätigen.\n\n"
+        "{button:Jetzt bestätigen}\n\n"
+        "Herzliche Grüße\n"
+        "Dein Vorstand von {vereinsname}\n\n"
+        "% Der Link ist 30 Tage gültig.\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen Browser: {link}",
     ],
     "MAIL_BESTAETIGUNG_BESTAETIGT": [
         "Hallo {vorname},\n\nvielen Dank für Deine Bestätigung! Anbei findest Du eine Kopie als PDF.\n\n"
