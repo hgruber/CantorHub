@@ -31,8 +31,10 @@ from intern.anfragespeicher import verwerfen as anfrage_verwerfen
 from intern.mitgliedschaft import (
     GRUPPE_FOERDERMITGLIED,
     GRUPPE_GRUENDER,
+    GRUPPE_KEIN_BILD,
     GRUPPE_MITGLIED,
     aufnahme_setzt_aktiv,
+    kein_bild_aus_einwilligung,
     mitgliedschafts_aktion,
     ist_erstaufnahme,
 )
@@ -4693,7 +4695,7 @@ class MitgliedschaftTest(SimpleTestCase):
         self.assertFalse(aufnahme_setzt_aktiv(True))
 
     def test_gruppennamen_stehen_im_import(self):
-        """Die drei Gruppennamen muessen im ``GROUPS``-Dict der Migration stehen.
+        """Die Gruppennamen muessen im ``GROUPS``-Dict der Migration stehen.
 
         Sonst legt ``create_groups`` sie bei einer Neuinstallation nicht an und die
         Aufnahme laufe gegen eine Gruppe, die es nur per ``get_or_create`` gibt.
@@ -4701,8 +4703,15 @@ class MitgliedschaftTest(SimpleTestCase):
         quelle = (
             Path(__file__).resolve().parent / "migrations" / "0003_import.py"
         ).read_text(encoding="utf-8")
-        for name in (GRUPPE_MITGLIED, GRUPPE_FOERDERMITGLIED, GRUPPE_GRUENDER):
+        for name in (
+            GRUPPE_MITGLIED, GRUPPE_FOERDERMITGLIED, GRUPPE_GRUENDER, GRUPPE_KEIN_BILD,
+        ):
             self.assertIn(f'"{name}": [', quelle, f"{name} fehlt in GROUPS")
+
+    def test_kein_bild_ohne_foto_einwilligung(self):
+        """Ohne Foto-Haekchen gibt es das Tag „kein Bild", mit Haekchen nicht."""
+        self.assertTrue(kein_bild_aus_einwilligung(False))
+        self.assertFalse(kein_bild_aus_einwilligung(True))
 
 
 class LoginSperrhinweisTest(SimpleTestCase):

@@ -285,6 +285,14 @@ class AuftrittsaboForm(forms.Form):
 USERNAME_RE = re.compile(r"^[A-Za-z0-9._-]{3,30}$")
 
 
+# Antrag und Datenschutz-Bestätigung fragen die Foto-Einwilligung mit demselben Text ab.
+EINWILLIGUNG_FOTOS_LABEL = (
+    "Ich willige ein, dass Fotos meiner Person bei öffentlichen Auftritten "
+    "des Chors veröffentlicht werden dürfen. Diese Einwilligung ist freiwillig "
+    "und kann jederzeit widerrufen werden."
+)
+
+
 class MitgliedBeitrittForm(forms.ModelForm):
     """Öffentliches Beitritts-Formular. Die E-Mail kommt aus dem Einladungs-Token
     und ist daher kein Formularfeld."""
@@ -330,9 +338,7 @@ class MitgliedBeitrittForm(forms.ModelForm):
     )
     einwilligung_fotos = forms.BooleanField(
         required=False,
-        label="Ich willige ein, dass Fotos meiner Person bei öffentlichen Auftritten "
-        "des Chors veröffentlicht werden dürfen. Diese Einwilligung ist freiwillig "
-        "und kann jederzeit widerrufen werden.",
+        label=EINWILLIGUNG_FOTOS_LABEL,
     )
     foerdermitglied = forms.BooleanField(
         required=False,
@@ -484,6 +490,11 @@ class MitgliedBestaetigungForm(forms.Form):
             "Satzung</a> des Vereins an."
         ),
     )
+    einwilligung_fotos = forms.BooleanField(
+        required=False,
+        label=EINWILLIGUNG_FOTOS_LABEL,
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from intern.app_settings import get_document_url

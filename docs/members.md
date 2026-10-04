@@ -81,7 +81,8 @@ passwords (`validate_password`), and five mandatory consent checkboxes (Richtigk
 Angaben; Datenschutz — links to `/datenschutz/`; Datenverarbeitung; Satzung — links to the PDF
 configured via `SATZUNG_FILE_ID`; Beitragsordnung — via `BEITRAGSORDNUNG_FILE_ID`). Two
 optional fields: `einwilligung_fotos` (photo consent at public events) and `foerdermitglied`
-(supporting membership).
+(supporting membership). Without the photo consent the new account gets the tag „kein Bild"
+(see below).
 
 On success:
 
@@ -156,7 +157,9 @@ dormant account, so the wording covers both. `LoginSperrhinweisTest` guards it.
 
 **Public form:** `/intern/bestaetigung/<token>/` (`mitglied_bestaetigung` in `views/auth.py`, no
 `login_required`, inactive accounts accepted, anonymised `geloescht_*` ones not). Shows the member's current data (read-only) plus three mandatory checkboxes
-(`MitgliedBestaetigungForm`): data correct, Datenschutz, Satzung.
+(`MitgliedBestaetigungForm`): data correct, Datenschutz, Satzung — plus the optional photo
+consent, pre-ticked unless the member carries „kein Bild". Submitting sets or removes the tag
+according to that box and prints it into the PDF.
 
 **On submit:** an inactive account is switched back on first, flagged `_ohne_aktivierungsmail`
 so that `signals._send_activation_mail()` stays out: no welcome or reactivation mail and **no
@@ -167,6 +170,16 @@ confirmed checkboxes, saves it to „Mitglieder-Verwaltung" in filer, and attach
 quittance mail sent to the member (`MAIL_BESTAETIGUNG_BESTAETIGT`). No Vorstand notification.
 Three public templates extend `mitglied_public_base.html`: `mitglied_bestaetigung.html`,
 `_success.html`, `_invalid.html`.
+
+## Photo consent: the tag „kein Bild"
+
+The group „kein Bild" (`GRUPPE_KEIN_BILD` in `mitgliedschaft.py`) marks members who have not
+consented to the publication of their photos. It is set from the photo checkbox of the
+application and of the re-confirmation form, and otherwise only by holders of
+`intern.change_user` through the „Tag „kein Bild" setzen/entfernen" button on the edit page —
+the member's own profile form has no group field. Every change goes through
+`setze_kein_bild()` and leaves a `ChangeLog` entry. Existing members start without the tag;
+their consent is unrecorded until they re-confirm.
 
 ## Leaving: anonymise or delete
 

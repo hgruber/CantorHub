@@ -33,7 +33,13 @@ from intern.pdf import (
 from intern.mail import send_config_mail
 
 from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
-from ..mitgliedschaft import FOERDERMITGLIED_IM_ANTRAG, GRUPPE_FOERDERMITGLIED
+from ..mitgliedschaft import (
+    FOERDERMITGLIED_IM_ANTRAG,
+    GRUPPE_FOERDERMITGLIED,
+    hat_kein_bild,
+    kein_bild_aus_einwilligung,
+    setze_kein_bild,
+)
 from ..models import OHNE_ANKUENDIGUNG, Termin, User
 
 __all__ = [
@@ -412,6 +418,9 @@ def mitglied_beitritt(request, token):
                 except AuthGroup.DoesNotExist:
                     logger.warning("Gruppe '%s' nicht gefunden", GRUPPE_FOERDERMITGLIED)
 
+            einwilligung_fotos = form.cleaned_data.get("einwilligung_fotos", False)
+            setze_kein_bild(user, kein_bild_aus_einwilligung(einwilligung_fotos), actor=user)
+
             minderjaehrig = False
             if user.geburtstag:
                 from datetime import date as _date
@@ -425,7 +434,7 @@ def mitglied_beitritt(request, token):
             try:
                 pdf_bytes, pdf_fname = _save_antrag_pdf(
                     user, email,
-                    einwilligung_fotos=form.cleaned_data.get("einwilligung_fotos", False),
+                    einwilligung_fotos=einwilligung_fotos,
                     foerdermitglied=foerdermitglied,
                 )
                 pdf_attachment = [(pdf_fname, pdf_bytes, "application/pdf")]
@@ -495,7 +504,7 @@ def make_bestaetigung_url(user, base_url):
     return f"{base_url.rstrip('/')}/intern/bestaetigung/{token}/"
 
 
-def _save_bestaetigung_pdf(user):
+def _save_bestaetigung_pdf(user, einwilligung_fotos=False):
     buf, c, y = new_letterhead_pdf(
         title="Datenbestätigung",
         subtitle=f"Bestätigt am: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}",
@@ -521,10 +530,12 @@ def _save_bestaetigung_pdf(user):
         if wert:
             y = draw_field(c, y, label, wert)
 
-    y = draw_section(c, y, "Bestätigungen (alle bestätigt)")
+    y = draw_section(c, y, "Bestätigungen")
     y = draw_checkbox(c, y, "Daten korrekt und aktuell")
     y = draw_checkbox(c, y, "Datenschutzerklärung gelesen und akzeptiert")
     y = draw_checkbox(c, y, "Satzung gelesen und akzeptiert")
+    y = draw_checkbox(c, y, "Einwilligung zur Veröffentlichung von Fotos bei Auftritten",
+                      checked=einwilligung_fotos)
     draw_signature(c, y, f"{user.first_name} {user.last_name}")
 
     c.save()
@@ -588,9 +599,12 @@ def mitglied_bestaetigung(request, token):
                 user._ohne_aktivierungsmail = True
                 user.save(update_fields=["is_active"])
 
+            einwilligung_fotos = form.cleaned_data.get("einwilligung_fotos", False)
+            setze_kein_bild(user, kein_bild_aus_einwilligung(einwilligung_fotos), actor=user)
+
             pdf_attachment = None
             try:
-                pdf_bytes, pdf_fname = _save_bestaetigung_pdf(user)
+                pdf_bytes, pdf_fname = _save_bestaetigung_pdf(user, einwilligung_fotos)
                 pdf_attachment = [(pdf_fname, pdf_bytes, "application/pdf")]
             except Exception:
                 logger.exception(
@@ -606,7 +620,9 @@ def mitglied_bestaetigung(request, token):
             )
             return render(request, "mitglied_bestaetigung_success.html", {"user": user})
     else:
-        form = MitgliedBestaetigungForm()
+        form = MitgliedBestaetigungForm(
+            initial={"einwilligung_fotos": not hat_kein_bild(user)}
+        )
 
     return render(request, "mitglied_bestaetigung.html", {"form": form, "user": user})
 

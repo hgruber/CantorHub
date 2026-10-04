@@ -22,11 +22,15 @@ Die Entscheidungen stehen als reine Funktionen oben, ohne Datenbankzugriff, dami
 ``mailingliste.py``).
 """
 
-# Die drei Gruppennamen, die der Code kennt. Persistierte Strings — ein Umbenennen
+# Die Gruppennamen, die der Code kennt. Persistierte Strings — ein Umbenennen
 # reicht in die Datenbank jeder Installation und in ``ChangeLog.changes``.
 GRUPPE_MITGLIED = "Mitglied"
 GRUPPE_FOERDERMITGLIED = "Fördermitglied"
 GRUPPE_GRUENDER = "Gründer"
+# Keine Einwilligung zur Veröffentlichung von Fotos. Setzen darf es im Portal nur
+# „Mitglieder bearbeiten"; das Mitglied selbst nur über das Foto-Häkchen in Antrag
+# und Datenschutz-Bestätigung.
+GRUPPE_KEIN_BILD = "kein Bild"
 
 # Bietet der Mitgliedsantrag die Fördermitgliedschaft an? Vorerst aus; True
 # bringt Checkbox, Hinweiskarte, Dialog und PDF-Abschnitt zurück.
@@ -142,3 +146,36 @@ def beende(user, actor=None):
         user.is_active = False
         user._audit_user = actor
         user.save(update_fields=["is_active"])
+
+
+def kein_bild_aus_einwilligung(einwilligung):
+    """Trägt jemand nach dem Foto-Häkchen ``einwilligung`` das Tag „kein Bild"?"""
+    return not einwilligung
+
+
+def hat_kein_bild(user):
+    """Trägt ``user`` das Tag „kein Bild"?"""
+    return user.groups.filter(name=GRUPPE_KEIN_BILD).exists()
+
+
+def setze_kein_bild(user, an, actor=None):
+    """Setzt (``an``) oder entfernt das Tag „kein Bild" und protokolliert die Änderung."""
+    from django.contrib.auth.models import Group
+
+    from .models import ChangeLog
+
+    gruppe, _ = Group.objects.get_or_create(name=GRUPPE_KEIN_BILD)
+    if user.groups.filter(pk=gruppe.pk).exists() == bool(an):
+        return
+    if an:
+        user.groups.add(gruppe)
+    else:
+        user.groups.remove(gruppe)
+    ChangeLog.objects.create(
+        user=actor,
+        action=ChangeLog.ACTION_UPDATE,
+        model_name="User",
+        object_id=user.pk,
+        object_repr=str(user),
+        changes={"gruppe": [None, gruppe.name] if an else [gruppe.name, None]},
+    )

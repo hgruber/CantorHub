@@ -9,6 +9,12 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Mitglieder: das Tag „kein Bild" kennzeichnet Personen ohne Einwilligung zur Veröffentlichung
+  von Fotos. Mitgliedsantrag und Datenschutz-Bestätigung setzen oder entfernen es nach dem
+  Foto-Häkchen, sonst nur Inhaber von „Mitglieder bearbeiten" auf der Bearbeiten-Seite.
+
 ### Geändert
 
 - Mitgliederliste: der Hinweis im Einladungs-Panel nennt den Vorstand statt eines Admins als

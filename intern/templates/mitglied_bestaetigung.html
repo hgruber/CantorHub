@@ -104,6 +104,11 @@
             {% if form.anerkennung_satzung.errors %}
                 <div class="invalid-feedback">{{ form.anerkennung_satzung.errors }}</div>
             {% endif %}
+
+            <label class="checkbox-label join-consent">
+                {{ form.einwilligung_fotos }}
+                <span>{{ form.einwilligung_fotos.label }}</span>
+            </label>
         </div>
     </div>
 
