@@ -2,10 +2,10 @@ import logging
 from django.utils.timezone import now as timezone_now
 
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -51,6 +51,7 @@ __all__ = [
     "forum_invite",
     "forum_add",
     "forum_delete",
+    "forum_deaktivieren",
     "forum_reaktivieren",
     "forum_permissions",
 ]
@@ -60,18 +61,37 @@ logger = logging.getLogger(__name__)
 FORUM_SEARCH_LIMIT = 200
 
 
+def darf_forum_archiv(user):
+    """True if the user holds ``view_forum_archiv`` explicitly.
+
+    Deliberately not ``has_perm()``: that answers True for every superuser,
+    but an archived forum stays hidden from administrators too unless the
+    right was granted — directly or through a group.
+    """
+    if not user.is_authenticated or not user.is_active:
+        return False
+    return (
+        Permission.objects.filter(
+            codename="view_forum_archiv", content_type__app_label="intern"
+        )
+        .filter(Q(group__user=user) | Q(user=user))
+        .exists()
+    )
+
+
 def _forum_access(user, forum_id):
     """True if the user may read this forum.
 
-    Holders of manage_forum_permissions always have access.
-    A deactivated forum (``Forum.aktiv`` False) is closed to everyone else.
+    A deactivated (archived) forum (``Forum.aktiv`` False) is open only to
+    holders of ``view_forum_archiv`` — see ``darf_forum_archiv``.
+    Holders of manage_forum_permissions pass the group restriction.
     No ForumPermission row for the forum → open to everyone (default).
     Otherwise the user must be in one of the permitted groups.
     """
+    if Forum.objects.filter(pk=forum_id, aktiv=False).exists():
+        return darf_forum_archiv(user)
     if user.has_perm("intern.manage_forum_permissions"):
         return True
-    if Forum.objects.filter(pk=forum_id, aktiv=False).exists():
-        return False
     perms = ForumPermission.objects.filter(forum_id=forum_id)
     if not perms.exists():
         return True
@@ -80,11 +100,16 @@ def _forum_access(user, forum_id):
 
 
 def _hidden_forum_ids(user):
-    """Set of forum IDs the user may NOT read: group restrictions plus
-    deactivated forums (both lifted by manage_forum_permissions)."""
+    """Set of forum IDs the user may NOT read: group restrictions (lifted by
+    manage_forum_permissions) plus deactivated forums (lifted only by
+    ``darf_forum_archiv``)."""
+    inaktiv = (
+        set()
+        if darf_forum_archiv(user)
+        else set(Forum.objects.filter(aktiv=False).values_list("id", flat=True))
+    )
     if user.has_perm("intern.manage_forum_permissions"):
-        return set()
-    inaktiv = set(Forum.objects.filter(aktiv=False).values_list("id", flat=True))
+        return inaktiv
     restricted = set(
         ForumPermission.objects.values_list("forum_id", flat=True).distinct()
     )
@@ -494,6 +519,9 @@ def forum_reactions(request, forum):
 @permission_required("intern.change_forum", raise_exception=True)
 def forum_edit(request, forum):
     forum_obj = get_object_or_404(Forum, id=forum)
+    darf_archiv = darf_forum_archiv(request.user)
+    if not forum_obj.aktiv and not darf_archiv:
+        raise PermissionDenied
 
     if request.method == "POST":
         form = ForumEditForm(request.POST, request.FILES, instance=forum_obj)
@@ -528,6 +556,7 @@ def forum_edit(request, forum):
         "view": "forum_view",
         "id": forum,
         "ejabberd_enabled": is_ejabberd_configured(),
+        "darf_archiv": darf_archiv,
         **user_lists,
     }
     return render(request, "forum_edit.html", context)
@@ -570,7 +599,22 @@ def forum_delete(request, forum):
 
 @permission_required("intern.change_forum", raise_exception=True)
 @require_POST
+def forum_deaktivieren(request, forum):
+    """Archive a forum. Afterwards only ``view_forum_archiv`` holders see it."""
+    forum_obj = get_object_or_404(Forum, id=forum)
+    forum_obj.aktiv = False
+    forum_obj._audit_user = request.user
+    forum_obj.save(update_fields=["aktiv"])
+    if darf_forum_archiv(request.user):
+        return redirect("forum_edit", forum=forum)
+    return redirect("forum_list")
+
+
+@login_required
+@require_POST
 def forum_reaktivieren(request, forum):
+    if not darf_forum_archiv(request.user):
+        raise PermissionDenied
     forum_obj = get_object_or_404(Forum, id=forum)
     forum_obj.aktiv = True
     forum_obj._audit_user = request.user

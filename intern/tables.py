@@ -81,8 +81,9 @@ class ForumTabelle(tables.Table):
     class Meta:
         row_attrs = {
             "data-href": lambda record: reverse("forum_view", args=[record.id]),
-            # Deaktivierte Foren sieht nur, wer Forum-Berechtigungen verwaltet —
-            # mit etwas hellerer Schrift, der Zeilenhintergrund bleibt.
+            # Deaktivierte (archivierte) Foren sieht nur, wer das Recht
+            # „Forum: Archiv“ hat — mit etwas hellerer Schrift und dem
+            # Archiv-Symbol vor dem Thema, der Zeilenhintergrund bleibt.
             "class": lambda record: " ".join(
                 k
                 for k, an in (
@@ -92,6 +93,15 @@ class ForumTabelle(tables.Table):
                 if an
             ),
         }
+
+    def render_thema(self, record, value):
+        if record.aktiv:
+            return value
+        return format_html(
+            '<span class="marker-icon" title="Archiviert" aria-label="Archiviert">{}</span> {}',
+            mark_safe(_ARCHIV_SVG),
+            value,
+        )
 
     def render_anzahl_mitteilungen(self, record, value):
         """Ungelesene als Badge, dahinter die Gesamtzahl gedämpft.
@@ -531,6 +541,14 @@ _CROSS_SVG = (
     'stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'
     '<line x1="12" y1="3" x2="12" y2="21"/>'
     '<line x1="6"  y1="9" x2="18" y2="9"/></svg>'
+)
+
+_ARCHIV_SVG = (
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '
+    'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<rect x="2" y="3" width="20" height="5" rx="1"/>'
+    '<path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>'
+    '<line x1="10" y1="12" x2="14" y2="12"/></svg>'
 )
 
 _MIC_SVG = (

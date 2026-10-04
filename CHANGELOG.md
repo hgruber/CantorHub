@@ -18,6 +18,14 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Migration: Webmaster und KonzertOrga werden mit festen Personen besetzt statt aus den Rechten
   des Altsystems; die Gruppe „Termine" bleibt anfangs leer.
 - Migration: Petra Gruber wird neben Holger Gruber Superuser.
+- Foren: deaktivierte (archivierte) Foren sieht nur noch, wer das neue Recht „Forum: Archiv“
+  hat — auch Superuser brauchen es ausdrücklich. Nur dieses Recht erlaubt das Reaktivieren; in
+  der Forenliste tragen archivierte Foren ein Archiv-Symbol.
+
+### Hinzugefügt
+
+- Foren: „Forum deaktivieren“ auf der Bearbeitungsseite archiviert ein Forum (Recht „Forum
+  bearbeiten“).
 
 ## v1.0.0 — 2026-10-04
 

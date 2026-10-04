@@ -331,6 +331,7 @@ class Forum(models.Model):
         verbose_name_plural = "Foren"
         permissions = [
             ("manage_forum_permissions", "Forum-Berechtigungen bearbeiten"),
+            ("view_forum_archiv", "Archivierte Foren sehen und reaktivieren"),
         ]
 
     def __str__(self):

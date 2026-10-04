@@ -139,13 +139,16 @@
         {% if forum_obj.aktiv %}
         <div class="detail-card detail-card-danger">
             <h3>Forum deaktivieren</h3>
-            <p class="text-muted danger-desc">Deaktiviert das Forum. Diese Aktion kann später rückgängig gemacht werden.</p>
-            <button class="btn btn-danger" disabled>Forum deaktivieren</button>
+            <p class="text-muted danger-desc">Archiviert das Forum: Es verschwindet für alle, die nicht das Recht „Forum: Archiv“ haben. Nur mit diesem Recht lässt es sich wieder aktivieren.</p>
+            <form method="post" action="{% url 'forum_deaktivieren' forum=id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Forum deaktivieren? Danach sehen es nur noch Mitglieder mit dem Recht „Forum: Archiv“.')">Forum deaktivieren</button>
+            </form>
         </div>
-        {% else %}
+        {% elif darf_archiv %}
         <div class="detail-card">
             <h3>Forum reaktivieren</h3>
-            <p class="text-muted">Das Forum ist deaktiviert und nur für Mitglieder mit dem Recht zur Forum-Zugriffskontrolle sichtbar. Reaktivieren zeigt es wieder allen, die es lesen dürfen.</p>
+            <p class="text-muted">Das Forum ist deaktiviert (archiviert) und nur für Mitglieder mit dem Recht „Forum: Archiv“ sichtbar. Reaktivieren zeigt es wieder allen, die es lesen dürfen.</p>
             <form method="post" action="{% url 'forum_reaktivieren' forum=id %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-primary">Reaktivieren</button>

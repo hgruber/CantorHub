@@ -37,6 +37,7 @@ PERMISSION_DEFS = [
     ("intern.change_forum",               "bearbeiten",     "Forum"),
     ("intern.delete_forum",               "löschen",        "Forum"),
     ("intern.manage_forum_permissions",   "Zugriff",        "Forum"),
+    ("intern.view_forum_archiv",          "Archiv",         "Forum"),
     # Orte
     ("intern.add_ort",                    "anlegen",        "Orte"),
     ("intern.change_ort",                 "bearbeiten",     "Orte"),
@@ -66,6 +67,11 @@ PERMISSION_DESCRIPTIONS = {
         "Einschränkung ist jedes Forum für alle angemeldeten Mitglieder "
         "sichtbar. Bei eingeschränkten Foren wird auch der verknüpfte "
         "Chat-Raum entsprechend synchronisiert.",
+    "intern.view_forum_archiv":
+        "Darf deaktivierte (archivierte) Foren sehen, lesen und wieder "
+        "aktivieren. Ohne dieses Recht ist ein archiviertes Forum für "
+        "niemanden sichtbar – auch nicht für Administratoren. Archivieren "
+        "selbst darf jeder mit dem Recht „Forum bearbeiten“.",
     "intern.add_termin":
         "Darf neue Termine eintragen.",
     "intern.change_termin":
