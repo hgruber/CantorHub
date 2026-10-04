@@ -14,9 +14,10 @@ The two combine freely. The conductor's account from the
 legacy portal is „access, no tag" (`legacy_id=232`, see `migration.md`); „Fördermitglied"
 (supporting member) is a member who does not take part, so tag without access.
 
-The tag carries **no permissions** — like „Gründer", „Fördermitglied" and „Kassenprüfer" it is a
-bare label in `GROUPS` (`0003_import.py`). „Gründer" has lost its function entirely: it steers
-the import and nothing else, and may be deleted later.
+The tag also carries the permissions every member has — initially „Mitglieder: benachrichtigen"
+and all of „Orte" (`GROUPS` in `0003_import.py`); ending the membership takes them away with it.
+„Gründer", „Fördermitglied" and „Kassenprüfer" are bare labels. „Gründer" has lost its function
+entirely: it steers the import and nothing else, and may be deleted later.
 
 **Admission** is its own action, „Mitgliedschaft genehmigen" in `mitglied_edit`
 (`action="aufnehmen"`, perm `intern.change_user`). `mitgliedschaft.nimm_auf()` adds the tag,

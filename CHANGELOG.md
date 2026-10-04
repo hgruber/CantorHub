@@ -7,6 +7,17 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Migration: neue Ausgangsrechte der Gruppen — Vorstand: Mitglieder anlegen/bearbeiten und
+  Termine; Webmaster: Mitglieder löschen sowie Dateien, Artikel und Forum vollständig; Termine:
+  Termine; Mitglied: Mitglieder benachrichtigen und Orte. Die Gruppe „Repertoire" heißt jetzt
+  „KonzertOrga" und darf Termine, Repertoire und Orte verwalten.
+- Migration: Webmaster und KonzertOrga werden mit festen Personen besetzt statt aus den Rechten
+  des Altsystems; die Gruppe „Termine" bleibt anfangs leer.
+
 ## v1.0.0 — 2026-10-04
 
 ### Geändert
