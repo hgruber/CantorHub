@@ -365,7 +365,7 @@ def _folder_search_records(pk, q, user=None):
 
     if user is not None:
         visible_ids = visible_folder_ids(user)
-        scope = scope.filter(folder_id__in=visible_ids)
+        scope = scope.filter(Q(folder_id__in=visible_ids) | Q(folder__isnull=True))
 
     ensure_indexed(scope)
 
@@ -532,6 +532,11 @@ def folder_view(request, pk):
         )
     )
     visible_ids = visible_folder_ids(request.user)
+    # Backstage holds the folders the portal files into on its own. At the root
+    # it is only listed for webmasters — hidden, not locked: the pages that use
+    # those files and direct links keep working.
+    if pk is None and not request.user.has_perm("intern.manage_folder_permissions"):
+        visible_ids = visible_ids - {folders.backstage()}
     folders_qs = (
         Folder.objects.filter(parent_id=pk, id__in=visible_ids)
         .values(

@@ -560,9 +560,9 @@ share the `sending` parameters, the progress card (`upload-progress.js`) and the
 The view decides target and visibility through its context: `upload_folder_id`,
 `upload_folder_name` and the other `upload_*` keys read by `base.html`. The icon shows wherever
 `upload_folder_id` is not `None`. In the folder browser (`show_file_actions`) it follows
-`can_write_here` instead, root included (pk 0 → the upload lands in Eingang). A page without an
-upload target shows no icon; a drop there still lands in Eingang. Write access is enforced by
-`upload` in `views/files.py` either way.
+`can_write_here` instead, root included (pk 0 → the upload lands at the root). A page without an
+upload target shows no icon; a drop there still lands at the root, and the upload card asks to
+move it. Write access is enforced by `upload` in `views/files.py` either way.
 
 ## The list pages' script
 

@@ -6453,6 +6453,7 @@ td.marker-cell {
 }
 .uc-status.ok  { color: #16a34a; }
 .uc-status.err { color: var(--brand); }
+.uc-status.warn { color: var(--warn-text); white-space: normal; }
 [data-theme="dark"] .uc-status.ok { color: #4ade80; }
 
 /* =================================================== */

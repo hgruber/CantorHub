@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -339,7 +339,8 @@ def _route_and_rename_for_lied(lied, filer_file, source_name):
         "music": folders.notensatz,
         "pdf": folders.pdf,
     }
-    folder_id = (_type_folder.get(file_type) or folders.unsortiert)()
+    zielordner = _type_folder.get(file_type)
+    folder_id = zielordner() if zielordner else None
     if folder_id:
         filer_file.folder_id = folder_id
 
@@ -394,17 +395,23 @@ def upload(request):
         # matching song was found or the upload context explicitly requests it
         # (e.g. dropped on the Repertoire/Titel page).
         _type_folder = {"audio": folders.repertoire, "music": folders.notensatz, "pdf": folders.pdf}
+        # Without a folder the file lands at the root (None), which the
+        # answer reports so the upload card can ask to keep the root clear.
         if file_type and file_type_config and (song or route_by_type):
-            folder_id = (_type_folder.get(file_type) or folders.unsortiert)()
+            zielordner = _type_folder.get(file_type)
+            folder_id = zielordner() if zielordner else None
+            if not folder_id:
+                return JsonResponse(
+                    {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
+                )
         else:
-            folder_id = preferred_folder_id or folders.unsortiert()
+            folder_id = preferred_folder_id if preferred_folder_id not in (None, "", "0") else None
 
-        if not folder_id:
+        target_folder = Folder.objects.filter(pk=folder_id).first() if folder_id else None
+        if folder_id and target_folder is None:
             return JsonResponse(
-                {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
+                {"status": "error", "message": "Zielordner nicht gefunden"}, status=400
             )
-
-        target_folder = Folder.objects.filter(pk=folder_id).first()
         _, can_write, _ = folder_access(request.user, target_folder)
         if not can_write:
             return JsonResponse(
@@ -502,7 +509,7 @@ def upload(request):
             ).url
         except Exception:
             pass
-        return JsonResponse({"status": "success", "id": filer_file.id, "url": url, "thumbnail_url": thumb, "overwritten": overwritten})
+        return JsonResponse({"status": "success", "id": filer_file.id, "url": url, "thumbnail_url": thumb, "overwritten": overwritten, "wurzel": folder_id is None})
 
 
 def _ordner_pfad(folder):
@@ -659,7 +666,8 @@ def file_search(request):
     visible_ids = visible_folder_ids(request.user)
     files = (
         File.objects
-        .filter(original_filename__istartswith=q, folder_id__in=visible_ids)
+        .filter(original_filename__istartswith=q)
+        .filter(Q(folder_id__in=visible_ids) | Q(folder__isnull=True))
         .only("id", "original_filename", "file")[:20]
     )
     results = [{"id": f.id, "name": f.original_filename, "url": f.url} for f in files]

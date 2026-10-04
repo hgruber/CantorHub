@@ -149,16 +149,16 @@ def _save_antrag_pdf(user, email, einwilligung_fotos=False, foerdermitglied=Fals
 
 
 def _pdf_ablegen(user, pdf_bytes, fname):
-    """File an application or confirmation PDF under Mitglieder-Verwaltung.
+    """File an application or confirmation PDF under Verein/Vorstand/Mitgliedsanträge.
 
     A missing folder is not recreated: a new folder has no FolderPermission
     rows and would be open to every member, yet it holds applications. The PDF
     still goes out by mail, it is just not filed."""
-    folder_id = folders.mitglieder_verwaltung()
+    folder_id = folders.mitgliedsantraege()
     if folder_id is None:
         logger.warning(
             "Ordner '%s' fehlt, %s wird nicht abgelegt.",
-            folders.MITGLIEDER_VERWALTUNG, fname,
+            "/".join(folders.PFADE["mitgliedsantraege"]), fname,
         )
         return
     FilerFile.objects.create(

@@ -8,6 +8,7 @@
   var card, body, doneEl, totalEl;
   var collapseTimer = null, hideTimer = null;
   var errorCount = 0;
+  var wurzelCount = 0;  // uploads that landed at the root: the card stays open
 
   function buildCard() {
     var appMain = document.getElementById("app-main");
@@ -60,6 +61,7 @@
         total = 0;
         done  = 0;
         errorCount = 0;
+        wurzelCount = 0;
       }
 
       file._ucId = uid();
@@ -107,7 +109,13 @@
       var status = row.querySelector(".uc-status");
       status.className = "uc-status ok";
       var overwritten = response && response.overwritten;
-      status.textContent = overwritten ? "✓ Überschrieben" : "✓ Hochgeladen";
+      if (response && response.wurzel) {
+        status.className = "uc-status warn";
+        status.textContent = "⚠ In der obersten Ebene abgelegt – bitte in einen Ordner verschieben";
+        wurzelCount++;
+      } else {
+        status.textContent = overwritten ? "✓ Überschrieben" : "✓ Hochgeladen";
+      }
       done++;
       doneEl.textContent = done;
     });
@@ -126,7 +134,7 @@
     });
 
     dz.on("queuecomplete", function () {
-      if (errorCount > 0) return;
+      if (errorCount > 0 || wurzelCount > 0) return;
       collapseTimer = setTimeout(function () {
         card.classList.add("upload-card--collapsed");
         hideTimer = setTimeout(function () {

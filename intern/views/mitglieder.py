@@ -19,6 +19,7 @@ from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, pars
 from filer.models import File, Folder
 
 from intern import ejabberd, folders
+from intern.folder_access import visible_folder_ids
 from intern.app_settings import (
     get_config_bool, get_map_center, get_vereinsname_lang, is_ejabberd_configured,
     is_email_configured, konfiguration_gepuffert,
@@ -551,11 +552,14 @@ def _rundmail_versenden(user, subject, body, recipients, attachments,
         connections.close_all()
 
 
-def _verwaltung_tree(folder_id):
-    """Rekursive Ordnerstruktur unterhalb eines Filer-Ordners als verschachtelte Liste."""
+def _verwaltung_tree(folder_id, sichtbar):
+    """Rekursive Ordnerstruktur unterhalb eines Filer-Ordners als verschachtelte Liste.
+
+    Nur Unterordner aus `sichtbar` (``visible_folder_ids``) — der Vorstand-Zweig
+    bleibt so dem Vorstand vorbehalten."""
     result = []
-    for sub in Folder.objects.filter(parent_id=folder_id).order_by("name"):
-        children = _verwaltung_tree(sub.pk)
+    for sub in Folder.objects.filter(parent_id=folder_id, pk__in=sichtbar).order_by("name"):
+        children = _verwaltung_tree(sub.pk, sichtbar)
         result.append({"id": sub.pk, "name": sub.name, "type": "folder", "children": children})
     for f in File.objects.filter(folder_id=folder_id).order_by("original_filename", "name"):
         fname = f.original_filename or f.name or f"Datei {f.pk}"
@@ -638,9 +642,10 @@ def mitglied_benachrichtigen(request):
             signature_members = notify_groups_data[0]["members"]
 
         attachments = []
+        sichtbar = visible_folder_ids(request.user)
         for fid in attachment_ids:
             try:
-                fobj = File.objects.get(pk=int(fid))
+                fobj = File.objects.get(pk=int(fid), folder_id__in=sichtbar)
                 with fobj.file.open("rb") as fh:
                     fbytes = fh.read()
                 fname = fobj.original_filename or fobj.name or f"anhang_{fid}"
@@ -664,8 +669,8 @@ def mitglied_benachrichtigen(request):
                 list_url += f"?{filter_params}"
             return redirect(list_url)
 
-        vw_id = folders.mitglieder_verwaltung()
-        verwaltung_tree = _verwaltung_tree(vw_id) if vw_id else []
+        vw_id = folders.verein()
+        verwaltung_tree = _verwaltung_tree(vw_id, visible_folder_ids(request.user)) if vw_id else []
         safe_ids = [int(x) for x in attachment_ids if str(x).strip().isdigit()]
         return render(request, "mitglied_benachrichtigen.html", {
             "seitentitel": "E-Mail verfassen",
@@ -682,8 +687,8 @@ def mitglied_benachrichtigen(request):
             "errors": errors,
         })
 
-    vw_id = folders.mitglieder_verwaltung()
-    verwaltung_tree = _verwaltung_tree(vw_id) if vw_id else []
+    vw_id = folders.verein()
+    verwaltung_tree = _verwaltung_tree(vw_id, visible_folder_ids(request.user)) if vw_id else []
     return render(request, "mitglied_benachrichtigen.html", {
         "seitentitel": "E-Mail verfassen",
         "recipients": recipients,
@@ -704,6 +709,6 @@ def mitglied_benachrichtigen(request):
 def mitglied_benachrichtigen_files(request):
     if not request.user.has_perm("intern.notify_user"):
         return HttpResponseForbidden()
-    vw_id = folders.mitglieder_verwaltung()
-    tree = _verwaltung_tree(vw_id) if vw_id else []
+    vw_id = folders.verein()
+    tree = _verwaltung_tree(vw_id, visible_folder_ids(request.user)) if vw_id else []
     return JsonResponse({"tree": tree})

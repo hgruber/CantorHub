@@ -18,12 +18,21 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Migration: Webmaster und KonzertOrga werden mit festen Personen besetzt statt aus den Rechten
   des Altsystems; die Gruppe „Termine" bleibt anfangs leer.
 - Migration: Petra Gruber wird neben Holger Gruber Superuser.
+- Dateien: Den Ordner „Eingang“ gibt es nicht mehr; Uploads ohne Zielordner landen in der
+  obersten Ebene. Antrags- und Bestätigungs-PDFs liegen in „Verein/Vorstand/Mitgliedsanträge“
+  statt in „Mitglieder-Verwaltung“, und die Rundmail bietet Anhänge aus „Verein“ an.
+- Dateien: „Backstage“ erscheint in der Ordneransicht nur noch für Webmaster; die Dateien darin
+  bleiben überall sonst erreichbar.
 - Foren: deaktivierte (archivierte) Foren sieht nur noch, wer das neue Recht „Forum: Archiv“
   hat — auch Superuser brauchen es ausdrücklich. Nur dieses Recht erlaubt das Reaktivieren; in
   der Forenliste tragen archivierte Foren ein Archiv-Symbol.
 
 ### Hinzugefügt
 
+- Dateien: Die Migration legt die Ordner „Organisation Chor“, „Organisation Konzerte“ und
+  „Verein“ mit ihren Unterordnern an; „Verein/Vorstand“ sieht nur der Vorstand.
+- Dateien: Ein Upload, der in der obersten Ebene landet, zeigt in der Upload-Karte den Hinweis,
+  ihn in einen Ordner zu verschieben.
 - Foren: „Forum deaktivieren“ auf der Bearbeitungsseite archiviert ein Forum (Recht „Forum
   bearbeiten“).
 

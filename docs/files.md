@@ -109,13 +109,15 @@ Two consequences worth knowing:
 ## Standard folders
 
 The folders the portal files into on its own sit under **Backstage**, so a member browsing the
-archive sees their own folders rather than a dozen system ones. Two stay at the root:
-**Eingang**, because every upload without a better folder lands there (a drop on the browser's
-root included) and members have to find it, and **Mitglieder-Verwaltung** (application and
-re-confirmation PDFs, Vorstand-only).
+archive sees their own folders rather than a dozen system ones. The folder browser lists
+Backstage at the root only for holders of `intern.manage_folder_permissions` (the Webmaster
+group) — hidden, not locked: it has no `FolderPermission` rows, the pages that use its files, the
+search and direct links keep working. An upload without a better folder lands at the **root**
+itself (a drop on the browser's root included); its answer carries `"wurzel": true` and the
+upload card asks the member to move the file into a folder, so the top level stays tidy.
 
 ```
-Eingang                fallback target of every upload without a better folder
+/                      fallback target of every upload without a better folder
 Backstage/
   Forenbilder          forum pictures
   Profilbilder         member avatars, see below
@@ -126,8 +128,16 @@ Backstage/
     Probenmitschnitte  imported recordings not tied to a song
   Termin-Anhänge       upload target of the event list
   Wiki-Anhänge         files and pictures used in articles
-Mitglieder-Verwaltung  root of the attachment picker in the Rundmail
+Verein/                root of the attachment picker in the Rundmail
+  Vorstand/            Vorstand-only (FolderPermission rows set by 0003_import)
+    Mitgliedsanträge   application and re-confirmation PDFs
 ```
+
+Next to `PFADE`, `folders.STARTORDNER` lists the choir's initial working folders (Organisation
+Chor, Organisation Konzerte, the rest of Verein). `0003_import.py` creates them once after
+`PFADE`; the code never looks them up, so members may rename or move them freely. Folder names
+must not contain `/` — `StandardOrdnerTest` checks both lists. The Rundmail picker only offers
+folders the sender can see, and the send path drops attachments from any other folder.
 
 `intern/folders.py` is the registry: the names are constants there, `PFADE` maps each logical
 name to its path from the root, and one accessor per folder (`folders.pdf()` …) resolves that
@@ -137,7 +147,7 @@ order (parents first). Renaming or moving one of these folders in the browser br
 
 **Backstage has no `FolderPermission` rows, deliberately.** A folder is only visible when every
 ancestor is readable, so restricting Backstage would hide the song files from members.
-`_pdf_ablegen` in `views/auth.py` does not recreate a missing Mitglieder-Verwaltung: a fresh
+`_pdf_ablegen` in `views/auth.py` does not recreate a missing Mitgliedsanträge: a fresh
 folder would be open to everyone while holding membership applications.
 
 ## Folder permissions

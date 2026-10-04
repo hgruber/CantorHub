@@ -88,7 +88,7 @@ optional fields: `einwilligung_fotos` (photo consent at public events) and `foer
 On success:
 
 - the member is created with `is_active=False`;
-- a PDF of the completed application is saved to the filer folder **„Mitglieder-Verwaltung"**
+- a PDF of the completed application is saved to the filer folder **„Verein/Vorstand/Mitgliedsanträge"**
   (Vorstand-only, via `_save_antrag_pdf` in `views/auth.py` using reportlab; best-effort, never
   blocks registration);
 - a confirmation mail goes to the applicant;
@@ -167,7 +167,7 @@ so that `signals._send_activation_mail()` stays out: no welcome or reactivation 
 Eintrittsdatum** — the legacy import left most members with tag „Mitglied" and
 `date_joined=None`, which the signal would otherwise take for a first admission. Then
 `_save_bestaetigung_pdf(user)` generates a PDF (reportlab) with all stored data +
-confirmed checkboxes, saves it to „Mitglieder-Verwaltung" in filer, and attaches it to the
+confirmed checkboxes, saves it to „Verein/Vorstand/Mitgliedsanträge" in filer, and attaches it to the
 quittance mail sent to the member (`MAIL_BESTAETIGUNG_BESTAETIGT`). No Vorstand notification.
 Three public templates extend `mitglied_public_base.html`: `mitglied_bestaetigung.html`,
 `_success.html`, `_invalid.html`.

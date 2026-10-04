@@ -91,7 +91,7 @@ as one over-long line (RFC 5321).
 
 Two mails carry a PDF: the application copy (`_save_antrag_pdf()`) and the re-confirmation
 receipt (`_save_bestaetigung_pdf()`), both in `views/auth.py`, built with reportlab on top of
-`intern/pdf.py`. Both PDFs are additionally filed under „Mitglieder-Verwaltung" in filer
+`intern/pdf.py`. Both PDFs are additionally filed under „Verein/Vorstand/Mitgliedsanträge" in filer
 (Vorstand-only).
 
 The full placeholder list and the recipe for adding a new mail are in `configuration.md`.

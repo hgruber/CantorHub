@@ -2698,16 +2698,18 @@ class StandardOrdnerTest(SimpleTestCase):
         folders.invalidate()
         self.addCleanup(folders.invalidate)
 
-    def test_alles_unter_backstage_ausser_eingang_und_mitglieder_verwaltung(self):
+    def test_alles_unter_backstage_ausser_dem_verein_zweig(self):
         from intern import folders
-        an_der_wurzel = {
-            "backstage": (folders.BACKSTAGE,),
-            "unsortiert": (folders.EINGANG,),
-            "mitglieder_verwaltung": (folders.MITGLIEDER_VERWALTUNG,),
+        unter_verein = {
+            "verein": (folders.VEREIN,),
+            "vorstand": (folders.VEREIN, folders.VORSTAND),
+            "mitgliedsantraege": (folders.VEREIN, folders.VORSTAND, folders.MITGLIEDSANTRAEGE),
         }
         for schluessel, pfad in folders.PFADE.items():
-            if schluessel in an_der_wurzel:
-                self.assertEqual(pfad, an_der_wurzel[schluessel])
+            if schluessel == "backstage":
+                self.assertEqual(pfad, (folders.BACKSTAGE,))
+            elif schluessel in unter_verein:
+                self.assertEqual(pfad, unter_verein[schluessel])
             else:
                 self.assertEqual(pfad[0], folders.BACKSTAGE, schluessel)
                 self.assertGreater(len(pfad), 1, schluessel)
@@ -2720,6 +2722,19 @@ class StandardOrdnerTest(SimpleTestCase):
         for i, pfad in enumerate(pfade):
             if len(pfad) > 1:
                 self.assertIn(pfad[:-1], pfade[:i], pfad)
+
+    def test_startordner_eltern_zuerst_und_ohne_schraegstrich(self):
+        """0003_import legt STARTORDNER nach PFADE an; "/" ist in Ordnernamen gesperrt."""
+        from intern import folders
+        bekannt = set(folders.PFADE.values())
+        for pfad in folders.STARTORDNER:
+            if len(pfad) > 1:
+                self.assertIn(pfad[:-1], bekannt, pfad)
+            self.assertNotIn(pfad, folders.PFADE.values(), pfad)
+            bekannt.add(pfad)
+        for pfad in (*folders.PFADE.values(), *folders.STARTORDNER):
+            for name in pfad:
+                self.assertNotIn("/", name, pfad)
 
     def test_jede_zugriffsfunktion_hat_einen_pfad(self):
         from intern import folders
