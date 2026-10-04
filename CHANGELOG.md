@@ -9,21 +9,13 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+## v1.0.0-rc7 — 2026-10-04
+
 ### Hinzugefügt
 
 - Mitglieder: das Tag „kein Bild" kennzeichnet Personen ohne Einwilligung zur Veröffentlichung
   von Fotos. Mitgliedsantrag und Datenschutz-Bestätigung setzen oder entfernen es nach dem
   Foto-Häkchen, sonst nur Inhaber von „Mitglieder bearbeiten" auf der Bearbeiten-Seite.
-
-### Geändert
-
-- Mitgliederliste: der Hinweis im Einladungs-Panel nennt den Vorstand statt eines Admins als
-  den, der das neue Mitglied freischaltet.
-
-## v1.0.0-rc7 — 2026-10-04
-
-### Hinzugefügt
-
 - Mitglied bearbeiten: Konten ohne Tag „Mitglied" (etwa Chorleitung oder Gäste) lassen sich mit
   „Zugang sperren" und „Zugang freischalten" sperren und entsperren, ohne die Mitgliedschaft zu
   berühren. Die Aktion steht nur Superusern und Inhabern des Rechts „Kann
@@ -36,6 +28,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
+- Mitgliederliste: der Hinweis im Einladungs-Panel nennt den Vorstand statt eines Admins als
+  den, der das neue Mitglied freischaltet.
 - Mitgliederliste: „manuell anlegen" im Einladungs-Panel steht nur noch Superusern und Inhabern
   des Rechts „Kann Mitglieder-Berechtigungen verwalten" zur Verfügung; die Seite zum manuellen
   Anlegen prüft dasselbe Recht.
