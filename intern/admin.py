@@ -42,6 +42,10 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ["first_name", "last_name", "ort"]
     # ordering_fields = ['first_name']
 
+    def get_queryset(self, request):
+        # Namensverweise (siehe models.NAMENSVERWEIS) listet keine Ansicht.
+        return super().get_queryset(request).exclude(NAMENSVERWEIS)
+
     # Deleting here bypasses mitglied_delete, so hand the files over explicitly.
     # Deliberately not a pre_delete signal: Django's deletion collector gathers
     # its SET_NULL updates before the signal is sent, and would be free to write

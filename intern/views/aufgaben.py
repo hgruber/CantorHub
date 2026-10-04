@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from filer.models import Folder
 
-from ..models import ChangeLog, FolderPermission, User
+from ..models import NAMENSVERWEIS, ChangeLog, FolderPermission, User
 from ._auswahl import chip_eintraege
 from ._decorators import perm_or_home
 from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
@@ -24,9 +24,11 @@ def aufgaben(request):
     # Auch Konten ohne Zugang: ein Foerdermitglied traegt das Tag „Mitglied" ohne
     # Zugang und waere hier sonst unerreichbar,
     # und damit die Mitgliedschaft im Portal nicht pflegbar. Anonymisierte Konten
-    # (``mitglied_delete``) bleiben draussen; sie haben keine Gruppen mehr.
+    # (``mitglied_delete``) bleiben draussen; sie haben keine Gruppen mehr. Ebenso
+    # Namensverweise, die nur alte Forenbeiträge und Artikelfassungen tragen.
     users = (
         User.objects.exclude(username__startswith="geloescht_")
+        .exclude(NAMENSVERWEIS)
         .annotate(stimme_order=User.stimme_order_case())
         .order_by("stimme_order", "last_name", "first_name")
         .prefetch_related("groups")

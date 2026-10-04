@@ -28,7 +28,7 @@ from intern.mail import neu_verbinden, send_config_mail, versende_serie
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..mitglied_felder import PRIVACY_FIELDS
 from ..mitgliedschaft import beende, ist_mitglied, mitgliedschafts_aktion, nimm_auf
-from ..models import Abstimmung, Artikel, Mitteilung, User, Zusage
+from ..models import NAMENSVERWEIS, Abstimmung, Artikel, Mitteilung, User, Zusage
 from ..tables import MitgliederFilter, MitgliederTabelle
 from .auth import make_invite_token
 from .files import _get_file_extension, besitz_uebertragen
@@ -54,7 +54,9 @@ __all__ = [
 @tabellenzustand
 def mitglied_list(request):
     can_manage = request.user.has_perm("intern.change_user")
-    base_qs = User.objects.all() if can_manage else User.objects.filter(is_active=True)
+    # Namensverweise (Absender alter Beiträge) listet keine Ansicht, auch nicht für Verwalter.
+    alle = User.objects.exclude(NAMENSVERWEIS)
+    base_qs = alle if can_manage else alle.filter(is_active=True)
     queryset = (
         base_qs
         .annotate(
@@ -134,7 +136,9 @@ def mitglied_list(request):
 
 @login_required
 def mitglied_view(request, id):
-    user = get_object_or_404(User.objects.prefetch_related("solist", "dirigent", "groups"), id=id)
+    user = get_object_or_404(
+        User.objects.exclude(NAMENSVERWEIS).prefetch_related("solist", "dirigent", "groups"), id=id
+    )
     can_edit = (
         request.user.id == id
         or request.user.has_perm("intern.change_user")
@@ -165,7 +169,7 @@ def mitglied_edit(request, id):
         and not request.user.has_perm("intern.change_user")
     ):
         return redirect("mitglied_view", id=id)
-    user = get_object_or_404(User.objects.prefetch_related("groups"), id=id)
+    user = get_object_or_404(User.objects.exclude(NAMENSVERWEIS).prefetch_related("groups"), id=id)
     ist_selbst = request.user.id == id
     # Solange der Dienst aus ist, gaebe es nichts zu widersprechen — dann wird das
     # Feld gar nicht erst gebaut, und ein gespeichertes True ueberlebt unangetastet.
@@ -303,9 +307,10 @@ def mitglied_delete(request, id):
     # ownership is no longer part of has_history below.
     besitz_uebertragen(member, fallback=request.user)
 
-    # Determine whether history exists that must be preserved
+    # Determine whether history exists that must be preserved. ``alle``: auch
+    # Beiträge vor dem Stichtag sind Geschichte, sonst würde hart gelöscht.
     has_history = (
-        Mitteilung.objects.filter(sender=member).exists()
+        Mitteilung.alle.filter(sender=member).exists()
         or Artikel.objects.filter(autor=member).exists()
         or Abstimmung.objects.filter(person=member).exists()
     )
@@ -355,7 +360,9 @@ def mitglied_delete(request, id):
 @login_required
 def mitglied_emails(request):
     can_manage = request.user.has_perm("intern.change_user")
-    base_qs = User.objects.all() if can_manage else User.objects.filter(is_active=True)
+    # Namensverweise (Absender alter Beiträge) listet keine Ansicht, auch nicht für Verwalter.
+    alle = User.objects.exclude(NAMENSVERWEIS)
+    base_qs = alle if can_manage else alle.filter(is_active=True)
     queryset = (
         base_qs
         .annotate(_stimme_pos=User.stimme_order_case())
@@ -559,7 +566,9 @@ def _verwaltung_tree(folder_id):
 @permission_required("intern.notify_user", raise_exception=True)
 def mitglied_benachrichtigen(request):
     can_manage = request.user.has_perm("intern.change_user")
-    base_qs = User.objects.all() if can_manage else User.objects.filter(is_active=True)
+    # Namensverweise (Absender alter Beiträge) listet keine Ansicht, auch nicht für Verwalter.
+    alle = User.objects.exclude(NAMENSVERWEIS)
+    base_qs = alle if can_manage else alle.filter(is_active=True)
     queryset = (
         base_qs
         .annotate(_stimme_pos=User.stimme_order_case())

@@ -43,7 +43,8 @@ class User(AbstractUser):
 
     # --- Namen ---
     first_name = models.CharField(max_length=32, verbose_name="Vorname")
-    last_name = models.CharField(max_length=32, verbose_name="Nachname")
+    # NULL nur beim Namensverweis (siehe ``NAMENSVERWEIS``); Formulare speichern "".
+    last_name = models.CharField(max_length=32, null=True, verbose_name="Nachname")
 
     username = models.CharField(
         max_length=150,
@@ -121,7 +122,14 @@ class User(AbstractUser):
         ]
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.first_name} {self.last_name or ''}".strip()
+
+    def get_full_name(self):
+        return str(self)
+
+    @property
+    def ist_namensverweis(self):
+        return self.last_name is None
 
     def mitteilungen(self):
         return self.mitteilung_set.count()
@@ -258,6 +266,25 @@ class FolderPermission(models.Model):
         return f"{self.folder} – {self.group}"
 
 
+def ab_stichtag(prefix="mitteilung__"):
+    """Bedingung „Beitrag ab dem Stichtag ``FORUM_ANZEIGE_AB``“ für einen Join.
+
+    ``Mitteilung.objects`` filtert selbst; ein Join über ``mitteilung`` (``Count``,
+    ``Max``, ``mitteilung__…``) umgeht aber jeden Manager und braucht die Bedingung
+    ausdrücklich. ``MitteilungStichtagTest`` hält die Join-Stellen fest.
+    """
+    from .app_settings import get_forum_anzeige_ab
+
+    return Q(**{f"{prefix}datum__gte": get_forum_anzeige_ab()})
+
+
+class MitteilungManager(models.Manager):
+    """Nur Beiträge ab dem Stichtag — ältere zeigt das Portal nirgends an."""
+
+    def get_queryset(self):
+        return super().get_queryset().filter(ab_stichtag(prefix=""))
+
+
 class ForumQuerySet(models.QuerySet):
     def extra_data(self):
         # Get the full name of the sender of the most recent message.
@@ -272,8 +299,8 @@ class ForumQuerySet(models.QuerySet):
         )
 
         return self.select_related("bild").annotate(
-            anzahl_mitteilungen=Count("mitteilung"),
-            zugriff=Max("mitteilung__datum"),
+            anzahl_mitteilungen=Count("mitteilung", filter=ab_stichtag()),
+            zugriff=Max("mitteilung__datum", filter=ab_stichtag()),
             letzter_absender=Subquery(last_sender_subquery),
         )
 
@@ -287,6 +314,7 @@ class ForumQuerySet(models.QuerySet):
             ungelesen=Count(
                 "mitteilung",
                 filter=Q(mitteilung__id__gt=F("_gelesen_bis"))
+                & ab_stichtag()
                 & (Q(mitteilung__sender__isnull=True) | ~Q(mitteilung__sender=user)),
             ),
         )
@@ -335,6 +363,12 @@ class Mitteilung(models.Model):
     # Set by forum_react when a web user's reaction set changed; the bot relays
     # the new web-reaction union to the MUC and clears the flag (see ejabberd_bot).
     reactions_dirty = models.BooleanField(default=False)
+
+    # ``objects`` zuerst: der Standardmanager (auch hinter ``forum.mitteilung_set``)
+    # blendet alles vor dem Stichtag aus. ``alle`` nur für technische Pfade, die
+    # alte Beiträge sehen müssen — die Liste steht in ``MitteilungStichtagTest``.
+    objects = MitteilungManager()
+    alle = models.Manager()
 
     class Meta:
         verbose_name_plural = "Mitteilungen"
@@ -500,6 +534,13 @@ class Ort(models.Model):
 models.TextField.register_lookup(Length)
 
 OHNE_ANKUENDIGUNG = Q(extern__isnull=True) | Q(extern__length=0)
+
+# Ein Namensverweis ist eine Person aus dem Altportal, die nur noch als Absender
+# alter Forenbeiträge oder als Autor alter Artikelfassungen gebraucht wird: der
+# Import legt sie mit Vornamen und ``last_name = NULL`` an. NULL statt "" — kein
+# Formular schreibt NULL, und unter MariaDB (PAD SPACE) wäre "" auch " ".
+# Keine Ansicht listet sie; siehe docs/members.md.
+NAMENSVERWEIS = Q(last_name__isnull=True)
 
 
 class Termin(models.Model):

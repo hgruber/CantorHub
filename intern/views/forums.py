@@ -26,7 +26,15 @@ from intern.forum_gelesen import (
 )
 
 from ..forms import ForumEditForm
-from ..models import ChangeLog, Forum, ForumPermission, Mitteilung, Reaktion, User
+from ..models import (
+    ChangeLog,
+    Forum,
+    ForumPermission,
+    Mitteilung,
+    Reaktion,
+    User,
+    ab_stichtag,
+)
 from ..tables import ForumTabelle
 from ._auswahl import chip_eintraege
 from ._decorators import tabellenzustand
@@ -54,32 +62,39 @@ FORUM_SEARCH_LIMIT = 200
 def _forum_access(user, forum_id):
     """True if the user may read this forum.
 
-    No ForumPermission row for the forum → open to everyone (default).
     Holders of manage_forum_permissions always have access.
+    A deactivated forum (``Forum.aktiv`` False) is closed to everyone else.
+    No ForumPermission row for the forum → open to everyone (default).
     Otherwise the user must be in one of the permitted groups.
     """
+    if user.has_perm("intern.manage_forum_permissions"):
+        return True
+    if Forum.objects.filter(pk=forum_id, aktiv=False).exists():
+        return False
     perms = ForumPermission.objects.filter(forum_id=forum_id)
     if not perms.exists():
-        return True
-    if user.has_perm("intern.manage_forum_permissions"):
         return True
     gids = user.groups.values_list("id", flat=True)
     return perms.filter(group_id__in=gids).exists()
 
 
 def _hidden_forum_ids(user):
-    """Set of forum IDs the user may NOT read due to group restrictions."""
+    """Set of forum IDs the user may NOT read: group restrictions plus
+    deactivated forums (both lifted by manage_forum_permissions)."""
+    if user.has_perm("intern.manage_forum_permissions"):
+        return set()
+    inaktiv = set(Forum.objects.filter(aktiv=False).values_list("id", flat=True))
     restricted = set(
         ForumPermission.objects.values_list("forum_id", flat=True).distinct()
     )
-    if not restricted or user.has_perm("intern.manage_forum_permissions"):
-        return set()
+    if not restricted:
+        return inaktiv
     gids = user.groups.values_list("id", flat=True)
     readable = set(
         ForumPermission.objects.filter(group_id__in=gids)
         .values_list("forum_id", flat=True)
     )
-    return restricted - readable
+    return (restricted - readable) | inaktiv
 
 
 def _allowed_reader_jids(forum_obj):
@@ -405,7 +420,9 @@ def _reactions_payload(forum_id, user, message_ids=None):
     """Aggregate reactions per message for a forum into a JSON-serialisable dict
     ``{message_id: [{emoji, count, mine, who}]}``. ``mine`` flags the requesting
     user's own (web) reaction so the UI can highlight it."""
-    qs = Reaktion.objects.filter(mitteilung__forum_id=forum_id).select_related("sender")
+    qs = Reaktion.objects.filter(
+        ab_stichtag(), mitteilung__forum_id=forum_id
+    ).select_related("sender")
     if message_ids is not None:
         qs = qs.filter(mitteilung_id__in=message_ids)
 

@@ -3,7 +3,7 @@
 <div class="{% if message.sender == user %}message_me{% else %}message{% endif %}"
      data-id="{{ message.id }}">
     <div class="avatar"
-         {% if message.sender and not message.is_from_bot %}onclick="window.location.href='/intern/mitglied/{{ message.sender.id }}/'"{% endif %}>
+         {% if message.sender and not message.sender.ist_namensverweis and not message.is_from_bot %}onclick="window.location.href='/intern/mitglied/{{ message.sender.id }}/'"{% endif %}>
         {% if message.sender != user %}
             <img src="{{ message.sender_avatar_url }}"
                  alt="{{ message.sender_name }}" width="38" height="38" loading="lazy" />

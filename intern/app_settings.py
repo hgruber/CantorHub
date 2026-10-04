@@ -154,6 +154,31 @@ def get_zeitzone():
     return settings.TIME_ZONE
 
 
+# Standard von ``FORUM_ANZEIGE_AB`` — der Stichtag, ab dem der Import früher
+# überhaupt erst Forenbeiträge übernahm (``0003_import._MITTEILUNGEN_CUTOFF``).
+FORUM_ANZEIGE_AB_STANDARD = "2026-06-01"
+
+
+def lese_forum_anzeige_ab(roh):
+    """``FORUM_ANZEIGE_AB`` als ``datetime`` (Mitternacht, naiv).
+
+    Ein leerer oder ungültiger Wert fällt auf den Standard zurück, damit ein
+    Tippfehler in der Konfiguration nicht jede Forenseite zum Absturz bringt.
+    """
+    from datetime import date, datetime
+
+    try:
+        tag = date.fromisoformat((roh or "").strip())
+    except ValueError:
+        tag = date.fromisoformat(FORUM_ANZEIGE_AB_STANDARD)
+    return datetime(tag.year, tag.month, tag.day)
+
+
+def get_forum_anzeige_ab():
+    """Stichtag der Forenanzeige: ältere Beiträge zeigt das Portal nicht."""
+    return lese_forum_anzeige_ab(get_config("FORUM_ANZEIGE_AB"))
+
+
 def get_sprache():
     """Sprachkennung des Portals (``de-de``), als Zeichenkette.
 

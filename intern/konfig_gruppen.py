@@ -64,6 +64,7 @@ FELDTYPEN: dict[str, str] = {
     "EJABBERD_BOT_RELAY_SECONDS": "int",
     # string (einzeilig; MAILINGLISTE_WOCHEN = Komma-Liste, MAILINGLISTE_VERSANDZEIT
     # = Uhrzeit HH:MM)
+    "FORUM_ANZEIGE_AB": "string",  # ISO-Datum, gelesen via get_forum_anzeige_ab
     "EJABBERD_API_URL": "string",
     "EJABBERD_HOST": "string",
     "EJABBERD_MUC_SERVICE": "string",
@@ -231,6 +232,7 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     # Aufbewahrung & Bereinigung — Löschfristen der Cleanup-Jobs
     "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE", "DATEIVERSION_AUFBEWAHRUNG_TAGE",
     "DATEIVERSION_AUFBEWAHRUNG_ANZAHL", "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE",
+    "FORUM_ANZEIGE_AB",
 )
 _REIHENFOLGE_INDEX: dict[str, int] = {k: i for i, k in enumerate(SCHLUESSEL_REIHENFOLGE)}
 _REIHENFOLGE_ENDE = len(SCHLUESSEL_REIHENFOLGE)
@@ -465,12 +467,13 @@ GRUPPEN: tuple[Gruppe, ...] = (
         id="aufbewahrung",
         titel="Aufbewahrung & Bereinigung",
         hinweis="Löschfristen der Cleanup-Jobs (Änderungsprotokoll, Dateiversionen, "
-        "Versand-Marker)",
+        "Versand-Marker) und Stichtag der Forenanzeige",
         keys=(
             "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE",
             "DATEIVERSION_AUFBEWAHRUNG_TAGE",
             "DATEIVERSION_AUFBEWAHRUNG_ANZAHL",
             "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE",
+            "FORUM_ANZEIGE_AB",
         ),
         praefixe=(),
     ),

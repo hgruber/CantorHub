@@ -176,6 +176,17 @@ owner (`besitz_uebertragen`, see `files.md`), then decides: a member who left co
 really deleted. `UserAdmin.delete_model`/`delete_queryset` (`intern/admin.py`) take the same
 route so the admin path cannot bypass the ownership transfer.
 
+## Name references (Namensverweise)
+
+The import brings back people from the legacy portal who only remain as the sender of old forum
+messages or the author of old article versions: username `verweis_<legacy id>`, first name
+only, **`last_name` NULL**, no access, unusable password, no groups. NULL is the marker
+(`models.NAMENSVERWEIS`): no form ever writes it, and it avoids MariaDB's PAD SPACE comparison.
+No view lists them — the member list (also for managers with „Aktiv: Egal"), the rights grid in
+`aufgaben`, the admin changelist exclude `NAMENSVERWEIS`, `mitglied_view`/`mitglied_edit`
+answer 404, and every other member selection already filters `is_active=True`. The forum shows
+their first name without a profile link.
+
 ## Field-level privacy and the address-book opt-out
 
 `User.private_fields` holds the fields a member has hidden. `User.field_visible_to()` grants

@@ -54,7 +54,7 @@ def _db_init_relay_cursor():
     from django.db.models import Max
     from intern.models import Mitteilung
 
-    return Mitteilung.objects.aggregate(m=Max("id"))["m"] or 0
+    return Mitteilung.alle.aggregate(m=Max("id"))["m"] or 0
 
 
 def _db_pending_forum_messages(after_id):
@@ -65,7 +65,7 @@ def _db_pending_forum_messages(after_id):
     from intern.views.media import rewrite_media_urls
 
     qs = (
-        Mitteilung.objects.filter(
+        Mitteilung.alle.filter(
             id__gt=after_id,
             sender__isnull=False,
             xmpp_stanza_id__isnull=True,
@@ -95,7 +95,7 @@ def _db_store_message(room_jid, body, sender_jid, stanza_id):
         return
 
     # Deduplicate by stanza ID
-    if stanza_id and Mitteilung.objects.filter(xmpp_stanza_id=stanza_id).exists():
+    if stanza_id and Mitteilung.alle.filter(xmpp_stanza_id=stanza_id).exists():
         logger.debug("ejabberd_bot: duplicate stanza_id %s, skipping", stanza_id)
         return
 
@@ -114,7 +114,7 @@ def _db_store_message(room_jid, body, sender_jid, stanza_id):
         except User.DoesNotExist:
             pass
 
-    dup_query = Mitteilung.objects.filter(
+    dup_query = Mitteilung.alle.filter(
         forum=forum,
         mitteilung=body,
         datum__gte=recent_cutoff,
@@ -128,7 +128,7 @@ def _db_store_message(room_jid, body, sender_jid, stanza_id):
         logger.debug("ejabberd_bot: recent duplicate in forum #%s, skipping", forum.pk)
         return
 
-    Mitteilung.objects.create(
+    Mitteilung.alle.create(
         forum=forum,
         sender=sender_user,
         mitteilung=body,
@@ -193,7 +193,7 @@ def _db_capture_stanza_id(mitteilung_id, stanza_id):
     from intern.models import Mitteilung
 
     try:
-        Mitteilung.objects.filter(
+        Mitteilung.alle.filter(
             pk=mitteilung_id, xmpp_stanza_id__isnull=True
         ).update(xmpp_stanza_id=stanza_id)
     except Exception:
@@ -206,7 +206,7 @@ def _db_store_xmpp_reaction(to_id, reactor_jid, emojis):
     this message is fully replaced. Never marks reactions_dirty (no rebroadcast)."""
     from intern.models import Mitteilung, Reaktion, User
 
-    mitteilung = Mitteilung.objects.filter(xmpp_stanza_id=to_id).first()
+    mitteilung = Mitteilung.alle.filter(xmpp_stanza_id=to_id).first()
     if mitteilung is None:
         logger.debug("ejabberd_bot: reaction for unknown stanza_id %s, skipping", to_id)
         return
@@ -242,7 +242,7 @@ def _db_dirty_reaction_candidates():
     from intern.models import Mitteilung
 
     return list(
-        Mitteilung.objects.filter(reactions_dirty=True)
+        Mitteilung.alle.filter(reactions_dirty=True)
         .exclude(xmpp_stanza_id__isnull=True)
         .exclude(xmpp_stanza_id="")
         .exclude(forum__xmpp_muc_jid__isnull=True)
@@ -260,7 +260,7 @@ def _db_clear_and_get_ranked(mitteilung_id):
 
     from intern.models import Mitteilung, Reaktion
 
-    Mitteilung.objects.filter(pk=mitteilung_id).update(reactions_dirty=False)
+    Mitteilung.alle.filter(pk=mitteilung_id).update(reactions_dirty=False)
     return list(
         Reaktion.objects.filter(mitteilung_id=mitteilung_id, origin="web")
         .values("emoji")

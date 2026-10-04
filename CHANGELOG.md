@@ -15,6 +15,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   „Zugang sperren" und „Zugang freischalten" sperren und entsperren, ohne die Mitgliedschaft zu
   berühren. Die Aktion steht nur Superusern und Inhabern des Rechts „Kann
   Mitglieder-Berechtigungen verwalten" zur Verfügung.
+- Konfiguration: `FORUM_ANZEIGE_AB` unter „Aufbewahrung & Bereinigung“ legt den Stichtag fest,
+  vor dem das Portal Forenbeiträge nirgends anzeigt; gelöscht wird nichts.
 
 ### Geändert
 
@@ -29,6 +31,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Mitglied bearbeiten und Aufgaben: das Badge „Ruhend" heißt jetzt „Kein Zugang".
 - Anmeldeseite: Titel und Begrüßung nennen den Vereinsnamen (`VEREINSNAME`) statt des langen
   Chornamens.
+- Migration: alle Foren und alle Beiträge des Altportals werden übernommen; Foren ohne Beitrag ab
+  dem Stichtag kommen deaktiviert an und sind nur für Inhaber der Forum-Berechtigungsverwaltung
+  sichtbar.
+- Migration: Absender alter Beiträge und Autoren alter Artikelfassungen ohne eigenes Konto kommen
+  als Namensverweis mit nur dem Vornamen, den keine Mitgliederansicht listet.
 
 ## v1.0.0-rc6 — 2026-10-04
 

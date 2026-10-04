@@ -154,6 +154,7 @@ The cleanup jobs read these as their default; each has a `--days` (or `--keep`) 
 - `AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE` (retention of the change log in days; default `1095` = 3 years, privacy policy section „Speicherdauer")
 - `DATEIVERSION_AUFBEWAHRUNG_TAGE` (retention of superseded file revisions in days; default `730` = 2 years — a convenience feature, not an archive)
 - `DATEIVERSION_AUFBEWAHRUNG_ANZAHL` (number of revisions kept per file regardless of age; default `10`)
+- `FORUM_ANZEIGE_AB` (cutoff date `YYYY-MM-DD`; forum messages before it are not shown anywhere, nothing is deleted; default `2026-06-01`, an invalid value falls back to it — see `forum.md`)
 - `ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE` (retention of the `ErinnerungVersand` send markers in days; default `365`. The markers only guard against double sends, so after the event they are no longer needed)
 
 ## Completeness: what the settings page flags

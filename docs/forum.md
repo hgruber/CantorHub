@@ -115,6 +115,22 @@ wrapper below it):
 a forum only on the phone still sees its messages as unread in the portal until they open it
 there.
 
+## Cutoff date and deactivated forums
+
+`FORUM_ANZEIGE_AB` (ISO date, read through `app_settings.get_forum_anzeige_ab()`) hides every
+message older than that day; nothing is deleted. `Mitteilung.objects` is a `MitteilungManager`
+that applies the cutoff to every query, so search, detail, paging, poll, reactions, unread
+markers, `forum.mitteilung_set` and the admin all inherit it. Two paths bypass it and are
+deliberate: `Mitteilung.alle` (unfiltered — only the XMPP bridge and `has_history` in
+`mitglied_delete`), and joins through `mitteilung` (`Count`, `Max`, `mitteilung__…`), which
+ignore managers and therefore add `ab_stichtag()` explicitly. `MitteilungStichtagTest` counts
+both per file; a new site fails the test until its cutoff handling has been reviewed.
+
+`Forum.aktiv = False` hides a forum from the list, search, notification bubbles and unread dot,
+and `_forum_access` refuses it (403) — except for holders of `manage_forum_permissions`. The
+import deactivates every forum without a message on or after the cutoff, once; changing
+`FORUM_ANZEIGE_AB` later does not toggle forums.
+
 ## Message display fallbacks
 
 `Mitteilung.sender_name()` / `sender_avatar_url()` / `is_from_bot()` fall back to

@@ -4738,3 +4738,131 @@ class LoginSperrhinweisTest(SimpleTestCase):
 
     def test_unbekannter_name(self):
         self.assertFalse(self._formular(None).zugang_gesperrt)
+
+
+class ForumAnzeigeAbTest(SimpleTestCase):
+    """``FORUM_ANZEIGE_AB``: ein Tippfehler darf keine Forenseite umwerfen."""
+
+    def test_gueltiges_datum(self):
+        self.assertEqual(
+            app_settings.lese_forum_anzeige_ab("2025-01-15"), datetime(2025, 1, 15)
+        )
+
+    def test_leer_und_ungueltig_fallen_auf_den_standard(self):
+        standard = datetime.combine(
+            date.fromisoformat(app_settings.FORUM_ANZEIGE_AB_STANDARD), time()
+        )
+        for roh in (None, "", "  ", "15.01.2025", "kaputt"):
+            with self.subTest(roh=roh):
+                self.assertEqual(app_settings.lese_forum_anzeige_ab(roh), standard)
+
+    def test_standard_steht_im_katalog(self):
+        from intern.apps import _CONFIG_DEFAULTS
+
+        werte = {row[0]: row[1] for row in _CONFIG_DEFAULTS}
+        self.assertEqual(
+            werte["FORUM_ANZEIGE_AB"], app_settings.FORUM_ANZEIGE_AB_STANDARD
+        )
+
+
+class NamensverweisTest(SimpleTestCase):
+    """Namensverweise (Absender alter Beiträge) erkennt man an ``last_name`` NULL.
+
+    NULL, nicht "": kein Formular schreibt NULL, und unter MariaDB (PAD SPACE)
+    wäre ``last_name = ''`` auch für ``' '`` wahr. Die Suite sieht keine
+    Datenbank, darum pinnt der Test die Form der Bedingung.
+    """
+
+    def test_bedingung(self):
+        from intern.models import NAMENSVERWEIS
+
+        self.assertEqual(NAMENSVERWEIS, Q(last_name__isnull=True))
+
+    def test_anzeige_nur_vorname(self):
+        from intern.models import User
+
+        verweis = User(first_name="Max", last_name=None)
+        self.assertTrue(verweis.ist_namensverweis)
+        self.assertEqual(str(verweis), "Max")
+        self.assertEqual(verweis.get_full_name(), "Max")
+
+    def test_echtes_konto(self):
+        from intern.models import User
+
+        self.assertEqual(str(User(first_name="Max", last_name="Muster")), "Max Muster")
+        self.assertFalse(User(first_name="Max", last_name="").ist_namensverweis)
+
+
+class MitteilungStichtagTest(SimpleTestCase):
+    """Kein Forenbeitrag vor ``FORUM_ANZEIGE_AB`` erreicht eine Ansicht.
+
+    Der Standardmanager filtert jede Abfrage. Zwei Wege führen an ihm vorbei:
+    ``Mitteilung.alle`` und Joins über ``mitteilung`` (``Count``, ``Max``,
+    ``mitteilung__…``). Beide sind hier je Datei gezählt; eine neue Stelle macht
+    den Test rot, bis jemand den Stichtag dort bewusst geprüft und die Zahl
+    angepasst hat.
+    """
+
+    _JOIN = re.compile(r'mitteilung__|(?:Count|Max|Min|Sum|Avg)\(\s*"mitteilung"')
+    _ALLE = re.compile(r"Mitteilung\.alle\b")
+
+    # Datei → Anzahl Join-Stellen, mit dem Grund, warum sie so stimmen.
+    JOINS = {
+        # Max("mitteilung__id") setzt nur die Lesemarke — bewusst ungefiltert.
+        "forum_gelesen.py": 1,
+        # Raumreihenfolge der Brücke nach letztem Beitrag — keine Anzeige.
+        "management/commands/ejabberd_bot.py": 1,
+        # ab_stichtag (Signatur + Docstring), extra_data (Count, Max mit
+        # ab_stichtag), mit_ungelesen (Count + drei Lookups, mit ab_stichtag).
+        "models.py": 8,
+        # Suche: Feld ``mitteilung`` über den Standardmanager; Reaktionen mit
+        # ab_stichtag.
+        "views/forums.py": 2,
+    }
+    # Datei → Anzahl ``Mitteilung.alle`` (ungefiltert, nur technische Pfade).
+    ALLE = {
+        # Relay, Dedupe, Stanza-IDs der Brücke — Verhalten wie vor dem Stichtag.
+        "management/commands/ejabberd_bot.py": 9,
+        # has_history in mitglied_delete: alte Beiträge sind auch Geschichte.
+        "views/mitglieder.py": 1,
+    }
+
+    def _zaehle(self, muster):
+        wurzel = Path(__file__).resolve().parent
+        treffer = {}
+        for pfad in sorted(wurzel.rglob("*.py")):
+            rel = pfad.relative_to(wurzel).as_posix()
+            if rel.startswith("migrations/") or rel == "tests.py":
+                continue
+            n = len(muster.findall(pfad.read_text(encoding="utf-8")))
+            if n:
+                treffer[rel] = n
+        return treffer
+
+    def test_join_stellen_sind_geprueft(self):
+        self.assertEqual(self._zaehle(self._JOIN), self.JOINS)
+
+    def test_ungefilterter_manager_nur_wo_geprueft(self):
+        self.assertEqual(self._zaehle(self._ALLE), self.ALLE)
+
+    def test_forum_joins_tragen_den_stichtag(self):
+        import inspect
+
+        from intern.models import ForumQuerySet
+
+        quelle = inspect.getsource(ForumQuerySet)
+        self.assertEqual(quelle.count("ab_stichtag()"), 3)
+
+    def test_standardmanager_filtert(self):
+        from intern.models import Mitteilung, MitteilungManager
+
+        self.assertIsInstance(Mitteilung._default_manager, MitteilungManager)
+        stichtag = datetime(2025, 3, 1)
+        with mock.patch.object(
+            app_settings, "get_forum_anzeige_ab", return_value=stichtag
+        ):
+            where = Mitteilung.objects.all().query.where
+        (bedingung,) = where.children
+        self.assertEqual(bedingung.lhs.target.name, "datum")
+        self.assertEqual(bedingung.lookup_name, "gte")
+        self.assertEqual(bedingung.rhs, stichtag)

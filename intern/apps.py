@@ -3,6 +3,8 @@ import threading
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate, post_save, pre_migrate
 
+from .app_settings import FORUM_ANZEIGE_AB_STANDARD
+
 # Thread-local for tracking migration status
 _migrating = threading.local()
 
@@ -418,6 +420,12 @@ _CONFIG_DEFAULTS = [
         "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE",
         "365",
         "Aufbewahrungsfrist der Versand-Marker (ErinnerungVersand) in Tagen",
+    ),
+    (
+        "FORUM_ANZEIGE_AB",
+        FORUM_ANZEIGE_AB_STANDARD,
+        "Stichtag der Foren (JJJJ-MM-TT): ältere Beiträge zeigt das Portal nicht an, "
+        "gelöscht wird nichts",
     ),
     # --- iCal-Feed / CalDAV ---
     (
