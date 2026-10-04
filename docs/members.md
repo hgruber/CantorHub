@@ -138,18 +138,26 @@ privacy policy, bylaws and fee schedule.
 override with `--base-url URL`). The command calls `send_bestaetigung_mail(user, base_url)` in
 `views/auth.py`, which:
 
-1. creates a `TimestampSigner` token (salt `"intern.mitglied_bestaetigung"`, **30-day**
-   validity) encoding the user PK;
+1. creates a `TimestampSigner` token (salt `"intern.mitglied_bestaetigung"`, validity
+   `MITGLIED_BESTAETIGUNG_TAGE` days, default 30) encoding the user PK;
 2. reads the mail body from the `Konfiguration` key **`MAIL_BESTAETIGUNG`** — all standard
    placeholders plus `{link}`; an empty key means an empty mail body;
 3. sends it via `send_config_mail()`;
-4. switches `is_active` off once the mail went out — the member cannot log in (portal,
-   CardDAV/CalDAV; open sessions end) until the form is submitted. A failed send leaves the
-   account alone, and `--print-url` never locks.
+4. switches `is_active` off once the mail went out (`sperre_bis_bestaetigung()`) — the member
+   cannot log in (portal, CardDAV/CalDAV; open sessions end) until the form is submitted. A
+   failed send leaves the account alone. `--print-url` locks as well: without the lock the
+   printed link would be refused (see below).
 
-`--user` also finds an account that is already locked, so an expired link can be re-sent; `--all`
-covers active members only. The lock is `is_active` alone, without a marker: a dormant member
-holding a still valid link could unlock themselves through it.
+Only accounts tagged „Mitglied" are addressed: `--all` covers active ones with the tag, `--user`
+refuses an account without it and neither sends nor locks. `--user` also finds an account that is
+already locked, so an expired link can be re-sent.
+
+**What a link still does** is decided by the account, not the token —
+`bestaetigungslink_zustand(is_active, ist_mitglied)` in `mitgliedschaft.py`, guarded by
+`MitgliedschaftTest`: active → already confirmed, the link is spent (a friendly „Bereits
+bestätigt" page); locked with tag → the form; locked without tag → invalid, so a link still
+running after „Mitgliedschaft beenden" cannot reopen the account. The remaining gap: an account
+the board merely deactivated, tag kept, can still be unlocked by a valid link.
 
 **Login hint:** `CantorAuthenticationForm` (`forms.py`) sets `zugang_gesperrt` when the password
 is right but the account is inactive, and `login.html` then asks the member to confirm through
@@ -157,7 +165,8 @@ the mail link instead of claiming a wrong password. It cannot tell a pending con
 dormant account, so the wording covers both. `LoginSperrhinweisTest` guards it.
 
 **Public form:** `/intern/bestaetigung/<token>/` (`mitglied_bestaetigung` in `views/auth.py`, no
-`login_required`, inactive accounts accepted, anonymised `geloescht_*` ones not). Shows the member's current data (read-only) plus four mandatory checkboxes
+`login_required`, only in the state „locked with tag" above, anonymised `geloescht_*` accounts
+never). Shows the member's current data (read-only) plus four mandatory checkboxes
 (`MitgliedBestaetigungForm`): data correct, Datenschutz, Satzung, Beitragsordnung — plus the optional photo
 consent, pre-ticked unless the member carries „kein Bild". Submitting sets or removes the tag
 according to that box and prints it into the PDF.

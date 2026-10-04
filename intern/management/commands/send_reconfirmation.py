@@ -1,8 +1,13 @@
 from django.core.management.base import BaseCommand
 
 from intern.app_settings import get_base_url, konfiguration_gepuffert
+from intern.mitgliedschaft import GRUPPE_MITGLIED, ist_mitglied
 from intern.models import User
-from intern.views.auth import make_bestaetigung_url, send_bestaetigung_mail
+from intern.views.auth import (
+    make_bestaetigung_url,
+    send_bestaetigung_mail,
+    sperre_bis_bestaetigung,
+)
 
 
 class Command(BaseCommand):
@@ -10,7 +15,9 @@ class Command(BaseCommand):
         "Sendet die Datenbestätigungs-E-Mail an einzelne oder alle aktiven Mitglieder. "
         "Die E-Mail enthält einen 30 Tage gültigen Link zum öffentlichen Bestätigungsformular. "
         "Nach dem Versand ist der Portalzugang bis zur Bestätigung gesperrt. "
-        "Mit --print-url wird nur die URL ausgegeben, ohne Mail zu senden und ohne Sperre."
+        "Mit --print-url wird nur die URL ausgegeben, ohne Mail zu senden; gesperrt wird "
+        "trotzdem, denn ein aktives Konto gilt als bestätigt und der Link wäre wertlos. "
+        "Nur Konten mit dem Tag „Mitglied“ — ohne Tag weist das Formular den Link ab."
     )
 
     def add_arguments(self, parser):
@@ -27,7 +34,10 @@ class Command(BaseCommand):
             "--all",
             action="store_true",
             dest="all_users",
-            help="Mail an alle aktiven Mitglieder mit hinterlegter E-Mail-Adresse senden.",
+            help=(
+                "Mail an alle aktiven Konten mit Tag „Mitglied“ und hinterlegter "
+                "E-Mail-Adresse senden."
+            ),
         )
         parser.add_argument(
             "--base-url",
@@ -42,7 +52,7 @@ class Command(BaseCommand):
             "--print-url",
             action="store_true",
             dest="print_url",
-            help="Nur URL ausgeben, keine Mail senden.",
+            help="Nur URL ausgeben, keine Mail senden. Sperrt das Konto wie der Versand.",
         )
 
     def handle(self, *args, **options):
@@ -57,15 +67,27 @@ class Command(BaseCommand):
                     self.style.ERROR(f"Benutzer '{options['user']}' nicht gefunden.")
                 )
                 return
+            if not ist_mitglied(user):
+                self.stderr.write(self.style.ERROR(
+                    f"'{user.username}' trägt das Tag „{GRUPPE_MITGLIED}“ nicht — "
+                    "der Link würde abgewiesen. Nichts gesendet, nichts gesperrt."
+                ))
+                return
             if print_url:
                 self.stdout.write(make_bestaetigung_url(user, base_url))
+                sperre_bis_bestaetigung(user)
             else:
                 self._send(user, base_url)
         else:
-            users = User.objects.filter(is_active=True).exclude(email="").order_by("username")
+            users = (
+                User.objects.filter(is_active=True, groups__name=GRUPPE_MITGLIED)
+                .exclude(email="")
+                .order_by("username")
+            )
             if print_url:
                 for user in users:
                     self.stdout.write(f"{user.username}\t{make_bestaetigung_url(user, base_url)}")
+                    sperre_bis_bestaetigung(user)
             else:
                 count = users.count()
                 self.stdout.write(f"Sende an {count} Mitglieder …")

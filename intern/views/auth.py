@@ -36,7 +36,9 @@ from ..forms import MitgliedBeitrittForm, MitgliedBestaetigungForm, RegisterForm
 from ..mitgliedschaft import (
     FOERDERMITGLIED_IM_ANTRAG,
     GRUPPE_FOERDERMITGLIED,
+    bestaetigungslink_zustand,
     hat_kein_bild,
+    ist_mitglied,
     kein_bild_aus_einwilligung,
     setze_kein_bild,
 )
@@ -566,6 +568,15 @@ def send_bestaetigung_mail(user, base_url):
         user=user,
         link=link,
     )
+    sperre_bis_bestaetigung(user)
+
+
+def sperre_bis_bestaetigung(user):
+    """Sperrt den Portalzugang, bis das Formular hinter dem Link abgeschickt ist.
+
+    Ohne Sperre wäre der Link wertlos: ein aktives Konto gilt als bestätigt, und
+    ``mitglied_bestaetigung`` weist den Link dann ab.
+    """
     if user.is_active:
         user.is_active = False
         user.save(update_fields=["is_active"])
@@ -581,6 +592,8 @@ def mitglied_bestaetigung(request, token):
     Der Versand der Aufforderung sperrt das Konto; das Absenden schaltet es
     wieder frei — ohne Eintrittsdatum und ohne Willkommens- oder
     Reaktivierungsmail (``_ohne_aktivierungsmail``, siehe ``signals.py``).
+    Damit ist der Link verbraucht: Ob er noch etwas bewirkt, entscheidet
+    ``bestaetigungslink_zustand()`` am Konto, nicht am Token.
     """
     user_pk = _read_bestaetigung_token(token)
     if user_pk is None:
@@ -591,14 +604,19 @@ def mitglied_bestaetigung(request, token):
     except User.DoesNotExist:
         return render(request, "mitglied_bestaetigung_invalid.html", status=400)
 
+    zustand = bestaetigungslink_zustand(user.is_active, ist_mitglied(user))
+    if zustand == "erledigt":
+        return render(request, "mitglied_bestaetigung_invalid.html", {"bereits_bestaetigt": True})
+    if zustand == "ungueltig":
+        return render(request, "mitglied_bestaetigung_invalid.html", status=400)
+
     if request.method == "POST":
         form = MitgliedBestaetigungForm(request.POST)
         if form.is_valid():
-            if not user.is_active:
-                user.is_active = True
-                user._audit_user = user
-                user._ohne_aktivierungsmail = True
-                user.save(update_fields=["is_active"])
+            user.is_active = True
+            user._audit_user = user
+            user._ohne_aktivierungsmail = True
+            user.save(update_fields=["is_active"])
 
             einwilligung_fotos = form.cleaned_data.get("einwilligung_fotos", False)
             setze_kein_bild(user, kein_bild_aus_einwilligung(einwilligung_fotos), actor=user)

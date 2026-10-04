@@ -34,6 +34,7 @@ from intern.mitgliedschaft import (
     GRUPPE_KEIN_BILD,
     GRUPPE_MITGLIED,
     aufnahme_setzt_aktiv,
+    bestaetigungslink_zustand,
     kein_bild_aus_einwilligung,
     mitgliedschafts_aktion,
     ist_erstaufnahme,
@@ -4704,6 +4705,16 @@ class MitgliedschaftTest(SimpleTestCase):
         # Ohne Tag verraet das Eintrittsdatum das ehemalige Mitglied.
         self.assertEqual(mitgliedschafts_aktion(False, self.EIN_DATUM), "wieder_aufnehmen")
         self.assertEqual(mitgliedschafts_aktion(False, None), "aufnehmen")
+
+    def test_bestaetigungslink_folgt_dem_konto(self):
+        # Aktiv heisst bestaetigt: der Link ist verbraucht, auch ohne Tag.
+        self.assertEqual(bestaetigungslink_zustand(True, True), "erledigt")
+        self.assertEqual(bestaetigungslink_zustand(True, False), "erledigt")
+        # Gesperrt mit Tag: die Bestaetigung steht aus.
+        self.assertEqual(bestaetigungslink_zustand(False, True), "offen")
+        # Gesperrt ohne Tag (Mitgliedschaft beendet): ein laufender Link
+        # darf das Konto nicht wieder oeffnen.
+        self.assertEqual(bestaetigungslink_zustand(False, False), "ungueltig")
 
     def test_foerdermitglied_bekommt_keinen_zugang(self):
         self.assertTrue(aufnahme_setzt_aktiv(False))

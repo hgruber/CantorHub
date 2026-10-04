@@ -69,6 +69,21 @@ def mitgliedschafts_aktion(ist_mitglied, date_joined):
     return "aufnehmen"
 
 
+def bestaetigungslink_zustand(is_active, ist_mitglied):
+    """Was ein gültig signierter Datenbestätigungs-Link bei diesem Konto bewirkt.
+
+    ``"erledigt"``: das Konto ist aktiv, also schon bestätigt — der Link ist verbraucht.
+    ``"offen"``: gesperrt und Mitglied, das Formular darf freischalten.
+    ``"ungueltig"``: gesperrt ohne Tag — nach „Mitgliedschaft beenden" darf ein
+    noch laufender Link das Konto nicht wieder öffnen.
+    """
+    if is_active:
+        return "erledigt"
+    if ist_mitglied:
+        return "offen"
+    return "ungueltig"
+
+
 def mitglied_gruppe():
     """Die Gruppe „Mitglied", notfalls neu angelegt.
 

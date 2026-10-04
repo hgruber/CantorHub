@@ -19,6 +19,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   auf den neuen Standard gehoben.
 - Datenbestätigung: Das Formular fragt als viertes Pflicht-Häkchen die Anerkennung der
   Beitragsordnung ab, wie es die Aufforderungsmail ankündigt; das Quittungs-PDF führt sie mit auf.
+- Datenbestätigung: Ein Link wirkt nur noch bei einem gesperrten Konto mit Tag „Mitglied“; nach dem
+  Absenden zeigt er „Bereits bestätigt“, nach „Mitgliedschaft beenden“ ist er ungültig.
+  `send_reconfirmation --print-url` sperrt jetzt wie der Mailversand, und Konten ohne Tag werden
+  weder angeschrieben noch gesperrt.
 
 ## v1.0.0 — 2026-10-04
 
