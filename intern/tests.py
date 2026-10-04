@@ -33,6 +33,7 @@ from intern.mitgliedschaft import (
     GRUPPE_GRUENDER,
     GRUPPE_MITGLIED,
     aufnahme_setzt_aktiv,
+    mitgliedschafts_aktion,
     ist_erstaufnahme,
 )
 from intern.aufstellung import aufstellung
@@ -4668,6 +4669,14 @@ class MitgliedschaftTest(SimpleTestCase):
         # muss trotzdem ein echtes bool sein, weil er die Mailauswahl steuert.
         self.assertIs(ist_erstaufnahme(None, 1), True)
         self.assertIs(ist_erstaufnahme(None, 0), False)
+
+    def test_aktion_folgt_dem_tag(self):
+        # Mit Tag gibt es nur „beenden" — auch beim Foerdermitglied ohne Zugang.
+        self.assertEqual(mitgliedschafts_aktion(True, None), "beenden")
+        self.assertEqual(mitgliedschafts_aktion(True, self.EIN_DATUM), "beenden")
+        # Ohne Tag verraet das Eintrittsdatum das ehemalige Mitglied.
+        self.assertEqual(mitgliedschafts_aktion(False, self.EIN_DATUM), "wieder_aufnehmen")
+        self.assertEqual(mitgliedschafts_aktion(False, None), "aufnehmen")
 
     def test_foerdermitglied_bekommt_keinen_zugang(self):
         self.assertTrue(aufnahme_setzt_aktiv(False))

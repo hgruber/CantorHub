@@ -235,10 +235,10 @@ reasoning where it matters.
   `cleanup_verwaiste_blobs` is the safe stand-in, and `intern/blob_aufraeumen.py` holds the rule
   it decides by.
 - **`is_active` is portal access, the group „Mitglied" is the club membership.** Two axes, one
-  source: `intern/mitgliedschaft.py`. A dormant membership is „tag, no access"; the conductor's
-  legacy account is „access, no tag"; a Fördermitglied is „tag, no access" by design. Admission
-  („Mitgliedschaft genehmigen") sets both, the dormant switch never touches tags, and welcome
-  mail plus Eintrittsdatum need the tag — `date_joined is None` alone would greet a non-member
+  source: `intern/mitgliedschaft.py`. The conductor's legacy account is „access, no tag"; a
+  Fördermitglied is „tag, no access" by design. Admission („Mitgliedschaft genehmigen") sets
+  both, „Mitgliedschaft beenden" removes both and keeps `date_joined`, which then offers
+  „wieder aufnehmen" instead of admission. Welcome mail plus Eintrittsdatum need the tag — `date_joined is None` alone would greet a non-member
   as a newcomer on every reactivation. See `docs/members.md`.
 - **Every write path on a file must call `darf_avatar_aendern()`**, or one member can overwrite
   another's profile picture.

@@ -8,9 +8,9 @@
 | | meaning |
 |---|---|
 | `is_active` | actively taking part — and therefore allowed into the portal. Nothing else. |
-| group „Mitglied" | club membership. It survives a dormant membership: whoever pauses loses the access (`is_active=False`) but keeps the tag. |
+| group „Mitglied" | club membership. Ending it („Mitgliedschaft beenden") removes the tag and the access together. |
 
-The two combine freely. A dormant member is „tag, no access"; the conductor's account from the
+The two combine freely. The conductor's account from the
 legacy portal is „access, no tag" (`legacy_id=232`, see `migration.md`); „Fördermitglied"
 (supporting member) is a member who does not take part, so tag without access.
 
@@ -22,9 +22,21 @@ the import and nothing else, and may be deleted later.
 (`action="aufnehmen"`, perm `intern.change_user`). `mitgliedschaft.nimm_auf()` adds the tag,
 writes a `ChangeLog` row for it (`changes={"gruppe": …}`) and — unless the account carries
 „Fördermitglied" — switches `is_active` on in the same step. The tag is set **before** the save,
-because the signal below reads it. The dormant/reactivate switch next to it (`action="deactivate"`,
-perms `intern.change_user` **and** `intern.manage_user_permissions`) never touches tags,
-which is what makes a dormant membership stay one.
+because the signal below reads it.
+
+The page offers exactly one membership action, chosen by
+`mitgliedschafts_aktion(ist_mitglied, date_joined)`, and the view accepts only that one:
+
+| state | action | button | perms |
+|---|---|---|---|
+| tag | `beenden` | „Mitgliedschaft beenden" | `change_user` **and** `manage_user_permissions` |
+| no tag, `date_joined` set | `wieder_aufnehmen` | „Mitgliedschaft wieder aufnehmen" | `change_user` **and** `manage_user_permissions` |
+| no tag, no `date_joined` | `aufnehmen` | „Mitgliedschaft genehmigen" | `change_user` |
+
+`mitgliedschaft.beende()` removes the tag (with its `ChangeLog` row) and switches `is_active`
+off; `date_joined` stays, which is what marks the former member. „Wieder aufnehmen" runs
+`nimm_auf()`, so a Fördermitglied stays without access, and the kept `date_joined` sends
+`MAIL_REAKTIVIERT` instead of the welcome mail.
 
 **First admission vs. reactivation.** `signals._send_activation_mail()` asks
 `ist_erstaufnahme(user.date_joined, ist_mitglied(user))`: only a member (tag) without an
@@ -33,9 +45,9 @@ Eintrittsdatum yet is a first admission and gets `MAIL_WILLKOMMEN` plus the stam
 otherwise be greeted as a newcomer every time it is switched back on. Such accounts take the
 `MAIL_REAKTIVIERT` path and keep an empty „Mitglied seit", which is correct for a non-member.
 
-Because a dormant account keeps its tags, the group matrix `/intern/aufgaben/` lists dormant
-accounts too (marked „ruhend"); only anonymised ones (`geloescht_*`) stay out. Otherwise a
-dormant member's tag could be neither seen nor corrected.
+Because a Fördermitglied carries the tag without access, the group matrix `/intern/aufgaben/`
+lists inactive accounts too (marked „ruhend"); only anonymised ones (`geloescht_*`) stay out.
+Otherwise such a member's tag could be neither seen nor corrected.
 
 ## Member application flow (Mitglieds-Beitritt)
 

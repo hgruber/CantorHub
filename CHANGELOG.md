@@ -14,8 +14,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Mitgliederliste: „manuell anlegen" im Einladungs-Panel steht nur noch Superusern und Inhabern
   des Rechts „Kann Mitglieder-Berechtigungen verwalten" zur Verfügung; die Seite zum manuellen
   Anlegen prüft dasselbe Recht.
-- Mitglied bearbeiten: „Ruhend setzen" und „Zugang freischalten" stehen nur noch Superusern und
-  Inhabern des Rechts „Kann Mitglieder-Berechtigungen verwalten" zur Verfügung.
+- Mitglied bearbeiten: „Ruhend setzen" heißt jetzt „Mitgliedschaft beenden" und entfernt neben
+  dem Zugang auch das Tag „Mitglied"; „Zugang freischalten" heißt „Mitgliedschaft wieder
+  aufnehmen" und setzt beides wieder. Beide Aktionen stehen nur Superusern und Inhabern des
+  Rechts „Kann Mitglieder-Berechtigungen verwalten" zur Verfügung; ein ehemaliges Mitglied sieht
+  statt „Mitgliedschaft genehmigen" nur noch „wieder aufnehmen".
 
 ## v1.0.0-rc6 — 2026-10-04
 

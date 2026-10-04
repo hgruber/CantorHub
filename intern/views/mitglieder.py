@@ -27,7 +27,7 @@ from intern.mail import neu_verbinden, send_config_mail, versende_serie
 
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..mitglied_felder import PRIVACY_FIELDS
-from ..mitgliedschaft import ist_mitglied, nimm_auf
+from ..mitgliedschaft import beende, ist_mitglied, mitgliedschafts_aktion, nimm_auf
 from ..models import Abstimmung, Artikel, Mitteilung, User, Zusage
 from ..tables import MitgliederFilter, MitgliederTabelle
 from .auth import make_invite_token
@@ -172,33 +172,31 @@ def mitglied_edit(request, id):
     carddav_aktiv = get_config_bool("CARDDAV_AKTIV", False)
 
     if request.method == "POST":
-        # Die Aufnahme in den Verein: sie setzt das Tag „Mitglied" und — außer bei
-        # Fördermitgliedern — den Portalzugang. Der Schalter darunter fasst das Tag
-        # bewusst nicht an, damit eine ruhende Mitgliedschaft eine bleibt.
-        if request.POST.get("action") == "aufnehmen" and request.user.has_perm("intern.change_user"):
-            if nimm_auf(user, request.user):
-                messages.success(request, "Mitgliedschaft genehmigt.")
-            else:
-                messages.success(
-                    request, "Fördermitgliedschaft genehmigt — ohne Portalzugang."
-                )
-            return redirect("mitglied_edit", id=id)
-
-        if (
-            request.POST.get("action") == "deactivate"
-            and request.user.has_perm("intern.change_user")
-            and request.user.has_perm("intern.manage_user_permissions")
-        ):
-            user.is_active = not user.is_active
-            user._audit_user = request.user
-            user.save(update_fields=["is_active"])
-            if user.is_active:
-                messages.success(request, "Zugang wieder freigeschaltet.")
-            else:
-                messages.success(
-                    request,
-                    "Ruhend gesetzt — der Zugang ist gesperrt, die Mitgliedschaft bleibt.",
-                )
+        # Die Mitgliedschaft: Tag „Mitglied" und Portalzugang gehen zusammen. Die
+        # Ansicht nimmt nur die Aktion an, die die Seite gerade anbietet; „beenden"
+        # und „wieder aufnehmen" brauchen zusaetzlich das Berechtigungsrecht.
+        aktion = request.POST.get("action")
+        if aktion in ("aufnehmen", "wieder_aufnehmen", "beenden"):
+            erlaubt = request.user.has_perm("intern.change_user") and (
+                aktion == "aufnehmen"
+                or request.user.has_perm("intern.manage_user_permissions")
+            )
+            if erlaubt and aktion == mitgliedschafts_aktion(ist_mitglied(user), user.date_joined):
+                if aktion == "beenden":
+                    beende(user, request.user)
+                    messages.success(
+                        request, "Mitgliedschaft beendet — Tag und Zugang sind entfernt."
+                    )
+                elif nimm_auf(user, request.user):
+                    messages.success(
+                        request,
+                        "Mitgliedschaft wieder aufgenommen." if aktion == "wieder_aufnehmen"
+                        else "Mitgliedschaft genehmigt.",
+                    )
+                else:
+                    messages.success(
+                        request, "Fördermitgliedschaft genehmigt — ohne Portalzugang."
+                    )
             return redirect("mitglied_edit", id=id)
 
         form = UserEditForm(
@@ -252,6 +250,7 @@ def mitglied_edit(request, id):
         "privacy_fields": PRIVACY_FIELDS,
         "member_groups": list(user.groups.order_by("name")),
         "ist_mitglied": ist_mitglied(user),
+        "mitgliedschafts_aktion": mitgliedschafts_aktion(ist_mitglied(user), user.date_joined),
     }
     return render(request, "mitglied_edit.html", context)
 

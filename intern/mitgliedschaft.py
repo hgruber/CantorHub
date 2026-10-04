@@ -6,9 +6,10 @@ Zwei Achsen, die vorher in einem Feld steckten:
     Aktiv Mitwirkender — und damit Zugang zum Portal. Nichts weiter.
 
 Gruppe „Mitglied"
-    Die Vereinsmitgliedschaft. Sie überlebt eine ruhende Mitgliedschaft: wer pausiert,
-    verliert den Zugang (``is_active=False``), bleibt aber Mitglied und trägt das Tag
-    weiter. Umgekehrt gibt es Konten mit Zugang **ohne** Mitgliedschaft — das
+    Die Vereinsmitgliedschaft. „Mitgliedschaft beenden" (``beende()``) nimmt Tag und
+    Zugang zusammen weg, „wieder aufnehmen" bringt beides über ``nimm_auf()`` zurück.
+    Tag ohne Zugang trägt das Fördermitglied. Umgekehrt gibt es Konten mit Zugang
+    **ohne** Mitgliedschaft — das
     Chorleiter-Konto aus dem Altportal ist der Anlassfall (siehe
     ``migrations/0003_import.py``, ``deaktiviere_nicht_gruender``).
 
@@ -49,6 +50,20 @@ def aufnahme_setzt_aktiv(ist_foerdermitglied):
     Fördermitglieder wirken nicht mit — sie werden Mitglied, bleiben aber ohne Zugang.
     """
     return not ist_foerdermitglied
+
+
+def mitgliedschafts_aktion(ist_mitglied, date_joined):
+    """Welche Aktion bietet „Mitglied bearbeiten" an?
+
+    ``"beenden"`` mit Tag; ohne Tag ``"wieder_aufnehmen"``, wenn ein Eintrittsdatum
+    eine frühere Aufnahme verrät, sonst ``"aufnehmen"`` (der Antrag). Die Seite
+    zeigt danach genau einen Button, und die Ansicht nimmt nur diese Aktion an.
+    """
+    if ist_mitglied:
+        return "beenden"
+    if date_joined is not None:
+        return "wieder_aufnehmen"
+    return "aufnehmen"
 
 
 def mitglied_gruppe():
@@ -100,3 +115,30 @@ def nimm_auf(user, actor=None):
         user._audit_user = actor
         user.save(update_fields=["is_active"])
     return aktiv
+
+
+def beende(user, actor=None):
+    """Die Vereinsmitgliedschaft von ``user`` endet: Tag „Mitglied" und Zugang gehen.
+
+    Das Eintrittsdatum bleibt stehen — es kennzeichnet das ehemalige Mitglied, damit
+    die Seite danach „wieder aufnehmen" statt „genehmigen" anbietet und die erneute
+    Aufnahme die Reaktivierungs- statt der Willkommensmail verschickt.
+    """
+    from .models import ChangeLog
+
+    gruppe = mitglied_gruppe()
+    if user.groups.filter(pk=gruppe.pk).exists():
+        user.groups.remove(gruppe)
+        ChangeLog.objects.create(
+            user=actor,
+            action=ChangeLog.ACTION_UPDATE,
+            model_name="User",
+            object_id=user.pk,
+            object_repr=str(user),
+            changes={"gruppe": [gruppe.name, None]},
+        )
+
+    if user.is_active:
+        user.is_active = False
+        user._audit_user = actor
+        user.save(update_fields=["is_active"])

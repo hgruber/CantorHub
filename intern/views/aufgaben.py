@@ -21,8 +21,8 @@ __all__ = ["aufgaben", "folder_permissions"]
 @perm_or_home("intern.manage_user_permissions")
 def aufgaben(request):
     groups = list(Group.objects.order_by("id"))
-    # Auch ruhende Konten: eine ruhende Mitgliedschaft behaelt ihr Tag „Mitglied"
-    # und ein Foerdermitglied hat nie Zugang — beide waeren hier sonst unerreichbar,
+    # Auch Konten ohne Zugang: ein Foerdermitglied traegt das Tag „Mitglied" ohne
+    # Zugang und waere hier sonst unerreichbar,
     # und damit die Mitgliedschaft im Portal nicht pflegbar. Anonymisierte Konten
     # (``mitglied_delete``) bleiben draussen; sie haben keine Gruppen mehr.
     users = (
