@@ -494,6 +494,13 @@ class MitgliedBestaetigungForm(forms.Form):
             "Satzung</a> des Vereins an."
         ),
     )
+    anerkennung_beitragsordnung = forms.BooleanField(
+        required=True,
+        label=mark_safe(
+            'Ich nehme die <a href="#" target="_blank" rel="noopener">'
+            "Beitragsordnung</a> des Vereins zur Kenntnis und erkenne sie an."
+        ),
+    )
     einwilligung_fotos = forms.BooleanField(
         required=False,
         label=EINWILLIGUNG_FOTOS_LABEL,
@@ -506,6 +513,11 @@ class MitgliedBestaetigungForm(forms.Form):
         self.fields["anerkennung_satzung"].label = mark_safe(
             f'Ich erkenne die <a href="{satzung_url}" target="_blank" rel="noopener">'
             "Satzung</a> des Vereins an."
+        )
+        beitragsordnung_url = get_document_url("BEITRAGSORDNUNG_FILE_ID")
+        self.fields["anerkennung_beitragsordnung"].label = mark_safe(
+            f'Ich nehme die <a href="{beitragsordnung_url}" target="_blank" rel="noopener">'
+            "Beitragsordnung</a> des Vereins zur Kenntnis und erkenne sie an."
         )
 
 

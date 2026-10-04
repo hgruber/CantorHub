@@ -534,6 +534,7 @@ def _save_bestaetigung_pdf(user, einwilligung_fotos=False):
     y = draw_checkbox(c, y, "Daten korrekt und aktuell, sonst sofortige Korrektur zugesagt")
     y = draw_checkbox(c, y, "Datenschutzerklärung gelesen und akzeptiert")
     y = draw_checkbox(c, y, "Satzung gelesen und akzeptiert")
+    y = draw_checkbox(c, y, "Beitragsordnung zur Kenntnis genommen und anerkannt")
     y = draw_checkbox(c, y, "Einwilligung zur Veröffentlichung von Fotos bei Auftritten",
                       checked=einwilligung_fotos)
     draw_signature(c, y, f"{user.first_name} {user.last_name}")
@@ -573,7 +574,7 @@ def send_bestaetigung_mail(user, base_url):
 def mitglied_bestaetigung(request, token):
     """Öffentliches Bestätigungsformular hinter einem signierten Link.
 
-    Zeigt die aktuellen Mitgliedsdaten und vier Bestätigungs-Checkboxen.
+    Zeigt die aktuellen Mitgliedsdaten und fünf Bestätigungs-Checkboxen.
     Bei Absenden wird ein PDF gespeichert und per Mail als Quittung versandt.
     Kein Login erforderlich, kein Vorstand-Notify.
 

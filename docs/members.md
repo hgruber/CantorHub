@@ -157,8 +157,8 @@ the mail link instead of claiming a wrong password. It cannot tell a pending con
 dormant account, so the wording covers both. `LoginSperrhinweisTest` guards it.
 
 **Public form:** `/intern/bestaetigung/<token>/` (`mitglied_bestaetigung` in `views/auth.py`, no
-`login_required`, inactive accounts accepted, anonymised `geloescht_*` ones not). Shows the member's current data (read-only) plus three mandatory checkboxes
-(`MitgliedBestaetigungForm`): data correct, Datenschutz, Satzung — plus the optional photo
+`login_required`, inactive accounts accepted, anonymised `geloescht_*` ones not). Shows the member's current data (read-only) plus four mandatory checkboxes
+(`MitgliedBestaetigungForm`): data correct, Datenschutz, Satzung, Beitragsordnung — plus the optional photo
 consent, pre-ticked unless the member carries „kein Bild". Submitting sets or removes the tag
 according to that box and prints it into the PDF.
 
