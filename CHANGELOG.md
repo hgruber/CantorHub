@@ -12,7 +12,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 ### Geändert
 
 - Migration: Artikelversionen vor dem 12.12.2015 werden nicht übernommen; Artikel, die nur
-  ältere Versionen haben, entfallen ganz. Die Hilfe-Seiten kommen vollständig mit.
+  ältere Versionen haben, entfallen ganz. Von den Hilfe-Seiten kommt jeweils
+  nur die letzte Version mit.
 
 ## v1.0.0-rc7 — 2026-10-04
 

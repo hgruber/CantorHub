@@ -81,8 +81,8 @@ environment variable — only network access. Without it the migration calls `ex
   table filter „Weihnachten" finds them. Another stopgap that disappears with this file.
 - skips every article version dated before 12.12.2015 (`_ARTIKEL_CUTOFF`). The remaining
   versions keep their legacy numbers, so an article's history may start above 1; an article
-  whose versions all predate the cutoff is not imported at all. The „Hilfe:" pages are exempt
-  and arrive with every version.
+  whose versions all predate the cutoff is not imported at all. The „Hilfe:" pages are exempt:
+  each arrives with its latest version only, whatever its date.
 - gives **only the members of „Gründer" an Eintrittsdatum** — the founding date 17.06.2026
   (`_GRUENDUNGSDATUM`, `import_gruendungsdatum`). Every other account arrives with
   `date_joined=None`; the legacy column `aktiv_seit` is no longer read, because it was
