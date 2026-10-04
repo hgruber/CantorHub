@@ -6,7 +6,7 @@ from intern.models import User
 
 class Command(BaseCommand):
     help = (
-        "Entfernt das Tag „Datenschutz bestätigt“ — einzeln oder bei allen. Konten mit "
+        "Entfernt das Tag „DSGVO“ — einzeln oder bei allen. Konten mit "
         "Zugang ohne Mitgliedschaft sehen danach beim nächsten Seitenaufruf wieder die "
         "Seite „Datenschutz bestätigen“, etwa nach einer geänderten Datenschutzerklärung."
     )

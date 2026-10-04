@@ -33,7 +33,7 @@ GRUPPE_KEIN_BILD = "kein Bild"
 # Portalzugang ohne Mitgliedschaft (Chorleitung, Gast): Datenschutzerklärung und
 # Foto-Einwilligung sind bestätigt. Gesetzt allein über die Seite
 # „Datenschutz bestätigen"; entfernt, um erneut zu fragen.
-GRUPPE_DATENSCHUTZ_BESTAETIGT = "Datenschutz bestätigt"
+GRUPPE_DATENSCHUTZ_BESTAETIGT = "DSGVO"
 
 # Bietet der Mitgliedsantrag die Fördermitgliedschaft an? Vorerst aus; True
 # bringt Checkbox, Hinweiskarte, Dialog und PDF-Abschnitt zurück.
@@ -202,12 +202,12 @@ def setze_kein_bild(user, an, actor=None):
 
 
 def hat_datenschutz_bestaetigt(user):
-    """Trägt ``user`` das Tag „Datenschutz bestätigt"?"""
+    """Trägt ``user`` das Tag „DSGVO"?"""
     return user.groups.filter(name=GRUPPE_DATENSCHUTZ_BESTAETIGT).exists()
 
 
 def setze_datenschutz_bestaetigt(user, an, actor=None):
-    """Setzt (``an``) oder entfernt das Tag „Datenschutz bestätigt", protokolliert."""
+    """Setzt (``an``) oder entfernt das Tag „DSGVO", protokolliert."""
     _setze_tag(user, GRUPPE_DATENSCHUTZ_BESTAETIGT, an, actor)
 
 

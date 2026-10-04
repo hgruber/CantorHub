@@ -774,7 +774,7 @@ def datenschutz_bestaetigen(request):
 
     ``DatenschutzPruefung`` (``middleware.py``) leitet hierher, solange
     ``braucht_datenschutzbestaetigung()`` es verlangt. Das Absenden setzt das Tag
-    „Datenschutz bestätigt", setzt oder entfernt „kein Bild", legt ein PDF ab und
+    „DSGVO", setzt oder entfernt „kein Bild", legt ein PDF ab und
     schickt es als Quittung (``MAIL_BESTAETIGUNG_BESTAETIGT``).
     """
     user = request.user

@@ -111,7 +111,7 @@ class DatenschutzPruefung:
     """Schickt Konten mit Zugang ohne Mitgliedschaft zuerst auf die Bestätigungsseite.
 
     Die Entscheidung trifft ``braucht_datenschutzbestaetigung()`` in
-    ``mitgliedschaft.py``; erledigt ist sie mit dem Tag „Datenschutz bestätigt".
+    ``mitgliedschaft.py``; erledigt ist sie mit dem Tag „DSGVO".
     Gehört hinter ``AuthenticationMiddleware``.
     """
 
