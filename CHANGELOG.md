@@ -27,6 +27,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Rechts „Kann Mitglieder-Berechtigungen verwalten" zur Verfügung; ein ehemaliges Mitglied sieht
   statt „Mitgliedschaft genehmigen" nur noch „wieder aufnehmen".
 - Mitglied bearbeiten und Aufgaben: das Badge „Ruhend" heißt jetzt „Kein Zugang".
+- Anmeldeseite: Titel und Begrüßung nennen den Vereinsnamen (`VEREINSNAME`) statt des langen
+  Chornamens.
 
 ## v1.0.0-rc6 — 2026-10-04
 
