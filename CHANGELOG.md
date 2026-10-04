@@ -21,6 +21,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Dateien: Den Ordner „Eingang“ gibt es nicht mehr; Uploads ohne Zielordner landen in der
   obersten Ebene. Antrags- und Bestätigungs-PDFs liegen in „Verein/Vorstand/Mitgliedsanträge“
   statt in „Mitglieder-Verwaltung“, und die Rundmail bietet Anhänge aus „Verein“ an.
+- Migration: Altdateien ohne Zuordnung zu Lied oder Artikel werden nicht mehr importiert;
+  übrige Audiodateien landen weiterhin in „Probenmitschnitte“.
 - Dateien: „Backstage“ erscheint in der Ordneransicht nur noch für Webmaster; die Dateien darin
   bleiben überall sonst erreichbar.
 - Foren: deaktivierte (archivierte) Foren sieht nur noch, wer das neue Recht „Forum: Archiv“
