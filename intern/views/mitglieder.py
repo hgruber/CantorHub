@@ -184,7 +184,11 @@ def mitglied_edit(request, id):
                 )
             return redirect("mitglied_edit", id=id)
 
-        if request.POST.get("action") == "deactivate" and request.user.has_perm("intern.change_user"):
+        if (
+            request.POST.get("action") == "deactivate"
+            and request.user.has_perm("intern.change_user")
+            and request.user.has_perm("intern.manage_user_permissions")
+        ):
             user.is_active = not user.is_active
             user._audit_user = request.user
             user.save(update_fields=["is_active"])

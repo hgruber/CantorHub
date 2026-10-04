@@ -120,6 +120,7 @@
                     </div>
                 </form>
                 {% endif %}
+                {% if perms.intern.manage_user_permissions %}
                 <p class="text-muted">Ruhend heißt: die Anmeldung ist gesperrt und die Person für andere nicht mehr sichtbar, ohne dass Daten verloren gehen. Die Mitgliedschaft selbst bleibt unberührt, und die Aktion ist jederzeit umkehrbar.</p>
                 <form method="post">
                     {% csrf_token %}
@@ -132,6 +133,7 @@
                         {% endif %}
                     </div>
                 </form>
+                {% endif %}
             </div>
             {% endif %}
 

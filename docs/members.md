@@ -22,7 +22,8 @@ the import and nothing else, and may be deleted later.
 (`action="aufnehmen"`, perm `intern.change_user`). `mitgliedschaft.nimm_auf()` adds the tag,
 writes a `ChangeLog` row for it (`changes={"gruppe": …}`) and — unless the account carries
 „Fördermitglied" — switches `is_active` on in the same step. The tag is set **before** the save,
-because the signal below reads it. The dormant/reactivate switch next to it never touches tags,
+because the signal below reads it. The dormant/reactivate switch next to it (`action="deactivate"`,
+perms `intern.change_user` **and** `intern.manage_user_permissions`) never touches tags,
 which is what makes a dormant membership stay one.
 
 **First admission vs. reactivation.** `signals._send_activation_mail()` asks
