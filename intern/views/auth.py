@@ -443,7 +443,7 @@ def mitglied_beitritt(request, token):
             empfaenger = [antrag_email] if antrag_email else [u.email for u in _member_managers() if u.email]
             if empfaenger:
                 link = request.build_absolute_uri(
-                    reverse("mitglied_view", args=[user.id])
+                    reverse("mitglied_edit", args=[user.id])
                 )
                 hinweise = []
                 if minderjaehrig:

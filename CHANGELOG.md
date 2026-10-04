@@ -17,6 +17,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Bestätigungsformulars nicht mehr anmelden; das Absenden gibt den Zugang ohne Eintrittsdatum
   und ohne Willkommensmail wieder frei. Die Anmeldeseite nennt bei richtigem Passwort die Sperre
   statt eines falschen Passworts.
+- Mitgliedsantrag: der Button „Antrag ansehen" in der Benachrichtigung an die Verwalter führt
+  direkt auf die Bearbeiten-Seite mit „Mitgliedschaft genehmigen" statt auf das Profil.
 
 ## v1.0.0-rc5 — 2026-09-27
 
