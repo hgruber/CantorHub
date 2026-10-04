@@ -17,6 +17,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   „KonzertOrga" und darf Termine, Repertoire und Orte verwalten.
 - Migration: Webmaster und KonzertOrga werden mit festen Personen besetzt statt aus den Rechten
   des Altsystems; die Gruppe „Termine" bleibt anfangs leer.
+- Migration: Petra Gruber wird neben Holger Gruber Superuser.
 
 ## v1.0.0 — 2026-10-04
 
