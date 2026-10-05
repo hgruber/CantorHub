@@ -305,6 +305,45 @@ reasoning where it matters.
 - **Redirect targets taken from a `next` parameter must pass
   `url_has_allowed_host_and_scheme()`.**
 
+## Changing the permission system
+
+A permission change — a new right, a renamed or dropped codename, a moved check, a different group
+default, a new object-level rule — has to be carried through every place below by hand. Only the
+help-dialog coverage is tested (`RechteHilfeTest`); nothing ties the rest together.
+
+1. **Definition** — `Meta.permissions` of the model in `models.py` (custom codenames) or Django's
+   default `add/change/delete/view_<model>`. A new codename reaches an existing instance only
+   through the `MIGRATE` rebuild (see the migration invariant); until then `has_perm()` is
+   silently `False` and a `Permission.objects.get()` raises.
+2. **`views/gruppen.py`** — `PERMISSION_DEFS` (column, label, category: without an entry the right
+   cannot be granted in the portal), `PERMISSION_DESCRIPTIONS` (tooltip) and `PERMISSION_DETAILS`
+   (the help dialog on `/intern/gruppen/` and on the card „Meine Rechte"; a third element names a
+   second right the place also needs).
+3. **Seed groups** — `GROUPS` in `migrations/0003_import.py`, read only on a fresh import; on a
+   live instance a changed default is set in `/intern/gruppen/` as well. Rights every member
+   should hold hang off the group „Mitglied" (`docs/members.md`).
+4. **Checks** — the views (`permission_required`, `perm_or_home`, `has_perm`), `avatar_access.py`
+   and the templates (`perms.intern.*`, `sidebar.html` included). View and template must ask the
+   same question: a button without the right ends in a 403, a right without its button is
+   invisible. `has_perm()` passes every superuser; a right that must be granted explicitly reads
+   the permission table instead (`darf_forum_archiv()`).
+5. **Object permissions** (`FolderPermission`, `ArtikelPermission`, `ForumPermission`; no rows
+   means open, except that a folder inherits per axis — see the invariant) are enforced in more
+   than one place each: folders in `folder_access.py` plus the per-request cache in
+   `anfragespeicher.py`; articles in `views/artikel.py` **and**
+   `replacements.py` (embedded articles); forums in `views/forums.py` **and** on the XMPP side
+   (`_reconcile_forum_muc`, the invite filter in `management/commands/ejabberd_bot.py`), or the
+   MUC room stays readable in a client.
+6. **Audit** — a new editor for rights or object permissions writes a `ChangeLog` row like
+   `views/gruppen.py`, `views/aufgaben.py` and `_audit_forum_permissions` do.
+7. **Documentation** — `docs/permissions.md` is the per-right table of every check (module ·
+   function, URL, purpose) and the list of rules `/intern/gruppen/` does not show; keep it and
+   `PERMISSION_DETAILS` in step. Then the topic file that names the right: `docs/members.md`,
+   `docs/files.md`, `docs/articles.md`, `docs/forum.md`, `docs/xmpp.md` („Forum read permissions →
+   MUC affiliations"), `docs/mail.md`, `docs/architecture.md` (guarded management pages), and
+   `docs/frontend.md` if the matrix gains a category (palette `--kat-N`). A user-visible change
+   also gets its `CHANGELOG.md` entry.
+
 ## Conventions
 
 - New domain code is written with German identifiers, in line with the models; older modules are
