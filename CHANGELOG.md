@@ -17,6 +17,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Profil: Die Karte „Meine Rechte“ im eigenen Profil listet die eigenen Rechte. Ein Klick öffnet
   dieselbe Hilfe wie auf der Gruppen-Seite, statt aller Inhaber steht dort, worüber man das Recht hat.
 
+### Geändert
+
+- Seitenleiste: Unter „Einstellungen“ heißt „Profil bearbeiten“ jetzt „Mein Profil“ und öffnet das
+  eigene Profil; der Stift rechts daneben führt direkt zur Bearbeitung.
+
 ## v1.0.0 — 2026-10-05
 
 ### Hinzugefügt

@@ -945,6 +945,46 @@ a.version-string:focus-visible {
     color: var(--sb-text-hover);
 }
 .schriftgroesse-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Mein Profil: die ganze Zeile oeffnet das Profil (gestreckter Link), der Stift
+   rechts die Bearbeitung — er liegt darueber und faengt seinen Klick selbst. */
+.nav-subitem.nav-profil { position: relative; padding-right: 6px; }
+.nav-profil-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+}
+.nav-profil-link:hover { color: inherit; text-decoration: none; }
+.nav-profil-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+.nav-profil-bearbeiten {
+    position: relative;
+    z-index: 1;
+    margin-left: auto;
+    width: calc(22rem / 14);
+    height: calc(22rem / 14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid var(--sb-divider);
+    border-radius: 50%;
+    color: var(--sb-text);
+}
+.nav-profil-bearbeiten:hover {
+    background: var(--sb-hover);
+    color: var(--sb-text-hover);
+    border-color: currentColor;
+}
+.nav-subitem .nav-profil-bearbeiten .nav-icon { width: 12px; height: 12px; }
 .schriftgroesse-wert {
     min-width: 3em;
     text-align: center;
@@ -8131,5 +8171,10 @@ button.tag {
     font-family: inherit;
     cursor: pointer;
 }
+/* Gegen das globale button:hover (Markenfarbe als Flaeche) — wie .tag-active */
 button.tag:hover,
-button.tag:focus-visible { color: var(--brand-text); }
+button.tag:focus-visible {
+    background: var(--brand-light);
+    color: var(--brand-text);
+    box-shadow: none;
+}
