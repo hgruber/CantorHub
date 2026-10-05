@@ -7,14 +7,6 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
-## Unveröffentlicht
-
-### Geändert
-
-- Mitgliedsantrag und Datenbestätigung: Die Beitragsordnung wird nur noch zur Kenntnis genommen,
-  nicht mehr anerkannt, im Formular wie im Quittungs-PDF. Die Aufforderungsmail `MAIL_BESTAETIGUNG`
-  sagt das ebenso; ein nie geänderter Text wird beim Start auf den neuen Standard gehoben.
-
 ## v1.0.0 — 2026-10-05
 
 ### Hinzugefügt
@@ -64,12 +56,15 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Datenbestätigung: Aufforderungsmail und Formular sagen, dass der Zugang zum internen Bereich bis
   zur Bestätigung gesperrt bleibt. Ein nie geänderter Mailtext `MAIL_BESTAETIGUNG` wird beim Start
   auf den neuen Standard gehoben.
-- Datenbestätigung: Das Formular fragt als viertes Pflicht-Häkchen die Anerkennung der
+- Datenbestätigung: Das Formular fragt als viertes Pflicht-Häkchen die Kenntnisnahme der
   Beitragsordnung ab, wie es die Aufforderungsmail ankündigt; das Quittungs-PDF führt sie mit auf.
 - Datenbestätigung: Ein Link wirkt nur noch bei einem gesperrten Konto mit Tag „Mitglied“; nach dem
   Absenden zeigt er „Bereits bestätigt“, nach „Mitgliedschaft beenden“ ist er ungültig.
   `send_reconfirmation --print-url` sperrt jetzt wie der Mailversand, und Konten ohne Tag werden
   weder angeschrieben noch gesperrt.
+- Mitgliedsantrag und Datenbestätigung: Die Beitragsordnung wird nur noch zur Kenntnis genommen,
+  nicht mehr anerkannt, im Formular wie im Quittungs-PDF. Die Aufforderungsmail `MAIL_BESTAETIGUNG`
+  sagt das ebenso; ein nie geänderter Text wird beim Start auf den neuen Standard gehoben.
 
 ### Behoben
 
