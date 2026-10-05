@@ -5008,3 +5008,52 @@ class MitteilungStichtagTest(SimpleTestCase):
         self.assertEqual(bedingung.lhs.target.name, "datum")
         self.assertEqual(bedingung.lookup_name, "gte")
         self.assertEqual(bedingung.rhs, stichtag)
+
+
+class RechteHilfeTest(SimpleTestCase):
+    """Der Hilfe-Dialog auf /intern/gruppen/: jedes Recht hat Stellen, ein zweites
+    Recht ist ein bekanntes, und die Inhaber stehen nach ihrer Quelle."""
+
+    def test_jedes_recht_hat_stellen(self):
+        from intern.views.gruppen import PERMISSION_DEFS, PERMISSION_DETAILS
+
+        rechte = [perm for perm, _, _ in PERMISSION_DEFS]
+        self.assertEqual(set(PERMISSION_DETAILS), set(rechte))
+        for perm in rechte:
+            self.assertTrue(PERMISSION_DETAILS[perm], perm)
+
+    def test_zweites_recht_ist_bekannt(self):
+        from intern.views.gruppen import PERMISSION_DEFS, PERMISSION_DETAILS
+
+        rechte = {perm for perm, _, _ in PERMISSION_DEFS}
+        for perm, stellen in PERMISSION_DETAILS.items():
+            for stelle in stellen:
+                self.assertIn(len(stelle), (2, 3), perm)
+                if len(stelle) == 3:
+                    self.assertIn(stelle[2], rechte, perm)
+                    self.assertNotEqual(stelle[2], perm)
+
+    def test_inhaber_nach_quelle(self):
+        from intern.views.gruppen import rechte_inhaber
+
+        ergebnis = rechte_inhaber(
+            ["intern.add_ort", "intern.view_forum_archiv", "intern.delete_ort"],
+            {"Vorstand": {"intern.add_ort", "intern.view_forum_archiv"},
+             "Leer": {"intern.add_ort"}},
+            {"Vorstand": ["Anna"], "Leer": []},
+            {"intern.add_ort": ["Bert"]},
+            ["Chris"],
+        )
+        self.assertEqual(ergebnis["intern.add_ort"], [
+            {"quelle": "Vorstand", "namen": ["Anna"]},
+            {"quelle": "Leer", "namen": []},
+            {"quelle": "Direkt zugewiesen", "namen": ["Bert"]},
+            {"quelle": "Admin", "namen": ["Chris"]},
+        ])
+        # Das Archivrecht haben Admins nicht von selbst (darf_forum_archiv).
+        self.assertEqual(ergebnis["intern.view_forum_archiv"], [
+            {"quelle": "Vorstand", "namen": ["Anna"]},
+        ])
+        self.assertEqual(ergebnis["intern.delete_ort"], [
+            {"quelle": "Admin", "namen": ["Chris"]},
+        ])

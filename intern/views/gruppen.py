@@ -5,7 +5,7 @@ from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import render
 
-from ..models import ChangeLog
+from ..models import ChangeLog, User
 from ._decorators import perm_or_home
 
 __all__ = ["gruppen"]
@@ -119,11 +119,237 @@ PERMISSION_DESCRIPTIONS = {
         "des jeweiligen Ordners.",
 }
 
+# Hilfe beim Klick auf einen Spaltenkopf: wo ein Recht im Portal wirkt, in Worten
+# für Verwaltende. Ein drittes Element nennt das Recht, ohne das die Stelle nicht
+# erreichbar ist. docs/permissions.md ist dieselbe Liste für Entwickler — eine
+# Änderung an einer Abfrage gehört in beide.
+PERMISSION_DETAILS = {
+    "intern.add_user": [
+        ("Mitgliederliste",
+         "Zeigt den Knopf „+“ mit dem Einladungs-Panel: Eine neue Person bekommt per "
+         "E-Mail einen Link zum Mitgliedsantrag."),
+        ("Mitgliederliste › manuell anlegen",
+         "Ein Konto direkt anlegen, ohne Einladung und ohne Antrag.",
+         "intern.manage_user_permissions"),
+    ],
+    "intern.change_user": [
+        ("Mitgliederliste",
+         "Zeigt auch Konten ohne Portalzugang, etwa beendete Mitgliedschaften oder "
+         "Fördermitglieder; ohne dieses Recht erscheinen nur Personen mit Zugang. Das "
+         "gilt ebenso für die E-Mail-Liste und die Empfänger beim Benachrichtigen."),
+        ("Profil einer Person",
+         "Bearbeiten-Knopf und Änderungsverlauf bei anderen Personen. Das eigene Profil "
+         "kann jede Person immer selbst bearbeiten."),
+        ("Mitglied bearbeiten",
+         "Name, Anschrift, Stimme, E-Mail und die weiteren Angaben anderer Personen "
+         "ändern und einen Mitgliedsantrag mit „Mitgliedschaft genehmigen“ annehmen."),
+        ("Verborgene Angaben",
+         "Angaben, die eine Person für andere verborgen hat (etwa Telefon oder "
+         "Anschrift), bleiben im Portal sichtbar. Im Adressbuch und Kalender auf dem "
+         "Handy bleiben sie trotzdem verborgen."),
+        ("Karte",
+         "Zeigt auch Personen, die ihre Anschrift verborgen haben."),
+        ("Profilbilder",
+         "Das Profilbild einer anderen Person ersetzen."),
+        ("E-Mail bei neuem Antrag",
+         "Bekommt eine Nachricht, sobald ein neuer Mitgliedsantrag eingeht."),
+        ("Mitgliedschaft beenden oder wieder aufnehmen, Zugang sperren",
+         "Auf der Seite „Mitglied bearbeiten“ — mehr dazu unter „Mitglieder "
+         "Berechtigungen“.",
+         "intern.manage_user_permissions"),
+    ],
+    "intern.delete_user": [
+        ("Mitglied bearbeiten",
+         "Zeigt „Mitglied löschen“ und löscht das Konto endgültig. Das eigene Konto "
+         "lässt sich so nicht löschen."),
+    ],
+    "intern.manage_user_permissions": [
+        ("Gruppen",
+         "Diese Seite: Rechte an Gruppen vergeben und entziehen, Gruppen anlegen und "
+         "löschen. Wer das darf, kann sich jedes andere Recht selbst geben."),
+        ("Aufgaben",
+         "Personen den Gruppen zuordnen — darüber erhalten sie deren Rechte."),
+        ("Änderungsprotokoll",
+         "Einsicht in das Protokoll aller Änderungen im Portal."),
+        ("Versionshinweise",
+         "Der Versionslink unten in der Seitenleiste und die Seite mit den Neuerungen "
+         "jeder Version."),
+        ("Seitenleiste",
+         "Das Menü „Admin“ mit Aufgaben, Gruppen und Änderungsprotokoll."),
+        ("Mitgliedschaft beenden oder wieder aufnehmen",
+         "Auf der Seite „Mitglied bearbeiten“: eine Mitgliedschaft beenden (Tag "
+         "„Mitglied“ und Zugang werden entfernt) oder wieder aufnehmen.",
+         "intern.change_user"),
+        ("Zugang sperren oder freischalten",
+         "Für Konten ohne Tag „Mitglied“, etwa Chorleitung oder Gäste: nur die "
+         "Anmeldung ein- oder ausschalten.",
+         "intern.change_user"),
+        ("Mitgliederliste › manuell anlegen",
+         "Ein Konto direkt anlegen, ohne Einladung und ohne Antrag.",
+         "intern.add_user"),
+    ],
+    "intern.notify_user": [
+        ("Mitgliederliste",
+         "Zeigt den Knopf zum Benachrichtigen."),
+        ("Benachrichtigen",
+         "Eine E-Mail an alle Personen schreiben, die der aktuelle Filter der "
+         "Mitgliederliste zeigt, auf Wunsch mit Dateien aus dem Ordner „Verein“ als "
+         "Anhang."),
+    ],
+    "intern.delete_folder": [
+        ("Ordner",
+         "In jedem Ordner Dateien und Unterordner löschen — auch dort, wo die "
+         "Ordnerrechte das sonst nicht erlauben. Ohne dieses Recht entscheiden allein "
+         "die Ordnerrechte."),
+    ],
+    "intern.manage_folder_permissions": [
+        ("Ordner",
+         "Der Knopf „Berechtigungen“ in jedem Ordner: festlegen, welche Gruppen einen "
+         "Ordner sehen, darin hochladen und löschen dürfen."),
+        ("Oberste Ordnerebene",
+         "Zeigt den Ordner „Backstage“, in dem das Portal seine eigenen Dateien ablegt. "
+         "Für alle anderen ist er nur ausgeblendet; die Dateien bleiben überall "
+         "erreichbar, wo sie verwendet werden."),
+    ],
+    "intern.add_termin": [
+        ("Terminliste und Kalender",
+         "Zeigt den Knopf „+“ und das Formular für einen neuen Termin."),
+    ],
+    "intern.change_termin": [
+        ("Termin",
+         "Bearbeiten-Knopf und Änderungsverlauf eines Termins."),
+        ("Termin bearbeiten",
+         "Datum, Uhrzeit, Ort, Beschreibung und Ankündigungstext ändern."),
+    ],
+    "intern.delete_termin": [
+        ("Termin bearbeiten",
+         "Zeigt „Termin löschen“ und löscht den Termin endgültig."),
+    ],
+    "intern.change_zusage": [
+        ("Termin › Anwesenheit",
+         "Schaltet die Anwesenheitstabelle in den Bearbeitungsmodus: Zu- und Absagen "
+         "anderer Personen eintragen oder ändern. Die eigene Antwort kann jede Person "
+         "immer selbst geben."),
+    ],
+    "intern.add_lied": [
+        ("Repertoire",
+         "Zeigt den Knopf „+“ und nimmt neue Lieder auf."),
+    ],
+    "intern.change_lied": [
+        ("Lied",
+         "Bearbeiten-Knopf und Änderungsverlauf eines Liedes."),
+        ("Lied bearbeiten",
+         "Titel, Angaben und zugeordnete Dateien eines Liedes ändern."),
+        ("Ablauf eines Termins",
+         "Im Repertoire, gefiltert auf einen Termin: die Reihenfolge der Lieder "
+         "festlegen."),
+        ("Hochladen",
+         "Eine hochgeladene Datei direkt einem Lied zuordnen, etwa beim Ablegen auf der "
+         "Seite des Liedes."),
+    ],
+    "intern.delete_lied": [
+        ("Lied bearbeiten",
+         "Zeigt „Lied löschen“ und entfernt das Lied endgültig aus dem Repertoire."),
+    ],
+    "intern.delete_artikel": [
+        ("Artikel",
+         "Zeigt „Löschen“ und entfernt einen Artikel mit allen Versionen; das lässt "
+         "sich nicht rückgängig machen."),
+    ],
+    "intern.manage_artikel_permissions": [
+        ("Artikel",
+         "Der Knopf „Berechtigungen“: festlegen, welche Gruppen einen Artikel lesen und "
+         "bearbeiten dürfen."),
+        ("Artikelliste",
+         "Listet auch Artikel, deren Lesen auf andere Gruppen beschränkt ist. Öffnen "
+         "lassen sie sich nur mit einer passenden Gruppe."),
+    ],
+    "intern.add_forum": [
+        ("Foren",
+         "Zeigt den Knopf „+“ und legt neue Foren an."),
+    ],
+    "intern.change_forum": [
+        ("Forum",
+         "Bearbeiten-Knopf und Änderungsverlauf eines Forums."),
+        ("Forum bearbeiten",
+         "Titel und Titelbild ändern und — wenn ein Chat-Server angebunden ist — den "
+         "verknüpften Chat-Raum verwalten und Personen dorthin einladen."),
+        ("Forum deaktivieren",
+         "Ein Forum archivieren. Danach sehen es nur noch Personen mit dem Recht "
+         "„Forum Archiv“."),
+    ],
+    "intern.delete_forum": [
+        ("Forum bearbeiten",
+         "Zeigt „Forum löschen“ und löscht das Forum mit allen Beiträgen."),
+    ],
+    "intern.manage_forum_permissions": [
+        ("Forum",
+         "Der Knopf „Zugriff“: festlegen, welche Gruppen ein Forum lesen dürfen; der "
+         "verknüpfte Chat-Raum folgt dieser Einstellung."),
+        ("Foren, Ungelesen-Markierung und Benachrichtigungen",
+         "Liest auch Foren, die auf andere Gruppen beschränkt sind, und sieht deren "
+         "neue Beiträge."),
+    ],
+    "intern.view_forum_archiv": [
+        ("Foren",
+         "Zeigt archivierte Foren und öffnet sie zum Lesen. Ohne dieses Recht sieht sie "
+         "niemand — auch Admins nicht, solange sie es nicht ausdrücklich haben."),
+        ("Forum bearbeiten",
+         "Bei einem archivierten Forum erscheint „Reaktivieren“ statt „Forum "
+         "deaktivieren“.",
+         "intern.change_forum"),
+    ],
+    "intern.add_ort": [
+        ("Orte",
+         "Zeigt den Knopf „+“ und legt neue Orte an."),
+        ("Karte",
+         "Einen neuen Ort direkt auf der Karte setzen."),
+    ],
+    "intern.change_ort": [
+        ("Ort",
+         "Bearbeiten-Knopf und Änderungsverlauf eines Ortes."),
+        ("Ort bearbeiten",
+         "Name, Anschrift und Position ändern — auch über die Karte."),
+    ],
+    "intern.delete_ort": [
+        ("Ort bearbeiten",
+         "Zeigt „Ort löschen“ und löscht den Ort endgültig, auch über die Karte."),
+    ],
+}
+
 # Human-readable label for each permission string, e.g. "intern.add_artikel" → "Artikel anlegen"
 _PERM_LABELS = {
     perm_str: f"{category} {label}"
     for perm_str, label, category in PERMISSION_DEFS
 }
+
+# Das eine Recht, das Admins nicht automatisch haben — darf_forum_archiv() liest es
+# ausdrücklich aus der Rechtetabelle.
+_OHNE_ADMIN = {"intern.view_forum_archiv"}
+
+
+def rechte_inhaber(perm_strs, gruppen_rechte, gruppen_mitglieder, direkt, admins):
+    """Je Recht, wer es hat — zusammengefasst nach der Quelle.
+
+    gruppen_rechte: {gruppe: set(perm_str)} in Anzeigereihenfolge;
+    gruppen_mitglieder: {gruppe: [name]}; direkt: {perm_str: [name]} (am Konto
+    statt über eine Gruppe vergeben); admins: [name].
+    Ergebnis: {perm_str: [{"quelle": …, "namen": [...]}]} — erst die Gruppen, die
+    das Recht tragen (auch ohne Personen), dann „Direkt zugewiesen“, dann „Admin“.
+    """
+    ergebnis = {}
+    for perm in perm_strs:
+        quellen = [
+            {"quelle": gruppe, "namen": gruppen_mitglieder.get(gruppe, [])}
+            for gruppe, rechte in gruppen_rechte.items()
+            if perm in rechte
+        ]
+        if direkt.get(perm):
+            quellen.append({"quelle": "Direkt zugewiesen", "namen": direkt[perm]})
+        if admins and perm not in _OHNE_ADMIN:
+            quellen.append({"quelle": "Admin", "namen": admins})
+        ergebnis[perm] = quellen
+    return ergebnis
 
 
 @perm_or_home("intern.manage_user_permissions")
@@ -262,6 +488,47 @@ def gruppen(request):
         for g in all_groups
     }
 
+    # Hilfe-Dialog je Spaltenkopf: wo das Recht wirkt und wer es hat. Gezählt
+    # werden nur Konten mit Portalzugang — ohne Anmeldung nützt kein Recht.
+    aktive = list(
+        User.objects.filter(is_active=True)
+        .order_by("first_name", "last_name")
+        .prefetch_related("groups", "user_permissions__content_type")
+    )
+    aktive_mitglieder = {g.name: [] for g in all_groups}
+    direkt: dict[str, list] = {}
+    for u in aktive:
+        name = f"{u.first_name} {u.last_name}".strip() or u.username
+        for g in u.groups.all():
+            aktive_mitglieder.setdefault(g.name, []).append(name)
+        for p in u.user_permissions.all():
+            direkt.setdefault(f"{p.content_type.app_label}.{p.codename}", []).append(name)
+    admins = [
+        f"{u.first_name} {u.last_name}".strip() or u.username
+        for u in aktive if u.is_superuser
+    ]
+    inhaber = rechte_inhaber(
+        [perm_str for perm_str, _, _ in PERMISSION_DEFS],
+        {name: set(rechte) for name, rechte in matrix.items()},
+        aktive_mitglieder, direkt, admins,
+    )
+    perm_hilfe = {
+        perm_str: {
+            "titel": f"{category} · {label}",
+            "beschreibung": PERMISSION_DESCRIPTIONS.get(perm_str, ""),
+            "stellen": [
+                {
+                    "ort": eintrag[0],
+                    "text": eintrag[1],
+                    "mit": _PERM_LABELS.get(eintrag[2], eintrag[2]) if len(eintrag) > 2 else "",
+                }
+                for eintrag in PERMISSION_DETAILS.get(perm_str, [])
+            ],
+            "inhaber": inhaber[perm_str],
+        }
+        for perm_str, label, category in PERMISSION_DEFS
+    }
+
     return render(request, "gruppen.html", {
         "seitentitel": "Gruppen",
         "groups": all_groups,
@@ -270,4 +537,5 @@ def gruppen(request):
         "matrix": matrix,
         "group_user_counts": group_user_counts,
         "group_members": group_members,
+        "perm_hilfe": perm_hilfe,
     })

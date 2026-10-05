@@ -7,6 +7,14 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Gruppen: Ein Klick auf eine Berechtigung öffnet eine Hilfe, die alle Stellen im Portal
+  beschreibt, an denen das Recht wirkt, und nennt, wo ein zweites Recht nötig ist. Darunter stehen
+  die Personen mit diesem Recht, nach der Gruppe, über die sie es haben, direkt oder als Admin.
+
 ## v1.0.0 — 2026-10-05
 
 ### Hinzugefügt

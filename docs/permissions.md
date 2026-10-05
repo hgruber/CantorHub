@@ -9,6 +9,11 @@ rights `docs/forum.md`, article rights `docs/articles.md`.
 
 The page `/intern/gruppen/` lists exactly the rights in `PERMISSION_DEFS`
 (`intern/views/gruppen.py`); its tooltips come from `PERMISSION_DESCRIPTIONS` in the same file.
+A click on a column header opens a help dialog built from `PERMISSION_DETAILS` — the tables below
+in user-facing words, a third element naming a second right a place also needs — and lists who
+holds the right, per group, direct grant or admin status (`rechte_inhaber()`, active accounts
+only). A change to a check belongs in both lists; `RechteHilfeTest` only guards that every right
+has an entry and that a second right exists.
 A right is granted to a group there (or to a single account in `/admin/`). Four forms of check
 occur in the code:
 
