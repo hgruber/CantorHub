@@ -45,6 +45,7 @@ it wipes the database and belongs to the migration — see `migration.md`.
 | Frontend: pages, components, design tokens, calendar, maps, homepage | `docs/frontend.md` |
 | Automated e-mails and their markup | `docs/mail.md` |
 | Members: joining, re-confirmation, leaving, field privacy | `docs/members.md` |
+| Permissions: where each right of `/intern/gruppen/` is checked, and the rules it does not show | `docs/permissions.md` |
 | Forums: read permissions, reactions and unread markers | `docs/forum.md` |
 | Articles: versioning, editor, permissions, wiki markup | `docs/articles.md` |
 | Public gig-reminder mailing list | `docs/mailinglist.md` |
