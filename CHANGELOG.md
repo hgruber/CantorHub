@@ -14,6 +14,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Gruppen: Ein Klick auf eine Berechtigung öffnet eine Hilfe, die alle Stellen im Portal
   beschreibt, an denen das Recht wirkt, und nennt, wo ein zweites Recht nötig ist. Darunter stehen
   die Personen mit diesem Recht, nach der Gruppe, über die sie es haben, direkt oder als Admin.
+- Profil: Die Karte „Meine Rechte“ im eigenen Profil listet die eigenen Rechte. Ein Klick öffnet
+  dieselbe Hilfe wie auf der Gruppen-Seite, statt aller Inhaber steht dort, worüber man das Recht hat.
 
 ## v1.0.0 — 2026-10-05
 

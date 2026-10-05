@@ -143,6 +143,22 @@
                 </div>
             </div>
             {% comment %}
+               Nur im eigenen Profil (perm_hilfe fehlt sonst im Kontext). Ein Klick auf
+               ein Recht oeffnet denselben Hilfe-Dialog wie auf der Gruppen-Seite.
+            {% endcomment %}
+            {% if perm_hilfe is not None %}
+            <div class="detail-card">
+                <h3>Meine Rechte</h3>
+                {% if perm_hilfe %}
+                <div class="tag-list">
+                    {% for key, eintrag in perm_hilfe.items %}<button type="button" class="tag" data-rechte-hilfe="{{ key }}" aria-haspopup="dialog" title="Klicken für mehr Details">{{ eintrag.titel }}</button>{% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Keine Rechte über die eines Mitglieds hinaus.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% comment %}
                Die beiden Liedkarten laufen ueber die volle Breite: eine Liste
                92 Lieder ist in einer halben Spalte nicht nur doppelt so hoch,
                sie zieht im Raster auch die Karte daneben — Personalien stand
@@ -189,4 +205,5 @@
             {% endif %}
         </div>
     </div>
+    {% if perm_hilfe %}{% include "_rechte_hilfe_dialog.html" %}{% endif %}
 {% endblock %}

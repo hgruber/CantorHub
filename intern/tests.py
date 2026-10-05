@@ -5057,3 +5057,24 @@ class RechteHilfeTest(SimpleTestCase):
         self.assertEqual(ergebnis["intern.delete_ort"], [
             {"quelle": "Admin", "namen": ["Chris"]},
         ])
+
+    def test_eigene_quellen(self):
+        from intern.views.gruppen import PERMISSION_DEFS, rechte_hilfe, rechte_quellen
+
+        quellen = rechte_quellen(
+            {"Vorstand": {"intern.add_ort"}, "Mitglied": {"intern.add_ort", "intern.notify_user"}},
+            {"intern.delete_ort"},
+            False,
+        )
+        self.assertEqual(quellen, {
+            "intern.notify_user": ["Mitglied"],
+            "intern.add_ort": ["Vorstand", "Mitglied"],
+            "intern.delete_ort": ["Direkt zugewiesen"],
+        })
+        # Admin: jedes Recht außer dem Archivrecht, das ausdrücklich vergeben wird.
+        admin = rechte_quellen({}, set(), True)
+        self.assertEqual(len(admin), len(PERMISSION_DEFS) - 1)
+        self.assertNotIn("intern.view_forum_archiv", admin)
+        hilfe = rechte_hilfe(["intern.add_ort"], {"intern.add_ort": {"quellen": ["Vorstand"]}})
+        self.assertEqual(hilfe["intern.add_ort"]["titel"], "Orte · anlegen")
+        self.assertEqual(hilfe["intern.add_ort"]["quellen"], ["Vorstand"])

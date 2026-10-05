@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from ._decorators import tabellenzustand
+from .gruppen import eigene_rechte
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 from filer.models import File, Folder
@@ -160,6 +161,10 @@ def mitglied_view(request, id):
         "map_center_lng": str(map_center[1]),
         "member_groups": list(user.groups.order_by("name")),
     }
+    # Karte „Meine Rechte“ nur im eigenen Profil — wer welche Rechte hat, steht
+    # sonst nur auf der Gruppen-Seite.
+    if request.user.id == id:
+        context["perm_hilfe"] = eigene_rechte(request.user)
     return render(request, "mitglied.html", context)
 
 

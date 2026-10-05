@@ -8059,3 +8059,77 @@ body.join-page {
     border-radius: var(--r-sm);
     padding: 1px 5px;
 }
+
+/* === Rechte-Hilfe-Dialog (Gruppen-Seite und eigenes Profil) === */
+.perm-hilfe {
+    width: min(640px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    background: var(--bg-card);
+    color: var(--t1);
+    white-space: normal;
+}
+.perm-hilfe h3 { padding-right: 24px; }
+.perm-hilfe-kurz {
+    margin: -6px 0 16px;
+    font-size: calc(13rem / 14);
+    line-height: 1.5;
+    color: var(--t2);
+}
+.perm-hilfe h4 {
+    margin: 18px 0 8px;
+    font-size: calc(11rem / 14);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t4);
+}
+.perm-hilfe-stellen {
+    margin: 0;
+    padding-left: 18px;
+    font-size: calc(13rem / 14);
+    line-height: 1.5;
+}
+.perm-hilfe-stellen li { margin-bottom: 8px; }
+.perm-hilfe-ort { font-weight: 600; color: var(--t1); }
+.perm-hilfe-text { color: var(--t2); }
+.perm-hilfe-mit {
+    display: block;
+    margin-top: 2px;
+    font-size: calc(12rem / 14);
+    color: var(--brand-text);
+}
+.perm-hilfe-quelle { margin-bottom: 10px; }
+.perm-hilfe-quelle-name {
+    font-size: calc(12.5rem / 14);
+    font-weight: 600;
+    color: var(--t2);
+    margin-bottom: 3px;
+}
+.perm-hilfe-leer {
+    font-size: calc(12.5rem / 14);
+    color: var(--t4);
+}
+.perm-hilfe .member-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 2px;
+}
+.perm-hilfe .member-chip {
+    background: var(--bg-row-hover);
+    color: var(--t1);
+    border-radius: 99px;
+    padding: 1px 8px;
+    font-size: calc(11.5rem / 14);
+    white-space: nowrap;
+}
+
+/* Profil „Meine Rechte“: ein Tag je Recht, öffnet den Hilfe-Dialog */
+button.tag {
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+button.tag:hover,
+button.tag:focus-visible { color: var(--brand-text); }

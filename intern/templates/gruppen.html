@@ -301,15 +301,13 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     font-size: calc(11.5rem / 14);
     color: var(--t4);
 }
-.perm-tooltip .member-chips,
-.perm-hilfe .member-chips {
+.perm-tooltip .member-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 0.3rem;
     margin-top: 2px;
 }
-.perm-tooltip .member-chip,
-.perm-hilfe .member-chip {
+.perm-tooltip .member-chip {
     background: var(--bg-row-hover);
     color: var(--t1);
     border-radius: 99px;
@@ -329,59 +327,10 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     box-shadow: 0 4px 16px rgba(0,0,0,0.45);
 }
 
-/* Hilfe-Dialog beim Klick auf einen Spaltenkopf */
+/* Spaltenkopf öffnet den Hilfe-Dialog (_rechte_hilfe_dialog.html) */
 th.perm-col-head { cursor: pointer; }
 th.perm-col-head:hover .perm-col-rotate span,
 th.perm-col-head:focus-visible .perm-col-rotate span { color: var(--brand-text); }
-.perm-hilfe {
-    width: min(640px, calc(100vw - 32px));
-    max-height: calc(100vh - 48px);
-    overflow-y: auto;
-    background: var(--bg-card);
-    color: var(--t1);
-    white-space: normal;
-}
-.perm-hilfe h3 { padding-right: 24px; }
-.perm-hilfe-kurz {
-    margin: -6px 0 16px;
-    font-size: calc(13rem / 14);
-    line-height: 1.5;
-    color: var(--t2);
-}
-.perm-hilfe h4 {
-    margin: 18px 0 8px;
-    font-size: calc(11rem / 14);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--t4);
-}
-.perm-hilfe-stellen {
-    margin: 0;
-    padding-left: 18px;
-    font-size: calc(13rem / 14);
-    line-height: 1.5;
-}
-.perm-hilfe-stellen li { margin-bottom: 8px; }
-.perm-hilfe-ort { font-weight: 600; color: var(--t1); }
-.perm-hilfe-text { color: var(--t2); }
-.perm-hilfe-mit {
-    display: block;
-    margin-top: 2px;
-    font-size: calc(12rem / 14);
-    color: var(--brand-text);
-}
-.perm-hilfe-quelle { margin-bottom: 10px; }
-.perm-hilfe-quelle-name {
-    font-size: calc(12.5rem / 14);
-    font-weight: 600;
-    color: var(--t2);
-    margin-bottom: 3px;
-}
-.perm-hilfe-leer {
-    font-size: calc(12.5rem / 14);
-    color: var(--t4);
-}
 </style>
 
 <div class="table-view">
@@ -402,7 +351,7 @@ th.perm-col-head:focus-visible .perm-col-rotate span { color: var(--brand-text);
                 <tr class="perm-label-row">
                     <th class="perm-user-col perm-user-head" style="font-size:calc(11rem / 14);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--t3);padding:8px 16px;vertical-align:bottom;">Gruppe</th>
                     {% for cat in categories %}{% for perm in cat.perms %}
-                    <th class="perm-col-head perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}" data-perm="{{ perm.key }}" data-tooltip="{{ perm.description }}" tabindex="0" aria-haspopup="dialog">
+                    <th class="perm-col-head perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}" data-perm="{{ perm.key }}" data-tooltip="{{ perm.description }}" data-rechte-hilfe="{{ perm.key }}" tabindex="0" aria-haspopup="dialog">
                         <div class="perm-col-rotate"><span>{{ perm.label }}</span></div>
                     </th>
                     {% endfor %}{% endfor %}
@@ -452,19 +401,9 @@ th.perm-col-head:focus-visible .perm-col-rotate span { color: var(--brand-text);
     <div id="perm-tooltip-body"></div>
 </div>
 
-<dialog id="perm-hilfe" class="app-dialog perm-hilfe" aria-labelledby="perm-hilfe-titel">
-    <button type="button" class="dialog-close" aria-label="Schließen">&#x2715;</button>
-    <h3 id="perm-hilfe-titel"></h3>
-    <p class="perm-hilfe-kurz" id="perm-hilfe-kurz"></p>
-    <h4>Wo dieses Recht wirkt</h4>
-    <ul class="perm-hilfe-stellen" id="perm-hilfe-stellen"></ul>
-    <h4>Wer dieses Recht hat</h4>
-    <div id="perm-hilfe-inhaber"></div>
-    <p class="perm-hilfe-leer">Gespeicherter Stand, nur Personen mit Portalzugang.</p>
-</dialog>
+{% include "_rechte_hilfe_dialog.html" %}
 
 {{ matrix|json_script:"matrix-data" }}
-{{ perm_hilfe|json_script:"perm-hilfe-data" }}
 {{ group_user_counts|json_script:"user-counts-data" }}
 {{ group_members|json_script:"group-members-data" }}
 <script>
@@ -649,98 +588,11 @@ th.perm-col-head:focus-visible .perm-col-rotate span { color: var(--brand-text);
             clearTimeout(tooltipTimer);
             tooltip.classList.remove('visible');
         });
-    });
-
-    // Hilfe-Dialog: Klick auf einen Spaltenkopf zeigt, wo das Recht wirkt und wer es hat
-    var permHilfe = JSON.parse(document.getElementById('perm-hilfe-data').textContent);
-    var hilfeDialog = document.getElementById('perm-hilfe');
-
-    function chipListe(namen) {
-        if (!namen.length) {
-            var leer = document.createElement('div');
-            leer.className = 'perm-hilfe-leer';
-            leer.textContent = 'Niemand';
-            return leer;
-        }
-        var chips = document.createElement('div');
-        chips.className = 'member-chips';
-        namen.forEach(function (name) {
-            var span = document.createElement('span');
-            span.className = 'member-chip';
-            span.textContent = name;
-            chips.appendChild(span);
+        // Der Klick öffnet den Hilfe-Dialog (rechte-hilfe.js) — Tooltip weg
+        th.addEventListener('click', function () {
+            clearTimeout(tooltipTimer);
+            tooltip.classList.remove('visible');
         });
-        return chips;
-    }
-
-    function zeigeHilfe(perm) {
-        var daten = permHilfe[perm];
-        if (!daten) return;
-        clearTimeout(tooltipTimer);
-        tooltip.classList.remove('visible');
-        document.getElementById('perm-hilfe-titel').textContent = daten.titel;
-        document.getElementById('perm-hilfe-kurz').textContent = daten.beschreibung;
-
-        var liste = document.getElementById('perm-hilfe-stellen');
-        liste.innerHTML = '';
-        daten.stellen.forEach(function (stelle) {
-            var li = document.createElement('li');
-            var ort = document.createElement('span');
-            ort.className = 'perm-hilfe-ort';
-            ort.textContent = stelle.ort + ': ';
-            var text = document.createElement('span');
-            text.className = 'perm-hilfe-text';
-            text.textContent = stelle.text;
-            li.appendChild(ort);
-            li.appendChild(text);
-            if (stelle.mit) {
-                var mit = document.createElement('span');
-                mit.className = 'perm-hilfe-mit';
-                mit.textContent = 'Nur zusammen mit dem Recht „' + stelle.mit + '“.';
-                li.appendChild(mit);
-            }
-            liste.appendChild(li);
-        });
-
-        var inhaber = document.getElementById('perm-hilfe-inhaber');
-        inhaber.innerHTML = '';
-        if (!daten.inhaber.length) {
-            inhaber.appendChild(chipListe([]));
-        }
-        daten.inhaber.forEach(function (quelle) {
-            var block = document.createElement('div');
-            block.className = 'perm-hilfe-quelle';
-            var name = document.createElement('div');
-            name.className = 'perm-hilfe-quelle-name';
-            name.textContent = quelle.quelle;
-            block.appendChild(name);
-            block.appendChild(chipListe(quelle.namen));
-            inhaber.appendChild(block);
-        });
-        hilfeDialog.showModal();
-        hilfeDialog.scrollTop = 0;
-    }
-
-    document.querySelectorAll('th.perm-col-head[data-perm]').forEach(function (th) {
-        th.addEventListener('click', function () { zeigeHilfe(th.dataset.perm); });
-        th.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                zeigeHilfe(th.dataset.perm);
-            }
-        });
-    });
-    hilfeDialog.querySelector('.dialog-close').addEventListener('click', function () {
-        hilfeDialog.close();
-    });
-    // Klick auf den abgedunkelten Hintergrund schließt ebenfalls. Der Innenabstand
-    // gehört auch zum <dialog>, deshalb entscheidet das Rechteck, nicht e.target.
-    hilfeDialog.addEventListener('click', function (e) {
-        if (e.target !== hilfeDialog) return;
-        var r = hilfeDialog.getBoundingClientRect();
-        if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
-            hilfeDialog.close();
-        }
     });
 
     // Tooltip für Mitglieder-Anzahl-Badge

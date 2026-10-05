@@ -1,0 +1,21 @@
+{% load static %}{% comment %}
+Hilfe-Dialog zu einer Berechtigung: wo sie im Portal wirkt (PERMISSION_DETAILS)
+und wer sie hat. Jedes Element mit data-rechte-hilfe="intern.…" öffnet ihn.
+
+Parameter:
+  perm_hilfe   Dict aus intern.views.gruppen.rechte_hilfe(). Ein Eintrag trägt
+               entweder ``inhaber`` (Gruppen-Seite: alle Personen nach Quelle)
+               oder ``quellen`` (eigenes Profil: worüber man das Recht hat).
+{% endcomment %}
+<dialog id="perm-hilfe" class="app-dialog perm-hilfe" aria-labelledby="perm-hilfe-titel">
+    <button type="button" class="dialog-close" aria-label="Schließen">&#x2715;</button>
+    <h3 id="perm-hilfe-titel"></h3>
+    <p class="perm-hilfe-kurz" id="perm-hilfe-kurz"></p>
+    <h4>Wo dieses Recht wirkt</h4>
+    <ul class="perm-hilfe-stellen" id="perm-hilfe-stellen"></ul>
+    <h4 id="perm-hilfe-inhaber-titel"></h4>
+    <div id="perm-hilfe-inhaber"></div>
+    <p class="perm-hilfe-leer" id="perm-hilfe-hinweis">Gespeicherter Stand, nur Personen mit Portalzugang.</p>
+</dialog>
+{{ perm_hilfe|json_script:"perm-hilfe-data" }}
+<script defer src="{% static 'intern/js/rechte-hilfe.js' %}"></script>

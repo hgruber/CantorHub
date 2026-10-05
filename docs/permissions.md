@@ -12,7 +12,11 @@ The page `/intern/gruppen/` lists exactly the rights in `PERMISSION_DEFS`
 A click on a column header opens a help dialog built from `PERMISSION_DETAILS` — the tables below
 in user-facing words, a third element naming a second right a place also needs — and lists who
 holds the right, per group, direct grant or admin status (`rechte_inhaber()`, active accounts
-only). A change to a check belongs in both lists; `RechteHilfeTest` only guards that every right
+only). The same dialog (`_rechte_hilfe_dialog.html`, `rechte-hilfe.js`) serves the card „Meine
+Rechte" on one's own profile, which lists the rights one holds and, instead of all holders, only
+the sources one holds each through (`eigene_rechte()`); other profiles do not show it, since who
+holds which right is otherwise visible on `/intern/gruppen/` alone. A change to a check belongs in
+both lists; `RechteHilfeTest` only guards that every right
 has an entry and that a second right exists.
 A right is granted to a group there (or to a single account in `/admin/`). Four forms of check
 occur in the code:

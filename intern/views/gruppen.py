@@ -352,6 +352,62 @@ def rechte_inhaber(perm_strs, gruppen_rechte, gruppen_mitglieder, direkt, admins
     return ergebnis
 
 
+def rechte_quellen(gruppen_rechte, direkt, ist_admin):
+    """Für eine Person: je Recht, das sie hat, die Quellen in Anzeigereihenfolge.
+
+    gruppen_rechte: {gruppe: set(perm_str)} ihrer Gruppen; direkt: set(perm_str)
+    am Konto. Rechte ohne Quelle fehlen im Ergebnis.
+    """
+    perm_strs = [perm_str for perm_str, _, _ in PERMISSION_DEFS]
+    inhaber = rechte_inhaber(
+        perm_strs, gruppen_rechte, {}, {p: ["ich"] for p in direkt},
+        ["ich"] if ist_admin else [],
+    )
+    return {
+        perm: [q["quelle"] for q in inhaber[perm]]
+        for perm in perm_strs if inhaber[perm]
+    }
+
+
+def rechte_hilfe(perm_strs, zusatz):
+    """Die Daten des Hilfe-Dialogs (_rechte_hilfe_dialog.html) für diese Rechte.
+
+    zusatz: {perm_str: {…}} — je Recht ``inhaber`` (Gruppen-Seite) oder
+    ``quellen`` (eigenes Profil), wird in den Eintrag übernommen.
+    """
+    defs = {perm_str: (label, category) for perm_str, label, category in PERMISSION_DEFS}
+    return {
+        perm_str: {
+            "titel": f"{defs[perm_str][1]} · {defs[perm_str][0]}",
+            "beschreibung": PERMISSION_DESCRIPTIONS.get(perm_str, ""),
+            "stellen": [
+                {
+                    "ort": eintrag[0],
+                    "text": eintrag[1],
+                    "mit": _PERM_LABELS.get(eintrag[2], eintrag[2]) if len(eintrag) > 2 else "",
+                }
+                for eintrag in PERMISSION_DETAILS.get(perm_str, [])
+            ],
+            **zusatz.get(perm_str, {}),
+        }
+        for perm_str in perm_strs
+    }
+
+
+def eigene_rechte(user):
+    """Die Hilfedaten der Rechte, die ``user`` hat, mit ihren Quellen."""
+    gruppen_rechte = {
+        g.name: {f"{p.content_type.app_label}.{p.codename}" for p in g.permissions.all()}
+        for g in user.groups.order_by("id").prefetch_related("permissions__content_type")
+    }
+    direkt = {
+        f"{p.content_type.app_label}.{p.codename}"
+        for p in user.user_permissions.select_related("content_type")
+    }
+    quellen = rechte_quellen(gruppen_rechte, direkt, user.is_superuser)
+    return rechte_hilfe(list(quellen), {p: {"quellen": q} for p, q in quellen.items()})
+
+
 @perm_or_home("intern.manage_user_permissions")
 def gruppen(request):
     if request.method == "POST":
@@ -507,27 +563,13 @@ def gruppen(request):
         f"{u.first_name} {u.last_name}".strip() or u.username
         for u in aktive if u.is_superuser
     ]
+    perm_strs = [perm_str for perm_str, _, _ in PERMISSION_DEFS]
     inhaber = rechte_inhaber(
-        [perm_str for perm_str, _, _ in PERMISSION_DEFS],
+        perm_strs,
         {name: set(rechte) for name, rechte in matrix.items()},
         aktive_mitglieder, direkt, admins,
     )
-    perm_hilfe = {
-        perm_str: {
-            "titel": f"{category} · {label}",
-            "beschreibung": PERMISSION_DESCRIPTIONS.get(perm_str, ""),
-            "stellen": [
-                {
-                    "ort": eintrag[0],
-                    "text": eintrag[1],
-                    "mit": _PERM_LABELS.get(eintrag[2], eintrag[2]) if len(eintrag) > 2 else "",
-                }
-                for eintrag in PERMISSION_DETAILS.get(perm_str, [])
-            ],
-            "inhaber": inhaber[perm_str],
-        }
-        for perm_str, label, category in PERMISSION_DEFS
-    }
+    perm_hilfe = rechte_hilfe(perm_strs, {p: {"inhaber": i} for p, i in inhaber.items()})
 
     return render(request, "gruppen.html", {
         "seitentitel": "Gruppen",
