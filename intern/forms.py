@@ -333,7 +333,7 @@ class MitgliedBeitrittForm(forms.ModelForm):
         required=True,
         label=mark_safe(
             'Ich nehme die <a href="#" target="_blank" rel="noopener">'
-            "Beitragsordnung</a> des Vereins zur Kenntnis und erkenne sie an."
+            "Beitragsordnung</a> des Vereins zur Kenntnis."
         ),
     )
     einwilligung_fotos = forms.BooleanField(
@@ -397,7 +397,7 @@ class MitgliedBeitrittForm(forms.ModelForm):
         beitragsordnung_url = get_document_url("BEITRAGSORDNUNG_FILE_ID")
         self.fields["anerkennung_beitragsordnung"].label = mark_safe(
             f'Ich nehme die <a href="{beitragsordnung_url}" target="_blank" rel="noopener">'
-            "Beitragsordnung</a> des Vereins zur Kenntnis und erkenne sie an."
+            "Beitragsordnung</a> des Vereins zur Kenntnis."
         )
 
     def clean_username(self):
@@ -535,7 +535,7 @@ class MitgliedBestaetigungForm(forms.Form):
         required=True,
         label=mark_safe(
             'Ich nehme die <a href="#" target="_blank" rel="noopener">'
-            "Beitragsordnung</a> des Vereins zur Kenntnis und erkenne sie an."
+            "Beitragsordnung</a> des Vereins zur Kenntnis."
         ),
     )
     einwilligung_fotos = forms.BooleanField(
@@ -554,7 +554,7 @@ class MitgliedBestaetigungForm(forms.Form):
         beitragsordnung_url = get_document_url("BEITRAGSORDNUNG_FILE_ID")
         self.fields["anerkennung_beitragsordnung"].label = mark_safe(
             f'Ich nehme die <a href="{beitragsordnung_url}" target="_blank" rel="noopener">'
-            "Beitragsordnung</a> des Vereins zur Kenntnis und erkenne sie an."
+            "Beitragsordnung</a> des Vereins zur Kenntnis."
         )
 
 

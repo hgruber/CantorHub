@@ -7,6 +7,14 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Mitgliedsantrag und Datenbestätigung: Die Beitragsordnung wird nur noch zur Kenntnis genommen,
+  nicht mehr anerkannt, im Formular wie im Quittungs-PDF. Die Aufforderungsmail `MAIL_BESTAETIGUNG`
+  sagt das ebenso; ein nie geänderter Text wird beim Start auf den neuen Standard gehoben.
+
 ## v1.0.0 — 2026-10-05
 
 ### Hinzugefügt
