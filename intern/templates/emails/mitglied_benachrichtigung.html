@@ -2,14 +2,19 @@
 {# Rundmail an Mitglieder: Body aus MAIL_RUNDMAIL, darunter die Unterschrift. #}
 
 {% block after_body %}
-{% if signature_group_name %}
+{% if signature_group_name or absender_name %}
 <tr>
   <td style="background-color:{{ mail_farbe_card }};padding:0 32px 28px;">
     <hr style="border:none;border-top:1px solid {{ mail_farbe_border }};margin:0 0 20px;">
+    {% if signature_group_name %}
     <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:{{ brand_farbe }};letter-spacing:.01em;">{{ signature_group_name }}</p>
     {% for name in signature_members %}
     <p style="margin:0;font-size:13px;color:{{ mail_farbe_text }};line-height:1.6;">{{ name }}</p>
     {% endfor %}
+    {% endif %}
+    {% if absender_name %}
+    <p style="margin:{% if signature_group_name %}12px{% else %}0{% endif %} 0 0;font-size:12px;color:{{ mail_farbe_muted }};line-height:1.6;">Gesendet von {{ absender_name }}</p>
+    {% endif %}
   </td>
 </tr>
 {% endif %}

@@ -535,6 +535,10 @@ def _rundmail_versenden(user, subject, body, recipients, attachments,
                 logger.warning("Rundmail: SMTP-Verbindung konnte nicht geoeffnet werden.",
                                exc_info=True)
 
+            # Die Gruppe unterschreibt, aber wer abgeschickt hat, soll der Empfaenger
+            # trotzdem sehen.
+            absender_name = f"{user.first_name} {user.last_name}".strip() or user.username
+
             def senden(r):
                 return send_config_mail(
                     subject,
@@ -545,6 +549,7 @@ def _rundmail_versenden(user, subject, body, recipients, attachments,
                         "mail_title": subject,
                         "signature_group_name": signature_group_name,
                         "signature_members": signature_members,
+                        "absender_name": absender_name,
                     },
                     attachments=attachments or None,
                     connection=connection,

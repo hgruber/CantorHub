@@ -2606,8 +2606,11 @@ class RundmailSerieTest(SimpleTestCase):
                                   side_effect=[True, False, False]) as senden, \
                 mock.patch.object(mitglieder, "_log_notify") as log, \
                 mock.patch.object(mitglieder.connections, "close_all"):
-            mitglieder._rundmail_versenden("user", "Betreff", "Text", empfaenger, [], "", [])
+            user = mock.Mock(first_name="Carla", last_name="C", username="carla")
+            mitglieder._rundmail_versenden(user, "Betreff", "Text", empfaenger, [], "", [])
         conn.open.assert_called()
+        self.assertTrue(all(c.kwargs["context"]["absender_name"] == "Carla C"
+                            for c in senden.call_args_list))
         self.assertTrue(all(c.kwargs["connection"] is conn for c in senden.call_args_list))
         self.assertEqual([c.kwargs["vorname"] for c in senden.call_args_list],
                          ["Anna", "Bert", "Bert"])

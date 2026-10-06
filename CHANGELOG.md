@@ -34,6 +34,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
+- Rundmail an Mitglieder: Unter der Signatur der Gruppe steht jetzt „Gesendet von" mit dem Namen
+  der Person, die die E-Mail abgeschickt hat. Das Formular zeigt die Zeile schon vor dem Versand.
 - Repertoire: Der Filter ist derselbe Baukasten wie in der Mitgliederliste — beliebig viele
   Bedingungen mit „und"/„oder", etwa „Hymne und A cappella und nicht Aufnahme"; das Konzert bleibt
   ein festes Feld darunter, die Ablauf-Ansicht filtert nicht mehr. Ein gemerkter Filter aus der

@@ -13,7 +13,7 @@ There are four, and there is no per-mail template:
 |---|---|
 | `emails/base.html` | the frame — card, logo header with `{vereinsname}`, footer text from `MAIL_FOOTER` |
 | `emails/generic.html` | renders `body_html`; the default for everything |
-| `emails/mitglied_benachrichtigung.html` | round mail; adds the signature block via the `after_body` block |
+| `emails/mitglied_benachrichtigung.html` | round mail; adds the signature block via the `after_body` block — group and its members, then „Gesendet von" with the sender's name |
 | `emails/mailingliste.html` | gig reminders; renders the unsubscribe link structurally |
 
 ## The mails
