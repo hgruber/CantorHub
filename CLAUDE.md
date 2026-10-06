@@ -91,7 +91,12 @@ into release sections and change groups, plus inline markup, without a Markdown 
 behind `/intern/changelog/`; **not** the audit log `ChangeLog`, see `docs/frontend.md`),
 `zusage.py` (the value set and labels of `Zusage.option` — the one source the model, the
 stage picture, the table column, the filter and the audit labels all read; guarded by
-`ZusageOptionenTest`), `mitgliedschaft.py` (the two axes of belonging: `is_active` = portal
+`ZusageOptionenTest`), `filterbau.py` (the filter as a chain of conditions — connector,
+negation and the `und`-binds-tighter evaluation, the per-field right, the three-state switch
+rule and the escaping that lets a typed name carry a comma; the machine, without a single
+field and without DB access), `filterbau_mitglieder.py` / `filterbau_titel.py` (its two field
+registries, for the member list and the repertoire; no `FilterSet` left on either, see „The
+filter builder" in `docs/frontend.md`), `mitgliedschaft.py` (the two axes of belonging: `is_active` = portal
 access, the group „Mitglied" = club membership, plus the admission itself — guarded by
 `MitgliedschaftTest`, see `docs/members.md`), `avatare.py` (fallback avatar files and thumbnails, so lists do not
 load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TRIGGER_FIELDS`),

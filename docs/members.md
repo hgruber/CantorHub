@@ -266,6 +266,13 @@ holders of `intern.change_user` a view of hidden fields inside the portal — bu
 bonus stops at the portal boundary**: the CardDAV cards, the CalDAV birthdays and the birthday
 chips in the month grid consult `private_fields` alone (see `dav.md`).
 
+A hidden field is hidden from the filters too. The member list's filter builder offers the
+`PRIVACY_FIELDS` — and the access switch — only to `intern.change_user`
+(`filterbau.py` · `erlaubte_felder`); everyone else never sees them in the dropdown, and a
+hand-written URL naming one is discarded while parsing. That second half matters: the filter runs
+on the raw queryset, while the table blanks hidden values only as it renders, so filtering on one
+would betray through the *hit count* what the cell keeps quiet.
+
 `User.adressbuch_verborgen` goes one step further: it keeps the **whole** record out of the
 CardDAV address book, not just single fields. Both are set by the member alone — `mitglied_edit`
 passes `with_privacy` / `mit_adressbuch` only when `request.user.id == id`, so an admin editing a

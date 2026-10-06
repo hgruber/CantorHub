@@ -2,7 +2,6 @@ import django_filters as filters
 import django_tables2 as tables
 from django import forms
 from django.contrib.auth.models import Group
-from django.db.models import Q
 from django.template.defaultfilters import date as datumsfilter
 from django.template.loader import render_to_string
 from django.templatetags.static import static
@@ -15,9 +14,7 @@ from intern.app_settings import get_vereinsname_kurz
 from .avatare import vorschau_url
 from .mitglied_felder import PRIVACY_FIELDS
 from .models import Artikel, ChangeLog, Lied, Ort, Termin, User
-from .forms import ChipMultiSelect, SchnellSelect, TriStateToggle
 from .replacements import format_bytes, format_datetime
-from .zusage import OPTION_LABELS, OPTIONEN
 
 
 class _Datumsspalte(tables.Column):
@@ -383,137 +380,6 @@ class TerminTabelle(tables.Table):
         row_attrs = {"data-href": lambda record: reverse("termin_view", args=[record.id])}
 
 
-class RepertoireFilter(filters.FilterSet):
-    titel = filters.CharFilter(method="filter_suche", label="Suche")
-    tempo = filters.ChoiceFilter(
-        field_name="tempo", choices=Lied.CHOICES, label="Tempo",
-        widget=SchnellSelect(attrs={"class": "filter-inline"}),
-    )
-    tonart = filters.ChoiceFilter(
-        field_name="tonart",
-        choices=Lied.TONART_CHOICES,
-        label="Tonart",
-        widget=SchnellSelect(attrs={"class": "filter-inline"}),
-    )
-    aktiv = filters.BooleanFilter(field_name="aktiv", label="Aktiv")
-    hymne = filters.BooleanFilter(field_name="hymne", label="Hymne")
-    acapella = filters.BooleanFilter(field_name="acapella", label="A cappella")
-    weihnacht = filters.BooleanFilter(field_name="weihnacht", label="Weihnachten")
-    original = filters.BooleanFilter(
-        field_name="original",
-        lookup_expr="isnull",
-        exclude=True,
-        label="Original",
-    )
-    aufnahme = filters.BooleanFilter(
-        field_name="aufnahme",
-        lookup_expr="isnull",
-        exclude=True,
-        label="Aufnahme",
-    )
-    sheet = filters.BooleanFilter(
-        field_name="pdf",
-        lookup_expr="isnull",
-        exclude=True,
-        label="Notenblatt",
-    )
-    notensatz = filters.BooleanFilter(
-        field_name="noten",
-        lookup_expr="isnull",
-        exclude=True,
-        label="Notensatz",
-    )
-    dirigent_qs = (
-        User.objects.filter(dirigent__isnull=False, is_active=True)
-        .distinct()
-        .order_by("last_name", "first_name")
-    )
-    dirigent = filters.ModelMultipleChoiceFilter(
-        field_name="dirigent",
-        queryset=dirigent_qs,
-        widget=ChipMultiSelect(
-            auswahl_label="Gewählte Dirigenten",
-            vorrat_label="Verfügbare Dirigenten",
-            such_platzhalter="Dirigent suchen …",
-            leer_text="Alle Dirigenten",
-        ),
-        label="Dirigent",
-    )
-    solist_qs = (
-        User.objects.filter(solist__isnull=False, is_active=True)
-        .distinct()
-        .order_by("last_name", "first_name")
-    )
-    solist = filters.ModelMultipleChoiceFilter(
-        field_name="solist",
-        queryset=solist_qs,
-        widget=ChipMultiSelect(
-            auswahl_label="Gewählte Solisten",
-            vorrat_label="Verfügbare Solisten",
-            such_platzhalter="Solist suchen …",
-            leer_text="Alle Solisten",
-        ),
-        label="Solist",
-    )
-    konzert_qs = (
-        Termin.objects.filter(konzert__isnull=False).distinct().order_by("-datum")
-    )
-    konzert = filters.ModelChoiceFilter(
-        field_name="termin",
-        queryset=konzert_qs,
-        label="Konzert",
-        # SchnellSelect: der Filter bietet jeden Termin an (dreistellige Anzahl),
-        # und Djangos Vorgabe rendert je Option eine eigene Vorlage.
-        widget=SchnellSelect(),
-    )
-
-    class Meta:
-        model = Lied
-        fields = [
-            "titel",
-            "konzert",
-            "aktiv",
-            "hymne",
-            "acapella",
-            "weihnacht",
-            "tempo",
-            "tonart",
-            "original",
-            "aufnahme",
-            "notensatz",
-            "sheet",
-            "solist",
-            "dirigent",
-        ]
-
-    BOOLEAN_FILTER_FIELDS = [
-        "aktiv", "hymne", "acapella", "weihnacht",
-        "original", "aufnahme", "sheet", "notensatz",
-    ]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for name in self.BOOLEAN_FILTER_FIELDS:
-            if name in self.form.fields:
-                self.form.fields[name].widget = TriStateToggle()
-
-    def filter_suche(self, qs, name, value):
-        """Die Suche greift über Titel, Komponist und Bearbeiter."""
-        if not value:
-            return qs
-        return qs.filter(
-            Q(titel__icontains=value)
-            | Q(komponist__icontains=value)
-            | Q(bearbeiter__icontains=value)
-        )
-
-    @property
-    def form(self):
-        form = super().form
-        form.label_suffix = ""
-        return form
-
-
 _PLAY_ICON_SVG = (
     '<svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" '
     'class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>'
@@ -801,105 +667,6 @@ class RepertoireTabelle(tables.Table):
         if record.weihnacht:
             parts.append(_chip_icon(_SNOWFLAKE_SVG, "Weihnachten"))
         return mark_safe("".join(parts))
-
-
-class MitgliederFilter(filters.FilterSet):
-    stimme = filters.MultipleChoiceFilter(
-        field_name="stimme",
-        choices=User.STIMMEN,
-        widget=ChipMultiSelect(
-            auswahl_label="Gewählte Stimmen",
-            vorrat_label="Verfügbare Stimmen",
-            leer_text="Alle Stimmen",
-        ),
-    )
-    konzert_qs = Termin.objects.filter(anwesenheit=True).distinct().order_by("-datum")
-
-    zugang = filters.BooleanFilter(field_name="is_active", label="Zugang")
-    gruppen = filters.ModelMultipleChoiceFilter(
-        field_name="groups",
-        queryset=Group.objects.order_by("id"),
-        widget=ChipMultiSelect(
-            auswahl_label="Gewählte Gruppen",
-            vorrat_label="Verfügbare Gruppen",
-            such_platzhalter="Gruppe suchen …",
-            leer_text="Alle Gruppen",
-        ),
-        label="Gruppen",
-    )
-    gruppen_nicht = filters.ModelMultipleChoiceFilter(
-        field_name="groups",
-        queryset=Group.objects.order_by("id"),
-        widget=ChipMultiSelect(
-            auswahl_label="Ausgeschlossene Gruppen",
-            vorrat_label="Verfügbare Gruppen",
-            such_platzhalter="Gruppe suchen …",
-            leer_text="Keine Gruppe ausgeschlossen",
-            variante="exclude",
-        ),
-        label="Nicht in Gruppen",
-        exclude=True,
-    )
-
-    status = filters.ChoiceFilter(
-        label="Status",
-        widget=SchnellSelect(),
-        # Alle Antwortoptionen außer „keine Angabe" (eine leere Auswahl filtert
-        # ohnehin nicht, siehe filter_status) plus der Sentinel "0" = „nicht geantwortet".
-        choices=[(wert, OPTION_LABELS[wert]) for wert in OPTIONEN if wert]
-        + [("0", "keine Auswahl")],
-        method="filter_status",
-    )
-    konzert = filters.ModelChoiceFilter(
-        label="Termin",
-        queryset=konzert_qs,
-        method=lambda qs, name, value: qs,
-        # siehe RepertoireFilter.konzert
-        widget=SchnellSelect(),
-    )
-
-    def filter_status(self, queryset, name, value):
-        termin = self.form.cleaned_data.get("konzert")
-
-        if not termin or not value:
-            return queryset
-        if value == "0":
-            return queryset.exclude(zusage__termin=termin)
-
-        return queryset.filter(
-            zusage__termin=termin,
-            zusage__option=value,
-        ).distinct()
-
-    class Meta:
-        model = User
-        fields = [
-            "stimme",
-            "zugang",
-            "gruppen",
-        ]
-
-    BOOLEAN_FILTER_FIELDS = ["zugang"]
-    MANAGE_ONLY_FIELDS = ["zugang", "gruppen", "gruppen_nicht"]
-
-    def __init__(self, *args, can_manage=False, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not can_manage:
-            for name in self.MANAGE_ONLY_FIELDS:
-                self.filters.pop(name, None)
-                self.form.fields.pop(name, None)
-            return
-        for name in self.BOOLEAN_FILTER_FIELDS:
-            if name in self.form.fields:
-                self.form.fields[name].widget = TriStateToggle()
-        if "zugang" in self.form.fields:
-            self.form.fields["zugang"].widget = TriStateToggle(
-                titel_ja="Zugang erlaubt", titel_nein="Zugang gesperrt"
-            )
-            # Server injects zugang=true as default when the param is absent.
-            # Tell the toggle JS to keep "unknown" in the URL so users can
-            # explicitly choose "Egal" instead of falling back to the default.
-            self.form.fields["zugang"].widget.attrs["data-keep-unknown"] = "true"
 
 
 class MitgliederTabelle(tables.Table):

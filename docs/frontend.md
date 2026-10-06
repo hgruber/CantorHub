@@ -618,6 +618,132 @@ date. `ChangelogTest` guards the same file for the `update` hook; `Auslieferunge
 cross-checks the two decompositions and keeps every entry to three sentences, so neither the
 duplicate patterns nor the writing rule can drift apart silently.
 
+## The filter builder
+
+The member list and the repertoire do not use a fixed field per criterion. Their filter is a
+**chain of conditions**: any number of them, each with its own connector (`und`/`oder`) and its
+own negation. That is what makes „in Gruppe A und in Gruppe B und nicht in Gruppe C" or „Hymne
+und A cappella und nicht Aufnahme" expressible — a `ModelMultipleChoiceFilter` always ORs its
+values and used to appear only once.
+
+- **Machine and registries.** `intern/filterbau.py` is the machine and knows no field: the
+  class `Baukasten` parses (`lese_bedingungen()`), builds the `Q` (`baue_q()`), applies both
+  (`aus_daten()`) and prepares the topbar display (`kette()`), all without database access so a
+  `SimpleTestCase` can pin them (like `verwendung.py` or `mitgliedschaft.py`). The fields live
+  in two registries next to it, each a `Baukasten` instance: `MITGLIEDER` in
+  `filterbau_mitglieder.py` and `TITEL` in `filterbau_titel.py`. The hooks where the pages
+  differ are optional: `vorgabe` (the manager's access default), `alt_parameter` (the
+  pre-builder parameters), `marker` (extra parameters when a condition goes away) and `traeger`
+  (extra hidden form fields). Only names for foreign keys need the database; the view passes
+  them in.
+- **Evaluation: `und` binds tighter than `oder`**, as everywhere else. The chain is split at
+  every `oder`, each segment is ANDed and the segments are ORed, so `A oder B und C` is
+  `A oder (B und C)`. The topbar parenthesises a segment of more than one condition whenever
+  there is more than one segment — the display must not lie. A single-segment chain stays free
+  of parentheses.
+- **Wire format: one repeated `f` parameter per condition**, `<connector>:<field>:<operator>:<values>`.
+  One assembled value per condition rather than parallel lists: a multi-select emits one entry
+  per value, which would knock a positional mapping out of alignment. **Every single value is
+  percent-encoded** (`quote(w, safe="")`, the script's `encodeURIComponent`): comma and colon
+  are the separators, and a typed name may contain both. Reading splits first and `unquote()`s
+  each part, so the old unencoded values (`1,4`) stay valid.
+  Without an `f`, `lese_bedingungen()` hands the query to the registry's `alt_parameter` hook,
+  which translates the pre-builder parameters — `@tabellenzustand` keeps the query in a cookie
+  for a year, and a view that no longer knows those names would show an **unfiltered** list that
+  looks filtered. Members: `gruppen`, `gruppen_nicht`, `stimme`, `zugang`, `status`+`konzert`;
+  the old third state `zugang=unknown` („Egal") suppresses the manager default just like the new
+  `zugang=egal`. Repertoire: the names of the old **`FilterSet` attributes**, not the model
+  fields — `titel` is the search, `sheet` is `pdf`, `notensatz` is `noten`, plus `tempo`,
+  `tonart`, the eight `true`/`false`/`unknown` switches, `solist` and `dirigent`.
+- **A registry is a `FELDER` dict**; a field is one entry — label, operators, `Q` builder, and
+  `recht`. The member registry covers every column of the list (name, voice, e-mail, XMPP,
+  birthday, last login, entry date, address and phone fields, fax, access) plus `gruppen` and
+  `zusage` — a separate `termin` condition was dropped because `zusage` + „geantwortet" is
+  exactly what it could say. The repertoire registry has the search (over title, composer
+  *and* arranger), tempo, key, the four flags, the four „has a file" fields, soloist and
+  conductor. A field's `art` picks the value widget, generically for both: `text`, `datum`,
+  `ohne` (no values, the operator carries the statement, as with `Zugang` or `Hymne`),
+  `auswahl` (one `<select>`), `mehrfach` (chip multi-select) and the member-only `zusage`
+  (termin + answer). The entries of `auswahl`/`mehrfach` come from the registry's `eintraege`.
+- **`konzert` is not part of the repertoire's chain.** The same parameter switches the running
+  order mode and restricts the player's queues, so it stays a fixed field: `titel_list` and
+  `titel_playlist` apply it next to the chain (`_mit_konzert`), and `table.html` takes its
+  `<select>` through `filter_zusatz` (`_filter_konzert.html`) below the rows. The running order
+  view (`?konzert=<id>&edit`) has no filter at all — both of its lists come from their own
+  querysets — and shows a hint pointing to the repertoire list instead.
+- **A condition over a multi-valued relation is an `EXISTS` subquery, never a join.** This is
+  not a style choice: `Q(groups__pk__in=[A]) & ~Q(groups__pk__in=[B])` compiles to a plain
+  join plus `NOT (…)` on the **link row**, and Django correlates the subquery it builds for the
+  negation to that row instead of to the person — so a member who is in A *and* in B slipped
+  through the exclusion. `_gruppen_q` and `_zusage_q` (members) and `_personen_q` (soloist and
+  conductor) therefore ask `Exists(… objects.filter(… OuterRef("pk"), …))`. Since no condition joins any more, no
+  condition can duplicate a row either, which is why the builder has no `.distinct()` and no
+  `mehrfach` flag; a future field that *does* join has to handle that itself. The regression is
+  pinned in `FilterbauQTest`.
+- **Rights are part of a field, and the gate has two halves.** `Feld.recht` is `None` or
+  `intern.change_user`; `felder_kontext()` hides the rest from the dropdown, and
+  `lese_bedingungen()` drops them again while parsing — a hand-written URL must not slip past the
+  form. What this protects is the **order of operations**: the filter runs on the raw queryset in
+  the view, while `MitgliederTabelle.__init__` blanks hidden fields only when it renders. A filter
+  on `email__icontains` would therefore betray through the *hit count* what the cell keeps quiet.
+  `PRIVACY_FIELDS` and `zugang` are gated; groups and the attendance fields are not. No
+  repertoire field carries a right. The `namen` map handed to the topbar is
+  `{field_key: {pk: name}}` — groups and termin labels, or soloists, conductors, keys and tempi.
+- **The editor** is `_filter_baukasten.html` + `_filter_zeile.html` + `_filter_wert.html`, in the
+  filter offcanvas, driven by `filter-baukasten.js`. Neither list has a `FilterSet` left.
+  Its visible controls carry **no** `name`; the script writes one hidden `<input name="f">` per
+  row and disables it while the row has no values (except for `ohne` fields, where no values are
+  the point). New rows are cloned from `<template>` elements, **one per field**, not per `art`:
+  soloist and conductor share `mehrfach` but not their entries and labels, and keyed by `art`
+  a row switched from one to the other kept the first one's list. Cloned markup arrives
+  uninitialised, which is why `chip-multiselect.js` exposes `window.chipMultiSelectInitAlle`.
+  The **choice lists come as one JSON bundle** (`filter-optionen`, `{field: [{wert, label}]}`,
+  from `Baukasten.optionen()`), not as `<select>` markup: there are hundreds of termine and
+  people, and they would otherwise be repeated in every row and every template.
+- **Fixed switches.** A yes/no field without a value (`ist_fest()`: `ohne_wert` plus one
+  yes/no pair — the repertoire's four flags and four „has a file" fields, the members'
+  `Zugang`) is not in the field dropdown. Like `konzert` it is always there, as a compact grid
+  of three-state switches below the chain, „egal" by default; each switch carries its own
+  hidden `f` input. These conditions apply to the whole chain: `lese_bedingungen()` moves them
+  to the front, `baue_q()` builds `fest und (Kette)`, and the topbar parenthesises the rest of
+  the chain when it has more than one `oder` segment. An `oder` on them is deliberately not
+  offered.
+- **The three-state switch in a row** (✗ / · / ✓) replaces the operator `<select>` where a
+  field has one yes/no pair (`hat_paar()`: two operators, the first affirmative, the second
+  negating) **and a single value** — tempo, key, attendance (`hat_schalter()`). It sits right
+  next to the value, which then collapses to its content width. A multi-select (groups, voice,
+  soloist, conductor) keeps the „ist in / ist nicht in" list: an empty selection already says
+  „egal". Text and date fields keep their word operators. The field and operator selects carry
+  no caption, only an `aria-label`, and the row's ✕ always sits at the right. It reuses the
+  `.tri-toggle*` classes but is
+  driven by `filter-baukasten.js`, not `tri-toggle.js`, which bails out without a sibling
+  `.tri-toggle-select`; the thumb offset is rendered inline for that reason. Two traps: the
+  **operator `<select>` stays in the DOM**, hidden — `aktualisiere()` reads it unconditionally,
+  and the switch only sets its value; and the **middle position („egal") silences the row**
+  (`data-egal`, hidden input disabled) while field and values stay, so it can be switched back
+  on. Without that an `ohne` field such as `Zugang` would keep sending its last operator.
+  Segment clicks do not fire `change`, so the switch has its own `click` handler.
+- **The manager's access default** is prepended as a `Zugang: hat` condition rather than injected
+  as a URL parameter. It is a real row in the editor and a real chip in the topbar; removing that
+  chip sets `?zugang=egal`, because an absence cannot be told from "never had one" otherwise.
+  The form follows the same rule: `feste_kontext()` names each fixed switch's `marker`, and when
+  the `Zugang` switch stands on „egal" at submit, the script adds `zugang=egal` as a hidden
+  field.
+- **The topbar is one chain, not a second bar.** `filter_kette` hands its elements to
+  `filter_chips`, whose rows are either a chip, a connector word or a parenthesis; chips stay
+  removable links. **A chip is a finished sentence**, never „Feld: Wert": the operator carries
+  its wording in `Feld.operatoren` and fills `{w}`/`{feld}`, so it reads „ist in Gruppe A, B",
+  „hat keinen Zugang", „hat geantwortet zu Konzert am 06.06.27". `satz_bauer` overrides that
+  where the wording depends on the values — the answer brings its own verb, so the negation
+  lands in the right place („hat nicht zugesagt", but „hat eine Angabe gemacht"). The sentence
+  contains the „nicht" itself, so nothing prefixes a second one; `ist_verneinend` only paints the
+  chip red. `filter_chips` also
+  tolerates `filter_obj=None`, which is what the member list passes. `MAX_CHIPS` caps the chain at
+  three conditions and collapses the rest into a „+n" that opens the filter. A capped chain drops
+  its parentheses — half a bracket is noise — and carries the full sentence in its `title`.
+- **Guards in `table.html`**: the column selector hangs on `column_choices` (matching its button
+  in `base.html`), the filter panel on `filter or baukasten`, the chip line on `filter or kette`.
+
 ## Remembered list state
 
 A list remembers its last sort and filters per device. `@tabellenzustand`

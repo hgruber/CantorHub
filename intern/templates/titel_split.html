@@ -1,9 +1,6 @@
 {% extends 'base.html' %}
-{% load django_tables2 filter_tags %}
+{% load django_tables2 %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>{% endblock %}
-{% block topbar_after %}
-{% if filter %}{% filter_chips filter request chips_skip %}{% endif %}
-{% endblock %}
 {% block content %}
 <div class="table-view">
     {% csrf_token %}
@@ -50,22 +47,10 @@
             </div>
         </div>
     </div>
-    <div class="filter offcanvas" id="Filter">
-        <div class="offcanvas-header">
-            <strong>Filtern</strong>
-            <button type="button" class="offcanvas-close" onclick="toggle('Filter')" aria-label="Schließen">&#x2715;</button>
-        </div>
-        <form method="get" class="filter-form">
-            <input type="hidden" name="edit" value="1">
-            <div class="filter-body">
-                {{ filter.form.as_div }}
-            </div>
-            <div class="filter-actions">
-                <a href="?" class="btn btn-secondary">Zurücksetzen</a>
-                <button type="submit" class="btn btn-primary">Filtern</button>
-            </div>
-        </form>
-    </div>
+    <span class="split-hinweis">
+        Der Ablauf zeigt links die Titel dieses Termins und rechts alles Übrige —
+        gefiltert wird auf der <a href="{% url 'titel_list' %}">Repertoireliste</a>.
+    </span>
     {% if add_form %}
     <div class="add-panel offcanvas" id="AddPanel">
         <div class="add-panel-header">

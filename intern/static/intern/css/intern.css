@@ -706,6 +706,27 @@ a.version-string:focus-visible {
 }
 .filter-chip:hover .filter-chip-x { opacity: 1; }
 
+/* Das „+n" der abgekuerzten Filterkette: eine Schaltflaeche, kein Link -- es entfernt
+   nichts, es oeffnet den Filter. */
+button.filter-chip {
+    font-family: inherit;
+    border: 1px dashed var(--border-dark);
+    background: transparent;
+    color: var(--t2);
+    cursor: pointer;
+}
+button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--brand-text); }
+/* Das Konnektorwort zwischen zwei Bedingungen. Traegt die Logik der Kette und darf
+   deshalb nicht wie ein Chip aussehen, den man wegklicken kann. */
+.filter-verb,
+.filter-klammer {
+    flex-shrink: 0;
+    font-size: calc(10rem / 14);
+    font-weight: 600;
+    color: var(--t3);
+}
+.filter-klammer { color: var(--t4); }
+
 [data-theme="dark"] .filter-chip--default { background: rgba(255,255,255,0.08); color: var(--t3); }
 [data-theme="dark"] .filter-chip--true  { background: rgba(16,185,129,0.20); color: #6ee7b7; }
 [data-theme="dark"] .filter-chip--false { background: rgba(239,68,68,0.20); color: #fca5a5; }
@@ -1987,6 +2008,144 @@ time {
 .filter-body > div:has(.filter-inline) label { margin-bottom: 0; }
 
 .filter-body .filter-inline { width: auto; padding: 4px 6px; font-size: calc(11rem / 14); border-radius: 999px; }
+
+/* ── Filter-Baukasten (Zeilen-Editor) ──
+   Steht als erstes Kind in .filter-body, ueber den festen Feldern. Das Panel ist nur
+   320px breit: eine Zeile stapelt ihre Bedienelemente, statt vier davon in eine
+   Reihe zu zwaengen. */
+.filter-baukasten { margin-bottom: 16px; }
+.filter-zeile {
+    background: var(--bg-app);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 10px 10px 2px;
+    margin-bottom: 8px;
+}
+/* Verknuepfung, Feld, Operator und Kreuz in einer Reihe; die Auswahlen nehmen nur
+   ihre Inhaltsbreite, das Kreuz steht immer rechts. Wird es zu eng, bricht der
+   Operator um. */
+.filter-zeile-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.filter-zeile-auswahl {
+    width: auto !important;
+    max-width: 100%;
+    padding: 4px 6px !important;
+    font-size: calc(12rem / 14) !important;
+}
+.filter-zeile-auswahl[hidden] { display: none; }
+/* Der Konnektor beschriftet die Zeile, er ist kein Formularfeld wie die anderen --
+   deshalb die kleine, gesperrte Form statt der vollen Select-Hoehe. */
+.filter-zeile-verbindung {
+    width: auto !important;
+    padding: 2px 6px !important;
+    font-size: calc(10.5rem / 14) !important;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--brand-text) !important;
+}
+.filter-zeile-weg {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--t4);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 4px;
+    margin-left: auto;
+}
+.filter-zeile-weg:hover { color: var(--brand); }
+.filter-zeile-feld,
+.filter-zeile-operator {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+.filter-zeile-feld > span,
+.filter-zeile-operator > span {
+    font-size: calc(10.5rem / 14);
+    font-weight: 700;
+    color: var(--t3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+/* Wert und Schalter nebeneinander. Ohne Schalter nimmt der Wert die Breite (Chip-
+   Liste, Text); mit Schalter kollabiert er auf seinen Inhalt, damit die Pille direkt
+   daneben sitzt. */
+.filter-zeile-wertreihe {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.filter-zeile-werte { flex: 1 1 auto; min-width: 0; }
+.filter-zeile-wertreihe:has([data-filter-schalter]) .filter-zeile-werte { flex: 0 1 auto; }
+.filter-zeile-wertreihe:has([data-filter-schalter]) select { width: auto !important; max-width: 100%; }
+.filter-zeile-schalterplatz:empty { display: none; }
+.filter-zeile-wertreihe .tri-toggle,
+.filter-fest .tri-toggle { flex: none; }
+/* Die Zusage braucht zwei Auswahlen -- Termin und Antwort -- und der Offcanvas ist
+   zu schmal fuer eine Reihe. */
+.filter-zusage {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+/* Felder ohne Wert (Zugang): der Operator sagt alles, hier steht nur der Hinweis. */
+.filter-ohne {
+    margin: 0;
+    font-size: calc(11rem / 14);
+    color: var(--t3);
+}
+.filter-hinzufuegen { width: 100%; font-size: calc(12rem / 14); }
+.filter-baukasten-leer {
+    margin: 8px 0 0;
+    font-size: calc(12rem / 14);
+    color: var(--t3);
+}
+/* Die festen Ja/Nein-Schalter unter der Kette: ein kompaktes Zweierraster, je
+   Zelle Bezeichnung und Pille. */
+.filter-feste {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+.filter-fest {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+}
+.filter-fest-label {
+    font-size: calc(12rem / 14);
+    color: var(--t2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* Was nicht in eine Zeile passt: ein festes Feld unter der Kette (das Konzert des
+   Repertoires). Optisch abgesetzt, damit es nicht wie eine Bedingung wirkt. */
+.filter-zusatz {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+/* Ablauf-Ansicht: dort wird nicht gefiltert, und das soll dastehen. */
+.split-hinweis {
+    display: block;
+    padding: 10px 16px 4px;
+    font-size: calc(12rem / 14);
+    color: var(--t3);
+}
 
 .tri-toggle-wrap { display: flex; align-items: center; }
 

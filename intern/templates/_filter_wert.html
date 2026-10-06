@@ -1,0 +1,29 @@
+{% comment %}
+Das Werte-Widget einer Baukasten-Zeile, nach Feldart. Eingebunden von
+_filter_zeile.html (bestehende Bedingungen) und von den <template>-Vorlagen in
+_filter_baukasten.html (neue Zeilen) — ein Markup, zwei Einstiegspunkte. Dort kommt
+die Art als `art` herein, weil die Vorlage noch keine Zeile hat.
+
+Kein Element trägt einen `name`: den Zustand schreibt filter-baukasten.js in den
+versteckten <input name="f">. Und keine Auswahlliste bringt ihre Optionen mit — die
+füllt das Skript aus dem mitgegebenen Bündel, sonst stünde dieselbe Liste in jeder
+Zeile und jeder Vorlage noch einmal.
+{% endcomment %}
+{% with a=art|default:zeile.art %}
+{% if a == "ohne" %}
+<p class="filter-ohne">Hier gibt es nichts zu wählen — der Operator sagt alles.</p>
+{% elif a == "text" %}
+<input type="text" class="inline-input" data-filter-text value="{{ zeile.wert1 }}" autocomplete="off">
+{% elif a == "datum" %}
+<input type="date" class="inline-input" data-filter-datum value="{{ zeile.wert1 }}">
+{% elif a == "auswahl" %}
+<select class="inline-input filter-zeile-auswahl" data-filter-auswahl data-werte="{{ zeile.werte_roh }}"></select>
+{% elif a == "mehrfach" %}
+{% include "_chip_multiselect.html" with name="baukasten-werte" eintraege=zeile.eintraege auswahl_label=zeile.auswahl_label vorrat_label=zeile.vorrat_label such_platzhalter=zeile.such_platzhalter leer_text=zeile.leer_text %}
+{% elif a == "zusage" %}
+<div class="filter-zusage">
+    <select class="inline-input" data-filter-termin data-werte="{{ zeile.wert1 }}"></select>
+    <select class="inline-input" data-filter-antwort data-werte="{{ zeile.wert2 }}"></select>
+</div>
+{% endif %}
+{% endwith %}

@@ -11,6 +11,21 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Hinzugefügt
 
+- Mitgliederliste: Der Filter besteht aus beliebig vielen Bedingungen, jede mit eigenem
+  „und"/„oder" und mit „ist in"/„ist nicht in" — damit ist etwa „in Gruppe A und in Gruppe B und
+  nicht in Gruppe C" möglich, und eine Verneinung schließt die Person aus, nicht bloß eine ihrer
+  Zugehörigkeiten. Die Titelleiste zeigt die Kette als Satz, mit dem Verknüpfungswort zwischen den
+  Chips und Klammern, wo das „und" stärker bindet. Ein gemerkter Filter aus der Zeit davor wird
+  weiterhin gelesen.
+- Mitgliederliste: Jedes Kriterium der Liste ist filterbar — Name, Stimme, E-Mail, XMPP,
+  Geburtstag, letzte Anmeldung, Eintritt, Anschrift, Telefon, Fax, Zugang, Gruppen sowie Zusage.
+  Textfelder kennen „enthält", „enthält nicht", „beginnt mit", „endet mit" und „ist"; die Zusage
+  wird über Termin und Antwort bestimmt. Die Titelleiste zeigt jede Bedingung als Satz („ist in
+  Gruppe Vorstand", „hat geantwortet zu Konzert am 06.06.27").
+- Mitgliederliste: Was ein Mitglied verbergen kann (E-Mail, Telefon, Anschrift, Geburtstag) und
+  der Zugangsschalter sind nur mit „Mitglieder bearbeiten" filterbar. Der Filter greift, bevor die
+  Tabelle verborgene Angaben ausblendet — ein Kriterium darauf hätte den Wert über die
+  Trefferzahl verraten.
 - Gruppen: Ein Klick auf eine Berechtigung öffnet eine Hilfe, die alle Stellen im Portal
   beschreibt, an denen das Recht wirkt, und nennt, wo ein zweites Recht nötig ist. Darunter stehen
   die Personen mit diesem Recht, nach der Gruppe, über die sie es haben, direkt oder als Admin.
@@ -19,6 +34,14 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
+- Repertoire: Der Filter ist derselbe Baukasten wie in der Mitgliederliste — beliebig viele
+  Bedingungen mit „und"/„oder", etwa „Hymne und A cappella und nicht Aufnahme"; das Konzert bleibt
+  ein festes Feld darunter, die Ablauf-Ansicht filtert nicht mehr. Ein gemerkter Filter aus der
+  Zeit davor wird weiterhin gelesen.
+- Filter: Ja/Nein-Kriterien ohne Wert (etwa Hymne, Aufnahme, Zugang) stehen als feste Schalter
+  mit drei Stellungen (ausschließen, egal, einschließen) unter den Bedingungen und gelten für alle.
+  Tempo, Tonart und Zusage tragen den Schalter neben ihrem Wert, Mehrfachauswahlen wählen „ist in"
+  oder „ist nicht in"; Feld- und Operatorauswahl stehen kompakt in einer Zeile.
 - Seitenleiste: Unter „Einstellungen“ heißt „Profil bearbeiten“ jetzt „Mein Profil“ und öffnet das
   eigene Profil; der Stift rechts daneben führt direkt zur Bearbeitung.
 - Konfiguration: Die Karten stehen linksbündig wie auf den übrigen Seiten, statt auf breiten

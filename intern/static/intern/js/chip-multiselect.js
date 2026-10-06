@@ -281,8 +281,8 @@
 
     // ------------------------------------------------------------- Einstieg
 
+    // Nach einem htmx-Swap sind Instanzen aus dem Dokument verschwunden.
     function initAlle() {
-        // Nach einem htmx-Swap sind Instanzen aus dem Dokument verschwunden.
         instanzen = instanzen.filter(function (inst) {
             if (document.contains(inst.wrap)) return true;
             inst.sortables.forEach(function (s) {
@@ -295,6 +295,9 @@
             initEine(wrap);
         });
     }
+    // Fuer Aufrufer, die Markup einsetzen, ohne htmx zu benutzen (filter-baukasten.js:
+    // eine geklonte Zeile bringt eine uninitialisierte Chip-Liste mit).
+    window.chipMultiSelectInitAlle = initAlle;
 
     function init() {
         if (!document.querySelector("[data-chip-multiselect]")) return;

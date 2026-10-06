@@ -1,10 +1,20 @@
+{% comment %}
+Die Filterleiste der Titelleiste. Jeder Chip bringt seinen Text fertig mit
+(``filter_tags.filter_chips``): die Kette des Baukastens als Satz („ist in Gruppe
+Vorstand", „hat geantwortet zu Konzert am 06.06.27"), die Felder eines FilterSet als
+„Feld: Wert". Rot unterlegt sind verneinte Bedingungen — der Satz sagt das „nicht"
+selbst, die Fläche macht es auf einen Blick sichtbar.
+
+Ein Chip ohne Link ist keiner: das Konnektorwort und die Klammer tragen nur die Logik,
+das „+n" öffnet den Filter.
+{% endcomment %}
 {% if chips %}
 <div class="filter-chips">
     {% for chip in chips %}
-    <a href="{{ chip.url }}" class="filter-chip filter-chip--{{ chip.chip_type }}">
-        {{ chip.label }}{% if chip.value %}: {{ chip.value }}{% endif %}
-        <span class="filter-chip-x">&times;</span>
-    </a>
+    {% if chip.verb %}<span class="filter-verb">{{ chip.verb }}</span>
+    {% elif chip.klammer %}<span class="filter-klammer">{{ chip.klammer }}</span>
+    {% elif chip.chip_type == "mehr" %}<button type="button" class="filter-chip filter-chip--mehr" title="{{ chip.titel }}" onclick="toggle('Filter')">{{ chip.label }}</button>
+    {% else %}<a href="{{ chip.url }}" class="filter-chip filter-chip--{{ chip.chip_type }}">{{ chip.text }}<span class="filter-chip-x">&times;</span></a>{% endif %}
     {% endfor %}
 </div>
 {% endif %}

@@ -17,6 +17,7 @@ from unittest import mock
 from django.core.signals import request_finished, request_started
 from django.db.models import Q
 from django import forms
+from django.http import QueryDict
 from django.template import Context, Template
 from django.template.loader import render_to_string
 from django.test import SimpleTestCase
@@ -3223,52 +3224,63 @@ class ZusageOptionenTest(SimpleTestCase):
             dict(Zusage._meta.get_field("option").choices), zusage.OPTION_LABELS
         )
 
-    def test_filter_bietet_die_antworten_plus_sentinel(self):
-        """Der Statusfilter zeigt genau die Antworten (ohne „keine Angabe", denn
-        eine leere Auswahl filtert nicht) plus ``"0"`` = „nicht geantwortet"."""
-        from intern import zusage
-        from intern.tables import MitgliederFilter
+    def test_baukasten_bietet_die_antworten(self):
+        """Die Zusage-Zeile kennt jede Antwort aus dem Katalog.
 
-        choices = MitgliederFilter.base_filters["status"].extra["choices"]
-        self.assertEqual([wert for wert, _ in choices], ["1", "2", "3", "0"])
-        erwartet = {wert: label for wert, label in zusage.OPTION_LABELS.items() if wert}
-        erwartet["0"] = "keine Auswahl"
-        self.assertEqual(dict(choices), erwartet)
+        Die Beschriftungen sind hier **Verben** („zugesagt"), weil sie in einem Satz
+        stehen („Zusage: Konzert am 12.03.26 — zugesagt"); die Langform aus
+        ``zusage.OPTION_LABELS`` bleibt davon unberührt und anderweitig wortgleich.
+        """
+        from intern import zusage
+        from intern import filterbau_mitglieder as filterbau
+
+        beschriftungen = dict(filterbau.ZUSAGE_LABELS)
+        # Jede echte Antwortoption ist dabei -- "ohne" steht fuer die leere.
+        for wert in zusage.OPTIONEN:
+            self.assertIn(wert or "ohne", beschriftungen)
+        self.assertEqual(beschriftungen["ohne"], "Keine Angabe")
+        self.assertEqual(beschriftungen["beantwortet"], "geantwortet")
+        self.assertEqual(dict(zusage.OPTION_LABELS)["1"], "Zusage")
+        # Jeder Eintrag bringt beide Satzformen mit; „ohne" braucht ein eigenes Wort,
+        # „nicht keine Angabe gemacht" liest sich nicht.
+        saetze = {w: (ja, nein) for w, _l, ja, nein in filterbau.ZUSAGE_ANTWORTEN}
+        self.assertEqual(saetze["1"], ("hat zugesagt", "hat nicht zugesagt"))
+        self.assertEqual(saetze["ohne"], ("hat keine Angabe gemacht", "hat eine Angabe gemacht"))
 
 
 class RepertoireSucheTest(SimpleTestCase):
     """Die Suche der Titelliste greift über Titel, Komponist und Bearbeiter.
 
-    Das QuerySet wird nie ausgewertet — der ``method=``-Filter liefert ein
-    faules QuerySet, geprüft wird das kompilierte SQL.
+    Das QuerySet wird nie ausgewertet — geprüft wird das kompilierte SQL.
     """
 
-    def _query(self, wert):
-        from intern.models import Lied
-        from intern.tables import RepertoireFilter
+    def _query(self, query):
+        from django.http import QueryDict
 
-        return RepertoireFilter().filter_suche(Lied.objects.all(), "titel", wert)
+        from intern.filterbau_titel import TITEL
+        from intern.models import Lied
+
+        qs, _bedingungen = TITEL.aus_daten(Lied.objects.all(), QueryDict(query))
+        return qs
 
     def test_suche_umfasst_komponist_und_bearbeiter(self):
-        sql = str(self._query("bach").query)
+        sql = str(self._query("f=und:suche:enthaelt:bach").query)
+        for spalte in ("titel", "komponist", "bearbeiter"):
+            self.assertIn(f'"{spalte}" LIKE', sql)
+
+    def test_alter_suchparameter_greift_weiter(self):
+        # Der gemerkte Filter im Cookie traegt noch „titel" -- jetzt die Suche.
+        sql = str(self._query("titel=bach").query)
         for spalte in ("titel", "komponist", "bearbeiter"):
             self.assertIn(f'"{spalte}" LIKE', sql)
 
     def test_leere_suche_filtert_nicht(self):
         from intern.models import Lied
 
-        self.assertEqual(
-            str(self._query("").query), str(Lied.objects.all().query)
-        )
-
-    def test_filter_bleibt_benannt_und_beschriftet(self):
-        """Parameter und Label bleiben wie bisher, damit alte Links und die
-        gemerkten Filter je Seite weiter greifen."""
-        from intern.tables import RepertoireFilter
-
-        feld = RepertoireFilter.base_filters["titel"]
-        self.assertEqual(feld.label, "Suche")
-        self.assertEqual(feld.method, "filter_suche")
+        for query in ("titel=", "f=und:suche:enthaelt:"):
+            self.assertEqual(
+                str(self._query(query).query), str(Lied.objects.all().query), query
+            )
 
 
 class TabellenPreferenzenTest(SimpleTestCase):
@@ -5078,3 +5090,999 @@ class RechteHilfeTest(SimpleTestCase):
         hilfe = rechte_hilfe(["intern.add_ort"], {"intern.add_ort": {"quellen": ["Vorstand"]}})
         self.assertEqual(hilfe["intern.add_ort"]["titel"], "Orte · anlegen")
         self.assertEqual(hilfe["intern.add_ort"]["quellen"], ["Vorstand"])
+
+
+class FilterbauParseTest(SimpleTestCase):
+    """Die Kette des Filter-Baukastens lesen: `f=verbindung:feld:operator:werte`."""
+
+    def _lesen(self, *zeilen):
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        daten = QueryDict("", mutable=True)
+        for zeile in zeilen:
+            daten.appendlist("f", zeile)
+        return MITGLIEDER.lese_bedingungen(daten)
+
+    def test_zeile(self):
+        from intern.filterbau import Bedingung
+
+        self.assertEqual(
+            self._lesen("und:gruppen:in:1,4"),
+            [Bedingung("und", "gruppen", "in", ("1", "4"))],
+        )
+
+    def test_erste_bedingung_ohne_konnektor(self):
+        # Vor der ersten Zeile ist nichts, womit sie sich verknuepfen koennte.
+        self.assertEqual(self._lesen("oder:gruppen:in:1")[0].verbindung, "und")
+
+    def test_konnektoren_bleiben(self):
+        gelesen = self._lesen("und:gruppen:in:1", "oder:stimme:in:S")
+        self.assertEqual([b.verbindung for b in gelesen], ["und", "oder"])
+
+    def test_verwirft_unbekanntes(self):
+        # Ein unbekanntes Feld, ein unbekannter Operator, zu wenig Teile, leere Werte.
+        for zeile in (
+            "und:erfunden:in:1",
+            "und:gruppen:erfunden:1",
+            "und:gruppen:in",
+            "und:gruppen:in:",
+            "und:gruppen:in:,,",
+            "",
+        ):
+            self.assertEqual(self._lesen(zeile), [], zeile)
+
+    def test_unbekannter_konnektor_ist_und(self):
+        self.assertEqual(self._lesen("vielleicht:gruppen:in:1")[0].verbindung, "und")
+
+    def test_leere_werte_zwischendurch_fallen_heraus(self):
+        self.assertEqual(self._lesen("und:gruppen:in:1,,4")[0].werte, ("1", "4"))
+
+    def test_ohne_f_keine_bedingungen(self):
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        self.assertEqual(MITGLIEDER.lese_bedingungen(QueryDict("")), [])
+
+
+class FilterbauAltTest(SimpleTestCase):
+    """Die Parameter der Zeit vor dem Baukasten.
+
+    ``@tabellenzustand`` merkt sich die Query ein Jahr im Cookie und leitet einen
+    Aufruf ohne Parameter dorthin um. Kennte die Ansicht die alten Namen nicht mehr,
+    saehe man eine ungefilterte Liste, die wie eine gefilterte aussieht.
+    """
+
+    def _lesen(self, **params):
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        daten = QueryDict("", mutable=True)
+        for name, werte in params.items():
+            for wert in werte:
+                daten.appendlist(name, wert)
+        return MITGLIEDER.lese_bedingungen(daten)
+
+    def test_gruppen_werden_einschluss(self):
+        from intern.filterbau import Bedingung
+
+        self.assertEqual(
+            self._lesen(gruppen=["1", "2"]),
+            [Bedingung("und", "gruppen", "in", ("1", "2"))],
+        )
+
+    def test_gruppen_nicht_werden_ausschluss(self):
+        from intern.filterbau import Bedingung
+
+        self.assertEqual(
+            self._lesen(gruppen_nicht=["7"]),
+            [Bedingung("und", "gruppen", "nicht-in", ("7",))],
+        )
+
+    def test_stimmen(self):
+        self.assertEqual(self._lesen(stimme=["S", "A"])[0].werte, ("S", "A"))
+
+    def test_f_hat_vorrang(self):
+        # Steht ein `f` in der Query, ist es der neue Weg -- die Altparameter daneben
+        # sind dann Reste und werden nicht zusaetzlich ausgewertet.
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        daten = QueryDict("f=und:gruppen:in:1&gruppen=9", mutable=True)
+        self.assertEqual(MITGLIEDER.lese_bedingungen(daten)[0].werte, ("1",))
+
+    def test_leere_altwerte(self):
+        self.assertEqual(self._lesen(gruppen=[""], gruppen_nicht=[""]), [])
+
+
+class FilterbauQTest(SimpleTestCase):
+    """``baue_q`` ohne Datenbank.
+
+    Verglichen wird die **Verknuepfungsform**, nicht die Gleichheit der Q-Objekte: die
+    Blaetter ueber Mehrfachrelationen sind EXISTS-Unterabfragen (`Exists`), und die
+    sind nur sich selbst gleich. Die Form ist ohnehin das, worum es hier geht --
+    UND bindet staerker als ODER. ``+`` ist eine Bedingung, ``-`` eine verneinte.
+    """
+
+    def _q(self, *zeilen):
+        from intern.filterbau import Bedingung
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        bedingungen = []
+        for i, (verbindung, feld, operator, werte) in enumerate(zeilen):
+            bedingungen.append(
+                Bedingung(
+                    verbindung if i else "und", feld, operator, tuple(werte.split(","))
+                )
+            )
+        return MITGLIEDER.baue_q(bedingungen)
+
+    def _form(self, q):
+        from django.db.models.expressions import NegatedExpression
+
+        if not isinstance(q, Q):
+            return "-" if isinstance(q, NegatedExpression) else "+"
+        kinder = [self._form(k) for k in q.children]
+        if len(kinder) == 1:
+            return kinder[0]
+        wort = " und " if q.connector == "AND" else " oder "
+        return "(%s)" % wort.join(kinder)
+
+    def test_einschluss(self):
+        self.assertEqual(self._form(self._q(("und", "gruppen", "in", "1,4"))), "+")
+
+    def test_ausschluss_ist_negiert(self):
+        self.assertEqual(self._form(self._q(("und", "gruppen", "nicht-in", "7"))), "-")
+
+    def test_reine_und_kette(self):
+        # Der Fall des Nutzers: in A und in B und nicht in C.
+        self.assertEqual(
+            self._form(self._q(
+                ("und", "gruppen", "in", "1"),
+                ("und", "gruppen", "in", "2"),
+                ("und", "gruppen", "nicht-in", "3"),
+            )),
+            "(+ und + und -)",
+        )
+
+    def test_und_bindet_staerker_als_oder(self):
+        # A oder B und C muss A oder (B und C) sein, nicht (A oder B) und C.
+        self.assertEqual(
+            self._form(self._q(
+                ("und", "gruppen", "in", "1"),
+                ("oder", "gruppen", "in", "2"),
+                ("und", "gruppen", "in", "3"),
+            )),
+            "(+ oder (+ und +))",
+        )
+
+    def test_zwei_abschnitte(self):
+        self.assertEqual(
+            self._form(self._q(
+                ("und", "stimme", "in", "S"),
+                ("oder", "gruppen", "in", "1"),
+                ("und", "gruppen", "in", "2"),
+            )),
+            "(+ oder (+ und +))",
+        )
+
+    def test_ohne_bedingungen_filtert_nichts(self):
+        self.assertEqual(self._q(), Q())
+        self.assertFalse(self._q())
+
+    def test_verneinte_gruppe_bleibt_beim_ergebnis_frei_von_dubletten(self):
+        """Der Filter ueber eine Mehrfachrelation ist eine EXISTS-Unterabfrage.
+
+        Als Join mit Verneinung prueft Django die einzelne Verknuepfungszeile statt
+        der Person: wer ausser der ausgeschlossenen Gruppe noch eine andere hat,
+        rutschte durch — genau das war der Fehler. Ohne Join gibt es auch keine
+        doppelten Koepfe, deshalb braucht es kein ``.distinct()``.
+        """
+        from intern.models import User
+        from intern.filterbau import Bedingung
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        qs = User.objects.all().filter(MITGLIEDER.baue_q([
+            Bedingung("und", "gruppen", "in", ("1", "2")),
+            Bedingung("und", "gruppen", "nicht-in", ("3",)),
+        ]))
+        sql = str(qs.query)
+        self.assertIn("EXISTS", sql)
+        # Die Unterabfrage haengt an der Person, nicht an der Verknuepfungszeile.
+        self.assertNotIn('U1."id" = "intern_user_groups"."id"', sql)
+        self.assertFalse(qs.query.distinct)
+
+
+class FilterbauKetteTest(SimpleTestCase):
+    """Die Anzeige der Kette in der Titelleiste."""
+
+    def setUp(self):
+        from django.test import RequestFactory
+
+        self.rf = RequestFactory()
+
+    @staticmethod
+    def _art(element):
+        """Ein Anzeigeelement auf seine Art eindampfen -- lesbarer als fuenf Schluessel."""
+        if "verb" in element:
+            return element["verb"]
+        if "klammer" in element:
+            return element["klammer"]
+        if element.get("chip_type") == "mehr":
+            return "+n"
+        return "nicht" if element.get("nicht") else "chip"
+
+    def _kette(self, *zeilen, pfad="/intern/mitglied/", max_chips=None, namen=None, **params):
+        from intern.filterbau import Bedingung
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        bedingungen = [
+            Bedingung(verbindung if i else "und", feld, operator, tuple(werte.split(",")))
+            for i, (verbindung, feld, operator, werte) in enumerate(zeilen)
+        ]
+        daten = [":".join((b.verbindung, b.feld, b.operator, ",".join(b.werte)))
+                 for b in bedingungen]
+        request = self.rf.get(pfad, {**params, "f": daten})
+        if max_chips is None:
+            return MITGLIEDER.kette(bedingungen, request, namen=namen)
+        return MITGLIEDER.kette(bedingungen, request, namen=namen, max_chips=max_chips)
+
+    def test_reine_und_kette_ohne_klammern(self):
+        ergebnis = self._kette(
+            ("und", "gruppen", "in", "1"),
+            ("und", "gruppen", "in", "2"),
+            ("und", "gruppen", "nicht-in", "3"),
+        )
+        self.assertEqual(
+            [FilterbauKetteTest._art(e) for e in ergebnis["elemente"]],
+            ["chip", "und", "chip", "und", "nicht"],
+        )
+        self.assertFalse([e for e in ergebnis["elemente"] if "klammer" in e])
+        self.assertEqual(ergebnis["versteckt"], 0)
+
+    def test_klammern_um_jeden_mehrfachen_abschnitt(self):
+        # A oder (B und C): nur der zweite Abschnitt traegt eine Bedingung zuviel.
+        ergebnis = self._kette(
+            ("und", "gruppen", "in", "1"),
+            ("oder", "gruppen", "in", "2"),
+            ("und", "stimme", "in", "S"),
+        )
+        self.assertEqual(
+            [self._art(e) for e in ergebnis["elemente"]],
+            ["chip", "oder", "(", "chip", "und", "chip", ")"],
+        )
+
+    def test_klammern_um_beide_abschnitte(self):
+        ergebnis = self._kette(
+            ("und", "gruppen", "in", "1"),
+            ("und", "stimme", "in", "S"),
+            ("oder", "gruppen", "in", "2"),
+            ("und", "stimme", "in", "A"),
+            max_chips=4,
+        )
+        self.assertEqual(
+            [self._art(e) for e in ergebnis["elemente"]],
+            ["(", "chip", "und", "chip", ")", "oder", "(", "chip", "und", "chip", ")"],
+        )
+
+    def test_einzelne_bedingung_ohne_klammer(self):
+        # Eine Bedingung ist schon fuer sich ein Ausdruck.
+        ergebnis = self._kette(
+            ("und", "stimme", "in", "S"), ("oder", "gruppen", "in", "1")
+        )
+        self.assertEqual(
+            [self._art(e) for e in ergebnis["elemente"]], ["chip", "oder", "chip"]
+        )
+
+    def test_deckel_und_klammern_schliessen_sich_aus(self):
+        # Abgekuerzt waeren unvollstaendige Klammern nur Rauschen.
+        ergebnis = self._kette(
+            ("und", "gruppen", "in", "1"),
+            ("oder", "gruppen", "in", "2"),
+            ("und", "stimme", "in", "S"),
+            ("und", "stimme", "in", "A"),
+        )
+        self.assertEqual(ergebnis["versteckt"], 1)
+        self.assertEqual(
+            [self._art(e) for e in ergebnis["elemente"]],
+            ["chip", "oder", "chip", "und", "chip"],
+        )
+
+    def test_titel_traegt_den_vollen_satz(self):
+        ergebnis = self._kette(
+            ("und", "gruppen", "in", "1"),
+            ("und", "gruppen", "nicht-in", "3"),
+        )
+        self.assertEqual(
+            ergebnis["titel"], "ist in Gruppe 1 und ist nicht in Gruppe 3"
+        )
+
+    def test_chip_url_entfernt_genau_eine_bedingung(self):
+        from urllib.parse import parse_qs, urlsplit
+
+        ergebnis = self._kette(
+            ("und", "gruppen", "in", "1"),
+            ("und", "gruppen", "in", "2"),
+            ("und", "stimme", "in", "S"),
+            sort="last_name",
+        )
+        erste = ergebnis["elemente"][0]
+        abfrage = parse_qs(urlsplit(erste["url"]).query)
+        self.assertEqual(abfrage["f"], ["und:gruppen:in:2", "und:stimme:in:S"])
+        self.assertEqual(abfrage["sort"], ["last_name"])
+
+    def test_letzter_chip_laesst_kein_leeres_f(self):
+        from urllib.parse import urlsplit
+
+        ergebnis = self._kette(("und", "stimme", "in", "S"))
+        self.assertNotIn("f", urlsplit(ergebnis["elemente"][0]["url"]).query)
+
+    def test_stimme_wird_beschriftet(self):
+        ergebnis = self._kette(("und", "stimme", "in", "S,A"))
+        self.assertEqual(ergebnis["elemente"][0]["text"], "ist Sopran, Alt")
+
+    def test_unbekannte_gruppe_bleibt_als_kennung(self):
+        # Ohne Namensaufloesung stehen die Schluessel -- immer noch besser als nichts.
+        ergebnis = self._kette(("und", "gruppen", "in", "1"))
+        self.assertEqual(ergebnis["elemente"][0]["text"], "ist in Gruppe 1")
+
+    def test_gruppennamen_werden_eingesetzt(self):
+        ergebnis = self._kette(
+            ("und", "gruppen", "in", "1,2"),
+            ("und", "gruppen", "nicht-in", "9"),
+            namen={"gruppen": {"1": "Vorstand", "2": "Kassenprüfer"}},
+        )
+        self.assertEqual(
+            [e["text"] for e in ergebnis["elemente"] if "text" in e],
+            ["ist in Gruppe Vorstand, Kassenprüfer", "ist nicht in Gruppe 9"],
+        )
+        self.assertIn("Vorstand, Kassenprüfer", ergebnis["titel"])
+
+
+class FilterbauVorlagenTest(SimpleTestCase):
+    """Feld- und Operatorauswahl des Baukastens, und das Rechte-Gate."""
+
+    def test_felder_kontext_nur_die_erlaubten(self):
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        # Ohne Verwalterrecht: kein einziges Feld aus PRIVACY_FIELDS, kein Zugang.
+        schluessel = [f["key"] for f in MITGLIEDER.felder_kontext(False)]
+        self.assertIn("name", schluessel)
+        self.assertIn("stimme", schluessel)
+        self.assertIn("gruppen", schluessel)
+        for gesperrt in ("email", "xmpp", "telefon", "fax", "strasse", "plz", "ort",
+                         "geburtstag", "zugang"):
+            self.assertNotIn(gesperrt, schluessel, gesperrt)
+
+    def test_felder_kontext_mit_verwalterrecht(self):
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        schluessel = {f["key"] for f in MITGLIEDER.felder_kontext(True)}
+        self.assertLessEqual({"email", "telefon", "ort", "geburtstag"}, schluessel)
+        # Die Reihenfolge folgt der Tabelle.
+        self.assertEqual(
+            [f["key"] for f in MITGLIEDER.felder_kontext(True)][:2], ["name", "stimme"]
+        )
+
+    def test_operatoren(self):
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        felder = {f["key"]: f for f in MITGLIEDER.felder_kontext(True)}
+        self.assertEqual(
+            [o["key"] for o in felder["gruppen"]["operatoren"]], ["in", "nicht-in"]
+        )
+        self.assertTrue(felder["gruppen"]["operatoren"][1]["nicht"])
+        self.assertFalse(felder["gruppen"]["operatoren"][0]["nicht"])
+        # Das Textfeld traegt die Wortoperatoren; jeder bringt seinen Satzbaustein mit.
+        self.assertEqual(
+            [o["key"] for o in felder["name"]["operatoren"]],
+            ["enthaelt", "enthaelt-nicht", "beginnt", "endet", "ist"],
+        )
+        self.assertEqual(felder["name"]["operatoren"][0]["satz"], "{feld} enthält {w}")
+        self.assertEqual(felder["gruppen"]["operatoren"][0]["satz"], "ist in Gruppe {w}")
+
+    def test_leerzeile_fuer_gesperrtes_feld_ist_none(self):
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        self.assertIsNone(MITGLIEDER.bedingung_fuer_feld("email", False))
+        self.assertEqual(MITGLIEDER.bedingung_fuer_feld("email", True).feld, "email")
+
+
+class FilterbauEscapingTest(SimpleTestCase):
+    """Werte werden einzeln kodiert -- ein getippter Name darf Komma und Doppelpunkt
+    enthalten, und beides sind hier Trennzeichen."""
+
+    def _rundlauf(self, werte):
+        from urllib.parse import quote
+
+        from django.http import QueryDict
+
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        bedingung = filterbau.Bedingung("und", "name", "enthaelt", werte)
+        # Wie im echten Leben: kodieren, dann als Query-String uebertragen (das macht
+        # die Chip-Adresse), dann von Django dekodieren lassen.
+        uebertragen = "f=" + quote(filterbau.kodiere(bedingung), safe="")
+        gelesen = MITGLIEDER.lese_bedingungen(QueryDict(uebertragen, mutable=True), True)
+        return gelesen[0].werte if gelesen else ()
+
+    def test_komma_und_doppelpunkt(self):
+        self.assertEqual(self._rundlauf(("Müller, Peter: Test",)), ("Müller, Peter: Test",))
+
+    def test_prozentzeichen(self):
+        self.assertEqual(self._rundlauf(("100%",)), ("100%",))
+
+    def test_mehrere_werte_bleiben_getrennt(self):
+        self.assertEqual(self._rundlauf(("a,b", "c:d")), ("a,b", "c:d"))
+
+    def test_alte_werte_bleiben_gueltig(self):
+        from django.http import QueryDict
+
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        gelesen = MITGLIEDER.lese_bedingungen(
+            QueryDict("f=und:gruppen:in:1,4", mutable=True), True
+        )
+        self.assertEqual(gelesen[0].werte, ("1", "4"))
+
+
+class FilterbauRechteTest(SimpleTestCase):
+    """Das Recht greift beim **Lesen**, nicht nur im Dropdown.
+
+    Ohne das umginge eine handgeschriebene Adresse die Oberflaeche und verriete ueber
+    die Treffermenge, was die Tabelle verschweigt: der Filter laeuft vor der
+    Datenschutz-Schwaerzung.
+    """
+
+    def _lesen(self, zeilen, kann_verwalten):
+        from django.http import QueryDict
+
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        daten = QueryDict("", mutable=True)
+        for zeile in zeilen:
+            daten.appendlist("f", zeile)
+        return MITGLIEDER.lese_bedingungen(daten, kann_verwalten)
+
+    def test_gesperrtes_feld_faellt_heraus(self):
+        self.assertEqual(self._lesen(["und:email:enthaelt:gmail"], False), [])
+
+    def test_mit_verwalterrecht_bleibt_es(self):
+        gelesen = self._lesen(["und:email:enthaelt:gmail"], True)
+        self.assertEqual(gelesen[0].feld, "email")
+
+    def test_erlaubte_felder_bleiben(self):
+        gelesen = self._lesen(
+            ["und:email:enthaelt:gmail", "und:name:enthaelt:Meier"], False
+        )
+        self.assertEqual([b.feld for b in gelesen], ["name"])
+
+    def test_zugang_ist_gesperrt(self):
+        self.assertEqual(self._lesen(["und:zugang:hat:"], False), [])
+
+    def test_ein_gesperrtes_feld_wird_nicht_zur_ersten_bedingung(self):
+        # Faellt die erste weg, rueckt die naechste nach und traegt keinen Konnektor.
+        gelesen = self._lesen(
+            ["und:email:enthaelt:gmail", "oder:name:enthaelt:Meier"], False
+        )
+        self.assertEqual([(b.verbindung, b.feld) for b in gelesen], [("und", "name")])
+
+
+class FilterbauAltTest2(SimpleTestCase):
+    """Die festen Felder von vor dem Baukasten: zugang, status, konzert."""
+
+    def _lesen(self, **params):
+        from django.http import QueryDict
+
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        daten = QueryDict("", mutable=True)
+        for name, wert in params.items():
+            daten[name] = wert
+        return MITGLIEDER.lese_bedingungen(daten, True)
+
+    def test_zugang_true(self):
+        self.assertEqual(
+            self._lesen(zugang="true")[0],
+            filterbau_bedingung("und", "zugang", "hat", ()),
+        )
+
+    def test_zugang_false(self):
+        gelesen = self._lesen(zugang="false")
+        self.assertEqual((gelesen[0].feld, gelesen[0].operator), ("zugang", "hat-nicht"))
+
+    def test_zugang_unknown_ergibt_nichts(self):
+        # „Egal" war der dritte Zustand des Schalters und ist keine Bedingung.
+        self.assertEqual(self._lesen(zugang="unknown"), [])
+
+    def test_status_mit_termin(self):
+        gelesen = self._lesen(status="1", konzert="7")
+        self.assertEqual(gelesen[0].feld, "zusage")
+        self.assertEqual(gelesen[0].werte, ("7", "1"))
+
+    def test_status_null_heisst_nicht_geantwortet(self):
+        # Das Termin-Feld ist entfallen; „keine Zeile" ist jetzt „hat nicht geantwortet".
+        gelesen = self._lesen(status="0", konzert="7")
+        self.assertEqual(
+            (gelesen[0].feld, gelesen[0].operator, gelesen[0].werte),
+            ("zusage", "hat-nicht", ("7", "beantwortet")),
+        )
+
+    def test_termin_ohne_status_filtert_nicht(self):
+        # Der Termin war nur Kontext fuer den Status und filterte allein nichts.
+        self.assertEqual(self._lesen(konzert="7"), [])
+
+
+def filterbau_bedingung(*args):
+    from intern.filterbau import Bedingung
+
+    return Bedingung(*args)
+
+
+class FilterbauQNeuTest(SimpleTestCase):
+    """Die Q-Bauer der neuen Felder."""
+
+    def _q(self, feld, operator, *werte):
+        from intern.filterbau_mitglieder import FELDER
+
+        return FELDER[feld].q(operator, tuple(werte))
+
+    def _sql(self, feld, operator, *werte):
+        """Das kompilierte SQL -- Mehrfachrelationen sind EXISTS-Unterabfragen, und
+        die lassen sich nicht als Q-Objekt vergleichen."""
+        from intern.models import User
+
+        return str(User.objects.all().filter(self._q(feld, operator, *werte)).query)
+
+    def test_name_enthaelt_ueber_beide_namen(self):
+        self.assertEqual(
+            self._q("name", "enthaelt", "Mei"),
+            Q(first_name__icontains="Mei") | Q(last_name__icontains="Mei"),
+        )
+
+    def test_name_enthaelt_nicht_ist_negiert(self):
+        self.assertEqual(
+            self._q("name", "enthaelt-nicht", "Mei"),
+            ~(Q(first_name__icontains="Mei") | Q(last_name__icontains="Mei")),
+        )
+
+    def test_textoperatoren(self):
+        self.assertEqual(self._q("ort", "beginnt", "Ber"), Q(ort__istartswith="Ber"))
+        self.assertEqual(self._q("ort", "endet", "lin"), Q(ort__iendswith="lin"))
+        self.assertEqual(self._q("ort", "ist", "Berlin"), Q(ort__iexact="Berlin"))
+
+    def test_zugang(self):
+        self.assertEqual(self._q("zugang", "hat"), Q(is_active=True))
+        self.assertEqual(self._q("zugang", "hat-nicht"), Q(is_active=False))
+
+    def test_zusage_ist_exists_und_haengt_an_der_person(self):
+        # Eine Mehrfachrelation wird als EXISTS-Unterabfrage geprueft, nicht als Join
+        # -- siehe FilterbauQTest. Das SQL haengt an der Person, nicht an einer
+        # Verknuepfungszeile.
+        sql = self._sql("zusage", "hat", "7", "1")
+        self.assertIn("EXISTS", sql)
+        self.assertIn("intern_zusage", sql)
+        self.assertIn('"termin_id" = 7', sql)
+        self.assertIn('"person_id" = ("intern_user"."id")', sql)
+        self.assertNotIn("NOT EXISTS", sql)
+        self.assertIn("NOT EXISTS", self._sql("zusage", "hat-nicht", "7", "1"))
+
+    def test_zusage_antwort(self):
+        sql = self._sql("zusage", "hat", "7", "2")
+        self.assertIn("EXISTS", sql)
+        self.assertIn('"option" = 2', sql)
+        self.assertIn('"termin_id" = 7', sql)
+
+    def test_zusage_ohne_angabe_ist_die_leere_option(self):
+        # Die leere Option ist eine echte Zeile -- „ohne Angabe" ist etwas anderes als
+        # „hat nicht geantwortet".
+        sql = self._sql("zusage", "hat", "7", "ohne")
+        self.assertIn('"option" = ', sql)
+        self.assertNotIn('"option" = 1', sql)
+
+    def test_zusage_beantwortet(self):
+        self.assertIn(
+            '"option" IN (1, 2, 3)', self._sql("zusage", "hat", "7", "beantwortet")
+        )
+
+    def test_datum(self):
+        self.assertEqual(self._q("geburtstag", "vor", "1990-01-01"),
+                         Q(geburtstag__lt="1990-01-01"))
+        self.assertEqual(self._q("geburtstag", "nach", "1990-01-01"),
+                         Q(geburtstag__gt="1990-01-01"))
+
+    def test_zeitstempel_vergleichen_das_datum(self):
+        # last_login ist ein DateTimeField -- ohne __date faende „vor dem 1.1." den
+        # 1.1. selbst nicht mehr.
+        self.assertEqual(self._q("last_login", "vor", "2026-01-01"),
+                         Q(last_login__date__lt="2026-01-01"))
+
+
+class FilterbauVorgabeTest(SimpleTestCase):
+    """Die Zugangs-Vorgabe des Verwalters und ihr Opt-out."""
+
+    def _daten(self, query=""):
+        from django.http import QueryDict
+
+        return QueryDict(query, mutable=True)
+
+    def test_ohne_verwalterrecht_keine_vorgabe(self):
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        self.assertEqual(MITGLIEDER.vorgabe([], self._daten(), False), [])
+
+    def test_verwalter_bekommt_die_vorgabe(self):
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        gelesen = MITGLIEDER.vorgabe([], self._daten(), True)
+        self.assertEqual((gelesen[0].feld, gelesen[0].operator), ("zugang", "hat"))
+
+    def test_egal_schaltet_sie_ab(self):
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        self.assertEqual(
+            MITGLIEDER.vorgabe([], self._daten("zugang=egal"), True), []
+        )
+
+    def test_alte_egal_wahl_schaltet_sie_ebenso_ab(self):
+        # Der alte Schalter hatte den dritten Zustand „unknown" -- dieselbe Aussage.
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        self.assertEqual(
+            MITGLIEDER.vorgabe([], self._daten("zugang=unknown"), True), []
+        )
+
+    def test_eigene_zugangsbedingung_gewinnt(self):
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        eigen = [filterbau.Bedingung("und", "zugang", "hat-nicht", ())]
+        self.assertEqual(MITGLIEDER.vorgabe(eigen, self._daten(), True), eigen)
+
+    def test_chip_der_vorgabe_setzt_egal(self):
+        from django.test import RequestFactory
+
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        bedingung = filterbau.Bedingung("und", "zugang", "hat", ())
+        request = RequestFactory().get(
+            "/intern/mitglied/", {"f": filterbau.kodiere(bedingung)}
+        )
+        ergebnis = MITGLIEDER.kette([bedingung], request)
+        self.assertEqual(ergebnis["elemente"][0]["url"], "/intern/mitglied/?zugang=egal")
+
+    def test_andere_bedingung_setzt_kein_egal(self):
+        from django.test import RequestFactory
+
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        bedingung = filterbau.Bedingung("und", "stimme", "in", ("S",))
+        request = RequestFactory().get(
+            "/intern/mitglied/", {"f": filterbau.kodiere(bedingung)}
+        )
+        ergebnis = MITGLIEDER.kette([bedingung], request)
+        self.assertEqual(ergebnis["elemente"][0]["url"], "/intern/mitglied/")
+
+
+class FilterbauChipTextTest(SimpleTestCase):
+    """Der Chip liest sich als Satz — „ist in Gruppe Vorstand", nicht „Gruppen: Vorstand".
+
+    Die Verneinung steckt im Satz („ist nicht in …"); das rote Hinterlegen kommt
+    weiterhin aus ``ist_verneinend``, aber es steht kein zweites „nicht" davor.
+    """
+
+    def setUp(self):
+        from django.test import RequestFactory
+
+        self.rf = RequestFactory()
+
+    def _chip(self, feld, operator, *werte, namen=None):
+        from intern import filterbau
+        from intern.filterbau_mitglieder import MITGLIEDER
+
+        bedingung = filterbau.Bedingung("und", feld, operator, tuple(werte))
+        request = self.rf.get("/intern/mitglied/", {"f": filterbau.kodiere(bedingung)})
+        return MITGLIEDER.kette([bedingung], request, namen)["elemente"][0]
+
+    def _text(self, feld, operator, *werte, namen=None):
+        return self._chip(feld, operator, *werte, namen=namen)["text"]
+
+    def test_textfeld_als_satz(self):
+        self.assertEqual(self._text("name", "enthaelt", "Mei"), "Name enthält Mei")
+        self.assertEqual(self._text("name", "beginnt", "Mei"), "Name beginnt mit Mei")
+        self.assertEqual(self._text("name", "endet", "Mei"), "Name endet mit Mei")
+        self.assertEqual(self._text("name", "ist", "Mei"), "Name ist Mei")
+        self.assertEqual(self._text("ort", "enthaelt", "Ber"), "Ort enthält Ber")
+
+    def test_verneinung_steht_im_satz_und_bleibt_rot(self):
+        chip = self._chip("name", "enthaelt-nicht", "Mei")
+        self.assertEqual(chip["text"], "Name enthält nicht Mei")
+        self.assertTrue(chip["nicht"])
+        self.assertEqual(chip["chip_type"], "false")
+        # Kein zweites „nicht" davor — der Satz traegt es schon.
+        self.assertFalse(chip["text"].startswith("nicht"))
+
+    def test_gruppen_als_satz(self):
+        self.assertEqual(
+            self._text("gruppen", "in", "1", "2", namen={"gruppen": {"1": "Vorstand", "2": "Kassenprüfer"}}),
+            "ist in Gruppe Vorstand, Kassenprüfer",
+        )
+        self.assertEqual(
+            self._text("gruppen", "nicht-in", "3", namen={"gruppen": {"3": "Webmaster"}}),
+            "ist nicht in Gruppe Webmaster",
+        )
+
+    def test_stimme_als_satz(self):
+        self.assertEqual(self._text("stimme", "in", "S"), "ist Sopran")
+        self.assertEqual(self._text("stimme", "nicht-in", "S", "A"), "ist nicht Sopran, Alt")
+
+    def test_zugang_ohne_wert(self):
+        self.assertEqual(self._text("zugang", "hat"), "hat Zugang")
+        self.assertEqual(self._text("zugang", "hat-nicht"), "hat keinen Zugang")
+
+    def test_datum_als_satz(self):
+        self.assertEqual(
+            self._text("geburtstag", "vor", "1990-01-01"), "Geburtstag vor dem 01.01.1990"
+        )
+        self.assertEqual(
+            self._text("last_login", "nach", "2026-01-01"), "Letzte Anmeldung nach dem 01.01.2026"
+        )
+
+    def test_zusage_liest_als_satz(self):
+        namen = {"termin": {"7": "Konzert am 12.03.26"}}
+        self.assertEqual(
+            self._text("zusage", "hat", "7", "beantwortet", namen=namen),
+            "hat geantwortet zu Konzert am 12.03.26",
+        )
+        self.assertEqual(
+            self._text("zusage", "hat-nicht", "7", "1", namen=namen),
+            "hat nicht zugesagt zu Konzert am 12.03.26",
+        )
+        # „ohne Angabe" braucht ein eigenes Wort fuer die Verneinung.
+        self.assertEqual(
+            self._text("zusage", "hat", "7", "ohne", namen=namen),
+            "hat keine Angabe gemacht zu Konzert am 12.03.26",
+        )
+        self.assertEqual(
+            self._text("zusage", "hat-nicht", "7", "ohne", namen=namen),
+            "hat eine Angabe gemacht zu Konzert am 12.03.26",
+        )
+
+    def test_unbekannter_termin_bleibt_als_kennung(self):
+        self.assertEqual(self._text("zusage", "hat", "7", "1"), "hat zugesagt zu 7")
+
+    def test_termin_feld_gibt_es_nicht_mehr(self):
+        # „Zusage" deckt es ab: „hat / geantwortet" ist genau das, was es konnte.
+        from intern.filterbau_mitglieder import FELDER, FELD_REIHENFOLGE
+
+        self.assertNotIn("termin", FELDER)
+        self.assertNotIn("termin", FELD_REIHENFOLGE)
+
+
+class FilterbauSchalterTest(SimpleTestCase):
+    """Wo der Drei-Zustand-Schalter steht.
+
+    Ja/Nein-Felder ohne Wert sind feste Schalter unter der Kette und fehlen im
+    Feld-Dropdown. In einer Zeile gibt es den Schalter nur bei einem Einzelwert; eine
+    Mehrfachauswahl bekommt die Auswahlliste „ist in / ist nicht in", Text- und
+    Datumsfelder ihre Wortoperatoren.
+    """
+
+    def _arten(self, felder):
+        from intern.filterbau import hat_schalter, ist_fest
+
+        return (
+            {k for k, f in felder.items() if ist_fest(f)},
+            {k for k, f in felder.items() if hat_schalter(f)},
+        )
+
+    def test_mitgliederliste(self):
+        from intern.filterbau_mitglieder import FELDER
+
+        self.assertEqual(self._arten(FELDER), ({"zugang"}, {"zusage"}))
+
+    def test_repertoire(self):
+        from intern.filterbau_titel import FELDER
+
+        fest, schalter = self._arten(FELDER)
+        self.assertEqual(fest, {"aktiv", "hymne", "acapella", "weihnacht",
+                                "original", "aufnahme", "pdf", "noten"})
+        self.assertEqual(schalter, {"tempo", "tonart"})
+
+    def test_feste_felder_fehlen_im_dropdown(self):
+        from intern.filterbau_mitglieder import MITGLIEDER
+        from intern.filterbau_titel import TITEL
+
+        felder = {f["key"]: f for f in MITGLIEDER.felder_kontext(True)}
+        self.assertNotIn("zugang", felder)
+        self.assertFalse(felder["gruppen"]["schalter"])
+        self.assertTrue(felder["zusage"]["schalter"])
+        self.assertFalse(felder["name"]["schalter"])
+        self.assertEqual(
+            [f["key"] for f in TITEL.felder_kontext()],
+            ["suche", "tempo", "tonart", "solist", "dirigent"],
+        )
+
+    def test_feste_schalter_mit_stellung(self):
+        from intern.filterbau import Bedingung
+        from intern.filterbau_titel import TITEL
+
+        feste = {f["key"]: f for f in TITEL.feste_kontext(
+            [Bedingung("und", "hymne", "ja", ()), Bedingung("und", "aufnahme", "nein", ())]
+        )}
+        self.assertEqual(feste["hymne"]["stellung"], "ja")
+        self.assertEqual(feste["hymne"]["wert"], "und:hymne:ja:")
+        self.assertEqual(feste["aufnahme"]["stellung"], "nein")
+        self.assertEqual(feste["weihnacht"]["stellung"], "egal")
+        self.assertEqual(feste["weihnacht"]["wert"], "")
+
+    def test_zugang_traegt_den_egal_marker(self):
+        # Steht der Zugangs-Schalter auf „egal", schickt das Formular den Marker mit --
+        # sonst haengte die Vorgabe „hat Zugang" sofort wieder an.
+        from intern.filterbau_mitglieder import MITGLIEDER
+        from intern.filterbau_titel import TITEL
+
+        feste = {f["key"]: f for f in MITGLIEDER.feste_kontext([], True)}
+        self.assertEqual(feste["zugang"]["marker"], {"zugang": "egal"})
+        self.assertEqual(MITGLIEDER.feste_kontext([], False), [])
+        self.assertFalse(any(f["marker"] for f in TITEL.feste_kontext([])))
+
+
+class FilterbauFestTest(SimpleTestCase):
+    """Die festen Bedingungen gelten fuer die ganze Kette: ``fest und (Kette)``."""
+
+    def setUp(self):
+        from django.test import RequestFactory
+
+        self.rf = RequestFactory()
+
+    def _b(self, *zeilen):
+        from intern.filterbau import Bedingung
+
+        return [Bedingung(v, f, o, tuple(w.split(",")) if w else ())
+                for v, f, o, w in zeilen]
+
+    def test_q_haengt_fest_vor_die_ganze_kette(self):
+        from intern.filterbau_titel import TITEL
+
+        # Mitten in einer ODER-Kette darf „Hymne" nicht nur an einem Abschnitt haengen.
+        q = TITEL.baue_q(self._b(
+            ("und", "tempo", "ist", "s"),
+            ("oder", "hymne", "ja", ""),
+            ("oder", "tonart", "ist", "C"),
+        ))
+        self.assertEqual(
+            q, Q(hymne=True) & (Q(tempo__in=("s",)) | Q(tonart__in=("C",)))
+        )
+
+    def test_lesen_ordnet_feste_nach_vorn(self):
+        from django.http import QueryDict
+
+        from intern.filterbau_titel import TITEL
+
+        daten = QueryDict("", mutable=True)
+        daten.setlist("f", ["und:tempo:ist:s", "oder:hymne:ja:", "oder:tonart:ist:C"])
+        gelesen = TITEL.lese_bedingungen(daten)
+        self.assertEqual(
+            [(b.verbindung, b.feld) for b in gelesen],
+            [("und", "hymne"), ("und", "tempo"), ("oder", "tonart")],
+        )
+
+    def test_kette_klammert_den_rest(self):
+        from intern.filterbau_titel import TITEL
+
+        ergebnis = TITEL.kette(
+            self._b(("und", "hymne", "ja", ""), ("und", "tempo", "ist", "s"),
+                    ("oder", "tonart", "ist", "C")),
+            self.rf.get("/intern/titel/"),
+        )
+        self.assertEqual(
+            [FilterbauKetteTest._art(e) for e in ergebnis["elemente"]],
+            ["chip", "und", "(", "chip", "oder", "chip", ")"],
+        )
+
+    def test_reine_und_kette_ohne_klammern(self):
+        from intern.filterbau_titel import TITEL
+
+        ergebnis = TITEL.kette(
+            self._b(("und", "hymne", "ja", ""), ("und", "tempo", "ist", "s")),
+            self.rf.get("/intern/titel/"),
+        )
+        self.assertEqual(
+            [FilterbauKetteTest._art(e) for e in ergebnis["elemente"]],
+            ["chip", "und", "chip"],
+        )
+
+
+class FilterbauTitelTest(SimpleTestCase):
+    """Das Register des Repertoires: Q-Bauer je Feldart und die alten Parameter."""
+
+    def _q(self, feld, operator, *werte):
+        from intern.filterbau_titel import FELDER
+
+        return FELDER[feld].q(operator, tuple(werte))
+
+    def _sql(self, feld, operator, *werte):
+        from intern.models import Lied
+
+        return str(Lied.objects.all().filter(self._q(feld, operator, *werte)).query)
+
+    def _lesen(self, query):
+        from django.http import QueryDict
+
+        from intern.filterbau_titel import TITEL
+
+        return [
+            (b.feld, b.operator, b.werte)
+            for b in TITEL.lese_bedingungen(QueryDict(query))
+        ]
+
+    def test_schalter_auf_boolean(self):
+        self.assertEqual(self._q("hymne", "ja"), Q(hymne=True))
+        self.assertEqual(self._q("hymne", "nein"), Q(hymne=False))
+
+    def test_datei_vorhanden_oder_nicht(self):
+        self.assertEqual(self._q("aufnahme", "ja"), Q(aufnahme__isnull=False))
+        self.assertEqual(self._q("pdf", "nein"), Q(pdf__isnull=True))
+
+    def test_tempo(self):
+        self.assertEqual(self._q("tempo", "ist", "s"), Q(tempo__in=("s",)))
+        self.assertEqual(self._q("tempo", "ist-nicht", "s"), ~Q(tempo__in=("s",)))
+
+    def test_solist_ist_exists_und_haengt_am_lied(self):
+        # Wie die Gruppen der Mitgliederliste: eine verneinte Join-Bedingung pruefte
+        # die Verknuepfungszeile statt des Lieds.
+        sql = self._sql("solist", "in", "3")
+        self.assertIn("EXISTS", sql)
+        self.assertNotIn("NOT EXISTS", sql)
+        self.assertIn("NOT EXISTS", self._sql("dirigent", "nicht-in", "3"))
+
+    def test_kette_hymne_und_acapella_und_nicht_aufnahme(self):
+        from intern.filterbau_titel import TITEL
+        from intern.filterbau import Bedingung
+
+        q = TITEL.baue_q([
+            Bedingung("und", "hymne", "ja", ()),
+            Bedingung("und", "acapella", "ja", ()),
+            Bedingung("und", "aufnahme", "nein", ()),
+        ])
+        self.assertEqual(
+            q, Q(hymne=True) & Q(acapella=True) & Q(aufnahme__isnull=True)
+        )
+
+    def test_kein_feld_traegt_ein_recht(self):
+        from intern.filterbau_titel import FELDER, TITEL
+
+        self.assertEqual(TITEL.erlaubte_felder(False), frozenset(FELDER))
+
+    def test_alte_parameter(self):
+        self.assertEqual(
+            self._lesen("titel=bach&sheet=true&notensatz=false&original=1"),
+            [
+                ("original", "ja", ()),
+                ("pdf", "ja", ()),
+                ("noten", "nein", ()),
+                ("suche", "enthaelt", ("bach",)),
+            ],
+        )
+
+    def test_alte_schalter_und_personen(self):
+        self.assertEqual(
+            self._lesen("hymne=false&tempo=s&solist=3&solist=4"),
+            [
+                ("hymne", "nein", ()),
+                ("tempo", "ist", ("s",)),
+                ("solist", "in", ("3", "4")),
+            ],
+        )
+
+    def test_egal_und_konzert_ergeben_nichts(self):
+        # „unknown" war die Mitte des alten Schalters; das Konzert steht neben der
+        # Kette und wird in der Ansicht angewandt.
+        self.assertEqual(self._lesen("aktiv=unknown&konzert=7"), [])

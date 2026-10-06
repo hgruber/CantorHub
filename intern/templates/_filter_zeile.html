@@ -1,0 +1,73 @@
+{% comment %}
+Eine Zeile des Filter-Baukastens. Serverseitig für bestehende Bedingungen gerendert;
+für neue Zeilen klont filter-baukasten.js die Vorlage „zeile", die dieselbe Datei mit
+leerer Zeile einbindet — ein Markup, zwei Einstiegspunkte (wie bei
+_chip_multiselect.html).
+
+Kopfzeile: Verknüpfung, Feld, Operator, Entfernen-Kreuz (immer rechts). Die Auswahlen
+tragen keine Überschrift — „Feld" und „Operator" ergeben sich aus dem Kontext — und
+nehmen nur ihre Inhaltsbreite ein.
+
+Der Operator hat zwei Gestalten:
+
+- **Drei-Zustand-Schalter** (✗ / · / ✓) neben dem Wert, wo das Feld genau ein
+  Ja/Nein-Paar mit einem Einzelwert hat (Tempo, Tonart, Zusage). Die Mitte („egal")
+  schaltet die Zeile still, ohne Feld und Wert zu verlieren.
+- **Auswahlliste** sonst — bei einer Mehrfachauswahl „ist in / ist nicht in", bei
+  Text- und Datumsfeldern die Wortoperatoren.
+
+Die Ja/Nein-Felder ohne Wert stehen gar nicht hier, sondern als feste Schalter unter
+der Kette (_filter_baukasten.html).
+
+Das Operator-<select> bleibt in beiden Fällen im DOM — versteckt bei den
+Schalter-Feldern, wo es den Operatorwert trägt; das Skript liest es unbedingt. Die
+sichtbaren Bedienelemente tragen **keinen** Namen: eine Mehrfachauswahl erzeugt je
+Wert einen Eintrag, damit geriete eine Zuordnung über gleichnamige Felder
+durcheinander. Stattdessen füllt das Skript den versteckten <input name="f">.
+{% endcomment %}
+<div class="filter-zeile" data-filter-zeile>
+    <div class="filter-zeile-kopf">
+        <select class="filter-zeile-verbindung" data-filter-verbindung
+                aria-label="Verknüpfung mit der Zeile darüber"{% if ist_erste %} hidden{% endif %}>
+            <option value="und"{% if zeile.verbindung == "und" %} selected{% endif %}>und</option>
+            <option value="oder"{% if zeile.verbindung == "oder" %} selected{% endif %}>oder</option>
+        </select>
+        <select class="filter-zeile-auswahl" data-filter-feld aria-label="Feld">
+            {% for feld in felder %}
+            <option value="{{ feld.key }}"{% if feld.key == zeile.feld %} selected{% endif %}>{{ feld.label }}</option>
+            {% endfor %}
+        </select>
+        <select class="filter-zeile-auswahl" data-filter-operator aria-label="Operator"{% if zeile.schalter %} hidden{% endif %}>
+            {% for op in zeile.operatoren %}
+            <option value="{{ op.key }}" data-nicht="{{ op.nicht|yesno:'1,' }}"{% if op.key == zeile.operator %} selected{% endif %}>{{ op.label }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" class="filter-zeile-weg" data-filter-weg
+                aria-label="Bedingung entfernen" title="Bedingung entfernen">&#x2715;</button>
+    </div>
+    <div class="filter-zeile-wertreihe">
+        <div class="filter-zeile-werte" data-filter-werte data-feld="{{ zeile.feld }}" data-werte="{{ zeile.werte_roh }}">
+            {% include "_filter_wert.html" with zeile=zeile %}
+        </div>
+        <span class="filter-zeile-schalterplatz" data-filter-schalterplatz>
+        {% if zeile.schalter %}
+        {% comment %}
+        Die Pille wird von filter-baukasten.js bedient, nicht von tri-toggle.js —
+        letzteres steigt ohne ein Geschwister .tri-toggle-select sofort aus. Der
+        Daumen-Transform steht hier inline, sonst klebte er bis zum Skriptstart links.
+        {% endcomment %}
+        <span class="tri-toggle filter-zeile-schalter" data-filter-schalter role="group"
+              data-value="{% if zeile.schalter_stellung == 'nein' %}false{% else %}true{% endif %}"
+              aria-label="Bedingung ein-, aus- oder stillschalten">
+            <span class="tri-toggle-thumb" style="transform:translateX({{ zeile.schalter_offset }})"></span>
+            <button type="button" class="tri-toggle-seg{% if zeile.schalter_stellung == 'nein' %} selected{% endif %}"
+                    data-val="{{ zeile.operatoren.1.key }}" title="{{ zeile.operatoren.1.label }}">&#x2717;</button>
+            <button type="button" class="tri-toggle-seg" data-val="egal" title="Egal">&#x00b7;</button>
+            <button type="button" class="tri-toggle-seg{% if zeile.schalter_stellung == 'ja' %} selected{% endif %}"
+                    data-val="{{ zeile.operatoren.0.key }}" title="{{ zeile.operatoren.0.label }}">&#x2713;</button>
+        </span>
+        {% endif %}
+        </span>
+    </div>
+    <input type="hidden" name="f" value="{{ zeile.wert }}" data-filter-wert>
+</div>

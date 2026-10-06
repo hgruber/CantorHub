@@ -4,6 +4,7 @@ import threading
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
+from django.contrib.auth.models import Group
 from django.core.mail import get_connection
 from django.db import connections
 from django.db.models import Count, F, OuterRef
@@ -20,6 +21,7 @@ from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, pars
 from filer.models import File, Folder
 
 from intern import ejabberd, folders
+from intern.filterbau_mitglieder import MITGLIEDER
 from intern.folder_access import visible_folder_ids
 from intern.app_settings import (
     get_config_bool, get_map_center, get_vereinsname_lang, is_ejabberd_configured,
@@ -30,14 +32,26 @@ from intern.mail import neu_verbinden, send_config_mail, versende_serie
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..mitglied_felder import PRIVACY_FIELDS
 from ..mitgliedschaft import beende, ist_mitglied, mitgliedschafts_aktion, nimm_auf
-from ..models import NAMENSVERWEIS, Abstimmung, Artikel, Mitteilung, User, Zusage
-from ..tables import MitgliederFilter, MitgliederTabelle
+from ..models import NAMENSVERWEIS, Abstimmung, Artikel, Mitteilung, Termin, User, Zusage
+from ..tables import MitgliederTabelle
 from .auth import make_invite_token
 from .files import _get_file_extension, besitz_uebertragen
 
 logger = logging.getLogger(__name__)
 
 _PAGE_SIZE = 50
+
+
+def _chip_namen():
+    """Kennung -> Name fuer die Chips der Kette: Gruppen und Termine.
+
+    Ohne die Zuordnung stuenden dort Zahlen. Eine Abfrage je Art, und nur die drei
+    Felder, die ``str(Termin)`` liest.
+    """
+    return {
+        "gruppen": {str(g.pk): g.name for g in Group.objects.order_by("id")},
+        "termin": {str(t.pk): str(t) for t in Termin.objects.only("id", "kurz", "datum")},
+    }
 
 __all__ = [
     "mitglied_list",
@@ -75,11 +89,9 @@ def mitglied_list(request):
         .prefetch_related("groups")
         .order_by("last_name", "first_name")
     )
-    filter_data = request.GET
-    if can_manage and "zugang" not in filter_data:
-        filter_data = filter_data.copy()
-        filter_data["zugang"] = "true"
-    mitglieder_filter = MitgliederFilter(filter_data, queryset=queryset, can_manage=can_manage)
+    # Die Bedingungen des Baukastens. Sie laufen ueber Mehrfachrelationen (groups,
+    # zusage), ein ODER darueber liefert Koepfe sonst mehrfach.
+    queryset, bedingungen = MITGLIEDER.aus_daten(queryset, request.GET, can_manage)
     from .files import visible_fields
 
     fields = visible_fields(request, "MitgliederTabelle")
@@ -88,7 +100,10 @@ def mitglied_list(request):
 
     offset = parse_offset(request)
 
-    probe = MitgliederTabelle(mitglieder_filter.qs, visible_fields=fields, viewer=None)
+    # Kennung -> Name fuer die Chips: Gruppen und Termine zeigen sonst Zahlen.
+    kette = MITGLIEDER.kette(bedingungen, request, _chip_namen())
+
+    probe = MitgliederTabelle(queryset, visible_fields=fields, viewer=None)
     page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
     table = MitgliederTabelle(page, visible_fields=fields, viewer=request.user, counter_offset=offset)
     RequestConfig(request, paginate=False).configure(table)
@@ -113,7 +128,10 @@ def mitglied_list(request):
         {
             "table": table,
             "column_choices": column_choices,
-            "filter": mitglieder_filter,
+            "baukasten": MITGLIEDER,
+            "kann_verwalten": can_manage,
+            "bedingungen": bedingungen,
+            "kette": kette,
             "showfilter": True,
             "seitentitel": "Mitgliederliste",
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
@@ -374,13 +392,9 @@ def mitglied_emails(request):
         .annotate(_stimme_pos=User.stimme_order_case())
         .order_by("_stimme_pos", "last_name", "first_name")
     )
-    filter_data = request.GET
-    if can_manage and "zugang" not in filter_data:
-        filter_data = filter_data.copy()
-        filter_data["zugang"] = "true"
-    mitglieder_filter = MitgliederFilter(filter_data, queryset=queryset, can_manage=can_manage)
+    queryset, _bedingungen = MITGLIEDER.aus_daten(queryset, request.GET, can_manage)
     entries = []
-    for user in mitglieder_filter.qs:
+    for user in queryset:
         if user.field_visible_to(request.user, "email") and user.email:
             name = f"{user.first_name} {user.last_name}".strip()
             entries.append(f"{name} <{user.email}>")
@@ -598,14 +612,12 @@ def mitglied_benachrichtigen(request):
         filter_params = request.GET.urlencode()
         filter_data = request.GET
 
-    if can_manage and "zugang" not in filter_data:
-        filter_data = filter_data.copy()
-        filter_data["zugang"] = "true"
-    mitglieder_filter = MitgliederFilter(filter_data, queryset=queryset, can_manage=can_manage)
+    # Dieselbe Kette wie in der Liste -- die Empfaenger sind genau die Gefilterten.
+    queryset, _bedingungen = MITGLIEDER.aus_daten(queryset, filter_data, can_manage)
 
     recipients = [
         {"pk": u.pk, "name": f"{u.first_name} {u.last_name}".strip(), "email": u.email}
-        for u in mitglieder_filter.qs
+        for u in queryset
         if u.email
     ]
 

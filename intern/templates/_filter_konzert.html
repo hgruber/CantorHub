@@ -1,0 +1,21 @@
+{% comment %}
+Das Konzert des Repertoires — kein Feld der Kette, sondern ein fester Parameter:
+derselbe Wert schnürt die Liste ein, sortiert sie nach der Ablaufposition und
+bestimmt die Warteschlangen des Abspielers. Der Chip dafür bleibt aus der Titelleiste
+ausgenommen, weil er an anderer Stelle schon steht (der Konzertkopf).
+
+Steht in `table.html` unter den Bedingungen (`filter_zusatz`). Ohne dieses Feld wäre
+ein Konzert nur noch über Fremdlinks zu erreichen.
+{% endcomment %}
+<div class="filter-zusatz">
+    <label class="filter-zeile-feld">
+        <span>Konzert</span>
+        <select class="inline-input" name="konzert" aria-label="Auf ein Konzert einschränken">
+            <option value="">Alle Termine</option>
+            {% for termin in konzert_auswahl.termine %}
+            <option value="{{ termin.pk }}"{% if termin.pk|stringformat:"s" == konzert_auswahl.aktuell %} selected{% endif %}>{{ termin }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <p class="filter-ohne">Schränkt die Liste auf den Ablauf dieses Termins ein.</p>
+</div>

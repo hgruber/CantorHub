@@ -42,6 +42,7 @@ they survive edits. Module paths are relative to `intern/`.
 | `add_user` | `views/mitglieder.py` · `mitglied_invite` | `/intern/mitglied/invite/` | send an invitation link |
 | `add_user` **and** `manage_user_permissions` | `views/mitglieder.py` · `mitglied_add`; `templates/mitglied_add_panel.html` | `/intern/mitglied/add/` | create an account manually, without invitation; the panel shows „manuell anlegen" only with `manage_user_permissions` |
 | `change_user` | `views/mitglieder.py` · `mitglied_list`, `mitglied_emails`, `mitglied_benachrichtigen` | `/intern/mitglied/`, `/intern/mitglied/emails/`, `/intern/mitglied/benachrichtigen/` | the lists include accounts without portal access; otherwise only active ones |
+| `change_user` | `filterbau_mitglieder.py` · `Feld.recht`; `filterbau.py` · `erlaubte_felder`, `lese_bedingungen` | `/intern/mitglied/` | which filter criteria the builder offers — e-mail, XMPP, phone, fax, address, birthday and the access switch are for managers. The list itself needs no right. The gate must sit in the reading code, not only in the dropdown: the filter runs **before** `MitgliederTabelle` blanks hidden fields, so a filter on one would reveal its value through the hit count. See `docs/frontend.md` |
 | `change_user` | `views/mitglieder.py` · `mitglied_view` | `/intern/mitglied/<id>/` | edit and history links on another member's profile (one's own profile is always editable) |
 | `change_user` | `views/mitglieder.py` · `mitglied_edit`; `templates/mitglied_edit.html` | `/intern/mitglied/<id>/edit/` | edit another member's data (otherwise redirect to the profile) and „Mitgliedschaft genehmigen" |
 | `change_user` | `views/aenderungen.py` · `mitglied_aenderungen` | `/intern/mitglied/<id>/aenderungen/` | a member's change history |
@@ -95,6 +96,10 @@ they survive edits. Module paths are relative to `intern/`.
 | `change_lied` | `views/aenderungen.py` · `titel_aenderungen` | `/intern/titel/<id>/aenderungen/` | a song's change history |
 | `change_lied` | `views/files.py` · `upload` | `/intern/upload/` | file an upload to a song (`lied_id`, e.g. a drop on the song page) |
 | `delete_lied` | `views/titel.py` · `titel_delete` | `/intern/titel/<id>/delete/` | delete a song |
+
+The repertoire's filter builder has no gate: the right sits on the field (`Feld.recht`), and no
+field in `filterbau_titel.py` carries one — whoever is logged in sees and filters every
+criterion.
 
 ## Artikel
 

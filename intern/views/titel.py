@@ -15,9 +15,10 @@ from filer.models import File
 
 from intern import folders
 
+from ..filterbau_titel import TITEL
 from ..forms import LiedEditForm
-from ..models import Konzert, Lied, Termin
-from ..tables import RepertoireFilter, RepertoireTabelle
+from ..models import Konzert, Lied, Termin, User
+from ..tables import RepertoireTabelle
 from .files import _get_file_extension, _aufnahme_prefix_with_space, datei_url, visible_fields
 
 _PAGE_SIZE = 50
@@ -48,6 +49,52 @@ def _ohne_offset_und_sortierung(query):
     return rest.urlencode()
 
 
+def _mit_konzert(queryset, konzert_id):
+    """Auf ein Konzert einschnueren.
+
+    Das tat frueher der Filterparameter ``konzert``; seit er nicht mehr zur Kette
+    gehoert (er steuert auch Ablauf und Abspieler), muss die Einschraenkung hier
+    stehen -- sonst zeigte die Liste zu einem Konzert das ganze Repertoire.
+    """
+    if not konzert_id:
+        return queryset
+    return queryset.filter(konzert__termin__id=konzert_id).distinct()
+
+
+def _chip_namen(bedingungen):
+    """Kennung -> Name fuer die Chips: Solisten, Dirigenten, Tonarten, Tempo.
+
+    Nur was die Kette wirklich nennt -- eine Abfrage ueber alle Mitglieder waere
+    fuer jede Repertoireseite zu viel.
+    """
+    gebraucht = {b.feld for b in bedingungen}
+    namen = {}
+    if gebraucht & {"solist", "dirigent"}:
+        personen = {
+            str(u.pk): f"{u.last_name}, {u.first_name}".strip(", ")
+            for u in User.objects.all()
+        }
+        namen["solist"] = personen
+        namen["dirigent"] = personen
+    if "tonart" in gebraucht:
+        namen["tonart"] = dict(Lied.TONART_CHOICES)
+    if "tempo" in gebraucht:
+        from ..tables import _TEMPO_LABELS
+
+        namen["tempo"] = _TEMPO_LABELS
+    return namen
+
+
+def _konzert_auswahl(konzert_id):
+    """Das feste Konzertfeld: die Termine mit einem Ablauf, und der gewaehlte."""
+    return {
+        "aktuell": str(konzert_id) if konzert_id else "",
+        "termine": list(
+            Termin.objects.filter(konzert__isnull=False).distinct().order_by("-datum")
+        ),
+    }
+
+
 @login_required
 def titel_playlist(request):
     """Die Wiedergabelisten des (gefilterten) Repertoires als JSON.
@@ -55,7 +102,8 @@ def titel_playlist(request):
     Gegenstueck zu ``folder_playlist``: der Mini-Player holt sie beim ersten Klick
     auf „Abspielen", statt sie in jede Seite einzubetten.
     """
-    qs = RepertoireFilter(request.GET, queryset=_repertoire_queryset()).qs
+    qs, _bedingungen = TITEL.aus_daten(_repertoire_queryset(), request.GET)
+    qs = _mit_konzert(qs, request.GET.get("konzert"))
     return JsonResponse(_warteschlangen(qs))
 
 
@@ -126,7 +174,10 @@ def _repertoire_queryset():
 def titel_list(request):
     queryset = _repertoire_queryset()
     konzert_id = request.GET.get("konzert")
-    repertoire_filter = RepertoireFilter(request.GET, queryset=queryset)
+    queryset, bedingungen = TITEL.aus_daten(queryset, request.GET)
+    queryset = _mit_konzert(queryset, konzert_id)
+    # Kennung -> Name fuer die Chips: Solisten und Dirigenten zeigen sonst Zahlen.
+    kette = TITEL.kette(bedingungen, request, _chip_namen(bedingungen))
     fields = visible_fields(request, "RepertoireTabelle")
     # Legacy single-property columns now live in one Eigenschaften column
     _LEGACY_EIG = {"aktiv", "tempo", "beats", "hymne", "acapella", "weihnacht"}
@@ -143,9 +194,9 @@ def titel_list(request):
             .order_by("position")
         )
         fields = ["titel", "eigenschaften", "position"]
-        table = RepertoireTabelle(
-            repertoire_filter.qs, visible_fields=fields
-        )
+        # Nur fuer render_eigenschaften -- die beiden Listen entstehen daneben aus
+        # eigenen QuerySets, der Filter wirkt hier nicht.
+        table = RepertoireTabelle(Lied.objects.none(), visible_fields=fields)
         RequestConfig(request, paginate=False).configure(table)
 
         from datetime import date
@@ -184,7 +235,6 @@ def titel_list(request):
             request,
             "titel_split.html",
             {
-                "filter": repertoire_filter,
                 "seitentitel": seitentitel,
                 "konzert_items": konzert_items,
                 "pool_items": pool_items,
@@ -194,12 +244,11 @@ def titel_list(request):
                 "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
                 "add_form_multipart": True,
                 "add_label": "Neuer Titel",
-                "chips_skip": ["konzert"],
             },
         )
 
     # Normal repertoire table mode
-    qs = repertoire_filter.qs
+    qs = queryset
     if konzert_id:
         qs = qs.annotate(position=F("konzert__position")).order_by("position")
 
@@ -242,7 +291,11 @@ def titel_list(request):
         "table": table,
         "column_choices": column_choices,
         "visible_fields": fields,
-        "filter": repertoire_filter,
+        "baukasten": TITEL,
+        "bedingungen": bedingungen,
+        "kette": kette,
+        "filter_zusatz": "_filter_konzert.html",
+        "konzert_auswahl": _konzert_auswahl(konzert_id),
         "seitentitel": seitentitel,
         "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
         "upload_folder_id": folders.musik(),
@@ -261,7 +314,6 @@ def titel_list(request):
         "playlist_aufnahmen_count": anzahlen["aufnahmen"],
         "playlist_all_count": anzahlen["all"],
         "konzert_id": konzert_id,
-        "chips_skip": ["konzert"],
         "has_more": has_more,
         "next_offset": offset + _PAGE_SIZE,
     }

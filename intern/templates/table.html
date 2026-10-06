@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
-{% load django_tables2 filter_tags ui_tags %}
+{% load django_tables2 filter_tags ui_tags static %}
 {% block topbar_icon %}{{ topbar_icon|safe }}{% endblock %}
+{% block extra_js %}{% if baukasten %}<script src="{% static 'intern/js/filter-baukasten.js' %}" defer></script>{% endif %}{% endblock %}
 {% block topbar_after %}
-{% if filter %}{% filter_chips filter request chips_skip %}{% endif %}
+{% if filter or kette %}{% filter_chips filter request chips_skip kette %}{% endif %}
 {% endblock %}
 {% block topbar_actions_extra %}
 {% if gallery_url %}
@@ -130,7 +131,7 @@
             {% render_table pool %}
         </div>
     {% endif %}
-    {% if filter %}
+    {% if column_choices %}
         <div class="selector offcanvas" id="ColumnSelector">
             <div class="offcanvas-header">
                 <strong>Spalten</strong>
@@ -153,6 +154,8 @@
                 {% endfor %}
             </form>
         </div>
+    {% endif %}
+    {% if filter or baukasten %}
         <div class="filter offcanvas" id="Filter">
             <div class="offcanvas-header">
                 <strong>Filtern</strong>
@@ -164,8 +167,9 @@
             </div>
             <form method="get" class="filter-form" id="filter-form">
                 <div class="filter-body">
-                    {{ filter.form.media }}
-                    {{ filter.form.as_div }}
+                    {% if baukasten %}{% filter_baukasten bedingungen request baukasten kann_verwalten %}{% endif %}
+                    {% if filter_zusatz %}{% include filter_zusatz %}{% endif %}
+                    {% if filter %}{{ filter.form.media }}{{ filter.form.as_div }}{% endif %}
                 </div>
             </form>
         </div>

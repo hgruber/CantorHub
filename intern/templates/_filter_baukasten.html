@@ -1,0 +1,67 @@
+{% comment %}
+Der Zeilen-Editor des Filters. Er ist der einzige Filter der Seite — die festen
+Filterfelder gibt es hier nicht mehr; was nicht in eine Zeile passt (das Konzert des
+Repertoires), kommt über `filter_zusatz` darunter.
+
+Serverseitig entstehen nur echte Zeilen für die bestehenden Bedingungen; neue Zeilen
+klont filter-baukasten.js aus den <template>-Vorlagen. Der vollständige Zustand steht
+am Ende in den versteckten <input name="f"> — daraus baut das Register die
+Bedingungen zurück. Das Feld-Dropdown zeigt nur die Felder, die die Berechtigungen
+hergeben.
+
+Die Auswahllisten kommen **einmal** als JSON mit: es sind dreistellig viele Termine
+und Personen, und sie stünden sonst in jeder Zeile und jeder Vorlage noch einmal.
+
+Ohne JavaScript verschwindet der Editor: das Skript nimmt den Werte-Widgets den Namen
+(sonst stünden die Werte aller Zeilen unter einem Schlüssel in der Adresse), und ohne
+es ließe sich eine geänderte Auswahl nicht in die Zeile zurückschreiben — die Zeile
+würde etwas anderes anzeigen als sie sendet. Die aktiven Bedingungen bleiben als Chips
+in der Titelleiste abwählbar.
+{% endcomment %}
+<noscript><style>.filter-baukasten { display: none; }</style></noscript>
+<div class="filter-baukasten" data-filter-baukasten>
+    <div data-filter-zeilen>
+        {% for zeile in zeilen %}{% include "_filter_zeile.html" with zeile=zeile ist_erste=forloop.first %}{% endfor %}
+    </div>
+    <button type="button" class="btn btn-secondary filter-hinzufuegen" data-filter-hinzufuegen>Bedingung hinzufügen</button>
+    <p class="filter-baukasten-leer" data-filter-leer{% if zeilen %} hidden{% endif %}>
+        Noch keine Bedingung — die Liste zeigt alle
+    </p>
+    {% comment %}
+    Die Ja/Nein-Felder ohne Wert — wie das Konzert kein Teil der Kette, sondern immer
+    da, mit „egal" als Grundstellung. Sie gelten mit UND für die ganze Kette. Jeder
+    Schalter trägt seinen eigenen versteckten <input name="f">; auf „egal" ist er
+    stillgelegt, und ein `data-marker` geht dann stattdessen mit (Zugang: zugang=egal).
+    {% endcomment %}
+    {% if feste %}
+    <div class="filter-feste">
+        {% for fest in feste %}
+        <div class="filter-fest" data-filter-fest data-feld="{{ fest.key }}"
+             data-ja="{{ fest.ja }}" data-nein="{{ fest.nein }}"
+             data-marker="{% for name, wert in fest.marker.items %}{{ name }}={{ wert }}{% endfor %}">
+            <span class="filter-fest-label">{{ fest.label }}</span>
+            <span class="tri-toggle" data-filter-fest-schalter role="group" aria-label="{{ fest.label }}"
+                  data-value="{% if fest.stellung == 'ja' %}true{% elif fest.stellung == 'nein' %}false{% else %}unknown{% endif %}">
+                <span class="tri-toggle-thumb" style="transform:translateX({% if fest.stellung == 'ja' %}28px{% elif fest.stellung == 'nein' %}0px{% else %}14px{% endif %})"></span>
+                <button type="button" class="tri-toggle-seg{% if fest.stellung == 'nein' %} selected{% endif %}" data-val="nein" title="{{ fest.nein_label }}">&#x2717;</button>
+                <button type="button" class="tri-toggle-seg{% if fest.stellung == 'egal' %} selected{% endif %}" data-val="egal" title="Egal">&#x00b7;</button>
+                <button type="button" class="tri-toggle-seg{% if fest.stellung == 'ja' %} selected{% endif %}" data-val="ja" title="{{ fest.ja_label }}">&#x2713;</button>
+            </span>
+            <input type="hidden" name="f" value="{{ fest.wert }}" data-filter-fest-wert{% if fest.stellung == 'egal' %} disabled{% endif %}>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% comment %}
+    Marker, deren Abwesenheit sich nicht als Bedingung ausdrücken lässt — die
+    abgewählte Zugangs-Vorgabe der Mitgliederliste etwa. Ohne diesen Träger schaltete
+    „Filtern“ sie wieder an.
+    {% endcomment %}
+    {% for name, wert in traeger %}<input type="hidden" name="{{ name }}" value="{{ wert }}">{% endfor %}
+</div>
+{{ felder|json_script:"filter-felder" }}
+{{ optionen|json_script:"filter-optionen" }}
+<template data-filter-vorlage="zeile">{% include "_filter_zeile.html" with zeile=leerzeile ist_erste=False %}</template>
+{% for vorlage in vorlagen %}
+<template data-filter-vorlage="feld-{{ vorlage.feld }}">{% include "_filter_wert.html" with zeile=vorlage %}</template>
+{% endfor %}
