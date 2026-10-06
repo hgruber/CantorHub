@@ -21,6 +21,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 - Seitenleiste: Unter „Einstellungen“ heißt „Profil bearbeiten“ jetzt „Mein Profil“ und öffnet das
   eigene Profil; der Stift rechts daneben führt direkt zur Bearbeitung.
+- Konfiguration: Die Karten stehen linksbündig wie auf den übrigen Seiten, statt auf breiten
+  Bildschirmen mittig zu stehen.
 
 ## v1.0.0 — 2026-10-05
 

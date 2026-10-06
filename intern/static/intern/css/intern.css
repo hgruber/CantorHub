@@ -7539,11 +7539,13 @@ body.join-page {
 /* =================================================== */
 /* Konfiguration                                       */
 /* =================================================== */
+/* max-width ohne margin:auto — wie .detail-page.member-voice haelt der Deckel
+   nur die Zeilenlaenge, die Karten bleiben aber linksbuendig wie ihre
+   Geschwister und werden nicht zur zentrierten Insel. */
 .kf-page {
     padding: 16px;
     padding-bottom: calc(var(--kf-bars-h, 0px) + 24px);
     max-width: 1100px;
-    margin: 0 auto;
 }
 
 /* Karte für neu angelegte Einträge — immer ganz oben, vor den Gruppen. */
