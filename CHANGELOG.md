@@ -28,6 +28,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Forenliste: Die Spalte „Zugriff“ heißt jetzt „Letzter Beitrag“.
 - Startseite: Der Link zur Auftritts-Mailingliste steht nur noch unter „Konzerte“; die Karte
   „Auftritts-Informationen“ im Kontaktbereich entfällt.
+- Passwort zurücksetzen: Die E-Mail spricht vom „Benutzernamen“ statt vom „Benutzer“; ein
+  unverändert gebliebener Konfigurationstext wird beim nächsten Start angepasst.
 - Datenbestätigung: Die Satzung wird nicht mehr abgefragt, und Mail und Formular sagen jetzt,
   dass man sich nach der Bestätigung im Mitgliederportal anmelden kann; eine unverändert
   gebliebene Aufforderungsmail wird beim nächsten Start angepasst. Auch Fehlerseiten und Hinweise sprechen vom „Mitgliederportal“

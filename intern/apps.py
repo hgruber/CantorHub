@@ -254,7 +254,7 @@ _CONFIG_DEFAULTS = [
     (
         "MAIL_NEUES_PASSWORT",
         "Hallo {vorname},\n\n"
-        "über den folgenden Button kannst Du ein neues Passwort für Deinen Benutzer "
+        "über den folgenden Button kannst Du ein neues Passwort für Deinen Benutzernamen "
         "'''{user}''' setzen.\n\n"
         "{button:Passwort zurücksetzen}\n\n"
         "% Wenn Du das nicht angefordert hast, kannst Du diese E-Mail einfach ignorieren "
@@ -644,6 +644,13 @@ _LEGACY_MAIL_DEFAULTS = {
         "Hallo {vorname},\n\nüber diesen Link kannst Du ein neues Passwort für Deinen "
         "Benutzer '{user}' setzen:\n\n{link}\n\nWenn Du das nicht angefordert hast, kannst "
         "Du diese E-Mail ignorieren — Dein Passwort bleibt unverändert.",
+        "Hallo {vorname},\n\n"
+        "über den folgenden Button kannst Du ein neues Passwort für Deinen Benutzer "
+        "'''{user}''' setzen.\n\n"
+        "{button:Passwort zurücksetzen}\n\n"
+        "% Wenn Du das nicht angefordert hast, kannst Du diese E-Mail einfach ignorieren "
+        "— Dein Passwort bleibt unverändert.\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen Browser: {link}",
     ],
     "MAIL_WILLKOMMEN": [
         "Liebe/r {vorname},\n\nwir freuen uns sehr, Dich als neues Mitglied bei {vereinsname} begrüßen zu dürfen!\n\n"
