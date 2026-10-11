@@ -79,7 +79,9 @@ Three underscore-prefixed modules hold what the view modules share:
 
 Cross-cutting modules: `models.py`, `forms.py`, `signals.py` (audit log, activation mails, filer
 indexing, MUC room assignment), `app_settings.py` (runtime config), `folders.py` (the standard
-folders under Backstage), `folder_access.py` / `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
+folders under Backstage), `dateiablage.py` (the only way into a folder: file identity, the
+version chain and its merging, one name per folder — see `docs/files.md`),
+`folder_access.py` / `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
 shared by the folder browser and the wiki media bar), `verwendung.py` (what a delete would break),
 `blob_aufraeumen.py` (which files under `MEDIA_ROOT` no row references any more — the rule
 behind `cleanup_verwaiste_blobs`, see `docs/files.md`),
@@ -236,7 +238,7 @@ reasoning where it matters.
   — the settings page's banner reports it while blank; if blank is a legitimate state for it, add
   it to `OPTIONAL_LEER` with the reason. See „Completeness" in `docs/configuration.md`.
 - **A file's identity is its storage path**, not its row: several `filer.File` rows may share one
-  blob. Use the helpers in `views/files.py` instead of touching `File.file`/`name`. Never run
+  blob. Use the helpers in `intern/dateiablage.py` instead of touching `File.file`/`name`. Never run
   `filer_check --delete-orphans` — it would delete the whole version history;
   `cleanup_verwaiste_blobs` is the safe stand-in, and `intern/blob_aufraeumen.py` holds the rule
   it decides by.
@@ -246,6 +248,12 @@ reasoning where it matters.
   both, „Mitgliedschaft beenden" removes both and keeps `date_joined`, which then offers
   „wieder aufnehmen" instead of admission. Welcome mail plus Eintrittsdatum need the tag — `date_joined is None` alone would greet a non-member
   as a newcomer on every reactivation. See `docs/members.md`.
+- **One name per folder.** A folder holds one file and one subfolder per name (case-insensitive).
+  Every way into a folder — upload, copy, link, move, rename, the system placements — goes
+  through `intern/dateiablage.py`; a taken name makes the incoming file a revision of the one
+  there, after a dialog where the table in „One name per folder" (`docs/files.md`) asks for
+  one, and a conflict without a choice is skipped. Never `File.objects.create()` into a folder
+  or set `folder_id` by hand.
 - **Every write path on a file must call `darf_avatar_aendern()`**, or one member can overwrite
   another's profile picture.
 - **A folder without `FolderPermission` rows is open.** Code that creates a folder must set rows

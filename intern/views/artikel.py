@@ -15,6 +15,7 @@ from filer.models import File
 
 from intern import folders
 from intern.avatar_access import darf_avatar_aendern
+from intern.dateiablage import datei_loeschen
 from intern.folder_access import folder_access
 from intern.replacements import (
     abstimmungen_ohne_ende,
@@ -282,8 +283,6 @@ def article_dateien_einfuegen(request, name):
 def article_datei_loeschen(request, name):
     """Aus dem Datei-Menü: das verlinkte Vorkommen löschen (wie im
     Ordner-Browser) und den Verweis in einer neuen Version entfernen."""
-    from .folders import _datei_loeschen
-
     _can_read, can_edit = _artikel_access(request.user, name)
     if not can_edit:
         raise PermissionDenied
@@ -297,7 +296,7 @@ def article_datei_loeschen(request, name):
     if not darf_avatar_aendern(request.user, f):
         raise PermissionDenied
     dateiname = f.original_filename or f.name
-    _datei_loeschen(f)
+    datei_loeschen(f)
     folders.invalidate()
     _neue_version(
         name, request.user,

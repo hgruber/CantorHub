@@ -16,7 +16,6 @@ from django.db.models import (
     Sum,
     Value,
 )
-from django.core.files.base import ContentFile
 from django.db.models.functions import Coalesce, Concat
 from django.http import Http404, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -32,7 +31,8 @@ from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, pars
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
-from intern import folders
+from intern import dateiablage, folders
+from intern.dateiablage import datei_loeschen
 from intern.avatar_access import darf_avatar_aendern
 from intern.folder_access import (
     folder_access,
@@ -43,7 +43,6 @@ from intern.medientypen import AUDIO_ENDUNGEN
 
 from ..models import Artikel, DateiVersion, FolderPermission
 from ..tables import OrdnerTabelle
-from .files import datei_umbenennen, verknuepfte_dateien, versionen_loeschen
 
 __all__ = [
     "folder_view",
@@ -54,6 +53,7 @@ __all__ = [
     "folder_link",
     "folder_duplicate",
     "folder_rename",
+    "ablage_konflikte",
     "folder_zip_download",
     "folder_zip_selection",
 ]
@@ -131,27 +131,12 @@ def _parse_items(post):
     return items
 
 
-def _datei_loeschen(f):
-    """Remove one occurrence of a file.
-
-    filer's File.delete() drops the blob only when no other row references it,
-    so a file linked into several folders survives losing one of them. When this
-    *was* the last occurrence, its archived versions go too — otherwise the
-    content of a deleted file would live on in storage.
-
-    Pass a freshly loaded instance: the decision is made on `f.file.name`, and a
-    stale one would have filer delete a blob that is still in use."""
-    if not verknuepfte_dateien(f, inklusive_selbst=False).exists():
-        versionen_loeschen(f)
-    f.delete()
-
-
 def _delete_folder_deep(folder):
-    """Recursively delete a folder and its contents, calling _datei_loeschen() on
+    """Recursively delete a folder and its contents, calling datei_loeschen() on
     each file so filer's custom delete() also removes the underlying blob from
     storage once no other folder links it."""
     for f in File.objects.filter(folder=folder).iterator():
-        _datei_loeschen(f)
+        datei_loeschen(f)
     for child in Folder.objects.filter(parent=folder):
         _delete_folder_deep(child)
     folder.delete()
@@ -197,41 +182,15 @@ def _apply_perm_specs(folder, specs):
     ])
 
 
-def _datei_verknuepfen(f, target_folder_id, owner):
-    """Link a file into another folder: a new row, the same blob. Folders work
-    like tags — the file now sits in both places and an update reaches both."""
-    return File.objects.create(
-        file=f.file,
-        original_filename=f.original_filename,
-        name=f.name,
-        owner=owner,
-        folder_id=target_folder_id,
-        mime_type=f.mime_type,
-    )
-
-
-def _datei_duplizieren(f, target_folder_id, owner):
-    """Copy a file including its blob — an independent file that can be changed
-    without touching the original. Versions are not carried over."""
-    with f.file.open("rb") as src:
-        inhalt = ContentFile(src.read(), name=f.original_filename or f.name)
-    return File.objects.create(
-        file=inhalt,
-        original_filename=f.original_filename,
-        name=f.name,
-        owner=owner,
-        folder_id=target_folder_id,
-        mime_type=f.mime_type,
-    )
-
-
 def _copy_folder_deep(src_folder, target_parent_id, owner, inherited_perms=(),
                       blob_kopieren=False):
     """Recursively copy a folder and its contents into target_parent_id.
 
-    By default the files are *linked* (`_datei_verknuepfen`): new rows sharing
-    the storage blob, filer's own copy semantics. With `blob_kopieren` they are
-    truly duplicated instead (`_datei_duplizieren`), yielding independent files.
+    By default the files are *linked* (`dateiablage.verknuepfen`): new rows
+    sharing the storage blob, filer's own copy semantics. With `blob_kopieren`
+    they are truly duplicated instead (`dateiablage.kopieren`), yielding
+    independent files. The new folder is empty, so the name rule only bites on
+    a source folder that already holds a name twice.
 
     Access rights travel with the copy: a restricted folder keeps its own
     FolderPermission rows, an unrestricted one inherits `inherited_perms` (the
@@ -244,9 +203,11 @@ def _copy_folder_deep(src_folder, target_parent_id, owner, inherited_perms=(),
     )
     perms = _perm_specs(src_folder) or list(inherited_perms)
     _apply_perm_specs(new_folder, perms)
-    datei_fn = _datei_duplizieren if blob_kopieren else _datei_verknuepfen
     for f in File.objects.filter(folder=src_folder):
-        datei_fn(f, new_folder.pk, owner)
+        if blob_kopieren:
+            dateiablage.kopieren(f, new_folder.pk, owner)
+        else:
+            dateiablage.verknuepfen(f, new_folder.pk, owner, {})
     for child in Folder.objects.filter(parent=src_folder):
         _copy_folder_deep(child, new_folder.pk, owner, perms, blob_kopieren)
     return new_folder
@@ -801,6 +762,10 @@ def folder_create(request, pk):
         if is_ajax:
             return JsonResponse({"error": "Name darf nicht leer sein."}, status=400)
         return redirect("folder_view", pk=pk)
+    if not dateiablage.ordnername_frei(pk if pk != 0 else None, name):
+        if is_ajax:
+            return JsonResponse({"error": "Einen Ordner dieses Namens gibt es hier schon."}, status=400)
+        return redirect("folder_view", pk=pk)
 
     new_folder = Folder.objects.create(
         name=name,
@@ -857,7 +822,7 @@ def folder_delete(request):
                 continue
             if not darf_avatar_aendern(request.user, f):
                 continue
-            _datei_loeschen(f)
+            datei_loeschen(f)
     folders.invalidate()
     return redirect("folder_view", pk=referer_pk)
 
@@ -872,8 +837,13 @@ def folder_move(request):
     _, target_write, _ = folder_access(request.user, target)
     if not target_write:
         raise PermissionDenied
+    entscheidungen = dateiablage.entscheidungen_lesen(request.POST.getlist("entscheidung"))
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
+            folder = Folder.objects.filter(pk=item_id).first()
+            # Ein Name, ein Ordner: was dort schon so heißt, bleibt, wo es ist.
+            if folder is None or not dateiablage.ordnername_frei(target_id, folder.name, folder.pk):
+                continue
             Folder.objects.filter(pk=item_id).update(parent_id=target_id)
         else:
             try:
@@ -885,7 +855,8 @@ def folder_move(request):
                 continue
             if not darf_avatar_aendern(request.user, f):
                 continue
-            File.objects.filter(pk=item_id).update(folder_id=target_id)
+            dateiablage.verschieben(f, target_id, request.user, entscheidungen)
+    folders.invalidate()
     return redirect("folder_view", pk=referer_pk)
 
 
@@ -900,7 +871,7 @@ def _copy_action(request, blob_kopieren):
     if not target_write:
         raise PermissionDenied
     target_perms = _perm_specs(target)
-    datei_fn = _datei_duplizieren if blob_kopieren else _datei_verknuepfen
+    entscheidungen = dateiablage.entscheidungen_lesen(request.POST.getlist("entscheidung"))
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
             try:
@@ -922,7 +893,10 @@ def _copy_action(request, blob_kopieren):
             src_read, _, _ = folder_access(request.user, f.folder)
             if not src_read:
                 continue
-            datei_fn(f, target_id, request.user)
+            if blob_kopieren:
+                dateiablage.kopieren(f, target_id, request.user)
+            else:
+                dateiablage.verknuepfen(f, target_id, request.user, entscheidungen)
     folders.invalidate()
     # Das Datei-Menü im Artikel verknüpft von dort aus und will dorthin zurück.
     ziel = request.POST.get("next", "")
@@ -931,6 +905,41 @@ def _copy_action(request, blob_kopieren):
     ):
         return redirect(ziel)
     return redirect("folder_view", pk=referer_pk)
+
+
+@login_required
+@require_POST
+def ablage_konflikte(request):
+    """Die Vorabprüfung zu Verschieben, Referenz und Kopieren: welche Dateien
+    der Auswahl im Zielordner auf einen vergebenen Namen treffen, und was zur
+    Wahl steht. Der Dialog fragt danach, die Aktion selbst prüft erneut und
+    überspringt, wofür keine Wahl mitkommt (dateiablage.OPTIONEN)."""
+    aktion = request.POST.get("aktion", "")
+    if aktion not in ("verschieben", "verknuepfen", "kopieren"):
+        return JsonResponse({"status": "error", "message": "Unbekannte Aktion."}, status=400)
+    raw_target = request.POST.get("target_pk", "")
+    target_id = int(raw_target) if raw_target.isdigit() and raw_target != "0" else None
+    konflikte = []
+    for item_type, item_id in _parse_items(request.POST):
+        if item_type == "Folder":
+            folder = Folder.objects.filter(pk=item_id).first()
+            if (aktion == "verschieben" and folder is not None
+                    and not dateiablage.ordnername_frei(target_id, folder.name, folder.pk)):
+                konflikte.append({
+                    "schluessel": f"Folder:{folder.pk}",
+                    "datei": folder.name,
+                    "ordner": dateiablage.ordner_pfad(Folder.objects.filter(pk=target_id).first()),
+                    "art": "ordnername",
+                    "optionen": [],
+                })
+            continue
+        f = File.objects.filter(pk=item_id).select_related("folder").first()
+        if f is None:
+            continue
+        konflikt = dateiablage.pruefen(aktion, f, target_id, request.user)
+        if konflikt is not None:
+            konflikte.append(konflikt.als_json())
+    return JsonResponse({"konflikte": konflikte})
 
 
 @login_required
@@ -1006,7 +1015,7 @@ def folder_rename(request):
         _, can_write, _ = folder_access(request.user, folder)
         if not can_write:
             raise PermissionDenied
-        if Folder.objects.filter(parent_id=folder.parent_id, name=new_name).exclude(pk=item_id).exists():
+        if not dateiablage.ordnername_frei(folder.parent_id, new_name, folder.pk):
             return JsonResponse({"status": "error", "message": "Name bereits vergeben."}, status=400)
         folder.name = new_name
         folder.save(update_fields=["name"])
@@ -1020,7 +1029,26 @@ def folder_rename(request):
             raise PermissionDenied
         alter_name = f.original_filename or f.name
         # One file, one name — a rename reaches every folder it is linked into.
-        datei_umbenennen(f, new_name)
+        # Where the new name is taken, the file becomes a revision of the file
+        # holding it — once the dialog has a choice for each of those folders.
+        status, konflikte = dateiablage.umbenennen(
+            f, new_name, request.user,
+            dateiablage.entscheidungen_lesen(request.POST.getlist("entscheidung")),
+        )
+        if status == "offen":
+            return JsonResponse(
+                {"status": "konflikt", "konflikte": [k.als_json() for k in konflikte]},
+                status=409,
+            )
+        if status == "gesperrt":
+            gesperrt = next(k for k in konflikte if k.art == dateiablage.ART_GESPERRT)
+            return JsonResponse({
+                "status": "error",
+                "message": f"„{new_name}“ gibt es schon in {dateiablage.ordner_pfad(gesperrt.ziel.folder)}"
+                           " — diese Datei darfst du nicht ändern.",
+            }, status=403)
+        if status == "abgebrochen":
+            return JsonResponse({"status": "abgebrochen", "name": alter_name})
         if request.POST.get("links_mitziehen"):
             angepasst, uebersprungen = _wiki_links_umschreiben(
                 alter_name, new_name, request.user
@@ -1028,9 +1056,13 @@ def folder_rename(request):
             return JsonResponse({
                 "status": "ok",
                 "name": new_name,
+                "verschmolzen": bool(konflikte),
                 "links_angepasst": angepasst,
                 "links_uebersprungen": uebersprungen,
             })
+        # Verschmolzen: die Zeile kann in einer anderen aufgegangen sein — die
+        # Liste lädt dann neu, statt nur den Namen zu tauschen.
+        return JsonResponse({"status": "ok", "name": new_name, "verschmolzen": bool(konflikte)})
     else:
         return JsonResponse({"status": "error", "message": "Unbekannter Typ."}, status=400)
     return JsonResponse({"status": "ok", "name": new_name})

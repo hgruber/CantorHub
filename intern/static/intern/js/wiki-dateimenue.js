@@ -61,9 +61,11 @@
     f.action = action;
     felder.csrfmiddlewaretoken = getCsrfToken();
     Object.keys(felder).forEach(function (name) {
-      var inp = document.createElement("input");
-      inp.type = "hidden"; inp.name = name; inp.value = felder[name];
-      f.appendChild(inp);
+      [].concat(felder[name]).forEach(function (wert) {
+        var inp = document.createElement("input");
+        inp.type = "hidden"; inp.name = name; inp.value = wert;
+        f.appendChild(inp);
+      });
     });
     document.body.appendChild(f);
     f.submit();
@@ -98,11 +100,16 @@
         label: z.path,
         icon: ICON.ordner,
         action: function () {
-          formularSenden("/intern/ordner/verknuepfen/", {
-            item: "File:" + id,
-            target_pk: z.id,
-            referer_pk: 0,
-            next: window.location.pathname,
+          // Gleicher Name im Zielordner: dieselbe Rückfrage wie im Ordner-Browser.
+          window.ablageKlaeren("verknuepfen", ["File:" + id], z.id).then(function (entscheidungen) {
+            if (entscheidungen === null) return;
+            formularSenden("/intern/ordner/verknuepfen/", {
+              item: "File:" + id,
+              target_pk: z.id,
+              referer_pk: 0,
+              next: window.location.pathname,
+              entscheidung: entscheidungen,
+            });
           });
         },
       };

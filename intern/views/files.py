@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
-from django.db.models import Max, Q
+from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -18,12 +18,13 @@ from django.views.decorators.http import require_POST
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
-from intern import folders
+from intern import dateiablage, folders
 from intern.avatar_access import darf_avatar_aendern
+from intern.dateiablage import ordner_pfad, verknuepfte_dateien
 from intern.folder_access import folder_access, visible_folder_ids
 
 from ..app_settings import get_config
-from ..models import DateiIndex, DateiVersion, Lied, TabellenPreferenzen, User
+from ..models import DateiVersion, Lied, TabellenPreferenzen, User
 
 
 def _aufnahme_prefixes():
@@ -49,9 +50,6 @@ __all__ = [
     "datei_restore",
     "datei_verwendung",
     "datei_aktionen",
-    "verknuepfte_dateien",
-    "datei_umbenennen",
-    "versionen_loeschen",
     "besitz_uebertragen",
     "_get_file_extension",
     "_get_file_type_config",
@@ -63,13 +61,10 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-# === Dateiidentität: ein Blob, viele Ordner ==================================
+# === Datei-URLs ==============================================================
 #
-# Two File rows pointing at the same storage path are the *same* file in two
-# folders — folders work like tags. This is filer's own semantics: File.delete()
-# drops the blob only when no other row references it. Every operation that
-# changes a file's path or name therefore has to carry all its rows along, which
-# is what the helpers below are for.
+# Identität, Versionen und jede Ablage in einen Ordner liegen in
+# intern/dateiablage.py — hier nur, was die Anzeige braucht.
 
 
 # Der Storage des filer-Dateifelds — einmal ermittelt, danach wiederverwendet.
@@ -104,89 +99,6 @@ def datei_url(pfad):
         # Modelle und Einstellungen noch nicht bereit (siehe CLAUDE.md).
         _datei_storage = File._meta.get_field("file").storage
     return _datei_storage.url(pfad)
-
-
-def verknuepfte_dateien(f, inklusive_selbst=True):
-    """All File rows sharing `f`'s blob — the same file in other folders.
-
-    A row without a blob is only ever itself: `file` is nullable in filer, and
-    matching on an empty path would lump all such rows together."""
-    if not f.file or not f.file.name:
-        qs = File.objects.filter(pk=f.pk)
-    else:
-        qs = File.objects.filter(file=f.file.name, is_public=f.is_public)
-    if not inklusive_selbst:
-        qs = qs.exclude(pk=f.pk)
-    return qs
-
-
-def datei_umbenennen(f, neuer_name):
-    """Rename a file everywhere it is linked — one file, one name."""
-    verknuepfte_dateien(f).update(name=neuer_name, original_filename=neuer_name)
-    f.name = neuer_name
-    f.original_filename = neuer_name
-
-
-def version_anlegen(f, autor=None):
-    """Archive `f`'s current revision before its blob is replaced.
-
-    The blob stays where it is; only its path is recorded. Callers must follow
-    up with `geschwister_nachziehen()`, which moves the chain (including this
-    new row) onto the new path."""
-    pfad = f.file.name
-    letzte = DateiVersion.objects.filter(aktuell=pfad).aggregate(Max("nummer"))
-    return DateiVersion.objects.create(
-        aktuell=pfad,
-        pfad=pfad,
-        original_filename=f.original_filename or f.name or "",
-        groesse=f._file_size or 0,
-        sha1=f.sha1 or "",
-        mime_type=f.mime_type or "",
-        autor=autor if (autor and autor.is_authenticated) else None,
-        nummer=(letzte["nummer__max"] or 0) + 1,
-    )
-
-
-def geschwister_nachziehen(alter_pfad, quelle):
-    """Point every other row that shared `alter_pfad` at `quelle`'s new blob, so
-    the update shows up in all folders the file is linked into. Also moves the
-    version chain over to the new path."""
-    pks = list(
-        File.objects.filter(file=alter_pfad, is_public=quelle.is_public)
-        .exclude(pk=quelle.pk)
-        .values_list("pk", flat=True)
-    )
-    if pks:
-        File.objects.filter(pk__in=pks).update(
-            file=quelle.file.name,
-            _file_size=quelle._file_size,
-            sha1=quelle.sha1,
-            mime_type=quelle.mime_type,
-        )
-        # ensure_indexed() spots stale rows by file size; drop the entries so a
-        # replacement of exactly the same size is re-indexed too.
-        DateiIndex.objects.filter(file_id__in=pks).delete()
-    DateiVersion.objects.filter(aktuell=alter_pfad).update(aktuell=quelle.file.name)
-    return pks
-
-
-def versionen_loeschen(f):
-    """Delete the archived blobs of `f`, for when its last row goes.
-
-    Without this the content of a deleted file would survive in storage, which
-    would undercut the deletion promise of the privacy policy."""
-    versionen = list(DateiVersion.objects.filter(aktuell=f.file.name))
-    for v in versionen:
-        try:
-            get_thumbnailer(v.pfad).delete_thumbnails()
-        except Exception:
-            logger.debug("Thumbnails der Version %s nicht löschbar", v.pfad)
-        try:
-            f.file.storage.delete(v.pfad)
-        except Exception:
-            logger.warning("Versions-Blob %s konnte nicht gelöscht werden", v.pfad)
-    DateiVersion.objects.filter(pk__in=[v.pk for v in versionen]).delete()
-    return len(versionen)
 
 
 def _ziel_owner(ordner, ausgeschlossen_pk, fallback_pk, cache):
@@ -341,17 +253,16 @@ def _route_and_rename_for_lied(lied, filer_file, source_name):
         "pdf": folders.pdf,
     }
     zielordner = _type_folder.get(file_type)
-    folder_id = zielordner() if zielordner else None
-    if folder_id:
-        filer_file.folder_id = folder_id
+    folder_id = (zielordner() if zielordner else None) or filer_file.folder_id
 
     new_name = (
         f"{_aufnahme_prefix_with_space()}{lied.titel}{extension}"
         if field_name == "aufnahme"
         else f"{lied.titel}{extension}"
     )
-    datei_umbenennen(filer_file, new_name)
-    filer_file.save()
+    # Liegt dort schon eine Datei dieses Namens (die bisherige des Titels),
+    # wird die neue ihre vordere Fassung — und der Titel zeigt auf sie.
+    filer_file = dateiablage.systemablage(filer_file, folder_id, new_name)
 
     setattr(lied, field_name, filer_file)
     lied.save(update_fields=[field_name])
@@ -444,43 +355,27 @@ def upload(request):
                 status=403,
             )
 
-        # Overwrite in-place if a file with the same name already exists here.
-        # Replacing the .file field updates content but keeps the same File PK,
-        # so existing Lied/Artikel/Forum references remain intact. The previous
-        # revision is kept (version_anlegen) instead of being deleted, and every
-        # folder the file is linked into follows along (geschwister_nachziehen).
-        existing = File.objects.filter(
-            folder_id=folder_id, original_filename=file.name
-        ).first()
-        overwritten = existing is not None
-        if overwritten and not darf_avatar_aendern(request.user, existing):
-            # Vor version_anlegen prüfen — sonst wäre die fremde Fassung schon
-            # archiviert und das Profilbild ersetzt.
+        # Der endgültige Name steht vor der Ablage fest (Avatar → <id>.<ext>),
+        # damit die Namensregel den Namen prüft, unter dem die Datei liegen wird.
+        name = f"{rename_to}{_get_file_extension(file.name)}" if rename_to else file.name
+        vorhanden = dateiablage.gleichnamige(folder_id, name)
+        if vorhanden is not None and not darf_avatar_aendern(request.user, vorhanden):
+            # Vor der Ablage prüfen — sonst wäre das fremde Profilbild schon ersetzt.
             return JsonResponse(
                 {"status": "error", "message": "Das ist das Profilbild eines anderen Mitglieds."},
                 status=403,
             )
-        if overwritten:
-            alter_pfad = existing.file.name
-            version_anlegen(existing, request.user)
-            existing.file = file
-            existing.owner = request.user
-            existing.save()
-            geschwister_nachziehen(alter_pfad, existing)
-            filer_file = existing
-        else:
-            filer_file = File.objects.create(
-                file=file,
-                original_filename=file.name,
-                name=file.name,
-                owner=request.user,
-                folder_id=folder_id,
+        # Gleicher Name: neue vordere Fassung der Datei dort (die PK bleibt, alle
+        # Verweise und Referenzen folgen). Gleicher Inhalt: nichts wird abgelegt.
+        filer_file, status, gleiche = dateiablage.hochladen(file, folder_id, name, request.user)
+        overwritten = status == "fassung"
+        meldung = ""
+        if status == "identisch":
+            meldung = (
+                "Bereits vorhanden — nicht abgelegt"
+                if gleiche.pfad == filer_file.file.name
+                else f"Bereits vorhanden als Fassung vom {gleiche.datum:%-d.%-m.%Y} — nicht abgelegt"
             )
-
-        # Rename file if requested (e.g. avatar → <user_id>.<ext>)
-        if rename_to:
-            ext = _get_file_extension(file.name)
-            datei_umbenennen(filer_file, f"{rename_to}{ext}")
 
         # Update user avatar if requested
         if avatar_user_id:
@@ -512,19 +407,7 @@ def upload(request):
             pass
         # `name` ist der Name nach einem rename_to — über ihn löst ein
         # [[Datei:…]] auf, den die Artikelseiten daraus bauen.
-        return JsonResponse({"status": "success", "id": filer_file.id, "name": filer_file.original_filename, "url": url, "thumbnail_url": thumb, "overwritten": overwritten, "wurzel": folder_id is None})
-
-
-def _ordner_pfad(folder):
-    """Full path string of a folder, e.g. "Verwaltung / Mitglieder"."""
-    if folder is None:
-        return "/ (Wurzel)"
-    teile, cur, gesehen = [], folder, set()
-    while cur is not None and cur.pk not in gesehen:
-        gesehen.add(cur.pk)
-        teile.append(cur.name)
-        cur = cur.parent
-    return " / ".join(reversed(teile))
+        return JsonResponse({"status": "success", "id": filer_file.id, "name": filer_file.original_filename, "url": url, "thumbnail_url": thumb, "overwritten": overwritten, "identisch": status == "identisch", "meldung": meldung, "wurzel": folder_id is None})
 
 
 def _datei_orte(f, user):
@@ -542,7 +425,7 @@ def _datei_orte(f, user):
         orte.append({
             "datei": g,
             "folder": g.folder,
-            "pfad": _ordner_pfad(g.folder),
+            "pfad": ordner_pfad(g.folder),
             "url": reverse("folder_view", args=[g.folder_id]) if g.folder_id else None,
         })
     orte.sort(key=lambda o: o["pfad"])
@@ -589,10 +472,11 @@ def datei_view(request, pk):
 @login_required
 @require_POST
 def datei_restore(request, pk, version_id):
-    """Make an archived revision the current one — everywhere the file is linked.
+    """Bring an archived revision to the front — everywhere the file is linked.
 
-    Mirrors the overwrite path: the running revision becomes a version itself,
-    all linked rows move onto the restored blob. No blob is copied or deleted."""
+    Only the order of the chain changes (`dateiablage.wiederherstellen`): the
+    running revision becomes a version, no blob is copied or deleted, and the
+    name stays — revisions have no name of their own."""
     f = get_object_or_404(File, pk=pk)
     orte, darf_schreiben = _datei_orte(f, request.user)
     if not orte:
@@ -603,15 +487,7 @@ def datei_restore(request, pk, version_id):
         raise PermissionDenied
     version = get_object_or_404(DateiVersion, pk=version_id, aktuell=f.file.name)
 
-    alter_pfad = f.file.name
-    version_anlegen(f, request.user)
-    f.file = version.pfad
-    f.owner = request.user
-    f.save()
-    geschwister_nachziehen(alter_pfad, f)
-    if version.original_filename:
-        datei_umbenennen(f, version.original_filename)
-    version.delete()
+    dateiablage.wiederherstellen(f, version)
     return redirect("datei_view", pk=f.pk)
 
 
@@ -694,7 +570,7 @@ def datei_aktionen(request, pk):
     return JsonResponse({
         "ordner": {
             "url": reverse("folder_view", args=[f.folder_id or 0]) + f"?datei={f.pk}",
-            "pfad": _ordner_pfad(f.folder),
+            "pfad": ordner_pfad(f.folder),
         },
         "darf_loeschen": darf_loeschen,
         "ziele": ziele,
@@ -869,13 +745,10 @@ def file_unzip(request, pk):
         except Exception:
             continue
         mime = mimetypes.guess_type(fname)[0] or "application/octet-stream"
-        filer_file = File.objects.create(
-            file=ContentFile(data, name=fname),
-            original_filename=fname,
-            name=fname,
-            owner=request.user,
-            folder=target_folder,
-            mime_type=mime,
+        # Ein Archiv kann einen Namen doppelt tragen (etwa in anderer
+        # Schreibweise) — dann wird der zweite Eintrag Fassung des ersten.
+        filer_file = dateiablage.systemablage_inhalt(
+            ContentFile(data, name=fname), target_folder.pk, fname, request.user, mime,
         )
         _assign_file_to_song(fname, filer_file)
 

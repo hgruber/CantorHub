@@ -70,6 +70,7 @@ urlpatterns = [
     path("ordner/loeschen/", views.folder_delete, name="folder_delete"),
     path("ordner/verschieben/", views.folder_move, name="folder_move"),
     path("ordner/verknuepfen/", views.folder_link, name="folder_link"),
+    path("ordner/konflikte/", views.ablage_konflikte, name="ablage_konflikte"),
     path("ordner/duplizieren/", views.folder_duplicate, name="folder_duplicate"),
     path("ordner/umbenennen/", views.folder_rename, name="folder_rename"),
     path("file/", views.dummy, name="file_list"),

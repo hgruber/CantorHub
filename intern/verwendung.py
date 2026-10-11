@@ -28,6 +28,15 @@ _LIED_FELDER = {
     "noten": "Notensatz",
 }
 
+# Jeder Verweis auf eine File-PK als (Modell, Feld) — die eine Liste hinter der
+# Warnung (pk_verwendungen) und dem Umhängen beim Verschmelzen
+# (verweise_umhaengen). DateiVerweiseTest vergleicht sie mit allen FKs auf
+# filer.File; die Konfiguration hält ihre IDs als Text und kommt eigens dazu.
+DATEI_PK_VERWEISE = [(Lied, feld) for feld in _LIED_FELDER] + [
+    (Forum, "bild"),
+    (User, "avatar"),
+]
+
 
 def _artikel_lesbar(user, artikel_name):
     if user is None:
@@ -75,8 +84,9 @@ def pk_verwendungen(datei):
     eintraege = []
 
     lied_filter = Q()
-    for feld in _LIED_FELDER:
-        lied_filter |= Q(**{feld: datei})
+    for modell, feld in DATEI_PK_VERWEISE:
+        if modell is Lied:
+            lied_filter |= Q(**{feld: datei})
     for lied in Lied.objects.filter(lied_filter):
         rollen = [
             bezeichnung
@@ -115,13 +125,32 @@ def pk_verwendungen(datei):
     return eintraege
 
 
+def verweise_umhaengen(alt_pk, neu_pk):
+    """Alles, was an der Zeile `alt_pk` hängt, auf `neu_pk` umbiegen — wenn
+    beim Verschmelzen eine Zeile im Zielordner keinen Platz hat.
+
+    Per update(): Das ist keine inhaltliche Änderung am Lied oder Mitglied,
+    das Änderungsprotokoll bleibt davon frei."""
+    if alt_pk == neu_pk:
+        return
+    for modell, feld in DATEI_PK_VERWEISE:
+        modell.objects.filter(**{f"{feld}_id": alt_pk}).update(**{f"{feld}_id": neu_pk})
+    # Gleicher Vergleich wie in pk_verwendungen (mit strip), damit Warnung und
+    # Umhängen dieselben Einträge treffen. save() statt update(): post_save
+    # leert den Konfigurations-Puffer der laufenden Anfrage.
+    for cfg in Konfiguration.objects.filter(key__endswith=_CONFIG_FILE_SUFFIX):
+        if (cfg.value or "").strip() == str(alt_pk):
+            cfg.value = str(neu_pk)
+            cfg.save(update_fields=["value"])
+
+
 def datei_verwendungen(dateien, user=None, beim_loeschen=True):
     """{file_pk: [Verwendung, …]} für die übergebenen File-Objekte.
 
     `beim_loeschen=False` prüft den Umbenennen-Fall: dort brechen nur die
     Wiki-Links, und zwar unabhängig davon, in wie vielen Ordnern die Datei
     liegt (der Name ändert sich überall)."""
-    from .views.files import verknuepfte_dateien
+    from .dateiablage import verknuepfte_dateien
 
     dateien = list(dateien)
     if not dateien:

@@ -9,26 +9,59 @@ second permission axis on top of the folder permissions.
 **A file's identity is its storage path.** Two `filer.File` rows pointing at the same `file`
 path are the *same file in two folders* — folders work like tags (one invoice under Haus,
 Versicherung and Finanzamt). This is filer's own semantics: `File.delete()` drops the blob
-only when no other row references that path. Every operation that changes a file's path or
-name therefore has to carry all its rows along, which is what the helpers in `views/files.py`
-are for — use them instead of touching `File.file`/`name` directly:
+only when no other row references that path. Every operation that puts a file into a folder,
+or changes its path or name, therefore goes through **`intern/dateiablage.py`** — never touch
+`File.file`/`name`/`folder` directly, and never `File.objects.create()` a file into a folder:
 
 | Helper | Purpose |
 |---|---|
 | `verknuepfte_dateien(f, inklusive_selbst=True)` | all rows sharing `f`'s blob |
-| `datei_url(pfad)` | the public URL of a storage path, without loading the `File` |
-| `datei_umbenennen(f, name)` | rename everywhere — one file, one name |
-| `version_anlegen(f, autor)` | archive the current revision before it is replaced |
-| `geschwister_nachziehen(alter_pfad, quelle)` | point all rows at the new blob, move the version chain over |
+| `datei_umbenennen(f, name)` | rename everywhere, no conflict check — the ablage paths call it |
+| `datei_loeschen(f)` | remove one occurrence; versions go with the last one |
 | `versionen_loeschen(f)` | drop the archived blobs (when the last occurrence goes) |
-| `besitz_uebertragen(member, fallback)` | hand a departing member's files **and** folders to the owner of the folder above them |
+| `zusammenfuehren(ziel, eingehend, vorne, …)` | merge two chains into one — behind every new revision |
+| `hochladen` · `kopieren` · `verknuepfen` · `verschieben` · `umbenennen` · `systemablage(_inhalt)` | the ablage paths, see „One name per folder" |
+| `datei_url(pfad)` (`views/files.py`) | the public URL of a storage path, without loading the `File` |
+| `besitz_uebertragen(member, fallback)` (`views/files.py`) | hand a departing member's files **and** folders to the owner of the folder above them |
 
 **Copy vs. duplicate:** `folder_link` (button „Verknüpfen") adds a row sharing the blob — the
 tag case above. `folder_duplicate` („Duplizieren") copies the blob, giving an independent
-file. Both share `_copy_action` / `_copy_folder_deep(…, blob_kopieren)` in `views/folders.py`.
-Deleting goes through `_datei_loeschen`, which removes one occurrence and only cleans up
-versions when it was the last one — pass it a **freshly loaded** instance, a stale one would
-have filer delete a blob that is still in use.
+file. Both share `_copy_action` / `_copy_folder_deep(…, blob_kopieren)` in `views/folders.py`
+and end in `dateiablage.verknuepfen` / `kopieren`. `datei_loeschen` wants a **freshly loaded**
+instance — a stale one would have filer delete a blob that is still in use.
+
+## One name per folder
+
+A folder holds **one file per name and one subfolder per name**, compared without regard to
+case (MariaDB's `utf8mb4_general_ci` does so anyway; `dateiablage` makes SQLite agree with
+`__iexact`/`casefold`). Placing a file on a taken name never adds a second row — the incoming
+file becomes a **revision** of the one already there:
+
+| Path | Same name in the target | Same content (any revision of the target) |
+|---|---|---|
+| Upload (`hochladen`) | new front revision, no question | not stored, the upload card says so |
+| Duplicate (`kopieren`) | new front revision dated now, no question | not stored, listed as a hint |
+| Link (`verknuepfen`) | ask: merge / cancel | ask: merge without a new revision / cancel |
+| Move (`verschieben`) | ask: merge / cancel | ask: delete here / cancel |
+| Rename (`umbenennen`, every folder of the file) | ask per folder: becomes a revision / cancel | as for the name, no new revision |
+| System (`systemablage`: avatar `<id>.ext`, song files, forum picture, application PDF, `rename_to`, unzip) | new front revision, no question | the existing row is used |
+| Folder move, create, rename | refused | — |
+| Folder copy, unzip | `Name (2)`, as before | — |
+
+**Merging** (`zusammenfuehren`) makes the two files one: both chains become one chain, every
+row of both blobs points at the front revision, the row already in the target folder stays and
+the incoming one — if it exists — hands its PK references (`verwendung.verweise_umhaengen`,
+from the table `DATEI_PK_VERWEISE`) to it and goes. The incoming revision goes in front when
+it is younger; when the target is younger the dialog asks a third question — **date it now**
+(it goes in front) or **sort it in** by its date (the target stays in front). Equal content
+is kept once; a blob nothing points at any more is deleted after commit.
+
+The decision logic is pure and tested without a database (`kette_bilden`, `konflikt_art`,
+`OPTIONEN`, `wahl`, `vorne_fuer`, `name_frei`). The browser asks first
+(`/intern/ordner/konflikte/` → `window.ablageKlaeren` in `intern.js`, one dialog per conflict
+with „für alle übernehmen"); the action then sends `entscheidung=File:<pk>@<ordner>=<wahl>`.
+The server re-checks and **skips every conflict without a valid choice** — nothing is merged
+silently. Rename answers 409 with the conflicts and is sent again with the choices.
 
 Avatars follow the same rule through `vorschau_url(pfad)` (`models.py`), which builds the
 square preview from a storage path. Going through the `File` row costs **two** queries per
@@ -49,20 +82,21 @@ need `File.url`.
 
 ## File versions
 
-**Overwriting** an upload with the same name in the same folder (`upload` in `views/files.py`)
-keeps the `File` PK — so `Lied`/`Artikel`/`Forum` references survive — archives the old
-revision as a `DateiVersion` and moves every linked row onto the new blob. The update thus
-appears in *all* folders the file sits in, and nothing is deleted. The search index follows by
-itself (`ensure_indexed` spots a changed `file_size`); the sibling rows' `DateiIndex` entries
-are dropped so a same-size replacement is re-indexed too.
+A new revision (see the table above) keeps the target's `File` PK — so `Lied`/`Artikel`/
+`Forum` references survive — and moves every linked row onto the front blob. The update thus
+appears in *all* folders the file sits in. The search index follows: the rows' `DateiIndex`
+entries are dropped so a same-size replacement is re-indexed too.
 
-**`DateiVersion`** (`models.py`) records the path and metadata of a superseded revision; the
-blob itself simply stays where it is. `aktuell` holds the path of the *live* revision and
-chains the history — it is rewritten whenever the file moves to a new blob.
-`/intern/datei/<pk>/` (`datei_view`, `datei.html`) shows the places a file is linked into
-(filtered by `visible_folder_ids` — never reveal folders the member cannot see) plus its
-version list; `datei_restore` makes an old revision current again, mirroring the overwrite
-path. Reached from the `#id` badge in the folder listing.
+**`DateiVersion`** (`models.py`) records the path and metadata of a revision that is not in
+front; the blob itself simply stays where it is. `aktuell` holds the path of the front
+revision and chains the history. `datum` is the revision's **own date** (the `modified_at` it
+carried), not the moment it was archived — the chain is ordered by it and `nummer` follows that
+order; only `zusammenfuehren` writes these rows. A revision has **no name of its own**:
+`original_filename` is still recorded but nothing reads it. `/intern/datei/<pk>/`
+(`datei_view`, `datei.html`) shows the places a file is linked into (filtered by
+`visible_folder_ids` — never reveal folders the member cannot see) plus its version list;
+`datei_restore` (`dateiablage.wiederherstellen`) only swaps which revision is in front — the
+name stays. Reached from the `#id` badge in the folder listing.
 
 A version blob has **no `File` row** — that is the whole point, and it makes the blob an
 orphan by filer's reckoning. **Never run `filer_check --delete-orphans` on this project:** it
@@ -182,11 +216,12 @@ against `folder_access()`.
   Everything that is not an avatar returns `True` — normal files are unaffected.
 
 **Every write path on files must call `darf_avatar_aendern()`.** Current call sites:
-`datei_restore` and `upload` (overwrite branch — checked *before* `version_anlegen`, plus the
-`rename_to`/`avatar_user_id` parameters, checked before the `File` row is created so a
+`datei_restore` and `upload` (the file already holding the final name — after `rename_to` —
+is checked *before* the ablage, as are the `rename_to`/`avatar_user_id` parameters, so a
 rejection leaves no orphan) in `views/files.py`; `folder_rename`, `folder_move` and
-`folder_delete` in `views/folders.py`. `folder_link`/`folder_duplicate` need no guard — they
-do not change the avatar, and reading is open anyway.
+`folder_delete` in `views/folders.py`. Every merge goes through `dateiablage.pruefen`, which
+checks the *target* too: another member's avatar is conflict type `gesperrt` and is never
+merged into, whichever path leads there.
 
 `datei_view` passes `darf_wiederherstellen` (= `darf_schreiben` **and** `darf_avatar_aendern`)
 to `datei.html`, which hides only the restore button. The version list itself stays visible to
@@ -339,7 +374,7 @@ history imported from the legacy system would otherwise vanish on the next serve
 those `DateiVersion` rows carry the original file mtime as `datum` (see `../migration.md`).
 Consequence to keep in mind: **there is currently no time-based deletion of superseded file
 revisions in production.** A revision only disappears when 25 newer ones exist, when the last
-`filer.File` occurrence is deleted (`_datei_loeschen` → `versionen_loeschen`), or on an
+`filer.File` occurrence is deleted (`dateiablage.datei_loeschen` → `versionen_loeschen`), or on an
 explicit erasure request. If a real time limit is ever wanted, the imported avatar versions
 have to be exempted first — a blanket `--days` would take them with it.
 

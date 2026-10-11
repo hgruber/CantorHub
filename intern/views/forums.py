@@ -15,7 +15,7 @@ from django_tables2 import RequestConfig
 
 from filer.models import File
 
-from intern import ejabberd, folders
+from intern import dateiablage, ejabberd, folders
 from intern.app_settings import get_config, get_from_email, is_ejabberd_configured
 from intern.forum_gelesen import (
     hat_aeltere_ungelesene,
@@ -529,16 +529,20 @@ def forum_edit(request, forum):
             # Move dropzone-uploaded bild to the Forenbilder folder
             new_bild_id = request.POST.get("bild")
             old_bild_id = str(forum_obj.bild_id) if forum_obj.bild_id else ""
+            bild = None
             if new_bild_id and new_bild_id != old_bild_id:
                 try:
                     f = File.objects.get(pk=int(new_bild_id))
                     folder_id = folders.forum()
-                    if folder_id:
-                        f.folder_id = folder_id
-                        f.save()
+                    # Gleichnamiges Bild dort: das neue wird seine Fassung.
+                    bild = dateiablage.systemablage(
+                        f, folder_id or f.folder_id, f.original_filename or f.name
+                    )
                 except (File.DoesNotExist, ValueError):
                     pass
             instance = form.save(commit=False)
+            if bild is not None:
+                instance.bild = bild
             instance._audit_user = request.user
             instance.save()
             form.save_m2m()
@@ -633,10 +637,9 @@ def forum_add(request):
                 try:
                     f = File.objects.get(pk=int(filer_id))
                     folder_id = folders.forum()
-                    if folder_id:
-                        f.folder_id = folder_id
-                        f.save()
-                    forum.bild = f
+                    forum.bild = dateiablage.systemablage(
+                        f, folder_id or f.folder_id, f.original_filename or f.name
+                    )
                 except (File.DoesNotExist, ValueError):
                     pass
             forum._audit_user = request.user

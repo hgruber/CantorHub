@@ -6144,3 +6144,141 @@ class FilterbauTitelTest(SimpleTestCase):
         # „unknown" war die Mitte des alten Schalters; das Konzert steht neben der
         # Kette und wird in der Ansicht angewandt.
         self.assertEqual(self._lesen("aktiv=unknown&konzert=7"), [])
+
+
+class AblageKetteTest(SimpleTestCase):
+    """dateiablage.kette_bilden: wer vorne steht, wie die Kette sortiert ist
+    und welche Inhalte doppelt sind."""
+
+    def _f(self, pfad, sha1, tag):
+        from intern.dateiablage import Fassung
+        return Fassung(pfad, sha1, datetime(2026, 1, tag), 1, "", "a.pdf", None)
+
+    def setUp(self):
+        self.jetzt = datetime(2026, 10, 1)
+        self.ziel = [self._f("z", "Z", 10), self._f("z1", "Z1", 2)]
+        self.ein = [self._f("e", "E", 5), self._f("e1", "E1", 1)]
+
+    def test_eingehend_vorne_rest_nach_stand(self):
+        from intern.dateiablage import VORNE_EINGEHEND, kette_bilden
+        aktuell, versionen, weg = kette_bilden(self.ziel, self.ein, VORNE_EINGEHEND, self.jetzt)
+        self.assertEqual(aktuell.pfad, "e")
+        self.assertEqual([v.pfad for v in versionen], ["e1", "z1", "z"])
+        self.assertEqual(weg, [])
+
+    def test_jetzt_setzt_das_datum(self):
+        from intern.dateiablage import VORNE_JETZT, kette_bilden
+        aktuell, _, _ = kette_bilden(self.ziel, self.ein, VORNE_JETZT, self.jetzt)
+        self.assertEqual((aktuell.pfad, aktuell.datum), ("e", self.jetzt))
+
+    def test_einsortieren_laesst_das_ziel_vorne(self):
+        from intern.dateiablage import VORNE_ZIEL, kette_bilden
+        aktuell, versionen, _ = kette_bilden(self.ziel, self.ein, VORNE_ZIEL, self.jetzt)
+        self.assertEqual(aktuell.pfad, "z")
+        self.assertEqual([v.pfad for v in versionen], ["e1", "z1", "e"])
+
+    def test_gleicher_inhalt_bleibt_einmal(self):
+        from intern.dateiablage import VORNE_EINGEHEND, kette_bilden
+        ein = [self._f("e", "Z1", 5)]
+        aktuell, versionen, weg = kette_bilden(self.ziel, ein, VORNE_EINGEHEND, self.jetzt)
+        self.assertEqual(aktuell.pfad, "e")
+        self.assertEqual([v.pfad for v in versionen], ["z"])
+        self.assertEqual(weg, ["z1"])
+
+    def test_gleicher_pfad_zaehlt_einmal(self):
+        """Wiederherstellen: die Version steckt schon in der Kette des Ziels."""
+        from intern.dateiablage import VORNE_EINGEHEND, kette_bilden
+        aktuell, versionen, weg = kette_bilden(
+            self.ziel, [self.ziel[1]], VORNE_EINGEHEND, self.jetzt
+        )
+        self.assertEqual(aktuell.pfad, "z1")
+        self.assertEqual([v.pfad for v in versionen], ["z"])
+        self.assertEqual(weg, [])
+
+    def test_leerer_sha1_ist_nie_doppelt(self):
+        from intern.dateiablage import VORNE_EINGEHEND, kette_bilden
+        ziel = [self._f("z", "", 10)]
+        ein = [self._f("e", "", 5)]
+        _, versionen, weg = kette_bilden(ziel, ein, VORNE_EINGEHEND, self.jetzt)
+        self.assertEqual(([v.pfad for v in versionen], weg), (["z"], []))
+
+
+class AblageEntscheidungTest(SimpleTestCase):
+    """Konfliktart, Wahl und Vorrang — ohne Wahl wird übersprungen."""
+
+    def test_konfliktarten(self):
+        from intern.dateiablage import konflikt_art
+        alt, neu = datetime(2026, 1, 1), datetime(2026, 2, 1)
+        self.assertEqual(konflikt_art({"A", "B"}, "B", neu, alt), "identisch")
+        self.assertEqual(konflikt_art({"A"}, "C", alt, neu), "name")
+        self.assertEqual(konflikt_art({"A"}, "C", neu, alt), "name_aelter")
+        self.assertEqual(konflikt_art({"A"}, "", alt, neu), "name")
+
+    def test_entscheidungen_lesen_verwirft_unbekanntes(self):
+        from intern.dateiablage import entscheidungen_lesen
+        self.assertEqual(
+            entscheidungen_lesen(["File:1@2=verschmelzen", "File:3@0=quatsch", "kaputt", ""]),
+            {"File:1@2": "verschmelzen"},
+        )
+
+    def test_wahl_muss_zur_art_passen(self):
+        from intern.dateiablage import wahl
+        self.assertEqual(wahl("verschieben", "identisch", "loeschen"), "loeschen")
+        self.assertIsNone(wahl("verknuepfen", "identisch", "loeschen"))
+        self.assertIsNone(wahl("verschieben", "name", None))
+        self.assertIsNone(wahl("verschieben", "name", "abbrechen"))
+        self.assertIsNone(wahl("kopieren", "name", "verschmelzen"))
+
+    def test_vorrang(self):
+        from intern.dateiablage import vorne_fuer
+        alt, neu = datetime(2026, 1, 1), datetime(2026, 2, 1)
+        self.assertEqual(vorne_fuer("jetzt", "name_aelter", neu, alt), "jetzt")
+        self.assertEqual(vorne_fuer("einsortieren", "name_aelter", neu, alt), "ziel")
+        self.assertEqual(vorne_fuer("verschmelzen", "name", alt, neu), "eingehend")
+        # Gleicher Inhalt holt nie einen älteren Stand nach vorne.
+        self.assertEqual(vorne_fuer("verschmelzen", "identisch", neu, alt), "ziel")
+        self.assertEqual(vorne_fuer("verschmelzen", "identisch", alt, neu), "eingehend")
+
+    def test_jede_option_hat_eine_wirkung(self):
+        from intern.dateiablage import OPTIONEN
+        bekannt = {"verschmelzen", "jetzt", "einsortieren", "loeschen"}
+        for schluessel, werte in OPTIONEN.items():
+            self.assertTrue(set(werte) <= bekannt, schluessel)
+
+    def test_name_frei_ohne_gross_klein(self):
+        from intern.dateiablage import name_frei
+        self.assertFalse(name_frei(["Noten", "Audio"], "noten"))
+        self.assertFalse(name_frei(["Noten "], " NOTEN"))
+        self.assertTrue(name_frei(["Noten"], "Noten 2"))
+        self.assertTrue(name_frei([], "Noten"))
+
+
+class DateiVerweiseTest(SimpleTestCase):
+    """Warnung und Umhängen lesen dieselbe Tabelle — und die kennt jeden FK
+    eines intern-Modells auf filer.File (außer dem Suchindex, der mit der
+    Zeile geht)."""
+
+    def test_tabelle_deckt_alle_fks(self):
+        from django.apps import apps
+        from filer.models import File
+
+        from intern.models import DateiIndex
+        from intern.verwendung import DATEI_PK_VERWEISE
+
+        fks = {
+            (modell, feld.name)
+            for modell in apps.get_app_config("intern").get_models()
+            for feld in modell._meta.get_fields()
+            if getattr(feld, "concrete", False)
+            and isinstance(getattr(feld, "related_model", None), type)
+            and issubclass(feld.related_model, File)
+            and modell is not DateiIndex
+        }
+        self.assertEqual(set(DATEI_PK_VERWEISE), fks)
+
+    def test_versionsdatum_ist_setzbar(self):
+        """Der Stand einer Fassung wird gesetzt, nicht beim Anlegen überschrieben."""
+        from intern.models import DateiVersion
+        feld = DateiVersion._meta.get_field("datum")
+        self.assertFalse(feld.auto_now_add)
+        self.assertFalse(feld.auto_now)

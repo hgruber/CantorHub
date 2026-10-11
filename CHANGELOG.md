@@ -54,6 +54,20 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   eigene Profil; der Stift rechts daneben führt direkt zur Bearbeitung.
 - Konfiguration: Die Karten stehen linksbündig wie auf den übrigen Seiten, statt auf breiten
   Bildschirmen mittig zu stehen.
+- Dateien: Ein Ordner enthält jeden Namen nur einmal. Landet eine Datei auf einem vergebenen
+  Namen, wird sie Fassung der vorhandenen: beim Hochladen und Kopieren ohne Rückfrage, beim
+  Verschieben, Verknüpfen und Umbenennen nach einer Rückfrage, die bei einer jüngeren Datei am
+  Ziel auch nach dem Datum fragt.
+- Dateien: Ein Inhalt, der am Ziel schon als Fassung vorliegt, wird nicht noch einmal abgelegt;
+  Hochladen und Kopieren melden das, Verschieben bietet an, die Datei hier zu löschen.
+  „Version wiederherstellen“ tauscht nur noch die vordere Fassung und lässt den Namen stehen.
+- Ordner: Einen Unterordner gleichen Namens gibt es nur einmal — Anlegen, Umbenennen und
+  Verschieben auf einen vergebenen Namen werden abgelehnt.
+
+### Behoben
+
+- Profilbild, Forenbild, Titel-Dateien und Antrags-PDFs legten bei gleichem Namen eine zweite
+  Datei neben die vorhandene; die neue wird jetzt deren Fassung, und der Verweis zeigt auf sie.
 
 ## v1.0.0 — 2026-10-05
 

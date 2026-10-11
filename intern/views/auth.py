@@ -14,8 +14,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
 from django.utils.http import url_has_allowed_host_and_scheme, urlsafe_base64_encode
 from django.utils.timezone import now as tz_now
-from filer.models import File as FilerFile
-from intern import ejabberd, folders
+from intern import dateiablage, ejabberd, folders
 from intern.app_settings import (
     get_config,
     get_config_int,
@@ -176,13 +175,10 @@ def _pdf_ablegen(user, pdf_bytes, fname):
             "/".join(folders.PFADE["mitgliedsantraege"]), fname,
         )
         return
-    FilerFile.objects.create(
-        file=ContentFile(pdf_bytes, name=fname),
-        original_filename=fname,
-        name=fname,
-        owner=user,
-        folder_id=folder_id,
-        mime_type="application/pdf",
+    # Ein zweiter Antrag am selben Tag trägt denselben Namen und wird Fassung
+    # des ersten (dateiablage) statt einer zweiten Datei daneben.
+    dateiablage.systemablage_inhalt(
+        ContentFile(pdf_bytes, name=fname), folder_id, fname, user, "application/pdf",
     )
 
 

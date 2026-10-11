@@ -20,7 +20,7 @@ from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, pars
 
 from filer.models import File, Folder
 
-from intern import ejabberd, folders
+from intern import dateiablage, ejabberd, folders
 from intern.filterbau_mitglieder import MITGLIEDER
 from intern.folder_access import visible_folder_ids
 from intern.app_settings import (
@@ -255,20 +255,19 @@ def mitglied_edit(request, id):
             # if it differs from the original, the file was just uploaded.
             new_avatar_id = request.POST.get("avatar")
             old_avatar_id = str(user.avatar_id) if user.avatar_id else ""
+            avatar = None
             if new_avatar_id and new_avatar_id != old_avatar_id:
                 try:
                     f = File.objects.get(pk=int(new_avatar_id))
                     folder_id = folders.avatare()
-                    if folder_id:
-                        f.folder_id = folder_id
                     ext = _get_file_extension(f.original_filename or f.name or "")
-                    new_name = f"{id}{ext}"
-                    f.original_filename = new_name
-                    f.name = new_name
-                    f.save()
+                    # Ein früheres <id><ext> dort: das neue Bild wird seine Fassung.
+                    avatar = dateiablage.systemablage(f, folder_id or f.folder_id, f"{id}{ext}")
                 except (File.DoesNotExist, ValueError):
                     pass
             instance = form.save(commit=False)
+            if avatar is not None:
+                instance.avatar = avatar
             instance._audit_user = request.user
             instance.save()
             form.save_m2m()

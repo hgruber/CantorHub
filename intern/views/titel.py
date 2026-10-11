@@ -13,7 +13,7 @@ from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, pars
 
 from filer.models import File
 
-from intern import folders
+from intern import dateiablage, folders
 
 from ..filterbau_titel import TITEL
 from ..forms import LiedEditForm
@@ -322,6 +322,17 @@ def titel_list(request):
     return render(request, "table.html", context)
 
 
+def _titeldatei_ablegen(f, feld, ordner_fn, titel):
+    """Eine hochgeladene Titel-Datei in ihren Ordner, benannt nach dem Titel.
+
+    Liegt dort schon eine Datei dieses Namens (die bisherige des Titels), wird
+    die neue ihre vordere Fassung; zurück kommt die Zeile, auf die der Titel
+    zeigen soll."""
+    ext = _get_file_extension(f.original_filename or f.name or "")
+    praefix = _aufnahme_prefix_with_space() if feld == "aufnahme" else ""
+    return dateiablage.systemablage(f, ordner_fn() or f.folder_id, f"{praefix}{titel}{ext}")
+
+
 @login_required
 def titel_view(request, titel):
     lied = get_object_or_404(Lied.objects.prefetch_related("solist", "dirigent"), id=titel)
@@ -354,26 +365,21 @@ def titel_edit(request, titel):
                 "pdf": folders.pdf,
                 "noten": folders.notensatz,
             }
+            abgelegt = {}
             for field_name, folder_fn in _FILER_EDIT_MAP.items():
                 new_id = request.POST.get(field_name)
                 old_id = str(getattr(lied, field_name + "_id") or "") if hasattr(lied, field_name + "_id") else ""
                 if new_id and new_id != old_id:
                     try:
                         f = File.objects.get(pk=int(new_id))
-                        folder_id = folder_fn()
-                        if folder_id:
-                            f.folder_id = folder_id
-                        ext = _get_file_extension(f.original_filename or f.name or "")
-                        if field_name == "aufnahme":
-                            new_name = f"{_aufnahme_prefix_with_space()}{lied.titel}{ext}"
-                        else:
-                            new_name = f"{lied.titel}{ext}"
-                        f.original_filename = new_name
-                        f.name = new_name
-                        f.save()
+                        abgelegt[field_name] = _titeldatei_ablegen(f, field_name, folder_fn, lied.titel)
                     except (File.DoesNotExist, ValueError):
                         pass
             instance = form.save(commit=False)
+            # Hat die Ablage die neue Datei mit der bisherigen verschmolzen,
+            # gilt deren Zeile — nicht die aus dem Formular.
+            for field_name, zeile in abgelegt.items():
+                setattr(instance, field_name, zeile)
             instance._audit_user = request.user
             instance.save()
             form.save_m2m()
@@ -482,17 +488,8 @@ def titel_add(request):
                 if filer_id:
                     try:
                         f = File.objects.get(pk=int(filer_id))
-                        # Move file to its final folder
-                        folder_id = folder_fn()
-                        if folder_id:
-                            f.folder_id = folder_id
-                        # Rename file to match the song title
-                        ext = _get_file_extension(f.original_filename or f.name or "")
-                        new_name = f"{_aufnahme_prefix_with_space()}{lied.titel}{ext}" if model_field == "aufnahme" else f"{lied.titel}{ext}"
-                        f.name = new_name
-                        f.original_filename = new_name
-                        f.save()
-                        setattr(lied, model_field, f)
+                        setattr(lied, model_field,
+                                _titeldatei_ablegen(f, model_field, folder_fn, lied.titel))
                     except (File.DoesNotExist, ValueError):
                         pass
             lied._audit_user = request.user

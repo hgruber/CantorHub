@@ -164,7 +164,7 @@ this file tracks only what is still open.
   or restore an avatar (see "Avatars are write-protected against other members" in
   `files.md`). Their version list stays *visible* to every member, though — a deliberate
   decision; if that is ever reconsidered, `datei_view` already computes the flag
-  (`darf_wiederherstellen`) that would gate it. An erasure request is covered — `_datei_loeschen` drops all versions with
+  (`darf_wiederherstellen`) that would gate it. An erasure request is covered — `dateiablage.datei_loeschen` drops all versions with
   the last occurrence of a file — but the *automatic* pruning is weaker than the command's
   defaults suggest: `cleanup_dateiversionen` defaults to 10 revisions / 2 years, yet
   `start.sh` runs it as `--keep 25 --days 36500`, which disables the age rule so the

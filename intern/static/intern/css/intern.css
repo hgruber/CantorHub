@@ -7357,6 +7357,16 @@ body.join-page {
     margin-top: 16px;
 }
 
+/* „Für alle weiteren gleichen Fälle übernehmen" bei den Ablage-Rückfragen. */
+.verwendung-auswahl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(13rem / 14);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
 /* =================================================== */
 /* Chip-Multiselect                                    */
 /* =================================================== */

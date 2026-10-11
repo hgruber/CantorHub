@@ -879,16 +879,16 @@ class DateiIndex(models.Model):
 
 
 class DateiVersion(models.Model):
-    """A superseded revision of a file, kept when an upload overwrites it.
+    """A revision of a file that is not the one in front.
 
-    The old blob is neither copied nor deleted — it stays where it is and this
-    row records its path. A file's identity is its storage path (`File.file`),
-    the same rule filer uses in `File.delete()` to decide whether a blob may go,
-    so several File rows sharing a path are one file in several folders. When a
-    new revision is stored under a fresh path, every row of the chain is moved
-    over to it via `aktuell`.
+    The blob is neither copied nor deleted — it stays where it is and this row
+    records its path. A file's identity is its storage path (`File.file`), the
+    same rule filer uses in `File.delete()` to decide whether a blob may go, so
+    several File rows sharing a path are one file in several folders. `aktuell`
+    names the path in front; the chain is ordered by `datum`, the revision's
+    own date, and `nummer` follows that order.
 
-    See intern/views/files.py for the helpers that maintain this.
+    Only intern/dateiablage.py writes these rows (`zusammenfuehren()`).
     """
 
     aktuell = models.CharField(max_length=255, db_index=True)
@@ -898,7 +898,9 @@ class DateiVersion(models.Model):
     sha1 = models.CharField(max_length=40, blank=True)
     mime_type = models.CharField(max_length=255, blank=True)
     autor = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL)
-    datum = models.DateTimeField(auto_now_add=True)
+    # Der Stand dieser Fassung (das Änderungsdatum, das sie trug), nicht der
+    # Zeitpunkt ihrer Archivierung — danach sortiert dateiablage die Kette.
+    datum = models.DateTimeField(default=timezone.now)
     nummer = models.IntegerField(default=1)
 
     class Meta:

@@ -111,14 +111,27 @@
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'name=' + encodeURIComponent(name) + '&csrfmiddlewaretoken=' + encodeURIComponent(csrf.value),
             })
-            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(r) {
+                return r.json().catch(function() { return {}; }).then(function(data) {
+                    if (!r.ok) throw new Error(data.error || '');
+                    return data;
+                });
+            })
             .then(function(data) {
                 if (data.html) nfRow.insertAdjacentHTML('beforebegin', data.html);
                 nfInput.value = '';
                 nfInput.classList.remove('nf-error');
                 nfInput.focus();
             })
-            .catch(function() { nfInput.classList.add('nf-error'); })
+            .catch(function(e) {
+                nfInput.classList.add('nf-error');
+                // Die Meldung des Servers (etwa: Name schon vergeben) am Feld zeigen.
+                if (e.message) {
+                    nfInput.disabled = false;
+                    nfInput.setCustomValidity(e.message);
+                    nfInput.reportValidity();
+                }
+            })
             .finally(function() { nfInput.disabled = false; nfConfirm.disabled = false; });
         }
 
@@ -127,7 +140,7 @@
         nfInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') { e.preventDefault(); submitFolder(); }
             else if (e.key === 'Escape') hideRow();
-            else nfInput.classList.remove('nf-error');
+            else { nfInput.classList.remove('nf-error'); nfInput.setCustomValidity(''); }
         });
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && nfRow.style.display !== 'none') hideRow();

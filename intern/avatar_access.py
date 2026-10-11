@@ -28,7 +28,7 @@ def avatar_mitglied(f):
     its own PK but shares the blob and the version chain, so acting on the sibling
     would swap the avatar just the same.
     """
-    from .views.files import verknuepfte_dateien
+    from .dateiablage import verknuepfte_dateien
 
     pks = list(verknuepfte_dateien(f).values_list("pk", flat=True))
     if not pks:
@@ -54,7 +54,7 @@ def darf_avatar_aendern(user, f):
     # No owner to be found, but the file sits in Profilbilder: a leftover `<id>.jpg`
     # of a member who has no avatar set any more, version history included.
     # Only the membership administration touches those.
-    from .views.files import verknuepfte_dateien
+    from .dateiablage import verknuepfte_dateien
 
     avatare_id = folders.avatare()
     if avatare_id is not None:

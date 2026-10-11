@@ -58,6 +58,24 @@ table, so an environment variable set after startup wins over any stored value �
 page shows no sign of it. `_seed_config` does write env values into the table at startup, so the
 usual deployment case is visible; only a later change is not.
 
+## One name per folder: what the rule does not reach yet (October 2026)
+
+Since `intern/dateiablage.py` (see „One name per folder" in `files.md`) no portal path can put
+a second file or subfolder of the same name into a folder. Left open on purpose:
+
+- **Existing duplicates are not cleaned up.** Files and folders that already share a name in a
+  folder stay as they are. A command would merge each group with the same rule as
+  `zusammenfuehren`: the youngest revision in front, equal content kept once, the PK
+  references of the dropped rows moved over (`verweise_umhaengen`). Duplicate folders need a
+  human decision, because their `FolderPermission` rows can differ — the command should list
+  them rather than merge.
+- **`/admin/filer/` bypasses the rule.** filer's own admin creates and moves rows without
+  `dateiablage`. A model-level guard (`pre_save` on `filer.File`/`Folder`) would close it, but
+  it would also fire inside `zusammenfuehren`'s own updates and in migrations.
+- **`DateiVersion.original_filename` is written but no longer read.** Revisions have no name
+  of their own since `datei_restore` stopped renaming. The column can go with the next
+  `MIGRATE` rebuild, together with the writes in `dateiablage.zusammenfuehren`.
+
 ## First install vs. legacy import (deferred September 2026)
 
 `0003_import.py` (1384 lines, 21 `RunPython` operations, no schema) mixes two things that belong

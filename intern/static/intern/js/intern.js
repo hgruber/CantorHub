@@ -1044,7 +1044,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Kleiner Bestätigungsdialog auf <dialog>-Basis. Liefert den Wert des
   // geklickten Buttons (oder null bei Abbruch/Esc).
-  function verwendungsDialog({ titel, hinweis, warnungen, buttons }) {
+  // `auswahl` ({label, an}) setzt ein Häkchen über die Knöpfe; sein Stand
+  // steht danach in `auswahl.an`.
+  function verwendungsDialog({ titel, hinweis, warnungen, buttons, auswahl }) {
     return new Promise((resolve) => {
       const dlg = document.createElement("dialog");
       dlg.className = "verwendung-dialog";
@@ -1076,6 +1078,18 @@ document.addEventListener("DOMContentLoaded", function () {
         dlg.appendChild(block);
       });
 
+      if (auswahl) {
+        const label = document.createElement("label");
+        label.className = "verwendung-auswahl";
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = !!auswahl.an;
+        box.addEventListener("change", () => { auswahl.an = box.checked; });
+        label.appendChild(box);
+        label.appendChild(document.createTextNode(" " + auswahl.label));
+        dlg.appendChild(label);
+      }
+
       const leiste = document.createElement("div");
       leiste.className = "verwendung-buttons";
       buttons.forEach((b) => {
@@ -1092,6 +1106,126 @@ document.addEventListener("DOMContentLoaded", function () {
       dlg.addEventListener("close", () => dlg.remove());
       document.body.appendChild(dlg);
       dlg.showModal();
+    });
+  }
+
+  // ── Ein Name, eine Datei: Rückfragen bei vergebenen Namen ──
+  // Der Server (dateiablage) nennt je Konflikt Art und Wahl; hier wird nur
+  // gefragt. Was ohne Wahl bleibt, überspringt er — nie wird still verschmolzen.
+  const ABLAGE_WAHL = {
+    verschmelzen: { text: "Verschmelzen", klasse: "btn-primary" },
+    jetzt:        { text: "Datum auf jetzt", klasse: "btn-primary" },
+    einsortieren: { text: "Datum lassen und einsortieren" },
+    loeschen:     { text: "Weiter (hier löschen)", klasse: "btn-danger" },
+  };
+
+  function ablageFrage(aktion, k) {
+    const wo = `„${k.datei}“ in ${k.ordner}`;
+    if (k.art === "name") {
+      return { titel: `${wo} gibt es schon`,
+               hinweis: aktion === "umbenennen"
+                 ? "Diese Datei wird eine Fassung der vorhandenen und steht vorne."
+                 : "Die hinzukommende Datei wird die vordere Fassung der vorhandenen — danach sind beide eine Datei." };
+    }
+    if (k.art === "name_aelter") {
+      return { titel: `${wo} ist jünger`,
+               hinweis: `Stand dort: ${k.ziel_datum}, hinzukommend: ${k.eingehend_datum}. ` +
+                        "Damit die hinzukommende vorne steht, bekommt sie das Datum von jetzt — " +
+                        "oder sie wird nach ihrem Datum als ältere Fassung einsortiert." };
+    }
+    if (aktion === "verschieben") {   // identisch oder dieselbe Datei
+      return { titel: "Eine identische Datei liegt bereits im Ziel",
+               hinweis: `${wo}. Weiter löscht sie hier.` };
+    }
+    return { titel: `${wo} hat denselben Inhalt`,
+             hinweis: "Verschmelzen legt keine neue Fassung an — danach sind beide eine Datei." };
+  }
+
+  // Konflikte ohne Wahl: was nicht abgelegt wird. Kopieren auf einen
+  // vergebenen Namen fragt nicht — die Kopie wird dort neue Fassung.
+  function ablageHinweis(aktion, k) {
+    const wo = `„${k.datei}“ in ${k.ordner}`;
+    if (k.art === "ordnername") return `Den Ordner ${wo} gibt es schon — er bleibt, wo er ist.`;
+    if (k.art === "gesperrt") return `${wo} darfst du nicht ändern — wird übersprungen.`;
+    if (aktion === "verknuepfen" && k.art === "vorhanden") return `${wo} liegt dort schon.`;
+    if (aktion === "kopieren" && (k.art === "identisch" || k.art === "vorhanden")) {
+      return `${wo} hat schon diesen Inhalt — wird nicht abgelegt.`;
+    }
+    return null;
+  }
+
+  // Fragt jeden Konflikt ab; liefert die Felder `entscheidung` („Schlüssel=Wahl")
+  // oder null, wenn der ganze Vorgang abgebrochen wurde.
+  async function konflikteKlaeren(aktion, konflikte) {
+    const hinweise = [], fragen = [], entscheidungen = [], fuerAlle = {};
+    konflikte.forEach((k) => {
+      const h = ablageHinweis(aktion, k);
+      if (h) hinweise.push(h);
+      else if (k.optionen && k.optionen.length) fragen.push(k);
+    });
+    for (let i = 0; i < fragen.length; i++) {
+      const k = fragen[i];
+      let wert = fuerAlle[k.art];
+      if (wert === undefined) {
+        const { titel, hinweis } = ablageFrage(aktion, k);
+        const weitere = fragen.slice(i + 1).some((x) => x.art === k.art);
+        const auswahl = weitere ? { label: "Für alle weiteren gleichen Fälle übernehmen", an: false } : null;
+        const buttons = [{ text: "Abbrechen", wert: "abbrechen" }].concat(
+          k.optionen.slice().reverse().map((w) => ({
+            text: aktion === "umbenennen" && w === "verschmelzen"
+              ? "Wird Version dieser Datei" : ABLAGE_WAHL[w].text,
+            klasse: ABLAGE_WAHL[w].klasse,
+            wert: w,
+          })),
+        );
+        wert = (await verwendungsDialog({ titel, hinweis, buttons, auswahl })) || "abbrechen";
+        if (auswahl && auswahl.an) fuerAlle[k.art] = wert;
+      }
+      entscheidungen.push(`${k.schluessel}=${wert}`);
+    }
+    if (hinweise.length) {
+      const weiter = await verwendungsDialog({
+        titel: "Nicht alles wird abgelegt",
+        warnungen: [{ datei: "", verwendungen: hinweise }],
+        buttons: [
+          { text: "Abbrechen", wert: null },
+          { text: "Weiter", wert: "ok", klasse: "btn-primary" },
+        ],
+      });
+      if (weiter !== "ok") return null;
+    }
+    return entscheidungen;
+  }
+
+  // Vorabprüfung für Verschieben, Referenz und Kopieren (auch aus dem
+  // Datei-Menü eines Artikels). Ohne Antwort des Servers bleibt die Liste
+  // leer — dann überspringt er die Konflikte selbst.
+  window.ablageKlaeren = async function (aktion, items, zielPk) {
+    const body = new URLSearchParams();
+    body.append("aktion", aktion);
+    body.append("target_pk", zielPk || "0");
+    items.forEach((val) => body.append("item", val));
+    let konflikte = [];
+    try {
+      const res = await fetch("/intern/ordner/konflikte/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": getCsrfToken(),
+        },
+        body: body.toString(),
+      });
+      if (res.ok) konflikte = (await res.json()).konflikte || [];
+    } catch (err) { /* der Server prüft beim Absenden erneut */ }
+    return konflikteKlaeren(aktion, konflikte);
+  };
+
+  function entscheidungenAnhaengen(form, liste) {
+    form.querySelectorAll('input[name="entscheidung"]').forEach((el) => el.remove());
+    liste.forEach((wert) => {
+      const inp = document.createElement("input");
+      inp.type = "hidden"; inp.name = "entscheidung"; inp.value = wert;
+      form.appendChild(inp);
     });
   }
 
@@ -1145,6 +1279,10 @@ document.addEventListener("DOMContentLoaded", function () {
         : "link-target"
       );
       if (targetInput) targetInput.value = targetRadio.value;
+      const aktion = { move: "verschieben", link: "verknuepfen", duplicate: "kopieren" }[action];
+      const entscheidungen = await window.ablageKlaeren(aktion, items, targetRadio.value);
+      if (entscheidungen === null) return;
+      entscheidungenAnhaengen(form, entscheidungen);
     }
 
     // Append item inputs and submit
@@ -1259,7 +1397,10 @@ document.addEventListener("DOMContentLoaded", function () {
       Promise.all(promises).then(() => refreshFolderTable());
     }
 
-    function submitDragMove(items, targetPk) {
+    async function submitDragMove(items, targetPk) {
+      const entscheidungen = await window.ablageKlaeren("verschieben", items, targetPk);
+      if (entscheidungen === null) return;
+      entscheidungenAnhaengen(moveForm, entscheidungen);
       moveForm.querySelectorAll('input[name="item"]').forEach((el) => el.remove());
       items.forEach((val) => {
         const inp = document.createElement("input");
@@ -1546,17 +1687,31 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         try {
-          const felder = { type, id, name: newName };
-          if (mitziehen) felder.links_mitziehen = "1";
-          const res = await fetch("/intern/ordner/umbenennen/", {
+          const body = new URLSearchParams({ type, id, name: newName });
+          if (mitziehen) body.append("links_mitziehen", "1");
+          const senden = () => fetch("/intern/ordner/umbenennen/", {
             method: "POST",
             headers: {
               "Content-Type": "application/x-www-form-urlencoded",
               "X-CSRFToken": getCsrfToken(),
             },
-            body: new URLSearchParams(felder).toString(),
+            body: body.toString(),
           });
-          const data = await res.json().catch(() => ({}));
+          let res = await senden();
+          let data = await res.json().catch(() => ({}));
+          // Der Name ist in einem Ordner der Datei vergeben: fragen, ob sie dort
+          // Fassung der vorhandenen wird — sonst bleibt alles, wie es war.
+          if (res.status === 409 && data.konflikte) {
+            const entscheidungen = await konflikteKlaeren("umbenennen", data.konflikte);
+            if (entscheidungen === null || entscheidungen.some((e) => e.endsWith("=abbrechen"))) {
+              restore();
+              return;
+            }
+            entscheidungen.forEach((e) => body.append("entscheidung", e));
+            res = await senden();
+            data = await res.json().catch(() => ({}));
+          }
+          if (data.status === "abgebrochen") { restore(); return; }
           if (!res.ok) {
             alert(data.message || "Umbenennen fehlgeschlagen.");
             restore();
@@ -1568,6 +1723,8 @@ document.addEventListener("DOMContentLoaded", function () {
                   data.links_uebersprungen.join("\n"));
           }
           finished = true;
+          // Verschmolzen: die Zeile kann in einer anderen aufgegangen sein.
+          if (data.verschmolzen) { refreshFolderTable(); return; }
           const newLink = link.cloneNode(false);
           newLink.textContent = data.name || newName;
           cell.innerHTML = "";
