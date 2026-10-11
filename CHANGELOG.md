@@ -66,6 +66,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Behoben
 
+- Ordner: Ein Ordner lässt sich nicht mehr in sich selbst oder einen seiner Unterordner
+  verschieben; der Zweig verschwand dabei aus dem Ordnerbaum.
 - Profilbild, Forenbild, Titel-Dateien und Antrags-PDFs legten bei gleichem Namen eine zweite
   Datei neben die vorhandene; die neue wird jetzt deren Fassung, und der Verweis zeigt auf sie.
 

@@ -45,7 +45,7 @@ file becomes a **revision** of the one already there:
 | Move (`verschieben`) | ask: merge / cancel | ask: delete here / cancel |
 | Rename (`umbenennen`, every folder of the file) | ask per folder: becomes a revision / cancel | as for the name, no new revision |
 | System (`systemablage`: avatar `<id>.ext`, song files, forum picture, application PDF, `rename_to`, unzip) | new front revision, no question | the existing row is used |
-| Folder move, create, rename | refused | — |
+| Folder move, create, rename | refused; a move into the folder itself or one of its subfolders is refused too (`_is_descendant_or_self`, as copying already did) | — |
 | Folder copy, unzip | `Name (2)`, as before | — |
 
 **Merging** (`zusammenfuehren`) makes the two files one: both chains become one chain, every

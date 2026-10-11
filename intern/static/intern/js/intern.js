@@ -1146,6 +1146,9 @@ document.addEventListener("DOMContentLoaded", function () {
   function ablageHinweis(aktion, k) {
     const wo = `„${k.datei}“ in ${k.ordner}`;
     if (k.art === "ordnername") return `Den Ordner ${wo} gibt es schon — er bleibt, wo er ist.`;
+    if (k.art === "in_sich_selbst") {
+      return `Der Ordner „${k.datei}“ kann nicht in sich selbst oder einen eigenen Unterordner — er bleibt, wo er ist.`;
+    }
     if (k.art === "gesperrt") return `${wo} darfst du nicht ändern — wird übersprungen.`;
     if (aktion === "verknuepfen" && k.art === "vorhanden") return `${wo} liegt dort schon.`;
     if (aktion === "kopieren" && (k.art === "identisch" || k.art === "vorhanden")) {

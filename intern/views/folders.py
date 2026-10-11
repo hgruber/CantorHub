@@ -841,8 +841,14 @@ def folder_move(request):
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
             folder = Folder.objects.filter(pk=item_id).first()
+            if folder is None:
+                continue
+            # In sich selbst oder einen eigenen Unterordner: der Zweig hinge
+            # danach an sich selbst und wäre von der Wurzel aus unerreichbar.
+            if _is_descendant_or_self(target_id, folder.pk):
+                continue
             # Ein Name, ein Ordner: was dort schon so heißt, bleibt, wo es ist.
-            if folder is None or not dateiablage.ordnername_frei(target_id, folder.name, folder.pk):
+            if not dateiablage.ordnername_frei(target_id, folder.name, folder.pk):
                 continue
             Folder.objects.filter(pk=item_id).update(parent_id=target_id)
         else:
@@ -923,15 +929,23 @@ def ablage_konflikte(request):
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
             folder = Folder.objects.filter(pk=item_id).first()
-            if (aktion == "verschieben" and folder is not None
-                    and not dateiablage.ordnername_frei(target_id, folder.name, folder.pk)):
-                konflikte.append({
-                    "schluessel": f"Folder:{folder.pk}",
-                    "datei": folder.name,
-                    "ordner": dateiablage.ordner_pfad(Folder.objects.filter(pk=target_id).first()),
-                    "art": "ordnername",
-                    "optionen": [],
-                })
+            if folder is None:
+                continue
+            # Kopieren überspringt das Ziel im eigenen Zweig genauso (_copy_action).
+            if _is_descendant_or_self(target_id, folder.pk):
+                art = "in_sich_selbst"
+            elif aktion == "verschieben" and not dateiablage.ordnername_frei(
+                    target_id, folder.name, folder.pk):
+                art = "ordnername"
+            else:
+                continue
+            konflikte.append({
+                "schluessel": f"Folder:{folder.pk}",
+                "datei": folder.name,
+                "ordner": dateiablage.ordner_pfad(Folder.objects.filter(pk=target_id).first()),
+                "art": art,
+                "optionen": [],
+            })
             continue
         f = File.objects.filter(pk=item_id).select_related("folder").first()
         if f is None:

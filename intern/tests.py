@@ -6282,3 +6282,41 @@ class DateiVerweiseTest(SimpleTestCase):
         feld = DateiVersion._meta.get_field("datum")
         self.assertFalse(feld.auto_now_add)
         self.assertFalse(feld.auto_now)
+
+
+class OrdnerZyklusTest(SimpleTestCase):
+    """Ein Ordner darf nicht in sich selbst oder einen eigenen Unterordner —
+    der Zweig hinge sonst an sich selbst und fiele aus dem Baum."""
+
+    # 1 ─ 2 ─ 3, daneben 4
+    ELTERN = {1: None, 2: 1, 3: 2, 4: None}
+
+    def _pruefen(self, kandidat, vorfahr):
+        from intern.views import folders
+
+        class Abfrage:
+            def get(_self, pk):
+                if pk not in self.ELTERN:
+                    raise folders.Folder.DoesNotExist
+                return self.ELTERN[pk]
+
+        with mock.patch.object(folders.Folder, "objects") as objects:
+            objects.values_list.return_value = Abfrage()
+            return folders._is_descendant_or_self(kandidat, vorfahr)
+
+    def test_eigener_zweig(self):
+        self.assertTrue(self._pruefen(1, 1))
+        self.assertTrue(self._pruefen(3, 1))
+        self.assertTrue(self._pruefen(2, 2))
+
+    def test_fremder_zweig_und_wurzel(self):
+        self.assertFalse(self._pruefen(4, 1))
+        self.assertFalse(self._pruefen(1, 3))
+        self.assertFalse(self._pruefen(None, 1))
+
+    def test_verschieben_und_vorabpruefung_fragen_danach(self):
+        import inspect
+
+        from intern.views import folders
+        for view in (folders.folder_move, folders.ablage_konflikte):
+            self.assertIn("_is_descendant_or_self(target_id", inspect.getsource(view), view.__name__)
