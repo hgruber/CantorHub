@@ -18,6 +18,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Forenliste: Die angezeigten Spalten lassen sich wie in Mitgliederliste und Repertoire je
   Mitglied auswählen.
 
+### Geändert
+
+- Forenliste: Die Spalte „Zugriff“ heißt jetzt „Letzter Beitrag“.
+
 ## v1.0.1 — 2026-10-11
 
 ### Hinzugefügt

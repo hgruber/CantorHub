@@ -75,7 +75,7 @@ class ForumTabelle(tables.Table):
         attrs={"th": {"class": "kategorie"}, "td": {"class": "kategorie"}},
     )
     thema = tables.Column()
-    zugriff = tables.Column()
+    zugriff = tables.Column(verbose_name="Letzter Beitrag")
     anzahl_mitteilungen = tables.Column(
         verbose_name="Anzahl",
         attrs={"th": {"class": "zahl"}, "td": {"class": "zahl"}},
