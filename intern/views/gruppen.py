@@ -201,6 +201,10 @@ PERMISSION_DETAILS = {
          "In jedem Ordner Dateien und Unterordner löschen — auch dort, wo die "
          "Ordnerrechte das sonst nicht erlauben. Ohne dieses Recht entscheiden allein "
          "die Ordnerrechte."),
+        ("Artikel › Menü eines Vorschaubilds",
+         "„Datei löschen“ entfernt die eingebettete Datei und ihren Verweis — auch "
+         "dort, wo die Ordnerrechte das sonst nicht erlauben. Schreibrecht für den "
+         "Artikel braucht es trotzdem."),
     ],
     "intern.manage_folder_permissions": [
         ("Ordner",

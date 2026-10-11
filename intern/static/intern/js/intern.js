@@ -266,6 +266,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // App-main overlay dropzone
   const appMain = document.getElementById("app-main");
   const uploadMaxMb = appMain ? (parseInt(appMain.dataset.uploadMaxMb, 10) || 50) : 50;
+  const artikelDateien = [];  // Namen der Uploads in der Artikelansicht
   if (appMain) {
     appMainDz = new Dropzone(appMain, {
       url: "/intern/upload/",
@@ -290,8 +291,33 @@ document.addEventListener("DOMContentLoaded", function () {
         this.on("success", function (file, response) {
           const textarea = document.getElementById("mitteilung-textarea");
           if (textarea) textarea.value += response.url;
+          // Artikel-Editor: der Verweis kommt vorn ins Textfeld, gespeichert
+          // wird erst mit „Speichern".
+          const editor = document.querySelector('.article-editor textarea[name="text"]');
+          if (editor && response.name) {
+            editor.value = "[[Datei:" + response.name + "]]\n" + editor.value;
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          if (appMain.dataset.uploadArtikel && response.name) {
+            artikelDateien.push(response.name);
+          }
         });
         this.on("queuecomplete", function () {
+          // Artikelansicht: alle Dateien dieses Uploads in einer neuen Version
+          // vorn einfügen — ein Request, sonst stritten parallele Uploads um
+          // dieselbe Versionsnummer.
+          const artikel = appMain.dataset.uploadArtikel;
+          if (artikel) {
+            if (!artikelDateien.length) return;
+            const body = new FormData();
+            artikelDateien.splice(0).forEach((n) => body.append("datei", n));
+            fetch("/intern/artikel/" + encodeURIComponent(artikel) + "/dateien/", {
+              method: "POST",
+              headers: { "X-CSRFToken": getCsrfToken() },
+              body: body,
+            }).then(() => window.location.reload());
+            return;
+          }
           if (window.location.pathname.startsWith("/intern/ordner/")) {
             refreshFolderTable();
           } else if (appMain.dataset.uploadLiedId) {
@@ -300,6 +326,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       },
     });
+
+    // Artikelansicht ohne Schreibrecht: kein Zielordner, und ohne ihn landete
+    // ein Drop in der Wurzel — dort wird gar nicht hochgeladen.
+    const uploadGesperrt =
+      !!document.querySelector(".wiki[data-artikel]") && !appMain.dataset.uploadFolderId;
+    if (uploadGesperrt) appMainDz.disable();
 
     // Topbar-Button: für Geräte ohne Drag & Drop. Die gewählten Dateien laufen
     // durch dieselbe Dropzone wie ein Drop — Zielordner, Fortschrittskarte und
@@ -316,7 +348,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let dragCounter = 0;
     appMain.addEventListener("dragenter", (e) => {
-      if (!e.dataTransfer || !e.dataTransfer.types.includes("Files")) return;
+      if (uploadGesperrt || !e.dataTransfer || !e.dataTransfer.types.includes("Files")) return;
       // Don't show overlay when a panel dropzone is active
       if (document.querySelector('.add-panel.open') || document.querySelector('.dropzone-field.dz-dragover')) return;
       dragCounter++;
@@ -1250,6 +1282,16 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!actionPanel || !actionPanel.dataset.canWrite) return; // only on folder views
     const canWrite = actionPanel.dataset.canWrite === "true";
     const canDelete = actionPanel.dataset.canDelete === "true";
+
+    // Sprung aus dem Datei-Menü eines Artikels (`?datei=<pk>`): die Ansicht
+    // hat die erste Seite bis zu dieser Zeile verlängert, hier wird sie gezeigt.
+    const sprung = new URLSearchParams(window.location.search).get("datei");
+    const sprungZeile = sprung &&
+      tbody.querySelector(`tr[data-type="File"][data-id="${CSS.escape(sprung)}"]`);
+    if (sprungZeile) {
+      sprungZeile.classList.add("zeile-markiert");
+      sprungZeile.scrollIntoView({ block: "center" });
+    }
 
     // Dieselben Icons wie die Aktions-Buttons im Panel (table.html) — Menü und
     // Panel benennen und bebildern dieselben Aktionen gleich.

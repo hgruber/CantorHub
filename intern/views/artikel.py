@@ -9,10 +9,19 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.timezone import now
+from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from filer.models import File
 
 from intern import folders
-from intern.replacements import abstimmungen_ohne_ende, apply_replacements
+from intern.avatar_access import darf_avatar_aendern
+from intern.folder_access import folder_access
+from intern.replacements import (
+    abstimmungen_ohne_ende,
+    apply_replacements,
+    datei_verweis_entfernen,
+    dateien_voranstellen,
+)
 
 from ..models import Artikel, ArtikelPermission
 from ..tables import ArtikelTabelle
@@ -29,6 +38,8 @@ __all__ = [
     "article_search",
     "article_permissions",
     "article_delete",
+    "article_dateien_einfuegen",
+    "article_datei_loeschen",
     "dummy",
 ]
 
@@ -202,6 +213,9 @@ def article_view(request, name):
 
     can_delete = request.user.has_perm("intern.delete_artikel")
     can_manage_perms = request.user.has_perm("intern.manage_artikel_permissions")
+    # Hochladen und die schreibenden Punkte des Datei-Menüs ändern die neueste
+    # Fassung — also nur mit Schreibrecht und nicht auf einer alten Version.
+    schreiben = can_edit and not is_outdated
 
     context = {
         "artikel": artikel,
@@ -213,8 +227,10 @@ def article_view(request, name):
         "latest_version": latest.version,
         "prev_version": prev_version,
         "next_version": next_version,
-        "upload_folder_id": folders.artikel(),
-        "upload_folder_name": folders.WIKI_ANHAENGE,
+        "upload_folder_id": folders.artikel() if schreiben else None,
+        "upload_folder_name": folders.WIKI_ANHAENGE if schreiben else "",
+        "upload_artikel": artikel.name if schreiben else "",
+        "datei_menue_schreiben": schreiben,
         "up": "article_list",
         "edit": "article_edit" if can_edit else None,
         "history": "article_history",
@@ -223,6 +239,72 @@ def article_view(request, name):
         "can_manage_perms": can_manage_perms,
     }
     return render(request, "artikel.html", context)
+
+
+def _neue_version(artikel_name, user, aendern, kommentar):
+    """Eine neue Version aus `aendern(text der neuesten)`, sofern sich etwas
+    ändert — Artikel sind pro Version unveränderlich (wie in article_edit)."""
+    letzte = Artikel.objects.filter(name=artikel_name).order_by("-version").first()
+    if letzte is None:
+        return
+    neuer_text = aendern(letzte.text)
+    if neuer_text == letzte.text:
+        return
+    Artikel.objects.create(
+        name=artikel_name,
+        version=letzte.version + 1,
+        datum=now(),
+        autor=user,
+        kommentar=kommentar,
+        text=neuer_text,
+    )
+
+
+@login_required
+@require_POST
+def article_dateien_einfuegen(request, name):
+    """Nach einem Upload in der Artikelansicht: die hochgeladenen Dateien als
+    `[[Datei:…]]` an den Anfang stellen — eine Version für den ganzen Upload."""
+    _can_read, can_edit = _artikel_access(request.user, name)
+    if not can_edit:
+        raise PermissionDenied
+    namen = list(dict.fromkeys(n for n in request.POST.getlist("datei") if n))
+    _neue_version(
+        name, request.user,
+        lambda alt: dateien_voranstellen(alt, namen),
+        "Datei hochgeladen: " + ", ".join(namen),
+    )
+    return JsonResponse({"status": "ok"})
+
+
+@login_required
+@require_POST
+def article_datei_loeschen(request, name):
+    """Aus dem Datei-Menü: das verlinkte Vorkommen löschen (wie im
+    Ordner-Browser) und den Verweis in einer neuen Version entfernen."""
+    from .folders import _datei_loeschen
+
+    _can_read, can_edit = _artikel_access(request.user, name)
+    if not can_edit:
+        raise PermissionDenied
+    try:
+        f = File.objects.get(pk=int(request.POST.get("datei", "")))
+    except (File.DoesNotExist, ValueError):
+        raise Http404
+    _, _, can_del = folder_access(request.user, f.folder)
+    if not (can_del or request.user.has_perm("intern.delete_folder")):
+        raise PermissionDenied
+    if not darf_avatar_aendern(request.user, f):
+        raise PermissionDenied
+    dateiname = f.original_filename or f.name
+    _datei_loeschen(f)
+    folders.invalidate()
+    _neue_version(
+        name, request.user,
+        lambda alt: datei_verweis_entfernen(alt, dateiname),
+        f"Datei gelöscht: {dateiname}",
+    )
+    return JsonResponse({"status": "ok"})
 
 
 @login_required

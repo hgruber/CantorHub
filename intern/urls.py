@@ -53,6 +53,7 @@ urlpatterns = [
     path("media-auth/", views.media_auth, name="media_auth"),
     path("datei/verwendung/", views.datei_verwendung, name="datei_verwendung"),
     path("datei/<int:pk>/", views.datei_view, name="datei_view"),
+    path("datei/<int:pk>/aktionen/", views.datei_aktionen, name="datei_aktionen"),
     path("datei/<int:pk>/version/<int:version_id>/", views.datei_restore, name="datei_restore"),
     path("datei/<int:pk>/<str:token>/<path:filename>", views.datei_token, name="datei_token"),
     # Upload and File URLs
@@ -150,4 +151,6 @@ urlpatterns = [
     path("artikel/<str:name>/diff/", views.article_diff, name="article_diff"),
     path("artikel/<str:name>/berechtigungen/", views.article_permissions, name="article_permissions"),
     path("artikel/<str:name>/loeschen/", views.article_delete, name="article_delete"),
+    path("artikel/<str:name>/dateien/", views.article_dateien_einfuegen, name="article_dateien_einfuegen"),
+    path("artikel/<str:name>/datei-loeschen/", views.article_datei_loeschen, name="article_datei_loeschen"),
 ]

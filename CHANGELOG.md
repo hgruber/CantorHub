@@ -11,6 +11,12 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Hinzugefügt
 
+- Artikel: Hochladen gibt es in der Ansicht nur mit Schreibrecht. Eine hochgeladene Datei kommt
+  als `[[Datei:…]]` an den Anfang des Artikels, in der Ansicht als neue Version, im Editor nur
+  ins Textfeld.
+- Artikel: Ein Klick auf ein eingebettetes Vorschaubild öffnet ein Menü zum Herunterladen und
+  Anzeigen, mit Schreibrecht außerdem zum Sprung in den Ordner, zum Anlegen einer Referenz und
+  zum Löschen der Datei samt Verweis.
 - Mitgliederliste: Der Filter besteht aus beliebig vielen Bedingungen, jede mit eigenem
   „und"/„oder" und mit „ist in"/„ist nicht in" — damit ist etwa „in Gruppe A und in Gruppe B und
   nicht in Gruppe C" möglich, und eine Verneinung schließt die Person aus, nicht bloß eine ihrer

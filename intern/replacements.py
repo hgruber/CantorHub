@@ -300,8 +300,11 @@ def insert_file_object(f, label=None, spieler=False):
                 {"size": (200, 200), "quality": 85}
             )
             alt = html.escape(f.original_filename or "")
+            # data-datei-* trägt das Kontextmenü der Artikelansicht
+            # (wiki-dateimenue.js) — die Zeile, auf die dieser Link auflöst.
             return (
-                f'<figure class="wiki-figure">'
+                f'<figure class="wiki-figure" data-datei-id="{f.pk}" '
+                f'data-datei-name="{alt}">'
                 f'<a href="{url}">'
                 f'<img src="{html.escape(thumb.url)}" alt="{alt}" class="datei-preview" /></a>'
                 f'{caption}</figure>'
@@ -703,6 +706,44 @@ def get_references(article_list):
             cleaned = cleaned.strip()  # nochmal strip für Sicherheit
             matches.add(cleaned)
     return list(matches)
+
+
+def dateien_voranstellen(text, namen):
+    """`text` mit je einer Zeile `[[Datei:name]]` pro Name davor.
+
+    Schon verlinkte Namen bleiben weg — überschreibt ein Upload eine Datei, die
+    der Artikel bereits einbettet, käme sonst ein zweiter Verweis dazu."""
+    from intern.models import Artikel
+
+    vorhanden = {
+        Artikel.dateiname_aus_link(roh) for roh in Artikel.DATEI_LINK_RE.findall(text)
+    }
+    neu = []
+    for name in namen:
+        if name and name not in vorhanden:
+            vorhanden.add(name)
+            neu.append(f"[[Datei:{name}]]\n")
+    return "".join(neu) + text
+
+
+def datei_verweis_entfernen(text, name):
+    """`text` ohne jeden `[[Datei:name]]` (auch mit `|Titel`).
+
+    Steht ein Verweis allein in seiner Zeile, geht die Zeile mit."""
+    from intern.models import Artikel
+
+    def passt(match):
+        return Artikel.dateiname_aus_link(match.group(1)) == name
+
+    zeilen = []
+    for zeile in text.splitlines(keepends=True):
+        rest = Artikel.DATEI_LINK_RE.sub(
+            lambda m: "" if passt(m) else m.group(0), zeile
+        )
+        if rest != zeile and not rest.strip():
+            continue
+        zeilen.append(rest)
+    return "".join(zeilen)
 
 
 def format_datetime(dt: Union[datetime, date]) -> str:

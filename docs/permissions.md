@@ -66,6 +66,7 @@ they survive edits. Module paths are relative to `intern/`.
 |---|---|---|---|
 | `delete_folder` | `views/folders.py` · `folder_view` | `/intern/ordner/<pk>/` | offers delete in every folder, beyond the folder's own `FolderPermission` delete flag |
 | `delete_folder` | `views/folders.py` · `folder_delete` | `/intern/ordner/loeschen/` | delete folders and files regardless of `FolderPermission` |
+| `delete_folder` | `views/files.py` · `datei_aktionen`; `views/artikel.py` · `article_datei_loeschen` | `/intern/datei/<pk>/aktionen/`, `/intern/artikel/<name>/datei-loeschen/` | „Datei löschen" in an article's thumbnail menu regardless of `FolderPermission`; the article's edit right is still required |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view` | `/intern/ordner/<pk>/` | the „Berechtigungen" link |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view` | `/intern/ordner/0/` | lists „Backstage" at the root (hidden, not locked, for everyone else) |
 | `manage_folder_permissions` | `views/aufgaben.py` · `folder_permissions` | `/intern/ordner/<pk>/berechtigungen/` | edit the folder's `FolderPermission` rows |
@@ -113,6 +114,8 @@ criterion.
 Reading and editing an article are decided by `ArtikelPermission` groups alone
 (`_artikel_access`), and so is creating one — there is no right for either, and neither
 `manage_artikel_permissions` nor superuser status lifts a restriction on the article page itself.
+The edit right also gates uploading on the article view and the writing entries of the
+thumbnail menu (see „Files in an article" in `articles.md`).
 
 ## Forum
 

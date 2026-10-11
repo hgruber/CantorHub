@@ -2700,6 +2700,61 @@ class TabellenzustandTest(SimpleTestCase):
         self.assertNotEqual(zustand_cookie("/intern/ordner/1/"),
                             zustand_cookie("/intern/ordner/12/"))
 
+    def test_datei_sprung_wird_nicht_gemerkt(self):
+        from urllib.parse import unquote
+        response = self._get("?sort=name&datei=7")
+        self.assertEqual(unquote(response.cookies[self.cookie].value), "sort=name")
+
+    def test_datei_sprung_ueberlebt_die_umleitung(self):
+        response = self._get("?datei=7", cookie="sort%3D-modified",
+                             referer="https://portal.example/intern/artikel/X/")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], self.PFAD + "?sort=-modified&datei=7")
+        self.assertEqual(self.aufrufe, [])
+
+
+class ArtikelDateiVerweisTest(SimpleTestCase):
+    """Upload und Löschen aus der Artikelansicht ändern den Text über zwei
+    reine Funktionen in intern.replacements."""
+
+    def test_voranstellen_in_reihenfolge(self):
+        from intern.replacements import dateien_voranstellen
+        self.assertEqual(
+            dateien_voranstellen("Text\n", ["a.jpg", "b.pdf"]),
+            "[[Datei:a.jpg]]\n[[Datei:b.pdf]]\nText\n",
+        )
+
+    def test_voranstellen_ueberspringt_vorhandene_und_doppelte(self):
+        from intern.replacements import dateien_voranstellen
+        text = "Oben\n[[Datei: a.jpg |Bild]]\n"
+        self.assertEqual(
+            dateien_voranstellen(text, ["a.jpg", "b.jpg", "b.jpg", ""]),
+            "[[Datei:b.jpg]]\n" + text,
+        )
+
+    def test_voranstellen_in_leeren_text(self):
+        from intern.replacements import dateien_voranstellen
+        self.assertEqual(dateien_voranstellen("", ["a.jpg"]), "[[Datei:a.jpg]]\n")
+
+    def test_entfernen_nimmt_die_eigene_zeile_mit(self):
+        from intern.replacements import datei_verweis_entfernen
+        self.assertEqual(
+            datei_verweis_entfernen("[[Datei:a.jpg]]\nText\n[[Datei:a.jpg|Titel]]\n", "a.jpg"),
+            "Text\n",
+        )
+
+    def test_entfernen_mitten_im_satz_laesst_den_rest_stehen(self):
+        from intern.replacements import datei_verweis_entfernen
+        self.assertEqual(
+            datei_verweis_entfernen("Siehe [[Datei:a.jpg]] hier.\n", "a.jpg"),
+            "Siehe  hier.\n",
+        )
+
+    def test_entfernen_laesst_fremde_namen_stehen(self):
+        from intern.replacements import datei_verweis_entfernen
+        text = "[[Datei:a.jpg.bak]]\n[[Datei:b.jpg]]\n"
+        self.assertEqual(datei_verweis_entfernen(text, "a.jpg"), text)
+
 
 class StandardOrdnerTest(SimpleTestCase):
     """intern.folders: die Standard-Ordner liegen unter Backstage und werden

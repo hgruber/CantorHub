@@ -22,6 +22,7 @@ from django.http import Http404, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.template.loader import render_to_string
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
@@ -688,10 +689,19 @@ def folder_view(request, pk):
 
     # Paginate folders + files; folder_up (..) is fixed and always shown on offset=0
     paginatable = folders_list + files_list
-    page_items = paginatable[offset : offset + _FOLDER_PAGE_SIZE + 1]
-    has_more = len(page_items) > _FOLDER_PAGE_SIZE
+    # `?datei=<pk>` (Sprung aus dem Datei-Menü eines Artikels): die erste Seite
+    # reicht mindestens bis zu dieser Datei, damit das Skript sie anspringen kann.
+    seite = _FOLDER_PAGE_SIZE
+    gesucht = request.GET.get("datei", "")
+    if offset == 0 and gesucht.isdigit():
+        for i, r in enumerate(paginatable):
+            if r.get("type") == "File" and r.get("id") == int(gesucht):
+                seite = max(seite, i + 1)
+                break
+    page_items = paginatable[offset : offset + seite + 1]
+    has_more = len(page_items) > seite
     if has_more:
-        page_items = page_items[:_FOLDER_PAGE_SIZE]
+        page_items = page_items[:seite]
     display_items = (folder_up if offset == 0 else []) + page_items
 
     table = OrdnerTabelle(display_items)
@@ -734,7 +744,7 @@ def folder_view(request, pk):
             "show_search": True,
             "search_query": "",
             "has_more": has_more,
-            "next_offset": offset + _FOLDER_PAGE_SIZE,
+            "next_offset": offset + seite,
             "permissions_url": permissions_url,
             "gallery_url": gallery_url,
             # Der geöffnete Ordner hat keine eigene Zeile und damit kein
@@ -914,6 +924,12 @@ def _copy_action(request, blob_kopieren):
                 continue
             datei_fn(f, target_id, request.user)
     folders.invalidate()
+    # Das Datei-Menü im Artikel verknüpft von dort aus und will dorthin zurück.
+    ziel = request.POST.get("next", "")
+    if ziel and url_has_allowed_host_and_scheme(
+        ziel, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return redirect(ziel)
     return redirect("folder_view", pk=referer_pk)
 
 

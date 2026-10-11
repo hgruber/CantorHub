@@ -52,9 +52,15 @@ def zustand_cookie(pfad):
     return "liste_" + hashlib.sha256(pfad.encode()).hexdigest()[:16]
 
 
+# Parameter, die nur diesen einen Aufruf betreffen und nie gemerkt werden:
+# `offset` (Nachladen) und `datei` (Sprung zu einer Datei im Ordner).
+_FLUECHTIG = ("offset", "datei")
+
+
 def _ohne_offset(query):
     query = query.copy()
-    query.pop("offset", None)
+    for name in _FLUECHTIG:
+        query.pop(name, None)
     return query
 
 
@@ -69,7 +75,7 @@ def tabellenzustand(view):
     Kommt der Aufruf ohne Parameter von derselben Liste („Zurücksetzen", letzter
     Filter-Chip entfernt, Menüklick auf der Liste selbst), wird der Zustand
     vergessen. Nachladen per Infinite Scroll und POST (Spaltenauswahl) laufen
-    unverändert durch; ``offset`` wird nie gemerkt.
+    unverändert durch; ``offset`` und ``datei`` werden nie gemerkt.
     """
 
     @wraps(view)
@@ -99,6 +105,10 @@ def tabellenzustand(view):
 
         gemerkt = _ohne_offset(QueryDict(unquote(request.COOKIES.get(cookie, ""))))
         if gemerkt:
+            # Ein Sprung zur Datei überlebt die Umleitung auf den gemerkten Zustand.
+            if request.GET.get("datei"):
+                gemerkt = gemerkt.copy()
+                gemerkt["datei"] = request.GET["datei"]
             # Neu codiert statt den Cookie-Wert durchzureichen; das Ziel bleibt
             # immer dieselbe Liste.
             return HttpResponseRedirect(pfad + "?" + gemerkt.urlencode())

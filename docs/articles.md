@@ -53,6 +53,28 @@ Holders of `intern.manage_artikel_permissions` bypass the read restriction, and 
 filters restricted names out for everyone else. Because permissions hang off `artikel_name`, they
 survive every new version automatically.
 
+## Files in an article
+
+Uploads on an article page go through the shared `#app-main` dropzone into „Wiki-Anhänge“.
+`/upload/` answers with the stored `name`, the name a `[[Datei:…]]` resolves by.
+
+- **View** — `article_view` only sets `upload_folder_id` / `upload_artikel` with edit right and
+  on the latest version; otherwise `intern.js` disables the dropzone. After the queue
+  completes, *all* uploaded names go in one POST to `article_dateien_einfuegen`, which prepends
+  them (`dateien_voranstellen`) as a single new version — one request per file would race for
+  the same version number.
+- **Editor** — each upload prepends `[[Datei:<name>]]` to the textarea; nothing is saved.
+
+A thumbnail figure carries `data-datei-id` (the row the link resolved to) and `data-datei-name`.
+In the view, `wiki-dateimenue.js` turns a click on it into a context menu: download and show for
+everyone; with edit right it asks `datei_aktionen` (`/intern/datei/<pk>/aktionen/`) for the
+folder, the writable folders not holding the file yet and the delete right. „Enthaltenen Ordner
+anzeigen“ opens `folder_view?datei=<pk>`, which stretches the first page to that row; the
+parameter is never remembered by `tabellenzustand`. „Referenz erzeugen“ posts to `folder_link`
+with a checked `next`. „Datei löschen“ (`article_datei_loeschen`) deletes **this occurrence
+only**, same rights as `folder_delete`, and removes the reference in a new version
+(`datei_verweis_entfernen`).
+
 ## Wiki markup
 
 `intern/replacements.py` renders the article body: headings, `'''bold'''` / `''italic''`, lists,
