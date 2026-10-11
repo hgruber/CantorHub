@@ -6319,3 +6319,259 @@ class OrdnerZyklusTest(SimpleTestCase):
         from intern.views import folders
         for view in (folders.folder_move, folders.ablage_konflikte):
             self.assertIn("_is_descendant_or_self(target_id", inspect.getsource(view), view.__name__)
+
+
+# --- Ordnerrechte (folder_access.py) ---------------------------------------
+#
+# Ein Baum mit drei Ebenen unter „Organisation Chor“ und einem zweiten Ordner der
+# obersten Ebene. Geprüft wird der reine Kern ``rechte()`` über die Kette, die
+# auch ``folder_access()`` baut — ohne Datenbank.
+
+_MITGLIED, _VORSTAND, _BAND = 1, 2, 3
+_CHOR, _MITSCHNITTE, _JAHR, _VEREIN = 10, 11, 12, 20
+_ELTERN = {_CHOR: None, _MITSCHNITTE: _CHOR, _JAHR: _MITSCHNITTE, _VEREIN: None}
+
+
+def _regel(lesen=(), schreiben=(), loeschen=()):
+    """Die Zeilen, die der Rechte-Editor für eine Einschränkung je Achse speichert."""
+    return [
+        (gid, gid in lesen, gid in schreiben, gid in loeschen)
+        for gid in sorted(set(lesen) | set(schreiben) | set(loeschen))
+    ]
+
+
+class _OrdnerrechteBasis(SimpleTestCase):
+    def rechte(self, ordner, gruppen, regeln=None, global_loeschen=False):
+        from intern.folder_access import _kette, rechte
+
+        kette = _kette(ordner, _ELTERN, regeln or {})
+        return rechte(kette, gruppen, global_loeschen=global_loeschen)
+
+
+class OrdnerrechteStandardTest(_OrdnerrechteBasis):
+    """Ohne Regel: lesen und schreiben für jeden, löschen nur mit Recht."""
+
+    def test_ohne_regel_lesen_und_schreiben(self):
+        self.assertEqual(self.rechte(_MITSCHNITTE, {_MITGLIED}), (True, True, False))
+
+    def test_ohne_gruppe_ebenso(self):
+        self.assertEqual(self.rechte(_MITSCHNITTE, set()), (True, True, False))
+
+    def test_globales_loeschrecht(self):
+        self.assertEqual(
+            self.rechte(_MITSCHNITTE, {_MITGLIED}, global_loeschen=True), (True, True, True)
+        )
+
+    def test_loeschregel_nennt_die_gruppe(self):
+        regeln = {_MITSCHNITTE: _regel(loeschen={_MITGLIED})}
+        self.assertEqual(self.rechte(_MITSCHNITTE, {_MITGLIED}, regeln), (True, True, True))
+
+
+class OrdnerrechteLesenTest(_OrdnerrechteBasis):
+    """„Lesen: Gruppen x, y“ — wer in keiner ist, sieht den Ordner nicht."""
+
+    REGELN = {_MITSCHNITTE: _regel(lesen={_VORSTAND, _BAND})}
+
+    def test_ausgeschlossen_sieht_nichts(self):
+        self.assertEqual(
+            self.rechte(_MITSCHNITTE, {_MITGLIED}, self.REGELN), (False, False, False)
+        )
+
+    def test_ausgeschlossen_loescht_auch_mit_globalem_recht_nicht(self):
+        self.assertEqual(
+            self.rechte(_MITSCHNITTE, {_MITGLIED}, self.REGELN, global_loeschen=True),
+            (False, False, False),
+        )
+
+    def test_jede_genannte_gruppe_genuegt(self):
+        self.assertEqual(self.rechte(_MITSCHNITTE, {_VORSTAND}, self.REGELN), (True, True, False))
+        self.assertEqual(self.rechte(_MITSCHNITTE, {_BAND}, self.REGELN), (True, True, False))
+
+    def test_eine_genannte_unter_mehreren_gruppen(self):
+        self.assertTrue(self.rechte(_MITSCHNITTE, {_MITGLIED, _BAND}, self.REGELN)[0])
+
+    def test_nachbarordner_unberuehrt(self):
+        self.assertEqual(self.rechte(_VEREIN, {_MITGLIED}, self.REGELN), (True, True, False))
+        self.assertEqual(self.rechte(_CHOR, {_MITGLIED}, self.REGELN), (True, True, False))
+
+
+class OrdnerrechteSchreibenTest(_OrdnerrechteBasis):
+    """„Schreiben: Gruppen x, y“ — Ausgeschlossene lesen weiter, schreiben nicht."""
+
+    REGELN = {_MITSCHNITTE: _regel(schreiben={_VORSTAND})}
+
+    def test_ausgeschlossen_liest_schreibt_nicht(self):
+        self.assertEqual(
+            self.rechte(_MITSCHNITTE, {_MITGLIED}, self.REGELN), (True, False, False)
+        )
+
+    def test_loeschen_unberuehrt(self):
+        self.assertEqual(
+            self.rechte(_MITSCHNITTE, {_MITGLIED}, self.REGELN, global_loeschen=True),
+            (True, False, True),
+        )
+
+    def test_genannte_gruppe_schreibt(self):
+        self.assertEqual(self.rechte(_MITSCHNITTE, {_VORSTAND}, self.REGELN), (True, True, False))
+
+
+class OrdnerrechteLoeschenTest(_OrdnerrechteBasis):
+    """„Löschen: Gruppen x, y“ — wie Schreiben, nur ist der Standard zu."""
+
+    REGELN = {_MITSCHNITTE: _regel(loeschen={_VORSTAND})}
+
+    def test_ausgeschlossen_merkt_nichts(self):
+        self.assertEqual(self.rechte(_MITSCHNITTE, {_MITGLIED}, self.REGELN), (True, True, False))
+
+    def test_ausgeschlossen_mit_globalem_recht(self):
+        self.assertEqual(
+            self.rechte(_MITSCHNITTE, {_MITGLIED}, self.REGELN, global_loeschen=True),
+            (True, True, True),
+        )
+
+    def test_genannte_gruppe_loescht(self):
+        self.assertEqual(self.rechte(_MITSCHNITTE, {_VORSTAND}, self.REGELN), (True, True, True))
+
+
+class OrdnerrechteWurzelTest(_OrdnerrechteBasis):
+    """Die oberste Ebene ist für alle lesbar und beschreibbar, nicht löschbar."""
+
+    def test_wurzel(self):
+        self.assertEqual(self.rechte(None, set()), (True, True, False))
+        self.assertEqual(self.rechte(None, set(), global_loeschen=True), (True, True, True))
+
+    def test_ordner_der_obersten_ebene_kann_verborgen_sein(self):
+        regeln = {_VEREIN: _regel(lesen={_VORSTAND})}
+        self.assertFalse(self.rechte(_VEREIN, {_MITGLIED}, regeln)[0])
+        self.assertEqual(self.rechte(None, {_MITGLIED}, regeln), (True, True, False))
+
+
+class OrdnerVererbungTest(_OrdnerrechteBasis):
+    """Je Achse gilt die Regel des nächsten Ordners, der eine trägt."""
+
+    def test_leseregel_verbirgt_den_zweig(self):
+        regeln = {_CHOR: _regel(lesen={_VORSTAND})}
+        for ordner in (_CHOR, _MITSCHNITTE, _JAHR):
+            self.assertEqual(self.rechte(ordner, {_MITGLIED}, regeln), (False, False, False))
+            self.assertTrue(self.rechte(ordner, {_VORSTAND}, regeln)[0])
+
+    def test_schreibregel_erbt(self):
+        regeln = {_CHOR: _regel(schreiben={_VORSTAND})}
+        for ordner in (_MITSCHNITTE, _JAHR):
+            self.assertEqual(self.rechte(ordner, {_MITGLIED}, regeln), (True, False, False))
+            self.assertEqual(self.rechte(ordner, {_VORSTAND}, regeln), (True, True, False))
+
+    def test_loeschregel_erbt(self):
+        regeln = {_CHOR: _regel(loeschen={_BAND})}
+        self.assertEqual(self.rechte(_JAHR, {_BAND}, regeln), (True, True, True))
+        self.assertEqual(self.rechte(_JAHR, {_MITGLIED}, regeln), (True, True, False))
+
+    def test_eigene_regel_ersetzt_die_geerbte(self):
+        regeln = {
+            _CHOR: _regel(schreiben={_VORSTAND}),
+            _MITSCHNITTE: _regel(schreiben={_MITGLIED}),
+        }
+        self.assertFalse(self.rechte(_CHOR, {_MITGLIED}, regeln)[1])
+        self.assertTrue(self.rechte(_MITSCHNITTE, {_MITGLIED}, regeln)[1])
+        self.assertFalse(self.rechte(_MITSCHNITTE, {_VORSTAND}, regeln)[1])
+        # Der Enkel erbt vom nächsten Vorfahren mit Regel, dem Kind.
+        self.assertTrue(self.rechte(_JAHR, {_MITGLIED}, regeln)[1])
+
+    def test_leseregel_erweitert_die_sichtbarkeit_nicht(self):
+        regeln = {
+            _CHOR: _regel(lesen={_VORSTAND}),
+            _MITSCHNITTE: _regel(lesen={_MITGLIED, _VORSTAND}),
+        }
+        self.assertFalse(self.rechte(_MITSCHNITTE, {_MITGLIED}, regeln)[0])
+        self.assertTrue(self.rechte(_MITSCHNITTE, {_VORSTAND}, regeln)[0])
+
+    def test_leseregel_im_zweig_verengt(self):
+        regeln = {_MITSCHNITTE: _regel(lesen={_BAND})}
+        self.assertTrue(self.rechte(_CHOR, {_MITGLIED}, regeln)[0])
+        self.assertFalse(self.rechte(_JAHR, {_MITGLIED}, regeln)[0])
+
+    def test_regel_einer_achse_unterbricht_die_anderen_nicht(self):
+        regeln = {
+            _CHOR: _regel(schreiben={_VORSTAND}),
+            _MITSCHNITTE: _regel(loeschen={_BAND}),
+        }
+        self.assertEqual(self.rechte(_JAHR, {_BAND}, regeln), (True, False, True))
+        self.assertEqual(self.rechte(_JAHR, {_VORSTAND}, regeln), (True, True, False))
+
+    def test_zeilen_ohne_flag_regeln_die_achse_nicht(self):
+        # Eine Lese-Einschränkung speichert Zeilen mit can_write=False — Schreiben
+        # bleibt trotzdem geerbt.
+        regeln = {
+            _CHOR: _regel(schreiben={_VORSTAND}),
+            _MITSCHNITTE: _regel(lesen={_MITGLIED, _VORSTAND}),
+        }
+        self.assertEqual(self.rechte(_MITSCHNITTE, {_MITGLIED}, regeln), (True, False, False))
+        self.assertEqual(self.rechte(_MITSCHNITTE, {_VORSTAND}, regeln), (True, True, False))
+
+    def test_verschobener_ordner_erbt_am_neuen_platz(self):
+        from intern.folder_access import _kette, rechte
+
+        regeln = {_CHOR: _regel(schreiben={_VORSTAND})}
+        eltern = {**_ELTERN, _MITSCHNITTE: _VEREIN}
+        self.assertTrue(rechte(_kette(_MITSCHNITTE, eltern, regeln), {_MITGLIED})[1])
+        self.assertTrue(rechte(_kette(_JAHR, eltern, regeln), {_MITGLIED})[1])
+
+
+class SichtbareOrdnerTest(_OrdnerrechteBasis):
+    def test_stimmt_mit_rechte_ueberein(self):
+        from intern.folder_access import sichtbare_ordner
+
+        regeln = {
+            _CHOR: _regel(schreiben={_VORSTAND}),
+            _MITSCHNITTE: _regel(lesen={_VORSTAND}),
+            _VEREIN: _regel(loeschen={_BAND}),
+        }
+        for gruppen in ({_MITGLIED}, {_VORSTAND}, {_BAND}, set()):
+            erwartet = {o for o in _ELTERN if self.rechte(o, gruppen, regeln)[0]}
+            self.assertEqual(sichtbare_ordner(_ELTERN, regeln, gruppen), erwartet)
+        self.assertEqual(sichtbare_ordner(_ELTERN, regeln, {_MITGLIED}), {_CHOR, _VEREIN})
+
+    def test_zyklus_bricht_ab(self):
+        from intern.folder_access import sichtbare_ordner
+
+        self.assertEqual(sichtbare_ordner({1: 2, 2: 1}, {}, set()), {1, 2})
+
+
+class FolderAccessTest(SimpleTestCase):
+    """Die DB-Hälfte: Benutzerarten und das globale Löschrecht."""
+
+    def _access(self, user, ordner_id, regeln=None):
+        from intern import folder_access
+
+        ordner = None if ordner_id is None else SimpleNamespace(pk=ordner_id)
+        with mock.patch.object(
+            folder_access, "_ordnerdaten", return_value=(_ELTERN, regeln or {})
+        ), mock.patch.object(folder_access, "_gruppen", return_value={_MITGLIED}):
+            return folder_access.folder_access(user, ordner)
+
+    def _user(self, superuser=False, loeschrecht=False, angemeldet=True):
+        return SimpleNamespace(
+            is_authenticated=angemeldet,
+            is_superuser=superuser,
+            has_perm=lambda perm: loeschrecht and perm == "intern.delete_folder",
+        )
+
+    def test_nicht_angemeldet(self):
+        self.assertEqual(self._access(self._user(angemeldet=False), None), (False, False, False))
+        self.assertEqual(self._access(None, _CHOR), (False, False, False))
+
+    def test_superuser_trotz_leseregel(self):
+        regeln = {_CHOR: _regel(lesen={_VORSTAND})}
+        self.assertEqual(self._access(self._user(superuser=True), _JAHR, regeln), (True, True, True))
+
+    def test_globales_loeschrecht_wird_geprueft(self):
+        self.assertEqual(self._access(self._user(), _CHOR), (True, True, False))
+        self.assertEqual(self._access(self._user(loeschrecht=True), _CHOR), (True, True, True))
+        self.assertEqual(self._access(self._user(loeschrecht=True), None), (True, True, True))
+        self.assertEqual(self._access(self._user(), None), (True, True, False))
+
+    def test_neue_ordner_bekommen_keine_kopierten_zeilen(self):
+        import inspect
+
+        from intern.views import folders
+        self.assertNotIn("_apply_perm_specs", inspect.getsource(folders.folder_create))

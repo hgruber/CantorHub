@@ -182,8 +182,7 @@ def _apply_perm_specs(folder, specs):
     ])
 
 
-def _copy_folder_deep(src_folder, target_parent_id, owner, inherited_perms=(),
-                      blob_kopieren=False):
+def _copy_folder_deep(src_folder, target_parent_id, owner, blob_kopieren=False):
     """Recursively copy a folder and its contents into target_parent_id.
 
     By default the files are *linked* (`dateiablage.verknuepfen`): new rows
@@ -192,24 +191,20 @@ def _copy_folder_deep(src_folder, target_parent_id, owner, inherited_perms=(),
     independent files. The new folder is empty, so the name rule only bites on
     a source folder that already holds a name twice.
 
-    Access rights travel with the copy: a restricted folder keeps its own
-    FolderPermission rows, an unrestricted one inherits `inherited_perms` (the
-    rows of its new parent, as in folder_create). Without this a protected
-    folder copied into an open one would end up readable by everyone, since
-    folder_access() treats a folder without rows as open."""
+    Each copied folder takes its source's own FolderPermission rows; what the
+    source only inherited it inherits afresh from its new place (folder_access.py)."""
     new_name = _unique_folder_name(target_parent_id, src_folder.name)
     new_folder = Folder.objects.create(
         name=new_name, parent_id=target_parent_id, owner=owner
     )
-    perms = _perm_specs(src_folder) or list(inherited_perms)
-    _apply_perm_specs(new_folder, perms)
+    _apply_perm_specs(new_folder, _perm_specs(src_folder))
     for f in File.objects.filter(folder=src_folder):
         if blob_kopieren:
             dateiablage.kopieren(f, new_folder.pk, owner)
         else:
             dateiablage.verknuepfen(f, new_folder.pk, owner, {})
     for child in Folder.objects.filter(parent=src_folder):
-        _copy_folder_deep(child, new_folder.pk, owner, perms, blob_kopieren)
+        _copy_folder_deep(child, new_folder.pk, owner, blob_kopieren)
     return new_folder
 
 
@@ -772,8 +767,6 @@ def folder_create(request, pk):
         parent_id=pk if pk != 0 else None,
         owner=request.user,
     )
-    # Copy parent's FolderPermission rows to the new subfolder
-    _apply_perm_specs(new_folder, _perm_specs(parent))
     folders.invalidate()
 
     if is_ajax:
@@ -876,7 +869,6 @@ def _copy_action(request, blob_kopieren):
     _, target_write, _ = folder_access(request.user, target)
     if not target_write:
         raise PermissionDenied
-    target_perms = _perm_specs(target)
     entscheidungen = dateiablage.entscheidungen_lesen(request.POST.getlist("entscheidung"))
     for item_type, item_id in _parse_items(request.POST):
         if item_type == "Folder":
@@ -889,8 +881,7 @@ def _copy_action(request, blob_kopieren):
             src_read, _, _ = folder_access(request.user, src)
             if not src_read:
                 continue
-            _copy_folder_deep(src, target_id, request.user, target_perms,
-                              blob_kopieren)
+            _copy_folder_deep(src, target_id, request.user, blob_kopieren)
         elif item_type == "File":
             try:
                 f = File.objects.get(pk=item_id)

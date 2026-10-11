@@ -577,6 +577,14 @@ post_delete.connect(
     anfrage_leeren, sender="intern.FolderPermission",
     dispatch_uid="intern_anfrage_cache_fp_delete",
 )
+# Ein in derselben Anfrage angelegter Ordner (Kopieren) muss in den Ordnerrechten
+# schon mit seinem Elternordner stehen.
+post_save.connect(
+    anfrage_leeren, sender="filer.Folder", dispatch_uid="intern_anfrage_cache_ordner_save",
+)
+post_delete.connect(
+    anfrage_leeren, sender="filer.Folder", dispatch_uid="intern_anfrage_cache_ordner_delete",
+)
 post_save.connect(
     cache_leeren, sender="intern.Konfiguration", dispatch_uid="intern_konfig_cache_save"
 )

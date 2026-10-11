@@ -166,7 +166,8 @@ def _pdf_ablegen(user, pdf_bytes, fname):
     """File an application or confirmation PDF under Verein/Vorstand/Mitgliedsanträge.
 
     A missing folder is not recreated: a new folder has no FolderPermission
-    rows and would be open to every member, yet it holds applications. The PDF
+    rows of its own and would only be as closed as its parent, yet it holds
+    applications. The PDF
     still goes out by mail, it is just not filed."""
     folder_id = folders.mitgliedsantraege()
     if folder_id is None:

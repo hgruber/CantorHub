@@ -119,7 +119,8 @@ tree each time) and the fallback avatars (`fallback_avatar_datei()`, once per bo
 forum). Lifetime and wiring are the configuration cache's: `request_started` opens it,
 `request_finished` drops it, both in `signals.py`, and **outside a request it deliberately does
 not engage** — the two endless loops would otherwise serve their start-up state forever. Writing
-a `FolderPermission` empties it, because that shifts which folders are visible.
+a `FolderPermission` or a `Folder` empties it, because that shifts which folders are visible and
+from where their rights are inherited.
 
 ## Cache
 

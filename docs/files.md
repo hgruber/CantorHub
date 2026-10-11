@@ -190,17 +190,36 @@ order (parents first). Renaming or moving one of these folders in the browser br
 **Backstage has no `FolderPermission` rows, deliberately.** A folder is only visible when every
 ancestor is readable, so restricting Backstage would hide the song files from members.
 `_pdf_ablegen` in `views/auth.py` does not recreate a missing Mitgliedsanträge: a fresh
-folder would be open to everyone while holding membership applications.
+folder has no rules of its own and would only be as closed as wherever it lands, while holding
+membership applications.
 
 ## Folder permissions
 
-Access is governed by `FolderPermission(folder, group)` rows — `folder_access()` in
-`intern/folder_access.py` treats a folder *without* rows as **open** for read/write. Any code
-that creates a folder must therefore set rows explicitly, or the new folder is world-readable.
-`folder_create` copies the parent's rows; `_copy_folder_deep` (used by both `folder_link` and
-`folder_duplicate`) gives each copied folder its source folder's own rows and, if the source
-was unrestricted, the rows of its new parent (`_perm_specs` / `_apply_perm_specs`) — otherwise
-copying a protected folder into an open one would expose its contents.
+Access is governed by `FolderPermission(folder, group)` rows, decided by `folder_access()` in
+`intern/folder_access.py` on three independent axes — read, write, delete. An axis is *ruled* on
+a folder when at least one row carries its flag; the rule admits exactly the groups whose rows
+carry it. This is what the editor at `/intern/ordner/<pk>/berechtigungen/` stores: „Wie im
+übergeordneten Ordner" or „Nur bestimmte Gruppen" per axis.
+
+- **Inheritance is dynamic and per axis.** Without an own rule an axis takes the rule of the
+  nearest ancestor that has one, at every check — a change to a parent reaches the whole branch
+  at once. Without any, the default holds: read and write open, delete closed. An own rule
+  *replaces* the inherited one and may widen it.
+- **Read is bounded by the chain.** A folder is visible only if every read rule on the way to
+  the root admits the user, so a widened read rule below a hidden folder shows nothing.
+- **Write and delete require read.** Who cannot see a folder cannot write or delete there.
+- **Delete** is granted by `intern.delete_folder` or by a delete rule naming one of the user's
+  groups — the same mechanics as write with the default inverted. `folder_access()` checks the
+  global right itself.
+- **The root** (top level) is open for read and write; delete there needs `intern.delete_folder`.
+  Folders of the top level may carry a read rule like any other.
+- Superusers may everything.
+
+New folders get no rows (`folder_create`); they inherit. `_copy_folder_deep` (used by both
+`folder_link` and `folder_duplicate`) gives each copied folder its source's *own* rows only, and
+a moved folder keeps its own rows — in both cases whatever the folder had only inherited it
+inherits afresh from its new place. The pure rule is `rechte()` / `sichtbare_ordner()`, guarded
+by the `Ordnerrechte*`, `OrdnerVererbungTest` and `SichtbareOrdnerTest` classes.
 
 ## Avatars are write-protected against other members
 

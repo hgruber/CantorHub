@@ -15,6 +15,16 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Mitschnitte“ an, lässt die Foren „Sopran“ und „Tenor“ aktiv und ersetzt das archivierte
   „Chorgespräch“ (jetzt „Chorgespräch alt“) durch ein neues. Die Foren bekommen dabei ihre
   Kategorien A–D.
+- Ordnerrechte: Eine Einschränkung auf Lesen, Schreiben oder Löschen gilt auch für alle
+  Unterordner ohne eigene Einschränkung und wirkt dort sofort, wenn sie geändert wird. Eine
+  eigene Einschränkung im Unterordner ersetzt die geerbte; im Rechte-Editor heißt die Option
+  ohne Einschränkung jetzt „Wie im übergeordneten Ordner“.
+
+### Behoben
+
+- Ordnerrechte: Wer nur das Schreiben oder nur das Löschen auf Gruppen einschränkte, sperrte den
+  Ordner für alle zum Lesen. Dateien auf der obersten Ebene konnte jeder löschen, und in einen
+  Ordner, den man nicht sehen darf, ließ sich trotzdem hochladen.
 
 ## v1.0.2 — 2026-10-11
 

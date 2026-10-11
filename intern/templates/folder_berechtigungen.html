@@ -10,7 +10,7 @@
         </div>
         <div class="detail-info">
             <h1>{{ folder.name }}</h1>
-            <p class="detail-subtitle">Ordnerberechtigungen verwalten · Kein Eintrag = für alle Mitglieder zugänglich</p>
+            <p class="detail-subtitle">Ordnerberechtigungen verwalten · Ohne Einschränkung gilt die des übergeordneten Ordners, ganz oben: Lesen und Schreiben für alle, Löschen nur mit dem allgemeinen Löschrecht</p>
         </div>
     </div>
 
@@ -23,7 +23,7 @@
                     <input type="radio" name="read_mode" value="all"
                            {% if not read_restricted %}checked{% endif %}
                            onchange="toggleGroups('read', this.value)">
-                    Alle Mitglieder
+                    Wie im übergeordneten Ordner
                 </label>
                 <label class="radio-label">
                     <input type="radio" name="read_mode" value="restricted"
@@ -44,7 +44,7 @@
                     <input type="radio" name="write_mode" value="all"
                            {% if not write_restricted %}checked{% endif %}
                            onchange="toggleGroups('write', this.value)">
-                    Alle Mitglieder
+                    Wie im übergeordneten Ordner
                 </label>
                 <label class="radio-label">
                     <input type="radio" name="write_mode" value="restricted"
@@ -65,7 +65,7 @@
                     <input type="radio" name="delete_mode" value="all"
                            {% if not delete_restricted %}checked{% endif %}
                            onchange="toggleGroups('delete', this.value)">
-                    Alle Mitglieder
+                    Wie im übergeordneten Ordner
                 </label>
                 <label class="radio-label">
                     <input type="radio" name="delete_mode" value="restricted"

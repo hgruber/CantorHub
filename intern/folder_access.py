@@ -1,13 +1,22 @@
 """Per-folder access control built on top of the FolderPermission model.
 
-A folder with no FolderPermission rows is open for read and write, but NOT for delete.
-A folder with rows is restricted: only matching groups have the listed flags.
+Three axes — read, write, delete — each decided on its own. An axis is *ruled* on
+a folder when at least one of its FolderPermission rows carries that axis's flag;
+the rule then admits exactly the groups whose rows carry it.
 
-Delete access requires either the global `intern.delete_folder` permission OR a
-FolderPermission row with can_delete=True for one of the user's groups.
+Inheritance is dynamic and per axis: a folder without a rule on an axis takes the
+rule of its nearest ancestor that has one. Without any, the default applies —
+read and write open, delete closed. An own rule replaces the inherited one, it may
+also widen it. Read is additionally bounded by the chain: a folder is visible only
+if every read rule on the way to the root admits the user.
 
-A folder is *visible* (browsable) only if the user has can_read on it AND on every
-ancestor up to the root. Folders without read access vanish entirely from the tree.
+Write and delete require read. Delete is granted by the global
+`intern.delete_folder` permission or by a delete rule naming one of the user's
+groups. The root (folder None) is open for read and write; delete there needs the
+global permission. Superusers may everything, anonymous users nothing.
+
+`rechte()` and `sichtbare_ordner()` hold the rule without DB access; the
+functions below them load the data. See „Folder permissions" in docs/files.md.
 """
 
 from filer.models import Folder
@@ -15,97 +24,125 @@ from filer.models import Folder
 from .anfragespeicher import gemerkt
 from .models import FolderPermission
 
+_LESEN, _SCHREIBEN, _LOESCHEN = 1, 2, 3   # positions of the flags in a rule row
+
+
+def _zugelassen(regeln, achse):
+    """The group ids an axis admits on one folder, or None if it has no rule there."""
+    if not any(r[achse] for r in regeln):
+        return None
+    return {r[0] for r in regeln if r[achse]}
+
+
+def _naechste_regel(kette, achse):
+    """The rule of the nearest folder in `kette` that rules `achse`, or None."""
+    for regeln in kette:
+        gruppen = _zugelassen(regeln, achse)
+        if gruppen is not None:
+            return gruppen
+    return None
+
+
+def rechte(kette, gruppen, *, global_loeschen=False):
+    """Return (lesen, schreiben, loeschen) for a member of `gruppen`.
+
+    `kette` lists the rule rows from the folder up to the top level, one list of
+    `(group_id, can_read, can_write, can_delete)` per folder; `[]` is the root."""
+    gruppen = set(gruppen)
+    lesen = all(
+        (zugelassen := _zugelassen(regeln, _LESEN)) is None or gruppen & zugelassen
+        for regeln in kette
+    )
+    if not lesen:
+        return False, False, False
+    schreiben = _naechste_regel(kette, _SCHREIBEN)
+    loeschen = _naechste_regel(kette, _LOESCHEN)
+    return (
+        True,
+        schreiben is None or bool(gruppen & schreiben),
+        global_loeschen or (loeschen is not None and bool(gruppen & loeschen)),
+    )
+
+
+def _kette(folder_id, eltern, regeln):
+    """The rule rows from `folder_id` up to the top level (see `rechte()`)."""
+    kette = []
+    gesehen = set()
+    while folder_id is not None and folder_id not in gesehen:
+        gesehen.add(folder_id)
+        kette.append(regeln.get(folder_id, []))
+        folder_id = eltern.get(folder_id)
+    return kette
+
+
+def sichtbare_ordner(eltern, regeln, gruppen):
+    """The ids among `eltern` (id → parent id) a member of `gruppen` can read.
+
+    `regeln` maps a folder id to its rule rows; folders without rows may be missing."""
+    return {
+        folder_id
+        for folder_id in eltern
+        if rechte(_kette(folder_id, eltern, regeln), gruppen)[0]
+    }
+
+
+def _ordnerdaten():
+    """(eltern, regeln) for all folders — once per request, see ``anfragespeicher``.
+
+    A changed folder or permission empties the store (``signals.py``)."""
+    def laden():
+        eltern = dict(Folder.objects.values_list("id", "parent_id"))
+        regeln = {}
+        for zeile in FolderPermission.objects.values_list(
+            "folder_id", "group_id", "can_read", "can_write", "can_delete"
+        ):
+            regeln.setdefault(zeile[0], []).append(zeile[1:])
+        return eltern, regeln
+    return gemerkt(("ordnerrechte",), laden)
+
+
+def _gruppen(user):
+    return gemerkt(
+        ("gruppen", user.pk), lambda: set(user.groups.values_list("id", flat=True))
+    )
+
 
 def folder_access(user, folder):
     """Return (can_read, can_write, can_delete) for `user` on `folder`.
 
-    Considers only this folder's own FolderPermission rows — not ancestors.
-    Use `is_folder_visible()` for the parent-chain visibility check."""
+    Includes inheritance and the ancestors' read rules, so `can_read` is the
+    visibility of the folder."""
     if user is None or not user.is_authenticated:
         return False, False, False
     if user.is_superuser:
         return True, True, True
-    if folder is None:
-        return True, True, True   # root: open
-    perms = list(FolderPermission.objects.filter(folder=folder))
-    if not perms:
-        return True, True, False  # no rows: open for read/write, closed for delete
-    group_ids = set(user.groups.values_list("id", flat=True))
-    matches = [p for p in perms if p.group_id in group_ids]
-    return (
-        any(p.can_read   for p in matches),
-        any(p.can_write  for p in matches),
-        any(p.can_delete for p in matches),
+    eltern, regeln = _ordnerdaten()
+    kette = _kette(folder.pk if folder is not None else None, eltern, regeln)
+    return rechte(
+        kette, _gruppen(user), global_loeschen=user.has_perm("intern.delete_folder")
     )
 
 
 def visible_folder_ids(user):
     """Return the set of folder ids that `user` can browse.
 
-    A folder is included only if can_read holds on it AND on every ancestor.
-
     Das Ergebnis wird je Anfrage einmal ermittelt (``anfragespeicher``): die
-    Ordneransicht fragt dreimal danach, und die drei Abfragen samt Aufstieg durch
-    den Baum wachsen mit der Zahl der Ordner. Eine geänderte Berechtigung leert
-    den Speicher (siehe ``signals.py``)."""
+    Ordneransicht fragt dreimal danach. Eine geänderte Berechtigung leert den
+    Speicher (siehe ``signals.py``)."""
     if user is None or not user.is_authenticated:
         return set()
     return gemerkt(("sichtbare_ordner", user.pk), lambda: _visible_folder_ids(user))
 
 
 def _visible_folder_ids(user):
-    all_folders = dict(Folder.objects.values_list("id", "parent_id"))
+    eltern, regeln = _ordnerdaten()
     if user.is_superuser:
-        return set(all_folders.keys())
-
-    restricted_ids = set(
-        FolderPermission.objects.values_list("folder_id", flat=True).distinct()
-    )
-    group_ids = list(user.groups.values_list("id", flat=True))
-    user_readable_restricted = set(
-        FolderPermission.objects.filter(
-            group_id__in=group_ids, can_read=True
-        ).values_list("folder_id", flat=True).distinct()
-    )
-
-    # Direct can_read: open folders (no rows) + restricted folders where user has can_read
-    direct_readable = (set(all_folders.keys()) - restricted_ids) | user_readable_restricted
-
-    # Apply ancestor check: a folder is visible only if all ancestors are direct_readable.
-    visible = set()
-    for folder_id in direct_readable:
-        cur = folder_id
-        seen = set()
-        ok = True
-        while cur is not None:
-            if cur in seen:
-                break  # cycle guard
-            seen.add(cur)
-            if cur not in direct_readable:
-                ok = False
-                break
-            cur = all_folders.get(cur)
-        if ok:
-            visible.add(folder_id)
-    return visible
+        return set(eltern)
+    return sichtbare_ordner(eltern, regeln, _gruppen(user))
 
 
 def is_folder_visible(user, folder):
-    """True if `user` can browse `folder` (own can_read + all ancestors can_read)."""
+    """True if `user` can browse `folder` (own read rule + all ancestors')."""
     if folder is None:
         return True   # root
-    if user is None or not user.is_authenticated:
-        return False
-    if user.is_superuser:
-        return True
-    cur = folder
-    seen = set()
-    while cur is not None:
-        if cur.pk in seen:
-            break
-        seen.add(cur.pk)
-        cr, _, _ = folder_access(user, cur)
-        if not cr:
-            return False
-        cur = cur.parent
-    return True
+    return folder_access(user, folder)[0]

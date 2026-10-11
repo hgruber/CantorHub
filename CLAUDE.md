@@ -125,7 +125,7 @@ visible folders, fallback avatars), `tables2_beschleunigung.py` (two caches over
 | `Zusage` | Per-member attendance response to an event |
 | `Abstimmung` | Voting records |
 | `DateiVersion` | A superseded revision of a file (path + metadata; the blob stays put) |
-| `FolderPermission` | Folder access by group — **no rows means open** |
+| `FolderPermission` | Folder access by group, per axis — **no rule inherits the parent's** |
 | `Konfiguration` | The runtime key/value settings table |
 | `ChangeLog` | Audit trail; retention enforced by `cleanup_changelog` |
 | `TabellenPreferenzen` | Per-user table column visibility |
@@ -256,8 +256,9 @@ reasoning where it matters.
   or set `folder_id` by hand.
 - **Every write path on a file must call `darf_avatar_aendern()`**, or one member can overwrite
   another's profile picture.
-- **A folder without `FolderPermission` rows is open.** Code that creates a folder must set rows
-  explicitly.
+- **Folder rights inherit per axis.** A folder without a rule on read, write or delete takes the
+  nearest ancestor's; at the top, read and write are open and delete is closed. Code that creates
+  a folder sets no rows — see „Folder permissions" in `docs/files.md`.
 - **Forum messages are ordered by `id`, not `datum`.** The read marker (`ForumGelesen.bis_id`),
   the „Neu seit Deinem letzten Besuch" divider, the 5 s poll (`id__gt`) and the paging
   (`id__lt`) all speak ids, so the display must too. `datum` has second resolution and no

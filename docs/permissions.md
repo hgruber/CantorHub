@@ -155,7 +155,7 @@ missing from the page. The Django default rights that are not listed (e.g. `add_
 |---|---|---|
 | Superuser („Admin-Status") | `/intern/aufgaben/`, by superusers only (`views/aufgaben.py`) | passes every right above except `view_forum_archiv`; alone opens `/intern/konfiguration/` (`views/konfiguration.py`, sidebar entry); bypasses `FolderPermission` (`folder_access.py`) and sees „Backstage" in breadcrumbs (`views/folders.py` · `_folder_breadcrumb`) |
 | `is_staff` | `/admin/` only | access to the Django admin at `/admin/` |
-| `FolderPermission` (per folder and group) | `/intern/ordner/<pk>/berechtigungen/` | read, write and delete in that folder; no rows means open — see `docs/files.md` |
+| `FolderPermission` (per folder and group) | `/intern/ordner/<pk>/berechtigungen/` | read, write and delete in that folder and, per axis without an own rule, in its subfolders; with no rule at all read and write are open, delete closed — see `docs/files.md` |
 | `ForumPermission` (per forum and group) | `/intern/forum/<id>/zugriff/` | who may read a forum and its MUC room; no rows means open — see `docs/forum.md` |
 | `ArtikelPermission` (per article and group) | `/intern/artikel/<name>/berechtigungen/` | who may read and edit an article — see `docs/articles.md` |
 | Tags „Mitglied" and „DSGVO" | admission, `/intern/aufgaben/` | the privacy gate for access without membership (`middleware.py`) — see `docs/members.md` |
