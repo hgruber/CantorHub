@@ -21,7 +21,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   KonzertOrga bearbeiten; lesen dürfen ihn weiterhin alle.
 - Artikel: Eingebettete Medien haben nur noch eine Steuerung. Ein Video spielt in seiner
   Leiste im Text, ohne dass unten der Player aufgeht; eine Audiodatei erscheint wie jede andere
-  Datei mit Noten-Symbol und Dateiname, ein Klick darauf öffnet den Player unten.
+  Datei mit Noten-Symbol, Dateiname und Download-Knopf, ein Klick aufs Symbol öffnet den Player
+  unten.
 
 ## v1.0.3 — 2026-10-11
 

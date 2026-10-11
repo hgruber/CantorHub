@@ -3696,6 +3696,23 @@ table.mitglied-table tr.stimme-group-start td {
     margin: 0 auto;
 }
 .wiki-page .wiki .wiki-audio-start:hover { color: var(--t1); }
+/* Dateiname und Download-Knopf in einer Zeile; gekürzt wird nur der Name. */
+.wiki-page .wiki .wiki-audio figcaption {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.wiki-page .wiki .wiki-audio-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wiki-page .wiki .wiki-audio .wp-download {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--t3);
+}
+.wiki-page .wiki .wiki-audio .wp-download:hover { color: var(--t1); }
 
 /* Mobile: floaten aufheben, damit der Text lesbar bleibt */
 @media (max-width: 768px) {

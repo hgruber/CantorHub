@@ -241,7 +241,9 @@ def _audiofigur(f, label=None):
         f' data-url="{url}" data-titel="{titel}">'
         f'<a class="wiki-audio-start" href="{url}" aria-label="Abspielen: {titel}">'
         f"{_ICON_NOTE}</a>"
-        f"<figcaption>{caption}</figcaption></figure>"
+        f'<figcaption><span class="wiki-audio-name">{caption}</span>'
+        f'<a class="wp-download" href="{url}" download aria-label="Herunterladen">'
+        f"{_ICON_DOWNLOAD}</a></figcaption></figure>"
     )
 
 

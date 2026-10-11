@@ -91,8 +91,9 @@ A `[[Datei:…]]` whose target `intern/medientypen.py` calls playable is rendere
   mini-player uses, inline in the text, with a `<video>` without `controls` — the bar *is* the
   controls, and the mini-player stays hidden while it plays.
 - **Audio** renders as a `<figure class="wiki-figure wiki-audio">` like any other file, with a
-  note icon instead of a thumbnail (`_audiofigur()`). Clicking the icon opens the mini-player,
-  which is the only control; without JavaScript the icon links to the file.
+  note icon instead of a thumbnail (`_audiofigur()`) and a download icon next to the caption.
+  Clicking the note opens the mini-player, which is the only control; without JavaScript it
+  links to the file.
 
 `|Label` overrides the title (and for audio the caption), which otherwise is the filename
 without its extension (for audio the caption is the full filename). Everything else keeps the

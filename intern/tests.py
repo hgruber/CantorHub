@@ -1859,7 +1859,8 @@ class MedienleisteMarkupTest(SimpleTestCase):
         self.assertIn('data-url="/media/Song.mp3"', markup)
         self.assertIn('data-titel="Song"', markup)
         self.assertIn('class="wiki-audio-start" href="/media/Song.mp3"', markup)
-        self.assertIn("<figcaption>Song.mp3</figcaption>", markup)
+        self.assertIn('<span class="wiki-audio-name">Song.mp3</span>', markup)
+        self.assertIn('class="wp-download" href="/media/Song.mp3" download', markup)
         self.assertNotIn("wiki-player", markup)
         self.assertNotIn("mp-", markup)
         self.assertNotIn("<audio", markup)
@@ -1901,7 +1902,7 @@ class MedienleisteMarkupTest(SimpleTestCase):
         self.assertIn('class="mp-title">Mein Titel<', markup)
         markup = insert_file_object(_datei("Song.mp3"), "Mein Titel", spieler=True)
         self.assertIn('data-titel="Mein Titel"', markup)
-        self.assertIn("<figcaption>Mein Titel</figcaption>", markup)
+        self.assertIn('<span class="wiki-audio-name">Mein Titel</span>', markup)
 
     def test_nicht_abspielbares_bleibt_figur(self):
         for name in ("Noten.pdf", "Brief.docx", "Film.mkv"):
