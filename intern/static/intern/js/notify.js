@@ -11,7 +11,6 @@
     if (isNaN(baseline)) return; // not authenticated (no data attribute)
     var firstPoll = !baseline;  // true when baseline is 0 (fresh DB / first visit)
     var currentForum = body.dataset.currentForum || "";
-    var notifyEnabled = body.dataset.notifyEnabled !== "0";
     var stack = document.getElementById("notify-stack");
     if (!stack) return;
 
@@ -20,48 +19,9 @@
     var MAX_VISIBLE = 5;
     var pollTimer = null;
 
-    /* ── Sidebar toggle ── */
-    var toggleBtn = document.getElementById("notify-toggle");
-    if (toggleBtn) {
-        updateToggleUI();
-        toggleBtn.addEventListener("click", function () {
-            fetch("/intern/notify/toggle/", { method: "POST", headers: { "X-CSRFToken": getCsrfToken() } })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    notifyEnabled = data.notify_enabled;
-                    body.dataset.notifyEnabled = notifyEnabled ? "1" : "0";
-                    updateToggleUI();
-                    if (notifyEnabled) { poll(); startPolling(); }
-                    else { stopPolling(); clearAllBubbles(); }
-                })
-                .catch(function () {});
-        });
-    }
-
-    function updateToggleUI() {
-        if (!toggleBtn) return;
-        var offIcon = toggleBtn.querySelector(".notify-icon-off");
-        var onIcon = toggleBtn.querySelector(".nav-icon:not(.notify-icon-off)");
-        var label = toggleBtn.querySelector(".notify-label");
-        if (notifyEnabled) {
-            if (offIcon) offIcon.style.display = "none";
-            if (onIcon) onIcon.style.display = "";
-            if (label) label.textContent = "Benachrichtigungen";
-        } else {
-            if (offIcon) offIcon.style.display = "";
-            if (onIcon) onIcon.style.display = "none";
-            if (label) label.textContent = "Benachrichtigungen (aus)";
-        }
-    }
-
-    function clearAllBubbles() {
-        while (stack.firstChild) stack.removeChild(stack.firstChild);
-    }
-
     /* ── Polling ── */
     function poll() {
         if (document.hidden) return;
-        if (!notifyEnabled) return;
         fetch("/intern/notify/?since=" + baseline)
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -102,8 +62,6 @@
 
     /* ── Render a bubble ── */
     function showBubble(e) {
-        if (!notifyEnabled) return;
-
         while (stack.children.length >= MAX_VISIBLE) {
             stack.removeChild(stack.firstChild);
         }
@@ -243,5 +201,5 @@
         }
     });
 
-    if (notifyEnabled) startPolling();
+    startPolling();
 })();

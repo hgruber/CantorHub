@@ -41,7 +41,6 @@ urlpatterns = [
     ),
     # Notification URLs
     path("notify/", views.site_notify, name="site_notify"),
-    path("notify/toggle/", views.notify_toggle, name="notify_toggle"),
     # Konfiguration URLs
     path("konfiguration/", views.konfiguration, name="konfiguration"),
     path("aufgaben/", views.aufgaben, name="aufgaben"),

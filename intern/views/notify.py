@@ -6,11 +6,10 @@ as JSON for the notification bubble system.
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
 
 from ..models import ChangeLog, Forum, Lied, Mitteilung, Termin
 
-__all__ = ["site_notify", "notify_toggle"]
+__all__ = ["site_notify"]
 
 # Models whose changes produce notification bubbles
 _NOTIFY_MODELS = {"Lied", "Termin", "Forum", "Mitteilung", "Artikel", "User"}
@@ -133,14 +132,3 @@ def site_notify(request):
 
     return JsonResponse({"entries": data, "latest_id": latest_id})
 
-
-@login_required
-@require_POST
-def notify_toggle(request):
-    """Toggle the notify_enabled preference for the current user."""
-    request.user.notify_enabled = not request.user.notify_enabled
-    # Record the acting user in the audit log; otherwise the ChangeLog entry
-    # falls back to "System".
-    request.user._audit_user = request.user
-    request.user.save(update_fields=["notify_enabled"])
-    return JsonResponse({"notify_enabled": request.user.notify_enabled})

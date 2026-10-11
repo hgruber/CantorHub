@@ -210,6 +210,11 @@ Deliberately **not** done, so the next audit does not raise it again:
   (and the admin) can write the field, and there is neither a CSP nor an allowlist library in the
   project — should the field ever be opened to another circle, an allowlist (`nh3`) has to come
   first.
+- **`User.notify_enabled` is dead and stays for now.** The sidebar switch for the
+  notification bubbles was removed in October 2026 — every member gets them. The column is
+  read and written nowhere any more; only its label in `views/aenderungen.py` remains, so old
+  audit entries still read well. Backlog: drop the field at the next `MIGRATE=1` rebuild,
+  together with that label.
 - **No field renames.** The member FK is called `autor`, `sender`, `person`, `mitglied` or
   `user` depending on the model, and timestamps are `datum`, `*_am`, `timestamp`,
   `indexed_at` or `aktualisiert`. The gain would be purely cosmetic; the risk is high and

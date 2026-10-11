@@ -235,7 +235,6 @@ _AUDIT_FIELDS = {
         "first_name", "last_name", "stimme", "is_active", "is_superuser", "email",
         "xmpp", "strasse", "plz", "ort", "telefon", "telefon_mobil",
         "geburtstag", "avatar_id", "private_fields", "adressbuch_verborgen",
-        "notify_enabled",
     ],
     "Termin": ["kurz", "datum", "datum_bis", "lang", "extern", "ort_id", "anwesenheit", "repertoire"],
     "Lied": ["titel", "aktiv", "tempo", "tonart", "beats", "hymne", "acapella", "weihnacht", "komponist",
