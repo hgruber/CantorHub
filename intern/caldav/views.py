@@ -13,7 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from ..dav import http, verweise, xml as dav
 from ..dav.auth import Dienst, dav_basic_auth
-from ..dav.xml import NS_CALDAV as CAL, NS_CS as CS, NS_DAV as D, element, qn
+from ..dav.xml import NS_CALDAV as CAL, NS_CS as CS, NS_DAV as D, NS_ICAL as ICAL, element, qn
 from . import daten, ical
 
 logger = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ def _sammlung_properties(pk, art, liste):
     }
     farbe = daten.farbe()
     if farbe:
-        props[qn(CS, "calendar-color")] = farbe
+        props[qn(ICAL, "calendar-color")] = farbe
     return props
 
 

@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import NamedTuple
 
 __all__ = [
-    "NS_DAV", "NS_CARDDAV", "NS_CALDAV", "NS_CS", "qn", "element",
+    "NS_DAV", "NS_CARDDAV", "NS_CALDAV", "NS_CS", "NS_ICAL", "qn", "element",
     "parse_body", "parse_propfind", "parse_report", "multistatus", "Report",
 ]
 
@@ -16,6 +16,7 @@ NS_DAV = "DAV:"
 NS_CARDDAV = "urn:ietf:params:xml:ns:carddav"
 NS_CALDAV = "urn:ietf:params:xml:ns:caldav"
 NS_CS = "http://calendarserver.org/ns/"
+NS_ICAL = "http://apple.com/ns/ical/"
 
 # Ohne diese Registrierung schreibt ElementTree ns0/ns1/ns2 — gültig, aber die
 # Rümpfe sind dann beim Debuggen mit curl kaum lesbar, und einzelne ältere
@@ -24,6 +25,7 @@ ET.register_namespace("D", NS_DAV)
 ET.register_namespace("C", NS_CARDDAV)
 ET.register_namespace("CAL", NS_CALDAV)
 ET.register_namespace("CS", NS_CS)
+ET.register_namespace("ICAL", NS_ICAL)
 
 # 256 KiB. Ein PROPFIND-Rumpf ist wenige hundert Byte gross; ein multiget über
 # ein ganzes Adressbuch bleibt weit darunter.

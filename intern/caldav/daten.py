@@ -75,7 +75,7 @@ def sammlung_name(art):
 
 
 def farbe():
-    """``CS:calendar-color`` — folgt der portalweiten BRAND_FARBE."""
+    """``ICAL:calendar-color`` — folgt der portalweiten BRAND_FARBE."""
     return get_brand_farbe()
 
 

@@ -81,7 +81,7 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   from `--brand` via `color-mix()` in `intern.css` and follow automatically, as do
   `--brand-dark`, `--brand-soft` and `--band` on the public homepage. Also colours mail buttons
   and links (`intern/mail_markup.py`), the mail header background (`emails/base.html`), the
-  PDF letterhead rule (`intern/pdf.py`) and the CalDAV `CS:calendar-color` handed to devices
+  PDF letterhead rule (`intern/pdf.py`) and the CalDAV `ICAL:calendar-color` handed to devices
   (`intern/caldav/daten.py:farbe()`). Edited on the configuration page via the generic
   text-plus-native-picker component (`feldtyp` `"color"`, see `docs/frontend.md`). **It has to
   carry white text**: `--brand` is the background of primary buttons and of the homepage's
