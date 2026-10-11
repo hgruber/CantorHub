@@ -570,10 +570,10 @@ class Termin(models.Model):
         null=True,
         help_text="Der öffentliche Ankündigungstext: Adresse, Einlass und Links für "
         "das Publikum. Er steht auf der öffentlichen Startseite unter „Konzerte“, "
-        "auf der Terminseite in der Karte „Extern“ und löst die Erinnerungsmails "
+        "auf der Terminseite in der Karte „Extern“ und löst die Informationsmails "
         "der Auftritts-Mailingliste aus. Ist das Feld leer, fehlt die Karte, der "
         "Termin steht nicht auf der Startseite und die Mailingliste wird nicht "
-        "erinnert. HTML ist erlaubt (Links, Zeilenumbrüche).",
+        "informiert. HTML ist erlaubt (Links, Zeilenumbrüche).",
     )
     ctag = models.IntegerField(default=0)
     # Die help_texts sind die einzige Quelle der Erklärungs-Tooltips:
@@ -582,7 +582,7 @@ class Termin(models.Model):
         default=False,
         help_text="Der Termin ist ein Auftritt mit einem Ablauf: Er bekommt auf der "
         "Terminseite die Karte „Lieder“. Für die öffentliche Ankündigung auf der "
-        "Startseite und die Erinnerungsmails der Auftritts-Mailingliste ist der "
+        "Startseite und die Informationsmails der Auftritts-Mailingliste ist der "
         "Ankündigungstext in „Extern“ zuständig.",
     )
     anwesenheit = models.BooleanField(
@@ -662,8 +662,8 @@ class ErinnerungVersand(models.Model):
 
     class Meta:
         ordering = ["-versendet_am"]
-        verbose_name = "Erinnerungsversand"
-        verbose_name_plural = "Erinnerungsversand"
+        verbose_name = "Informationsversand"
+        verbose_name_plural = "Informationsversand"
         constraints = [
             models.UniqueConstraint(
                 fields=["termin", "wochen"], name="uniq_erinnerung_termin_wochen"

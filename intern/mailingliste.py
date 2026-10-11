@@ -319,7 +319,7 @@ def send_mailingliste_mail(subject, abo, key, base_url, link=None, **extra):
         email=abo.email, **extra
     )
     # Vor dem "-- "-Trenner, den send_branded_mail für den Footer anhängt.
-    plain = f"{plain.rstrip()}\n\nKeine Erinnerungen mehr? Hier austragen: {url}\n"
+    plain = f"{plain.rstrip()}\n\nKeine Informationen mehr? Hier austragen: {url}\n"
     return send_branded_mail(
         subject,
         abo.email,

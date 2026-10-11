@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = (
-        "Verschickt Erinnerungen an öffentlich angekündigte Auftritte (Termine mit "
+        "Verschickt Informationen zu öffentlich angekündigten Auftritten (Termine mit "
         "Ankündigungstext, Termin.extern) an die bestätigten Adressen der "
         "Auftritts-Mailingliste. Ohne --loop läuft genau ein Durchlauf."
     )
@@ -72,7 +72,7 @@ class Command(BaseCommand):
                 self._iteration(options)
             return
 
-        self.stdout.write("Auftritts-Erinnerungen: Dauerbetrieb gestartet.")
+        self.stdout.write("Auftritts-Informationen: Dauerbetrieb gestartet.")
         while True:
             # Der komplette Rumpf ist abgesichert: start.sh startet den Prozess
             # mit '&', es gibt keinen Supervisor. Eine ungefangene Exception
@@ -81,7 +81,7 @@ class Command(BaseCommand):
                 with konfiguration_gepuffert():
                     self._iteration(options)
             except Exception:
-                logger.exception("Auftritts-Erinnerungen: Durchlauf fehlgeschlagen")
+                logger.exception("Auftritts-Informationen: Durchlauf fehlgeschlagen")
             # Intervall pro Iteration neu lesen — die Konfiguration ist zur
             # Laufzeit ueber /intern/konfiguration/ aenderbar. Steht ausserhalb des
             # Puffers, damit eine Aenderung zwischen zwei Durchlaeufen ankommt.
@@ -119,7 +119,7 @@ class Command(BaseCommand):
                 # wird also nie etwas faellig — die Meldung bliebe sonst fuer immer aus.
                 self._warnen("MAILINGLISTE_WOCHEN ergibt keine gültigen Vorlaufzeiten.")
             else:
-                self.stdout.write("0 Erinnerungen fällig.")
+                self.stdout.write("0 Informationen fällig.")
             return
 
         base_url = basis_url()
@@ -159,7 +159,7 @@ class Command(BaseCommand):
             return
 
         platzhalter = termin_platzhalter(termin, wochen)
-        betreff = f"Erinnerung: {termin.kurz} am {platzhalter['datum']}"
+        betreff = f"Information: {termin.kurz} am {platzhalter['datum']}"
         empfaenger = Auftrittsabo.objects.filter(
             bestaetigt_am__isnull=False
         ).order_by("pk")
@@ -184,4 +184,4 @@ class Command(BaseCommand):
 
     def _warnen(self, text):
         self.stderr.write(self.style.WARNING(text))
-        logger.warning("Auftritts-Erinnerungen: %s", text)
+        logger.warning("Auftritts-Informationen: %s", text)

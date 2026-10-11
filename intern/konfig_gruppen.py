@@ -416,7 +416,7 @@ GRUPPEN: tuple[Gruppe, ...] = (
     Gruppe(
         id="mailingliste",
         titel="Auftritts-Mailingliste",
-        hinweis="Öffentliche Auftritts-Erinnerungen ohne Mitgliederkonto",
+        hinweis="Öffentliche Auftritts-Informationen ohne Mitgliederkonto",
         keys=(),
         praefixe=("MAILINGLISTE_", "MAIL_MAILINGLISTE_"),
     ),

@@ -212,6 +212,6 @@ def auftritte_abmelden(request, token):
     return _status(
         request,
         "Abgemeldet",
-        "Wir haben Deine Adresse gelöscht und schicken Dir keine Erinnerungen "
+        "Wir haben Deine Adresse gelöscht und schicken Dir keine Informationen "
         "mehr. Du kannst Dich jederzeit wieder eintragen.",
     )

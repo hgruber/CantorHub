@@ -298,19 +298,19 @@ _CONFIG_DEFAULTS = [
     (
         "MAILINGLISTE_WOCHEN",
         "4,1",
-        "Vorlaufzeiten der Auftritts-Erinnerungen in Wochen, kommagetrennt "
+        "Vorlaufzeiten der Auftritts-Informationen in Wochen, kommagetrennt "
         "(z.B. '4,1' = vier Wochen und eine Woche vorher)",
     ),
     (
         "MAILINGLISTE_VERSANDZEIT",
         "18:00",
         "Uhrzeit HH:MM — nur Fallback für Termine ohne Uhrzeit. Sonst geht die "
-        "Erinnerung zur Uhrzeit des Termins raus, also am selben Wochentag.",
+        "Information zur Uhrzeit des Termins raus, also am selben Wochentag.",
     ),
     (
         "MAILINGLISTE_INTERVALL_MIN",
         "10",
-        "Prüfintervall des Erinnerungs-Dauerlaufs in Minuten",
+        "Prüfintervall des Informations-Dauerlaufs in Minuten",
     ),
     (
         "MAILINGLISTE_OPTIN_TAGE",
@@ -321,8 +321,8 @@ _CONFIG_DEFAULTS = [
     ),
     (
         "MAILINGLISTE_TEXT",
-        "Trag Dich hier ein, wenn wir Dich an unsere öffentlichen Auftritte "
-        "erinnern sollen. Wir schreiben Dir vier Wochen und noch einmal eine "
+        "Trag Dich hier ein, wenn wir Dich über unsere öffentlichen Auftritte "
+        "informieren sollen. Wir schreiben Dir vier Wochen und noch einmal eine "
         "Woche vor jedem Konzert — also nur ein paar Nachrichten im Jahr.\n\n"
         "Nach dem Absenden bekommst Du eine E-Mail mit einem Bestätigungslink. "
         "Erst wenn Du darauf klickst, tragen wir Dich ein.",
@@ -331,7 +331,7 @@ _CONFIG_DEFAULTS = [
     ),
     (
         "MAILINGLISTE_EINWILLIGUNG",
-        "Ich möchte per E-Mail an die öffentlichen Auftritte erinnert werden. "
+        "Ich möchte per E-Mail über die öffentlichen Auftritte informiert werden. "
         "Meine Adresse wird ausschließlich dafür verwendet und nicht an Dritte "
         "weitergegeben. Ich kann die Einwilligung jederzeit über den "
         "Abmelde-Link in jeder E-Mail widerrufen.",
@@ -341,8 +341,8 @@ _CONFIG_DEFAULTS = [
     (
         "MAIL_MAILINGLISTE_OPTIN",
         "Hallo{name_anrede},\n\n"
-        "Du möchtest an die öffentlichen Auftritte von '''{vereinsname}''' "
-        "erinnert werden. Bitte bestätige das noch mit einem Klick — vorher "
+        "Du möchtest über die öffentlichen Auftritte von '''{vereinsname}''' "
+        "informiert werden. Bitte bestätige das noch mit einem Klick — vorher "
         "tragen wir Dich nicht ein.\n\n"
         "{button:Eintrag bestätigen}\n\n"
         "% Wenn Du das nicht warst, ignoriere diese E-Mail einfach. Ohne "
@@ -369,7 +369,7 @@ _CONFIG_DEFAULTS = [
         "Hallo{name_anrede},\n\n"
         "Deine Adresse steht bereits auf unserer Auftritts-Liste — Du musst "
         "nichts weiter tun.\n\n"
-        "% Wenn Du keine Erinnerungen mehr möchtest, kannst Du Dich hier "
+        "% Wenn Du keine Informationen mehr möchtest, kannst Du Dich hier "
         "austragen: {abmelden}",
         "Antwort, wenn sich eine bestätigte Adresse erneut einträgt. "
         + _MARKUP_HINT + " Platzhalter: {name}, {name_anrede}, {email}, "
@@ -378,7 +378,7 @@ _CONFIG_DEFAULTS = [
     (
         "MAIL_MAILINGLISTE_ERINNERUNG",
         "",
-        "Erinnerung an einen Auftritt. Wiki-Markup erlaubt. Platzhalter: {titel}, "
+        "Information zu einem Auftritt. Wiki-Markup erlaubt. Platzhalter: {titel}, "
         "{datum}, {wochentag}, {uhrzeit}, {uhrzeit_text}, {ort}, {ort_adresse}, "
         "{extern} (der Ankündigungstext als Fließtext, ohne Markup), {wochen}, "
         "{wochen_text}, {name}, {abmelden}.",
@@ -591,6 +591,35 @@ _LEGACY_MAIL_DEFAULTS = {
         "Bestätigung passiert nichts.\n"
         "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen "
         "Browser: {link}",
+        "Hallo{name_anrede},\n\n"
+        "Du möchtest an die öffentlichen Auftritte von '''{vereinsname}''' "
+        "erinnert werden. Bitte bestätige das noch mit einem Klick — vorher "
+        "tragen wir Dich nicht ein.\n\n"
+        "{button:Eintrag bestätigen}\n\n"
+        "% Wenn Du das nicht warst, ignoriere diese E-Mail einfach. Ohne "
+        "Bestätigung passiert nichts.\n"
+        "% Falls der Button nicht funktioniert, kopiere diesen Link in Deinen "
+        "Browser: {link}",
+    ],
+    "MAIL_MAILINGLISTE_BEREITS_ANGEMELDET": [
+        "Hallo{name_anrede},\n\n"
+        "Deine Adresse steht bereits auf unserer Auftritts-Liste — Du musst "
+        "nichts weiter tun.\n\n"
+        "% Wenn Du keine Erinnerungen mehr möchtest, kannst Du Dich hier "
+        "austragen: {abmelden}",
+    ],
+    "MAILINGLISTE_TEXT": [
+        "Trag Dich hier ein, wenn wir Dich an unsere öffentlichen Auftritte "
+        "erinnern sollen. Wir schreiben Dir vier Wochen und noch einmal eine "
+        "Woche vor jedem Konzert — also nur ein paar Nachrichten im Jahr.\n\n"
+        "Nach dem Absenden bekommst Du eine E-Mail mit einem Bestätigungslink. "
+        "Erst wenn Du darauf klickst, tragen wir Dich ein.",
+    ],
+    "MAILINGLISTE_EINWILLIGUNG": [
+        "Ich möchte per E-Mail an die öffentlichen Auftritte erinnert werden. "
+        "Meine Adresse wird ausschließlich dafür verwendet und nicht an Dritte "
+        "weitergegeben. Ich kann die Einwilligung jederzeit über den "
+        "Abmelde-Link in jeder E-Mail widerrufen.",
     ],
     "MAIL_MAILINGLISTE_WILLKOMMEN": [
         "Hallo{name_anrede},\n\n"

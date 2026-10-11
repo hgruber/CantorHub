@@ -22,6 +22,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 - Anmeldeseite: Der Vereinsname steht in der Begrüßung in einer eigenen Zeile und wird nicht
   mehr umbrochen.
+- Auftritts-Mailingliste: Statt von „Erinnerungen“ ist auf Startseite, Anmeldeseiten, in den
+  E-Mails, im Betreff und in der Datenschutzerklärung von „Informationen“ die Rede. Unverändert
+  gebliebene Konfigurationstexte werden beim nächsten Start angepasst.
 - Forenliste: Die Spalte „Zugriff“ heißt jetzt „Letzter Beitrag“.
 
 ## v1.0.1 — 2026-10-11
