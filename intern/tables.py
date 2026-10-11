@@ -379,7 +379,8 @@ class TerminTabelle(tables.Table):
 
     def render_kurz(self, value, record):
         """Der Terminname allein trägt den pulsierenden Rahmen, nicht die Zeile:
-        fehlt die eigene Antwort, umrahmt er ihn im Gleichtakt mit dem eigenen
+        fehlt die eigene Antwort oder lautet sie „Eventuell", umrahmt er ihn im
+        Gleichtakt mit dem eigenen
         Kästchen der Aufstellung (siehe ``offen-puls`` in der CSS). Die Annotation
         setzt die View nur für kommende Termine, daher ``getattr``.
         """

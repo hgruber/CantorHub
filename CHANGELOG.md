@@ -37,6 +37,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   dass man sich nach der Bestätigung im Mitgliederportal anmelden kann; eine unverändert
   gebliebene Aufforderungsmail wird beim nächsten Start angepasst. Auch Fehlerseiten und Hinweise sprechen vom „Mitgliederportal“
   statt vom „internen Bereich“.
+- Terminliste: Auch ein Termin mit der eigenen Antwort „Eventuell“ blinkt jetzt, genau wie
+  einer ohne Antwort — der Terminname und das eigene Kästchen der Aufstellung.
 
 ## v1.0.1 — 2026-10-11
 

@@ -147,8 +147,8 @@ the pure `intern/aufstellung.py`; `_aufstellungen_anhaengen()` in `views/termine
 half and needs two queries per page, for the first load and the infinite-scroll reloads alike.
 The viewer's own square carries a `--brand` outline, every square a name tooltip.
 
-**A missing answer blinks.** Has the viewer not answered an upcoming event, the `--brand`
-outline of their own square pulses (`offen-puls`, `1.6 s`, `intern.css`) *and* the event's own
+**A missing answer blinks.** Has the viewer not answered an upcoming event, or only with
+„Eventuell", the `--brand` outline of their own square pulses (`offen-puls`, `1.6 s`, `intern.css`) *and* the event's own
 name in the list carries the same pulsing outline (`render_kurz` → `span.termin-offen`). Only
 the name is framed, not the row: the marker belongs to the event, not to its date and
 aufstellung cells. The span has no padding — it would push the name out of line with the

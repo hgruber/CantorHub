@@ -3070,7 +3070,8 @@ table.mitglied-table tr.stimme-group-start td {
 .aufst-na    { background: color-mix(in srgb, var(--t4) 45%, transparent); }
 .aufst-ich   { outline: 1.5px solid var(--brand); outline-offset: 1px; }
 .aufst-gross .aufst-ich { outline-width: 2px; }
-/* „Meine Antwort fehlt": das eigene Kästchen der Aufstellung pulsiert — und mit ihm
+/* „Meine Antwort fehlt" (offen oder „Eventuell"): das eigene Kästchen der Aufstellung
+   pulsiert — und mit ihm
    der Terminname in der Liste (``.termin-offen``, siehe Terminliste unten). Beide
    teilen **dieselbe** Animation, damit sie im Gleichtakt laufen; die Ruhephase
    bleibt sichtbar (Rahmen an), die Animation blendet ihn nur aus und wieder ein,
@@ -3079,7 +3080,8 @@ table.mitglied-table tr.stimme-group-start td {
     0%, 100% { outline-color: var(--brand); }
     50%      { outline-color: transparent; }
 }
-.aufst-ich.aufst-na { animation: offen-puls 1.6s ease-in-out infinite; }
+.aufst-ich.aufst-na,
+.aufst-ich.aufst-maybe { animation: offen-puls 1.6s ease-in-out infinite; }
 @media (max-width: 640px) {
     .aufst-gross { --aufst-p: calc(10rem / 14); --aufst-abstand: 2px; --aufst-gang: .5rem; }
 }
@@ -6548,6 +6550,7 @@ tr.row-fresh td {
 /* Wer Bewegung reduziert haben will, bekommt den Rahmen stehend statt blinkend. */
 @media (prefers-reduced-motion: reduce) {
     .aufst-ich.aufst-na,
+    .aufst-ich.aufst-maybe,
     .termin-offen { animation: none; }
 }
 

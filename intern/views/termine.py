@@ -134,12 +134,13 @@ def termin_list(request):
     annotations = {"lieder_anzahl": Count("konzert")}
     if not past:
         # „Meine Antwort fehlt": die Zeile pulsiert dann (siehe ``TerminTabelle``).
+        # „Eventuell" zählt mit — auch dann steht die endgültige Antwort noch aus.
         # Für vergangene Termine bleibt die Annotation weg — eine offene Antwort
         # ist dort gegenstandslos. Der leere Wert ist ein echter gespeicherter
         # Zustand (``zusage.TRANSITIONS``), deshalb schließt ihn ``exclude`` aus.
         annotations["meine_antwort_fehlt"] = ~Exists(
             Zusage.objects.filter(termin=OuterRef("pk"), person=request.user)
-            .exclude(option="")
+            .exclude(option__in=["", "3"])
         )
     if past:
         qs = Termin.objects.filter(datum__lte=timezone_now()).order_by("-datum")
