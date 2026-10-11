@@ -20,6 +20,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
+- Anmeldeseite: Der Vereinsname steht in der Begrüßung in einer eigenen Zeile und wird nicht
+  mehr umbrochen.
 - Forenliste: Die Spalte „Zugriff“ heißt jetzt „Letzter Beitrag“.
 
 ## v1.0.1 — 2026-10-11
