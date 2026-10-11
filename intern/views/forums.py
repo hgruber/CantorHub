@@ -268,15 +268,32 @@ def forum_list(request):
         .exclude(id__in=hidden)
         .order_by("-zugriff")
     )
+    from .files import visible_fields
+
+    # Ohne gespeicherte Auswahl (leere Liste) sind alle Spalten sichtbar.
+    fields = visible_fields(request, "ForumTabelle")
     table = ForumTabelle(foren)
-    if not foren.exclude(kategorie="").exists():
+    column_choices = [
+        {"name": name, "label": table.columns[name].header, "checked": not fields or name in fields}
+        for name in table.base_columns
+    ]
+    for name in list(table.columns.names()):
+        if fields and name not in fields:
+            table.columns.hide(name)
+    # Die Kategorie-Spalte erscheint nur, wenn ein angezeigtes Forum eine hat, und
+    # heißt „Kat“, solange keine Kategorie länger als drei Zeichen ist.
+    kategorien = set(foren.exclude(kategorie="").values_list("kategorie", flat=True))
+    if not kategorien:
         table.columns.hide("kategorie")
+    elif max(len(k) for k in kategorien) <= 3:
+        table.columns["kategorie"].column.verbose_name = "Kat"
     RequestConfig(request, paginate=False).configure(table)
     return render(
         request,
         "table.html",
         {
             "table": table,
+            "column_choices": column_choices,
             "seitentitel": "Foren",
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
             "upload_folder_id": folders.forum(),

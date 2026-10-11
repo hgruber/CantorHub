@@ -2,6 +2,7 @@ import django_filters as filters
 import django_tables2 as tables
 from django import forms
 from django.contrib.auth.models import Group
+from django.db.models import Case, IntegerField, Value, When
 from django.template.defaultfilters import date as datumsfilter
 from django.template.loader import render_to_string
 from django.templatetags.static import static
@@ -71,7 +72,6 @@ class ForumTabelle(tables.Table):
     # So schmal wie ihr Inhalt; ``forum_list`` blendet sie aus, solange keines der
     # angezeigten Foren eine Kategorie hat.
     kategorie = tables.Column(
-        order_by=("kategorie", "thema"),
         attrs={"th": {"class": "kategorie"}, "td": {"class": "kategorie"}},
     )
     thema = tables.Column()
@@ -96,6 +96,16 @@ class ForumTabelle(tables.Table):
                 if an
             ),
         }
+
+    def order_kategorie(self, queryset, is_descending):
+        """Aufsteigend stehen Foren ohne Kategorie am Ende, absteigend vorn."""
+        richtung = "-" if is_descending else ""
+        queryset = queryset.annotate(
+            kategorie_leer=Case(
+                When(kategorie="", then=Value(1)), default=Value(0), output_field=IntegerField()
+            )
+        ).order_by(richtung + "kategorie_leer", richtung + "kategorie", richtung + "thema")
+        return queryset, True
 
     def render_thema(self, record, value):
         if record.aktiv:

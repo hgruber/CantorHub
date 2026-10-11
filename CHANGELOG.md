@@ -13,6 +13,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 - Foren: Ein Forum kann beim Anlegen oder Bearbeiten eine Kategorie bekommen. Die Forenliste
   zeigt sie als erste, sortierbare Spalte, sobald eines der angezeigten Foren eine hat.
+  Sind alle Kategorien höchstens drei Zeichen lang, heißt die Spalte „Kat“; aufsteigend
+  sortiert stehen Foren ohne Kategorie am Ende.
+- Forenliste: Die angezeigten Spalten lassen sich wie in Mitgliederliste und Repertoire je
+  Mitglied auswählen.
 
 ## v1.0.1 — 2026-10-11
 
