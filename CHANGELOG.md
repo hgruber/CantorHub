@@ -7,7 +7,7 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
-## Unveröffentlicht
+## v1.0.1 — 2026-10-11
 
 ### Hinzugefügt
 
