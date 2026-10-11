@@ -81,7 +81,12 @@ environment variable — only network access. Without it the migration calls `ex
   table filter „Weihnachten" finds them. Another stopgap that disappears with this file.
 - skips every article version dated before 12.12.2015 (`_ARTIKEL_CUTOFF`). The remaining
   versions keep their legacy numbers, so an article's history may start above 1; an article
-  whose versions all predate the cutoff is not imported at all.- gives **only the members of „Gründer" an Eintrittsdatum** — the founding date 17.06.2026
+  whose versions all predate the cutoff is not imported at all.
+- lets **only Webmaster, Vorstand and KonzertOrga edit** the article „Aktuell"
+  (`artikel_schreibrechte`, `_ARTIKEL_GESCHUETZT`, `_ARTIKEL_SCHREIBGRUPPEN`): one
+  `ArtikelPermission` row with `can_edit` per group. Reading stays open; every other article
+  carries no row and is open to everyone until someone restricts it.
+- gives **only the members of „Gründer" an Eintrittsdatum** — the founding date 17.06.2026
   (`_GRUENDUNGSDATUM`, `import_gruendungsdatum`). Every other account arrives with
   `date_joined=None`; the legacy column `aktiv_seit` is no longer read, because it was
   inconsistent, partly empty and meant the login in the old portal rather than the join date.

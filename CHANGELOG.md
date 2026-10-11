@@ -17,6 +17,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Dateien: „Backstage“ und seine Unterordner stehen in keiner Zielauswahl mehr, weder im
   Ordnerbrowser noch im Datei-Menü eines Artikels; Verschieben, Referenz und Kopieren dorthin
   lehnt der Server ab, auch per Drag & Drop.
+- Migration vom Altportal: Den Artikel „Aktuell“ dürfen nur Webmaster, Vorstand und
+  KonzertOrga bearbeiten; lesen dürfen ihn weiterhin alle.
 
 ## v1.0.3 — 2026-10-11
 

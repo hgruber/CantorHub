@@ -4878,6 +4878,14 @@ class MitgliedschaftTest(SimpleTestCase):
         ):
             self.assertIn(f'"{name}": [', quelle, f"{name} fehlt in GROUPS")
 
+    def test_artikel_schreibgruppen_stehen_im_import(self):
+        """Gibt es eine der Gruppen nicht, bekaeme sie still kein Schreibrecht."""
+        import importlib
+
+        modul = importlib.import_module("intern.migrations.0003_import")
+        for name in modul._ARTIKEL_SCHREIBGRUPPEN:
+            self.assertIn(name, modul.GROUPS)
+
     def test_kein_bild_ohne_foto_einwilligung(self):
         """Ohne Foto-Haekchen gibt es das Tag „kein Bild", mit Haekchen nicht."""
         self.assertTrue(kein_bild_aus_einwilligung(False))
