@@ -7,6 +7,13 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Foren: Ein Forum kann beim Anlegen oder Bearbeiten eine Kategorie bekommen. Die Forenliste
+  zeigt sie als erste, sortierbare Spalte, sobald eines der angezeigten Foren eine hat.
+
 ## v1.0.1 — 2026-10-11
 
 ### Hinzugefügt

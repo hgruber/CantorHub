@@ -269,6 +269,8 @@ def forum_list(request):
         .order_by("-zugriff")
     )
     table = ForumTabelle(foren)
+    if not foren.exclude(kategorie="").exists():
+        table.columns.hide("kategorie")
     RequestConfig(request, paginate=False).configure(table)
     return render(
         request,

@@ -657,9 +657,10 @@ class ForumEditForm(forms.ModelForm):
 
     class Meta:
         model = Forum
-        fields = ["thema", "bild", "xmpp_muc_jid"]
+        fields = ["thema", "kategorie", "bild", "xmpp_muc_jid"]
         widgets = {
             "thema": forms.TextInput(attrs={"class": "form-control"}),
+            "kategorie": forms.TextInput(attrs={"class": "form-control"}),
             "bild": AdminImageWidget,
             "xmpp_muc_jid": forms.TextInput(attrs={"class": "form-control", "placeholder": "forum-262@conference.example.org"}),
         }

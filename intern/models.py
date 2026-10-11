@@ -322,6 +322,16 @@ class ForumQuerySet(models.QuerySet):
 
 class Forum(models.Model):
     thema = models.CharField(max_length=120)
+    # Gruppiert die Forenliste: eigene Spalte vor dem Thema, sortierbar, und nur
+    # sichtbar, wenn mindestens ein angezeigtes Forum eine Kategorie trägt.
+    kategorie = models.CharField(
+        max_length=40,
+        blank=True,
+        default="",
+        verbose_name="Kategorie",
+        help_text="Optional. Foren mit derselben Kategorie stehen in der Forenliste beieinander, "
+        "wenn nach Kategorie sortiert wird.",
+    )
     bild = FilerFileField(null=True, blank=True, on_delete=models.SET_NULL, related_name="forum_bild")
     aktiv = models.BooleanField(default=True)
     xmpp_muc_jid = models.CharField(max_length=255, null=True, blank=True, unique=True)

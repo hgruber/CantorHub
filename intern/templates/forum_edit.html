@@ -22,6 +22,7 @@
             <div class="detail-card">
                 <h3>Forum</h3>
                 {% form_field form.thema "Thema" %}
+                {% form_field form.kategorie "Kategorie" %}
                 {% form_field form.bild "Bild" %}
                 {% if ejabberd_enabled %}
                 {% form_field form.xmpp_muc_jid "XMPP-Raum (MUC JID)" %}

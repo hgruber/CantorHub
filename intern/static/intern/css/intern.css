@@ -1347,6 +1347,9 @@ th.zahl, td.zahl {
 }
 th.zahl a { justify-content: flex-end; }
 
+/* Kategorie der Forenliste: so schmal wie ihr Inhalt. */
+th.kategorie, td.kategorie { width: 1%; white-space: nowrap; }
+
 th.asc a::after  { content: " ↑"; color: var(--brand); font-size: calc(10rem / 14); font-weight: 700; }
 th.desc a::after { content: " ↓"; color: var(--brand); font-size: calc(10rem / 14); font-weight: 700; }
 

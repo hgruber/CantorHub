@@ -240,7 +240,7 @@ _AUDIT_FIELDS = {
     "Lied": ["titel", "aktiv", "tempo", "tonart", "beats", "hymne", "acapella", "weihnacht", "komponist",
              "original_id", "aufnahme_id", "pdf_id", "noten_id"],
     "Zusage": ["option"],
-    "Forum": ["thema", "aktiv", "bild_id", "xmpp_muc_jid"],
+    "Forum": ["thema", "kategorie", "aktiv", "bild_id", "xmpp_muc_jid"],
     "Ort": ["name", "beschreibung", "strasse", "plz", "ort", "breite", "laenge"],
     "Artikel": ["name", "version", "kommentar"],
     "Mitteilung": ["mitteilung"],

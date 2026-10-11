@@ -68,6 +68,12 @@ def _datei_url(pfad):
 
 
 class ForumTabelle(tables.Table):
+    # So schmal wie ihr Inhalt; ``forum_list`` blendet sie aus, solange keines der
+    # angezeigten Foren eine Kategorie hat.
+    kategorie = tables.Column(
+        order_by=("kategorie", "thema"),
+        attrs={"th": {"class": "kategorie"}, "td": {"class": "kategorie"}},
+    )
     thema = tables.Column()
     zugriff = tables.Column()
     anzahl_mitteilungen = tables.Column(

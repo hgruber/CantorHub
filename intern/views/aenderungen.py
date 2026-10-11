@@ -78,6 +78,7 @@ FIELD_LABELS = {
     "option": "Antwort",
     # Forum
     "thema": "Thema",
+    "kategorie": "Kategorie",
     "bild_id": "Bild",
     "xmpp_muc_jid": "Chat-Raum (XMPP)",
     # Konzert
