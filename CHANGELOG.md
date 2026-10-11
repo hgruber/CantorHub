@@ -7,6 +7,15 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Migration vom Altportal: Sie legt zusätzlich den Ordner „Organisation Chor/Audio & Video
+  Mitschnitte“ an, lässt die Foren „Sopran“ und „Tenor“ aktiv und ersetzt das archivierte
+  „Chorgespräch“ (jetzt „Chorgespräch alt“) durch ein neues. Die Foren bekommen dabei ihre
+  Kategorien A–D.
+
 ## v1.0.2 — 2026-10-11
 
 ### Hinzugefügt

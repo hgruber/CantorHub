@@ -59,6 +59,7 @@ STARTORDNER: tuple[tuple[str, ...], ...] = (
     ("Organisation Chor", "Chorgespräch"),
     ("Organisation Chor", "Chorfreizeit"),
     ("Organisation Chor", "Solisten"),
+    ("Organisation Chor", "Audio & Video Mitschnitte"),
     ("Organisation Konzerte",),
     ("Organisation Konzerte", "Organisation allgemein"),
     ("Organisation Konzerte", "Plakate & Flyer"),
