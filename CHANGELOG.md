@@ -30,6 +30,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   „Auftritts-Informationen“ im Kontaktbereich entfällt.
 - Passwort zurücksetzen: Die E-Mail spricht vom „Benutzernamen“ statt vom „Benutzer“; ein
   unverändert gebliebener Konfigurationstext wird beim nächsten Start angepasst.
+- Datenschutzerklärung: Neben den aktiven Mitgliedern sind jetzt auch der Chorleiter und
+  die Bandmitglieder als Personen mit Portalzugang genannt, die Profile einsehen und Adressbuch
+  und Kalender abgleichen können.
 - Datenbestätigung: Die Satzung wird nicht mehr abgefragt, und Mail und Formular sagen jetzt,
   dass man sich nach der Bestätigung im Mitgliederportal anmelden kann; eine unverändert
   gebliebene Aufforderungsmail wird beim nächsten Start angepasst. Auch Fehlerseiten und Hinweise sprechen vom „Mitgliederportal“
