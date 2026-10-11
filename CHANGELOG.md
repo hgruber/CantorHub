@@ -26,6 +26,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   E-Mails, im Betreff und in der Datenschutzerklärung von „Informationen“ die Rede. Unverändert
   gebliebene Konfigurationstexte werden beim nächsten Start angepasst.
 - Forenliste: Die Spalte „Zugriff“ heißt jetzt „Letzter Beitrag“.
+- Datenbestätigung: Mail und Formular sagen jetzt, dass man sich nach der Bestätigung im
+  Mitgliederportal anmelden kann; eine unverändert gebliebene Aufforderungsmail wird beim
+  nächsten Start angepasst. Auch Fehlerseiten und Hinweise sprechen vom „Mitgliederportal“
+  statt vom „internen Bereich“.
 
 ## v1.0.1 — 2026-10-11
 
