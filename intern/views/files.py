@@ -302,6 +302,32 @@ def upload(request):
         # Look up song if filename matches
         song = _get_lied_by_filename(file.name)
 
+        # Im Repertoire wird nur abgelegt, was einem Titel gehört: ein
+        # bekannter Dateityp, und der Titel kommt von der Detailseite oder
+        # aus dem Dateinamen. Alles andere wird abgelehnt, bevor es abgelegt ist.
+        if route_by_type:
+            if not file_type:
+                endungen = ", ".join(
+                    e for c in settings.FILE_TYPE_CONFIG.values() for e in c["extensions"]
+                )
+                return JsonResponse(
+                    {"status": "error",
+                     "message": f"Dateityp passt nicht ins Repertoire (erlaubt: {endungen})"},
+                    status=400,
+                )
+            lied_id = request.POST.get("lied_id", "")
+            lied_vorgegeben = (
+                lied_id.isdigit()
+                and request.user.has_perm("intern.change_lied")
+                and Lied.objects.filter(pk=int(lied_id)).exists()
+            )
+            if not song and not lied_vorgegeben:
+                return JsonResponse(
+                    {"status": "error",
+                     "message": "Kein Titel dieses Namens — Datei wie den Titel benennen"},
+                    status=400,
+                )
+
         # Determine folder_id:
         # Use type-specific subfolder when we know the file type AND either a
         # matching song was found or the upload context explicitly requests it
@@ -560,7 +586,7 @@ def datei_aktionen(request, pk):
     belegt = set(verknuepfte_dateien(f).values_list("folder_id", flat=True))
     ordner = {o.pk: o for o in Folder.objects.all()}
     ziele = [
-        e for e in _build_folder_flat(user=request.user)
+        e for e in _build_folder_flat(user=request.user, ohne_backstage=True)
         if e["id"] not in belegt and folder_access(request.user, ordner.get(e["id"]))[1]
     ]
     warnungen = [

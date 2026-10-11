@@ -6321,6 +6321,74 @@ class OrdnerZyklusTest(SimpleTestCase):
             self.assertIn("_is_descendant_or_self(target_id", inspect.getsource(view), view.__name__)
 
 
+
+class BackstageZielTest(SimpleTestCase):
+    """Backstage und alles darunter ist kein Ziel von Verschieben, Referenz und
+    Kopieren — weder in der Auswahl noch auf dem Server."""
+
+    # 1 Backstage ─ 2 Repertoire, daneben 3 Verein
+    ORDNER = [
+        {"id": 1, "name": "Backstage", "parent_id": None},
+        {"id": 2, "name": "Repertoire", "parent_id": 1},
+        {"id": 3, "name": "Verein", "parent_id": None},
+    ]
+
+    def _ids(self, **kwargs):
+        from intern.views import folders
+
+        with mock.patch.object(folders.Folder, "objects") as objects, \
+                mock.patch.object(folders, "_backstage_zweig", return_value={1, 2}):
+            objects.order_by.return_value.values.return_value = list(self.ORDNER)
+            return [e["id"] for e in folders._build_folder_flat(**kwargs)]
+
+    def test_auswahl_ohne_backstage(self):
+        self.assertEqual(self._ids(ohne_backstage=True), [3])
+
+    def test_pfade_der_suche_behalten_backstage(self):
+        self.assertEqual(self._ids(), [1, 2, 3])
+
+    def test_ziel_views_lehnen_ab(self):
+        import inspect
+
+        from intern.views import files, folders
+        for view in (folders.folder_move, folders._copy_action):
+            self.assertIn("target_id in _backstage_zweig()", inspect.getsource(view), view.__name__)
+        for view in (folders.folder_view, files.datei_aktionen):
+            self.assertIn("ohne_backstage=True", inspect.getsource(view), view.__name__)
+
+
+class RepertoireUploadTest(SimpleTestCase):
+    """Ein Upload im Repertoire ohne passenden Dateityp oder ohne Titel wird
+    abgelehnt, bevor irgendetwas abgelegt ist."""
+
+    def _hochladen(self, name, lied=None, **post):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import RequestFactory
+
+        from intern.views import files
+
+        request = RequestFactory().post("/intern/upload/", {
+            "file": SimpleUploadedFile(name, b"x"), "route_by_type": "1", **post,
+        })
+        request.user = mock.Mock(is_authenticated=True)
+        with mock.patch("intern.app_settings.get_config_int", return_value=50), \
+                mock.patch.object(files, "_get_lied_by_filename", return_value=lied), \
+                mock.patch.object(files.dateiablage, "hochladen") as hochladen:
+            antwort = files.upload(request)
+        self.assertFalse(hochladen.called)
+        return antwort
+
+    def test_unbekannter_dateityp(self):
+        antwort = self._hochladen("Notizen.docx", lied=mock.Mock())
+        self.assertEqual(antwort.status_code, 400)
+        self.assertIn("Dateityp", antwort.content.decode())
+
+    def test_kein_titel_dieses_namens(self):
+        antwort = self._hochladen("Unbekannt.pdf")
+        self.assertEqual(antwort.status_code, 400)
+        self.assertIn("Kein Titel", antwort.content.decode())
+
+
 # --- Ordnerrechte (folder_access.py) ---------------------------------------
 #
 # Ein Baum mit drei Ebenen unter „Organisation Chor“ und einem zweiten Ordner der

@@ -1344,9 +1344,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const m = link.getAttribute("href").match(/\/ordner\/(\d+)\//);
       if (!m) return;
       const targetPk = m[1];
+      // Backstage und darunter: kein Ziel fürs Verschieben (der Server lehnt ab).
+      const gesperrt = (moveForm.dataset.gesperrteZiele || "").split(",").includes(targetPk);
 
       row.addEventListener("dragover", (e) => {
         const isExternalFile = e.dataTransfer.types.includes("Files");
+        if (gesperrt && !isExternalFile) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = isExternalFile ? "copy" : "move";
         row.classList.toggle("dnd-file-over", isExternalFile);
@@ -1368,6 +1371,8 @@ document.addEventListener("DOMContentLoaded", function () {
           uploadFilesToFolder(e.dataTransfer.files, targetPk);
           return;
         }
+
+        if (gesperrt) return;
 
         // Internal move: don't drop a folder into itself
         const items = draggedItems.filter((item) => {

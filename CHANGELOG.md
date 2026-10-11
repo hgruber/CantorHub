@@ -7,6 +7,17 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Repertoire: Eine hochgeladene Datei wird abgelehnt, wenn ihr Dateityp nicht ins Repertoire
+  gehört oder sich keinem Titel zuordnen lässt — auf der Liste muss der Dateiname einem Titel
+  entsprechen. Bisher landete sie ohne Zuordnung in „Backstage/Repertoire“.
+- Dateien: „Backstage“ und seine Unterordner stehen in keiner Zielauswahl mehr, weder im
+  Ordnerbrowser noch im Datei-Menü eines Artikels; Verschieben, Referenz und Kopieren dorthin
+  lehnt der Server ab, auch per Drag & Drop.
+
 ## v1.0.3 — 2026-10-11
 
 ### Geändert

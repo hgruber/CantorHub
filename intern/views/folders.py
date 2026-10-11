@@ -65,12 +65,13 @@ def _sort_key(text):
     return "".join(c for c in text if not unicodedata.combining(c))
 
 
-def _build_folder_flat(exclude_pk=None, user=None):
+def _build_folder_flat(exclude_pk=None, user=None, ohne_backstage=False):
     """Return all folders as a flat list with full path strings, for the folder picker.
 
     The list is sorted by path segment, so parents precede their children and
     siblings appear alphabetically. When `user` is given, restrict the list to
-    folders the user can read."""
+    folders the user can read; `ohne_backstage` drops the Backstage branch,
+    which is never a target of move, link or copy."""
     all_fldrs = list(Folder.objects.order_by("name").values("id", "name", "parent_id"))
     folder_map = {f["id"]: f for f in all_fldrs}
 
@@ -90,6 +91,9 @@ def _build_folder_flat(exclude_pk=None, user=None):
     if user is not None:
         visible_ids = visible_folder_ids(user)
         all_fldrs = [f for f in all_fldrs if f["id"] in visible_ids]
+    if ohne_backstage:
+        gesperrt = _backstage_zweig()
+        all_fldrs = [f for f in all_fldrs if f["id"] not in gesperrt]
 
     eintraege = [
         {"id": f["id"], "path": path_of(f)} for f in all_fldrs if f["id"] != exclude_pk
@@ -272,6 +276,13 @@ def _descendant_folder_ids(pk):
         ids.update(new)
         frontier = new
     return ids
+
+
+def _backstage_zweig():
+    """Backstage and every folder below it — the portal files into them on its
+    own, so no move, link or copy may target them."""
+    backstage = folders.backstage()
+    return _descendant_folder_ids(backstage) if backstage else set()
 
 
 def _folder_path_map(user=None):
@@ -696,7 +707,8 @@ def folder_view(request, pk):
             "can_delete_here": can_delete_here,
             "new_folder_pk": original_pk,
             "current_pk": original_pk,
-            "all_folders_flat": _build_folder_flat(user=request.user),
+            "all_folders_flat": _build_folder_flat(user=request.user, ohne_backstage=True),
+            "gesperrte_ziele": ",".join(str(i) for i in sorted(_backstage_zweig())),
             "show_search": True,
             "search_query": "",
             "has_more": has_more,
@@ -828,7 +840,7 @@ def folder_move(request):
     target_id = int(raw_target) if raw_target and raw_target != "0" else None
     target = Folder.objects.filter(pk=target_id).first() if target_id else None
     _, target_write, _ = folder_access(request.user, target)
-    if not target_write:
+    if not target_write or target_id in _backstage_zweig():
         raise PermissionDenied
     entscheidungen = dateiablage.entscheidungen_lesen(request.POST.getlist("entscheidung"))
     for item_type, item_id in _parse_items(request.POST):
@@ -867,7 +879,7 @@ def _copy_action(request, blob_kopieren):
     target_id = int(raw_target) if raw_target and raw_target != "0" else None
     target = Folder.objects.filter(pk=target_id).first() if target_id else None
     _, target_write, _ = folder_access(request.user, target)
-    if not target_write:
+    if not target_write or target_id in _backstage_zweig():
         raise PermissionDenied
     entscheidungen = dateiablage.entscheidungen_lesen(request.POST.getlist("entscheidung"))
     for item_type, item_id in _parse_items(request.POST):

@@ -59,7 +59,7 @@
             {% csrf_token %}
             <input type="hidden" name="referer_pk" value="{{ current_pk }}">
         </form>
-        <form id="move-form" method="post" action="{% url 'folder_move' %}">
+        <form id="move-form" method="post" action="{% url 'folder_move' %}" data-gesperrte-ziele="{{ gesperrte_ziele }}">
             {% csrf_token %}
             <input type="hidden" name="referer_pk" value="{{ current_pk }}">
             <input type="hidden" id="move-target" name="target_pk" value="">

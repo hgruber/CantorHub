@@ -187,6 +187,14 @@ path level by level and caches the id. `0003_import.py` creates the tree from `P
 order (parents first). Renaming or moving one of these folders in the browser breaks the lookup
 — the accessor then returns `None` and uploads fall back or fail.
 
+**Backstage is never a target.** The folder pickers (`_build_folder_flat(ohne_backstage=True)`
+in the folder browser's action panel and context menu, and `datei_aktionen` for the article file
+menu) leave out Backstage and everything below it, and `folder_move` / `_copy_action` refuse such
+a target with a 403 — the portal files into these folders on its own, members don't. Uploads are
+not affected; the Repertoire page uploads there, but only files it can assign to a song: an
+upload with `route_by_type` is refused when its extension maps to no song-file type, or when
+neither `lied_id` (the Titel page) nor the file name names a song.
+
 **Backstage has no `FolderPermission` rows, deliberately.** A folder is only visible when every
 ancestor is readable, so restricting Backstage would hide the song files from members.
 `_pdf_ablegen` in `views/auth.py` does not recreate a missing Mitgliedsanträge: a fresh
