@@ -6147,60 +6147,69 @@ class FilterbauTitelTest(SimpleTestCase):
 
 
 class AblageKetteTest(SimpleTestCase):
-    """dateiablage.kette_bilden: wer vorne steht, wie die Kette sortiert ist
-    und welche Inhalte doppelt sind."""
+    """dateiablage.kette_bilden: nach „Geändert" sortiert, vorne die jüngste,
+    von identischen Fassungen bleibt die älteste."""
 
     def _f(self, pfad, sha1, tag):
         from intern.dateiablage import Fassung
         return Fassung(pfad, sha1, datetime(2026, 1, tag), 1, "", "a.pdf", None)
 
+    def _bilden(self, ziel, eingehend, jetzt=None):
+        from intern.dateiablage import kette_bilden
+        aktuell, versionen, weg = kette_bilden(ziel, eingehend, jetzt)
+        return aktuell.pfad, [v.pfad for v in versionen], weg
+
     def setUp(self):
         self.jetzt = datetime(2026, 10, 1)
         self.ziel = [self._f("z", "Z", 10), self._f("z1", "Z1", 2)]
-        self.ein = [self._f("e", "E", 5), self._f("e1", "E1", 1)]
 
-    def test_eingehend_vorne_rest_nach_stand(self):
-        from intern.dateiablage import VORNE_EINGEHEND, kette_bilden
-        aktuell, versionen, weg = kette_bilden(self.ziel, self.ein, VORNE_EINGEHEND, self.jetzt)
-        self.assertEqual(aktuell.pfad, "e")
-        self.assertEqual([v.pfad for v in versionen], ["e1", "z1", "z"])
-        self.assertEqual(weg, [])
+    def test_juengere_eingehende_steht_vorne(self):
+        ein = [self._f("e", "E", 20), self._f("e1", "E1", 1)]
+        self.assertEqual(self._bilden(self.ziel, ein), ("e", ["e1", "z1", "z"], []))
 
-    def test_jetzt_setzt_das_datum(self):
-        from intern.dateiablage import VORNE_JETZT, kette_bilden
-        aktuell, _, _ = kette_bilden(self.ziel, self.ein, VORNE_JETZT, self.jetzt)
+    def test_aeltere_eingehende_wird_einsortiert(self):
+        ein = [self._f("e", "E", 5)]
+        self.assertEqual(self._bilden(self.ziel, ein), ("z", ["z1", "e"], []))
+
+    def test_datum_auf_jetzt_holt_sie_nach_vorne(self):
+        from intern.dateiablage import kette_bilden
+        aktuell, versionen, _ = kette_bilden(self.ziel, [self._f("e", "E", 5)], self.jetzt)
         self.assertEqual((aktuell.pfad, aktuell.datum), ("e", self.jetzt))
+        self.assertEqual([v.pfad for v in versionen], ["z1", "z"])
 
-    def test_einsortieren_laesst_das_ziel_vorne(self):
-        from intern.dateiablage import VORNE_ZIEL, kette_bilden
-        aktuell, versionen, _ = kette_bilden(self.ziel, self.ein, VORNE_ZIEL, self.jetzt)
-        self.assertEqual(aktuell.pfad, "z")
-        self.assertEqual([v.pfad for v in versionen], ["e1", "z1", "e"])
+    def test_von_identischen_bleibt_die_aelteste(self):
+        """Die jüngere identische Fassung verschwindet — auch wenn sie vorne stand."""
+        ein = [self._f("e", "Z1", 20)]
+        self.assertEqual(self._bilden(self.ziel, ein), ("z", ["z1"], ["e"]))
 
-    def test_gleicher_inhalt_bleibt_einmal(self):
-        from intern.dateiablage import VORNE_EINGEHEND, kette_bilden
-        ein = [self._f("e", "Z1", 5)]
-        aktuell, versionen, weg = kette_bilden(self.ziel, ein, VORNE_EINGEHEND, self.jetzt)
-        self.assertEqual(aktuell.pfad, "e")
-        self.assertEqual([v.pfad for v in versionen], ["z"])
-        self.assertEqual(weg, ["z1"])
+    def test_identische_versionen_die_juengere_geht(self):
+        ziel = [self._f("z", "Z", 10), self._f("z2", "A", 4), self._f("z1", "A", 2)]
+        self.assertEqual(self._bilden(ziel, []), ("z", ["z1"], ["z2"]))
 
-    def test_gleicher_pfad_zaehlt_einmal(self):
-        """Wiederherstellen: die Version steckt schon in der Kette des Ziels."""
-        from intern.dateiablage import VORNE_EINGEHEND, kette_bilden
-        aktuell, versionen, weg = kette_bilden(
-            self.ziel, [self.ziel[1]], VORNE_EINGEHEND, self.jetzt
-        )
-        self.assertEqual(aktuell.pfad, "z1")
-        self.assertEqual([v.pfad for v in versionen], ["z"])
-        self.assertEqual(weg, [])
+    def test_vorne_identisch_mit_aelterer_version(self):
+        """Die vordere Fassung gleicht einer älteren: die ältere bleibt, vorne
+        steht danach die jüngste übrige."""
+        ziel = [self._f("z", "A", 10), self._f("y", "Y", 5), self._f("a", "A", 1)]
+        self.assertEqual(self._bilden(ziel, []), ("y", ["a"], ["z"]))
+
+    def test_wiederherstellen(self):
+        """Die Version steckt schon in der Kette (gleicher Pfad); mit „jetzt"
+        steht sie vorne, die bisherige vordere geht in die Historie."""
+        from intern.dateiablage import kette_bilden
+        aktuell, versionen, weg = kette_bilden(self.ziel, [self.ziel[1]], self.jetzt)
+        self.assertEqual((aktuell.pfad, aktuell.datum), ("z1", self.jetzt))
+        self.assertEqual(([v.pfad for v in versionen], weg), (["z"], []))
+
+    def test_gleichstand_eingehend_vorne_aelteste_aus_dem_ziel(self):
+        ein = [self._f("e", "E", 10)]
+        self.assertEqual(self._bilden(self.ziel, ein)[0], "e")
+        ein = [self._f("e", "Z1", 2)]
+        self.assertEqual(self._bilden(self.ziel, ein), ("z", ["z1"], ["e"]))
 
     def test_leerer_sha1_ist_nie_doppelt(self):
-        from intern.dateiablage import VORNE_EINGEHEND, kette_bilden
         ziel = [self._f("z", "", 10)]
         ein = [self._f("e", "", 5)]
-        _, versionen, weg = kette_bilden(ziel, ein, VORNE_EINGEHEND, self.jetzt)
-        self.assertEqual(([v.pfad for v in versionen], weg), (["z"], []))
+        self.assertEqual(self._bilden(ziel, ein), ("z", ["e"], []))
 
 
 class AblageEntscheidungTest(SimpleTestCase):
@@ -6228,16 +6237,6 @@ class AblageEntscheidungTest(SimpleTestCase):
         self.assertIsNone(wahl("verschieben", "name", None))
         self.assertIsNone(wahl("verschieben", "name", "abbrechen"))
         self.assertIsNone(wahl("kopieren", "name", "verschmelzen"))
-
-    def test_vorrang(self):
-        from intern.dateiablage import vorne_fuer
-        alt, neu = datetime(2026, 1, 1), datetime(2026, 2, 1)
-        self.assertEqual(vorne_fuer("jetzt", "name_aelter", neu, alt), "jetzt")
-        self.assertEqual(vorne_fuer("einsortieren", "name_aelter", neu, alt), "ziel")
-        self.assertEqual(vorne_fuer("verschmelzen", "name", alt, neu), "eingehend")
-        # Gleicher Inhalt holt nie einen älteren Stand nach vorne.
-        self.assertEqual(vorne_fuer("verschmelzen", "identisch", neu, alt), "ziel")
-        self.assertEqual(vorne_fuer("verschmelzen", "identisch", alt, neu), "eingehend")
 
     def test_jede_option_hat_eine_wirkung(self):
         from intern.dateiablage import OPTIONEN

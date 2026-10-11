@@ -16,8 +16,9 @@ Zeile gehen. Die **Kette** einer Datei ist ihre aktuelle Fassung plus die
 **Eine Operation.** Neue Fassung (Upload, Kopie), Verschmelzen (Referenz,
 Verschieben, Umbenennen) und Wiederherstellen sind alle `zusammenfuehren()`:
 zwei Ketten werden zu einer, alle Zeilen beider Blobs zeigen danach auf die
-vordere Fassung. Die Reihenfolge entscheidet `kette_bilden()` — ohne DB, damit
-sie sich prüfen lässt.
+vordere Fassung. Die Regel steckt in `kette_bilden()` — ohne DB, damit sie sich
+prüfen lässt: Fassungen sind nach „Geändert" sortiert, vorne steht die jüngste,
+und von identischen bleibt nur die älteste.
 """
 
 import hashlib
@@ -43,41 +44,45 @@ logger = logging.getLogger(__name__)
 # dem sie archiviert wurde.
 Fassung = namedtuple("Fassung", "pfad sha1 datum groesse mime name autor_id")
 
-# Wer nach dem Zusammenführen vorne steht.
-VORNE_EINGEHEND = "eingehend"   # die hinzukommende Fassung, mit ihrem Datum
-VORNE_JETZT = "jetzt"           # die hinzukommende Fassung, Datum auf jetzt
-VORNE_ZIEL = "ziel"             # die vorhandene bleibt vorne, die hinzukommende wird einsortiert
-
-
-def kette_bilden(ziel, eingehend, vorne, jetzt):
+def kette_bilden(ziel, eingehend, jetzt=None):
     """Zwei Ketten (je aktuelle Fassung zuerst) zu einer.
 
-    Liefert `(aktuell, versionen, ueberzaehlig)`: die vordere Fassung, die
-    übrigen nach Stand aufsteigend (Index + 1 ist ihre Nummer) und die Pfade
-    der Fassungen, deren Inhalt schon einmal in der Kette steckt. Gleiche Pfade
-    zählen einmal; bei gleichem Inhalt gewinnt, was weiter vorne steht."""
-    if vorne == VORNE_ZIEL:
-        aktuell, rest = ziel[0], list(ziel[1:]) + list(eingehend)
-    else:
-        aktuell, rest = eingehend[0], list(eingehend[1:]) + list(ziel)
-        if vorne == VORNE_JETZT:
-            aktuell = aktuell._replace(datum=jetzt)
+    Liefert `(aktuell, versionen, ueberzaehlig)`. Die Regel:
 
-    pfade = {aktuell.pfad}
-    inhalte = {aktuell.sha1} if aktuell.sha1 else set()
-    versionen, ueberzaehlig = [], []
-    for fassung in rest:
-        if fassung.pfad in pfade:
-            continue
-        pfade.add(fassung.pfad)
-        if fassung.sha1 and fassung.sha1 in inhalte:
+    * `jetzt` gibt der eingehenden vorderen Fassung dieses Datum („Datum auf
+      jetzt", Wiederherstellen).
+    * Gleicher Pfad ist dieselbe Fassung; es gilt die eingehende Sicht, denn nur
+      sie trägt ein gesetztes `jetzt`.
+    * Von identischen Inhalten bleibt die **älteste** (bei Gleichstand die
+      zuerst gelesene, Ziel vor Eingehend); die Pfade der übrigen sind
+      überzählig. Ein leerer SHA-1 (Altbestand) ist nie doppelt.
+    * Sortiert nach Datum: die jüngste steht vorne, die übrigen sind die
+      Versionen, aufsteigend (Index + 1 ist ihre Nummer). Bei Gleichstand
+      gewinnt die eingehende."""
+    eingehend = list(eingehend)
+    if jetzt is not None and eingehend:
+        eingehend[0] = eingehend[0]._replace(datum=jetzt)
+
+    nach_pfad = {}
+    for fassung in list(ziel) + eingehend:
+        nach_pfad[fassung.pfad] = fassung   # Reihenfolge des ersten Auftretens bleibt
+
+    behalten, ueberzaehlig, aelteste = [], [], {}
+    for fassung in nach_pfad.values():
+        bisher = aelteste.get(fassung.sha1) if fassung.sha1 else None
+        if bisher is None:
+            if fassung.sha1:
+                aelteste[fassung.sha1] = fassung
+            behalten.append(fassung)
+        elif fassung.datum < bisher.datum:
+            behalten[behalten.index(bisher)] = fassung
+            aelteste[fassung.sha1] = fassung
+            ueberzaehlig.append(bisher.pfad)
+        else:
             ueberzaehlig.append(fassung.pfad)
-            continue
-        if fassung.sha1:
-            inhalte.add(fassung.sha1)
-        versionen.append(fassung)
-    versionen.sort(key=lambda f: f.datum)
-    return aktuell, versionen, ueberzaehlig
+
+    behalten.sort(key=lambda f: f.datum)   # stabil: Ziel vor Eingehend
+    return behalten[-1], behalten[:-1], ueberzaehlig
 
 
 # Konfliktarten, wenn im Zielordner schon eine Datei dieses Namens liegt.
@@ -145,21 +150,6 @@ def wahl(aktion, art, entscheidung):
     if entscheidung in OPTIONEN.get((aktion, art), ()):
         return entscheidung
     return None
-
-
-def vorne_fuer(wahl_wert, art, ziel_datum, eingehend_datum):
-    """Welche Fassung nach einer Wahl vorne steht.
-
-    Bei gleichem Inhalt entsteht keine neue Fassung; vorne bleibt dann die
-    jüngere der beiden, damit ein Verschmelzen nie einen älteren Stand nach
-    vorne holt."""
-    if wahl_wert == "jetzt":
-        return VORNE_JETZT
-    if wahl_wert == "einsortieren":
-        return VORNE_ZIEL
-    if art == ART_IDENTISCH and ziel_datum and eingehend_datum and ziel_datum > eingehend_datum:
-        return VORNE_ZIEL
-    return VORNE_EINGEHEND
 
 
 def name_frei(vorhandene, name):
@@ -298,19 +288,19 @@ def _inhalt_speichern(inhalt, name, autor_id, jetzt):
     return Fassung(pfad, sha1, jetzt, inhalt.size or 0, mime, name, autor_id)
 
 
-def zusammenfuehren(ziel, eingehend, vorne, eingehend_zeile=None, jetzt=None):
+def zusammenfuehren(ziel, eingehend, eingehend_zeile=None, jetzt=None):
     """Die Kette `eingehend` (aktuelle Fassung zuerst) geht in `ziel` auf.
 
     Danach zeigen alle Zeilen beider Blobs auf die vordere Fassung und tragen
-    den Namen von `ziel`; die übrigen Fassungen stehen nach Stand in der Kette.
+    den Namen von `ziel`; wer vorne steht, entscheidet `kette_bilden()`.
+    `jetzt` ist „Datum auf jetzt" für die eingehende Fassung.
     `eingehend_zeile` — die Zeile, die im Zielordner keinen Platz hat — gibt
     ihre ID-Verweise an `ziel` ab und verschwindet. Inhalte, die doppelt in der
     Kette stecken, gehen samt Blob, sobald nichts mehr auf sie zeigt."""
     from .verwendung import verweise_umhaengen
 
-    jetzt = jetzt or datetime.now()
     ziel_kette = fassungen(ziel)
-    aktuell, versionen, ueberzaehlig = kette_bilden(ziel_kette, eingehend, vorne, jetzt)
+    aktuell, versionen, ueberzaehlig = kette_bilden(ziel_kette, eingehend, jetzt)
     alte = {ziel_kette[0].pfad, eingehend[0].pfad}
     name = ziel.original_filename or ziel.name
 
@@ -328,8 +318,9 @@ def zusammenfuehren(ziel, eingehend, vorne, eingehend_zeile=None, jetzt=None):
             name=name,
             original_filename=name,
         )
-        # Besitzer der Zielzeile ist, wer die vordere Fassung gebracht hat.
-        if vorne != VORNE_ZIEL and aktuell.autor_id:
+        # Besitzer der Zielzeile ist, wer die vordere Fassung gebracht hat —
+        # nur wenn sie gewechselt hat.
+        if aktuell.pfad != ziel_kette[0].pfad and aktuell.autor_id:
             File.objects.filter(pk=ziel.pk).update(owner_id=aktuell.autor_id)
         # ensure_indexed() erkennt veraltete Einträge an der Größe; ein neuer
         # Inhalt gleicher Größe würde sonst nie neu indiziert.
@@ -365,13 +356,14 @@ def zusammenfuehren(ziel, eingehend, vorne, eingehend_zeile=None, jetzt=None):
 
 
 def wiederherstellen(f, version):
-    """`version` nach vorne holen — nur die Reihenfolge ändert sich, der Name
-    nicht: Fassungen haben keinen eigenen Namen."""
+    """`version` nach vorne holen. Ihr „Geändert" wird jetzt — sonst stünde sie
+    nach der Sortierung nicht vorne. Der Name bleibt: Fassungen haben keinen
+    eigenen Namen."""
     eingehend = [Fassung(
         version.pfad, version.sha1, version.datum, version.groesse,
         version.mime_type, version.original_filename, version.autor_id,
     )]
-    return zusammenfuehren(f, eingehend, VORNE_EINGEHEND)
+    return zusammenfuehren(f, eingehend, jetzt=datetime.now())
 
 
 # === Konflikte erkennen =======================================================
@@ -453,9 +445,11 @@ def _aufloesen(konflikt, entscheidungen):
         verweise_umhaengen(konflikt.zeile.pk, konflikt.ziel.pk)
         datei_loeschen(File.objects.get(pk=konflikt.zeile.pk))
         return "geloescht"
-    vorne = vorne_fuer(gewaehlt, konflikt.art, konflikt.ziel.modified_at, konflikt.eingehend_datum)
+    # „jetzt" holt eine ältere Fassung nach vorne; sonst entscheidet das Datum
+    # (jünger: vorne, älter: einsortiert).
+    jetzt = datetime.now() if gewaehlt == "jetzt" else None
     weg = konflikt.zeile if konflikt.aktion != "verknuepfen" else None
-    zusammenfuehren(konflikt.ziel, fassungen(konflikt.zeile), vorne, eingehend_zeile=weg)
+    zusammenfuehren(konflikt.ziel, fassungen(konflikt.zeile), eingehend_zeile=weg, jetzt=jetzt)
     return "verschmolzen"
 
 
@@ -512,7 +506,7 @@ def kopieren(f, ordner_id, user, owner=None, jetzt=None):
         )
         return "ok"
     neu = _inhalt_speichern(inhalt, name, (owner or user).pk, jetzt)
-    zusammenfuehren(konflikt.ziel, [neu], VORNE_EINGEHEND, jetzt=jetzt)
+    zusammenfuehren(konflikt.ziel, [neu])
     return "fassung"
 
 
@@ -564,7 +558,7 @@ def hochladen(datei, ordner_id, name, owner, jetzt=None):
     if vorhanden is not None:
         return ziel, "identisch", vorhanden
     neu = _inhalt_speichern(datei, ziel.original_filename or name, owner.pk if owner else None, jetzt)
-    return zusammenfuehren(ziel, [neu], VORNE_EINGEHEND, jetzt=jetzt), "fassung", None
+    return zusammenfuehren(ziel, [neu]), "fassung", None
 
 
 def systemablage(zeile, ordner_id, name):
@@ -586,9 +580,7 @@ def systemablage(zeile, ordner_id, name):
         verweise_umhaengen(zeile.pk, ziel.pk)
         datei_loeschen(File.objects.get(pk=zeile.pk))
         return ziel
-    eingehend = fassungen(zeile)
-    eingehend[0] = eingehend[0]._replace(datum=datetime.now())
-    return zusammenfuehren(ziel, eingehend, VORNE_EINGEHEND, eingehend_zeile=zeile)
+    return zusammenfuehren(ziel, fassungen(zeile), eingehend_zeile=zeile, jetzt=datetime.now())
 
 
 def systemablage_inhalt(inhalt, ordner_id, name, owner, mime=None):
@@ -603,4 +595,4 @@ def systemablage_inhalt(inhalt, ordner_id, name, owner, mime=None):
     if fassung_von(ziel, _sha1(inhalt)) is not None:
         return ziel
     neu = _inhalt_speichern(inhalt, ziel.original_filename or name, owner.pk if owner else None, datetime.now())
-    return zusammenfuehren(ziel, [neu], VORNE_EINGEHEND)
+    return zusammenfuehren(ziel, [neu])

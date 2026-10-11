@@ -51,13 +51,20 @@ file becomes a **revision** of the one already there:
 **Merging** (`zusammenfuehren`) makes the two files one: both chains become one chain, every
 row of both blobs points at the front revision, the row already in the target folder stays and
 the incoming one — if it exists — hands its PK references (`verwendung.verweise_umhaengen`,
-from the table `DATEI_PK_VERWEISE`) to it and goes. The incoming revision goes in front when
-it is younger; when the target is younger the dialog asks a third question — **date it now**
-(it goes in front) or **sort it in** by its date (the target stays in front). Equal content
-is kept once; a blob nothing points at any more is deleted after commit.
+from the table `DATEI_PK_VERWEISE`) to it and goes.
+
+**The chain is ordered by „Geändert"** (`modified_at` in front, `DateiVersion.datum` behind),
+and **the youngest revision is the one in front** — `kette_bilden` sorts, nothing else decides.
+An incoming revision that is younger therefore goes in front; when the target is younger the
+dialog asks a third question — **date it now** (it gets today's date and goes in front) or
+**sort it in** by its date. **Of identical revisions only the oldest stays**: a younger copy
+disappears even if it stood in front, and the youngest remaining revision moves up. „Hochgeladen"
+(`uploaded_at`) is the moment the row was created and is never rewritten, so a file can show
+the oldest upload date and still be in front. A blob nothing points at any more is deleted
+after commit.
 
 The decision logic is pure and tested without a database (`kette_bilden`, `konflikt_art`,
-`OPTIONEN`, `wahl`, `vorne_fuer`, `name_frei`). The browser asks first
+`OPTIONEN`, `wahl`, `name_frei`). The browser asks first
 (`/intern/ordner/konflikte/` → `window.ablageKlaeren` in `intern.js`, one dialog per conflict
 with „für alle übernehmen"); the action then sends `entscheidung=File:<pk>@<ordner>=<wahl>`.
 The server re-checks and **skips every conflict without a valid choice** — nothing is merged
@@ -95,8 +102,9 @@ order; only `zusammenfuehren` writes these rows. A revision has **no name of its
 `original_filename` is still recorded but nothing reads it. `/intern/datei/<pk>/`
 (`datei_view`, `datei.html`) shows the places a file is linked into (filtered by
 `visible_folder_ids` — never reveal folders the member cannot see) plus its version list;
-`datei_restore` (`dateiablage.wiederherstellen`) only swaps which revision is in front — the
-name stays. Reached from the `#id` badge in the folder listing.
+`datei_restore` (`dateiablage.wiederherstellen`) brings a revision to the front by dating it
+now — under the ordering rule nothing else would put it there; „Hochgeladen" and the name
+stay. Reached from the `#id` badge in the folder listing.
 
 A version blob has **no `File` row** — that is the whole point, and it makes the blob an
 orphan by filer's reckoning. **Never run `filer_check --delete-orphans` on this project:** it

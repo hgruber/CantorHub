@@ -61,6 +61,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Dateien: Ein Inhalt, der am Ziel schon als Fassung vorliegt, wird nicht noch einmal abgelegt;
   Hochladen und Kopieren melden das, Verschieben bietet an, die Datei hier zu löschen.
   „Version wiederherstellen“ tauscht nur noch die vordere Fassung und lässt den Namen stehen.
+- Dateien: Die Fassungen einer Datei sind nach „Geändert“ sortiert, vorne steht die jüngste. Von
+  identischen Fassungen bleibt nur die älteste in der Historie. „Version wiederherstellen“ gibt
+  der Fassung das Datum von jetzt, „Hochgeladen“ bleibt unverändert.
 - Ordner: Einen Unterordner gleichen Namens gibt es nur einmal — Anlegen, Umbenennen und
   Verschieben auf einen vergebenen Namen werden abgelehnt.
 

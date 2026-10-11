@@ -72,6 +72,12 @@ a second file or subfolder of the same name into a folder. Left open on purpose:
 - **`/admin/filer/` bypasses the rule.** filer's own admin creates and moves rows without
   `dateiablage`. A model-level guard (`pre_save` on `filer.File`/`Folder`) would close it, but
   it would also fire inside `zusammenfuehren`'s own updates and in migrations.
+- **Identical revisions already in a chain are not cleaned up.** Since the ordering rule (the
+  youngest in front, of identical revisions the oldest) a merge never adds a duplicate, but a
+  chain that held one before keeps it. The migrated legacy data should not have any; should it
+  turn up, `cleanup_dateiversionen` could run `dateiablage.kette_bilden(kette, [])` per chain
+  (computing missing SHA-1 from the blob first) and write the result through the same path as
+  `zusammenfuehren`.
 - **`DateiVersion.original_filename` is written but no longer read.** Revisions have no name
   of their own since `datei_restore` stopped renaming. The column can go with the next
   `MIGRATE` rebuild, together with the writes in `dateiablage.zusammenfuehren`.
