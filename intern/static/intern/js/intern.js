@@ -837,7 +837,9 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       if (medium) medium.scrollIntoView({ block: "nearest", behavior: "smooth" });
       setMainIcon(true);
-      show();
+      // Ein Video spielt in seiner Leiste, die schon die Steuerung trägt —
+      // der schwebende Player daneben wäre eine zweite.
+      if (medium) hide(); else show();
       leistenRendern();
     }
     function play(btn) {
@@ -881,14 +883,14 @@ document.addEventListener("DOMContentLoaded", function () {
       loadTrack(queue[queueIndex], advance);
     }
 
-    // Die Warteschlange eines Artikels sind seine Leisten in Dokument-
-    // reihenfolge. Sie kommt aus dem DOM statt aus einem json_script: so
-    // spiegelt sie genau das, was der Leser sieht — auch in alten Versionen
+    // Die Warteschlange eines Artikels sind seine Video-Leisten und
+    // Audio-Figuren (.wiki-audio) in Dokumentreihenfolge. Sie kommt aus dem
+    // DOM statt aus einem json_script: so spiegelt sie genau das, was der Leser sieht — auch in alten Versionen
     // eines Artikels — und die View muss den Wikitext nicht ein zweites Mal
     // auflösen.
     function artikelQueueStarten(leiste) {
       const bereich = leiste.closest(".wiki") || document;
-      const alle = Array.from(bereich.querySelectorAll(".wiki-player"));
+      const alle = Array.from(bereich.querySelectorAll(".wiki-player, .wiki-audio"));
       const items = alle.map((l) => ({
         url: l.dataset.url,
         title: l.dataset.titel || "",
@@ -971,6 +973,22 @@ document.addEventListener("DOMContentLoaded", function () {
         const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
         audio.currentTime = pct * audio.duration;
         leistenRendern();
+      }
+    });
+
+    // Das Symbol einer Audio-Figur: startet die Warteschlange ab hier, beim
+    // laufenden Titel schaltet es zwischen Pause und Wiedergabe.
+    document.addEventListener("click", function (e) {
+      const start = e.target.closest && e.target.closest(".wiki-audio-start");
+      if (!start) return;
+      const figur = start.closest(".wiki-audio");
+      if (!figur) return;
+      e.preventDefault();
+      if (audio && aktuellerItem && aktuellerItem.url === figur.dataset.url) {
+        if (audio.paused) { audio.play(); setMainIcon(true); }
+        else              { audio.pause(); setMainIcon(false); }
+      } else {
+        artikelQueueStarten(figur);
       }
     });
 

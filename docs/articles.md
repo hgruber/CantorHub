@@ -84,11 +84,19 @@ linked into several folders has several rows (see `files.md`).
 
 ### Embedded media
 
-A `[[Datei:…]]` whose target `intern/medientypen.py` calls playable renders as a **media bar**
-instead of a link: the same `.mp-*` markup the floating mini-player uses, inline in the text.
-`|Label` overrides the title, which otherwise is the filename without its extension. Video gets a
-`<video>` without `controls` — the bar *is* the controls. Everything else keeps the old
-`<figure class="wiki-figure">`.
+A `[[Datei:…]]` whose target `intern/medientypen.py` calls playable is rendered so that there is
+**exactly one set of controls**:
+
+- **Video** renders as a **media bar** instead of a link: the same `.mp-*` markup the floating
+  mini-player uses, inline in the text, with a `<video>` without `controls` — the bar *is* the
+  controls, and the mini-player stays hidden while it plays.
+- **Audio** renders as a `<figure class="wiki-figure wiki-audio">` like any other file, with a
+  note icon instead of a thumbnail (`_audiofigur()`). Clicking the icon opens the mini-player,
+  which is the only control; without JavaScript the icon links to the file.
+
+`|Label` overrides the title (and for audio the caption), which otherwise is the filename
+without its extension (for audio the caption is the full filename). Everything else keeps the
+old `<figure class="wiki-figure">`.
 
 Two constraints on `_medienleiste()` come from `apply_replacements()` and are easy to break:
 
@@ -99,7 +107,8 @@ Two constraints on `_medienleiste()` come from `apply_replacements()` and are ea
   empty attribute values (two of them would read as `""…""`), no `$`. `MedienleisteMarkupTest`
   guards all of this.
 
-The queue — click a bar, the article's remaining media follow in document order — is built in the
+The queue — click a bar or an audio icon, the article's remaining media follow in document
+order — is built in the
 browser from the DOM, not from a `json_script`. See `frontend.md`.
 
 Forum messages deliberately keep the plain link: `Mitteilung.formatiert()` renders without a

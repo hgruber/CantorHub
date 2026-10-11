@@ -3682,6 +3682,21 @@ table.mitglied-table tr.stimme-group-start td {
     border-bottom: none;
 }
 
+/* Audio: das Noten-Symbol an der Stelle des Vorschaubilds; ein Klick darauf
+   startet den Mini-Player (intern.js). */
+.wiki-page .wiki .wiki-audio-start {
+    display: block;
+    padding: 12px 24px 6px;
+    color: var(--brand-text);
+}
+.wiki-page .wiki .wiki-audio-start svg {
+    display: block;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
+}
+.wiki-page .wiki .wiki-audio-start:hover { color: var(--t1); }
+
 /* Mobile: floaten aufheben, damit der Text lesbar bleibt */
 @media (max-width: 768px) {
     .wiki-page .wiki .wiki-figure {

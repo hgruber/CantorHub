@@ -224,8 +224,29 @@ _ICON_DOWNLOAD = (
 )
 
 
+def _audiofigur(f, label=None):
+    """Eine Audiodatei im Artikeltext: eine Figur wie jede andere Datei.
+
+    Keine eigenen Bedienelemente — ein Klick aufs Symbol startet die
+    Warteschlange des Artikels im schwebenden Mini-Player (`intern.js`), der
+    dann die einzige Steuerung ist. Der Link führt ohne JavaScript zur Datei.
+    """
+    dateiname = f.original_filename or ""
+    url = html.escape(f.url)
+    # `label` kommt bereits escapt aus dem Quelltext, siehe `_medienleiste`.
+    titel = (label or "").strip() or html.escape(os.path.splitext(dateiname)[0])
+    caption = (label or "").strip() or html.escape(dateiname)
+    return (
+        f'<figure class="wiki-figure wiki-audio" data-typ="audio"'
+        f' data-url="{url}" data-titel="{titel}">'
+        f'<a class="wiki-audio-start" href="{url}" aria-label="Abspielen: {titel}">'
+        f"{_ICON_NOTE}</a>"
+        f"<figcaption>{caption}</figcaption></figure>"
+    )
+
+
 def _medienleiste(f, typ, label=None):
-    """Die Abspielleiste für eine Audio- oder Videodatei im Artikeltext.
+    """Die Abspielleiste für eine Videodatei im Artikeltext.
 
     Sie teilt sich die `.mp-*`-Klassen mit dem schwebenden Mini-Player und wird
     von derselben Wiedergabe-Engine bedient (`intern.js`); hier entsteht nur die
@@ -281,11 +302,13 @@ def _medienleiste(f, typ, label=None):
 def insert_file_object(f, label=None, spieler=False):
     """Das eingebettete HTML für `[[Datei:…]]`.
 
-    `spieler` schaltet die Medienleiste frei; der Forums-Renderpfad lässt sie
-    aus (siehe `internal_links`).
+    `spieler` schaltet die Medienleiste (Video) und die abspielbare Audiofigur
+    frei; der Forums-Renderpfad lässt beide aus (siehe `internal_links`).
     """
     if spieler:
         typ = medientyp(f.mime_type, f.original_filename)
+        if typ == "audio":
+            return _audiofigur(f, label)
         if typ:
             return _medienleiste(f, typ, label)
     mime = f.mime_type or ""

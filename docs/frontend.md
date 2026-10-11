@@ -519,7 +519,9 @@ What `osm-map.js` does:
 closure variables `audio`, `queue`, `queueIndex`, `aktuellerItem`. Everything else is a display:
 
 - the floating `#mini-player` from `base.html`, present on every page;
-- the `.wiki-player` bars a wiki article embeds in its text (`docs/articles.md`).
+- the `.wiki-player` video bars a wiki article embeds in its text (`docs/articles.md`). Audio
+  in an article has no bar: its `.wiki-audio` figure only starts the queue, and the mini-player
+  is its display.
 
 The bars deliberately reuse the mini-player's `.mp-*` classes, which are defined **without** a
 `.mini-player` ancestor — only the positioning lives on `.mini-player` itself. Keep it that way.
@@ -532,7 +534,9 @@ state of prev/next all come from that one function; it is called from `loadTrack
 
 Video plays **in** the engine: `loadTrack` looks for the `<video>` of a matching bar
 (`medienElement()`) and adopts it instead of building `new Audio()` — same API, so nothing below
-changes, and video stays part of the same queue. Because that element outlives the track, its
+changes, and video stays part of the same queue. While such an adopted `<video>` plays,
+`loadTrack` hides the mini-player — the bar is already the controls, a second set would be
+redundant; the next audio track in the queue opens it again. Because that element outlives the track, its
 listeners are bound with an `AbortController` (`trackAbbruch`) and dropped on the next load;
 `new Audio()` used to take its listeners with it.
 
@@ -542,8 +546,9 @@ listener on `document` silences the engine when anything else on the page starts
 capture.
 
 Trigger paths are separate on purpose. `.audio-btn` (repertoire table, `titel.html`, the folder
-context menu) plays a single track and clears the queue; the bars' own delegated listener calls
-`artikelQueueStarten()`, which reads every bar in the `.wiki` container in document order and
+context menu) plays a single track and clears the queue; the bars' own delegated listener and the
+one on `.wiki-audio-start` call `artikelQueueStarten()`, which reads every bar and audio figure
+in the `.wiki` container in document order and
 starts `playQueue(items, false, index)` at the clicked one. Building the queue from the DOM
 instead of a `json_script` mirrors exactly what the reader sees — old article versions included —
 and spares the view a second pass over the wikitext.

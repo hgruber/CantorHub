@@ -1851,15 +1851,18 @@ class MedienleisteMarkupTest(SimpleTestCase):
         from intern.replacements import insert_file_object
         return insert_file_object(_datei(name, mime), spieler=True)
 
-    def test_audio_leiste(self):
+    def test_audio_ist_figur_ohne_eigene_controls(self):
+        """Audio spielt nur im Mini-Player — eine Leiste daneben wäre doppelt."""
         markup = self._leiste("Song.mp3")
-        self.assertIn('class="wiki-player wiki-player--audio"', markup)
+        self.assertIn('class="wiki-figure wiki-audio"', markup)
         self.assertIn('data-typ="audio"', markup)
         self.assertIn('data-url="/media/Song.mp3"', markup)
-        self.assertIn("mp-progress-bar", markup)
-        self.assertIn('class="mp-title">Song<', markup)
-        self.assertIn('class="mp-type">MP3<', markup)
-        self.assertNotIn("<video", markup)
+        self.assertIn('data-titel="Song"', markup)
+        self.assertIn('class="wiki-audio-start" href="/media/Song.mp3"', markup)
+        self.assertIn("<figcaption>Song.mp3</figcaption>", markup)
+        self.assertNotIn("wiki-player", markup)
+        self.assertNotIn("mp-", markup)
+        self.assertNotIn("<audio", markup)
 
     def test_video_leiste_ohne_eigene_controls(self):
         import re as _re
@@ -1872,17 +1875,19 @@ class MedienleisteMarkupTest(SimpleTestCase):
 
     def test_nur_phrasing_content(self):
         """Ein Blockelement bräche den <p>, in den die Zeile danach wandert."""
-        markup = self._leiste("Song.mp3")
+        markup = self._leiste("Clip.mp4")
         self.assertNotIn("<div", markup)
         self.assertNotIn("<figure", markup)
         self.assertNotIn("\n", markup)
 
     def test_ueberlebt_die_nachfolgenden_regeln(self):
         """''kursiv'', ""zitat"" und $roh$ laufen nach dieser Ersetzung."""
-        markup = self._leiste("Song.mp3")
-        self.assertNotIn("'", markup)
-        self.assertNotIn('""', markup)
-        self.assertNotIn("$", markup)
+        for name in ("Song.mp3", "Clip.mp4"):
+            markup = self._leiste(name)
+            self.assertNotIn("'", markup, name)
+            self.assertNotIn('""', markup, name)
+            self.assertNotIn("$", markup, name)
+            self.assertNotIn("\n", markup, name)
 
     def test_anfuehrungszeichen_im_dateinamen(self):
         markup = self._leiste('a"b.mp3')
@@ -1892,8 +1897,11 @@ class MedienleisteMarkupTest(SimpleTestCase):
 
     def test_label_ueberschreibt_den_titel(self):
         from intern.replacements import insert_file_object
-        markup = insert_file_object(_datei("Song.mp3"), "Mein Titel", spieler=True)
+        markup = insert_file_object(_datei("Clip.mp4"), "Mein Titel", spieler=True)
         self.assertIn('class="mp-title">Mein Titel<', markup)
+        markup = insert_file_object(_datei("Song.mp3"), "Mein Titel", spieler=True)
+        self.assertIn('data-titel="Mein Titel"', markup)
+        self.assertIn("<figcaption>Mein Titel</figcaption>", markup)
 
     def test_nicht_abspielbares_bleibt_figur(self):
         for name in ("Noten.pdf", "Brief.docx", "Film.mkv"):
@@ -1906,6 +1914,8 @@ class MedienleisteMarkupTest(SimpleTestCase):
         from intern.replacements import insert_file_object
         markup = insert_file_object(_datei("Song.mp3"))
         self.assertIn('class="wiki-figure"', markup)
+        self.assertNotIn("wiki-audio", markup)
+        markup = insert_file_object(_datei("Clip.mp4"))
         self.assertNotIn("wiki-player", markup)
 
 
@@ -1922,12 +1932,17 @@ class WikiPlayerIntegrationTest(SimpleTestCase):
             return replacements.apply_replacements(text, req)
 
     def test_absatz_bleibt_heil(self):
-        out = self._rendern("Hier: [[Datei:Song.mp3]] und Ende", _datei("Song.mp3"))
+        out = self._rendern("Hier: [[Datei:Clip.mp4]] und Ende", _datei("Clip.mp4"))
         self.assertIn('<p>Hier: <span class="wiki-player', out)
         self.assertIn("und Ende</p>", out)
 
+    def test_audio_wird_figur(self):
+        out = self._rendern("[[Datei:Song.mp3]]", _datei("Song.mp3"))
+        self.assertIn('<figure class="wiki-figure wiki-audio"', out)
+        self.assertNotIn("wiki-player", out)
+
     def test_label_wird_ausgewertet(self):
-        out = self._rendern("[[Datei:Song.mp3|Mein Titel]]", _datei("Song.mp3"))
+        out = self._rendern("[[Datei:Clip.mp4|Mein Titel]]", _datei("Clip.mp4"))
         self.assertIn('class="mp-title">Mein Titel<', out)
 
     def test_fehlende_datei_unveraendert(self):
@@ -1939,7 +1954,7 @@ class WikiPlayerIntegrationTest(SimpleTestCase):
         out = self._rendern(
             "[[Datei:Song.mp3]]", _datei("Song.mp3"), request=False
         )
-        self.assertNotIn("wiki-player", out)
+        self.assertNotIn("wiki-audio", out)
         self.assertIn('class="wiki-figure"', out)
 
 

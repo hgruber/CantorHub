@@ -19,6 +19,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   lehnt der Server ab, auch per Drag & Drop.
 - Migration vom Altportal: Den Artikel „Aktuell“ dürfen nur Webmaster, Vorstand und
   KonzertOrga bearbeiten; lesen dürfen ihn weiterhin alle.
+- Artikel: Eingebettete Medien haben nur noch eine Steuerung. Ein Video spielt in seiner
+  Leiste im Text, ohne dass unten der Player aufgeht; eine Audiodatei erscheint wie jede andere
+  Datei mit Noten-Symbol und Dateiname, ein Klick darauf öffnet den Player unten.
 
 ## v1.0.3 — 2026-10-11
 
