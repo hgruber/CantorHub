@@ -99,14 +99,6 @@
             {% endif %}
 
             <label class="checkbox-label join-consent">
-                {{ form.anerkennung_satzung }}
-                <span>{{ form.anerkennung_satzung.label }}{% if form.anerkennung_satzung.field.required %} <span class="req">*</span>{% endif %}</span>
-            </label>
-            {% if form.anerkennung_satzung.errors %}
-                <div class="invalid-feedback">{{ form.anerkennung_satzung.errors }}</div>
-            {% endif %}
-
-            <label class="checkbox-label join-consent">
                 {{ form.anerkennung_beitragsordnung }}
                 <span>{{ form.anerkennung_beitragsordnung.label }}{% if form.anerkennung_beitragsordnung.field.required %} <span class="req">*</span>{% endif %}</span>
             </label>

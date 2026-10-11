@@ -550,7 +550,7 @@ def mitglied_antrag_bestand(request, token):
 
 
 # ---------------------------------------------------------------------------
-# Mitglieds-Bestätigung (Daten + Datenschutz / Satzung / Beitrag)
+# Mitglieds-Bestätigung (Daten + Datenschutz / Beitrag)
 # ---------------------------------------------------------------------------
 
 def _bestaetigung_max_age():
@@ -607,7 +607,6 @@ def _save_bestaetigung_pdf(user, einwilligung_fotos=False):
     y = draw_section(c, y, "Bestätigungen")
     y = draw_checkbox(c, y, "Daten korrekt und aktuell, sonst sofortige Korrektur zugesagt")
     y = draw_checkbox(c, y, "Datenschutzerklärung gelesen und akzeptiert")
-    y = draw_checkbox(c, y, "Satzung gelesen und akzeptiert")
     y = draw_checkbox(c, y, "Beitragsordnung zur Kenntnis genommen")
     y = draw_checkbox(c, y, "Einwilligung zur Veröffentlichung von Fotos bei Auftritten",
                       checked=einwilligung_fotos)

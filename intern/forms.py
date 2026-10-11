@@ -524,13 +524,6 @@ class MitgliedBestaetigungForm(forms.Form):
             "Datenschutzerklärung</a> gelesen und stimme ihr zu."
         ),
     )
-    anerkennung_satzung = forms.BooleanField(
-        required=True,
-        label=mark_safe(
-            'Ich erkenne die <a href="#" target="_blank" rel="noopener">'
-            "Satzung</a> des Vereins an."
-        ),
-    )
     anerkennung_beitragsordnung = forms.BooleanField(
         required=True,
         label=mark_safe(
@@ -546,11 +539,6 @@ class MitgliedBestaetigungForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from intern.app_settings import get_document_url
-        satzung_url = get_document_url("SATZUNG_FILE_ID")
-        self.fields["anerkennung_satzung"].label = mark_safe(
-            f'Ich erkenne die <a href="{satzung_url}" target="_blank" rel="noopener">'
-            "Satzung</a> des Vereins an."
-        )
         beitragsordnung_url = get_document_url("BEITRAGSORDNUNG_FILE_ID")
         self.fields["anerkennung_beitragsordnung"].label = mark_safe(
             f'Ich nehme die <a href="{beitragsordnung_url}" target="_blank" rel="noopener">'
