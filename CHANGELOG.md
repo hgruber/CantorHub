@@ -29,6 +29,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   bisher in einem XML-Namensraum, den kein Client liest.
 - Profil: Ein Profilbild landet immer in „Backstage/Profilbilder“, schon beim Hochladen. Fehlte
   der Ordner, lag es bisher im Wurzelordner; jetzt legt das Portal ihn neu an.
+- Mail: Antwortet der Mailserver nicht, bricht der Versand nach 10 Sekunden mit einem Fehler ab.
+  Bisher hing die Seite, bis sie mit einem Serverfehler abbrach.
 
 ## v1.0.4 — 2026-10-11
 

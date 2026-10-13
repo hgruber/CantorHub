@@ -27,6 +27,8 @@ class DbEmailBackend(SmtpBackend):
         # which passes them here — discard them so our DB values take precedence.
         kwargs.pop("username", None)
         kwargs.pop("password", None)
+        # Ohne Zeitlimit wartet ein haengender SMTP-Server, bis gunicorn den Worker abschiesst.
+        kwargs.setdefault("timeout", 10)
 
         super().__init__(
             host=host,
