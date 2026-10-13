@@ -81,6 +81,9 @@ they survive edits. Module paths are relative to `intern/`.
 | `add_termin` | `views/termine.py` · `termin_add` | `/intern/termin/add/` | create an event |
 | `change_termin` | `views/termine.py` · `termin_view` | `/intern/termin/<id>/` | edit and history links |
 | `change_termin` | `views/termine.py` · `termin_edit` | `/intern/termin/<id>/edit/` | edit an event |
+| `change_termin` | `views/termine.py` · `termin_view` | `/intern/termin/<id>/` | card „Dateien“: drop area and unlink buttons; without the right the page has no upload at all |
+| `change_termin` | `views/files.py` · `upload` | `/intern/upload/` | `termin_id`: link the upload to the event, checked before the file is stored |
+| `change_termin` | `views/termine.py` · `termin_datei_entfernen` | `/intern/termin/<id>/dateien/<file>/entfernen/` | unlink a file from the event (the file stays) |
 | `change_termin` | `views/aenderungen.py` · `termin_aenderungen` | `/intern/termin/<id>/aenderungen/` | an event's change history |
 | `delete_termin` | `views/termine.py` · `termin_edit`, `termin_delete` | `/intern/termin/<id>/edit/`, `…/delete/` | the delete card and the deletion |
 | `change_zusage` | `templates/termin.html`, `templates/_termin_zusage.html` | `/intern/termin/<id>/` | edit mode of the attendance table (move other members' chips) |

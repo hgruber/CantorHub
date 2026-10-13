@@ -170,7 +170,8 @@ Backstage/
     Notenblätter       Lied.pdf
     Notensatz-Dateien  Lied.noten (capella, MuseScore)
     Probenmitschnitte  imported recordings not tied to a song
-  Termin-Anhänge       upload target of the event list
+  Termin-Anhänge       upload target of the event list and of the card „Dateien“
+                       (Termin.dateien), named „<YYYY-MM-DD> <name>“
   Wiki-Anhänge         files and pictures used in articles
 Verein/                root of the attachment picker in the Rundmail
   Vorstand/            Vorstand-only (FolderPermission rows set by 0003_import)

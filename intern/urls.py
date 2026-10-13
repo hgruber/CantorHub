@@ -107,6 +107,8 @@ urlpatterns = [
     path("termin/add/", views.termin_add, name="termin_add"),
     path("termin/<int:id>/", views.termin_view, name="termin_view"),
     path("termin/<int:id>/edit/", views.termin_edit, name="termin_edit"),
+    path("termin/<int:id>/dateien/<int:datei_id>/entfernen/", views.termin_datei_entfernen,
+         name="termin_datei_entfernen"),
     path("termin/<int:id>/aenderungen/", views.termin_aenderungen, name="termin_aenderungen"),
     path("termin/<int:id>/delete/", views.termin_delete, name="termin_delete"),
     path("termin/<int:id>/docx/", views.konzert_docx, name="konzert_docx"),

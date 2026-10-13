@@ -24,7 +24,7 @@ from intern.dateiablage import ordner_pfad, verknuepfte_dateien
 from intern.folder_access import folder_access, visible_folder_ids
 
 from ..app_settings import get_config
-from ..models import DateiVersion, Lied, TabellenPreferenzen, User
+from ..models import DateiVersion, Lied, TabellenPreferenzen, Termin, User
 
 
 def _aufnahme_prefixes():
@@ -328,6 +328,20 @@ def upload(request):
                     status=400,
                 )
 
+        # Terminseite: die Datei gehört dem Termin. Ordner und Name stehen
+        # damit fest, und das Recht wird vor der Ablage geprüft — eine Ablehnung
+        # hinterlässt keine Leiche in Termin-Anhänge.
+        termin = None
+        termin_id = request.POST.get("termin_id", "")
+        if termin_id:
+            if termin_id.isdigit():
+                termin = Termin.objects.filter(pk=int(termin_id)).first()
+            if termin is None or not request.user.has_perm("intern.change_termin"):
+                return JsonResponse(
+                    {"status": "error", "message": "Keine Berechtigung für diesen Termin"},
+                    status=403,
+                )
+
         # Determine folder_id:
         # Use type-specific subfolder when we know the file type AND either a
         # matching song was found or the upload context explicitly requests it
@@ -335,7 +349,13 @@ def upload(request):
         _type_folder = {"audio": folders.repertoire, "music": folders.notensatz, "pdf": folders.pdf}
         # Without a folder the file lands at the root (None), which the
         # answer reports so the upload card can ask to keep the root clear.
-        if file_type and file_type_config and (song or route_by_type):
+        if termin is not None:
+            folder_id = folders.termine()
+            if not folder_id:
+                return JsonResponse(
+                    {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
+                )
+        elif file_type and file_type_config and (song or route_by_type):
             zielordner = _type_folder.get(file_type)
             folder_id = zielordner() if zielordner else None
             if not folder_id:
@@ -391,6 +411,11 @@ def upload(request):
         # Der endgültige Name steht vor der Ablage fest (Avatar → <id>.<ext>),
         # damit die Namensregel den Namen prüft, unter dem die Datei liegen wird.
         name = f"{rename_to}{_get_file_extension(file.name)}" if rename_to else file.name
+        # Termin-Anhänge ist ein Ordner für alle Termine: das Datum vorn hält die
+        # „Ablauf.pdf“ zweier Termine auseinander. Derselbe Name am selben Termin
+        # wird eine neue Fassung.
+        if termin is not None:
+            name = f"{termin.datum:%Y-%m-%d} {file.name}"
         # Feld-Dropzone (Profilbild, Forenbild, Titel-Datei): die Datei wartet im
         # Zielordner auf „Speichern“ und darf bis dahin keine fremde gleichnamige
         # zu ihrer Fassung machen — ersetzt wird erst über systemablage().
@@ -428,7 +453,9 @@ def upload(request):
         # Assign to a song: explicitly by id when dropped on a Titel detail
         # page, otherwise by filename match.
         lied_id = request.POST.get("lied_id")
-        if lied_id and request.user.has_perm("intern.change_lied"):
+        if termin is not None:
+            termin.dateien.add(filer_file)
+        elif lied_id and request.user.has_perm("intern.change_lied"):
             try:
                 lied = Lied.objects.get(pk=int(lied_id))
                 _route_and_rename_for_lied(lied, filer_file, file.name)

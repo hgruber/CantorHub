@@ -282,11 +282,13 @@ document.addEventListener("DOMContentLoaded", function () {
           const avatarUserId = appMain.dataset.uploadAvatarUserId;
           const routeByType = appMain.dataset.uploadRouteByType;
           const liedId = appMain.dataset.uploadLiedId;
+          const terminId = appMain.dataset.uploadTerminId;
           if (folderId) formData.append("folder_id", folderId);
           if (renameTo) formData.append("rename_to", renameTo);
           if (avatarUserId) formData.append("avatar_user_id", avatarUserId);
           if (routeByType) formData.append("route_by_type", "1");
           if (liedId) formData.append("lied_id", liedId);
+          if (terminId) formData.append("termin_id", terminId);
         });
         this.on("success", function (file, response) {
           const textarea = document.getElementById("mitteilung-textarea");
@@ -320,7 +322,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }
           if (window.location.pathname.startsWith("/intern/ordner/")) {
             refreshFolderTable();
-          } else if (appMain.dataset.uploadLiedId) {
+          } else if (appMain.dataset.uploadLiedId || appMain.dataset.uploadTerminId) {
             window.location.reload();
           }
         });
@@ -347,6 +349,13 @@ document.addEventListener("DOMContentLoaded", function () {
     if (uploadBtn && !uploadGesperrt) uploadBtn.hidden = false;
     if (uploadBtn && uploadInput) {
       uploadBtn.addEventListener("click", () => uploadInput.click());
+      // Die Ablagefläche der Karte „Dateien“ (Terminseite) öffnet dieselbe Auswahl.
+      document.querySelectorAll(".termin-dateien-ablage").forEach((feld) => {
+        feld.addEventListener("click", () => uploadInput.click());
+        feld.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); uploadInput.click(); }
+        });
+      });
       uploadInput.addEventListener("change", () => {
         Array.from(uploadInput.files).forEach((f) => appMainDz.addFile(f));
         uploadInput.value = "";  // dieselbe Datei lässt sich erneut wählen

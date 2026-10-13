@@ -2973,6 +2973,23 @@ table.mitglied-table tr.stimme-group-start td {
     color: var(--t2);
 }
 
+/* Karte „Dateien“ der Terminseite */
+.termin-dateien { list-style: none; padding: 0; margin-bottom: 8px; }
+.termin-dateien li { display: flex; align-items: center; gap: 8px; }
+.termin-dateien a { overflow-wrap: anywhere; }
+.termin-dateien form { margin: 0 0 0 auto; }
+.termin-datei-entfernen {
+    background: none;
+    border: 0;
+    padding: 0 4px;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.termin-datei-entfernen:hover { color: var(--t2); }
+.termin-dateien-ablage { margin-bottom: 0; }
+
 /* Attendance table */
 .attendance-table {
     width: 100%;

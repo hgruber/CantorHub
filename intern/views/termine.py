@@ -24,6 +24,7 @@ from icalendar import Calendar, Event
 
 from intern import folders
 from intern.app_settings import get_config, get_config_bool, get_config_int
+from intern.folder_access import visible_folder_ids
 
 from ..aufstellung import aufstellung
 from ..forms import TerminForm
@@ -35,6 +36,7 @@ __all__ = [
     "termin_list",
     "termin_kalender",
     "termin_view",
+    "termin_datei_entfernen",
     "termin_zusage",
     "termin_anwesenheit_update",
     "termin_edit",
@@ -205,6 +207,10 @@ def termin_view(request, id):
     my_zusage = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
     my_option = my_zusage.option if my_zusage else ""
     _aufstellungen_anhaengen([termin], request.user)
+    darf_aendern = request.user.has_perm("intern.change_termin")
+    dateien = termin.dateien.filter(
+        folder_id__in=visible_folder_ids(request.user)
+    ).order_by("original_filename")
     context = {
         "seitentitel": str(termin),
         "termin": termin,
@@ -215,8 +221,29 @@ def termin_view(request, id):
         "edit": "termin_edit" if request.user.has_perm("intern.change_termin") else None,
         "history": "termin_aenderungen" if request.user.has_perm("intern.change_termin") else None,
         "id": id,
+        "dateien": dateien,
     }
+    # Hochladen nur, wer den Termin ändern darf — dann gehört jede Datei dem
+    # Termin (termin_id). Ohne das Recht keine Ablage: sie läge unverknüpft
+    # in Termin-Anhänge.
+    if darf_aendern:
+        context.update({
+            "upload_folder_id": folders.termine(),
+            "upload_folder_name": folders.TERMIN_ANHAENGE,
+            "upload_termin_id": id,
+        })
+    else:
+        context["upload_aus"] = True
     return render(request, "termin.html", context)
+
+
+@permission_required("intern.change_termin", raise_exception=True)
+@require_POST
+def termin_datei_entfernen(request, id, datei_id):
+    """Löst die Datei vom Termin; sie selbst bleibt in ihrem Ordner."""
+    termin = get_object_or_404(Termin, id=id)
+    termin.dateien.remove(datei_id)
+    return redirect("termin_view", id=id)
 
 
 @login_required

@@ -1,0 +1,31 @@
+{% comment %}
+Karte „Dateien“ der Terminseite. Wer den Termin ändern darf, sieht sie immer —
+mit Ablagefläche für die erste Datei; alle anderen nur, wenn Dateien da sind.
+Die Fläche ist keine eigene Dropzone: ein Drop landet in der seitenweiten von
+#app-main (die termin_id mitschickt), ein Tippen öffnet deren Dateiauswahl.
+{% endcomment %}
+{% if dateien or perms.intern.change_termin %}
+<div class="detail-card">
+    <h3>Dateien{% if dateien %} <span class="badge">{{ dateien|length }}</span>{% endif %}</h3>
+    {% if dateien %}
+    <ul class="detail-list termin-dateien">
+        {% for f in dateien %}
+        <li>
+            <a href="{{ f.url }}" target="_blank" rel="noopener">{{ f.original_filename|default:f.name }}</a>
+            {% if perms.intern.change_termin %}
+            <form method="post" action="{% url 'termin_datei_entfernen' termin.id f.id %}">
+                {% csrf_token %}
+                <button type="submit" class="termin-datei-entfernen" title="Vom Termin lösen (die Datei bleibt im Ordner)" aria-label="Vom Termin lösen">×</button>
+            </form>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if perms.intern.change_termin %}
+    <div class="dropzone-field termin-dateien-ablage" role="button" tabindex="0">
+        <span class="dropzone-field-placeholder">Dateien hierher ziehen oder antippen</span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

@@ -63,6 +63,8 @@
         {% endcomment %}
         {% include "_termin_extern_karte.html" %}
 
+        {% include "_termin_dateien_karte.html" %}
+
         {% if termin.ort and termin.ort.breite is not None and termin.ort.laenge is not None %}
         <div class="detail-card">
             <h3>Karte</h3>

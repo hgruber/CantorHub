@@ -593,6 +593,9 @@ class Termin(models.Model):
         "Termin.",
     )
     mitglied = models.ManyToManyField("User", through="Zusage", related_name="termin")
+    # Die Karte „Dateien“ der Terminseite. Hochgeladen wird nach
+    # Backstage/Termin-Anhänge, mit dem Datum vorn im Namen (views/files.py:upload).
+    dateien = models.ManyToManyField("filer.File", blank=True, related_name="termine")
 
     class Meta:
         verbose_name_plural = "Termine"

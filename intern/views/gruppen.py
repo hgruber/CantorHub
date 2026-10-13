@@ -76,7 +76,7 @@ PERMISSION_DESCRIPTIONS = {
         "Darf neue Termine eintragen.",
     "intern.change_termin":
         "Darf bestehende Termine bearbeiten – z. B. Datum, Uhrzeit, Ort "
-        "oder Beschreibung anpassen.",
+        "oder Beschreibung anpassen und Dateien anhängen.",
     "intern.delete_termin":
         "Darf Termine dauerhaft löschen.",
     "intern.change_zusage":
@@ -232,6 +232,8 @@ PERMISSION_DETAILS = {
          "Bearbeiten-Knopf und Änderungsverlauf eines Termins."),
         ("Termin bearbeiten",
          "Datum, Uhrzeit, Ort, Beschreibung und Ankündigungstext ändern."),
+        ("Termin, Karte „Dateien“",
+         "Dateien hochladen (nach Backstage/Termin-Anhänge) und vom Termin lösen."),
     ],
     "intern.delete_termin": [
         ("Termin bearbeiten",

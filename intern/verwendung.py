@@ -7,7 +7,7 @@ Verweis bricht. Zwei Arten von Verweisen mit unterschiedlichem Verhalten:
   **Namen** (`replacements.internal_links`). Sie brechen beim Umbenennen — und
   beim Löschen nur dann, wenn die *letzte* File-Zeile verschwindet: liegt die
   Datei noch in einem anderen Ordner, löst der Link weiter auf.
-* **Alle anderen** Verweise (Lied, Forum, Avatar, Konfiguration) hängen an der
+* **Alle anderen** Verweise (Lied, Forum, Avatar, Termin, Konfiguration) hängen an der
   **PK**. Sie brechen, sobald genau diese Zeile gelöscht wird, auch wenn die
   Datei anderswo verknüpft bleibt; ein Umbenennen stört sie nicht.
 """
@@ -15,7 +15,7 @@ Verweis bricht. Zwei Arten von Verweisen mit unterschiedlichem Verhalten:
 from django.db.models import Q
 from django.urls import reverse
 
-from .models import Artikel, Forum, Konfiguration, Lied, User
+from .models import Artikel, Forum, Konfiguration, Lied, Termin, User
 
 # Konfigurationsschlüssel mit einer Filer-ID als Wert folgen dieser Konvention;
 # so werden künftige Dokumente automatisch mit erfasst (SATZUNG_FILE_ID, …).
@@ -36,6 +36,10 @@ DATEI_PK_VERWEISE = [(Lied, feld) for feld in _LIED_FELDER] + [
     (Forum, "bild"),
     (User, "avatar"),
 ]
+
+# Dasselbe für die Mehrfachverweise (M2M): sie lassen sich nicht per update()
+# umhängen, verweise_umhaengen() geht über die Zwischentabelle.
+DATEI_M2M_VERWEISE = [(Termin, "dateien")]
 
 
 def _artikel_lesbar(user, artikel_name):
@@ -114,6 +118,13 @@ def pk_verwendungen(datei):
             "url": reverse("mitglied_view", args=[mitglied.pk]),
         })
 
+    for termin in Termin.objects.filter(dateien=datei):
+        eintraege.append({
+            "art": "termin",
+            "label": f"Termin „{termin}“ (Dateien)",
+            "url": reverse("termin_view", args=[termin.pk]),
+        })
+
     for cfg in Konfiguration.objects.filter(key__endswith=_CONFIG_FILE_SUFFIX):
         if (cfg.value or "").strip() == str(datei.pk):
             eintraege.append({
@@ -135,6 +146,16 @@ def verweise_umhaengen(alt_pk, neu_pk):
         return
     for modell, feld in DATEI_PK_VERWEISE:
         modell.objects.filter(**{f"{feld}_id": alt_pk}).update(**{f"{feld}_id": neu_pk})
+    for modell, feld in DATEI_M2M_VERWEISE:
+        m2m = getattr(modell, feld)
+        zwischen = m2m.through
+        quelle = f"{m2m.field.m2m_field_name()}_id"
+        datei = f"{m2m.field.m2m_reverse_field_name()}_id"
+        # Wer beide Zeilen schon trägt, behält nur die neue — sonst verletzte
+        # das Umhängen den Unique-Index der Zwischentabelle.
+        schon = list(zwischen.objects.filter(**{datei: neu_pk}).values_list(quelle, flat=True))
+        zwischen.objects.filter(**{datei: alt_pk, f"{quelle}__in": schon}).delete()
+        zwischen.objects.filter(**{datei: alt_pk}).update(**{datei: neu_pk})
     # Gleicher Vergleich wie in pk_verwendungen (mit strip), damit Warnung und
     # Umhängen dieselben Einträge treffen. save() statt update(): post_save
     # leert den Konfigurations-Puffer der laufenden Anfrage.

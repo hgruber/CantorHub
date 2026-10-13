@@ -9,6 +9,12 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Termine: Ein Termin kann Dateien tragen; sie stehen auf der Terminseite in der Karte „Dateien“.
+  Wer Termine bearbeiten darf, legt sie dort direkt ab und kann sie wieder vom Termin lösen.
+  Abgelegt wird in „Backstage/Termin-Anhänge“, mit dem Termindatum vorn im Dateinamen.
+
 ### Geändert
 
 - Dateien: Die Standardordner („Backstage“ mit seinen Unterordnern, „Verein“, „Vorstand“,

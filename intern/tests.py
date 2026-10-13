@@ -6277,27 +6277,37 @@ class AblageEntscheidungTest(SimpleTestCase):
 
 
 class DateiVerweiseTest(SimpleTestCase):
-    """Warnung und Umhängen lesen dieselbe Tabelle — und die kennt jeden FK
-    eines intern-Modells auf filer.File (außer dem Suchindex, der mit der
-    Zeile geht)."""
+    """Warnung und Umhängen lesen dieselben Tabellen — und die kennen jeden FK
+    und jedes M2M eines intern-Modells auf filer.File (außer dem Suchindex,
+    der mit der Zeile geht)."""
 
     def test_tabelle_deckt_alle_fks(self):
         from django.apps import apps
         from filer.models import File
 
         from intern.models import DateiIndex
-        from intern.verwendung import DATEI_PK_VERWEISE
+        from intern.verwendung import DATEI_M2M_VERWEISE, DATEI_PK_VERWEISE
 
-        fks = {
-            (modell, feld.name)
+        verweise = [
+            (modell, feld)
             for modell in apps.get_app_config("intern").get_models()
             for feld in modell._meta.get_fields()
-            if getattr(feld, "concrete", False)
+            # Ein M2M ist nicht concrete (seine Spalten liegen in der
+            # Zwischentabelle); auto_created schließt die Rückrichtungen aus.
+            if (getattr(feld, "concrete", False)
+                or (feld.many_to_many and not feld.auto_created))
             and isinstance(getattr(feld, "related_model", None), type)
             and issubclass(feld.related_model, File)
             and modell is not DateiIndex
-        }
-        self.assertEqual(set(DATEI_PK_VERWEISE), fks)
+        ]
+        self.assertEqual(
+            set(DATEI_PK_VERWEISE),
+            {(m, f.name) for m, f in verweise if not f.many_to_many},
+        )
+        self.assertEqual(
+            set(DATEI_M2M_VERWEISE),
+            {(m, f.name) for m, f in verweise if f.many_to_many},
+        )
 
     def test_versionsdatum_ist_setzbar(self):
         """Der Stand einer Fassung wird gesetzt, nicht beim Anlegen überschrieben."""
