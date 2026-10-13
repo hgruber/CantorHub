@@ -143,7 +143,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.http.ConditionalGetMiddleware",
-    "django.middleware.gzip.GZipMiddleware",
+    # Djangos GZipMiddleware, für CardDAV/CalDAV ohne Dateinamen im gzip-Kopf.
+    "intern.middleware.GZip",
 ]
 
 ROOT_URLCONF = "config.urls"

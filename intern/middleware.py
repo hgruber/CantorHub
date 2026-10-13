@@ -24,6 +24,7 @@ import time
 from urllib.parse import urlencode
 
 from django.http import HttpResponse
+from django.middleware.gzip import GZipMiddleware
 from django.shortcuts import redirect
 from django.urls import reverse
 
@@ -172,3 +173,38 @@ class Ersteinrichtung:
         elif hosts_offen():
             hosts_festlegen()
         return self.get_response(request)
+
+
+# Präfixe der beiden DAV-Dienste, ohne Schrägstrich am Ende: ``/carddav`` ist
+# selbst eine Route (``dav_root``).
+DAV_PRAEFIXE = ("/carddav", "/caldav")
+
+
+def ist_dav_pfad(pfad):
+    return pfad.startswith(DAV_PRAEFIXE)
+
+
+class _GZipOhneDateiname(GZipMiddleware):
+    max_random_bytes = 0
+
+
+class GZip(GZipMiddleware):
+    """Djangos ``GZipMiddleware``, für CardDAV/CalDAV ohne Zufallsdateinamen.
+
+    Gegen BREACH schreibt Django einen zufällig langen Dateinamen (FNAME) in den
+    gzip-Kopf. DAVx⁵ ab 4.5 entpackt mit ktor, das solche Antworten ablehnt
+    („Gzip file name not supported“) — die Einrichtung scheitert dann schon an
+    der ersten 207. Für die DAV-Pfade fällt der Name deshalb weg; die
+    HTML-Seiten behalten ihn.
+    """
+
+    def __init__(self, get_response):
+        super().__init__(get_response)
+        # Eigene Instanz statt ``self.max_random_bytes`` je Anfrage umzustellen:
+        # gunicorn läuft mit Threads, die Middleware-Instanz teilen sie sich.
+        self._dav = _GZipOhneDateiname(get_response)
+
+    def process_response(self, request, response):
+        if ist_dav_pfad(request.path):
+            return self._dav.process_response(request, response)
+        return super().process_response(request, response)

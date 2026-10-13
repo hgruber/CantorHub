@@ -52,6 +52,7 @@ from intern.blob_aufraeumen import verwaiste_pfade, zugeordnetes_verzeichnis
 from intern.forms import SchnellSelect, SchnellSelectMultiple
 from intern.middleware import (
     DATENSCHUTZ_FREI,
+    GZip,
     datenschutz_pruefpflichtig,
     muss_auffrischen,
 )
@@ -3476,6 +3477,41 @@ class DatenschutzPruefungTest(SimpleTestCase):
                         "/intern/logout/", "/intern/media-auth/", "/intern/register"):
             self.assertIn(praefix, DATENSCHUTZ_FREI)
             self.assertTrue(any(p.startswith(praefix) for p in pfade), praefix)
+
+
+class DavGzipTest(SimpleTestCase):
+    """CardDAV/CalDAV bekommen gzip ohne Dateinamen (``intern/middleware.py``).
+
+    ktor in DAVx⁵ ab 4.5 lehnt das FNAME-Flag ab, das Djangos BREACH-Schutz
+    setzt; die HTML-Seiten behalten es.
+    """
+
+    INHALT = b"<?xml version='1.0'?>" + b"<D:multistatus/>" * 50
+
+    def _flags(self, pfad):
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+        request = RequestFactory().generic(
+            "PROPFIND", pfad, HTTP_ACCEPT_ENCODING="gzip,deflate,identity"
+        )
+        mw = GZip(lambda r: HttpResponse(self.INHALT, status=207))
+        response = mw(request)
+        self.assertEqual(response["Content-Encoding"], "gzip")
+        return response.content[3]
+
+    def test_dav_ohne_dateiname(self):
+        import gzip
+        for pfad in ("/carddav/", "/carddav", "/caldav/7/termine/", "/caldav"):
+            self.assertFalse(self._flags(pfad) & gzip.FNAME, pfad)
+
+    def test_html_behaelt_dateiname(self):
+        import gzip
+        self.assertTrue(self._flags("/intern/artikel/Aktuell/") & gzip.FNAME)
+
+    def test_settings_verwendet_unterklasse(self):
+        from django.conf import settings
+        self.assertIn("intern.middleware.GZip", settings.MIDDLEWARE)
+        self.assertNotIn("django.middleware.gzip.GZipMiddleware", settings.MIDDLEWARE)
 
 
 class SitzungAuffrischenTest(SimpleTestCase):

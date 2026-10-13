@@ -51,6 +51,10 @@ have to stay:
 - `GZipMiddleware` weakens a strong ETag to `W/"…"`. The single-resource responses therefore
   set `Content-Encoding: identity`, which makes the middleware bail out; the 207s carry no
   ETag header and stay compressed.
+- Django's `GZipMiddleware` writes a random file name (FNAME) into the gzip header against
+  BREACH. DAVx⁵ from 4.5 on decompresses with ktor, which rejects that header ("Gzip file name
+  not supported") and fails account setup on the first 207. `intern.middleware.GZip` therefore
+  compresses `/carddav` and `/caldav` without the name; HTML pages keep it.
 - `current-user-privilege-set` containing only `<D:read/>` is what tells iOS the collection is
   read-only. Without it, opening an entry raises a save error.
 - Unknown properties must be reported as a second `propstat` with 404, not omitted.

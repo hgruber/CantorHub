@@ -28,6 +28,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Der einmalige Import aus dem Altportal ist ausgebaut; seine Migration bleibt als leerer
   Platzhalter in der Kette.
 
+### Behoben
+
+- CardDAV/CalDAV: DAVx⁵ ab Version 4.5 lässt sich wieder einrichten; es scheiterte an den
+  komprimierten Antworten des Portals („Gzip file name not supported“).
+
 ## v1.0.5 — 2026-10-13
 
 ### Hinzugefügt
