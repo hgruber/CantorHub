@@ -30,6 +30,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   überall dort, wo eine Ablagefläche ist.
 - Betrieb: Änderungen am Datenbankschema kommen als Migrationen mit dem Abbild und werden beim
   Start des Containers angewendet. Der Migrationspfad `MIGRATE=1` ist entfernt.
+- Datenschutzerklärung: Unter „Verantwortliche“ stehen alle Mitglieder der Gruppe „Vorstand“,
+  auch solche ohne Portalzugang.
 
 ### Behoben
 
@@ -56,8 +58,6 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Leiste im Text, ohne dass unten der Player aufgeht; eine Audiodatei erscheint wie jede andere
   Datei mit Noten-Symbol, Dateiname und Download-Knopf, ein Klick aufs Symbol öffnet den Player
   unten.
-- Datenschutzerklärung: Unter „Verantwortliche“ stehen alle Mitglieder der Gruppe „Vorstand“,
-  auch solche ohne Portalzugang.
 
 ## v1.0.3 — 2026-10-11
 
