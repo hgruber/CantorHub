@@ -70,7 +70,7 @@ is frozen and checked in, so the schema evolves through ordinary migrations from
 `SimpleTestCase`:** a `TestCase` makes Django build a test database, which runs `0003_import`,
 which then blows up anywhere that legacy environment is absent. Logic worth testing is kept free
 of DB access and the DB half is isolated in thin wrappers. That constraint disappears with this
-file — once `0003_import` is gone (or learns to no-op without the legacy DB), normal `TestCase`
+file — `0003_import` is empty since October 2026, so normal `TestCase`
 tests become possible.
 
 ## Avatars and their history
@@ -119,8 +119,9 @@ Everything that belongs to the migration carries a `MIGRATIONSPFAD` marker, so i
 one piece:
 
 - ~~the `if [ -n "${MIGRATE}" ]` block in `start.sh`~~ — removed in October 2026;
-- `intern/migrations/0003_import.py`, including its `_migrationsquellen()` helper;
-- the `pymysql` line in `requirements.txt` — nothing else imports it;
+- ~~`intern/migrations/0003_import.py`, including its `_migrationsquellen()` helper~~ — emptied
+  in October 2026; the file stays as a placeholder because the chain hangs off it;
+- ~~the `pymysql` line in `requirements.txt`~~ — removed in October 2026;
 - `/data/migration/` in the volume (data only, no code);
 - this file, and the references to it in `README.md` and `CLAUDE.md`.
 
@@ -132,9 +133,6 @@ Then also:
 - drop the `SimpleTestCase`-only rule from `CLAUDE.md` — with `0003_import` gone, tests may use a
   database again.
 
-**One thing has to be built before `0003_import` can go**, and it is the only real entanglement
-left: the permission groups (`create_groups`), the standard folders under `Backstage` and the
-first administrator exist today *only* because this migration creates them. A fresh install
-against an empty database therefore has no groups, no folders and nobody who can log in. That
-first-start path is a separate piece of work — it is what a second choir would need, and it is
-deliberately not part of the container rework.
+~~**One thing has to be built before `0003_import` can go**~~ — built in October 2026: the
+permission groups, the standard folders and the first administrator of a new installation come
+from the first-run setup (`intern/einrichtung.py`, `/einrichtung/`; see `README.md`).

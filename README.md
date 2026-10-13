@@ -48,10 +48,33 @@ podman run -d --name cantorhub -p 8000:8000 \
     cantorhub:v1.0.0
 ```
 
-`VEREINS_URL` is only needed on the **first** start: it is written into the database during
-`post_migrate` and read from there afterwards, so later starts can leave it out and the address
-is changed under `/intern/konfiguration/`. Without `DATABASE_URL` the portal falls back to
-SQLite in `/data` — fine for a test instance, not for production.
+`VEREINS_URL` is optional: without it the first-run setup takes the address from the first
+call and stores it (see below). If set, it is written into the database on every start and wins
+over the stored value. Without `DATABASE_URL` the portal falls back to SQLite in `/data` — fine
+for a test instance, not for production.
+
+A throwaway demo needs neither: `podman run --rm -p 8000:8000 cantorhub` starts on an empty
+SQLite inside the container, `http://localhost:8000/` leads straight into the first-run setup,
+and stopping the container discards everything.
+
+### First start on an empty database
+
+Point `DATABASE_URL` at an empty database (or at none) and start the image: `migrate` builds the
+schema, and since there is no administrator yet, every page redirects to `/einrichtung/`.
+**Whoever finishes that page first becomes the administrator** — there is no token or other
+guard, so on a public address do it right after the first start. Until then Django accepts any
+hostname, because the address is not known yet; the form prefills it from the call itself.
+
+The page asks for the first account (it becomes superuser and joins „Mitglied“ and
+„Vorstand“), the portal address, the sender address and, optionally, the SMTP server. Finishing
+it creates the permission groups, the standard folders, the Vorstand folder right and the start
+page „Aktuell“, logs the new account in and opens `/intern/konfiguration/`, whose banner lists the
+settings still missing (the club name). The box „Beispieldaten anlegen“ (on by default) adds a
+place, a few German folk songs, six weekly rehearsals, a concert with its running order and
+homepage announcement, and the forum „Allgemeines“ — ordinary entries, to be edited or deleted. From then on `/einrichtung/` is
+gone, and every worker restricts the accepted hostnames to the stored address on its next
+request — no restart needed. An existing installation is never affected: it has an
+administrator, so the step is skipped.
 
 ### The data volume
 
@@ -172,14 +195,15 @@ only the first line is one you normally set:
 | Variable | Default | Description |
 |---|---|---|
 | `DATABASE_URL` | SQLite in `/data` | `mysql://user:password@host:3306/name` or `sqlite:////data/db.sqlite3`. Characters like `@` or `/` in the password must be percent-encoded (`%40`, `%2F`) |
-| `VEREINS_URL` | — | Base URL of the portal. Fills `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` and is seeded into the database; **needed on the first start only** |
+| `VEREINS_URL` | — | Base URL of the portal. Fills `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` and is written into the database on every start; optional — the first-run setup stores the address otherwise |
 | `DEBUG` | unset | `1` enables development mode (dev server, debug pages) |
 | `SECRET_KEY` | generated | overrides the generated key in `/data/secret_key` |
 | `CANTORHUB_DATA` | `/data` | set inside the image; the directory for everything changing |
 
-If `VEREINS_URL` is neither set nor configured, only `localhost` and `127.0.0.1` are accepted
-and every request under the real hostname is answered with "Bad Request (400)". The startup log
-says so in plain words.
+If `VEREINS_URL` is neither set nor configured and there is no administrator yet, any hostname is
+accepted, so the first-run setup is reachable. With an administrator but no address, only
+`localhost` and `127.0.0.1` are accepted and every request under the real hostname is answered
+with "Bad Request (400)"; the log says so in plain words.
 
 Everything else — mail server, XMPP, map, upload limits, language, time zone, all mail texts —
 lives in the database and is edited at runtime under `/intern/konfiguration/`. As a convenience,

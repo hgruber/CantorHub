@@ -16,6 +16,7 @@ handler500 = "intern.views.custom_500"
 urlpatterns = [
     path("favicon.ico", RedirectView.as_view(url="/static/intern/images/JG-Frankfurt-wG-color.svg", permanent=True)),
     path("datenschutz/", views.datenschutz, name="datenschutz"),
+    path("einrichtung/", views.einrichtung, name="einrichtung"),
     path("tiles/<int:z>/<int:x>/<int:y>.png", views.tiles_proxy, name="tiles_proxy"),
     # Oeffentliche Auftritts-Mailingliste (kein Login)
     path("auftritte/", views.auftritte_anmeldung, name="auftritte_anmeldung"),

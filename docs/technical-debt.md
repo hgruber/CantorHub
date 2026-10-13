@@ -82,42 +82,28 @@ a second file or subfolder of the same name into a folder. Left open on purpose:
   of their own since `datei_restore` stopped renaming. The column can go in a migration,
   together with the writes in `dateiablage.zusammenfuehren`.
 
-## First install vs. legacy import (deferred September 2026)
+## First install (built October 2026) — what is left
 
-`0003_import.py` (1384 lines, 21 `RunPython` operations, no schema) mixes two things that belong
-apart: the import from the legacy MySQL database, and the values **every** installation needs.
-`migration.md:163-168` already names the consequence — the permission groups (`create_groups`), the
-standard folders under `Backstage` and the first administrator exist today *only* because this
-migration creates them, so a fresh database has no groups, no folders and nobody who can log in.
-Because `0003_import` disappears with the migration, that gap becomes permanent.
+`0003_import.py` used to mix the legacy import with the values every installation needs. Since
+October 2026 it is an empty placeholder (the import ran once and is never needed again), and a new
+installation gets its groups, standard folders, first administrator and first settings from the
+first-run setup (`intern/einrichtung.py`, `/einrichtung/`). Every mail text and the homepage texts
+carry a sample default in `_CONFIG_DEFAULTS` (`apps.py`), which `post_migrate` writes into any
+installation where the key is missing. What the legacy import supplied beyond that has no new
+home yet:
 
-The split is planned and deliberately not built yet — while the migration is still pending, the
-current arrangement works and the rework is not worth its cost:
+- **No fallback avatars.** `kein_photo.png` and `bot.png` were filer files imported from `Avatare/`;
+  `avatare.fallback_avatar_datei()` returns `None` without them, so members without a picture and
+  the XMPP bot show no placeholder.
 
-- **A — an init script for the first start:** groups, standard folders, first admin, and the choir
-  values from `seed_konfiguration` (`0003_import.py:1303-1354`).
-- **B — the reduced migration:** only what the legacy MySQL actually supplies. Eleven functions
-  carry `@with_legacy_db_connection` (`0003_import.py:282`); that decorator is the real boundary.
-  Nine operations need no MySQL at all, but only `create_groups`, the folder tree and
-  `seed_konfiguration` are installation-independent — `import_gruendungsmitglieder` (24 legacy ids),
-  `import_vorstand_und_kassenprufer`, `deaktiviere_nicht_gruender`, `make_holger_superuser` and
-  `set_tonarten` (matches imported song titles) describe *this* installation and stay in B.
-- **The first admin has no answer yet.** `make_holger_superuser` (`0003_import.py:1080-1083`) sets a
-  hardcoded username that only exists because B imported it. An install after A alone has nobody
-  who can log in; `README.md:326` points at `createsuperuser`.
-
-Two inconsistencies surfaced while measuring this:
+One inconsistency surfaced while measuring this:
 
 - **`VEREINSNAME` is spelled three ways:** `""` in the catalog (`apps.py:121`), `"Join us singing
   the Gospel e.V."` as the code fallback (`app_settings.py:211`) and `"Join Us Singing The Gospel
-  e.V."` in the seed (`0003_import.py:1307`). `VEREINSNAME_KURZ` has the same double default.
-- **Mail texts live in two places.** `MAIL_MAILINGLISTE_ERINNERUNG` sits in `seed_konfiguration`
-  with an empty catalog default (`apps.py:373`), while `MAIL_FOOTER` and the three other
-  Mailingliste mails still carry their full text in `_CONFIG_DEFAULTS`. They should follow one rule,
-  and that rule belongs with A.
+  e.V."` in the former legacy seed. `VEREINSNAME_KURZ` has the same double default.
 
-Hardcoded organisation values that have no business in the code — same bucket, to be settled with A
-or in `branding.md`: `DEFAULT_FROM_EMAIL` (`apps.py:30`, and again in `config/settings.py:275`),
+Hardcoded organisation values that have no business in the code — same bucket, to be settled
+in `branding.md`: `DEFAULT_FROM_EMAIL` (`apps.py:30`, and again in `config/settings.py:275`),
 `VEREINSNAME_LANG` (`apps.py:122`), `BRAND_FARBE` (`apps.py:128`), `FILE_PREFIX` (`apps.py:475`),
 `MAP_CENTER_LAT`/`_LNG` (`apps.py:462,468`) and the hardcoded fallbacks in `app_settings.py:211,215,219,223,269-270`.
 
@@ -268,7 +254,7 @@ but the measured effect on this data set does not justify touching the code:
 
 ## Medium risk (15-30%) — need testing after fixing
 
-- **No DB-backed tests are possible.** Any `TestCase` (as opposed to `SimpleTestCase`) makes Django create a test database, which replays the data migration `0003_import` — it connects to the legacy MySQL server and expects the filer files imported by `import_files`. Wherever that environment is missing, test-DB setup dies with `File.DoesNotExist` before a single test runs. Consequence: everything worth testing has to be written free of DB access (see `intern/tests.py`). The fix is to make `0003_import` a no-op when the legacy DB is unreachable — it already probes the connection, it just does not tolerate the absence.
+- **No DB-backed tests yet.** Any `TestCase` used to replay the data migration `0003_import` against the legacy MySQL server, so everything worth testing was written free of DB access (see `intern/tests.py`). Since October 2026 `0003_import` is empty and a test database builds without that environment; the `SimpleTestCase`-only rule in `CLAUDE.md` stands until it is lifted deliberately.
 - `intern.js` (1022 lines) puts all JS in one file with global namespace pollution (`appMainDz`, `toggle()`, `fileAction()`, `saveOrder()`). Should be split into modules.
 - Dropzone, Sortable, Leaflet, and `osm-map.js` are loaded unconditionally in `base.html` on every page. Should be page-specific `<script>` loads.
 - `sortablejs@latest` in `base.html` is unpinned — a breaking upstream update could break the app.

@@ -473,6 +473,78 @@ class MitgliedAntragBestandForm(MitgliedBeitrittForm):
         return forms.ModelForm.save(self, commit=commit)
 
 
+class EinrichtungForm(forms.Form):
+    """Die Ersteinrichtung: erstes Konto, Portaladresse, Absender, SMTP.
+
+    Alles Weitere — Vereinsname, Startseitentexte, Dienste — pflegt das neue
+    Konto danach unter /intern/konfiguration/.
+    """
+
+    _text = {"class": "form-control"}
+
+    first_name = forms.CharField(max_length=150, widget=forms.TextInput(attrs=_text))
+    last_name = forms.CharField(max_length=150, widget=forms.TextInput(attrs=_text))
+    username = forms.CharField(widget=forms.TextInput(attrs=_text))
+    email = forms.EmailField(widget=forms.EmailInput(attrs=_text))
+    password1 = forms.CharField(widget=forms.PasswordInput(attrs=_text))
+    password2 = forms.CharField(widget=forms.PasswordInput(attrs=_text))
+    vereins_url = forms.URLField(
+        widget=forms.URLInput(attrs=_text),
+        help_text="Die Adresse, unter der das Portal erreichbar ist; sie steht in "
+        "jeder E-Mail. Eine gesetzte Umgebungsvariable VEREINS_URL geht vor.",
+    )
+    absender = forms.EmailField(
+        widget=forms.EmailInput(attrs=_text),
+        help_text="Absenderadresse der E-Mails des Portals.",
+    )
+    email_host = forms.CharField(required=False, widget=forms.TextInput(attrs=_text))
+    email_port = forms.IntegerField(
+        required=False, initial=587, min_value=1, max_value=65535,
+        widget=forms.NumberInput(attrs=_text),
+    )
+    email_host_user = forms.CharField(required=False, widget=forms.TextInput(attrs=_text))
+    email_host_password = forms.CharField(
+        required=False, widget=forms.PasswordInput(attrs=_text)
+    )
+    email_verschluesselung = forms.ChoiceField(
+        choices=[("starttls", "STARTTLS"), ("ssl", "SSL/TLS"), ("", "keine")],
+        required=False,
+        widget=forms.Select(attrs=_text),
+    )
+    beispieldaten = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Beispieldaten anlegen: einige Volkslieder, Proben und ein Konzert mit "
+        "Ablauf sowie das Forum „Allgemeines“ — zum Ausprobieren, jederzeit löschbar.",
+    )
+
+    def clean_username(self):
+        username = (self.cleaned_data.get("username") or "").strip()
+        if not USERNAME_RE.match(username):
+            raise ValidationError(
+                "Der Benutzername darf nur Buchstaben, Ziffern sowie . _ - "
+                "enthalten und muss 3–30 Zeichen lang sein."
+            )
+        return username
+
+    def clean_vereins_url(self):
+        return self.cleaned_data["vereins_url"].rstrip("/")
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get("password1")
+        p2 = cleaned.get("password2")
+        if p1 and p2:
+            if p1 != p2:
+                self.add_error("password2", "Die Passwörter stimmen nicht überein.")
+            else:
+                try:
+                    validate_password(p1)
+                except ValidationError as exc:
+                    self.add_error("password1", exc)
+        return cleaned
+
+
 class CantorAuthenticationForm(AuthenticationForm):
     """Login-Formular, das ein gesperrtes Konto beim Namen nennt.
 

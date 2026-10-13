@@ -56,6 +56,8 @@ The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
 ## URL structure
 
 - `/` — public homepage (`templates/index.html`)
+- `/einrichtung/` — first-run setup of a new installation (`intern/einrichtung.py`); `404`
+  once a superuser exists
 - `/datenschutz/` — public privacy policy (`intern/templates/datenschutz.html`, no login
   required, `TemplateView` in `config/urls.py`)
 - `/auftritte/`, `/auftritte/bestaetigen/<token>/`, `/auftritte/abmelden/<token>/` — public
@@ -95,6 +97,15 @@ roughly ten milliseconds — and that included every nginx `auth_request` under 
 both polls. A gallery page with 48 thumbnails therefore issued 48 *writing* requests that
 queued behind each other on three worker processes. Measured on the media check: 22.5 ms with,
 1.5 ms without.
+
+`intern.middleware.Ersteinrichtung` (listed right after `SecurityMiddleware`) redirects every
+request except `/einrichtung/` and `/static/` to the first-run setup while the database has no
+superuser — a new installation, see `README.md`, „First start on an empty database". Until then
+`ALLOWED_HOSTS` is `["*"]` (set by `InternConfig.ready()` when no address is configured); on the
+first request after the setup each worker replaces it with the hosts of the stored address
+(`einrichtung.hosts_festlegen`). That is why it sits before `CommonMiddleware`, which checks the
+host. The check is one `exists()` query until it first answers yes; from then on the process
+remembers it and the middleware costs nothing.
 
 `intern.middleware.SitzungAuffrischen` (listed right after `AuthenticationMiddleware`) keeps
 the sliding expiry instead: for a logged-in member it stores the current time in the session
@@ -158,8 +169,9 @@ is exactly one variable:
   SQLite in the data directory. Parsed by `config/datenbank.py`.
 - `VEREINS_URL` — base URL of the portal. `settings.py` derives `ALLOWED_HOSTS` and
   `CSRF_TRUSTED_ORIGINS` from it (`hosts_aus_url`); `InternConfig.ready()` reads the value from
-  the `Konfiguration` table when the variable is absent, so it is needed on the first start
-  only. Neither set nor configured → only `localhost`, plus a warning in the log.
+  the `Konfiguration` table when the variable is absent, so it is optional. Neither set nor
+  configured → any host until the first-run setup stores the address, afterwards only
+  `localhost`, plus a warning in the log.
 - `CANTORHUB_DATA` — directory for everything that changes (`/data` in the image, set there;
   the project directory in development). Feeds `MEDIA_ROOT`, the secret key file and the SQLite
   fallback; nginx knows `/data/media` and `/data/tiles` as fixed paths.

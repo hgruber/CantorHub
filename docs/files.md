@@ -174,19 +174,21 @@ Backstage/
                        (Termin.dateien), named „<YYYY-MM-DD> <name>“
   Wiki-Anhänge         files and pictures used in articles
 Verein/                root of the attachment picker in the Rundmail
-  Vorstand/            Vorstand-only (FolderPermission rows set by 0003_import)
+  Vorstand/            Vorstand-only (FolderPermission row set by the first-run setup)
     Mitgliedsanträge   application and re-confirmation PDFs
 ```
 
 Next to `PFADE`, `folders.STARTORDNER` lists the choir's initial working folders (Organisation
-Chor, Organisation Konzerte, the rest of Verein). `0003_import.py` creates them once after
+Chor, Organisation Konzerte, the rest of Verein). The first-run setup (`intern/einrichtung.py`)
+creates them once after
 `PFADE`; the code never looks them up, so members may rename or move them freely. Folder names
 must not contain `/` — `StandardOrdnerTest` checks both lists. The Rundmail picker only offers
 folders the sender can see, and the send path drops attachments from any other folder.
 
 `intern/folders.py` is the registry: the names are constants there, `PFADE` maps each logical
 name to its path from the root, and one accessor per folder (`folders.pdf()` …) resolves that
-path level by level and caches the id. `0003_import.py` creates the tree from `PFADE`, in its
+path level by level and caches the id. The first-run setup creates the tree from `PFADE`
+(`folders.anlegen_alle()`), in its
 order (parents first). Renaming or moving one of these folders would break the lookup, so
 **the standard folders are protected**: `folder_rename`, `folder_move` and `folder_delete` refuse
 every folder of `PFADE` and every folder holding one (`folders.standard_ids()`), for superusers

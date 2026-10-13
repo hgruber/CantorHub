@@ -27,6 +27,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 
+from .einrichtung import hosts_festlegen, hosts_offen, ist_eingerichtet, pfad_frei
 from .mitgliedschaft import (
     GRUPPE_DATENSCHUTZ_BESTAETIGT,
     GRUPPE_MITGLIED,
@@ -149,3 +150,25 @@ class DatenschutzPruefung:
             GRUPPE_MITGLIED in tags,
             GRUPPE_DATENSCHUTZ_BESTAETIGT in tags,
         )
+
+
+class Ersteinrichtung:
+    """Schickt auf einer neuen Installation jede Anfrage auf ``/einrichtung/``.
+
+    Neu ist eine Installation, solange es keinen Superuser gibt (siehe
+    ``einrichtung.py``); bis dahin ist jeder Hostname zugelassen. Die erste
+    Anfrage danach legt in diesem Prozess die Hostnamen aus der Portaladresse
+    fest — so braucht es nach der Einrichtung keinen Neustart. Ab dann kostet die
+    Prüfung nichts mehr: das Ergebnis bleibt im Prozess gemerkt.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if not ist_eingerichtet():
+            if not pfad_frei(request.path):
+                return redirect("einrichtung")
+        elif hosts_offen():
+            hosts_festlegen()
+        return self.get_response(request)

@@ -10,11 +10,11 @@ Gruppe „Mitglied"
     Zugang zusammen weg, „wieder aufnehmen" bringt beides über ``nimm_auf()`` zurück.
     Tag ohne Zugang trägt das Fördermitglied. Umgekehrt gibt es Konten mit Zugang
     **ohne** Mitgliedschaft — das
-    Chorleiter-Konto aus dem Altportal ist der Anlassfall (siehe
-    ``migrations/0003_import.py``, ``deaktiviere_nicht_gruender``).
+    Chorleiter-Konto aus dem Altportal ist der Anlassfall (siehe ``migration.md``,
+    „What ``0003_import.py`` does“).
 
 Die Gruppe „Gründer" hat damit keine Funktion mehr; sie ist nur noch ein Etikett und
-darf später verschwinden. Bis dahin steuert sie allein den Import.
+darf später verschwinden.
 
 Die Entscheidungen stehen als reine Funktionen oben, ohne Datenbankzugriff, damit ein
 ``SimpleTestCase`` sie prüfen kann; die dünnen Wrapper darunter tragen die Abfragen

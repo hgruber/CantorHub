@@ -102,8 +102,14 @@ access, the group „Mitglied" = club membership, plus the admission itself — 
 `MitgliedschaftTest`, see `docs/members.md`), `avatare.py` (fallback avatar files and thumbnails, so lists do not
 load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TRIGGER_FIELDS`),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
-`ejabberd.py`, `konfig_gruppen.py`, `middleware.py` (the throttled session refresh, see
-`docs/architecture.md`, and the privacy gate for access without membership, see `docs/members.md`), `anfragespeicher.py` (values worth computing once per request —
+`ejabberd.py`, `konfig_gruppen.py`, `einrichtung.py` (the first-run setup of a new
+installation: groups, standard folders, first administrator, first settings, the start page
+„Aktuell“ and optional sample data, behind
+`/einrichtung/`, open to whoever comes first — see `README.md`),
+`middleware.py` (the throttled session refresh, see
+`docs/architecture.md`, the privacy gate for access without membership, see `docs/members.md`,
+and the redirect to `/einrichtung/` while no superuser exists, after which it fixes the accepted
+hostnames), `anfragespeicher.py` (values worth computing once per request —
 visible folders, fallback avatars), `tables2_beschleunigung.py` (two caches over django_tables2's per-cell work —
 `signature()` and `BoundColumn.attrs`; guarded by `Tables2SignaturTest`,
 `Tables2AttributeTest` and a pinned version).
@@ -154,7 +160,7 @@ empty forms counted) and whether the Terminseite shows the card „Extern". `Ter
 
 ## URL structure
 
-`/` homepage · `/datenschutz/` · `/auftritte/*` gig mailing list · `/carddav/*` · `/caldav/*` ·
+`/` homepage · `/datenschutz/` · `/einrichtung/` first-run setup · `/auftritte/*` gig mailing list · `/carddav/*` · `/caldav/*` ·
 `/tiles/<z>/<x>/<y>.png` OSM proxy · `/admin/` · `/intern/*` everything authenticated. The full
 list with the well-known redirects and the two privacy proxies is in `docs/architecture.md`.
 
@@ -170,10 +176,16 @@ reasoning where it matters.
   `MigrationenVollstaendigTest` fails while `models.py` and the migrations disagree. The first
   three are history: `0001_initial`, `0002_add_filer` (frozen in October 2026 from the models
   of v1.0.4, the state production was imported with — until then it was regenerated on every
-  build and never committed), `0003_import` (the one-time legacy import; production has it
-  recorded, and the chain hangs off it, so it stays). New migrations follow from `0004` on.
-  They run against a live MariaDB with data: a nullable → non-nullable change needs a default
-  or a data step in the migration itself.
+  build and never committed), `0003_import` (the one-time legacy import — it has run on the one
+  installation that needed it and **is never needed again**; since October 2026 it is an empty
+  placeholder that stays only because the chain hangs off it. Do not revive or fill it). New
+  migrations follow from `0004` on. **Every installation runs the same chain** — no branch, no
+  installation switch: a new one reaches the schema through `migrate` and its base data (groups,
+  standard folders, first administrator, first settings) through the first-run setup
+  (`intern/einrichtung.py`, `/einrichtung/`), so a migration from `0005` on must be correct on the
+  production data and on a freshly set-up database alike. Migrations run against a live MariaDB
+  with data: a nullable → non-nullable change needs a default or a data step in the migration
+  itself.
 - **A version tag needs its `CHANGELOG.md` section.** The tag is the release: the bare
   repository's `update` hook (`update.sh`) refuses `v<x.y.z>` whose commit carries no filled
   `## v<x.y.z>` section, so `post-receive` never builds an undocumented delivery. Only the tag is
@@ -186,8 +198,9 @@ reasoning where it matters.
   would reach the portal as a card without a date. `ChangelogTest` guards the format the hook
   parses, `AuslieferungenDateiTest` the group structure and the sentence rule, the release
   steps and the escape hatch are in `README.md`.
-- **All tests are `SimpleTestCase`.** A `TestCase` makes Django build a test database, which runs
-  the data migration `0003_import`, which needs the legacy MySQL server. Keep logic free of DB
+- **All tests are `SimpleTestCase`.** A `TestCase` used to build a test database through the data
+  migration `0003_import`, which needed the legacy MySQL server; that file is empty now, but the
+  rule stands until it is lifted deliberately (`docs/technical-debt.md`). Keep logic free of DB
   access and isolate the DB half in a thin wrapper so it stays testable (`lese_abmelde_token()`
   vs. `read_abmelde_token()` is the pattern).
 - **The production database compares strings with `PAD SPACE`.** MariaDB's
@@ -317,8 +330,8 @@ help-dialog coverage is tested (`RechteHilfeTest`); nothing ties the rest togeth
    cannot be granted in the portal), `PERMISSION_DESCRIPTIONS` (tooltip) and `PERMISSION_DETAILS`
    (the help dialog on `/intern/gruppen/` and on the card „Meine Rechte"; a third element names a
    second right the place also needs).
-3. **Seed groups** — `GROUPS` in `migrations/0003_import.py`, read only on a fresh import; on a
-   live instance a changed default is set in `/intern/gruppen/` as well. Rights every member
+3. **Seed groups** — `GRUPPEN` in `intern/einrichtung.py`, read only by the first-run setup of
+   a new installation; on a live instance a changed default is set in `/intern/gruppen/` as well. Rights every member
    should hold hang off the group „Mitglied" (`docs/members.md`).
 4. **Checks** — the views (`permission_required`, `perm_or_home`, `has_perm`), `avatar_access.py`
    and the templates (`perms.intern.*`, `sidebar.html` included). View and template must ask the

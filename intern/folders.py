@@ -51,8 +51,8 @@ PFADE: dict[str, tuple[str, ...]] = {
     "mitgliedsantraege":     (VEREIN, VORSTAND, MITGLIEDSANTRAEGE),
 }
 
-# The initial working folders of the choir, created once by 0003_import next to
-# PFADE. The code never looks them up, so they may be renamed freely. Parents
+# The initial working folders of the choir, created once by the first-run setup
+# (intern/einrichtung.py) next to PFADE. The code never looks them up, so they may be renamed freely. Parents
 # come before their children.
 STARTORDNER: tuple[tuple[str, ...], ...] = (
     ("Organisation Chor",),
@@ -117,6 +117,12 @@ def standard_ids() -> set[int]:
     umbenennen noch verschieben noch löschen, sonst fände es sie nicht mehr."""
     ids = (_get(*pfad) for pfad in PFADE.values())
     return {i for i in ids if i is not None}
+
+
+def anlegen_alle() -> None:
+    """PFADE und STARTORDNER anlegen, soweit sie fehlen — für die Ersteinrichtung."""
+    for pfad in (*PFADE.values(), *STARTORDNER):
+        _get(*pfad, anlegen=True)
 
 
 def invalidate() -> None:

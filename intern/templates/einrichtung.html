@@ -1,0 +1,73 @@
+{% extends 'mitglied_public_base.html' %}
+{% load form_tags %}
+{% block title %}Ersteinrichtung – CantorHub{% endblock %}
+{% block wrap_modifier %} join-wide{% endblock %}
+
+{% block header %}
+    <h1>Ersteinrichtung</h1>
+    <p class="join-intro">
+        Das Portal ist neu. Lege hier das erste Konto an — es bekommt alle Rechte —
+        und trage die Adresse des Portals ein. Alles Weitere, etwa den Vereinsnamen,
+        pflegst Du danach unter „Konfiguration“.
+    </p>
+{% endblock %}
+
+{% block body %}
+<form method="post" class="join-form" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    {# ── Erstes Konto ────────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Erstes Konto</h3>
+        <div class="form-grid">
+            {% form_field form.first_name "Vorname" req=True %}
+            {% form_field form.last_name "Nachname" req=True %}
+            {% form_field form.email "E-Mail" req=True %}
+            {% form_field form.username "Benutzername" req=True %}
+            {% form_field form.password1 "Passwort" req=True %}
+            {% form_field form.password2 "Passwort wiederholen" req=True %}
+        </div>
+    </div>
+
+    {# ── Portal ──────────────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Portal</h3>
+        <div class="form-grid">
+            {% form_field form.vereins_url "Adresse des Portals" req=True hilfe=True %}
+            {% form_field form.absender "Absenderadresse" req=True hilfe=True %}
+        </div>
+    </div>
+
+    {# ── E-Mail-Versand ──────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>E-Mail-Versand</h3>
+        <p class="join-hint">
+            Optional. Ohne SMTP-Server verschickt das Portal keine E-Mails — keine
+            Aktivierungen, keine Passwort-Zurücksetzung. Nachtragen lässt er sich
+            jederzeit unter „Konfiguration“.
+        </p>
+        <div class="form-grid">
+            {% form_field form.email_host "SMTP-Server" %}
+            {% form_field form.email_port "Port" %}
+            {% form_field form.email_verschluesselung "Verschlüsselung" %}
+            {% form_field form.email_host_user "Benutzername" %}
+            {% form_field form.email_host_password "Passwort" %}
+        </div>
+    </div>
+
+    {# ── Beispieldaten ───────────────────────────────────────── #}
+    <div class="detail-card">
+        <h3>Beispieldaten</h3>
+        <div class="join-consents">
+            <label class="checkbox-label join-consent">{{ form.beispieldaten }} <span>{{ form.beispieldaten.label }}</span></label>
+        </div>
+    </div>
+
+    <p class="join-required-note"><span class="req">*</span> Pflichtfeld</p>
+
+    <div class="join-actions">
+        <button type="submit" class="btn btn-primary">Einrichtung abschließen</button>
+    </div>
+</form>
+{% endblock %}

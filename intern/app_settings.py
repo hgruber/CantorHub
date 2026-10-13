@@ -155,7 +155,7 @@ def get_zeitzone():
 
 
 # Standard von ``FORUM_ANZEIGE_AB`` — der Stichtag, ab dem der Import früher
-# überhaupt erst Forenbeiträge übernahm (``0003_import._MITTEILUNGEN_CUTOFF``).
+# überhaupt erst Forenbeiträge übernahm (``_MITTEILUNGEN_CUTOFF`` des Altimports).
 FORUM_ANZEIGE_AB_STANDARD = "2026-06-01"
 
 

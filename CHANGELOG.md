@@ -7,6 +7,27 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Ersteinrichtung: Startet das Abbild auf einer leeren Datenbank, führt jeder Seitenaufruf auf
+  „/einrichtung/“; wer sie zuerst abschließt, wird Administrator. Dort entstehen das erste Konto,
+  die aus dem Aufruf vorbelegte Portaladresse, der Absender und auf Wunsch der SMTP-Zugang, dazu
+  Gruppen, Standardordner und das Vorstand-Recht.
+- Container: `podman run --rm -p 8000:8000 cantorhub` startet ohne Volume und ohne
+  Datenbankangabe eine Demo, die beim Beenden verschwindet. nginx reicht dafür den Host samt Port an Django
+  weiter.
+- Ersteinrichtung: Sie legt die Startseite „Aktuell“ an und auf Wunsch Beispieldaten — einige
+  Volkslieder, wöchentliche Proben, ein Konzert mit Ablauf und das Forum „Allgemeines“.
+- Konfiguration: Erinnerungsmail der Auftritts-Liste und Startseitentexte haben Mustertexte, die
+  eine neue Installation vorbelegen.
+
+### Entfernt
+
+- Der einmalige Import aus dem Altportal ist ausgebaut; seine Migration bleibt als leerer
+  Platzhalter in der Kette.
+
 ## v1.0.5 — 2026-10-13
 
 ### Hinzugefügt

@@ -142,12 +142,16 @@ _CONFIG_DEFAULTS = [
     ),
     (
         "HOMEPAGE_UEBER_UNS",
-        "",
+        "Wir sind ein Chor aus Menschen, die gern gemeinsam singen — einmal in der "
+        "Woche zur Probe und ein paar Mal im Jahr auf der Bühne. Unser Repertoire "
+        "reicht vom Volkslied bis zur Moderne. Schau Dir unsere nächsten Auftritte "
+        "an oder komm einfach einmal zur Probe vorbei.",
         "Über-uns-Text der öffentlichen Startseite (mehrzeilig erlaubt)",
     ),
     (
         "HOMEPAGE_AUFNAHME",
-        "",
+        "Du singst gern und möchtest mitmachen? Wir freuen uns über neue Stimmen in "
+        "allen Lagen — melde Dich bei uns!",
         "Wir-suchen-Text der öffentlichen Startseite (mehrzeilig erlaubt)",
     ),
     (
@@ -376,11 +380,17 @@ _CONFIG_DEFAULTS = [
     ),
     (
         "MAIL_MAILINGLISTE_ERINNERUNG",
-        "",
+        "== {titel} ==\n\n"
+        "{wochentag}, {datum}{uhrzeit_text}\n"
+        ": {ort}\n"
+        ": {ort_adresse}\n\n"
+        "{extern}\n\n"
+        "In {wochen_text} ist es soweit — wir freuen uns, wenn Du dabei bist.\n\n"
+        "Herzliche Grüße\n{vereinsname}",
         "Information zu einem Auftritt. Wiki-Markup erlaubt. Platzhalter: {titel}, "
         "{datum}, {wochentag}, {uhrzeit}, {uhrzeit_text}, {ort}, {ort_adresse}, "
         "{extern} (der Ankündigungstext als Fließtext, ohne Markup), {wochen}, "
-        "{wochen_text}, {name}, {abmelden}.",
+        "{wochen_text}, {name}, {abmelden}, {vereinsname}, {vereinsname_lang}.",
     ),
     (
         "MAIL_FOOTER",
@@ -745,6 +755,8 @@ def _erlaubte_hosts_nachziehen():
 
     Der Zeitpunkt trägt: ``ready()`` läuft vor der ersten Anfrage, also bevor
     ``CsrfViewMiddleware`` die Origins in seine ``cached_property`` übernimmt.
+    Später festgelegte Origins (nach der Ersteinrichtung) erreicht der Cache nicht;
+    das schadet nicht, weil Django eine Anfrage vom eigenen Host ohnehin annimmt.
     """
     import logging
     import os
@@ -765,22 +777,24 @@ def _erlaubte_hosts_nachziehen():
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
             url = get_base_url()
-        if url:
-            settings.ALLOWED_HOSTS, settings.CSRF_TRUSTED_ORIGINS = hosts_aus_url(url)
-            return
     except Exception:
         # Kein Grund, den Start zu verhindern: ohne Datenbank (Testlauf, erster
         # migrate) bleibt es bei den lokalen Einträgen aus settings.py.
-        pass
+        return
 
-    # Hierher kommt man mit leerer VEREINS_URL. Das Portal läuft, ist unter
-    # seinem eigenen Namen aber nicht erreichbar — und ein „Bad Request (400)"
-    # sagt niemandem, woran es liegt.
-    logging.getLogger(__name__).warning(
-        "VEREINS_URL ist weder gesetzt noch konfiguriert: es gelten nur "
-        "localhost und 127.0.0.1. Zugriffe unter dem echten Hostnamen "
-        "beantwortet Django mit 400. Beim ersten Start VEREINS_URL als "
-        "Umgebungsvariable mitgeben."
+    if url:
+        settings.ALLOWED_HOSTS, settings.CSRF_TRUSTED_ORIGINS = hosts_aus_url(url)
+        return
+
+    # Noch keine Adresse: eine neue Installation, deren Einrichtungsseite unter
+    # jedem Namen erreichbar sein muss. middleware.Ersteinrichtung legt die
+    # Liste fest, sobald es einen Superuser gibt (einrichtung.hosts_festlegen).
+    from .einrichtung import hosts_oeffnen
+
+    hosts_oeffnen()
+    logging.getLogger(__name__).info(
+        "VEREINS_URL ist noch nicht konfiguriert: bis zur Ersteinrichtung ist "
+        "jeder Hostname zugelassen."
     )
 
 

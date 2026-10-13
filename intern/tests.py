@@ -2798,7 +2798,7 @@ class StandardOrdnerTest(SimpleTestCase):
                 self.assertGreater(len(pfad), 1, schluessel)
 
     def test_pfade_eindeutig_und_eltern_zuerst(self):
-        """0003_import legt die Ordner in dieser Reihenfolge an."""
+        """Die Ersteinrichtung legt die Ordner in dieser Reihenfolge an."""
         from intern import folders
         pfade = list(folders.PFADE.values())
         self.assertEqual(len(pfade), len(set(pfade)))
@@ -2807,7 +2807,7 @@ class StandardOrdnerTest(SimpleTestCase):
                 self.assertIn(pfad[:-1], pfade[:i], pfad)
 
     def test_startordner_eltern_zuerst_und_ohne_schraegstrich(self):
-        """0003_import legt STARTORDNER nach PFADE an; "/" ist in Ordnernamen gesperrt."""
+        """Die Ersteinrichtung legt STARTORDNER nach PFADE an; "/" ist in Ordnernamen gesperrt."""
         from intern import folders
         bekannt = set(folders.PFADE.values())
         for pfad in folders.STARTORDNER:
@@ -3000,99 +3000,6 @@ class AbstimmungConstraintTest(SimpleTestCase):
         self.assertIn(("abstimmung", "person"), felder)
 
 
-class AbstimmungFristImportTest(SimpleTestCase):
-    """Die nachgetragene Abstimmungsfrist des Imports (``0003_import.py``).
-
-    Keine Abstimmung des Altportals trägt ein Ablaufdatum; ohne eines bliebe sie
-    im Portal für immer offen. Der Import ergänzt es — aber nur dort, wo
-    ``ABSTIMMUNG_DIRECTIVE`` auch wirklich greift, damit Syntax-Beispiele
-    unangetastet bleiben. „Hilfe:Wiki“ geht einen eigenen Weg, siehe
-    ``HilfeWikiBeispieleTest``. Reine Textarbeit, kein Datenbankzugriff.
-    """
-
-    @staticmethod
-    def _ergaenzen(text):
-        import importlib
-
-        modul = importlib.import_module("intern.migrations.0003_import")
-        return modul.abstimmungsfrist_ergaenzen(text)
-
-    def test_frist_wird_eingesetzt(self):
-        quelle = "{abstimmung:Namenswahl:4:Alpha;Beta}"
-
-        self.assertEqual(
-            self._ergaenzen(quelle), "{abstimmung:Namenswahl:4:30.06.2026:Alpha;Beta}"
-        )
-
-    def test_renderer_liest_die_frist_ohne_die_optionen_zu_verlieren(self):
-        # Die eigentliche Zusicherung: Ergänzung und Renderer-Regex passen
-        # zusammen. Ohne Frist liest der Renderer die Zeile gar nicht mehr —
-        # das Ende ist Pflicht —, mit ihr stehen Stimmenzahl und Optionen
-        # unverändert da.
-        from intern.replacements import parse_abstimmung_directive
-
-        quelle = "{abstimmung:Namenswahl:4:Alpha;Beta}"
-        vorher = parse_abstimmung_directive(quelle, "Namenswahl")
-        nachher = parse_abstimmung_directive(self._ergaenzen(quelle), "Namenswahl")
-
-        self.assertIsNone(vorher)
-        self.assertEqual(nachher, (4, ["Alpha", "Beta"], date(2026, 6, 30)))
-
-    def test_vorhandene_frist_bleibt(self):
-        quelle = "{abstimmung:Namenswahl:4:31.12.2027:Alpha;Beta}"
-
-        self.assertEqual(self._ergaenzen(quelle), quelle)
-
-    def test_zweimal_angewandt_aendert_nichts(self):
-        einmal = self._ergaenzen("{abstimmung:Namenswahl:4:Alpha;Beta}")
-
-        self.assertEqual(self._ergaenzen(einmal), einmal)
-
-    def test_datumsartige_option_ist_keine_frist(self):
-        # Die Terminabstimmung beginnt mit „15.03. 18:00“ — ohne Jahr und
-        # ohne Doppelpunkt dahinter, also keine Frist, sondern die erste Option.
-        quelle = "{abstimmung:Terminabstimmung:0:15.03. 18:00;16.03. 17:00}"
-
-        self.assertEqual(
-            self._ergaenzen(quelle),
-            "{abstimmung:Terminabstimmung:0:30.06.2026:15.03. 18:00;16.03. 17:00}",
-        )
-
-    def test_doku_beispiele_bleiben_unberuehrt(self):
-        # Was der Renderer nicht auswertet, darf der Import nicht anfassen:
-        # die mit einem Leerzeichen geschützte Zeile, das Beispiel mitten im
-        # Fließtext und die Altform ohne Stimmenzahl — alle drei in „Hilfe:Wiki“.
-        for quelle in (
-            " {abstimmung:Terminabstimmung:0:Alpha;Beta}",
-            "Die Syntax ist ${abstimmung:Name der Abstimmung:max:V1;V2}$.",
-            "{abstimmung:Terminabstimmung:15.03. 18:00;16.03. 17:00}",
-            "{abstimmung:Namenswahl:4:Alpha;Beta",
-        ):
-            with self.subTest(quelle=quelle):
-                self.assertEqual(self._ergaenzen(quelle), quelle)
-
-    def test_mehrere_direktiven_in_einem_artikel(self):
-        quelle = (
-            "{abstimmung:Erste:1:ja;nein}\n"
-            "Zwischentext\n"
-            "{abstimmung:Zweite:2:31.12.2027:a;b}\n"
-            "{abstimmung:Dritte:0:x;y}"
-        )
-
-        self.assertEqual(
-            self._ergaenzen(quelle),
-            "{abstimmung:Erste:1:30.06.2026:ja;nein}\n"
-            "Zwischentext\n"
-            "{abstimmung:Zweite:2:31.12.2027:a;b}\n"
-            "{abstimmung:Dritte:0:30.06.2026:x;y}",
-        )
-
-    def test_leerer_text_geht_durch(self):
-        # ``artikel_versionen.text`` kann im Altbestand NULL sein.
-        self.assertIsNone(self._ergaenzen(None))
-        self.assertEqual(self._ergaenzen(""), "")
-
-
 class AbstimmungEndePflichtTest(SimpleTestCase):
     """Das Ende der Abstimmung ist Pflicht (``intern/replacements.py``).
 
@@ -3177,69 +3084,6 @@ class AbstimmungOhneEndeTest(SimpleTestCase):
     def test_leerer_text_geht_durch(self):
         self.assertEqual(self._pruefen(None), [])
         self.assertEqual(self._pruefen(""), [])
-
-
-class HilfeWikiBeispieleTest(SimpleTestCase):
-    """„Hilfe:Wiki“ beim Import (``0003_import.py``).
-
-    Der Artikel erklärt die Syntax, statt abzustimmen: seine Beispiele bekommen
-    ein Datum weit in der Zukunft statt der abgelaufenen Frist des übrigen
-    Bestands, und die Erklärung nennt das Pflichtfeld. Der Auszug unten ist der
-    Wortlaut des Altbestands.
-    """
-
-    AUSZUG = (
-        "Die Syntax ist fest vorgegeben:"
-        " ${abstimmung:Name der Abstimmung:max:Vorschlag1;Vorschlag2;usw}$."
-        " max gibt dabei an, wie viele Häkchen maximal gesetzt werden dürfen,"
-        " '0' bedeutet dabei: beliebig viele. Die Vorschläge werden durch"
-        " Semikolons getrennt.\n"
-        " {abstimmung:Terminabstimmung:0:15.03. 18:00;16.03. 17:00}\n"
-        "{abstimmung:Terminabstimmung:0:15.03. 18:00;16.03. 17:00}\n"
-    )
-
-    @staticmethod
-    def _aufbereiten(name, text):
-        import importlib
-
-        modul = importlib.import_module("intern.migrations.0003_import")
-        return modul.artikeltext_aufbereiten(name, text)
-
-    def setUp(self):
-        self.neu = self._aufbereiten("Hilfe:Wiki", self.AUSZUG)
-
-    def test_beispiele_tragen_das_ferne_datum(self):
-        self.assertEqual(self.neu.count("31.12.2039:"), 2)
-        self.assertNotIn("30.06.2026", self.neu)
-
-    def test_auch_die_geschuetzte_zeile(self):
-        # Sie zeigt dem Leser die Syntax — also muss sie die gültige zeigen.
-        self.assertIn(
-            " {abstimmung:Terminabstimmung:0:31.12.2039:15.03. 18:00;16.03. 17:00}",
-            self.neu,
-        )
-
-    def test_platzhalterform_bekommt_den_platzhalter(self):
-        self.assertIn("{abstimmung:Name der Abstimmung:max:TT.MM.JJJJ:", self.neu)
-
-    def test_erklaerung_nennt_das_pflichtfeld(self):
-        self.assertIn("Danach folgt das Ende der Abstimmung", self.neu)
-
-    def test_ergebnis_wird_vom_renderer_gelesen(self):
-        from intern.replacements import parse_abstimmung_directive
-
-        self.assertEqual(
-            parse_abstimmung_directive(self.neu, "Terminabstimmung"),
-            (0, ["15.03. 18:00", "16.03. 17:00"], date(2039, 12, 31)),
-        )
-
-    def test_zweimal_angewandt_aendert_nichts(self):
-        self.assertEqual(self._aufbereiten("Hilfe:Wiki", self.neu), self.neu)
-
-    def test_andere_artikel_bekommen_die_alte_frist(self):
-        anderer = self._aufbereiten("Namenswahl", "{abstimmung:Wahl:2:a;b}")
-
-        self.assertEqual(anderer, "{abstimmung:Wahl:2:30.06.2026:a;b}")
 
 
 class ZusageOptionenTest(SimpleTestCase):
@@ -4879,28 +4723,19 @@ class MitgliedschaftTest(SimpleTestCase):
         self.assertTrue(aufnahme_setzt_aktiv(False))
         self.assertFalse(aufnahme_setzt_aktiv(True))
 
-    def test_gruppennamen_stehen_im_import(self):
-        """Die Gruppennamen muessen im ``GROUPS``-Dict der Migration stehen.
+    def test_gruppennamen_stehen_in_der_einrichtung(self):
+        """Die Gruppennamen muessen in ``einrichtung.GRUPPEN`` stehen.
 
-        Sonst legt ``create_groups`` sie bei einer Neuinstallation nicht an und die
-        Aufnahme laufe gegen eine Gruppe, die es nur per ``get_or_create`` gibt.
+        Sonst legt die Ersteinrichtung sie auf einer neuen Installation nicht an und
+        die Aufnahme liefe gegen eine Gruppe, die es nur per ``get_or_create`` gibt.
         """
-        quelle = (
-            Path(__file__).resolve().parent / "migrations" / "0003_import.py"
-        ).read_text(encoding="utf-8")
+        from intern.einrichtung import GRUPPE_VORSTAND, GRUPPEN
+
         for name in (
             GRUPPE_MITGLIED, GRUPPE_FOERDERMITGLIED, GRUPPE_GRUENDER, GRUPPE_KEIN_BILD,
-            GRUPPE_DATENSCHUTZ_BESTAETIGT,
+            GRUPPE_DATENSCHUTZ_BESTAETIGT, GRUPPE_VORSTAND,
         ):
-            self.assertIn(f'"{name}": [', quelle, f"{name} fehlt in GROUPS")
-
-    def test_artikel_schreibgruppen_stehen_im_import(self):
-        """Gibt es eine der Gruppen nicht, bekaeme sie still kein Schreibrecht."""
-        import importlib
-
-        modul = importlib.import_module("intern.migrations.0003_import")
-        for name in modul._ARTIKEL_SCHREIBGRUPPEN:
-            self.assertIn(name, modul.GROUPS)
+            self.assertIn(name, GRUPPEN)
 
     def test_kein_bild_ohne_foto_einwilligung(self):
         """Ohne Foto-Haekchen gibt es das Tag „kein Bild", mit Haekchen nicht."""
@@ -6816,3 +6651,144 @@ class MigrationenVollstaendigTest(SimpleTestCase):
             "models.py weicht von den Migrationen ab — "
             "python manage.py makemigrations intern --name <name>",
         )
+
+
+class EinrichtungTest(SimpleTestCase):
+    """Die reinen Entscheidungen der Ersteinrichtung (``intern/einrichtung.py``)."""
+
+    def test_nur_einrichtung_und_static_sind_frei(self):
+        from intern.einrichtung import pfad_frei
+
+        self.assertTrue(pfad_frei("/einrichtung/"))
+        self.assertTrue(pfad_frei("/static/intern/css/intern.css"))
+        for pfad in ("/", "/intern/", "/admin/", "/carddav/", "/intern/media-auth/"):
+            with self.subTest(pfad=pfad):
+                self.assertFalse(pfad_frei(pfad))
+
+    def test_hosts_bis_zur_einrichtung_offen(self):
+        from django.test import override_settings
+
+        from intern.einrichtung import hosts_offen, hosts_oeffnen
+
+        with override_settings(ALLOWED_HOSTS=["localhost"]):
+            self.assertFalse(hosts_offen())
+            hosts_oeffnen()
+            self.assertTrue(hosts_offen())
+
+    def test_hosts_festlegen_aus_der_portaladresse(self):
+        from django.conf import settings
+        from django.test import override_settings
+
+        from intern.einrichtung import hosts_festlegen, hosts_offen
+
+        with override_settings(ALLOWED_HOSTS=["*"], CSRF_TRUSTED_ORIGINS=[]):
+            hosts_festlegen("https://chor.example.de")
+            self.assertFalse(hosts_offen())
+            self.assertIn("chor.example.de", settings.ALLOWED_HOSTS)
+            self.assertIn("https://chor.example.de", settings.CSRF_TRUSTED_ORIGINS)
+
+    def test_middleware_legt_hosts_nach_der_einrichtung_fest(self):
+        from django.test import RequestFactory, override_settings
+
+        from intern import middleware
+
+        mw = middleware.Ersteinrichtung(lambda request: "weiter")
+        anfrage = RequestFactory().get("/")
+        with override_settings(ALLOWED_HOSTS=["*"]), \
+                mock.patch.object(middleware, "ist_eingerichtet", return_value=True), \
+                mock.patch.object(middleware, "hosts_festlegen") as festlegen:
+            self.assertEqual(mw(anfrage), "weiter")
+            festlegen.assert_called_once_with()
+
+    def test_middleware_leitet_vor_der_einrichtung_um(self):
+        from django.test import RequestFactory
+
+        from intern import middleware
+
+        mw = middleware.Ersteinrichtung(lambda request: "weiter")
+        with mock.patch.object(middleware, "ist_eingerichtet", return_value=False):
+            antwort = mw(RequestFactory().get("/intern/"))
+            self.assertEqual(antwort.status_code, 302)
+            self.assertEqual(antwort["Location"], "/einrichtung/")
+            self.assertEqual(mw(RequestFactory().get("/einrichtung/")), "weiter")
+
+    def test_smtp_ohne_host_schreibt_nichts(self):
+        from intern.einrichtung import smtp_konfiguration
+
+        self.assertEqual(smtp_konfiguration("", 25, "u", "p", "ssl"), {})
+
+    def test_smtp_verschluesselung(self):
+        from intern.einrichtung import smtp_konfiguration
+
+        for wahl, tls, ssl in (("starttls", "1", "0"), ("ssl", "0", "1"), ("", "0", "0")):
+            with self.subTest(wahl=wahl):
+                werte = smtp_konfiguration("mail.example.de", None, "", "", wahl)
+                self.assertEqual(werte["EMAIL_USE_TLS"], tls)
+                self.assertEqual(werte["EMAIL_USE_SSL"], ssl)
+                self.assertEqual(werte["EMAIL_PORT"], "587")
+
+    def test_smtp_schluessel_stehen_im_katalog(self):
+        from intern.apps import _CONFIG_DEFAULTS
+        from intern.einrichtung import smtp_konfiguration
+
+        katalog = {key for key, _, _ in _CONFIG_DEFAULTS}
+        werte = smtp_konfiguration("h", 25, "", "", "")
+        self.assertLessEqual(set(werte) | {"VEREINS_URL", "DEFAULT_FROM_EMAIL"}, katalog)
+
+    def test_platzhalter_0003_ist_leer(self):
+        import importlib
+
+        modul = importlib.import_module("intern.migrations.0003_import")
+        self.assertEqual(modul.Migration.operations, [])
+
+    def test_aktuell_schreibgruppen_gibt_es(self):
+        """Fehlt eine Gruppe, bekaeme sie still kein Schreibrecht auf „Aktuell"."""
+        from intern.einrichtung import AKTUELL_SCHREIBGRUPPEN, GRUPPEN
+
+        for name in AKTUELL_SCHREIBGRUPPEN:
+            self.assertIn(name, GRUPPEN)
+
+    def test_beispieltermine_liegen_in_der_zukunft(self):
+        from intern.einrichtung import PROBEN_ANZAHL, beispieltermine
+
+        # Ein Dienstag nach Probenbeginn: die erste Probe ist die der Folgewoche.
+        jetzt = datetime(2026, 10, 13, 20, 0)
+        termine = beispieltermine(jetzt)
+        proben = [t for t in termine if not t["repertoire"]]
+        konzerte = [t for t in termine if t["repertoire"]]
+
+        self.assertEqual(len(proben), PROBEN_ANZAHL)
+        self.assertEqual(len(konzerte), 1)
+        self.assertEqual(proben[0]["datum"], datetime(2026, 10, 20, 19, 30))
+        for termin in termine:
+            self.assertGreater(termin["datum"], jetzt)
+            self.assertGreater(termin["datum_bis"], termin["datum"])
+        self.assertTrue(all(p["datum"].weekday() == 1 for p in proben))
+        self.assertEqual(konzerte[0]["datum"].weekday(), 5)
+        self.assertGreater(konzerte[0]["datum"], proben[-1]["datum"])
+
+    def test_konzert_kommt_auf_die_startseite(self):
+        # Die Startseite listet Termine mit nicht leerem Ankündigungstext.
+        from intern.einrichtung import beispieltermine
+
+        konzert = [t for t in beispieltermine(datetime(2026, 10, 13)) if t["repertoire"]][0]
+        self.assertTrue(konzert["extern"].strip())
+
+    def test_beispiellieder_passen_ins_modell(self):
+        from intern.einrichtung import BEISPIEL_LIEDER, BEISPIEL_ORT, KONZERT_ABLAUF
+        from intern.models import Lied, Ort
+
+        tonarten = {k for k, _ in Lied.TONART_CHOICES}
+        tempi = {k for k, _ in Lied.CHOICES}
+        laenge = Lied._meta.get_field("titel").max_length
+        for titel, _, _, tonart, tempo, _ in BEISPIEL_LIEDER:
+            with self.subTest(titel=titel):
+                self.assertLessEqual(len(titel), laenge)
+                self.assertIn(tonart, tonarten)
+                self.assertIn(tempo, tempi)
+        self.assertEqual(len(set(KONZERT_ABLAUF)), len(KONZERT_ABLAUF))
+        self.assertTrue(all(0 <= i < len(BEISPIEL_LIEDER) for i in KONZERT_ABLAUF))
+        for feld, wert in BEISPIEL_ORT.items():
+            maximal = Ort._meta.get_field(feld).max_length
+            if maximal:
+                self.assertLessEqual(len(wert), maximal, feld)

@@ -129,6 +129,9 @@ AUTH_USER_MODEL = "intern.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Neue Installation ohne Superuser: alles auf /einrichtung/. Vor
+    # CommonMiddleware, weil sie danach die Hostnamen festlegt, die jene prüft.
+    "intern.middleware.Ersteinrichtung",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

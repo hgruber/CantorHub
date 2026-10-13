@@ -9,9 +9,6 @@ httpx==0.28.1
 icalendar==7.0.3
 Pillow==11.3.0
 mysqlclient>=2.2.1
-# MIGRATIONSPFAD: pymysql liest ausschliesslich das alte PHP-Portal
-# (intern/migrations/0003_import.py) und faellt mit dem Migrationszweig weg.
-pymysql==1.1.2
 pypdfium2==5.13.0
 reportlab==4.4.9
 slixmpp==1.13.2
