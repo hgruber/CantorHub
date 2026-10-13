@@ -32,6 +32,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Start des Containers angewendet. Der Migrationspfad `MIGRATE=1` ist entfernt.
 - Datenschutzerklärung: Unter „Verantwortliche“ stehen alle Mitglieder der Gruppe „Vorstand“,
   auch solche ohne Portalzugang.
+- Repertoire: Das Feld „Konzert“ im Filter zeigt ohne Auswahl „Alle Titel“ statt „Alle Termine“.
 
 ### Behoben
 

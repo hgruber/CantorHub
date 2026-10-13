@@ -11,7 +11,7 @@ ein Konzert nur noch über Fremdlinks zu erreichen.
     <label class="filter-zeile-feld">
         <span>Konzert</span>
         <select class="inline-input" name="konzert" aria-label="Auf ein Konzert einschränken">
-            <option value="">Alle Termine</option>
+            <option value="">Alle Titel</option>
             {% for termin in konzert_auswahl.termine %}
             <option value="{{ termin.pk }}"{% if termin.pk|stringformat:"s" == konzert_auswahl.aktuell %} selected{% endif %}>{{ termin }}</option>
             {% endfor %}
