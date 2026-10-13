@@ -25,10 +25,6 @@
 .vscode/
 .idea/
 
-# Wird im Dockerfile frisch erzeugt. Laege sie hier mit im Bauverzeichnis, kaeme
-# je nach Rechner eine andere — womoeglich veraltete — Fassung ins Abbild.
-intern/migrations/0002_add_filer.py
-
 # Python-Zwischenstaende
 __pycache__/
 **/__pycache__/

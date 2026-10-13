@@ -22,6 +22,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Hochladen: Die Ablagefläche eines Felds lässt sich antippen und nimmt auch ein zweites Bild an;
   Profil- und Forenbild öffnen auf dem Handy Galerie oder Kamera. Das Hochladen-Symbol erscheint
   überall dort, wo eine Ablagefläche ist.
+- Betrieb: Änderungen am Datenbankschema kommen als Migrationen mit dem Abbild und werden beim
+  Start des Containers angewendet. Der Migrationspfad `MIGRATE=1` ist entfernt.
 
 ### Behoben
 

@@ -3,7 +3,7 @@
 Guidance for Claude Code (claude.ai/code) when working in this repository. It is the
 **developer** entry point: a map of the code, the rules that are not visible from any single
 file, and pointers to the topic documents. Running and configuring a deployment is `README.md`;
-the one-time migration off the legacy PHP portal is `migration.md`.
+the one-time migration off the legacy PHP portal, which has run, is recorded in `migration.md`.
 
 **Language:** this file must be written strictly in English. Do not add German prose; code
 identifiers and string literals may remain in their original form. Note that the domain
@@ -33,8 +33,7 @@ podman run -p 8000:8000 -v cantorhub-data:/data \
 ```
 
 The management commands an operator runs (reminders, re-confirmation mails, cleanup jobs,
-ejabberd admin) are listed in `README.md`. `MIGRATE=1` selects the migration path in `start.sh`;
-it wipes the database and belongs to the migration — see `migration.md`.
+ejabberd admin) are listed in `README.md`.
 
 ## Where things are documented
 
@@ -164,19 +163,17 @@ list with the well-known redirects and the two privacy proxies is in `docs/archi
 These hold across the whole codebase. Each is stated once here; the topic files carry the
 reasoning where it matters.
 
-- **Migrations: never create `0004+`.** `0002_add_filer.py` is regenerated on every fresh install
-  and must not be committed. All model changes go into `models.py` and are picked up from there.
-  The **image builds it at build time** (`makemigrations` in the `Dockerfile`, with `0003` moved
-  aside because it declares a dependency on `0002`) — otherwise whether the image can migrate at
-  all would depend on a gitignored file happening to sit in the build directory. Note the flip
-  side of the scheme: a database that already recorded `0002` never sees a later regeneration of
-  it, so model changes reach an existing instance only through the `MIGRATE` rebuild.
-  **A nullable → non-nullable field is off limits**: Django then asks a question interactively
-  ("It is impossible to change a nullable field to non-nullable without a default"), and the
-  `makemigrations` runs in `Dockerfile` and `start.sh` have no stdin — the build dies with
-  `EOFError`. Either leave the column nullable and guard the reading code, or add `--no-input`
-  (or an explicit default) to *both* call sites.
-  See `migration.md`.
+- **Migrations are a normal, checked-in chain.** Every model change gets its migration:
+  `python manage.py makemigrations intern --name <name>`, committed with the change.
+  `start.sh` runs `migrate` on every container start, so a delivery brings its schema along;
+  neither the `Dockerfile` nor `start.sh` calls `makemigrations` any more.
+  `MigrationenVollstaendigTest` fails while `models.py` and the migrations disagree. The first
+  three are history: `0001_initial`, `0002_add_filer` (frozen in October 2026 from the models
+  of v1.0.4, the state production was imported with — until then it was regenerated on every
+  build and never committed), `0003_import` (the one-time legacy import; production has it
+  recorded, and the chain hangs off it, so it stays). New migrations follow from `0004` on.
+  They run against a live MariaDB with data: a nullable → non-nullable change needs a default
+  or a data step in the migration itself.
 - **A version tag needs its `CHANGELOG.md` section.** The tag is the release: the bare
   repository's `update` hook (`update.sh`) refuses `v<x.y.z>` whose commit carries no filled
   `## v<x.y.z>` section, so `post-receive` never builds an undocumented delivery. Only the tag is
@@ -312,9 +309,10 @@ default, a new object-level rule — has to be carried through every place below
 help-dialog coverage is tested (`RechteHilfeTest`); nothing ties the rest together.
 
 1. **Definition** — `Meta.permissions` of the model in `models.py` (custom codenames) or Django's
-   default `add/change/delete/view_<model>`. A new codename reaches an existing instance only
-   through the `MIGRATE` rebuild (see the migration invariant); until then `has_perm()` is
-   silently `False` and a `Permission.objects.get()` raises.
+   default `add/change/delete/view_<model>`. A new codename needs its migration (an
+   `AlterModelOptions`); Django's `post_migrate` creates the `Permission` row when `start.sh`
+   runs `migrate`. Until then `has_perm()` is silently `False` and a `Permission.objects.get()`
+   raises.
 2. **`views/gruppen.py`** — `PERMISSION_DEFS` (column, label, category: without an entry the right
    cannot be granted in the portal), `PERMISSION_DESCRIPTIONS` (tooltip) and `PERMISSION_DETAILS`
    (the help dialog on `/intern/gruppen/` and on the card „Meine Rechte"; a third element names a

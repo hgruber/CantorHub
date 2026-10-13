@@ -100,17 +100,6 @@ WORKDIR /app
 # Application code. Was draussen bleibt, steht in .containerignore.
 COPY --chown=appuser:appuser . .
 
-# 0002_add_filer wird bei jedem Bau neu erzeugt und ist nie eingecheckt (siehe
-# CLAUDE.md, „Migrations"). Ohne diesen Schritt haengt es davon ab, ob die Datei
-# zufaellig im Bauverzeichnis liegt: aus einem frischen Klon gebaut, fehlte sie
-# im Abbild — und "migrate" braeche sofort ab, weil 0003 eine Migration
-# deklariert, die es nicht gibt. 0003 muss dafuer kurz beiseite, aus demselben
-# Grund: der Migrationsgraph wird geladen, bevor makemigrations etwas tut.
-RUN rm -f intern/migrations/0002_add_filer.py && \
-    mv intern/migrations/0003_import.py /tmp/0003_import.py && \
-    DEBUG=1 python manage.py makemigrations intern --name add_filer && \
-    mv /tmp/0003_import.py intern/migrations/0003_import.py
-
 # Statische Dateien sind ein Bauergebnis, kein Betriebsdatum: einmal hier statt
 # bei jedem Containerstart. DEBUG=1 nur fuer diesen Aufruf, damit kein
 # Schluessel noetig ist — er wuerde sonst im Abbild landen. Bricht

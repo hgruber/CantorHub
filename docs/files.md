@@ -368,12 +368,12 @@ etc.).
 
 ## Orphaned blobs: `cleanup_verwaiste_blobs`
 
-A blob can outlive every row that named it. The way that happens in practice is the migration
-path: `MIGRATE=1` throws the database away, and because filer gives each imported file a fresh
-UUID path (`generate_filename.randomized`), the next import does not overwrite the old set — it
-puts a second one beside it. Up to v1.0.0-rc2 `start.sh` deleted `media/` only in the SQLite
-branch, so on the MySQL side the volume grew by the full data set on every run. `start.sh` now
-clears `media/` for both, and this command recovers what earlier runs left behind.
+A blob can outlive every row that named it. The way that happened in practice was the former
+migration path: `MIGRATE=1` threw the database away, and because filer gives each imported file a
+fresh UUID path (`generate_filename.randomized`), the next import did not overwrite the old set —
+it put a second one beside it. Up to v1.0.0-rc2 `start.sh` deleted `media/` only in the SQLite
+branch, so on the MySQL side the volume grew by the full data set on every run. This command
+recovers what such runs left behind.
 
 The rule sits in `intern/blob_aufraeumen.py`, free of database and filesystem so it can be
 tested (`VerwaisteBlobsTest`); the command holds the two halves that touch either. It decides by

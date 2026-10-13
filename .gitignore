@@ -52,7 +52,6 @@ coverage.xml
 
 # Other
 *.orig
-0002_add_filer.py
 # Der Django-Schluessel, wenn lokal ohne DEBUG gestartet wird (config/geheimnis.py)
 secret_key
 icons.html

@@ -136,9 +136,8 @@ same reason the limits exist — Django's default of 300 makes `DatabaseCache` c
 all rows on overflow (`CULL_FREQUENCY` 3), which an attacker could use to evict the very
 counters that throttle them.
 
-The table is created by `python manage.py createcachetable` in **both** `start.sh` and
-`migrate.sh`. That is plain DDL, **not** a migration, so it does not collide with the rule
-that all model changes go into the regenerated `0002`. It is idempotent. If the table is
+The table is created by `python manage.py createcachetable` in `start.sh`. That is plain DDL,
+**not** a migration, and idempotent. If the table is
 missing the throttles fail loudly rather than silently switching themselves off — that is
 deliberate, hence no `try/except` around the cache calls.
 
@@ -171,7 +170,6 @@ is exactly one variable:
   and image updates and with it every session. In `DEBUG` mode a fixed insecure constant is
   used, which keeps the test run from writing anything to disk.
 - `DEBUG` — set to `1` for development mode
-- `MIGRATE` — set → `start.sh` runs the migration path first (wipes the database)
 
 **Neither `config/datenbank.py` nor `config/geheimnis.py` imports Django**, and `settings.py`
 must not touch the database at import time: the whole test suite is `SimpleTestCase` and runs

@@ -5,56 +5,12 @@ Everything in this file exists for the single changeover from the old PHP portal
 see the checklist at the end. Nothing here is relevant to running CantorHub, which is `README.md`,
 or to developing it, which is `CLAUDE.md`.
 
-## `MIGRATE=1` — the fresh-install path
+## Status
 
-The migration path is a block inside `start.sh`, marked `MIGRATIONSPFAD` at both ends so it can
-later be lifted out in one piece. It runs only when `MIGRATE` is set:
-
-```bash
-podman run --rm -e MIGRATE=1 \
-    -e DATABASE_URL=mysql://cantorhub:secret@db:3306/cantorhub \
-    -v cantorhub-data:/data \
-    cantorhub:latest
-
-MIGRATE=1 DEBUG=1 ./start.sh      # DEV: runserver, data next to the code
-```
-
-The **legacy sources belong in `$CANTORHUB_DATA/migration/`** — that is `/data/migration/public/`
-and `/data/migration/Avatare/` in the container. They are needed for this one run only and can be
-deleted afterwards; `public/` alone is 2.5 GB and has no business in the image.
-
-It **discards all data**: with `DATABASE_URL` pointing at MySQL it drops every table, otherwise it
-deletes the SQLite file — and in both cases the whole `media/` tree goes with it. The blobs belong
-to the database that was just thrown away: filer gives every imported file a fresh UUID path, so a
-second run would not overwrite them but pile a complete second set on top, growing the volume by
-the full data set each time (`public/` alone is 2.5 GB). Until v1.0.0-rc2 the `rm` sat inside the
-SQLite branch and the MySQL side did exactly that; `cleanup_verwaiste_blobs` cleans up a volume
-where it already happened (see „Orphaned blobs" in `docs/files.md`). That is acceptable only during the current
-test phase, where every run rebuilds the portal from the legacy data. Afterwards the test system
-simply receives a copy of the production database and starts without `MIGRATE`.
-
-Steps after the wipe:
-
-1. `rm intern/migrations/0002_add_filer.py`, `mv intern/migrations/0003_import.py /tmp`
-2. `makemigrations intern --name add_filer` → regenerates `0002` from the current models
-3. `migrate` → schema only
-4. move `0003_import.py` back, `import_files --path $CANTORHUB_DATA/migration/Avatare`,
-   `migrate` again → the data import
-5. `createcachetable`, then `index_files` and `thumbnail_files` in the background
-
-The connection to the legacy MySQL is hardcoded in `0003_import.py` (`get_legacy_connection`:
-hosts `127.0.0.1` and `10.88.0.4`, user and password `jgf`, database `jg_frankfurt`) and needs no
-environment variable — only network access. Without it the migration calls `exit(1)`.
-
-## Why the migrations are numbered the way they are
-
-- `0002_add_filer.py` is **always regenerated** and **must never be committed**. Every model
-  change therefore lands in `models.py` and is picked up by the next regeneration — there are no
-  hand-written `0004+` migrations in this project, and adding one would break the rebuild.
-- `0003_import.py` is moved out of the way while `0002` is generated, because it declares a
-  dependency on `0002` and must see it freshly created.
-- `createcachetable` is plain DDL, not a migration, and idempotent — which is why it can sit in
-  both scripts without colliding with the regeneration rule.
+The final migration has run; production was imported with v1.0.4. Since then the `MIGRATE`
+path is gone from `start.sh`, and `0002_add_filer.py` — regenerated on every build until then —
+is frozen and checked in, so the schema evolves through ordinary migrations from `0004` on
+(see „Migrations“ in `CLAUDE.md`). What is left below documents what the import did.
 
 ## What `0003_import.py` does
 
@@ -162,7 +118,7 @@ SELECT COUNT(*) FROM auth_user WHERE password LIKE 'php_sha256$%';
 Everything that belongs to the migration carries a `MIGRATIONSPFAD` marker, so it comes out in
 one piece:
 
-- the `if [ -n "${MIGRATE}" ]` block in `start.sh`;
+- ~~the `if [ -n "${MIGRATE}" ]` block in `start.sh`~~ — removed in October 2026;
 - `intern/migrations/0003_import.py`, including its `_migrationsquellen()` helper;
 - the `pymysql` line in `requirements.txt` — nothing else imports it;
 - `/data/migration/` in the volume (data only, no code);
@@ -170,8 +126,7 @@ one piece:
 
 Then also:
 
-- commit a normal, checked-in migration chain (or squash the regenerated `0002` once) so
-  `makemigrations` stops being part of the start-up;
+- ~~commit a normal, checked-in migration chain~~ — `0002` frozen in October 2026;
 - drop `php_pbkdf2_hasher.py` from `PASSWORD_HASHERS` once the query above returns 0;
 - revisit `cleanup_dateiversionen`'s parameters in `start.sh` if a retention limit is wanted;
 - drop the `SimpleTestCase`-only rule from `CLAUDE.md` — with `0003_import` gone, tests may use a

@@ -3,7 +3,6 @@
 set -e
 
 DEBUG="${DEBUG:-}"
-MIGRATE="${MIGRATE:-}"
 CANTORHUB_DATA="${CANTORHUB_DATA:-.}"
 
 if [ -n "${DATABASE_URL}" ]; then
@@ -15,61 +14,10 @@ fi
 
 mkdir -p "${CANTORHUB_DATA}/media" "${CANTORHUB_DATA}/tiles"
 
-# ==== MIGRATIONSPFAD — faellt nach dem letzten Lauf als Ganzes weg ====
-# Einmaliger Import aus dem alten PHP-Portal. Loescht die Datenbank. Siehe
-# migration.md; die Quellen liegen unter ${CANTORHUB_DATA}/migration/.
-if [ -n "${MIGRATE}" ]; then
-    echo "MIGRATE gesetzt — Datenbank wird verworfen und neu aufgebaut."
-
-    if [ -n "${DATABASE_URL}" ]; then
-        python manage.py shell -c "
-from django.db import connection
-with connection.cursor() as c:
-    c.execute('SET FOREIGN_KEY_CHECKS = 0')
-    c.execute('SHOW TABLES')
-    tables = [row[0] for row in c.fetchall()]
-    for t in tables:
-        c.execute(f'DROP TABLE IF EXISTS {t}')
-    c.execute('SET FOREIGN_KEY_CHECKS = 1')
-print('Database cleared.')
-"
-    else
-        rm -rf "${CANTORHUB_DATA}/db.sqlite3"
-    fi
-
-    # Die Blobs gehoeren zu der Datenbank, die gerade verworfen wurde, und
-    # muessen mit ihr weg. filer vergibt jeder Datei einen frischen UUID-Pfad
-    # (generate_filename.randomized): der naechste Import ueberschreibt nichts,
-    # er legt den gesamten Bestand daneben. Ohne dieses rm wuechse das Volume
-    # bei jedem Migrationslauf um den vollen Datenbestand (public/ allein
-    # 2,5 GB), und aufzuraeumen waere das hinterher nur noch mit
-    # "cleanup_verwaiste_blobs" — filer_check --delete-orphans ist hier
-    # verboten. Steht ausserhalb des if: es gilt fuer beide Datenbanken.
-    rm -rf "${CANTORHUB_DATA}/media"
-    mkdir -p "${CANTORHUB_DATA}/media"
-
-    # 0002 wird bei jedem Lauf neu erzeugt und nie eingecheckt (siehe CLAUDE.md);
-    # 0003 muss dafuer kurz beiseite, sonst haengt es an einer Migration, die es
-    # in diesem Moment noch nicht gibt.
-    rm -rf intern/migrations/0002_add_filer.py
-    mv intern/migrations/0003_import.py /tmp || true
-
-    python manage.py makemigrations intern --name add_filer
-    python manage.py migrate
-
-    mv /tmp/0003_import.py intern/migrations || true
-    python manage.py import_files --path "${CANTORHUB_DATA}/migration/Avatare"
-    python manage.py migrate
-
-    python manage.py createcachetable
-    python manage.py index_files &
-    # Kein "filer_check --delete-orphans": das Kommando loescht jeden Blob ohne
-    # File-Zeile — und genau das ist ein DateiVersion-Blob (importierte Avatar-
-    # Fassungen).
-    python manage.py thumbnail_files &
-fi
-# ==== ENDE MIGRATIONSPFAD ====
-
+# Bringt die Datenbank auf den Stand des Abbilds: jede eingecheckte Migration
+# unter intern/migrations/, die noch nicht verbucht ist, laeuft hier — bei jedem
+# Start, eine schon angewendete ist ein No-op. set -e: scheitert eine, startet
+# der Container nicht, statt mit halbem Schema zu laufen.
 python manage.py migrate
 
 # Tabelle fuer den DatabaseCache (CACHES in settings.py) — traegt die beiden

@@ -5,8 +5,8 @@
 #
 # Frueher stand hier ein "systemctl restart": der Code lag als Arbeitskopie im
 # Volume cantorhub:/app, ein "git pull" davor genuegte. Seit der Code im Abbild
-# steckt — samt collectstatic und dem bei jedem Bau neu erzeugten
-# 0002_add_filer — muss ein Push stattdessen ein Abbild bauen.
+# steckt — samt collectstatic und den Migrationen, die start.sh beim Start
+# anwendet — muss ein Push stattdessen ein Abbild bauen.
 #
 # Gebaut wird ausschliesslich auf einen gueltigen Versions-Tag hin. Ein Push auf
 # master aendert am Betrieb nichts mehr; erst das Tag macht eine Fassung zur

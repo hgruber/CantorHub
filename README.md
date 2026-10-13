@@ -2,7 +2,7 @@
 
 A self-hosted member portal for a choir, built with Django 6. This file is for the people who
 **run** a CantorHub instance. Developers start at `CLAUDE.md`; the one-time import from the
-legacy PHP portal is described in `migration.md`.
+legacy PHP portal is described in `migration.md` (history only — it has run).
 
 ## What it does
 
@@ -62,7 +62,6 @@ Everything that changes lives under `/data`; nothing of it belongs in the image:
 /data/tiles/              nginx cache for the OSM map tiles
 /data/secret_key          generated on first start, mode 0600
 /data/db.sqlite3          only without DATABASE_URL
-/data/migration/          sources of the one-time import (see migration.md)
 ```
 
 The secret key is **not** an environment variable: it is generated on the first start and kept
@@ -77,8 +76,8 @@ DEBUG=1 ./start.sh                       # migrations, background jobs, dev serv
 python manage.py runserver 0.0.0.0:8000  # dev server only
 ```
 
-`MIGRATE=1` runs the one-time import from the legacy PHP portal and **deletes the whole
-database** — see `migration.md`. Do not set it on a live instance.
+Schema changes ship as checked-in migrations; `start.sh` applies the ones still missing with
+`python manage.py migrate` on every start, before anything else runs. Nothing to do by hand.
 
 ### Updating
 
@@ -174,7 +173,6 @@ only the first line is one you normally set:
 |---|---|---|
 | `DATABASE_URL` | SQLite in `/data` | `mysql://user:password@host:3306/name` or `sqlite:////data/db.sqlite3`. Characters like `@` or `/` in the password must be percent-encoded (`%40`, `%2F`) |
 | `VEREINS_URL` | — | Base URL of the portal. Fills `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` and is seeded into the database; **needed on the first start only** |
-| `MIGRATE` | unset | set → the migration path runs first and the database is rebuilt |
 | `DEBUG` | unset | `1` enables development mode (dev server, debug pages) |
 | `SECRET_KEY` | generated | overrides the generated key in `/data/secret_key` |
 | `CANTORHUB_DATA` | `/data` | set inside the image; the directory for everything changing |

@@ -6778,3 +6778,31 @@ class FolderAccessTest(SimpleTestCase):
 
         from intern.views import folders
         self.assertNotIn("_apply_perm_specs", inspect.getsource(folders.folder_create))
+
+
+class MigrationenVollstaendigTest(SimpleTestCase):
+    """Jede Änderung an models.py braucht ihre eingecheckte Migration —
+    start.sh wendet beim Start nur an, was unter intern/migrations/ liegt.
+
+    Ohne Datenbank: der Graph kommt aus den Dateien (MigrationLoader mit
+    connection=None), der Vergleich ist derselbe wie in makemigrations."""
+
+    def test_keine_ausstehende_modellaenderung(self):
+        from django.apps import apps
+        from django.db.migrations.autodetector import MigrationAutodetector
+        from django.db.migrations.loader import MigrationLoader
+        from django.db.migrations.state import ProjectState
+        from django.utils import translation
+
+        # Wie makemigrations (@no_translations): sonst vergliche der Lauf die
+        # deutschen verbose_names der Django-Apps mit den englischen der Dateien.
+        with translation.override(None):
+            loader = MigrationLoader(None, ignore_no_migrations=True)
+            changes = MigrationAutodetector(
+                loader.project_state(), ProjectState.from_apps(apps)
+            ).changes(graph=loader.graph)
+        self.assertNotIn(
+            "intern", changes,
+            "models.py weicht von den Migrationen ab — "
+            "python manage.py makemigrations intern --name <name>",
+        )

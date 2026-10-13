@@ -79,8 +79,8 @@ a second file or subfolder of the same name into a folder. Left open on purpose:
   (computing missing SHA-1 from the blob first) and write the result through the same path as
   `zusammenfuehren`.
 - **`DateiVersion.original_filename` is written but no longer read.** Revisions have no name
-  of their own since `datei_restore` stopped renaming. The column can go with the next
-  `MIGRATE` rebuild, together with the writes in `dateiablage.zusammenfuehren`.
+  of their own since `datei_restore` stopped renaming. The column can go in a migration,
+  together with the writes in `dateiablage.zusammenfuehren`.
 
 ## First install vs. legacy import (deferred September 2026)
 
@@ -213,8 +213,8 @@ Deliberately **not** done, so the next audit does not raise it again:
 - **`User.notify_enabled` is dead and stays for now.** The sidebar switch for the
   notification bubbles was removed in October 2026 — every member gets them. The column is
   read and written nowhere any more; only its label in `views/aenderungen.py` remains, so old
-  audit entries still read well. Backlog: drop the field at the next `MIGRATE=1` rebuild,
-  together with that label.
+  audit entries still read well. Backlog: drop the field in a migration, together with
+  that label.
 - **No field renames.** The member FK is called `autor`, `sender`, `person`, `mitglied` or
   `user` depending on the model, and timestamps are `datum`, `*_am`, `timestamp`,
   `indexed_at` or `aktualisiert`. The gain would be purely cosmetic; the risk is high and
@@ -235,12 +235,10 @@ Deliberately **not** done, so the next audit does not raise it again:
   instead of an FK: the clean fix needs an `Artikel` parent row, and articles are versioned
   by `(name, version)`.
 
-**One structural constraint matters for all of this**: model changes reach an existing
-database **only** through the `MIGRATE=1` rebuild (`0002` is regenerated and never
-re-imported by a database that already recorded it). Once the migration path is deleted
-after the final cutover, a schema change is no longer possible without a checked-in
-migration chain — which the project forbids. Everything above that touches the schema was
-therefore done now.
+Until October 2026 model changes reached a database only through the `MIGRATE=1` rebuild,
+which is why everything above that touches the schema was done before the cutover. Since
+then the migration chain is checked in (`0002` frozen, new changes from `0004` on), so a
+schema change is an ordinary migration again.
 
 ## Query counts (low risk) — measured, left alone on purpose
 
