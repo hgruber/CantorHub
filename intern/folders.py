@@ -73,7 +73,7 @@ STARTORDNER: tuple[tuple[str, ...], ...] = (
 _cache: dict[str, int] = {}
 
 
-def _get(*pfad: str) -> int | None:
+def _get(*pfad: str, anlegen: bool = False) -> int | None:
     key = "/".join(pfad)
     if key in _cache:
         return _cache[key]
@@ -84,7 +84,9 @@ def _get(*pfad: str) -> int | None:
         for name in pfad:
             folder = Folder.objects.filter(name=name, parent_id=parent_id).first()
             if folder is None:
-                return None
+                if not anlegen:
+                    return None
+                folder = Folder.objects.create(name=name, parent_id=parent_id)
             parent_id = folder.pk
     except OperationalError:
         return None  # DB not yet initialised (e.g. during migrate)
@@ -93,7 +95,10 @@ def _get(*pfad: str) -> int | None:
 
 
 def backstage()             -> int | None: return _get(*PFADE["backstage"])
-def avatare()               -> int | None: return _get(*PFADE["avatare"])
+# Fehlt der Ordner der Profilbilder, entsteht er neu — sonst ließe sich kein
+# Profilbild mehr ablegen. Mitgliedsanträge dagegen nicht: ohne seine
+# Vorstand-Rechte wäre er für alle lesbar.
+def avatare()               -> int | None: return _get(*PFADE["avatare"], anlegen=True)
 def forum()                 -> int | None: return _get(*PFADE["forum"])
 def artikel()               -> int | None: return _get(*PFADE["artikel"])
 def musik()                 -> int | None: return _get(*PFADE["musik"])
@@ -105,6 +110,13 @@ def andere()                -> int | None: return _get(*PFADE["andere"])
 def verein()                -> int | None: return _get(*PFADE["verein"])
 def vorstand()              -> int | None: return _get(*PFADE["vorstand"])
 def mitgliedsantraege()     -> int | None: return _get(*PFADE["mitgliedsantraege"])
+
+
+def standard_ids() -> set[int]:
+    """Die IDs aller Ordner aus PFADE, die es gibt — das Portal lässt sie weder
+    umbenennen noch verschieben noch löschen, sonst fände es sie nicht mehr."""
+    ids = (_get(*pfad) for pfad in PFADE.values())
+    return {i for i in ids if i is not None}
 
 
 def invalidate() -> None:

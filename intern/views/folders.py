@@ -71,7 +71,7 @@ def _build_folder_flat(exclude_pk=None, user=None, ohne_backstage=False):
     The list is sorted by path segment, so parents precede their children and
     siblings appear alphabetically. When `user` is given, restrict the list to
     folders the user can read; `ohne_backstage` drops the Backstage branch,
-    which is never a target of move, link or copy."""
+    which only webmasters may target with a move, link or copy."""
     all_fldrs = list(Folder.objects.order_by("name").values("id", "name", "parent_id"))
     folder_map = {f["id"]: f for f in all_fldrs}
 
@@ -280,9 +280,25 @@ def _descendant_folder_ids(pk):
 
 def _backstage_zweig():
     """Backstage and every folder below it — the portal files into them on its
-    own, so no move, link or copy may target them."""
+    own, so only webmasters may target them with a move, link or copy."""
     backstage = folders.backstage()
     return _descendant_folder_ids(backstage) if backstage else set()
+
+
+def _sieht_backstage(user):
+    """The same question as the root listing in `folder_view`: who sees
+    Backstage may also move, link or copy into it."""
+    return user.has_perm("intern.manage_folder_permissions")
+
+
+def _gesperrte_ziele(user):
+    return set() if _sieht_backstage(user) else _backstage_zweig()
+
+
+def _enthaelt_standardordner(pk):
+    """The folder is, or holds, one of `folders.PFADE` — renaming, moving or
+    deleting it would break the lookup, for everyone, superusers included."""
+    return bool(_descendant_folder_ids(pk) & folders.standard_ids())
 
 
 def _folder_path_map(user=None):
@@ -707,8 +723,10 @@ def folder_view(request, pk):
             "can_delete_here": can_delete_here,
             "new_folder_pk": original_pk,
             "current_pk": original_pk,
-            "all_folders_flat": _build_folder_flat(user=request.user, ohne_backstage=True),
-            "gesperrte_ziele": ",".join(str(i) for i in sorted(_backstage_zweig())),
+            "all_folders_flat": _build_folder_flat(
+                user=request.user, ohne_backstage=not _sieht_backstage(request.user)
+            ),
+            "gesperrte_ziele": ",".join(str(i) for i in sorted(_gesperrte_ziele(request.user))),
             "show_search": True,
             "search_query": "",
             "has_more": has_more,
@@ -816,6 +834,8 @@ def folder_delete(request):
             _, _, can_del = folder_access(request.user, folder)
             if not (global_delete or can_del):
                 continue
+            if _enthaelt_standardordner(folder.pk):
+                continue
             _delete_folder_deep(folder)
         else:
             try:
@@ -840,7 +860,7 @@ def folder_move(request):
     target_id = int(raw_target) if raw_target and raw_target != "0" else None
     target = Folder.objects.filter(pk=target_id).first() if target_id else None
     _, target_write, _ = folder_access(request.user, target)
-    if not target_write or target_id in _backstage_zweig():
+    if not target_write or target_id in _gesperrte_ziele(request.user):
         raise PermissionDenied
     entscheidungen = dateiablage.entscheidungen_lesen(request.POST.getlist("entscheidung"))
     for item_type, item_id in _parse_items(request.POST):
@@ -851,6 +871,9 @@ def folder_move(request):
             # In sich selbst oder einen eigenen Unterordner: der Zweig hinge
             # danach an sich selbst und wäre von der Wurzel aus unerreichbar.
             if _is_descendant_or_self(target_id, folder.pk):
+                continue
+            # Standardordner bleiben, wo das Portal sie sucht.
+            if _enthaelt_standardordner(folder.pk):
                 continue
             # Ein Name, ein Ordner: was dort schon so heißt, bleibt, wo es ist.
             if not dateiablage.ordnername_frei(target_id, folder.name, folder.pk):
@@ -879,7 +902,7 @@ def _copy_action(request, blob_kopieren):
     target_id = int(raw_target) if raw_target and raw_target != "0" else None
     target = Folder.objects.filter(pk=target_id).first() if target_id else None
     _, target_write, _ = folder_access(request.user, target)
-    if not target_write or target_id in _backstage_zweig():
+    if not target_write or target_id in _gesperrte_ziele(request.user):
         raise PermissionDenied
     entscheidungen = dateiablage.entscheidungen_lesen(request.POST.getlist("entscheidung"))
     for item_type, item_id in _parse_items(request.POST):
@@ -1032,6 +1055,11 @@ def folder_rename(request):
         _, can_write, _ = folder_access(request.user, folder)
         if not can_write:
             raise PermissionDenied
+        if folder.pk in folders.standard_ids():
+            return JsonResponse(
+                {"status": "error", "message": "Standardordner lassen sich nicht umbenennen."},
+                status=400,
+            )
         if not dateiablage.ordnername_frei(folder.parent_id, new_name, folder.pk):
             return JsonResponse({"status": "error", "message": "Name bereits vergeben."}, status=400)
         folder.name = new_name

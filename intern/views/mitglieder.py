@@ -256,18 +256,26 @@ def mitglied_edit(request, id):
             new_avatar_id = request.POST.get("avatar")
             old_avatar_id = str(user.avatar_id) if user.avatar_id else ""
             avatar = None
+            ohne_ordner = False
             if new_avatar_id and new_avatar_id != old_avatar_id:
                 try:
                     f = File.objects.get(pk=int(new_avatar_id))
                     folder_id = folders.avatare()
                     ext = _get_file_extension(f.original_filename or f.name or "")
-                    # Ein früheres <id><ext> dort: das neue Bild wird seine Fassung.
-                    avatar = dateiablage.systemablage(f, folder_id or f.folder_id, f"{id}{ext}")
+                    if folder_id is None:
+                        # Nie dort lassen, wo der Upload gelandet ist (der Wurzelordner).
+                        logger.warning("Profilbild von %s nicht übernommen: kein Ordner Profilbilder", id)
+                        ohne_ordner = True
+                    else:
+                        # Ein früheres <id><ext> dort: das neue Bild wird seine Fassung.
+                        avatar = dateiablage.systemablage(f, folder_id, f"{id}{ext}")
                 except (File.DoesNotExist, ValueError):
                     pass
             instance = form.save(commit=False)
             if avatar is not None:
                 instance.avatar = avatar
+            elif ohne_ordner:
+                instance.avatar_id = int(old_avatar_id) if old_avatar_id else None
             instance._audit_user = request.user
             instance.save()
             form.save_m2m()

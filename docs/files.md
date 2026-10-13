@@ -184,13 +184,21 @@ folders the sender can see, and the send path drops attachments from any other f
 `intern/folders.py` is the registry: the names are constants there, `PFADE` maps each logical
 name to its path from the root, and one accessor per folder (`folders.pdf()` …) resolves that
 path level by level and caches the id. `0003_import.py` creates the tree from `PFADE`, in its
-order (parents first). Renaming or moving one of these folders in the browser breaks the lookup
-— the accessor then returns `None` and uploads fall back or fail.
+order (parents first). Renaming or moving one of these folders would break the lookup, so
+**the standard folders are protected**: `folder_rename`, `folder_move` and `folder_delete` refuse
+every folder of `PFADE` and every folder holding one (`folders.standard_ids()`), for superusers
+too; only `/admin/` can still change them. Should one go missing anyway, its accessor returns
+`None` and uploads fall back or fail — except `folders.avatare()`, which recreates
+Backstage/Profilbilder, because a profile picture must never be filed elsewhere: `mitglied_edit`
+keeps the old avatar rather than link one outside that folder.
 
-**Backstage is never a target.** The folder pickers (`_build_folder_flat(ohne_backstage=True)`
+**Backstage is a target for webmasters only.** For everyone without
+`intern.manage_folder_permissions` the folder pickers (`_build_folder_flat(ohne_backstage=True)`
 in the folder browser's action panel and context menu, and `datei_aktionen` for the article file
 menu) leave out Backstage and everything below it, and `folder_move` / `_copy_action` refuse such
-a target with a 403 — the portal files into these folders on its own, members don't. Uploads are
+a target with a 403 — the portal files into these folders on its own, members don't. Who sees
+Backstage at the root may also move, link and copy into it (`_sieht_backstage`), e.g. to put a
+stray profile picture back. Uploads are
 not affected; the Repertoire page uploads there, but only files it can assign to a song: an
 upload with `route_by_type` is refused when its extension maps to no song-file type, or when
 neither `lied_id` (the Titel page) nor the file name names a song.

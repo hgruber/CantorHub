@@ -6348,7 +6348,8 @@ class OrdnerZyklusTest(SimpleTestCase):
 
 class BackstageZielTest(SimpleTestCase):
     """Backstage und alles darunter ist kein Ziel von Verschieben, Referenz und
-    Kopieren — weder in der Auswahl noch auf dem Server."""
+    Kopieren — weder in der Auswahl noch auf dem Server. Ausgenommen ist, wer
+    Backstage sieht (Webmaster)."""
 
     # 1 Backstage ─ 2 Repertoire, daneben 3 Verein
     ORDNER = [
@@ -6376,9 +6377,69 @@ class BackstageZielTest(SimpleTestCase):
 
         from intern.views import files, folders
         for view in (folders.folder_move, folders._copy_action):
-            self.assertIn("target_id in _backstage_zweig()", inspect.getsource(view), view.__name__)
+            self.assertIn(
+                "target_id in _gesperrte_ziele(request.user)", inspect.getsource(view), view.__name__
+            )
         for view in (folders.folder_view, files.datei_aktionen):
-            self.assertIn("ohne_backstage=True", inspect.getsource(view), view.__name__)
+            self.assertIn(
+                "ohne_backstage=not _sieht_backstage(request.user)",
+                inspect.getsource(view), view.__name__,
+            )
+
+    def test_webmaster_darf_nach_backstage(self):
+        from intern.views import folders
+
+        webmaster, mitglied = mock.Mock(), mock.Mock()
+        webmaster.has_perm.side_effect = lambda p: p == "intern.manage_folder_permissions"
+        mitglied.has_perm.return_value = False
+        with mock.patch.object(folders, "_backstage_zweig", return_value={1, 2}):
+            self.assertEqual(folders._gesperrte_ziele(webmaster), set())
+            self.assertEqual(folders._gesperrte_ziele(mitglied), {1, 2})
+
+
+class StandardordnerSchutzTest(SimpleTestCase):
+    """Die Ordner aus PFADE — und wer einen von ihnen enthält — lassen sich im
+    Portal weder umbenennen noch verschieben noch löschen, auch nicht als
+    Superuser; sonst fände das Portal etwa die Profilbilder nicht mehr."""
+
+    def test_enthaelt_standardordner(self):
+        from intern.views import folders
+
+        # 1 Verein ─ 2 Vorstand (Standard), 1 ─ 3 Chorverband (frei)
+        unterordner = {1: {1, 2, 3}, 2: {2}, 3: {3}}
+        with mock.patch.object(folders, "_descendant_folder_ids", side_effect=unterordner.get), \
+                mock.patch.object(folders.folders, "standard_ids", return_value={1, 2}):
+            self.assertTrue(folders._enthaelt_standardordner(1))
+            self.assertTrue(folders._enthaelt_standardordner(2))
+            self.assertFalse(folders._enthaelt_standardordner(3))
+
+    def test_views_fragen_danach(self):
+        import inspect
+
+        from intern.views import folders
+        for view in (folders.folder_move, folders.folder_delete):
+            self.assertIn("_enthaelt_standardordner(folder.pk)", inspect.getsource(view), view.__name__)
+        self.assertIn("folder.pk in folders.standard_ids()", inspect.getsource(folders.folder_rename))
+
+    def test_profilbilder_entstehen_neu(self):
+        """Fehlt Backstage/Profilbilder, legt `avatare()` den Pfad an — ein
+        Profilbild landet nie im Wurzelordner."""
+        from filer.models import Folder
+
+        from intern import folders
+
+        neu = iter([mock.Mock(pk=11), mock.Mock(pk=12)])
+        with mock.patch.object(Folder, "objects") as objects, mock.patch.dict(folders._cache, clear=True):
+            objects.filter.return_value.first.return_value = None
+            objects.create.side_effect = lambda **kw: next(neu)
+            self.assertEqual(folders.avatare(), 12)
+            objects.create.assert_any_call(name=folders.BACKSTAGE, parent_id=None)
+            objects.create.assert_any_call(name=folders.PROFILBILDER, parent_id=11)
+            objects.filter.return_value.first.return_value = None
+            folders._cache.clear()
+            objects.create.reset_mock()
+            self.assertIsNone(folders.mitgliedsantraege())
+            objects.create.assert_not_called()
 
 
 class RepertoireUploadTest(SimpleTestCase):

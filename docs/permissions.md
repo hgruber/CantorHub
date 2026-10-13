@@ -69,6 +69,7 @@ they survive edits. Module paths are relative to `intern/`.
 | `delete_folder` | `views/files.py` · `datei_aktionen`; `views/artikel.py` · `article_datei_loeschen` | `/intern/datei/<pk>/aktionen/`, `/intern/artikel/<name>/datei-loeschen/` | „Datei löschen" in an article's thumbnail menu regardless of `FolderPermission`; the article's edit right is still required |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view` | `/intern/ordner/<pk>/` | the „Berechtigungen" link |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view` | `/intern/ordner/0/` | lists „Backstage" at the root (hidden, not locked, for everyone else) |
+| `manage_folder_permissions` | `views/folders.py` · `folder_view`, `folder_move`, `_copy_action`; `views/files.py` · `datei_aktionen` | `/intern/ordner/<pk>/`, `/intern/ordner/verschieben/` …, `/intern/datei/<pk>/aktionen/` | offers and accepts Backstage and its subfolders as a move, link or copy target (`_sieht_backstage`) |
 | `manage_folder_permissions` | `views/aufgaben.py` · `folder_permissions` | `/intern/ordner/<pk>/berechtigungen/` | edit the folder's `FolderPermission` rows |
 
 ## Termine
@@ -156,6 +157,7 @@ missing from the page. The Django default rights that are not listed (e.g. `add_
 | Superuser („Admin-Status") | `/intern/aufgaben/`, by superusers only (`views/aufgaben.py`) | passes every right above except `view_forum_archiv`; alone opens `/intern/konfiguration/` (`views/konfiguration.py`, sidebar entry); bypasses `FolderPermission` (`folder_access.py`) and sees „Backstage" in breadcrumbs (`views/folders.py` · `_folder_breadcrumb`) |
 | `is_staff` | `/admin/` only | access to the Django admin at `/admin/` |
 | `FolderPermission` (per folder and group) | `/intern/ordner/<pk>/berechtigungen/` | read, write and delete in that folder and, per axis without an own rule, in its subfolders; with no rule at all read and write are open, delete closed — see `docs/files.md` |
+| Standard folders (`folders.PFADE`) | code only | nobody renames, moves or deletes them in the portal, superusers included — nor a folder holding one (`views/folders.py` · `_enthaelt_standardordner`); `/admin/` still can — see `docs/files.md` |
 | `ForumPermission` (per forum and group) | `/intern/forum/<id>/zugriff/` | who may read a forum and its MUC room; no rows means open — see `docs/forum.md` |
 | `ArtikelPermission` (per article and group) | `/intern/artikel/<name>/berechtigungen/` | who may read and edit an article — see `docs/articles.md` |
 | Tags „Mitglied" and „DSGVO" | admission, `/intern/aufgaben/` | the privacy gate for access without membership (`middleware.py`) — see `docs/members.md` |

@@ -115,8 +115,8 @@ PERMISSION_DESCRIPTIONS = {
         "Darf Dateiordner dauerhaft löschen.",
     "intern.manage_folder_permissions":
         "Darf festlegen, welche Gruppen auf bestimmte Dateiordner zugreifen "
-        "dürfen. Ohne diese Berechtigung gelten die Standard-Zugriffsregeln "
-        "des jeweiligen Ordners.",
+        "dürfen, und Dateien nach „Backstage“ verschieben oder kopieren. Ohne "
+        "diese Berechtigung gelten die Standard-Zugriffsregeln des jeweiligen Ordners.",
 }
 
 # Hilfe beim Klick auf einen Spaltenkopf: wo ein Recht im Portal wirkt, in Worten
@@ -214,6 +214,9 @@ PERMISSION_DETAILS = {
          "Zeigt den Ordner „Backstage“, in dem das Portal seine eigenen Dateien ablegt. "
          "Für alle anderen ist er nur ausgeblendet; die Dateien bleiben überall "
          "erreichbar, wo sie verwendet werden."),
+        ("Verschieben, Kopieren, Verknüpfen",
+         "Bietet „Backstage“ und seine Unterordner als Ziel an — im Ordner und im "
+         "Dateimenü eines Artikels. Für alle anderen sind sie kein Ziel."),
     ],
     "intern.add_termin": [
         ("Terminliste und Kalender",

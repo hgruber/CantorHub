@@ -457,6 +457,14 @@ document.addEventListener("DOMContentLoaded", function () {
         previewsContainer: false,
         headers: { "X-CSRFToken": getCsrfToken() },
         init: function () {
+          // Profilbild: gleich nach Backstage/Profilbilder als <id>.<ext>, wie
+          // die Seiten-Dropzone — sonst läge es bis „Speichern“ im Wurzelordner.
+          this.on("sending", function (file, xhr, formData) {
+            if (appMain && appMain.dataset.uploadRenameTo) {
+              if (appMain.dataset.uploadFolderId) formData.append("folder_id", appMain.dataset.uploadFolderId);
+              formData.append("rename_to", appMain.dataset.uploadRenameTo);
+            }
+          });
           this.on("success", function (file, response) {
             valueInput.value = response.id;
             showDone(response.thumbnail_url, file.name);

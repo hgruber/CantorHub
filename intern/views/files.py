@@ -570,7 +570,7 @@ def datei_aktionen(request, pk):
     The row is the one a `[[Datei:…]]` resolves to; its folder, the delete
     right on it and the folders a reference may go to. Deleting means this
     occurrence only, exactly as in the folder browser (`folder_delete`)."""
-    from .folders import _build_folder_flat
+    from .folders import _build_folder_flat, _sieht_backstage
 
     f = get_object_or_404(File.objects.select_related("folder"), pk=pk)
     lesen, _, loeschen = folder_access(request.user, f.folder)
@@ -586,7 +586,9 @@ def datei_aktionen(request, pk):
     belegt = set(verknuepfte_dateien(f).values_list("folder_id", flat=True))
     ordner = {o.pk: o for o in Folder.objects.all()}
     ziele = [
-        e for e in _build_folder_flat(user=request.user, ohne_backstage=True)
+        e for e in _build_folder_flat(
+            user=request.user, ohne_backstage=not _sieht_backstage(request.user)
+        )
         if e["id"] not in belegt and folder_access(request.user, ordner.get(e["id"]))[1]
     ]
     warnungen = [

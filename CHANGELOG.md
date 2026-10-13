@@ -9,10 +9,19 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Geändert
+
+- Dateien: Die Standardordner („Backstage“ mit seinen Unterordnern, „Verein“, „Vorstand“,
+  „Mitgliedsanträge“) lassen sich im Portal nicht mehr umbenennen, verschieben oder löschen.
+- Dateien: Webmaster können Dateien und Ordner nach „Backstage“ verschieben, kopieren und
+  verknüpfen.
+
 ### Behoben
 
 - CalDAV: der Kalender übernimmt auf den Geräten die Portalfarbe `BRAND_FARBE`. Die Farbe stand
   bisher in einem XML-Namensraum, den kein Client liest.
+- Profil: Ein Profilbild landet immer in „Backstage/Profilbilder“, schon beim Hochladen. Fehlte
+  der Ordner, lag es bisher im Wurzelordner; jetzt legt das Portal ihn neu an.
 
 ## v1.0.4 — 2026-10-11
 
