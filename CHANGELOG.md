@@ -15,6 +15,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   „Mitgliedsanträge“) lassen sich im Portal nicht mehr umbenennen, verschieben oder löschen.
 - Dateien: Webmaster können Dateien und Ordner nach „Backstage“ verschieben, kopieren und
   verknüpfen.
+- Hochladen: Eine Ablagefläche gibt es nur noch, wo die Datei einen Zielordner hat; auf oberster
+  Ebene laden nur Webmaster hoch. Das Profil hat nur noch die Fläche des Profilbilds.
+- Hochladen: Profilbild, Forenbild und Titel-Dateien liegen sofort in ihrem Ordner; ersetzt wird
+  die bisherige Datei erst mit „Speichern“.
 
 ### Behoben
 

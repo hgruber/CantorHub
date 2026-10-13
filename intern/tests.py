@@ -6474,6 +6474,56 @@ class RepertoireUploadTest(SimpleTestCase):
         self.assertIn("Kein Titel", antwort.content.decode())
 
 
+class WurzelUploadTest(SimpleTestCase):
+    """Ohne Zielordner läge ein Upload auf oberster Ebene — das darf nur, wer
+    Backstage sieht (Webmaster); alle anderen werden abgelehnt, bevor etwas
+    abgelegt ist."""
+
+    def _hochladen(self, webmaster):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import RequestFactory
+
+        from intern.views import files
+
+        request = RequestFactory().post("/intern/upload/", {"file": SimpleUploadedFile("x.txt", b"x")})
+        request.user = mock.Mock(is_authenticated=True, is_superuser=False, pk=1)
+        request.user.has_perm.side_effect = lambda p: webmaster and p == "intern.manage_folder_permissions"
+        with mock.patch("intern.app_settings.get_config_int", return_value=50), \
+                mock.patch.object(files, "_get_lied_by_filename", return_value=None), \
+                mock.patch("intern.folder_access.folder_access", return_value=(True, True, False)), \
+                mock.patch.object(files.folders, "avatare", return_value=None), \
+                mock.patch.object(files.dateiablage, "gleichnamige", return_value=None), \
+                mock.patch.object(files.dateiablage, "hochladen", side_effect=RuntimeError) as hochladen:
+            try:
+                antwort = files.upload(request)
+            except RuntimeError:
+                antwort = None
+        return antwort, hochladen.called
+
+    def test_mitglied_abgelehnt(self):
+        antwort, abgelegt = self._hochladen(webmaster=False)
+        self.assertEqual(antwort.status_code, 403)
+        self.assertFalse(abgelegt)
+
+    def test_webmaster_darf(self):
+        _, abgelegt = self._hochladen(webmaster=True)
+        self.assertTrue(abgelegt)
+
+
+class FreierNameTest(SimpleTestCase):
+    """Eine Feld-Dropzone legt im Zielordner ab, ohne eine gleichnamige Datei
+    zu ihrer Fassung zu machen: sie nimmt den ersten freien Namen."""
+
+    def test_frei_bleibt(self):
+        from intern.dateiablage import freier_name
+        self.assertEqual(freier_name(["a.pdf"], "b.pdf"), "b.pdf")
+
+    def test_vergeben_zaehlt_hoch(self):
+        from intern.dateiablage import freier_name
+        self.assertEqual(freier_name(["Score.pdf"], "Score.pdf"), "Score (2).pdf")
+        self.assertEqual(freier_name(["score.PDF", "Score (2).pdf"], "Score.pdf"), "Score (3).pdf")
+
+
 # --- Ordnerrechte (folder_access.py) ---------------------------------------
 #
 # Ein Baum mit drei Ebenen unter „Organisation Chor“ und einem zweiten Ordner der

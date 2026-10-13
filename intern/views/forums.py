@@ -300,6 +300,7 @@ def forum_list(request):
             "upload_folder_name": folders.FORENBILDER,
             "add": add,
             "add_form": ForumEditForm() if request.user.has_perm("intern.add_forum") else None,
+            "feld_ordner": {"bild": folders.forum()},
             "add_form_multipart": True,
             "add_label": "Neues Forum",
             "show_search": True,
@@ -580,6 +581,7 @@ def forum_edit(request, forum):
         "id": forum,
         "ejabberd_enabled": is_ejabberd_configured(),
         "darf_archiv": darf_archiv,
+        "feld_ordner": {"bild": folders.forum()},
         **user_lists,
     }
     return render(request, "forum_edit.html", context)
@@ -670,6 +672,7 @@ def forum_add(request):
     context = {
         "form": form,
         "seitentitel": "Neues Forum",
+        "feld_ordner": {"bild": folders.forum()},
     }
     return render(request, "forum_edit.html", context)
 

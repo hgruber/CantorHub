@@ -154,9 +154,11 @@ The folders the portal files into on its own sit under **Backstage**, so a membe
 archive sees their own folders rather than a dozen system ones. The folder browser lists
 Backstage at the root only for holders of `intern.manage_folder_permissions` (the Webmaster
 group) — hidden, not locked: it has no `FolderPermission` rows, the pages that use its files, the
-search and direct links keep working. An upload without a better folder lands at the **root**
-itself (a drop on the browser's root included); its answer carries `"wurzel": true` and the
-upload card asks the member to move the file into a folder, so the top level stays tidy.
+search and direct links keep working. Only holders of
+`intern.manage_folder_permissions` can upload to the **root** (a drop on the browser's root
+included); everyone else has no dropzone there and `upload` refuses with a 403. A root upload's
+answer carries `"wurzel": true` and the upload card asks to move the file into a folder, so the
+top level stays tidy.
 
 ```
 /                      fallback target of every upload without a better folder

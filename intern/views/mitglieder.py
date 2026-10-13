@@ -292,9 +292,9 @@ def mitglied_edit(request, id):
         "user": user,
         "seitentitel": f"bearbeiten: {user.first_name} {user.last_name}",
         "view": "mitglied_view",
-        "upload_folder_id": folders.avatare(),
-        "upload_folder_name": folders.PROFILBILDER,
-        "upload_rename_to": id,
+        # Keine Seiten-Dropzone: auf dem Profil genügt die des Profilbilds.
+        "upload_aus": True,
+        "feld_ordner": {"avatar": folders.avatare()},
         "id": id,
         "can_manage": request.user.has_perm("intern.change_user"),
         "can_set_privacy": ist_selbst,

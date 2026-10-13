@@ -244,6 +244,7 @@ def titel_list(request):
                 "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
                 "add_form_multipart": True,
                 "add_label": "Neuer Titel",
+                "feld_ordner": _feld_ordner(),
             },
         )
 
@@ -306,6 +307,7 @@ def titel_list(request):
         "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
         "add_form_multipart": True,
         "add_label": "Neuer Titel",
+        "feld_ordner": _feld_ordner(),
         "play_menu": bool(anzahlen["originals"] or anzahlen["aufnahmen"]),
         # Nicht die Listen, nur ihre Adresse — mit den Filtern der Seite, damit die
         # Warteschlange dasselbe Repertoire abdeckt wie die Liste davor.
@@ -320,6 +322,17 @@ def titel_list(request):
     if konzert_id and request.user.has_perm("intern.change_lied"):
         context["konzert_order_url"] = f"/intern/titel/?konzert={konzert_id}&edit"
     return render(request, "table.html", context)
+
+
+def _feld_ordner():
+    """Die Zielordner der Datei-Felder eines Titels — die Feld-Dropzone lädt
+    gleich dorthin, nicht erst beim Speichern (siehe `_titeldatei_ablegen`)."""
+    return {
+        "original": folders.repertoire(),
+        "aufnahme": folders.repertoire(),
+        "pdf": folders.pdf(),
+        "noten": folders.notensatz(),
+    }
 
 
 def _titeldatei_ablegen(f, feld, ordner_fn, titel):
@@ -407,6 +420,7 @@ def titel_edit(request, titel):
         "konzerte_count": konzerte_count,
         "can_delete": not blocking,
         "delete_tooltip": ("Kann nicht gelöscht werden: " + ", ".join(blocking)) if blocking else "",
+        "feld_ordner": _feld_ordner(),
     }
     return render(request, "titel_edit.html", context)
 
@@ -501,5 +515,6 @@ def titel_add(request):
     context = {
         "form": form,
         "seitentitel": "Neuer Titel",
+        "feld_ordner": _feld_ordner(),
     }
     return render(request, "titel_edit.html", context)

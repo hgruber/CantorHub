@@ -115,7 +115,8 @@ PERMISSION_DESCRIPTIONS = {
         "Darf Dateiordner dauerhaft löschen.",
     "intern.manage_folder_permissions":
         "Darf festlegen, welche Gruppen auf bestimmte Dateiordner zugreifen "
-        "dürfen, und Dateien nach „Backstage“ verschieben oder kopieren. Ohne "
+        "dürfen, Dateien nach „Backstage“ verschieben oder kopieren und auf "
+        "oberster Ebene hochladen. Ohne "
         "diese Berechtigung gelten die Standard-Zugriffsregeln des jeweiligen Ordners.",
 }
 
@@ -214,6 +215,10 @@ PERMISSION_DETAILS = {
          "Zeigt den Ordner „Backstage“, in dem das Portal seine eigenen Dateien ablegt. "
          "Für alle anderen ist er nur ausgeblendet; die Dateien bleiben überall "
          "erreichbar, wo sie verwendet werden."),
+        ("Hochladen auf oberster Ebene",
+         "Auf Seiten ohne eigenen Zielordner und auf der obersten Ordnerebene lassen "
+         "sich Dateien ablegen; sie landen auf oberster Ebene. Alle anderen haben "
+         "dort keine Ablagefläche."),
         ("Verschieben, Kopieren, Verknüpfen",
          "Bietet „Backstage“ und seine Unterordner als Ziel an — im Ordner und im "
          "Dateimenü eines Artikels. Für alle anderen sind sie kein Ziel."),

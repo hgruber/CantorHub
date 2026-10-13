@@ -69,6 +69,7 @@ they survive edits. Module paths are relative to `intern/`.
 | `delete_folder` | `views/files.py` · `datei_aktionen`; `views/artikel.py` · `article_datei_loeschen` | `/intern/datei/<pk>/aktionen/`, `/intern/artikel/<name>/datei-loeschen/` | „Datei löschen" in an article's thumbnail menu regardless of `FolderPermission`; the article's edit right is still required |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view` | `/intern/ordner/<pk>/` | the „Berechtigungen" link |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view` | `/intern/ordner/0/` | lists „Backstage" at the root (hidden, not locked, for everyone else) |
+| `manage_folder_permissions` | `views/files.py` · `upload`; `base.html` (`data-upload-wurzel`) | `/intern/upload/`, every page | upload to the root: the page dropzone on pages without an upload target and on the browser's root (everyone else gets none, and a 403) |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view`, `folder_move`, `_copy_action`; `views/files.py` · `datei_aktionen` | `/intern/ordner/<pk>/`, `/intern/ordner/verschieben/` …, `/intern/datei/<pk>/aktionen/` | offers and accepts Backstage and its subfolders as a move, link or copy target (`_sieht_backstage`) |
 | `manage_folder_permissions` | `views/aufgaben.py` · `folder_permissions` | `/intern/ordner/<pk>/berechtigungen/` | edit the folder's `FolderPermission` rows |
 

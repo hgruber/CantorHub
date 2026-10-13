@@ -356,6 +356,13 @@ def upload(request):
                 {"status": "error", "message": "Keine Schreibrechte für diesen Ordner"},
                 status=403,
             )
+        # Ohne Zielordner läge die Datei auf oberster Ebene — das darf nur, wer
+        # Backstage sieht (Webmaster); alle anderen haben dort keine Dropzone.
+        if folder_id is None and not request.user.has_perm("intern.manage_folder_permissions"):
+            return JsonResponse(
+                {"status": "error", "message": "Hier lässt sich nichts hochladen — kein Zielordner"},
+                status=403,
+            )
 
         # Fremde Mitglieds-IDs nur mit Verwaltungsrecht — vor dem Anlegen der
         # Datei geprüft, damit eine Ablehnung keine Leiche im Ordner hinterlässt.
@@ -384,6 +391,14 @@ def upload(request):
         # Der endgültige Name steht vor der Ablage fest (Avatar → <id>.<ext>),
         # damit die Namensregel den Namen prüft, unter dem die Datei liegen wird.
         name = f"{rename_to}{_get_file_extension(file.name)}" if rename_to else file.name
+        # Feld-Dropzone (Profilbild, Forenbild, Titel-Datei): die Datei wartet im
+        # Zielordner auf „Speichern“ und darf bis dahin keine fremde gleichnamige
+        # zu ihrer Fassung machen — ersetzt wird erst über systemablage().
+        if request.POST.get("feld"):
+            name = dateiablage.freier_name(
+                File.objects.filter(folder_id=folder_id).values_list("original_filename", flat=True),
+                name,
+            )
         vorhanden = dateiablage.gleichnamige(folder_id, name)
         if vorhanden is not None and not darf_avatar_aendern(request.user, vorhanden):
             # Vor der Ablage prüfen — sonst wäre das fremde Profilbild schon ersetzt.

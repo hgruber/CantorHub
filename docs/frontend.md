@@ -563,11 +563,20 @@ share the `sending` parameters, the progress card (`upload-progress.js`) and the
 `queuecomplete`.
 
 The view decides target and visibility through its context: `upload_folder_id`,
-`upload_folder_name` and the other `upload_*` keys read by `base.html`. The icon shows wherever
-`upload_folder_id` is not `None`. In the folder browser (`show_file_actions`) it follows
-`can_write_here` instead, root included (pk 0 → the upload lands at the root). A page without an
-upload target shows no icon; a drop there still lands at the root, and the upload card asks to
-move it. Write access is enforced by `upload` in `views/files.py` either way.
+`upload_folder_name` and the other `upload_*` keys read by `base.html`. **No dropzone may end up
+filing at the root:** a page without a target (`upload_folder_id` and `upload_route_by_type`
+both empty) gets no page dropzone at all — no overlay, no icon — unless the viewer holds
+`intern.manage_folder_permissions` (`data-upload-wurzel`); then a drop lands at the root and the
+upload card asks to move it. The folder browser follows `can_write_here`, at the root only with
+that right. `upload_aus` switches the page dropzone off for everyone (the profile page, where
+the avatar field is enough). `upload` in `views/files.py` enforces write access and the root
+rule either way.
+
+The field dropzones (`initFilerDropzones()`, which replace filer's widget for the avatar, the
+forum picture and the song files) upload straight into their field's folder: the view passes
+`feld_ordner = {field name: folder id}`, `base.html` prints it as `json_script` `#feld-ordner`.
+They send `feld=1`, so the upload takes a free name („x (2).pdf“) instead of becoming a revision
+of a file already there; „Speichern“ then renames it and merges via `systemablage()`.
 
 ## The list pages' script
 

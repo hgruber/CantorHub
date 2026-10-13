@@ -327,10 +327,15 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     });
 
-    // Artikelansicht ohne Schreibrecht: kein Zielordner, und ohne ihn landete
-    // ein Drop in der Wurzel — dort wird gar nicht hochgeladen.
+    // Keine Dropzone, die nur auf oberster Ebene ablegt: ohne Zielordner (und
+    // ohne Repertoire-Routing) lädt nur hoch, wer dort ablegen darf (Webmaster) —
+    // außer in der Artikelansicht, deren Uploads ein Ziel brauchen. Eine Seite
+    // kann die Dropzone ganz abschalten (Profil: dort genügt das Avatar-Feld).
+    const ds = appMain.dataset;
+    const ohneZiel = !ds.uploadFolderId && !ds.uploadRouteByType;
     const uploadGesperrt =
-      !!document.querySelector(".wiki[data-artikel]") && !appMain.dataset.uploadFolderId;
+      !!ds.uploadAus ||
+      (ohneZiel && (!ds.uploadWurzel || !!document.querySelector(".wiki[data-artikel]")));
     if (uploadGesperrt) appMainDz.disable();
 
     // Topbar-Button: für Geräte ohne Drag & Drop. Die gewählten Dateien laufen
@@ -386,6 +391,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!scope) return;
 
     const filerWidgets = scope.querySelectorAll(".filer-widget");
+    const feldOrdnerEl = document.getElementById("feld-ordner");
+    const feldOrdner = feldOrdnerEl ? JSON.parse(feldOrdnerEl.textContent) : {};
     filerWidgets.forEach((widget) => {
       const formGroup = widget.closest(".form-group");
       if (!formGroup) return;
@@ -457,13 +464,12 @@ document.addEventListener("DOMContentLoaded", function () {
         previewsContainer: false,
         headers: { "X-CSRFToken": getCsrfToken() },
         init: function () {
-          // Profilbild: gleich nach Backstage/Profilbilder als <id>.<ext>, wie
-          // die Seiten-Dropzone — sonst läge es bis „Speichern“ im Wurzelordner.
+          // Gleich in den Zielordner des Felds (Profilbilder, Forenbilder,
+          // Hörbeispiele …) — sonst läge die Datei bis „Speichern“ auf oberster
+          // Ebene. `feld` hält sie bis dahin von gleichnamigen Dateien fern.
           this.on("sending", function (file, xhr, formData) {
-            if (appMain && appMain.dataset.uploadRenameTo) {
-              if (appMain.dataset.uploadFolderId) formData.append("folder_id", appMain.dataset.uploadFolderId);
-              formData.append("rename_to", appMain.dataset.uploadRenameTo);
-            }
+            if (feldOrdner[name]) formData.append("folder_id", feldOrdner[name]);
+            formData.append("feld", "1");
           });
           this.on("success", function (file, response) {
             valueInput.value = response.id;

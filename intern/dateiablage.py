@@ -24,6 +24,7 @@ und von identischen bleibt nur die älteste.
 import hashlib
 import logging
 import mimetypes
+import os
 from collections import namedtuple
 from datetime import datetime
 
@@ -157,6 +158,18 @@ def name_frei(vorhandene, name):
     Groß-/Kleinschreibung, wie MariaDB unter utf8mb4_general_ci vergleicht."""
     gesucht = (name or "").strip().casefold()
     return all((n or "").strip().casefold() != gesucht for n in vorhandene)
+
+
+def freier_name(vorhandene, name):
+    """`name`, oder „Name (2).ext“, „Name (3).ext“ … — der erste, der neben
+    `vorhandene` frei ist. Für eine Ablage, die nichts überschreiben darf."""
+    if name_frei(vorhandene, name):
+        return name
+    stamm, ext = os.path.splitext(name)
+    n = 2
+    while not name_frei(vorhandene, f"{stamm} ({n}){ext}"):
+        n += 1
+    return f"{stamm} ({n}){ext}"
 
 
 # === Identität: ein Blob, viele Ordner ========================================
