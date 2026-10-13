@@ -358,8 +358,13 @@
                         </svg>
                     </a>
                 {% endif %}
-                {% if show_file_actions and can_write_here and upload_folder_id or show_file_actions and can_write_here and perms.intern.manage_folder_permissions or not show_file_actions and upload_folder_id and not upload_aus %}
-                    <button type="button" id="uploadBtn"
+                {% comment %}
+                Gerendert, wo hochgeladen werden könnte; ob es gilt, entscheidet
+                dieselbe Regel wie für die Dropzone (uploadGesperrt in intern.js),
+                die das Symbol dann einblendet.
+                {% endcomment %}
+                {% if show_file_actions and can_write_here or not show_file_actions and not upload_aus %}
+                    <button type="button" id="uploadBtn" hidden
                             title="Hochladen{% if upload_folder_name %} nach {{ upload_folder_name }}{% endif %}"
                             aria-label="Dateien hochladen">
                         <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

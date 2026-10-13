@@ -19,6 +19,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Ebene laden nur Webmaster hoch. Das Profil hat nur noch die Fläche des Profilbilds.
 - Hochladen: Profilbild, Forenbild und Titel-Dateien liegen sofort in ihrem Ordner; ersetzt wird
   die bisherige Datei erst mit „Speichern“.
+- Hochladen: Die Ablagefläche eines Felds lässt sich antippen und nimmt auch ein zweites Bild an;
+  Profil- und Forenbild öffnen auf dem Handy Galerie oder Kamera. Das Hochladen-Symbol erscheint
+  überall dort, wo eine Ablagefläche ist.
 
 ### Behoben
 

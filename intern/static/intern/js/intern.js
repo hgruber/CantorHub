@@ -343,6 +343,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Neuladen gelten damit unverändert.
     const uploadBtn = document.getElementById("uploadBtn");
     const uploadInput = document.getElementById("uploadInput");
+    // Symbol und Dropzone gehen zusammen: wo abgelegt werden kann, ist es da.
+    if (uploadBtn && !uploadGesperrt) uploadBtn.hidden = false;
     if (uploadBtn && uploadInput) {
       uploadBtn.addEventListener("click", () => uploadInput.click());
       uploadInput.addEventListener("change", () => {
@@ -429,6 +431,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const preview = document.createElement("div");
       preview.className = "dropzone-field-preview";
+      // Immer sichtbar, auch neben einem vorhandenen Bild: ohne Drag & Drop
+      // (Handy) ist Antippen der einzige Weg.
+      const hinweis = document.createElement("div");
+      hinweis.className = "dropzone-field-placeholder";
+      hinweis.textContent = "Antippen oder Datei hierher ziehen";
       // Dateinamen nur über textContent einfügen — nie über innerHTML.
       function showDone(thumbSrc, fileName) {
         preview.textContent = "";
@@ -450,10 +457,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const fileName = descEl && descEl.textContent.trim() ? descEl.textContent.trim() : "aktuelle Datei";
         showDone(thumbImg && thumbImg.src, fileName);
       } else {
-        preview.innerHTML = '<span class="dropzone-field-placeholder">' + labelText + ' ablegen oder klicken</span>';
+        hinweis.textContent = labelText + ": antippen oder Datei hierher ziehen";
       }
 
       dz.appendChild(preview);
+      dz.appendChild(hinweis);
 
       new Dropzone(dz, {
         url: "/intern/upload/",
@@ -461,6 +469,8 @@ document.addEventListener("DOMContentLoaded", function () {
         maxFilesize: uploadMaxMb,
         maxFiles: 1,
         clickable: true,
+        // Bildfelder: auf dem Handy öffnet das Galerie bzw. Kamera.
+        acceptedFiles: name === "avatar" || name === "bild" ? "image/*" : null,
         previewsContainer: false,
         headers: { "X-CSRFToken": getCsrfToken() },
         init: function () {
@@ -474,9 +484,19 @@ document.addEventListener("DOMContentLoaded", function () {
           this.on("success", function (file, response) {
             valueInput.value = response.id;
             showDone(response.thumbnail_url, file.name);
+            // maxFiles zählt sonst weiter: ein zweites Bild würde abgewiesen.
+            this.removeFile(file);
           });
           this.on("addedfile", function () {
             preview.innerHTML = '<span class="dropzone-field-uploading">Hochladen…</span>';
+          });
+          this.on("error", function (file, meldung) {
+            preview.textContent = "";
+            const span = document.createElement("span");
+            span.className = "dropzone-field-uploading";
+            span.textContent = (meldung && meldung.message) || String(meldung || "Hochladen fehlgeschlagen");
+            preview.appendChild(span);
+            this.removeFile(file);
           });
         },
       });

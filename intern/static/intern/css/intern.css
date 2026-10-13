@@ -832,6 +832,7 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
     color: var(--tb-icon);
 }
 .topbar-actions button:hover { background: var(--hover-icon-bg); }
+.topbar-actions button[hidden] { display: none; }
 .topbar-actions button:hover .toolicon { color: var(--brand); }
 
 .topbar-actions {

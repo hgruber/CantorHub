@@ -570,13 +570,20 @@ both empty) gets no page dropzone at all — no overlay, no icon — unless the 
 upload card asks to move it. The folder browser follows `can_write_here`, at the root only with
 that right. `upload_aus` switches the page dropzone off for everyone (the profile page, where
 the avatar field is enough). `upload` in `views/files.py` enforces write access and the root
-rule either way.
+rule either way. **Icon and dropzone go together:** `base.html` renders `#uploadBtn` `hidden`
+wherever an upload could happen, and the same `uploadGesperrt` rule in `intern.js` that
+disables the dropzone decides whether it is shown — there is no second condition to keep in
+step.
 
 The field dropzones (`initFilerDropzones()`, which replace filer's widget for the avatar, the
 forum picture and the song files) upload straight into their field's folder: the view passes
 `feld_ordner = {field name: folder id}`, `base.html` prints it as `json_script` `#feld-ordner`.
 They send `feld=1`, so the upload takes a free name („x (2).pdf“) instead of becoming a revision
-of a file already there; „Speichern“ then renames it and merges via `systemablage()`.
+of a file already there; „Speichern“ then renames it and merges via `systemablage()`. A field
+dropzone is tappable and says so („Antippen oder Datei hierher ziehen“) — on a phone it is the
+only way in; the picture fields (`avatar`, `bild`) accept `image/*`, which opens the gallery or
+camera. Each upload is removed from Dropzone's count afterwards, so a second file replaces the
+first instead of hitting `maxFiles: 1`.
 
 ## The list pages' script
 
