@@ -7,6 +7,18 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Container: Das Portal ist nach dem Start erreichbar, ohne auf den XMPP-Abgleich zu warten; der
+  läuft samt Bot im Hintergrund.
+
+### Behoben
+
+- Forum: Beiträge, die geschrieben werden, während der XMPP-Bot neu startet, erreichen den
+  XMPP-Raum nachträglich, statt verloren zu gehen.
+
 ## v1.0.6 — 2026-10-13
 
 ### Hinzugefügt

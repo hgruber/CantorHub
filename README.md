@@ -289,7 +289,7 @@ is in `docs/configuration.md`; these are the ones that decide whether things wor
 ### Optional services
 
 - **XMPP forum bridge** — becomes active once `EJABBERD_HOST` and `EJABBERD_BOT_JID` are set.
-  `start.sh` then runs the sync and the relay bot. Server-side requirements and the admin CLI are
+  `start.sh` then runs the sync and the relay bot in the background. Server-side requirements and the admin CLI are
   in `docs/xmpp.md`.
 - **CardDAV / CalDAV** — while the switch is `0`, the URLs answer `404`, i.e. the service does not
   exist. Turning it on means member data (including photos and, optionally, birthdays) lands in

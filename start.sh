@@ -35,16 +35,23 @@ python manage.py cleanup_dateiversionen --days 36500 --keep 25 &
 
 # XMPP nur anfassen, wenn es konfiguriert ist: ohne EJABBERD_HOST/BOT_JID laufen
 # beide Kommandos in Verbindungsfehler und fuellen bei jedem Start das Log.
-if python manage.py shell -c "
+# Der ganze Block laeuft im Hintergrund, damit das Portal nicht auf den Abgleich
+# wartet; darin nacheinander, weil der Bot das Konto braucht, das sync anlegt.
+# Forenbeitraege aus der Zwischenzeit gehen nicht verloren: der Bot fuehrt seinen
+# Relay-Stand in einer Datei unter CANTORHUB_DATA und holt sie nach.
+(
+    if python manage.py shell -c "
 import sys
 from intern.app_settings import is_ejabberd_configured
 sys.exit(0 if is_ejabberd_configured() else 1)
 " >/dev/null 2>&1; then
-    python manage.py ejabberd_admin sync
-    python manage.py ejabberd_bot &
-else
-    echo "XMPP nicht konfiguriert (EJABBERD_HOST/EJABBERD_BOT_JID) — Bot bleibt aus."
-fi
+        python manage.py ejabberd_admin sync \
+            || echo "ejabberd_admin sync fehlgeschlagen — Bot startet trotzdem."
+        python manage.py ejabberd_bot
+    else
+        echo "XMPP nicht konfiguriert (EJABBERD_HOST/EJABBERD_BOT_JID) — Bot bleibt aus."
+    fi
+) &
 
 # Erinnerungen an oeffentliche Auftritte (Auftritts-Mailingliste); Dauerloop wie
 # der ejabberd_bot, weil das Projekt keinen Scheduler hat.

@@ -2,7 +2,7 @@
 Management command: ejabberd_bot
 
 Long-running slixmpp bot that bridges ejabberd MUC rooms <-> CantorHub forum.
-Started as a background process by start.sh/migrate.sh; exits cleanly if ejabberd is not configured.
+Started as a background process by start.sh; exits cleanly if ejabberd is not configured.
 
 Responsibilities:
 - Joins (and thereby creates) all MUC rooms listed in Forum.xmpp_muc_jid of
@@ -22,7 +22,9 @@ SynchronousOnlyOperation errors.
 
 import asyncio
 import logging
+import os
 from datetime import datetime
+from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
@@ -60,6 +62,28 @@ def _db_init_relay_cursor():
     from intern.models import Mitteilung
 
     return Mitteilung.alle.aggregate(m=Max("id"))["m"] or 0
+
+
+def lese_relay_cursor(pfad):
+    """Persisted relay cursor from ``pfad``, or None if missing or unreadable."""
+    try:
+        return int(Path(pfad).read_text(encoding="ascii").strip())
+    except (OSError, ValueError):
+        return None
+
+
+def schreibe_relay_cursor(pfad, wert):
+    """Write the relay cursor atomically, so a crash never leaves half a number."""
+    pfad = Path(pfad)
+    tmp = pfad.with_name(pfad.name + ".tmp")
+    tmp.write_text(f"{wert}\n", encoding="ascii")
+    os.replace(tmp, pfad)
+
+
+def _relay_cursor_pfad():
+    from django.conf import settings
+
+    return settings.DATEN / "xmpp_relay_cursor"
 
 
 def _db_pending_forum_messages(after_id):
@@ -447,9 +471,23 @@ class CantorBot:
         own joined session. The relayed message echoes back under nick
         'CantorBot' and is skipped by echo prevention, so it is not re-stored."""
         if self._relay_cursor is None:
-            # Establish a baseline so existing history isn't replayed to MUC.
-            self._relay_cursor = await asyncio.to_thread(_db_init_relay_cursor)
-            return
+            # Resume from the persisted cursor so posts written while the bot was
+            # down still reach MUC. Without one (first start) take the newest id
+            # as baseline, so existing history isn't replayed; a cursor beyond it
+            # (database restored) is pulled back, or new posts would never relay.
+            pfad = _relay_cursor_pfad()
+            gespeichert = await asyncio.to_thread(lese_relay_cursor, pfad)
+            hoechste = await asyncio.to_thread(_db_init_relay_cursor)
+            if gespeichert is None or gespeichert > hoechste:
+                self._relay_cursor = hoechste
+                await asyncio.to_thread(schreibe_relay_cursor, pfad, hoechste)
+            else:
+                self._relay_cursor = gespeichert
+                if gespeichert < hoechste:
+                    logger.info(
+                        "ejabberd_bot: resuming relay after forum message #%s",
+                        gespeichert,
+                    )
 
         pending = await asyncio.to_thread(
             _db_pending_forum_messages, self._relay_cursor
@@ -466,6 +504,7 @@ class CantorBot:
             outgoing["origin_id"]["id"] = f"cantorhub-{msg_id}"
             outgoing.send()
             self._relay_cursor = msg_id
+            await asyncio.to_thread(schreibe_relay_cursor, _relay_cursor_pfad(), msg_id)
             logger.info(
                 "ejabberd_bot: relayed forum message #%s to %s", msg_id, muc_jid
             )

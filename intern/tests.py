@@ -6828,3 +6828,32 @@ class EinrichtungTest(SimpleTestCase):
             maximal = Ort._meta.get_field(feld).max_length
             if maximal:
                 self.assertLessEqual(len(wert), maximal, feld)
+
+
+class RelayCursorTest(SimpleTestCase):
+    """Der Relay-Stand des Bots überdauert einen Neustart; eine fehlende oder
+    kaputte Datei heißt „kein Stand“ und führt zum Basiswert statt zum Absturz."""
+
+    def test_schreiben_und_lesen(self):
+        import tempfile
+        from intern.management.commands.ejabberd_bot import (
+            lese_relay_cursor, schreibe_relay_cursor,
+        )
+
+        with tempfile.TemporaryDirectory() as verz:
+            pfad = Path(verz) / "xmpp_relay_cursor"
+            self.assertIsNone(lese_relay_cursor(pfad))
+            schreibe_relay_cursor(pfad, 4711)
+            self.assertEqual(lese_relay_cursor(pfad), 4711)
+            schreibe_relay_cursor(pfad, 4712)
+            self.assertEqual(lese_relay_cursor(pfad), 4712)
+            self.assertEqual(sorted(p.name for p in Path(verz).iterdir()), ["xmpp_relay_cursor"])
+
+    def test_muell_ist_kein_stand(self):
+        import tempfile
+        from intern.management.commands.ejabberd_bot import lese_relay_cursor
+
+        with tempfile.TemporaryDirectory() as verz:
+            pfad = Path(verz) / "xmpp_relay_cursor"
+            pfad.write_text("kaputt", encoding="ascii")
+            self.assertIsNone(lese_relay_cursor(pfad))

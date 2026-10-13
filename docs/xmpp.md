@@ -92,14 +92,14 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `
 
 `forum_send` only creates the `Mitteilung`. The persistent bot relays it to MUC on a 3 s timer over its **live** session:
 
-- `_db_init_relay_cursor()` records the highest Mitteilung id at startup, so existing history is not replayed to MUC. The cursor advances only past messages actually sent.
+- The cursor is persisted in `$CANTORHUB_DATA/xmpp_relay_cursor` (see below). The cursor advances only past messages actually sent.
 - `_db_pending_forum_messages(after_id)` selects Forum-originated messages (`sender` set, `xmpp_stanza_id` NULL) for forums with a `xmpp_muc_jid`, formatted as `*Full Name*: text` with `rewrite_media_urls()` applied (so `/media/` links become token URLs).
 - Each is sent with `self._client.send_message(mto=muc_jid, mbody=body, mtype="groupchat")`. If the room isn't joined yet, the loop stops (cursor not advanced) and retries next cycle, so nothing is lost.
 - Echo prevention: the relayed message echoes back under nick `CantorBot` and `_on_muc_message` skips it, so it is not re-stored.
 
 This replaced an earlier per-message short-lived slixmpp connection that was unreliable (flaky first TLS handshake → random timeouts) and collided on the `CantorBot` nick.
 
-**Known gap — `_relay_cursor` is not persistent:** the relay cursor is held only in memory and re-baselined to the highest `Mitteilung` id at each bot **process** start (`_db_init_relay_cursor`). In-process reconnects (TLS blip, auth retry, disconnect) keep the cursor, so they lose nothing. But if the bot **process** restarts while the portal keeps accepting posts, every forum message written during that downtime is treated as already-delivered and never reaches the MUC. This is currently masked because `start.sh`/`migrate.sh` wipe the DB on each start (test phase only). Once that wipe is gone after the final migration, the gap becomes real. Fix when it matters: persist the last-relayed `Mitteilung` id (DB/file) instead of taking the max at startup, so a bot restart replays the downtime window instead of skipping it. A supervisor/restart policy for the bot (it currently runs as a bare `&` background process in `start.sh` with no auto-restart) reduces the downtime window but does not remove the gap.
+**Persistent relay cursor:** the last relayed `Mitteilung` id is written to `$CANTORHUB_DATA/xmpp_relay_cursor` after every sent message (atomically, temp file + `os.replace`), and the first relay tick of a bot **process** resumes from it. So posts written while the bot is down — a deploy, a crash, or the window in which `start.sh` already serves the portal while `ejabberd_admin sync` still runs in the background — are relayed once the bot has joined the room; until then the „not joined yet“ rule holds them back. Without the file (first start) `_db_init_relay_cursor()` takes the highest id as baseline, so existing history is not replayed; a stored value above that id (database restored from an older dump) is pulled back to it, or new posts would never relay. A crash between send and write repeats at most one message. The bot still runs without a supervisor, so a dead bot process stays dead until the next container start — it just loses nothing meanwhile.
 
 ## MUC → Forum forwarding (`intern/management/commands/ejabberd_bot.py`)
 
@@ -225,9 +225,9 @@ single JID. Embedding the count in the reaction text (`👍 5`) is technically s
 merge with native `👍` reactions — it shows as a separate chip — and (b) may be filtered by
 strict clients. The plain-emoji union is kept; exact per-person counts live in the web UI.
 
-**Restart gap:** like the `_relay_cursor` gap, stanza-ids for messages relayed while the bot
-**process** is down aren't captured, so reactions to those specific messages don't round-trip.
-Acceptable during the DB-wipe test phase; improvable later via MAM.
+**Restart gap:** a message relayed just before the bot **process** stops may have its echo
+arrive after the stop, so its stanza-id isn't captured and reactions to it don't round-trip.
+Improvable later via MAM.
 
 ## Forum edit page (`forum_edit`)
 
@@ -289,9 +289,12 @@ The `_provision_xmpp_user` function also uploads the vCard on first login, so bo
 
 ## Startup script (`start.sh`)
 
-When `EJABBERD_HOST` and `EJABBERD_BOT_JID` are set as environment variables:
-1. `./manage.py ejabberd_admin sync` — registers bot account, assigns MUC JIDs, configures rooms
-2. `./manage.py ejabberd_bot &` — starts the bot in background
+When `EJABBERD_HOST` and `EJABBERD_BOT_JID` are set, one background subshell runs, in order
+(the web server does not wait for it):
+1. `./manage.py ejabberd_admin sync` — registers bot account, assigns MUC JIDs, configures rooms;
+   a failure is logged and does not stop the bot or the container
+2. `./manage.py ejabberd_bot` — the bot, which catches up on posts written meanwhile through the
+   persistent relay cursor
 
 ## Admin management command (`manage.py ejabberd_admin`)
 
