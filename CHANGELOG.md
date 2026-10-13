@@ -23,6 +23,12 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Konfiguration: Erinnerungsmail der Auftritts-Liste und Startseitentexte haben Mustertexte, die
   eine neue Installation vorbelegen.
 
+### Geändert
+
+- Seitenleiste: Die Version steht für alle unten in der Leiste. Als Link auf die Änderungsseite
+  erscheint sie mit dem Recht „Mitglieder › Berechtigungen“ oder „Dateien › Berechtigungen“; beide
+  geben jetzt auch die Seite selbst frei.
+
 ### Entfernt
 
 - Der einmalige Import aus dem Altportal ist ausgebaut; seine Migration bleibt als leerer

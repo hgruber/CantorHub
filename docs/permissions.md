@@ -54,7 +54,7 @@ they survive edits. Module paths are relative to `intern/`.
 | `manage_user_permissions` | `views/gruppen.py` · `gruppen` | `/intern/gruppen/` | this page: grant and revoke rights per group |
 | `manage_user_permissions` | `views/aufgaben.py` · `aufgaben` | `/intern/aufgaben/` | put members into groups (the admin-status column only for superusers) |
 | `manage_user_permissions` | `views/aenderungen.py` · `aenderungsprotokoll_list` | `/intern/aenderungsprotokoll/` | the audit log |
-| `manage_user_permissions` | `views/auslieferungen.py` · `auslieferungen`; `templates/sidebar.html` | `/intern/changelog/` | release notes and the version link under the sidebar |
+| `manage_user_permissions` | `views/auslieferungen.py` · `auslieferungen`; `templates/sidebar.html` | `/intern/changelog/` | release notes; turns the version under the sidebar into a link to them (also under `manage_folder_permissions`) |
 | `manage_user_permissions` | `templates/sidebar.html` | every page | the admin menu (Aufgaben, Gruppen, Änderungsprotokoll) |
 | `manage_user_permissions` **and** `change_user` | `views/mitglieder.py` · `mitglied_edit`; `templates/mitglied_edit.html` | `/intern/mitglied/<id>/edit/` | „Mitgliedschaft beenden" / „wieder aufnehmen", and „Zugang sperren/freischalten" for accounts without the tag „Mitglied" |
 | `notify_user` | `views/mitglieder.py` · `mitglied_list` | `/intern/mitglied/` | the „benachrichtigen" button |
@@ -72,6 +72,7 @@ they survive edits. Module paths are relative to `intern/`.
 | `manage_folder_permissions` | `views/files.py` · `upload`; `base.html` (`data-upload-wurzel`) | `/intern/upload/`, every page | upload to the root: the page dropzone on pages without an upload target and on the browser's root (everyone else gets none, and a 403) |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view`, `folder_move`, `_copy_action`; `views/files.py` · `datei_aktionen` | `/intern/ordner/<pk>/`, `/intern/ordner/verschieben/` …, `/intern/datei/<pk>/aktionen/` | offers and accepts Backstage and its subfolders as a move, link or copy target (`_sieht_backstage`) |
 | `manage_folder_permissions` | `views/aufgaben.py` · `folder_permissions` | `/intern/ordner/<pk>/berechtigungen/` | edit the folder's `FolderPermission` rows |
+| `manage_folder_permissions` | `views/auslieferungen.py` · `auslieferungen`; `templates/sidebar.html` | `/intern/changelog/` | release notes; turns the version under the sidebar into a link to them (also under `manage_user_permissions`; everyone else sees it as plain text) |
 
 ## Termine
 

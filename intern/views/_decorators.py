@@ -17,6 +17,8 @@ _ZUSTAND_MAX_AGE = 365 * 24 * 60 * 60
 def perm_or_home(perm, superuser_ok=True):
     """Zutritt nur mit ``perm`` (oder als Superuser); sonst zurück auf „Aktuell".
 
+    ``perm`` darf auch ein Tupel sein — dann genügt eines der Rechte.
+
     Bewusst nicht ``permission_required``: das antwortet je nach Aufruf mit 403
     oder schickt auf die Login-Seite. Die Verwaltungsseiten dahinter sollen
     stattdessen wortlos auf die Startseite zurückfallen — wer das Recht nicht
@@ -26,11 +28,13 @@ def perm_or_home(perm, superuser_ok=True):
     prüfen; die Views brauchen es nicht zusätzlich.
     """
 
+    rechte = (perm,) if isinstance(perm, str) else tuple(perm)
+
     def decorator(view):
         @wraps(view)
         @login_required
         def wrapper(request, *args, **kwargs):
-            erlaubt = request.user.has_perm(perm) or (
+            erlaubt = any(request.user.has_perm(p) for p in rechte) or (
                 superuser_ok and request.user.is_superuser
             )
             if not erlaubt:

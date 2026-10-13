@@ -173,8 +173,8 @@ PERMISSION_DETAILS = {
         ("Änderungsprotokoll",
          "Einsicht in das Protokoll aller Änderungen im Portal."),
         ("Versionshinweise",
-         "Der Versionslink unten in der Seitenleiste und die Seite mit den Neuerungen "
-         "jeder Version."),
+         "Die Version unten in der Seitenleiste wird zum Link auf die Seite mit den "
+         "Neuerungen jeder Version; alle anderen sehen sie nur als Text."),
         ("Seitenleiste",
          "Das Menü „Admin“ mit Aufgaben, Gruppen und Änderungsprotokoll."),
         ("Mitgliedschaft beenden oder wieder aufnehmen",
@@ -222,6 +222,9 @@ PERMISSION_DETAILS = {
         ("Verschieben, Kopieren, Verknüpfen",
          "Bietet „Backstage“ und seine Unterordner als Ziel an — im Ordner und im "
          "Dateimenü eines Artikels. Für alle anderen sind sie kein Ziel."),
+        ("Versionshinweise",
+         "Die Version unten in der Seitenleiste wird zum Link auf die Seite mit den "
+         "Neuerungen jeder Version; alle anderen sehen sie nur als Text."),
     ],
     "intern.add_termin": [
         ("Terminliste und Kalender",

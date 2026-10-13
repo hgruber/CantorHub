@@ -16,7 +16,7 @@ from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 __all__ = ["auslieferungen"]
 
 
-@perm_or_home("intern.manage_user_permissions")
+@perm_or_home(("intern.manage_user_permissions", "intern.manage_folder_permissions"))
 def auslieferungen(request):
     abschnitte = lies_auslieferungen()
     # Über alle Abschnitte bestimmen, nicht nur über die Charge — sonst trüge
