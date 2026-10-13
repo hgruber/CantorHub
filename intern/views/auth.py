@@ -202,7 +202,7 @@ def home(request):
 
 def datenschutz(request):
     vorstand = (
-        User.objects.filter(groups__name="Vorstand", is_active=True)
+        User.objects.filter(groups__name="Vorstand")
         .order_by("last_name", "first_name")
     )
     return render(request, "datenschutz.html", {

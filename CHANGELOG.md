@@ -46,6 +46,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Leiste im Text, ohne dass unten der Player aufgeht; eine Audiodatei erscheint wie jede andere
   Datei mit Noten-Symbol, Dateiname und Download-Knopf, ein Klick aufs Symbol öffnet den Player
   unten.
+- Datenschutzerklärung: Unter „Verantwortliche“ stehen alle Mitglieder der Gruppe „Vorstand“,
+  auch solche ohne Portalzugang.
 
 ## v1.0.3 — 2026-10-11
 
