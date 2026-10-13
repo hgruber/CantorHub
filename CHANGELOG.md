@@ -13,6 +13,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 - Container: Das Portal ist nach dem Start erreichbar, ohne auf den XMPP-Abgleich zu warten; der
   läuft samt Bot im Hintergrund.
+- Container: XMPP-Bot und Versand der Auftrittserinnerungen starten nach einem Absturz nach
+  30 Sekunden neu.
 
 ### Behoben
 

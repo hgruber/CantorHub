@@ -33,6 +33,20 @@ python manage.py cleanup_changelog &
 # (2012 ff.) nicht beim naechsten Serverstart wieder verschwinden.
 python manage.py cleanup_dateiversionen --days 36500 --keep 25 &
 
+# Haelt einen Dauerprozess am Leben: endet er mit Fehler (Ausnahme, Signal wie
+# ein OOM-Kill), startet er nach 30 s neu. Ein Ende mit 0 ist gewollt und bleibt
+# dabei — so gibt der Bot nach wiederholten Anmeldefehlern auf, statt das Log
+# im Takt mit Fehlversuchen zu fuellen.
+neustart_bei_absturz() {
+    local code
+    while true; do
+        "$@" && return 0
+        code=$?
+        echo "$* beendet mit Code ${code} — Neustart in 30 s." >&2
+        sleep 30
+    done
+}
+
 # XMPP nur anfassen, wenn es konfiguriert ist: ohne EJABBERD_HOST/BOT_JID laufen
 # beide Kommandos in Verbindungsfehler und fuellen bei jedem Start das Log.
 # Der ganze Block laeuft im Hintergrund, damit das Portal nicht auf den Abgleich
@@ -47,7 +61,7 @@ sys.exit(0 if is_ejabberd_configured() else 1)
 " >/dev/null 2>&1; then
         python manage.py ejabberd_admin sync \
             || echo "ejabberd_admin sync fehlgeschlagen — Bot startet trotzdem."
-        python manage.py ejabberd_bot
+        neustart_bei_absturz python manage.py ejabberd_bot
     else
         echo "XMPP nicht konfiguriert (EJABBERD_HOST/EJABBERD_BOT_JID) — Bot bleibt aus."
     fi
@@ -55,7 +69,7 @@ sys.exit(0 if is_ejabberd_configured() else 1)
 
 # Erinnerungen an oeffentliche Auftritte (Auftritts-Mailingliste); Dauerloop wie
 # der ejabberd_bot, weil das Projekt keinen Scheduler hat.
-python manage.py send_auftritt_erinnerungen --loop &
+neustart_bei_absturz python manage.py send_auftritt_erinnerungen --loop &
 
 if [ "${DEBUG}" = "1" ]; then
     python manage.py runserver 0.0.0.0:8001

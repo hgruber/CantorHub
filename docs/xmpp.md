@@ -99,7 +99,7 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `
 
 This replaced an earlier per-message short-lived slixmpp connection that was unreliable (flaky first TLS handshake → random timeouts) and collided on the `CantorBot` nick.
 
-**Persistent relay cursor:** the last relayed `Mitteilung` id is written to `$CANTORHUB_DATA/xmpp_relay_cursor` after every sent message (atomically, temp file + `os.replace`), and the first relay tick of a bot **process** resumes from it. So posts written while the bot is down — a deploy, a crash, or the window in which `start.sh` already serves the portal while `ejabberd_admin sync` still runs in the background — are relayed once the bot has joined the room; until then the „not joined yet“ rule holds them back. Without the file (first start) `_db_init_relay_cursor()` takes the highest id as baseline, so existing history is not replayed; a stored value above that id (database restored from an older dump) is pulled back to it, or new posts would never relay. A crash between send and write repeats at most one message. The bot still runs without a supervisor, so a dead bot process stays dead until the next container start — it just loses nothing meanwhile.
+**Persistent relay cursor:** the last relayed `Mitteilung` id is written to `$CANTORHUB_DATA/xmpp_relay_cursor` after every sent message (atomically, temp file + `os.replace`), and the first relay tick of a bot **process** resumes from it. So posts written while the bot is down — a deploy, a crash, or the window in which `start.sh` already serves the portal while `ejabberd_admin sync` still runs in the background — are relayed once the bot has joined the room; until then the „not joined yet“ rule holds them back. Without the file (first start) `_db_init_relay_cursor()` takes the highest id as baseline, so existing history is not replayed; a stored value above that id (database restored from an older dump) is pulled back to it, or new posts would never relay. A crash between send and write repeats at most one message. `start.sh` restarts a crashed bot process after 30 s (non-zero exit only; giving up after repeated authentication failures exits with 0 and stays down).
 
 ## MUC → Forum forwarding (`intern/management/commands/ejabberd_bot.py`)
 
@@ -294,7 +294,7 @@ When `EJABBERD_HOST` and `EJABBERD_BOT_JID` are set, one background subshell run
 1. `./manage.py ejabberd_admin sync` — registers bot account, assigns MUC JIDs, configures rooms;
    a failure is logged and does not stop the bot or the container
 2. `./manage.py ejabberd_bot` — the bot, which catches up on posts written meanwhile through the
-   persistent relay cursor
+   persistent relay cursor; restarted after 30 s if it crashes
 
 ## Admin management command (`manage.py ejabberd_admin`)
 

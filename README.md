@@ -306,7 +306,10 @@ is in `docs/configuration.md`; these are the ones that decide whether things wor
 
 ## Background jobs
 
-`start.sh` launches these; there is no scheduler, they are plain loops or one-shot jobs:
+`start.sh` launches these; there is no scheduler, they are plain loops or one-shot jobs. The two long-running ones (`ejabberd_bot`,
+`send_auftritt_erinnerungen --loop`) are restarted 30 s after a crash (non-zero exit); a clean
+exit — the bot giving up after repeated authentication failures — is final until the next
+container start:
 
 | Job | What it does |
 |---|---|
