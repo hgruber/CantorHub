@@ -20,6 +20,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 - Forum: Beiträge, die geschrieben werden, während der XMPP-Bot neu startet, erreichen den
   XMPP-Raum nachträglich, statt verloren zu gehen.
+- Forum: Reaktionen, die in einem XMPP-Client im Forenraum gesetzt werden, kommen im Forum an,
+  auch auf Beiträge, die aus dem Portal weitergeleitet wurden.
 
 ## v1.0.6 — 2026-10-13
 

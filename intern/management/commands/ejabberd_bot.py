@@ -331,6 +331,7 @@ class CantorBot:
 
         self._client.add_event_handler("session_start", self._on_session_start)
         self._client.add_event_handler("groupchat_message", self._on_muc_message)
+        self._client.add_event_handler("reactions", self._on_reactions)
         self._client.add_event_handler("presence", self._on_presence)
         self._client.add_event_handler("failed_auth", self._on_failed_auth)
         self._client.add_event_handler("disconnected", self._on_disconnected)
@@ -612,11 +613,10 @@ class CantorBot:
         # so check the resource (nickname) not the bare JID.
         sender_nickname = msg["from"].resource
 
-        # Reaction stanzas (XEP-0444) carry no <body>, so handle them first.
+        # Reactions (XEP-0444) are handled by _on_reactions. slixmpp only fires
+        # groupchat_message for stanzas with a <body>, so one arrives here only
+        # with a fallback body — which must not be stored as a forum post.
         if msg.get_plugin("reactions", check=True) is not None:
-            if sender_nickname == "CantorBot":
-                return  # our own relayed reaction echo — never re-import
-            await self._handle_reaction(msg, room_jid, sender_nickname)
             return
 
         body = (msg["body"] or "").strip()
@@ -662,6 +662,16 @@ class CantorBot:
             self._invitation_done.add(room_jid)
             await asyncio.to_thread(_db_invite_missing_users, room_jid)
 
+    async def _on_reactions(self, msg):
+        """Handle inbound reaction stanzas (xep_0444's ``reactions`` event, which
+        fires for body-less stanzas that groupchat_message never sees)."""
+        if msg["type"] != "groupchat":
+            return
+        sender_nickname = msg["from"].resource
+        if sender_nickname == "CantorBot":
+            return  # our own relayed reaction echo — never re-import
+        await self._handle_reaction(msg, str(msg["from"].bare), sender_nickname)
+
     async def _handle_reaction(self, msg, room_jid, sender_nickname):
         """Store an inbound XMPP reaction (XEP-0444) against the targeted message."""
         to_id = msg["reactions"]["id"]
@@ -677,7 +687,10 @@ class CantorBot:
 
     async def _capture_forum_stanza_id(self, msg):
         """For a CantorBot echo of a relayed forum message, map its origin-id back
-        to the Mitteilung and store the room-assigned stanza-id (for reactions)."""
+        to the Mitteilung and store the room-assigned stanza-id (for reactions).
+        A room without MAM assigns none; clients then react to the message's id
+        attribute, which ejabberd reflects unchanged — the same fallback as for
+        inbound messages."""
         origin_id = msg["origin_id"]["id"]
         if not origin_id or not origin_id.startswith("cantorhub-"):
             return
@@ -685,7 +698,7 @@ class CantorBot:
             mitteilung_id = int(origin_id.split("cantorhub-", 1)[1])
         except (ValueError, IndexError):
             return
-        stanza_id = msg["stanza_id"]["id"]
+        stanza_id = msg["stanza_id"]["id"] or msg["id"]
         if not stanza_id:
             return
         await asyncio.to_thread(_db_capture_stanza_id, mitteilung_id, stanza_id)

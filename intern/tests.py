@@ -6857,3 +6857,72 @@ class RelayCursorTest(SimpleTestCase):
             pfad = Path(verz) / "xmpp_relay_cursor"
             pfad.write_text("kaputt", encoding="ascii")
             self.assertIsNone(lese_relay_cursor(pfad))
+
+
+class XmppReaktionEingangTest(SimpleTestCase):
+    """Reaktionen (XEP-0444) tragen kein <body>; slixmpp meldet sie nur über das
+    ``reactions``-Event von xep_0444, nie über groupchat_message. Der Bot muss sie
+    dort abholen, sonst erreicht keine XMPP-Reaktion das Forum."""
+
+    def _bot(self):
+        from unittest.mock import AsyncMock
+        from intern.management.commands.ejabberd_bot import CantorBot
+
+        bot = CantorBot.__new__(CantorBot)
+        bot._handle_reaction = AsyncMock()
+        return bot
+
+    def _nachricht(self, von, typ="groupchat"):
+        from slixmpp import JID
+
+        return {"type": typ, "from": JID(von)}
+
+    def test_raumreaktion_wird_verarbeitet(self):
+        import asyncio
+
+        bot = self._bot()
+        msg = self._nachricht("forum-1@muc.example/Anna")
+        asyncio.run(bot._on_reactions(msg))
+        bot._handle_reaction.assert_awaited_once_with(msg, "forum-1@muc.example", "Anna")
+
+    def test_eigenes_echo_und_direktnachricht_nicht(self):
+        import asyncio
+
+        bot = self._bot()
+        asyncio.run(bot._on_reactions(self._nachricht("forum-1@muc.example/CantorBot")))
+        asyncio.run(bot._on_reactions(self._nachricht("anna@example/handy", typ="chat")))
+        bot._handle_reaction.assert_not_awaited()
+
+    def test_handler_registriert(self):
+        quelle = (Path(__file__).parent / "management/commands/ejabberd_bot.py").read_text()
+        self.assertIn('add_event_handler("reactions", self._on_reactions)', quelle)
+
+
+class XmppEchoIdTest(SimpleTestCase):
+    """Ein weitergeleiteter Forenbeitrag bekommt die Raum-Stanza-ID seines Echos;
+    vergibt der Raum keine (ohne MAM), die id des Echos — darauf reagieren die
+    Clients dann, und die Reaktion findet ihren Beitrag."""
+
+    def _erfasse(self, stanza_id, nachricht_id, origin_id="cantorhub-42"):
+        import asyncio
+        from unittest import mock
+        from intern.management.commands import ejabberd_bot
+
+        msg = {
+            "origin_id": {"id": origin_id},
+            "stanza_id": {"id": stanza_id},
+            "id": nachricht_id,
+        }
+        bot = ejabberd_bot.CantorBot.__new__(ejabberd_bot.CantorBot)
+        with mock.patch.object(ejabberd_bot, "_db_capture_stanza_id") as speichern:
+            asyncio.run(bot._capture_forum_stanza_id(msg))
+        return speichern
+
+    def test_stanza_id_hat_vorrang(self):
+        self._erfasse("raum-sid", "msg-id").assert_called_once_with(42, "raum-sid")
+
+    def test_ohne_stanza_id_die_nachrichten_id(self):
+        self._erfasse("", "msg-id").assert_called_once_with(42, "msg-id")
+
+    def test_fremdes_echo_nicht(self):
+        self._erfasse("raum-sid", "msg-id", origin_id="abc").assert_not_called()

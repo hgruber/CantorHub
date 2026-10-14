@@ -186,16 +186,20 @@ it in `Mitteilung.xmpp_stanza_id`. Forum-originated messages relayed by the bot 
 had **no** stanza-id (the CantorBot echo is dropped). So `_relay_messages` now builds the
 outgoing groupchat message with an **origin-id** `cantorhub-<mitteilung_id>`; when the echo
 arrives, `_capture_forum_stanza_id` reads that origin-id and writes the room-assigned
-`<stanza-id>` back onto the Mitteilung (only when still NULL). Body storage stays suppressed
+`<stanza-id>` back onto the Mitteilung (only when still NULL). A room without MAM assigns no
+`<stanza-id>`; clients then react to the message's `id` attribute, which ejabberd reflects
+unchanged, so the echo's `id` is stored instead — the same fallback the inbound path uses. Body storage stays suppressed
 — only the id is backfilled. `_db_pending_forum_messages` is unaffected: its discriminator
 is `xmpp_stanza_id IS NULL` **and** `id > _relay_cursor`, and the cursor has already advanced
 past a relayed message, so the late id-set never causes a re-send.
 
 ### XMPP → Web (inbound)
 
-Reaction stanzas carry no `<body>`, so `_on_muc_message` checks for the reactions plugin
-**before** the `if not body` return. CantorBot's own reaction echoes are skipped (no
-re-import → no loop). Otherwise `_handle_reaction` resolves the reactor JID (presence cache →
+Reaction stanzas carry no `<body>`, and slixmpp's MUC plugin fires `groupchat_message` only for
+stanzas with one — so reactions arrive through `xep_0444`'s own `reactions` event, handled by
+`_on_reactions` (groupchat only). A reaction with a fallback body also reaches
+`_on_muc_message`, which drops it so the fallback text is not stored as a post. CantorBot's own
+reaction echoes are skipped (no re-import → no loop). Otherwise `_handle_reaction` resolves the reactor JID (presence cache →
 REST) and `_db_store_xmpp_reaction` finds the Mitteilung by `xmpp_stanza_id == reactions.id`,
 replaces that reactor's `origin="xmpp"` set, and maps the JID to a `User` for display. It
 does **not** set `reactions_dirty` (no rebroadcast).
