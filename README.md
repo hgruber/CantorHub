@@ -299,6 +299,22 @@ is in `docs/configuration.md`; these are the ones that decide whether things wor
   one base URL finds the address book and both calendars. Anyone who would rather not be in the
   address book at all can switch that off in their own profile — no board action needed, so say so
   when you announce the service.
+
+  DAVx⁵ and iOS find both services through `/.well-known/` alone. GNOME Online Accounts (and
+  other clients that start from DNS) also need two **SRV records** (RFC 6764) on the portal's
+  domain — without them GOA probes only `OPTIONS /` (the homepage, no `DAV:` header), then the
+  Nextcloud path `/remote.php/dav`, and gives up with „Cannot find WebDAV endpoint“:
+
+  ```
+  _caldavs._tcp.<domain>.   IN SRV 0 1 443 <host>.
+  _carddavs._tcp.<domain>.  IN SRV 0 1 443 <host>.
+  ```
+
+  In a registrar's web form that is: name `_caldavs._tcp` / `_carddavs._tcp`, type `SRV`,
+  priority `0`, target `1 443 <host>.` (weight, port, host). No TXT `path=` record is needed;
+  the clients fall back to `/.well-known/caldav|carddav`. Check with
+  `dig +short SRV _caldavs._tcp.<domain>`. Do **not** redirect `/remote.php/dav`: GOA then takes
+  the server for a Nextcloud and configures a broken „Files“ entry.
 - **iCal feed** — `/intern/calendar/<ICAL_SECRET>.ics`, needs no login and works with Google
   Calendar, which cannot subscribe to CalDAV.
 - **Gig-reminder mailing list** — public sign-up at `/auftritte/` with double opt-in; reminders go

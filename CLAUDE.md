@@ -18,6 +18,21 @@ repertoire, forums bridged to XMPP, a versioned wiki, a file archive, a public h
 public gig-reminder mailing list. Phones can subscribe to the directory and the calendar over
 CardDAV/CalDAV.
 
+## Direction: one code base, a generic template, our configuration on top
+
+The next goal is a container that a non-technical choir can start and run as an interactive
+website out of the box. It must **share its updates with the production site** — one code base,
+one image line, no fork. Production's peculiarities (names, domain, logos, photos, texts,
+defaults that only fit this choir) are therefore extracted step by step, until the code alone
+yields a runnable, neutral template and everything choir-specific comes from configuration that
+overrides it (`Konfiguration`, uploaded assets, the data volume). Consequences for every change:
+
+- Do not add new choir-specific literals to code, templates or static files; put them behind a
+  `Konfiguration` key or an asset with a neutral default.
+- When touching a place that still carries one, prefer extracting it in the same change only if
+  asked; otherwise note it in `docs/branding.md`, which holds the inventory and the plan.
+- A fresh installation (`/einrichtung/`) must work without any of our values.
+
 ## Commands
 
 ```bash
