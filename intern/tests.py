@@ -3443,6 +3443,28 @@ class ForumTabelleTest(SimpleTestCase):
             klasse(SimpleNamespace(aktiv=False, ungelesen=2)), "ungelesen forum-inaktiv"
         )
 
+    def test_bild_aus_dem_annotierten_pfad(self):
+        from intern import tables
+
+        with mock.patch.object(tables, "vorschau_url", return_value="/media/vorschau.png") as url:
+            html = tables.ForumTabelle([]).render_bild(
+                record=SimpleNamespace(bild_pfad="filer/forum.png", bild_oeffentlich=False)
+            )
+        url.assert_called_once_with("filer/forum.png", oeffentlich=False)
+        self.assertIn('src="/media/vorschau.png"', html)
+
+    def test_ohne_bild_leere_zelle(self):
+        from intern.tables import ForumTabelle
+
+        self.assertEqual(ForumTabelle([]).render_bild(record=SimpleNamespace(bild_pfad=None)), "")
+
+    def test_bildspalte_vor_dem_thema_und_standardmaessig_aus(self):
+        from intern.tables import FORUM_SPALTEN_AUS, ForumTabelle
+
+        spalten = list(ForumTabelle.base_columns)
+        self.assertEqual(spalten.index("bild") + 1, spalten.index("thema"))
+        self.assertEqual(FORUM_SPALTEN_AUS, {"bild"})
+
 
 class DatenschutzPruefungTest(SimpleTestCase):
     """Welche Pfade die Datenschutz-Bestaetigung vorschaltet.

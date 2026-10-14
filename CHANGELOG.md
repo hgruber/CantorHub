@@ -9,6 +9,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Forenliste: Die Spalte „Bild“ zeigt das Forenbild als rundes Icon vor dem Thema. Sie ist
+  standardmäßig ausgeblendet und lässt sich über die Spaltenwahl einschalten.
+
 ### Geändert
 
 - Container: Das Portal ist nach dem Start erreichbar, ohne auf den XMPP-Abgleich zu warten; der

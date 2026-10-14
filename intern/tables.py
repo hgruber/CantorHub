@@ -68,12 +68,20 @@ def _datei_url(pfad):
     return datei_url(pfad)
 
 
+# Spalten der Forenliste, die erst per Spaltenwahl erscheinen.
+FORUM_SPALTEN_AUS = {"bild"}
+
+
 class ForumTabelle(tables.Table):
     # So schmal wie ihr Inhalt; ``forum_list`` blendet sie aus, solange keines der
     # angezeigten Foren eine Kategorie hat.
     kategorie = tables.Column(
         attrs={"th": {"class": "kategorie"}, "td": {"class": "kategorie"}},
     )
+    # Das Raumbild des Forums. Accessor auf den annotierten Pfad (siehe
+    # forum_list), nicht auf ``bild``: das laedt filer je Zeile polymorph nach.
+    # Ohne gespeicherte Spaltenwahl ausgeblendet (``FORUM_SPALTEN_AUS``).
+    bild = tables.Column(accessor="bild_pfad", orderable=False, empty_values=())
     thema = tables.Column()
     zugriff = tables.Column(verbose_name="Letzter Beitrag")
     anzahl_mitteilungen = tables.Column(
@@ -106,6 +114,15 @@ class ForumTabelle(tables.Table):
             )
         ).order_by(richtung + "kategorie_leer", richtung + "kategorie", richtung + "thema")
         return queryset, True
+
+    def render_bild(self, record):
+        pfad = getattr(record, "bild_pfad", None)
+        if not pfad:
+            return ""
+        return format_html(
+            '<img class="avatar-circle" src="{}" width="28" height="28" alt="" loading="lazy">',
+            vorschau_url(pfad, oeffentlich=getattr(record, "bild_oeffentlich", True)),
+        )
 
     def render_thema(self, record, value):
         if record.aktiv:

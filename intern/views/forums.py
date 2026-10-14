@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -35,7 +35,7 @@ from ..models import (
     User,
     ab_stichtag,
 )
-from ..tables import ForumTabelle
+from ..tables import FORUM_SPALTEN_AUS, ForumTabelle
 from ._auswahl import chip_eintraege
 from ._decorators import tabellenzustand
 
@@ -266,13 +266,17 @@ def forum_list(request):
         Forum.objects.extra_data()
         .mit_ungelesen(request.user)
         .exclude(id__in=hidden)
+        .annotate(bild_pfad=F("bild__file"), bild_oeffentlich=F("bild__is_public"))
         .order_by("-zugriff")
     )
     from .files import visible_fields
 
-    # Ohne gespeicherte Auswahl (leere Liste) sind alle Spalten sichtbar.
-    fields = visible_fields(request, "ForumTabelle")
+    # Ohne gespeicherte Auswahl (leere Liste) sind alle Spalten sichtbar, bis auf
+    # die standardmaessig abgeschalteten.
     table = ForumTabelle(foren)
+    fields = visible_fields(request, "ForumTabelle") or [
+        name for name in table.base_columns if name not in FORUM_SPALTEN_AUS
+    ]
     column_choices = [
         {"name": name, "label": table.columns[name].header, "checked": not fields or name in fields}
         for name in table.base_columns

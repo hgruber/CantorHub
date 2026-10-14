@@ -145,3 +145,11 @@ holders only.
 "Unbekannt" + `kein_photo.png` for `sender=None`, and to nick `CantorBot` + `bot.png` for the bot
 JID. `xmpp_stanza_id` deduplicates the bridge, `reactions_dirty` flags web reactions that still
 need relaying.
+
+## Forum image in the list
+
+`Forum.bild` is the MUC room avatar (`xmpp.md`) and, in `/intern/forum/`, the optional column
+„Bild" in front of „Thema": a round thumbnail from `vorschau_url()` over the annotated
+`bild_pfad`/`bild_oeffentlich`, so the column costs no query per row. Columns in
+`FORUM_SPALTEN_AUS` (`tables.py`) stay hidden until a member saves a column choice that includes
+them; a saved choice from before the column existed lacks it and keeps it hidden too.
