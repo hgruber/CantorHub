@@ -670,6 +670,14 @@ a.version-string:focus-visible {
     display: block;
     margin-left: 4px;
 }
+/* Das Forenbild an Stelle des Symbols (/intern/forum/<id>/): rund wie das
+   Raumbild im XMPP-Client, etwas groesser, damit ein Logo erkennbar bleibt. */
+.topbar-icon-bild {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+}
 
 /* Filter chips in topbar */
 .filter-chips {

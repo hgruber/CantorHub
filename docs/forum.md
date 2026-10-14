@@ -154,4 +154,5 @@ need relaying.
 `FORUM_SPALTEN_AUS` (`tables.py`) stay hidden until a member saves a column choice that includes
 them; a saved choice from before the column existed lacks it and keeps it hidden too. The edit
 page `/intern/forum/<id>/edit/` shows the same image in place of the header symbol
-(`detail-icon-bild`, from `avatar_vorschau_url()`).
+(`detail-icon-bild`, from `avatar_vorschau_url()`), the forum page `/intern/forum/<id>/` in place
+of the topbar symbol (`topbar-icon-bild`); without an image both keep the speech bubble.

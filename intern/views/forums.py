@@ -351,11 +351,14 @@ def forum_view(request, forum):
         if request.user.has_perm("intern.manage_forum_permissions")
         else None
     )
+    forum_obj = Forum.objects.select_related("bild").get(id=forum)
     return render(
         request,
         "forum.html",
         {
-            "seitentitel": f"Forum: {Forum.objects.get(id=forum).thema}",
+            "seitentitel": f"Forum: {forum_obj.thema}",
+            # Das Forenbild ersetzt in der Topbar das allgemeine Symbol.
+            "bild_url": avatar_vorschau_url(forum_obj.bild),
             "forum": forum,
             "last_id": last_id,
             "oldest_id": oldest_id,
