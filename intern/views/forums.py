@@ -25,6 +25,7 @@ from intern.forum_gelesen import (
     trenner_id,
 )
 
+from ..avatare import avatar_vorschau_url
 from ..forms import ForumEditForm
 from ..models import (
     ChangeLog,
@@ -580,6 +581,7 @@ def forum_edit(request, forum):
     context = {
         "form": form,
         "forum_obj": forum_obj,
+        "bild_url": avatar_vorschau_url(forum_obj.bild),
         "seitentitel": f"bearbeiten: {forum_obj.thema}",
         "view": "forum_view",
         "id": forum,

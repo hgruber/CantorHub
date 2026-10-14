@@ -13,6 +13,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 - Forenliste: Die Spalte „Bild“ zeigt das Forenbild als rundes Icon vor dem Thema. Sie ist
   standardmäßig ausgeblendet und lässt sich über die Spaltenwahl einschalten.
+- Forum bearbeiten: Der Seitenkopf zeigt das Forenbild statt des allgemeinen Symbols.
 
 ### Geändert
 

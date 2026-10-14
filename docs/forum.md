@@ -152,4 +152,6 @@ need relaying.
 „Bild" in front of „Thema": a round thumbnail from `vorschau_url()` over the annotated
 `bild_pfad`/`bild_oeffentlich`, so the column costs no query per row. Columns in
 `FORUM_SPALTEN_AUS` (`tables.py`) stay hidden until a member saves a column choice that includes
-them; a saved choice from before the column existed lacks it and keeps it hidden too.
+them; a saved choice from before the column existed lacks it and keeps it hidden too. The edit
+page `/intern/forum/<id>/edit/` shows the same image in place of the header symbol
+(`detail-icon-bild`, from `avatar_vorschau_url()`).

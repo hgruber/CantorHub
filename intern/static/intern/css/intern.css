@@ -2762,6 +2762,19 @@ table.mitglied-table tr.stimme-group-start td {
     flex-shrink: 0;
 }
 
+/* Ein Bild statt des Symbols (Forenlogo auf /intern/forum/<id>/edit/): fuellt
+   die Kachel, die Ecken schneidet ihr border-radius ab. */
+.detail-icon-bild {
+    overflow: hidden;
+    background: none;
+}
+.detail-icon-bild img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .detail-info h1 {
     margin: 0;
     font-size: 1.3rem;
