@@ -5,9 +5,30 @@ compliance items are tracked separately in `datenschutz.md`.
 
 ## Branding
 
-- **Branding is hardcoded** ("Just Gospel Frankfurt", logos, domain) across
-  templates, `replacements.py`, `tables.py`, and static SVGs. Blocks open-sourcing
-  as a white-label app. Full extraction plan in `branding.md`.
+- **Branding is partly extracted** (October 2026). Done: the public homepage and the SVG logo
+  come from `DATEN/startseite/` over a neutral shipped default (`docs/startseite.md`), and the
+  default `BRAND_FARBE` is a neutral blue. Still open, each its own change — full plan in
+  `branding.md`:
+  - **Raster logos.** The mail logo (`intern/brand/logo.png`, `mail.py`), the PDF letterhead
+    (`intern/brand/JG-Frankfurt-transparent.png`, `pdf.py`) and the PWA icons
+    (`icon-192.png`, `icon-512.png`, also the notification icon in `intern.js`/`mail.py`) are
+    still this choir's PNGs. Ship PNGs rendered from the seal and look them up through
+    `finde_statisch()` like the SVG.
+  - **`manifest.json` is static** — `name` „Just Gospel! Frankfurt" and `theme_color`
+    `#c14468`. Build it in a view from `VEREINSNAME_LANG`/`_KURZ` and `BRAND_FARBE`.
+  - **Choir defaults in code.** `get_vereinsname*()` in `app_settings.py` and
+    `VEREINSNAME_LANG` in `apps.py` default to the choir's names, `DEFAULT_FROM_EMAIL` to
+    `webmaster@example.org` (`apps.py`, `config/settings.py`), the forum form's XMPP
+    placeholder to `conference.example.org` (`forms.py`). The privacy-policy defaults
+    (`HOSTING_ANBIETER_*`, `DSB_*` in `apps.py` and `views/auth.py`) name Hetzner and the
+    Hessian data-protection authority — generic placeholders, or required keys without a
+    default, so a new installation notices.
+  - **Dynamic homepage content.** Whitelisted placeholders and tags
+    (`oeffentliche_termine`, `konfig` restricted to public keys), sub-pages
+    `seiten/<name>.html` → `/<name>/` as the last route, and wiki articles opted in through a
+    new `STARTSEITE_ARTIKEL` key, rendered by a public mode of `apply_replacements()` (no
+    votes, internal links as plain text, no `/media/` embeds). Spelled out under
+    „Homepage override" in `branding.md`.
 - **Config key naming is mixed** — existing `Konfiguration` keys mix German and
   English (`CALDAV_TAGE_RUECKWIRKEND` vs. `PWRESET_MAX_PER_HOUR`, `UPLOAD_MAX_MB`,
   `NOTIFY_POLL_MS`, `MAP_DEFAULT_ZOOM`). Renaming the existing keys would touch
