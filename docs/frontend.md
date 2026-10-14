@@ -507,6 +507,10 @@ What `osm-map.js` does:
   popup=… %}` renders only a `[data-osm-map]` container; `initAll()` builds the map from its
   data attributes on load. Parameters: `lat`, `lng`, `zoom` (default 15), `popup` (first line),
   `popup_ort` (an `Ort` whose address is appended as further lines), `pin`, `map_id`, `hoehe`.
+  Always pass a `pin`: without one Leaflet draws its default marker and looks for
+  `marker-icon.png` next to `leaflet.css` — which `ManifestStaticFilesStorage` serves hashed, so
+  Leaflet's path detection fails and the image 404s relative to the page (works under
+  `runserver`, breaks in the container).
   Popup text travels as plain text with `&#10;` line breaks and is escaped in JS — no
   `escapejs` in a template, no HTML from the DB. Used by `ort_detail.html`, `termin.html` and
   `mitglied.html`.

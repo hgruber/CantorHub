@@ -54,7 +54,7 @@
         {% if ort.breite is not None and ort.laenge is not None %}
         <div class="detail-card">
             <h3>Karte</h3>
-            {% include "_leaflet_map.html" with lat=ort.breite lng=ort.laenge popup=ort.name %}
+            {% include "_leaflet_map.html" with lat=ort.breite lng=ort.laenge pin="ort" popup=ort.name %}
         </div>
         {% endif %}
     </div>

@@ -25,6 +25,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Behoben
 
+- Termin- und Ortsseite: Die Karte zeigt den Ort wieder mit Marker, jetzt mit dem Orts-Pin der
+  Übersichtskarte; vorher fehlte das Markerbild im Container.
 - Forum: Beiträge, die geschrieben werden, während der XMPP-Bot neu startet, erreichen den
   XMPP-Raum nachträglich, statt verloren zu gehen.
 - Forum: Reaktionen, die in einem XMPP-Client im Forenraum gesetzt werden, kommen im Forum an,

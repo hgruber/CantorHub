@@ -8,7 +8,9 @@ Parameter:
   zoom        Zoomstufe (Vorgabe 15)
   popup       Erste Popup-Zeile; ohne sie bekommt der Marker kein Popup
   popup_ort   Optionaler Ort, dessen Adresse als weitere Popup-Zeilen folgt
-  pin         "ort" | "mitglied" (ohne: Leaflet-Standardmarker)
+  pin         "ort" | "mitglied" (ohne: Leaflet-Standardmarker — der fehlt im
+              Container: Leaflet sucht marker-icon.png neben leaflet.css, die
+              ManifestStaticFilesStorage aber mit Hash ausliefert)
   map_id      DOM-id (Vorgabe "map")
   hoehe       Feste Hoehe, falls die Karte nicht in einer .detail-card sitzt
 {% endcomment %}

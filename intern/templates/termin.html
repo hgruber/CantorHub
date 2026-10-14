@@ -68,7 +68,7 @@
         {% if termin.ort and termin.ort.breite is not None and termin.ort.laenge is not None %}
         <div class="detail-card">
             <h3>Karte</h3>
-            {% include "_leaflet_map.html" with lat=termin.ort.breite lng=termin.ort.laenge popup=termin.ort.name popup_ort=termin.ort %}
+            {% include "_leaflet_map.html" with lat=termin.ort.breite lng=termin.ort.laenge pin="ort" popup=termin.ort.name popup_ort=termin.ort %}
         </div>
         {% endif %}
 
