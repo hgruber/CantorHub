@@ -149,18 +149,37 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "config.urls"
 
+_CONTEXT_PROCESSORS = [
+    "django.template.context_processors.request",
+    "django.contrib.auth.context_processors.auth",
+    "django.contrib.messages.context_processors.messages",
+    "config.context_processors.project_meta",
+]
+
+# Die öffentliche Startseite: zuerst DATEN/startseite (die eigene Seite einer
+# Installation), dann die mitgelieferte unter intern/startseite. Datei für Datei
+# gewinnt der erste Treffer; ein fehlender Ordner wird übersprungen. Dieselbe
+# Reihenfolge gilt für die Dateien unter statisch/ (nginx.conf, startseite_tags).
+STARTSEITE_WURZELN = [DATEN / "startseite", BASE_DIR / "intern" / "startseite"]
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [],
         "APP_DIRS": True,
+        "OPTIONS": {"context_processors": _CONTEXT_PROCESSORS},
+    },
+    {
+        # Eigene Engine statt eines weiteren DIRS-Eintrags: Eine Vorlage aus dem
+        # Volume kann so keine Portalvorlage überschreiben und keine einbinden.
+        # Ohne cached.Loader, damit eine geänderte Seite ohne Neustart wirkt.
+        "NAME": "startseite",
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": STARTSEITE_WURZELN,
+        "APP_DIRS": False,
         "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-                "config.context_processors.project_meta",
-            ],
+            "context_processors": _CONTEXT_PROCESSORS,
+            "loaders": ["django.template.loaders.filesystem.Loader"],
         },
     },
 ]

@@ -296,7 +296,7 @@ numbers/headers use `--cal-weekend` (red) — all with dark-mode values.
 All colours use CSS custom properties defined in `:root` (light mode). Dark mode is a
 `[data-theme="dark"]` block that overrides all colour tokens. When adding new colours, always
 use CSS variables and add dark-mode values; avoid hardcoded hex values in component styles.
-`intern/static/intern/css/main.css`, the public homepage, is the one stylesheet outside this
+`intern/startseite/statisch/main.css`, the public homepage, is the one stylesheet outside this
 rule — it has a single theme and its own token block; see „Public homepage" below.
 
 The accent colour is the one exception worth calling out explicitly: never hardcode `#c14468`
@@ -790,14 +790,17 @@ Every new view that renders `table.html` needs the decorator.
 
 ## Public homepage
 
-`templates/index.html` + `intern/static/intern/css/main.css`. The public landing page does
+`intern/startseite/index.html` + `intern/startseite/statisch/main.css` — the shipped page, which
+an installation overrides file by file from `DATEN/startseite/` (mechanism in
+`docs/startseite.md`; asset paths below are relative to `statisch/`). The public landing page does
 **not** extend `base.html` and does **not** use `intern.css` — it is a standalone one-pager
 with its own stylesheet and its own token block in `:root`. It is light mode only: no
 `[data-theme="dark"]` block and no `_theme_boot.html`, because the photo hero, the white
 `.is-solid` header state and the rose Kontakt band are a composed look, not a token swap. The
 `--gold*` tokens are the one deliberate exception to the dark-value rule in `CLAUDE.md`: that
 rule governs `intern.css`, where two themes share one set of component styles, while `main.css`
-has only one. The page **does** include `_brand_boot.html`, directly after the `main.css` link,
+has only one. The page **does** set the brand colour — `{% markenfarbe %}`, the same rule as
+`_brand_boot.html`, directly after the `main.css` link,
 so `--brand` follows `BRAND_FARBE`; `--brand-dark`, `--brand-soft` and `--band` are derived from
 it with `color-mix()`, exactly as in `intern.css`. What does *not* follow is every logo: the
 `JG-Frankfurt*.svg` files carry `#c14468`/`#000000` as literals, so a deployer with an unrelated
@@ -879,25 +882,25 @@ brand too light to carry white is broken elsewhere already: `intern.css` and `.b
 put white on `--brand` all along.
 
 **The footer is light** — cream background, warm ink, and the *black* wordmark
-(`intern/brand/JG-Frankfurt.svg`); the light `JG-Frankfurt-transparent.svg` of the hero would be
-invisible on it. `intern/images/JG-Frankfurt-wG-color.svg` is not an alternative there: its
+(`brand/JG-Frankfurt.svg`); the light `JG-Frankfurt-transparent.svg` of the hero would be
+invisible on it. `brand/JG-Frankfurt-wG-color.svg` is not an alternative there: its
 white backing ellipse shows as a pale disc on cream. The copyright line uses `--muted` (5.2:1
 on cream); the old `rgba(255, 255, 255, 0.45)` on near-black was 3.4:1 and missed AA.
 
 Logo usage in the header is unchanged: the round mark
-(`intern/images/JG-Frankfurt-wG-color.svg`) over the photo, swapped for the black wordmark
-(`intern/brand/JG-Frankfurt.svg`) once the header turns white — below 460 px the mark stays. The
-hero headline uses the light wordmark (`intern/brand/JG-Frankfurt-transparent.svg`) as an image
+(`brand/JG-Frankfurt-wG-color.svg`) over the photo, swapped for the black wordmark
+(`brand/JG-Frankfurt.svg`) once the header turns white — below 460 px the mark stays. The
+hero headline uses the light wordmark (`brand/JG-Frankfurt-transparent.svg`) as an image
 inside the `<h1>`; its font (Showcard Gothic) exists only as outlines in the SVG, so the
 lettering can only be used as an asset, never as a webfont. The favicon redirect in
-`config/urls.py` relies on the tracked source copy of `JG-Frankfurt-wG-color.svg` in
-`intern/static/intern/images/`.
+`config/urls.py` still relies on the tracked copy of `JG-Frankfurt-wG-color.svg` in
+`intern/static/intern/images/`; the page's own copy sits under `statisch/brand/`.
 
 All copy comes from `Konfiguration` (`HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME`, `VEREINSNAME*`,
 `VEREINSADRESSE`, `DEFAULT_FROM_EMAIL`); `home()` in `views/auth.py` passes `HOMEPAGE_UEBER_UNS`
 whole to the Über uns card. The
 hero and gallery images are pre-scaled derivatives of the choir photo in
-`intern/static/intern/img/` (`chor-{800,1400,2000}.jpg` for the hero `srcset`,
+`img/` (`chor-{800,1400,2000}.jpg` for the hero `srcset`,
 `chor-band-{1100,1800}.jpg` for the gallery band); regenerate them from the original with
-ImageMagick when the photo changes. Assets are referenced via `{% static %}`, so
-`collectstatic` covers them.
+ImageMagick when the photo changes. Assets are referenced via `{% startseite_datei %}`,
+not `{% static %}` — `collectstatic` does not see them (`docs/startseite.md`).

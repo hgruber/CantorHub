@@ -55,7 +55,8 @@ The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
 
 ## URL structure
 
-- `/` — public homepage (`templates/index.html`)
+- `/` — public homepage (`index.html` of the `startseite` template engine, see
+  `docs/startseite.md`), `/startseite/*` its images and CSS
 - `/einrichtung/` — first-run setup of a new installation (`intern/einrichtung.py`); `404`
   once a superuser exists
 - `/datenschutz/` — public privacy policy (`intern/templates/datenschutz.html`, no login

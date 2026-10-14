@@ -9,11 +9,13 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
 from django.utils.http import url_has_allowed_host_and_scheme, urlsafe_base64_encode
 from django.utils.timezone import now as tz_now
+from django.views.static import serve
 from intern import dateiablage, ejabberd, folders
 from intern.app_settings import (
     get_config,
@@ -52,6 +54,7 @@ from ..mitgliedschaft import (
     kein_bild_aus_einwilligung,
     setze_kein_bild,
 )
+from ..templatetags.startseite_tags import finde_statisch
 from ..models import NAMENSVERWEIS, OHNE_ANKUENDIGUNG, Termin, User
 
 __all__ = [
@@ -71,6 +74,7 @@ __all__ = [
     "register",
     "register_success",
     "send_bestaetigung_mail",
+    "startseite_statisch",
 ]
 
 logger = logging.getLogger(__name__)
@@ -191,13 +195,25 @@ def home(request):
         .select_related("ort")[:10]
     )
     ueber_uns = get_config("HOMEPAGE_UEBER_UNS", "")
-    return render(request, "index.html", {
+    return render(request, "index.html", using="startseite", context={
         "termine": termine,
         "homepage_ueber_uns": ueber_uns,
         "homepage_aufnahme": get_config("HOMEPAGE_AUFNAHME", ""),
         "vereinsadresse": get_config("VEREINSADRESSE", ""),
         "kontakt_email": get_config("DEFAULT_FROM_EMAIL", ""),
     })
+
+
+def startseite_statisch(request, pfad):
+    """``/startseite/<pfad>`` in der Entwicklung; im Container liefert nginx aus.
+
+    Dieselbe Reihenfolge wie die Vorlagen: erst ``DATEN/startseite/statisch``,
+    dann die mitgelieferte Seite (``settings.STARTSEITE_WURZELN``).
+    """
+    datei = finde_statisch(pfad)
+    if datei is None:
+        raise Http404(pfad)
+    return serve(request, datei.name, document_root=datei.parent)
 
 
 def datenschutz(request):

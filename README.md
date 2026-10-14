@@ -320,6 +320,17 @@ is in `docs/configuration.md`; these are the ones that decide whether things wor
 - **Gig-reminder mailing list** — public sign-up at `/auftritte/` with double opt-in; reminders go
   out for events flagged as public gigs. Needs `VEREINS_URL` and a working SMTP server.
 
+### Your own homepage
+
+The public homepage ships with the image. To use your own, create `startseite/` in the data
+volume (`/data/startseite/` inside the container): an `index.html` there replaces the shipped
+page, and files under `startseite/statisch/` are served at `/startseite/…` and replace shipped
+files of the same name. Anything you leave out keeps coming from the image, so you can start by
+copying the shipped `intern/startseite/index.html` and changing it. Changes take effect on the
+next page view, no restart needed — keeping the folder as a git checkout and pulling into it
+works well. The files must be readable by nginx inside the container. The template variables and
+tags are listed in `docs/startseite.md`.
+
 ## Background jobs
 
 `start.sh` launches these; there is no scheduler, they are plain loops or one-shot jobs. The two long-running ones (`ejabberd_bot`,

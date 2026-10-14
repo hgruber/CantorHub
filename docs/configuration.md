@@ -76,8 +76,9 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)
 - `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title)
 - `BRAND_FARBE` (accent colour, hex, default `#c14468`) — overrides the `--brand` CSS custom
-  property (`intern/templates/_brand_boot.html`, included right after the `main.css`/`intern.css`
-  link on every page that loads it); `--brand-dark`/`--brand-light`/`--brand-ring` are derived
+  property (`intern/templates/_brand_boot.html`, included right after the `intern.css` link on
+  every portal page that loads it; the public homepage uses the tag `{% markenfarbe %}` after its
+  `main.css`); `--brand-dark`/`--brand-light`/`--brand-ring` are derived
   from `--brand` via `color-mix()` in `intern.css` and follow automatically, as do
   `--brand-dark`, `--brand-soft` and `--band` on the public homepage. Also colours mail buttons
   and links (`intern/mail_markup.py`), the mail header background (`emails/base.html`), the

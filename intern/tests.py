@@ -3772,7 +3772,7 @@ class VorlagenKommentarTest(SimpleTestCase):
     @staticmethod
     def _vorlagen():
         wurzel = Path(__file__).resolve().parent.parent
-        for verzeichnis in (wurzel / "intern" / "templates", wurzel / "templates"):
+        for verzeichnis in (wurzel / "intern" / "templates", wurzel / "intern" / "startseite"):
             yield from sorted(verzeichnis.rglob("*.html"))
 
     def test_keine_mehrzeiligen_rautenkommentare(self):
@@ -6948,3 +6948,101 @@ class XmppEchoIdTest(SimpleTestCase):
 
     def test_fremdes_echo_nicht(self):
         self._erfasse("raum-sid", "msg-id", origin_id="abc").assert_not_called()
+
+
+class StartseiteUeberlagerungTest(SimpleTestCase):
+    """Die Startseite kommt Datei für Datei zuerst aus ``DATEN/startseite``, dann
+    aus der mitgelieferten unter ``intern/startseite`` (``STARTSEITE_WURZELN``).
+
+    Eine eigene Engine, damit eine Vorlage aus dem Volume weder eine
+    Portalvorlage überschreiben noch eine einbinden kann, und ohne
+    ``cached.Loader``, damit eine geänderte Seite ohne Neustart wirkt.
+    """
+
+    def _mit_wurzeln(self, volume, demo):
+        from django.conf import settings
+        from django.test import override_settings
+
+        vorlagen = [dict(e) for e in settings.TEMPLATES]
+        vorlagen[1] = dict(vorlagen[1], DIRS=[volume, demo])
+        return override_settings(TEMPLATES=vorlagen, STARTSEITE_WURZELN=[volume, demo])
+
+    def _baue(self, wurzel, dateien):
+        for name, inhalt in dateien.items():
+            pfad = wurzel / name
+            pfad.parent.mkdir(parents=True, exist_ok=True)
+            pfad.write_text(inhalt, encoding="utf-8")
+
+    def test_volume_schlaegt_demo_und_luecken_fallen_zurueck(self):
+        import tempfile
+        from django.template import engines
+
+        with tempfile.TemporaryDirectory() as tmp:
+            volume, demo = Path(tmp) / "volume", Path(tmp) / "demo"
+            self._baue(demo, {"index.html": "demo {% include '_fuss.html' %}",
+                              "_fuss.html": "demo-fuss"})
+            self._baue(volume, {"index.html": "eigen {% include '_fuss.html' %}"})
+            with self._mit_wurzeln(volume, demo):
+                text = engines["startseite"].get_template("index.html").render({})
+        self.assertEqual(text, "eigen demo-fuss")
+
+    def test_ohne_volume_die_demo(self):
+        import tempfile
+        from django.template import engines
+
+        with tempfile.TemporaryDirectory() as tmp:
+            demo = Path(tmp) / "demo"
+            self._baue(demo, {"index.html": "demo"})
+            with self._mit_wurzeln(Path(tmp) / "gibtsnicht", demo):
+                text = engines["startseite"].get_template("index.html").render({})
+        self.assertEqual(text, "demo")
+
+    def test_keine_portalvorlage_erreichbar(self):
+        from django.template import TemplateDoesNotExist, engines
+
+        with self.assertRaises(TemplateDoesNotExist):
+            engines["startseite"].get_template("base.html")
+
+    def test_engine_ohne_cache_und_volume_zuerst(self):
+        from django.conf import settings
+
+        engine = next(e for e in settings.TEMPLATES if e.get("NAME") == "startseite")
+        self.assertFalse(engine["APP_DIRS"])
+        self.assertEqual(engine["OPTIONS"]["loaders"],
+                         ["django.template.loaders.filesystem.Loader"])
+        self.assertEqual(engine["DIRS"], settings.STARTSEITE_WURZELN)
+        self.assertEqual(settings.STARTSEITE_WURZELN[0], settings.DATEN / "startseite")
+
+    def test_statische_datei_volume_zuerst_und_nicht_hinaus(self):
+        import tempfile
+        from django.test import override_settings
+        from intern.templatetags.startseite_tags import finde_statisch, startseite_datei
+
+        with tempfile.TemporaryDirectory() as tmp:
+            volume, demo = Path(tmp) / "volume", Path(tmp) / "demo"
+            self._baue(demo, {"statisch/a.css": "demo", "statisch/b.css": "demo",
+                              "index.html": "geheim"})
+            self._baue(volume, {"statisch/a.css": "eigen"})
+            with override_settings(STARTSEITE_WURZELN=[volume, demo]):
+                self.assertEqual(finde_statisch("a.css"), volume / "statisch" / "a.css")
+                self.assertEqual(finde_statisch("b.css"), demo / "statisch" / "b.css")
+                self.assertIsNone(finde_statisch("c.css"))
+                self.assertIsNone(finde_statisch("../index.html"))
+                self.assertRegex(startseite_datei("a.css"), r"^/startseite/a\.css\?v=\d+$")
+                self.assertEqual(startseite_datei("c.css"), "/startseite/c.css")
+
+    def test_mitgelieferte_seite_uebersetzt_und_findet_ihre_dateien(self):
+        # Jede startseite_datei-Referenz der mitgelieferten Seite muss es geben;
+        # get_template übersetzt die Vorlage samt aller {% load %}.
+        from django.conf import settings
+        from django.template import engines
+        from django.test import override_settings
+        from intern.templatetags.startseite_tags import finde_statisch
+
+        demo = settings.STARTSEITE_WURZELN[-1]
+        with override_settings(STARTSEITE_WURZELN=[demo]):
+            engines["startseite"].get_template("index.html")
+            text = (demo / "index.html").read_text(encoding="utf-8")
+            fehlend = [p for p in re.findall(r"startseite_datei '([^']+)'", text)
+                       if finde_statisch(p) is None]
+        self.assertEqual(fehlend, [])

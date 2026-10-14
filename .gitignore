@@ -55,3 +55,6 @@ coverage.xml
 # Der Django-Schluessel, wenn lokal ohne DEBUG gestartet wird (config/geheimnis.py)
 secret_key
 icons.html
+
+# Eigene Startseite in der Entwicklung (DATEN = Projektordner), siehe docs/startseite.md
+/startseite/

@@ -11,6 +11,21 @@ colour, see `docs/configuration.md`) already landed outside this plan; the logo/
 the `Just Gospel`/`example.org` literals in `config/settings.py`, `config/urls.py`,
 `intern/pdf.py`, `intern/forms.py` and `intern/static/intern/manifest.json` are still open.
 
+## Homepage override (in progress)
+
+The mechanism is in place (`docs/startseite.md`): `DATEN/startseite/` overrides the shipped page
+file by file. Remaining steps, in this order:
+
+1. Move this choir's page into its own repository and check it out as `/data/startseite` on the
+   server; the homepage must look the same before and after.
+2. Only then replace the shipped `intern/startseite/` with a neutral demo (no photo, wordmark as
+   text, own neutral stylesheet), drop the choir photos and homepage-only logos from the code, and
+   add a test that no file there names the choir.
+3. Dynamic content: a placeholder contract plus whitelisted tags (`oeffentliche_termine`,
+   `konfig` limited to public keys), sub-pages `seiten/<name>.html` → `/<name>/` as the last
+   route, and wiki articles opted in through a `STARTSEITE_ARTIKEL` key, rendered by a public
+   mode of `apply_replacements()` (no votes, internal links as plain text, no `/media/` embeds).
+
 ## Inventory of hardcoded branding
 
 Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"`.
@@ -22,7 +37,8 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
 - `intern/templates/dialog.html` — header
 - `intern/templates/{400,403,404,500,503}.html` — title, alt text, wordmark span
 - `intern/templates/titel.html` — audio-button logo alt
-- `templates/index.html` — public homepage copy
+- `intern/startseite/index.html` — public homepage copy (a deployer overrides it from
+  `DATEN/startseite/`, see `docs/startseite.md`)
 - `intern/replacements.py:523` — wiki footer `…Just Gospel!`
 - `intern/tables.py:447` — audio player logo reference
 
@@ -32,7 +48,7 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
 - `intern/ejabberd.py`, `intern/apps.py` — XMPP host/MUC defaults reference the
   domain (already DB-config keys; just need generic defaults)
 
-### Photo assets (`intern/static/intern/img/`)
+### Photo assets (`intern/startseite/statisch/img/`)
 - `chor-{800,1400,2000}.jpg` — choir photo used as homepage hero (`srcset`)
 - `chor-band-{1100,1800}.jpg` — wide crop of the same photo, homepage gallery band
 

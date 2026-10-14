@@ -57,6 +57,7 @@ ejabberd admin) are listed in `README.md`.
 | Request flow, proxy assumptions, URLs, logging, cache, runtime config | `docs/architecture.md` |
 | Files: identity, versions, standard folders, avatar protection, folder rights, retention | `docs/files.md` |
 | Frontend: pages, components, design tokens, calendar, maps, homepage | `docs/frontend.md` |
+| Public homepage: shipped page, override from `DATEN/startseite/`, `/startseite/` files | `docs/startseite.md` |
 | Automated e-mails and their markup | `docs/mail.md` |
 | Members: joining, re-confirmation, leaving, field privacy | `docs/members.md` |
 | Permissions: where each right of `/intern/gruppen/` is checked, and the rules it does not show | `docs/permissions.md` |
@@ -129,6 +130,9 @@ visible folders, fallback avatars), `tables2_beschleunigung.py` (two caches over
 `signature()` and `BoundColumn.attrs`; guarded by `Tables2SignaturTest`,
 `Tables2AttributeTest` and a pinned version).
 `intern/dav/` is shared by `intern/carddav/` and `intern/caldav/`.
+`intern/startseite/` is the shipped public homepage (`index.html` + `statisch/`), rendered by the
+second template engine `startseite`, which looks in `DATEN/startseite/` first; its tags are in
+`templatetags/startseite_tags.py` — see `docs/startseite.md`.
 
 ## Key models (`intern/models.py`)
 
@@ -175,7 +179,7 @@ empty forms counted) and whether the Terminseite shows the card „Extern". `Ter
 
 ## URL structure
 
-`/` homepage · `/datenschutz/` · `/einrichtung/` first-run setup · `/auftritte/*` gig mailing list · `/carddav/*` · `/caldav/*` ·
+`/` homepage · `/startseite/*` its files · `/datenschutz/` · `/einrichtung/` first-run setup · `/auftritte/*` gig mailing list · `/carddav/*` · `/caldav/*` ·
 `/tiles/<z>/<x>/<y>.png` OSM proxy · `/admin/` · `/intern/*` everything authenticated. The full
 list with the well-known redirects and the two privacy proxies is in `docs/architecture.md`.
 

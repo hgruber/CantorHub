@@ -15,6 +15,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   standardmäßig ausgeblendet und lässt sich über die Spaltenwahl einschalten.
 - Forum bearbeiten: Der Seitenkopf zeigt das Forenbild statt des allgemeinen Symbols.
 - Forum: Die Kopfzeile zeigt vor dem Thema das Forenbild statt der Sprechblase.
+- Startseite: Eine eigene Startseite unter `/data/startseite/` ersetzt die mitgelieferte Datei
+  für Datei; Bilder und CSS daraus erscheinen unter `/startseite/`. Änderungen wirken ohne
+  Neustart.
 
 ### Geändert
 

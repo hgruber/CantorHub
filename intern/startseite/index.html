@@ -1,4 +1,4 @@
-{% load static termin_tags %}
+{% load startseite_tags termin_tags %}
 <!DOCTYPE html>
 <html lang="de">
     <head>
@@ -7,19 +7,19 @@
         <title>{{ vereinsname_lang }}</title>
         <meta name="description"
               content="{{ vereinsname_lang }} — {{ vereinsname }}" />
-        <link rel="stylesheet" href="{% static 'intern/css/main.css' %}" />
+        <link rel="stylesheet" href="{% startseite_datei 'main.css' %}" />
         {# überschreibt --brand mit BRAND_FARBE — muss nach dem main.css-Link stehen #}
-        {% include "_brand_boot.html" %}
-        <link rel="icon" href="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}" />
+        {% markenfarbe %}
+        <link rel="icon" href="{% startseite_datei 'brand/JG-Frankfurt-wG-color.svg' %}" />
     </head>
     <body>
         <header class="site-header" id="site-header">
             <a href="#home" class="brand" aria-label="{{ vereinsname_lang }}">
                 <img class="brand-mark"
-                     src="{% static 'intern/images/JG-Frankfurt-wG-color.svg' %}"
+                     src="{% startseite_datei 'brand/JG-Frankfurt-wG-color.svg' %}"
                      alt="" />
                 <img class="brand-word"
-                     src="{% static 'intern/brand/JG-Frankfurt-color.svg' %}"
+                     src="{% startseite_datei 'brand/JG-Frankfurt-color.svg' %}"
                      alt="" />
             </a>
             {% comment %}
@@ -33,17 +33,17 @@
 
         <section id="home" class="hero">
             <div class="hero-media">
-                <img src="{% static 'intern/img/chor-1400.jpg' %}"
-                     srcset="{% static 'intern/img/chor-800.jpg' %} 800w,
-                             {% static 'intern/img/chor-1400.jpg' %} 1400w,
-                             {% static 'intern/img/chor-2000.jpg' %} 2000w"
+                <img src="{% startseite_datei 'img/chor-1400.jpg' %}"
+                     srcset="{% startseite_datei 'img/chor-800.jpg' %} 800w,
+                             {% startseite_datei 'img/chor-1400.jpg' %} 1400w,
+                             {% startseite_datei 'img/chor-2000.jpg' %} 2000w"
                      sizes="100vw"
                      alt="{{ vereinsname_lang }} auf der Bühne"
                      fetchpriority="high" />
             </div>
             <div class="hero-inner">
                 <h1 class="hero-wordmark">
-                    <img src="{% static 'intern/brand/JG-Frankfurt-transparent.svg' %}"
+                    <img src="{% startseite_datei 'brand/JG-Frankfurt-transparent.svg' %}"
                          alt="{{ vereinsname_lang }}" />
                 </h1>
                 <div class="hero-actions">
@@ -128,9 +128,9 @@
                     <h2>Galerie</h2>
                 </div>
                 <figure class="gallery-band">
-                    <img src="{% static 'intern/img/chor-band-1100.jpg' %}"
-                         srcset="{% static 'intern/img/chor-band-1100.jpg' %} 1100w,
-                                 {% static 'intern/img/chor-band-1800.jpg' %} 1800w"
+                    <img src="{% startseite_datei 'img/chor-band-1100.jpg' %}"
+                         srcset="{% startseite_datei 'img/chor-band-1100.jpg' %} 1100w,
+                                 {% startseite_datei 'img/chor-band-1800.jpg' %} 1800w"
                          sizes="(max-width: 1160px) 100vw, 1160px"
                          alt="{{ vereinsname_lang }} — Chorfoto"
                          loading="lazy" />
@@ -172,7 +172,7 @@
         <footer>
             <div class="footer-content">
                 <div class="footer-logo">
-                    <img src="{% static 'intern/brand/JG-Frankfurt.svg' %}"
+                    <img src="{% startseite_datei 'brand/JG-Frankfurt.svg' %}"
                          alt="{{ vereinsname_lang }}" />
                 </div>
                 <div class="footer-links">
