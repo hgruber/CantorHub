@@ -59,5 +59,5 @@ def markenfarbe(context):
     """
     return format_html(
         "<style>:root{{--brand:{};}}</style>",
-        context.get("brand_farbe") or "#c14468",
+        context.get("brand_farbe") or "#2b6cb0",
     )

@@ -245,7 +245,7 @@ def get_vereinsname_kurz():
 
 
 def get_brand_farbe():
-    return get_config("BRAND_FARBE", "#c14468")
+    return get_config("BRAND_FARBE", "#2b6cb0")
 
 
 def get_base_url(override=None, fallback=""):

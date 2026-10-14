@@ -299,8 +299,8 @@ use CSS variables and add dark-mode values; avoid hardcoded hex values in compon
 `intern/startseite/statisch/startseite.css`, the public homepage, is the one stylesheet outside this
 rule — it has its own token block and follows `prefers-color-scheme`; see „Public homepage" below.
 
-The accent colour is the one exception worth calling out explicitly: never hardcode `#c14468`
-or `rgba(193, 68, 104, …)` in component styles — always reference `var(--brand)`, one of its
+The accent colour is the one exception worth calling out explicitly: never hardcode the default `#2b6cb0`
+(or the old `#c14468`) in component styles — always reference `var(--brand)`, one of its
 derived tokens (`--brand-dark`, `--brand-light`, `--brand-ring`, `--brand-text`), or a fresh
 `color-mix(in srgb, var(--brand) X%, transparent|white|black)` expression, so a `BRAND_FARBE`
 override (see `_brand_boot.html`) reaches every surface that uses it.

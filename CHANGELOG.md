@@ -14,6 +14,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Startseite: Die mitgelieferte Startseite ist eine neutrale Vorlage ohne Foto und Logo, mit
   Texten aus der Konfiguration und dunkler Darstellung nach Systemeinstellung. Administratoren
   sehen darauf einen Hinweis, wie sie Texte einstellen oder eine eigene Seite hinterlegen.
+- Portal: Das mitgelieferte Logo ist das blaue CantorHub-Siegel; ein eigenes Logo unter
+  `/data/startseite/statisch/logo.svg` ersetzt es auf Login, Sidebar, Fehlerseiten und als
+  Favicon.
+- Konfiguration: Die vorgegebene Akzentfarbe (`BRAND_FARBE`) für neue Installationen ist ein
+  Blau (`#2b6cb0`); bestehende Installationen behalten ihren Wert.
 
 ### Entfernt
 

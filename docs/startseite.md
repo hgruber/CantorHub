@@ -68,6 +68,20 @@ build time and never sees the volume.
   (`finde_statisch()` in `intern/templatetags/startseite_tags.py`, path checked with
   `safe_join`). The route exists in production as well; nginx simply answers first.
 
+## The portal logo
+
+The same overlay carries the logo of the whole portal: `statisch/logo.svg`. The shipped one is
+the blue CantorHub seal; an installation's `DATEN/startseite/statisch/logo.svg` replaces it on
+the login and dialog pages, in the sidebar, on the error pages, the privacy policy and the join
+form, in the wiki footer, on the audio buttons of the repertoire and as `/favicon.ico` (a
+non-permanent redirect, so a changed logo reaches browsers). Templates load `startseite_tags`
+next to `static` and call `{% startseite_datei 'logo.svg' %}`; Python (`tables.py`,
+`replacements.py`) calls `startseite_datei("logo.svg")`. A test fails if any of them points at
+the old `intern/brand/logo.svg` again or at a file the shipped page does not have.
+
+Mail, PDF and the PWA icons still use PNGs from `intern/static/intern/brand/` — open in
+`docs/branding.md`.
+
 ## The shipped page and this choir's own page
 
 `intern/startseite/` is a neutral demo (described under „Public homepage" in

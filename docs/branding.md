@@ -42,13 +42,15 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
 - `intern/ejabberd.py`, `intern/apps.py` — XMPP host/MUC defaults reference the
   domain (already DB-config keys; just need generic defaults)
 
-### Logo assets (`intern/static/intern/images/`)
-- `JG-Frankfurt-wG-color.svg` — primary logo, used in ~12 templates
-- `JG-Frankfurt-G-color.svg`, `JG-Frankfurt-test.svg` — variants
+### Raster logos still choir-specific (`intern/static/intern/brand/`)
+- `logo.png` — inline logo of every automated mail (`intern/mail.py`)
+- `JG-Frankfurt-transparent.png` — PDF letterhead (`intern/pdf.py`)
+- `icon-192.png`, `icon-512.png` + `intern/static/intern/manifest.json` (name, theme colour)
+  — PWA install icon, also the notification icon (`intern.js`, `mail.py`)
 
-  Caveat: these live in the **gitignored** `static/` (STATIC_ROOT) only, i.e. they are
-  not in a checkout. `JG-Frankfurt-wG-color.svg` has been copied to the tracked source
-  dir `intern/static/intern/images/`; the other two still need the same treatment.
+  They need PNGs, which the SVG overlay cannot provide by itself; next step is the same lookup
+  (`finde_statisch("logo.png")` etc.) with neutral PNGs rendered from `logo.svg` as defaults, and
+  a manifest built from `Konfiguration`.
 
 ### Data convention (NOT pure branding — handle separately)
 - Song filenames carry a literal `JG-` prefix (`JG-Titel` and `JG - Titel` are historically
@@ -80,49 +82,31 @@ the bulk of the work — mechanical find-and-replace across the templates listed
 above, plus `replacements.py` and `tables.py` (which build HTML in Python — read
 config there directly).
 
-### 3. Logo as a configurable asset
-The logo is binary, so it doesn't belong in the key/value table. Options, in
-order of preference:
-- **A (recommended):** ship a neutral default `logo.svg` in static; allow an
-  override file at a known media path (e.g. `media/branding/logo.svg`) served if
-  present, else fall back to the static default. Add a small uploader in
-  `/intern/konfiguration/` later. Keeps the repo free of org-specific art.
-- **B:** keep a static `logo.svg` filename and tell deployers to replace the
-  file. Simplest, but mixes deployment state into the repo tree.
+### 3. Logo as a configurable asset — done for the SVG
+The shipped logo is `intern/startseite/statisch/logo.svg`: the CantorHub seal (a tuning fork
+stamped out of a disc, ring around it), in blue to match the default `BRAND_FARBE` `#2b6cb0`.
+Every portal template, the wiki footer, the audio button and `/favicon.ico` reach it through
+`startseite_datei("logo.svg")`, so an installation's `DATEN/startseite/statisch/logo.svg`
+replaces it everywhere (`docs/startseite.md`). The other drafts were dropped once the seal was
+chosen; this choir's logos live in its own homepage repository.
 
-Rename the three `JG-Frankfurt-*.svg` files to generic names (`logo.svg`,
-`logo-mono.svg`) and update the ~12 references in one pass.
+Two constraints the seal encodes, worth keeping in any successor:
 
-Candidates for that neutral default sit in the repository root, none of them
-wired into a template yet. The current round is `cantorhub_a.svg` … `_d.svg`:
-four square 128×128 marks that share one identical tuning-fork silhouette and
-differ only in what surrounds it — sound arcs (a), a circle of four voices (b),
-a stamped-out seal (c), a staff of five lines (d). The two earlier drafts
-`cantorhub_v1.svg` / `_v2.svg` are icon-plus-wordmark lockups and are
-superseded; delete them once a mark is chosen.
-
-Two constraints these files encode, worth keeping in any successor:
-
-- Colours are the `--brand` / `--brand-dark` literals, not tokens — an SVG
-  cannot read the CSS custom properties, and `BRAND_FARBE` is configurable, so
-  a deployer who changes it replaces the logo too.
-- Every colour is a presentation attribute; the embedded `<style>` only carries
-  the `prefers-color-scheme: dark` override. Renderers that ignore CSS (librsvg,
-  Inkscape's exporter, most SVG-to-PDF paths) would otherwise paint gradient
-  stops black.
-
-Pick one, move it to `intern/static/intern/images/` under the generic name, and
-delete the rest. The square viewBox doubles as the favicon/PWA mark of step 4.
+- Colours are literals, not tokens — an SVG cannot read the CSS custom properties, and
+  `BRAND_FARBE` is configurable, so a deployer who changes it replaces the logo too.
+- Every colour is a presentation attribute; the embedded `<style>` only carries the
+  `prefers-color-scheme: dark` override. Renderers that ignore CSS (librsvg, Inkscape's
+  exporter, most SVG-to-PDF paths) would otherwise paint gradient stops black.
 
 ### 4. Favicon / PWA
-Same files drive the favicon (`<link rel="icon">` in base + error pages). Fold
-into the logo-asset step so the favicon tracks the configured logo.
+The favicon follows the logo (`<link rel="icon">` and `/favicon.ico`). The PWA icons and the
+manifest are still open — see „Raster logos" above.
 
 ## Suggested phasing
 1. Text → `SITE_NAME`/`SITE_TITLE`/`SITE_TAGLINE` config + context processor +
    template/`.py` replacements. (Low risk, high coverage.)
 2. Genericise email/XMPP defaults in `_CONFIG_DEFAULTS`.
-3. Logo/favicon asset strategy (option A) + file renames.
+3. Raster logos (mail, PDF, PWA) and the manifest — the SVG logo and favicon are done.
 4. Decide on the `JG-` filename prefix convention (config key or documented
    convention) and document it.
 5. README: add a "Branding / white-labelling" section listing the keys and the

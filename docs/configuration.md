@@ -75,7 +75,7 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel e.V."`)
 - `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)
 - `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title)
-- `BRAND_FARBE` (accent colour, hex, default `#c14468`) — overrides the `--brand` CSS custom
+- `BRAND_FARBE` (accent colour, hex, default `#2b6cb0`, a medium blue; it carries white at 5.4:1) — overrides the `--brand` CSS custom
   property (`intern/templates/_brand_boot.html`, included right after the `intern.css` link on
   every portal page that loads it; the public homepage uses the tag `{% markenfarbe %}` after its
   stylesheet); `--brand-dark`/`--brand-light`/`--brand-ring` are derived
@@ -87,8 +87,9 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   text-plus-native-picker component (`feldtyp` `"color"`, see `docs/frontend.md`). **It has to
   carry white text**: `--brand` is the background of primary buttons, and the homepage hero
   is a darkening of it, all of them white-on-brand. A very pale colour breaks those long before it
-  looks wrong anywhere else. The `JG-Frankfurt*.svg` logos keep their own hardcoded rose either way
-  (see `docs/branding.md`)
+  looks wrong anywhere else. The logo keeps its own colours either way: the shipped
+  seal is blue, an installation brings its own `logo.svg` under `DATEN/startseite/statisch/`
+  (see `docs/startseite.md`)
 - `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in the privacy policy's „Verantwortliche" section; multi-line, empty → only board member names are listed, no addresses)
 - `HOMEPAGE_UEBER_UNS` (body text for the "Über uns" card on the public homepage; multi-line allowed)
 - `HOMEPAGE_AUFNAHME` (body text for the "Wir suchen" card on the public homepage; multi-line allowed; hidden when empty)

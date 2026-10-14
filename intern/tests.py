@@ -7047,6 +7047,29 @@ class StartseiteUeberlagerungTest(SimpleTestCase):
                        if finde_statisch(p) is None]
         self.assertEqual(fehlend, [])
 
+    def test_portal_findet_sein_logo_in_der_mitgelieferten_seite(self):
+        # Das Portal-Logo kommt über startseite_datei, damit DATEN/startseite es
+        # überlagern kann. Jede Referenz in Portalvorlagen und Python muss die
+        # mitgelieferte Seite auch ohne eigene Seite erfüllen — und keine darf
+        # mehr auf das alte Logo unter intern/brand/ zeigen.
+        from django.conf import settings
+        from django.test import override_settings
+        from intern.templatetags.startseite_tags import finde_statisch
+
+        wurzel = Path(__file__).resolve().parent
+        dateien = sorted((wurzel / "templates").rglob("*.html")) + [
+            wurzel / "tables.py", wurzel / "replacements.py"]
+        verweise, alt = set(), []
+        for pfad in dateien:
+            text = pfad.read_text(encoding="utf-8")
+            verweise |= set(re.findall(r"""startseite_datei[ (]['"]([^'"]+)['"]""", text))
+            if "intern/brand/logo.svg" in text:
+                alt.append(pfad.name)
+        self.assertIn("logo.svg", verweise)
+        self.assertEqual(alt, [])
+        with override_settings(STARTSEITE_WURZELN=[settings.STARTSEITE_WURZELN[-1]]):
+            self.assertEqual([p for p in sorted(verweise) if finde_statisch(p) is None], [])
+
 
 class NeutraleDemoTest(SimpleTestCase):
     """Die mitgelieferte Startseite nennt keinen bestimmten Chor.

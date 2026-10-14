@@ -272,7 +272,7 @@ The full key catalog and the mail-placeholder reference live in `configuration.m
 
 - `pdf.py` — `new_letterhead_pdf(title, subtitle, vereinsname, vereinsname_lang,
   vereinsadresse)` returns `(buf, canvas, content_y)`; draws the branded letterhead (logo,
-  thin `#c14468` accent lines) and footer. `draw_section`, `draw_field`, `draw_checkbox`,
+  thin accent lines in `BRAND_FARBE`) and footer. `draw_section`, `draw_field`, `draw_checkbox`,
   `draw_signature` build the content area. Used by `_save_antrag_pdf` and
   `_save_bestaetigung_pdf` in `views/auth.py`.
 - `mail.py`, `mail_markup.py` — see `mail.md`.

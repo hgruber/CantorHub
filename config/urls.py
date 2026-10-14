@@ -14,7 +14,8 @@ handler404 = "intern.views.custom_404"
 handler500 = "intern.views.custom_500"
 
 urlpatterns = [
-    path("favicon.ico", RedirectView.as_view(url="/static/intern/images/JG-Frankfurt-wG-color.svg", permanent=True)),
+    # Nicht permanent: Eine Installation tauscht das Logo unter DATEN/startseite.
+    path("favicon.ico", RedirectView.as_view(url="/startseite/logo.svg")),
     # Bilder/CSS der Startseite; im Container beantwortet nginx den Pfad vorher.
     path("startseite/<path:pfad>", views.startseite_statisch, name="startseite_statisch"),
     path("datenschutz/", views.datenschutz, name="datenschutz"),

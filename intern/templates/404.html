@@ -1,11 +1,11 @@
-{% load static %}
+{% load static startseite_tags %}
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ vereinsname_kurz|default:"Portal" }} Intern – Seite nicht gefunden</title>
-    <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
+    <link rel="icon" href="{% startseite_datei 'logo.svg' %}" />
     <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
     {% include "_theme_boot.html" %}
     {% include "_brand_boot.html" %}
@@ -14,7 +14,7 @@
 <div class="error-standalone">
     <div class="error-card">
         <a href="/" class="error-brand">
-            <img src="{% static 'intern/brand/logo.svg' %}" alt="{{ vereinsname_kurz|default:'Portal' }}" />
+            <img src="{% startseite_datei 'logo.svg' %}" alt="{{ vereinsname_kurz|default:'Portal' }}" />
             <span>{{ vereinsname_kurz|default:"Portal" }}</span>
         </a>
 

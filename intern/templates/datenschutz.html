@@ -1,4 +1,4 @@
-{% load static %}
+{% load static startseite_tags %}
 <!DOCTYPE html>
 <html lang="de" class="join-page">
 <head>
@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" id="meta-theme-color" content="#ffffff">
     <title>Datenschutzerklärung – {{ vereinsname }}</title>
-    <link rel="icon" href="{% static 'intern/brand/logo.svg' %}" />
+    <link rel="icon" href="{% startseite_datei 'logo.svg' %}" />
     <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
     {% include "_theme_boot.html" %}
     {% include "_brand_boot.html" %}
@@ -15,7 +15,7 @@
 <div class="join-wrap join-wide">
     <div class="join-card">
         <div class="join-header">
-            <a href="/"><img class="join-logo" src="{% static 'intern/brand/logo.svg' %}" alt="{{ vereinsname }}" /></a>
+            <a href="/"><img class="join-logo" src="{% startseite_datei 'logo.svg' %}" alt="{{ vereinsname }}" /></a>
             <h1>Datenschutzerklärung</h1>
             <p class="join-intro">{{ vereinsname }}</p>
         </div>

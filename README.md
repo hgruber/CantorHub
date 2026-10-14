@@ -331,6 +331,10 @@ next page view, no restart needed — keeping the folder as a git checkout and p
 works well. The files must be readable by nginx inside the container. The template variables and
 tags are listed in `docs/startseite.md`.
 
+The same folder carries your **logo**: `startseite/statisch/logo.svg` replaces the shipped
+CantorHub seal everywhere in the portal (login, sidebar, error pages, favicon). Set
+`BRAND_FARBE` to match it; the default is a blue (`#2b6cb0`).
+
 ## Background jobs
 
 `start.sh` launches these; there is no scheduler, they are plain loops or one-shot jobs. The two long-running ones (`ejabberd_bot`,

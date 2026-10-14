@@ -12,6 +12,7 @@ from django.utils.safestring import mark_safe
 from django_tables2.data import TableListData
 
 from intern.app_settings import get_vereinsname_kurz
+from intern.templatetags.startseite_tags import startseite_datei
 from .avatare import vorschau_url
 from .mitglied_felder import PRIVACY_FIELDS
 from .models import Artikel, ChangeLog, Lied, Ort, Termin, User
@@ -525,9 +526,10 @@ def _audio_button_html(url, song_id, title, kind, composer=""):
     type_label = "Original" if kind == "original" else f"{get_vereinsname_kurz()} Aufnahme"
     if kind == "jg":
         inner = format_html(
-            '{play}<img src="{logo}" class="audio-btn-logo" alt="JG" />',
+            '{play}<img src="{logo}" class="audio-btn-logo" alt="{alt}" />',
             play=mark_safe(_PLAY_ICON_SVG),
-            logo=static("intern/brand/logo.svg"),
+            logo=startseite_datei("logo.svg"),
+            alt=get_vereinsname_kurz(),
         )
     else:
         inner = mark_safe(_PLAY_ICON_SVG)

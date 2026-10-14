@@ -1,8 +1,8 @@
-{% load static %}
+{% load static startseite_tags %}
 
 <!-- Brand -->
 <div class="sidebar-brand">
-    <img src="{% static 'intern/brand/logo.svg' %}" alt="{{ vereinsname_kurz }}" class="sidebar-logo" />
+    <img src="{% startseite_datei 'logo.svg' %}" alt="{{ vereinsname_kurz }}" class="sidebar-logo" />
     <span class="sidebar-title">{{ vereinsname_kurz }}</span>
 </div>
 

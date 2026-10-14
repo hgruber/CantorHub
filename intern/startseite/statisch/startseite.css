@@ -7,7 +7,7 @@
 :root {
     /* --brand setzt {% markenfarbe %} aus BRAND_FARBE; alles andere davon
        abgeleitet, wie in intern.css. */
-    --brand: #c14468;
+    --brand: #2b6cb0;
     --brand-text: color-mix(in srgb, var(--brand) 85%, black);
     /* Die Bühne trägt weiße Schrift: an beiden Enden des Verlaufs mindestens
        90 % Marke zu Schwarz, das hält Weiß auf dem Vorgabewert über 5,5:1. */

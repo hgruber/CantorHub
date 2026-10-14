@@ -17,9 +17,9 @@ GRAY  = (0.35, 0.35, 0.35)           # Untertitel / Metaangaben
 
 def _brand_rgb():
     """RGB-Tripel (0..1) aus BRAND_FARBE — nur für Linien, zur Aufrufzeit gelesen."""
-    hexfarbe = (get_brand_farbe() or "#c14468").lstrip("#")
+    hexfarbe = (get_brand_farbe() or "#2b6cb0").lstrip("#")
     if len(hexfarbe) != 6:
-        hexfarbe = "c14468"
+        hexfarbe = "2b6cb0"
     return tuple(int(hexfarbe[i:i + 2], 16) / 255 for i in (0, 2, 4))
 
 # ── Layout ────────────────────────────────────────────────────────────────────

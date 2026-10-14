@@ -4,7 +4,7 @@
 
 /* ─── Tokens ─────────────────────────────────────── */
 :root {
-    --brand:           #c14468;
+    --brand:           #2b6cb0;
     /* Von --brand abgeleitet (nicht literal), damit BRAND_FARBE-Überschreibungen
        (siehe _brand_boot.html) Hover-Zustand, Tint und Fokusring mitziehen. */
     --brand-dark:      color-mix(in srgb, var(--brand) 85%, black);
