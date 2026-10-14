@@ -5,7 +5,7 @@ reminded before each public gig. The triggering events are the publicly announce
 `Termin.objects.exclude(OHNE_ANKUENDIGUNG)` — the same set the homepage lists: a gig without an
 announcement text (`Termin.extern`) is neither mailed nor shown, and one with a text is both.
 `OHNE_ANKUENDIGUNG` lives in `intern/models.py` and is read by `home()` and the daemon alike.
-No model change on `Termin`. Linked from the homepage in `#concerts` (`.concert-cta`).
+No model change on `Termin`. Linked from the shipped homepage in `#termine` (`.abo`).
 
 **Layers:** domain logic in `intern/mailingliste.py` (tokens, URLs, due-date arithmetic,
 placeholders, sending), views in `intern/views/auftritte.py`, the daemon in

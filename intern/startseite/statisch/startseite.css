@@ -1,0 +1,307 @@
+/* ==========================================================================
+   Mitgelieferte Startseite — neutral, ohne Foto und Logo
+   Eine eigene Seite unter DATEN/startseite/ ersetzt diese Datei, wenn sie
+   eine startseite.css mitbringt (docs/startseite.md).
+   ========================================================================== */
+
+:root {
+    /* --brand setzt {% markenfarbe %} aus BRAND_FARBE; alles andere davon
+       abgeleitet, wie in intern.css. */
+    --brand: #c14468;
+    --brand-text: color-mix(in srgb, var(--brand) 85%, black);
+    /* Die Bühne trägt weiße Schrift: an beiden Enden des Verlaufs mindestens
+       90 % Marke zu Schwarz, das hält Weiß auf dem Vorgabewert über 5,5:1. */
+    --buehne-a: color-mix(in srgb, var(--brand) 90%, black);
+    --buehne-b: color-mix(in srgb, var(--brand) 62%, black);
+    --akzent-flaeche: color-mix(in srgb, var(--brand) 7%, var(--papier));
+
+    --tinte: #1f1d21;
+    --tinte-leise: #5d5862;
+    --linie: #e4e0e6;
+    --papier: #ffffff;
+    --papier-alt: #f6f4f7;
+    --karte: #ffffff;
+    --schatten: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+    --schrift: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica,
+        Arial, sans-serif;
+    --breite: 1080px;
+    --rand: clamp(1.25rem, 5vw, 2.5rem);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --brand-text: color-mix(in srgb, var(--brand) 55%, white);
+        --akzent-flaeche: color-mix(in srgb, var(--brand) 14%, var(--papier));
+        --tinte: #ece9ee;
+        --tinte-leise: #aaa4af;
+        --linie: #34303a;
+        --papier: #16141a;
+        --papier-alt: #1d1a22;
+        --karte: #221f28;
+        --schatten: none;
+    }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 4.5rem;
+}
+
+body {
+    font-family: var(--schrift);
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--tinte);
+    background: var(--papier);
+}
+
+a {
+    color: var(--brand-text);
+}
+
+.rahmen {
+    max-width: var(--breite);
+    margin: 0 auto;
+    padding: 0 var(--rand);
+}
+
+/* === Kopf === */
+
+.kopf {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem var(--rand);
+    background: var(--papier);
+    border-bottom: 1px solid var(--linie);
+}
+
+.wortmarke {
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--tinte);
+    text-decoration: none;
+}
+
+.kopf nav {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.kopf nav a {
+    color: var(--tinte-leise);
+    text-decoration: none;
+    font-size: calc(15rem / 16);
+}
+
+.kopf nav a:hover,
+.kopf nav .anmelden {
+    color: var(--brand-text);
+}
+
+@media (max-width: 520px) {
+    .kopf nav a:not(.anmelden) {
+        display: none;
+    }
+}
+
+/* === Bühne === */
+
+.buehne {
+    padding: clamp(4rem, 12vw, 7.5rem) 0;
+    color: #fff;
+    background: linear-gradient(135deg, var(--buehne-a), var(--buehne-b));
+}
+
+.buehne .zeile {
+    font-size: calc(15rem / 16);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+}
+
+.buehne h1 {
+    font-size: clamp(2.25rem, 6vw, 3.75rem);
+    line-height: 1.1;
+    max-width: 16ch;
+}
+
+.aktionen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+/* === Knöpfe === */
+
+.knopf {
+    display: inline-block;
+    padding: 0.625rem 1.25rem;
+    border-radius: 999px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #fff;
+    background: var(--buehne-a);
+    border: 2px solid transparent;
+}
+
+.knopf:hover {
+    background: var(--buehne-b);
+}
+
+.knopf-hell {
+    color: var(--buehne-a);
+    background: #fff;
+}
+
+.knopf-hell:hover {
+    background: #f1eef2;
+}
+
+.knopf-rand {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.85);
+}
+
+.knopf-rand:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* === Abschnitte === */
+
+main section {
+    padding: clamp(3rem, 8vw, 5rem) 0;
+}
+
+main h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.flaeche {
+    background: var(--papier-alt);
+}
+
+.raster {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1.5rem;
+}
+
+.karte {
+    padding: 1.75rem;
+    background: var(--karte);
+    border: 1px solid var(--linie);
+    border-radius: 12px;
+    box-shadow: var(--schatten);
+}
+
+.karte h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.karte-akzent {
+    background: var(--akzent-flaeche);
+    border-top: 3px solid var(--brand);
+}
+
+/* === Hinweis für Administratoren === */
+
+main .hinweis {
+    padding: 1.25rem 0;
+    background: var(--akzent-flaeche);
+    border-bottom: 1px solid var(--linie);
+    font-size: calc(15rem / 16);
+}
+
+.hinweis code {
+    font-size: calc(14rem / 16);
+}
+
+/* === Termine === */
+
+.termine {
+    list-style: none;
+    display: grid;
+    gap: 1rem;
+}
+
+.termine li {
+    padding: 1.25rem 1.5rem;
+    background: var(--karte);
+    border: 1px solid var(--linie);
+    border-left: 4px solid var(--brand);
+    border-radius: 8px;
+}
+
+.termine .wann {
+    font-size: calc(14rem / 16);
+    font-weight: 600;
+    color: var(--brand-text);
+}
+
+.termine h3 {
+    font-size: 1.125rem;
+}
+
+.termine .wo,
+.termine .mehr {
+    color: var(--tinte-leise);
+    font-size: calc(15rem / 16);
+}
+
+.termine .mehr {
+    margin-top: 0.5rem;
+}
+
+.termine .leer {
+    border-left-color: var(--linie);
+    color: var(--tinte-leise);
+}
+
+.abo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    margin-top: 2rem;
+}
+
+/* === Fuß === */
+
+.fuss {
+    padding: 2rem 0;
+    border-top: 1px solid var(--linie);
+    color: var(--tinte-leise);
+    font-size: calc(14rem / 16);
+}
+
+.fuss .rahmen {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.fuss nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+}
+
+.fuss a {
+    color: var(--tinte-leise);
+}

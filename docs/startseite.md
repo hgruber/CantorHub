@@ -39,6 +39,17 @@ CSS and images, or replace only one image.
   there. `home()` adds `termine`, `homepage_ueber_uns`, `homepage_aufnahme`, `vereinsadresse`
   and `kontakt_email`.
 
+**The Termine list (`termine`) follows `Termin.extern`, not `Termin.repertoire`:** `home()`
+excludes only the two empty forms of the announcement text, so an event without one stays off the
+page even when it is a public gig. The gig-reminder mails follow the same set —
+`OHNE_ANKUENDIGUNG` in `intern/models.py` (see `docs/mailinglist.md`). The selection deliberately
+checks the raw field while the rendered block checks the filter result (`extern_html`) — that is
+how a single space lists an event without producing an empty box. That is also why the condition
+measures the field's *length* instead of comparing it to `""`: MariaDB's `utf8mb4_general_ci`
+pads strings for comparison, so `' ' = ''` is true there and a `= ""` filter dropped exactly the
+gigs the space was meant to lift onto the page — visible only on the production database, never
+on SQLite.
+
 `StartseiteUeberlagerungTest` pins all of this, and checks that every file the shipped page
 references exists.
 
@@ -57,10 +68,13 @@ build time and never sees the volume.
   (`finde_statisch()` in `intern/templatetags/startseite_tags.py`, path checked with
   `safe_join`). The route exists in production as well; nginx simply answers first.
 
-## Our own page
+## The shipped page and this choir's own page
 
-The production page of this choir is the shipped page at the moment. Next it moves into its own
-repository, checked out as `/data/startseite` on the server; after that the shipped page becomes
-a neutral demo without photos or choir names. Sub-pages (`seiten/<name>.html` → `/<name>/`),
-whitelisted placeholders and public wiki articles are planned on top. The plan and its order
-are in `docs/branding.md`.
+`intern/startseite/` is a neutral demo (described under „Public homepage" in
+`docs/frontend.md`): no photo, no logo, every text from `Konfiguration`. `NeutraleDemoTest`
+fails as soon as a file there names a choir or is a binary such as a photo.
+
+This choir's page — photo, logos, `main.css` and the design notes in `GESTALTUNG.md` — lives in
+the repository `cantorhub-jg-startseite`, checked out as `/data/startseite` on the server; a push
+there is live on the next page view. Sub-pages (`seiten/<name>.html` → `/<name>/`), whitelisted
+placeholders and public wiki articles are planned on top (`docs/branding.md`).

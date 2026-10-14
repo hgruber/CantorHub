@@ -7046,3 +7046,27 @@ class StartseiteUeberlagerungTest(SimpleTestCase):
             fehlend = [p for p in re.findall(r"startseite_datei '([^']+)'", text)
                        if finde_statisch(p) is None]
         self.assertEqual(fehlend, [])
+
+
+class NeutraleDemoTest(SimpleTestCase):
+    """Die mitgelieferte Startseite nennt keinen bestimmten Chor.
+
+    Sie ist die Vorlage, die eine neue Installation ohne eigene Seite zeigt;
+    chorspezifisches gehört nach ``DATEN/startseite/`` (``docs/startseite.md``).
+    """
+
+    VERBOTEN = ("just gospel", "jg-frankfurt", "jg frankfurt", "frankfurt")
+
+    def test_keine_chornamen_in_der_mitgelieferten_seite(self):
+        wurzel = Path(__file__).resolve().parent / "startseite"
+        gefunden = []
+        for pfad in sorted(wurzel.rglob("*")):
+            if not pfad.is_file():
+                continue
+            if pfad.suffix not in (".html", ".css", ".svg", ".js", ".txt", ".md"):
+                gefunden.append(f"{pfad.relative_to(wurzel)} (Binärdatei — Foto/Logo?)")
+                continue
+            text = pfad.read_text(encoding="utf-8").lower()
+            gefunden += [f"{pfad.relative_to(wurzel)}: {wort}"
+                         for wort in self.VERBOTEN if wort in text]
+        self.assertEqual(gefunden, [], "Chorspezifisches gehört in DATEN/startseite/")

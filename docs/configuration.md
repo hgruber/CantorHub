@@ -78,16 +78,16 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `BRAND_FARBE` (accent colour, hex, default `#c14468`) — overrides the `--brand` CSS custom
   property (`intern/templates/_brand_boot.html`, included right after the `intern.css` link on
   every portal page that loads it; the public homepage uses the tag `{% markenfarbe %}` after its
-  `main.css`); `--brand-dark`/`--brand-light`/`--brand-ring` are derived
+  stylesheet); `--brand-dark`/`--brand-light`/`--brand-ring` are derived
   from `--brand` via `color-mix()` in `intern.css` and follow automatically, as do
-  `--brand-dark`, `--brand-soft` and `--band` on the public homepage. Also colours mail buttons
+  the accents of the shipped public homepage (`docs/startseite.md`). Also colours mail buttons
   and links (`intern/mail_markup.py`), the mail header background (`emails/base.html`), the
   PDF letterhead rule (`intern/pdf.py`) and the CalDAV `ICAL:calendar-color` handed to devices
   (`intern/caldav/daten.py:farbe()`). Edited on the configuration page via the generic
   text-plus-native-picker component (`feldtyp` `"color"`, see `docs/frontend.md`). **It has to
-  carry white text**: `--brand` is the background of primary buttons and of the homepage's
-  Kontakt band, all of them white-on-brand. A very pale colour breaks those long before it looks
-  wrong anywhere else. The `JG-Frankfurt*.svg` logos keep their own hardcoded rose either way
+  carry white text**: `--brand` is the background of primary buttons, and the homepage hero
+  is a darkening of it, all of them white-on-brand. A very pale colour breaks those long before it
+  looks wrong anywhere else. The `JG-Frankfurt*.svg` logos keep their own hardcoded rose either way
   (see `docs/branding.md`)
 - `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in the privacy policy's „Verantwortliche" section; multi-line, empty → only board member names are listed, no addresses)
 - `HOMEPAGE_UEBER_UNS` (body text for the "Über uns" card on the public homepage; multi-line allowed)

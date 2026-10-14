@@ -7,6 +7,19 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Startseite: Die mitgelieferte Startseite ist eine neutrale Vorlage ohne Foto und Logo, mit
+  Texten aus der Konfiguration und dunkler Darstellung nach Systemeinstellung. Administratoren
+  sehen darauf einen Hinweis, wie sie Texte einstellen oder eine eigene Seite hinterlegen.
+
+### Entfernt
+
+- Startseite: Chorfotos, Wortmarken und `main.css` sind nicht mehr Teil des Images; die eigene
+  Seite einer Installation bringt sie unter `/data/startseite/` mit.
+
 ## v1.0.7 — 2026-10-14
 
 ### Hinzugefügt

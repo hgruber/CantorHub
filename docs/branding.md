@@ -13,15 +13,11 @@ the `Just Gospel`/`example.org` literals in `config/settings.py`, `config/urls.p
 
 ## Homepage override (in progress)
 
-The mechanism is in place (`docs/startseite.md`): `DATEN/startseite/` overrides the shipped page
-file by file. Remaining steps, in this order:
+Done: `DATEN/startseite/` overrides the shipped page file by file (`docs/startseite.md`), this
+choir's page lives in its own repository checked out there, and the shipped page is a neutral
+demo guarded by `NeutraleDemoTest`. Remaining:
 
-1. Move this choir's page into its own repository and check it out as `/data/startseite` on the
-   server; the homepage must look the same before and after.
-2. Only then replace the shipped `intern/startseite/` with a neutral demo (no photo, wordmark as
-   text, own neutral stylesheet), drop the choir photos and homepage-only logos from the code, and
-   add a test that no file there names the choir.
-3. Dynamic content: a placeholder contract plus whitelisted tags (`oeffentliche_termine`,
+1. Dynamic content: a placeholder contract plus whitelisted tags (`oeffentliche_termine`,
    `konfig` limited to public keys), sub-pages `seiten/<name>.html` → `/<name>/` as the last
    route, and wiki articles opted in through a `STARTSEITE_ARTIKEL` key, rendered by a public
    mode of `apply_replacements()` (no votes, internal links as plain text, no `/media/` embeds).
@@ -37,8 +33,6 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
 - `intern/templates/dialog.html` — header
 - `intern/templates/{400,403,404,500,503}.html` — title, alt text, wordmark span
 - `intern/templates/titel.html` — audio-button logo alt
-- `intern/startseite/index.html` — public homepage copy (a deployer overrides it from
-  `DATEN/startseite/`, see `docs/startseite.md`)
 - `intern/replacements.py:523` — wiki footer `…Just Gospel!`
 - `intern/tables.py:447` — audio player logo reference
 
@@ -48,13 +42,6 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
 - `intern/ejabberd.py`, `intern/apps.py` — XMPP host/MUC defaults reference the
   domain (already DB-config keys; just need generic defaults)
 
-### Photo assets (`intern/startseite/statisch/img/`)
-- `chor-{800,1400,2000}.jpg` — choir photo used as homepage hero (`srcset`)
-- `chor-band-{1100,1800}.jpg` — wide crop of the same photo, homepage gallery band
-
-  Choir-specific content, not a logo: a deployer needs a way to supply their own
-  picture (config key with a filer file ID, analogous to `SATZUNG_FILE_ID`, would fit).
-
 ### Logo assets (`intern/static/intern/images/`)
 - `JG-Frankfurt-wG-color.svg` — primary logo, used in ~12 templates
 - `JG-Frankfurt-G-color.svg`, `JG-Frankfurt-test.svg` — variants
@@ -62,15 +49,6 @@ Found via `grep -rl "Just Gospel\|jg-frankfurt\|JG-Frankfurt\|Gospel\|Frankfurt"
   Caveat: these live in the **gitignored** `static/` (STATIC_ROOT) only, i.e. they are
   not in a checkout. `JG-Frankfurt-wG-color.svg` has been copied to the tracked source
   dir `intern/static/intern/images/`; the other two still need the same treatment.
-
-### Wordmark (`intern/static/intern/brand/`)
-- `JG-Frankfurt.svg` (black, homepage footer) / `JG-Frankfurt-color.svg` (solid brand
-  colour, the scrolled homepage header) / `JG-Frankfurt-transparent.svg` (a gradient
-  running into white, for dark grounds — the homepage hero) —
-  the "Just Gospel! Frankfurt" lettering, used as headline image on the homepage.
-  The three differ only in the fill of their single path.
-  The letters are outlines; the original typeface (Showcard Gothic) is not embedded and
-  cannot be licensed as a webfont, so a deployer replacing the branding replaces the SVG.
 
 ### Data convention (NOT pure branding — handle separately)
 - Song filenames carry a literal `JG-` prefix (`JG-Titel` and `JG - Titel` are historically

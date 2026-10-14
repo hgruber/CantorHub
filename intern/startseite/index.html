@@ -5,201 +5,142 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{{ vereinsname_lang }}</title>
-        <meta name="description"
-              content="{{ vereinsname_lang }} — {{ vereinsname }}" />
-        <link rel="stylesheet" href="{% startseite_datei 'main.css' %}" />
-        {# überschreibt --brand mit BRAND_FARBE — muss nach dem main.css-Link stehen #}
+        <meta name="description" content="{{ vereinsname_lang }} — {{ vereinsname }}" />
+        <link rel="stylesheet" href="{% startseite_datei 'startseite.css' %}" />
+        {# überschreibt --brand mit BRAND_FARBE — muss nach dem Stylesheet stehen #}
         {% markenfarbe %}
-        <link rel="icon" href="{% startseite_datei 'brand/JG-Frankfurt-wG-color.svg' %}" />
+        <link rel="icon" href="{% startseite_datei 'favicon.svg' %}" />
     </head>
     <body>
-        <header class="site-header" id="site-header">
-            <a href="#home" class="brand" aria-label="{{ vereinsname_lang }}">
-                <img class="brand-mark"
-                     src="{% startseite_datei 'brand/JG-Frankfurt-wG-color.svg' %}"
-                     alt="" />
-                <img class="brand-word"
-                     src="{% startseite_datei 'brand/JG-Frankfurt-color.svg' %}"
-                     alt="" />
-            </a>
-            {% comment %}
-            Nur das Login: „Konzerte" und „Kontakt" bietet das Hero direkt unter
-            dem Schriftzug als Buttons an, und „Home" ist die Bildmarke links.
-            {% endcomment %}
-            <nav class="site-nav">
-                <a href="/intern/login" class="nav-login">Login</a>
+        {% comment %}
+        Die mitgelieferte Startseite: neutral, ohne Foto und ohne Logo, alle Texte
+        aus der Konfiguration. Eine Installation ersetzt sie durch eine eigene unter
+        DATEN/startseite/ — Datei für Datei, siehe docs/startseite.md.
+        {% endcomment %}
+        <header class="kopf">
+            <a href="#start" class="wortmarke">{{ vereinsname_kurz|default:vereinsname_lang }}</a>
+            <nav>
+                <a href="#termine">Termine</a>
+                <a href="#kontakt">Kontakt</a>
+                <a href="/intern/login" class="anmelden">Login</a>
             </nav>
         </header>
 
-        <section id="home" class="hero">
-            <div class="hero-media">
-                <img src="{% startseite_datei 'img/chor-1400.jpg' %}"
-                     srcset="{% startseite_datei 'img/chor-800.jpg' %} 800w,
-                             {% startseite_datei 'img/chor-1400.jpg' %} 1400w,
-                             {% startseite_datei 'img/chor-2000.jpg' %} 2000w"
-                     sizes="100vw"
-                     alt="{{ vereinsname_lang }} auf der Bühne"
-                     fetchpriority="high" />
-            </div>
-            <div class="hero-inner">
-                <h1 class="hero-wordmark">
-                    <img src="{% startseite_datei 'brand/JG-Frankfurt-transparent.svg' %}"
-                         alt="{{ vereinsname_lang }}" />
-                </h1>
-                <div class="hero-actions">
-                    <a href="#concerts" class="btn btn-primary">Konzerte</a>
-                    <a href="#contact" class="btn btn-ghost">Kontakt</a>
+        <main>
+            <section id="start" class="buehne">
+                <div class="rahmen">
+                    {% if vereinsname and vereinsname != vereinsname_lang %}
+                    <p class="zeile">{{ vereinsname }}</p>
+                    {% endif %}
+                    <h1>{{ vereinsname_lang }}</h1>
+                    <div class="aktionen">
+                        <a href="#termine" class="knopf knopf-hell">Nächste Termine</a>
+                        <a href="#kontakt" class="knopf knopf-rand">Kontakt</a>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section id="about">
-            <div class="content">
-                {% comment %}
-                Der Vereinszusatz steht hier statt im Hero: dort war er die
-                kleinste Schrift und der Grund für einen Schleier bis ganz nach
-                oben, den das Foto heute gar nicht mehr trägt.
-                {% endcomment %}
-                <div class="section-head">
-                    <span class="eyebrow">{{ vereinsname }}</span>
+            {% if user.is_superuser %}
+            <section class="hinweis">
+                <div class="rahmen">
+                    <p>
+                        <strong>Nur für Dich als Administrator sichtbar:</strong> Das ist die
+                        mitgelieferte Startseite. Die Texte stellst Du unter
+                        <a href="/intern/konfiguration/">Konfiguration</a> ein
+                        (<code>HOMEPAGE_UEBER_UNS</code>, <code>HOMEPAGE_AUFNAHME</code>,
+                        <code>VEREINSNAME*</code>, <code>BRAND_FARBE</code>). Eine ganz
+                        eigene Seite legst Du im Datenverzeichnis unter
+                        <code>startseite/index.html</code> ab — sie ersetzt diese hier
+                        sofort, ohne Neustart.
+                    </p>
                 </div>
-                <div class="about">
-                    <div class="card">
+            </section>
+            {% endif %}
+
+            <section id="ueber-uns">
+                <div class="rahmen raster">
+                    {% if homepage_ueber_uns %}
+                    <article class="karte">
                         <h2>Über uns</h2>
                         <p>{{ homepage_ueber_uns|linebreaksbr }}</p>
-                    </div>
+                    </article>
+                    {% endif %}
                     {% if homepage_aufnahme %}
-                    <div class="card card-aufnahme">
-                        <h2>Wir suchen Sängerinnen und Sänger</h2>
+                    <article class="karte karte-akzent">
+                        <h2>Mitsingen</h2>
                         <p>
                             {{ homepage_aufnahme|linebreaksbr }}
                             {% if kontakt_email %}
                             <br /><a href="mailto:{{ kontakt_email }}">{{ kontakt_email }}</a>
                             {% endif %}
                         </p>
-                    </div>
+                    </article>
                     {% endif %}
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section id="concerts" class="section-alt">
-            <div class="content">
-                <div class="section-head">
-                    <span class="eyebrow">Termine</span>
-                    <h2>Konzerte</h2>
-                </div>
-                <div class="concert-list">
-                    {% for t in termine %}
-                    <div class="concert-item">
-                        <span class="date">
-                            <span>{{ t.datum|date:"D, d.m.Y" }}</span>
-                            {% if t.datum|time:"H:i" != "00:00" %}<span>{{ t.datum|time:"H:i" }} Uhr</span>{% endif %}
-                        </span>
-                        <h3>{{ t.kurz }}</h3>
-                        {% if t.ort %}<p class="location">{{ t.ort.name }}</p>{% endif %}
-                        {% comment %}
-                        Der öffentliche Ankündigungstext (Adresse, Einlass, Links).
-                        Die Bedingung ist das Filterergebnis, nicht das Feld: ein
-                        einzelnes Leerzeichen hebt den Termin in die Liste, soll
-                        hier aber keinen leeren Block erzeugen.
-                        {% endcomment %}
-                        {% if t.extern|extern_html %}<div class="concert-info">{{ t.extern|extern_html }}</div>{% endif %}
-                    </div>
-                    {% empty %}
-                    <p class="no-events">
-                        Gerade steht kein Auftritt fest. Trag Dich in unsere
-                        Informationsliste ein, dann melden wir uns, sobald der
-                        nächste Termin steht.
+            <section id="termine" class="flaeche">
+                <div class="rahmen">
+                    <h2>Termine</h2>
+                    <ul class="termine">
+                        {% for t in termine %}
+                        <li>
+                            <p class="wann">
+                                {{ t.datum|date:"D, d.m.Y" }}{% if t.datum|time:"H:i" != "00:00" %} · {{ t.datum|time:"H:i" }} Uhr{% endif %}
+                            </p>
+                            <h3>{{ t.kurz }}</h3>
+                            {% if t.ort %}<p class="wo">{{ t.ort.name }}</p>{% endif %}
+                            {% comment %}
+                            Der öffentliche Ankündigungstext. Die Bedingung ist das
+                            Filterergebnis, nicht das Feld: Ein einzelnes Leerzeichen hebt
+                            den Termin in die Liste, soll aber keinen leeren Block erzeugen.
+                            {% endcomment %}
+                            {% if t.extern|extern_html %}<div class="mehr">{{ t.extern|extern_html }}</div>{% endif %}
+                        </li>
+                        {% empty %}
+                        <li class="leer">Gerade steht kein öffentlicher Termin fest.</li>
+                        {% endfor %}
+                    </ul>
+                    <p class="abo">
+                        Keinen Auftritt verpassen?
+                        <a href="/auftritte/" class="knopf">Erinnerung per E-Mail</a>
                     </p>
-                    {% endfor %}
                 </div>
-                <div class="concert-cta">
-                    <p>Keinen Auftritt verpassen? Wir informieren Dich rechtzeitig per E-Mail.</p>
-                    <a href="/auftritte/" class="btn btn-primary">Informationen abonnieren</a>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <section id="gallery">
-            <div class="content">
-                <div class="section-head">
-                    <span class="eyebrow">Der Chor</span>
-                    <h2>Galerie</h2>
-                </div>
-                <figure class="gallery-band">
-                    <img src="{% startseite_datei 'img/chor-band-1100.jpg' %}"
-                         srcset="{% startseite_datei 'img/chor-band-1100.jpg' %} 1100w,
-                                 {% startseite_datei 'img/chor-band-1800.jpg' %} 1800w"
-                         sizes="(max-width: 1160px) 100vw, 1160px"
-                         alt="{{ vereinsname_lang }} — Chorfoto"
-                         loading="lazy" />
-                </figure>
-            </div>
-        </section>
-
-        <section id="contact">
-            <div class="content">
-                <div class="section-head">
-                    <span class="eyebrow">{{ vereinsname_kurz }}</span>
-                    <h2>Kontakt</h2>
-                </div>
-                <div class="contact-info">
+            <section id="kontakt">
+                <div class="rahmen raster">
                     {% if kontakt_email %}
-                    <div class="contact-card">
-                        <h3>Kontakt</h3>
-                        <p>
-                            <a href="mailto:{{ kontakt_email }}">{{ kontakt_email }}</a>
-                        </p>
-                    </div>
+                    <article class="karte">
+                        <h2>Kontakt</h2>
+                        <p><a href="mailto:{{ kontakt_email }}">{{ kontakt_email }}</a></p>
+                    </article>
                     {% endif %}
-                    <div class="contact-card">
-                        <h3>Impressum</h3>
+                    <article class="karte">
+                        <h2>Impressum</h2>
                         <p>
-                            Verantwortlich für den Webauftritt:
-                            <br />
+                            Verantwortlich für den Webauftritt:<br />
                             {% if vereinsadresse %}
-                            {{ vereinsname }}<br />{{ vereinsadresse|linebreaksbr }}
+                            {{ vereinsname|default:vereinsname_lang }}<br />{{ vereinsadresse|linebreaksbr }}
                             {% else %}
                             {{ vereinsname_lang }}
                             {% endif %}
                         </p>
-                    </div>
+                    </article>
                 </div>
-            </div>
-        </section>
+            </section>
+        </main>
 
-        <footer>
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <img src="{% startseite_datei 'brand/JG-Frankfurt.svg' %}"
-                         alt="{{ vereinsname_lang }}" />
-                </div>
-                <div class="footer-links">
-                    <a href="#home">Home</a>
-                    <a href="#concerts">Konzerte</a>
-                    <a href="#contact">Kontakt</a>
+        <footer class="fuss">
+            <div class="rahmen">
+                <nav>
+                    <a href="#termine">Termine</a>
+                    <a href="#kontakt">Kontakt</a>
                     <a href="/datenschutz/">Datenschutz</a>
                     <a href="/intern/login">Login</a>
-                </div>
-                <div class="copyright">
-                    <p>
-                        &copy; {% now "Y" %} {{ vereinsname_lang }}. Alle Rechte
-                        vorbehalten.
-                    </p>
-                </div>
+                </nav>
+                <p>&copy; {% now "Y" %} {{ vereinsname_lang }}</p>
             </div>
         </footer>
-
-        <script>
-            (function () {
-                var header = document.getElementById("site-header");
-                var setState = function () {
-                    header.classList.toggle("is-solid", window.scrollY > 60);
-                };
-                setState();
-                window.addEventListener("scroll", setState, { passive: true });
-            })();
-        </script>
     </body>
 </html>
