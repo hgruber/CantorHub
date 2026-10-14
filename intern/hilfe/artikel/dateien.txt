@@ -1,0 +1,35 @@
+== Dateien ==
+Unter '''Dateien''' liegen Noten, Aufnahmen, Fotos und Dokumente des Vereins — sortiert in Ordnern, wie auf einem Computer.
+
+=== Sich durch die Ordner bewegen ===
+* Tippe auf einen '''Ordner''', um ihn zu öffnen.
+* Über der Liste steht, in welchem Ordner Du gerade bist. Mit dem Pfeil oben rechts (Zurück) oder dem Zurück-Knopf Deines Browsers gehst Du eine Ebene höher.
+* Tippe auf eine '''Datei''', um sie zu öffnen oder herunterzuladen.
+* Mit dem '''Suchfeld''' oben rechts findest Du eine Datei, auch wenn Du nicht weißt, in welchem Ordner sie liegt.
+
+Manche Ordner sieht nur, wer sie braucht — zum Beispiel ist der Ordner des Vorstands für alle anderen unsichtbar.
+
+=== Eine Datei hochladen ===
+# Öffne den Ordner, in den die Datei gehört.
+# Tippe oben rechts auf das Symbol mit dem '''Pfeil nach oben''' (Hochladen) und wähle die Datei aus. Am Computer kannst Du Dateien auch einfach mit der Maus auf die Liste ziehen.
+# Warte, bis der Balken durchgelaufen ist.
+
+Gibt es im Ordner schon eine Datei mit demselben Namen, fragt das Portal nach: Die neue Datei wird dann eine '''neue Fassung''' der alten. Die alte Fassung geht nicht verloren.
+
+=== Was Du mit einer Datei tun kannst ===
+Klicke am Computer mit der '''rechten''' Maustaste auf eine Datei, auf dem Smartphone hältst Du den Finger etwas länger darauf. Es öffnet sich ein Menü, zum Beispiel mit:
+* '''Umbenennen''' — einen besseren Namen geben.
+* '''Verschieben nach…''' — in einen anderen Ordner legen.
+* '''Frühere Versionen''' — eine ältere Fassung ansehen oder zurückholen.
+* '''Abspielen''' — Musik und Videos direkt im Portal abspielen.
+* '''Löschen''' — wenn Du das darfst.
+
+Was Du in einem Ordner darfst, legt der Vorstand fest. Fehlt ein Menüpunkt, hast Du dort dieses Recht nicht.
+
+=== Mehrere Dateien auf einmal ===
+Setze links die Häkchen vor die Dateien. Dann erscheinen Knöpfe, um alle zusammen zu verschieben, herunterzuladen oder zu löschen.
+
+=== Einen neuen Ordner anlegen ===
+Tippe oben rechts auf das '''Ordner-Symbol mit dem Plus''' und gib einen Namen ein.
+
+Zurück zur [[Hilfe|Übersicht]].

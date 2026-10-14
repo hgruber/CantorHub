@@ -30,15 +30,15 @@ from ..models import DateiVersion, Lied, TabellenPreferenzen, Termin, User
 def _aufnahme_prefixes():
     """Die beiden Schreibweisen des Aufnahme-Präfixes, aus FILE_PREFIX abgeleitet.
 
-    ``JG-Titel`` und ``JG - Titel`` sind historisch gleichwertig; das Präfix
+    ``Chor-Titel`` und ``Chor - Titel`` sind historisch gleichwertig; das Präfix
     selbst ist konfigurierbar (FILE_PREFIX), die beiden Trenner bleiben.
     """
-    p = get_config("FILE_PREFIX", "JG")
+    p = get_config("FILE_PREFIX", "Chor")
     return (f"{p} - ", f"{p}-")
 
 
 def _aufnahme_prefix_with_space():
-    return f"{get_config('FILE_PREFIX', 'JG')} - "
+    return f"{get_config('FILE_PREFIX', 'Chor')} - "
 from ..verwendung import datei_verwendungen
 
 __all__ = [
@@ -230,7 +230,7 @@ def _route_and_rename_for_lied(lied, filer_file, source_name):
 
     The extension decides the kind: PDF → Notenblatt (`pdf`), notation files →
     Notensatz (`noten`), audio → Original/Aufnahme. An audio file uploaded with
-    a "JG - " prefix counts as our own recording (`aufnahme`), otherwise as the
+    a "<FILE_PREFIX> - " prefix counts as our own recording (`aufnahme`), otherwise as the
     reference original (`original`). Returns the assigned field name, or None
     for extensions that don't map to a known song-file type.
     """

@@ -39,7 +39,7 @@ _CONFIG_DEFAULTS = [
      "deutsch und werden nicht übersetzt"),
     ("UPLOAD_MAX_MB", "50", "Maximale Upload-Größe in MB"),
     ("MAP_CENTER_ID", "1", "ID des Orts, der als Karten-Mittelpunkt dient"),
-    ("MAP_DEFAULT_ZOOM", "12", "Standard-Zoomstufe der Gesamtkarte"),
+    ("MAP_DEFAULT_ZOOM", "6", "Standard-Zoomstufe der Gesamtkarte"),
     ("PWRESET_MAX_PER_HOUR", "5", "Maximale Passwort-Reset-Anfragen pro IP und Stunde"),
     (
         "CARDDAV_AKTIV",
@@ -120,13 +120,13 @@ _CONFIG_DEFAULTS = [
         "Terminerinnerung unterhalb der Topbar anzeigen (1/0). Wird sonst pro "
         "Mitglied und Sitzung wegklickbar angezeigt.",
     ),
-    ("VEREINSNAME", "", "Name des Chors"),
+    ("VEREINSNAME", "CantorHub", "Name des Chors"),
     (
         "VEREINSNAME_LANG",
-        "Just Gospel! Frankfurt",
+        "CantorHub",
         "Langer Vereinsname mit Ort (für E-Mail-Header, Seitentitel)",
     ),
-    ("VEREINSNAME_KURZ", "", "Kurzer Vereinsname (für Sidebar, Alt-Texte)"),
+    ("VEREINSNAME_KURZ", "CantorHub", "Kurzer Vereinsname (für Sidebar, Alt-Texte)"),
     (
         "BRAND_FARBE",
         "#2b6cb0",
@@ -481,50 +481,51 @@ _CONFIG_DEFAULTS = [
     ),
     (
         "MAP_CENTER_LAT",
-        "50.1109",
+        "51.1634",
         "Breitengrad des Karten-Mittelpunkts als Fallback, wenn MAP_CENTER_ID keinen "
         "Ort liefert",
     ),
     (
         "MAP_CENTER_LNG",
-        "8.6821",
+        "10.4477",
         "Längengrad des Karten-Mittelpunkts als Fallback, wenn MAP_CENTER_ID keinen "
         "Ort liefert",
     ),
     # --- Datei-Archiv ---
     (
         "FILE_PREFIX",
-        "JG",
-        "Präfix für die alternativen Dateinamen im Lied-Archiv (z. B. JG-Titel)",
+        "Chor",
+        "Präfix für die Dateinamen der eigenen Aufnahmen im Lied-Archiv (z. B. "
+        "Chor-Titel) und deren Bezeichnung („Chor Aufnahme“)",
     ),
     # --- Datenschutzerklärung: Hosting-Anbieter und Aufsichtsbehörde ---
     (
         "HOSTING_ANBIETER_NAME",
-        "Hetzner Online GmbH",
+        "",
         "Name des Hosting-Anbieters in der Datenschutzerklärung, Abschnitt "
         "„Hosting und technischer Betrieb“",
     ),
     (
         "HOSTING_ANBIETER_ANSCHRIFT",
-        "Industriestr. 25, 91710 Gunzenhausen, Deutschland",
+        "",
         "Anschrift des Hosting-Anbieters in der Datenschutzerklärung, Abschnitt "
         "„Hosting und technischer Betrieb“ (mehrzeilig erlaubt)",
     ),
     (
         "DSB_NAME",
-        "Der Hessische Beauftragte für Datenschutz und Informationsfreiheit (HBDI)",
+        "",
         "Name der Datenschutz-Aufsichtsbehörde in der Datenschutzerklärung, "
         "Abschnitt „Beschwerderecht bei der Aufsichtsbehörde“",
     ),
     (
         "DSB_ANSCHRIFT",
-        "Gustav-Stresemann-Ring 1, 65189 Wiesbaden",
+        "",
         "Anschrift der Datenschutz-Aufsichtsbehörde in der Datenschutzerklärung, "
         "Abschnitt „Beschwerderecht bei der Aufsichtsbehörde“ (mehrzeilig erlaubt)",
     ),
     (
         "DSB_URL",
-        "https://www.datenschutz.hessen.de",
+        "",
         "URL der Datenschutz-Aufsichtsbehörde in der Datenschutzerklärung, "
         "Abschnitt „Beschwerderecht bei der Aufsichtsbehörde“",
     ),

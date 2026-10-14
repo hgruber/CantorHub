@@ -1,0 +1,87 @@
+== Termine aufs Telefon ==
+Mit dieser Einrichtung erscheinen alle Proben und Auftritte im Kalender Deines Smartphones — mit Uhrzeit und Ort, und auf Wunsch auch die Geburtstage. Wird ein Termin im Portal geändert, ändert er sich auch auf Deinem Telefon. Du richtest das nur einmal ein.
+
+@ Dieser Dienst ist zurzeit '''{CALDAV_STATUS}'''. Steht dort „noch nicht eingeschaltet“, muss ihn erst jemand aus dem Vorstand freischalten — bis dahin klappt die Anmeldung nicht.
+
+=== Das brauchst Du ===
+Schreib Dir diese Angaben auf oder lass diese Seite offen, während Du Dein Telefon einrichtest:
+_ Adresse (Basis-URL) | {CALDAV_URL}
+_ Server (nur für iPhone) | {SERVER}
+_ Benutzername | {BENUTZERNAME}
+_ Passwort | Dein Passwort für dieses Portal
+
+Auf dem Telefon kannst Du die Termine nur '''ansehen'''. Zusagen und Absagen machst Du weiter im Portal.
+
+== Android (Samsung, Google Pixel, Xiaomi und andere) ==
+Android braucht dafür eine kleine App: '''DAVx⁵'''. Sie holt die Termine ab und gibt sie an Deine Kalender-App weiter.
+
+=== Schritt 1: DAVx⁵ installieren ===
+* Im [https://play.google.com/store/apps/details?id=at.bitfire.davdroid Google Play Store] kostet DAVx⁵ einmalig ein paar Euro.
+* Über [https://f-droid.org/packages/at.bitfire.davdroid/ F-Droid] ist sie kostenlos. Dafür musst Du zuerst F-Droid selbst installieren — wenn Du das noch nie gemacht hast, nimm lieber den Play Store.
+
+Öffne DAVx⁵ nach der Installation. Die App fragt nach Erlaubnissen für Kalender, Kontakte und Benachrichtigungen — tippe jedes Mal auf '''Zulassen'''. Fragt sie nach der '''Akku-Optimierung''', erlaube ihr, im Hintergrund zu laufen; sonst kommen neue Termine nur unregelmäßig an. Die App '''Tasks''' brauchst Du nicht.
+
+=== Schritt 2: Konto hinzufügen ===
+[[Datei:hilfe-davx5-plus.png]]
+Tippe unten rechts auf das runde '''+''' (Konto hinzufügen).
+
+=== Schritt 3: Mit Adresse und Benutzername anmelden ===
+[[Datei:hilfe-davx5-anmelden.png]]
+# Wähle '''Mit URL und Benutzername anmelden'''.
+# Bei '''Basis-URL''' trägst Du ein: {CALDAV_URL}
+# Bei '''Benutzername''': {BENUTZERNAME}
+# Bei '''Passwort''': Dein Portal-Passwort.
+# Tippe unten rechts auf '''Anmelden'''.
+
+=== Schritt 4: Konto anlegen ===
+[[Datei:hilfe-davx5-konto.png]]
+# DAVx⁵ schlägt einen '''Kontonamen''' vor. Du kannst ihn so lassen oder z. B. den Namen des Chors eintragen.
+# Bei '''Kontaktgruppen-Methode''' wählst Du '''Gruppen sind Kategorien der Kontakte'''.
+# Tippe auf '''Konto erstellen'''.
+
+=== Schritt 5: Kalender einschalten ===
+[[Datei:hilfe-davx5-kalender.png]]
+# Tippe auf das neue Konto.
+# Wechsle oben zum Reiter '''CalDAV'''.
+# Schalte '''{KALENDER_NAME}''' ein, und wenn Du möchtest auch '''{GEBURTSTAGE_NAME}'''.
+# Tippe auf das Symbol mit den '''zwei Pfeilen im Kreis''' (Jetzt synchronisieren).
+
+Öffne jetzt die Kalender-App Deines Telefons. Nach einer Minute sollten die Termine erscheinen. Wenn nicht: In den Einstellungen der Kalender-App gibt es eine Liste der Kalender — setze dort ein Häkchen bei '''{KALENDER_NAME}'''.
+
+% Mit demselben Konto kannst Du auch alle Mitglieder in Dein Adressbuch holen: Schalte im Reiter '''CardDAV''' das Adressbuch ein. Mehr dazu unter [[Hilfe:Kontakte aufs Telefon|Kontakte aufs Telefon]].
+
+== iPhone und iPad ==
+Auf dem iPhone brauchst Du keine zusätzliche App.
+
+=== Schritt 1: Account hinzufügen ===
+[[Datei:hilfe-ios-andere.png]]
+# Öffne die '''Einstellungen''' (das graue Zahnrad).
+# Wische ganz nach unten und tippe auf '''Apps''', dann auf '''Kalender'''.
+# Tippe auf '''Kalender-Accounts''' und dann auf '''Account hinzufügen'''.
+# Tippe ganz unten auf '''Andere'''.
+# Tippe auf '''CalDAV-Account hinzufügen'''.
+
+% Bei älteren iPhones (vor iOS 18) heißt der Weg: '''Einstellungen → Kalender → Accounts → Account hinzufügen → Andere'''.
+
+=== Schritt 2: Angaben eintragen ===
+[[Datei:hilfe-ios-caldav.png]]
+# '''Server:''' {SERVER}
+# '''Benutzername:''' {BENUTZERNAME}
+# '''Passwort:''' Dein Portal-Passwort
+# '''Beschreibung:''' ein Name, den Du wiedererkennst, z. B. „{VEREINSNAME_KURZ}“
+# Tippe oben rechts auf '''Weiter'''. Das iPhone prüft die Angaben.
+# Lass '''Kalender''' eingeschaltet und tippe auf '''Sichern'''.
+
+Öffne die Kalender-App. Unten in der Mitte unter '''Kalender''' kannst Du einstellen, welche Kalender angezeigt werden.
+
+% Meldet das iPhone „Account kann nicht überprüft werden“? Tippe auf '''Abbrechen''', bearbeite den Account und trage bei '''Server''' die ganze Adresse ein: {CALDAV_URL}
+
+== Wenn etwas nicht klappt ==
+* '''Anmeldung schlägt fehl:''' Prüfe Benutzername und Passwort, indem Du Dich damit im Portal anmeldest. Groß- und Kleinschreibung beachten!
+* '''Passwort geändert?''' Dann musst Du das neue Passwort auch auf dem Telefon eintragen — in DAVx⁵ unter den Einstellungen des Kontos, auf dem iPhone in den Einstellungen des Accounts.
+* '''Ein Termin fehlt:''' Warte ein paar Minuten oder starte die Synchronisierung von Hand. Termine, die weit zurückliegen, werden nicht übertragen.
+* '''Du willst es wieder loswerden:''' Lösche das Konto in DAVx⁵ bzw. den Account in den iPhone-Einstellungen. Die Termine verschwinden dann vom Telefon, im Portal bleibt alles erhalten.
+
+Keine App installieren und kein Passwort eingeben? Dann ist [[Hilfe:Kalender abonnieren|Kalender abonnieren]] das Richtige für Dich.
+
+Zurück zur [[Hilfe|Übersicht]].

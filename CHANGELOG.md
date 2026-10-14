@@ -9,6 +9,19 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Hilfe: Eine neue Installation bringt Hilfe-Artikel für Einsteiger mit — Übersicht „Hilfe“,
+  erste Schritte, Profil, Termine, Forum, Repertoire, Mitglieder, Dateien, Artikel schreiben und
+  bebilderte Anleitungen für Termine, Kalender-Abo, Kontakte und Chat (Conversations, Monal) auf
+  dem Telefon. Bestehende Installationen holen sie mit `manage.py hilfe_anlegen` nach, ohne
+  Vorhandenes zu überschreiben.
+- Artikel: Platzhalter wie `{VEREINS_URL}`, `{CALDAV_URL}`, `{BENUTZERNAME}` oder
+  `{XMPP_ADRESSE}` zeigen beim Lesen den passenden Wert der Installation bzw. des Lesers; die
+  Liste steht in „Hilfe:Wiki“. Links dürfen auch auf `webcal://` zeigen.
+- Ersteinrichtung: Neutrale Ersatzbilder für Mitglieder ohne Foto und den Chat-Bot sowie
+  sichtbare Spalten für Mitgliederliste und Repertoire.
+
 ### Geändert
 
 - Startseite: Die mitgelieferte Startseite ist eine neutrale Vorlage ohne Foto, mit dem CantorHub-Logo und
@@ -19,11 +32,33 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Favicon.
 - Konfiguration: Die vorgegebene Akzentfarbe (`BRAND_FARBE`) für neue Installationen ist ein
   Blau (`#2b6cb0`); bestehende Installationen behalten ihren Wert.
+- Termine und Mitgliederliste: Die Hinweiskästen „Termine aufs Telefon“, „Kalender abonnieren“
+  und „Kontakte aufs Telefon“ sind entfallen; ihre Anleitungen stehen jetzt in der Hilfe.
+- Portal: Mail-Logo, PDF-Briefkopf, App-Symbole und das Web-App-Manifest kommen aus der
+  Konfiguration und aus `/data/startseite/statisch/brand/`; mitgeliefert wird das CantorHub-Siegel.
+- Konfiguration: Neue Installationen starten mit neutralen Vorgaben (Name „CantorHub“,
+  `example.org`-Absender, Kartenmitte Deutschland); die Angaben zu Hoster und
+  Datenschutzbehörde sind leer und werden in der Konfiguration angemahnt. Die eigene Aufnahme
+  eines Titels heißt nach `FILE_PREFIX` („<Präfix> Aufnahme“).
 
 ### Entfernt
 
 - Startseite: Chorfotos, Wortmarken und `main.css` sind nicht mehr Teil des Images; die eigene
   Seite einer Installation bringt sie unter `/data/startseite/` mit.
+- Portal: Die Chor-PNGs (Mail-Logo, Briefkopf, App-Symbole) und das statische `manifest.json`
+  sind nicht mehr Teil des Images.
+
+### Behoben
+
+- Artikel: Fett und kursiv (`'''…'''`, `''…''`) werden wieder dargestellt, auch mehrfach in
+  einer Zeile; nummerierte Listen mit Hervorhebungen zerfallen nicht mehr.
+- Artikel: Kästen (`@`) und graue Hinweise (`%`) stehen an ihrer Stelle im Text und zeigen
+  Links und Hervorhebungen.
+- Termin: Anwesenheiten lassen sich auf Telefon und Tablet verschieben — durch Antippen oder
+  nach kurzem Halten durch Ziehen.
+- Mitgliedsprofil: Leere Angaben erscheinen nicht mehr als „None“, ein fehlendes Profilbild
+  zeigt ein Symbol statt eines kaputten Bildes.
+- Ersteinrichtung: Auf SQLite bricht sie nicht mehr mit „database is locked“ ab.
 
 ## v1.0.7 — 2026-10-14
 

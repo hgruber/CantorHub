@@ -1,0 +1,40 @@
+== Repertoire ==
+Im '''Repertoire''' stehen alle Lieder, die wir singen oder gesungen haben — mit Noten, Hörbeispielen und unseren eigenen Aufnahmen. Hier übst Du zu Hause.
+
+=== Die Liederliste ===
+[[Datei:hilfe-repertoire-liste.png]]
+Tippe in der Seitenleiste auf '''Repertoire'''. Jede Zeile ist ein Lied:
+* '''Titel''' — tippe darauf, um alles zu diesem Lied zu sehen.
+* '''Eigenschaften''' — kleine Zeichen, die das Lied beschreiben (siehe unten).
+* '''PDF''' — das Notenblatt. Tippe auf das Symbol, um es zu öffnen oder auszudrucken.
+* '''Noten''' — die Datei aus dem Notenprogramm, falls es eine gibt.
+
+=== Was die kleinen Zeichen bedeuten ===
+* '''grüner Punkt''' — das Lied singen wir gerade. Ein grauer Punkt heißt: zurzeit nicht.
+* '''›''', '''››''' oder '''›››''' — langsam, mittel oder schnell.
+* '''ein Buchstabe''' wie G oder Es — die Tonart.
+* '''eine Zahl''' — das Tempo in Schlägen pro Minute.
+* '''Kreuz''' — eine Hymne, '''Mikrofon''' — a cappella, '''Schneeflocke''' — ein Weihnachtslied.
+
+Wenn Du unsicher bist, zeige mit der Maus auf das Zeichen oder halte den Finger kurz darauf.
+
+=== Ein Lied anhören ===
+* In der Spalte '''Audio''' (falls sie angezeigt wird) startet der '''Abspiel-Knopf''' das Lied sofort. Der Knopf mit unserem Logo spielt unsere eigene Aufnahme, der andere das Original.
+* Auf der Seite eines Liedes stehen beide Aufnahmen mit Abspiel- und Download-Knopf.
+* Unten am Bildschirm erscheint dann ein kleiner '''Player'''. Mit ihm hältst Du an, spulst und springst zum nächsten Lied. Er spielt weiter, während Du im Portal andere Seiten öffnest.
+
+=== Alle Lieder am Stück hören ===
+Sobald es Aufnahmen gibt, steht oben rechts das Symbol '''Wiedergabe'''. Dort wählst Du zum Beispiel '''Alle Originale''', '''Originale zufällig''' oder alle unsere eigenen Aufnahmen. Es werden genau die Lieder gespielt, die gerade in der Liste stehen — mit einem Filter also zum Beispiel nur die Weihnachtslieder.
+
+=== Lieder für ein Konzert ===
+Auf der Seite eines Konzerts (unter [[Hilfe:Termine|Termine]]) tippst Du auf die Überschrift '''Lieder'''. Dann zeigt das Repertoire genau die Lieder dieses Konzerts in der richtigen Reihenfolge. Über das Symbol '''Downloads''' bekommst Du das Konzertprogramm als Word-Datei und alle Noten auf einmal als PDF oder Archiv.
+
+=== Suchen und sortieren ===
+* Mit dem '''Trichter-Symbol''' (Filtern) oben rechts suchst Du nach Titel, Komponist, Tonart und vielem mehr.
+* Tippe auf eine Spaltenüberschrift, um danach zu sortieren.
+* Mit dem '''Spalten-Symbol''' blendest Du weitere Spalten ein, zum Beispiel '''Audio''' oder '''Komponist'''.
+
+=== Noch mehr zu einer Zeile ===
+Am Computer klickst Du mit der '''rechten''' Maustaste auf eine Zeile, auf dem Smartphone hältst Du den Finger etwas länger darauf. Es öffnet sich ein Menü zum Abspielen und Herunterladen.
+
+Zurück zur [[Hilfe|Übersicht]].

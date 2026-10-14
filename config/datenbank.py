@@ -90,7 +90,11 @@ def _sqlite(pfad):
     return {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": pfad,
-        "OPTIONS": {"timeout": 20},
+        # IMMEDIATE: eine Transaktion holt sich die Schreibsperre gleich zu
+        # Beginn. Sonst bricht das Hochstufen einer Lese- zur Schreibtransaktion
+        # ohne Warten mit „database is locked“ ab, sobald ein zweiter Schreiber
+        # läuft — etwa die Indexier-Threads neuer Dateien (signals.py).
+        "OPTIONS": {"timeout": 20, "transaction_mode": "IMMEDIATE"},
     }
 
 

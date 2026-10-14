@@ -722,7 +722,7 @@ class ForumEditForm(forms.ModelForm):
             "thema": forms.TextInput(attrs={"class": "form-control"}),
             "kategorie": forms.TextInput(attrs={"class": "form-control"}),
             "bild": AdminImageWidget,
-            "xmpp_muc_jid": forms.TextInput(attrs={"class": "form-control", "placeholder": "forum-262@conference.example.org"}),
+            "xmpp_muc_jid": forms.TextInput(attrs={"class": "form-control", "placeholder": "forum-1@conference.example.org"}),
         }
 
 

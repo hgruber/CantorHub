@@ -185,5 +185,12 @@ service.
 
 **The old ICS feed stays.** `/intern/calendar/<secret>.ics` (`ICAL_SECRET`) is deliberately
 *not* replaced: Google Calendar on the web cannot subscribe to CalDAV, and the feed needs no
-portal password. The Termine list shows the CalDAV box first and labels the ICS one as the
-alternative without login.
+portal password.
+
+**How members find the addresses.** The event and member lists used to carry three dismissible
+info boxes („Termine aufs Telefon", „Kalender abonnieren", „Kontakte aufs Telefon"); on a phone
+they covered the list itself and were removed in October 2026. Their job moved to the help
+articles `Hilfe:Termine aufs Telefon`, `Hilfe:Kalender abonnieren` and `Hilfe:Kontakte aufs
+Telefon` (`docs/articles.md`), which take the addresses from the placeholders `{CALDAV_URL}`,
+`{CARDDAV_URL}`, `{ICAL_URL}`, `{WEBCAL_URL}` and `{SERVER}` and say whether the service is
+switched on (`{CALDAV_STATUS}`, `{CARDDAV_STATUS}`).

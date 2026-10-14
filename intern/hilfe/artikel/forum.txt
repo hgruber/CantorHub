@@ -1,0 +1,39 @@
+== Forum ==
+Im '''Forum''' schreiben wir uns Nachrichten, die alle lesen können — wie in einer Chat-Gruppe. Es gibt mehrere Foren zu verschiedenen Themen, zum Beispiel „Allgemeines“.
+
+=== Ein Forum öffnen ===
+Tippe in der Seitenleiste auf '''Forum'''. Du siehst eine Liste aller Foren:
+* '''Thema''' — der Name des Forums. Tippe darauf, um es zu öffnen.
+* '''Letzter Beitrag''' — wer zuletzt geschrieben hat und wann.
+* '''Anzahl''' — wie viele Nachrichten es gibt.
+
+Ist ein Forum '''fett''' geschrieben und steht davor eine Zahl in einem farbigen Kreis, gibt es dort so viele neue Nachrichten für Dich. Auch neben '''Forum''' in der Seitenleiste erscheint dann ein Punkt.
+
+=== Nachrichten lesen ===
+Die neueste Nachricht steht '''oben'''. Wenn Du nach unten wischst, kommen ältere Nachrichten nach. Deine eigenen Nachrichten stehen rechts, die der anderen links mit Foto und Namen.
+
+Seit Deinem letzten Besuch neu dazugekommene Nachrichten erkennst Du an einer Linie '''Neu seit Deinem letzten Besuch'''. Neue Nachrichten erscheinen von selbst — Du musst die Seite nicht neu laden.
+
+=== Eine Nachricht schreiben ===
+[[Datei:hilfe-forum-schreiben.png]]
+# Tippe oben in das Feld '''Schreibe Deine Nachricht…'''
+# Schreib Deinen Text. Die Eingabetaste macht eine neue Zeile.
+# Tippe auf den runden Knopf mit dem '''Pfeil''' rechts daneben. Fertig!
+
+% Eine abgeschickte Nachricht lässt sich nicht mehr ändern oder löschen. Lies sie also lieber einmal durch, bevor Du sie abschickst.
+
+=== Mit einem Daumen reagieren ===
+Unter jeder Nachricht steht ein kleines '''+'''. Tippe darauf und wähle ein Zeichen, zum Beispiel 👍 oder ❤️. So zeigst Du, dass Du die Nachricht gelesen hast, ohne extra zu antworten. Tippst Du auf eine schon vorhandene Reaktion, schließt Du Dich ihr an; ein zweiter Tipp nimmt Deine wieder weg.
+
+=== Ein Foto oder eine Datei mitschicken ===
+# Öffne das Forum.
+# Tippe oben rechts auf das Symbol mit dem '''Pfeil nach oben''' (Hochladen) und wähle die Datei aus. Am Computer kannst Du die Datei auch einfach auf die Seite ziehen.
+# Ein Link zur Datei erscheint im Nachrichtenfeld. Schreib noch etwas dazu und schicke die Nachricht ab.
+
+=== Etwas wiederfinden ===
+In der Forenliste steht oben rechts ein Suchfeld. Gib ein Wort ein, und Du bekommst alle Nachrichten, in denen es vorkommt.
+
+=== Das Forum als Chat auf dem Smartphone ===
+Jedes Forum ist auch ein Gruppenchat. Mit einer Chat-App bekommst Du neue Nachrichten sofort aufs Telefon, und was Du dort schreibst, steht auch hier im Forum. Wie Du das einrichtest, steht unter [[Hilfe:Chat auf dem Telefon|Chat auf dem Telefon]].
+
+Zurück zur [[Hilfe|Übersicht]].

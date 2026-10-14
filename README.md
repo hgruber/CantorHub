@@ -67,9 +67,12 @@ hostname, because the address is not known yet; the form prefills it from the ca
 
 The page asks for the first account (it becomes superuser and joins „Mitglied“ and
 „Vorstand“), the portal address, the sender address and, optionally, the SMTP server. Finishing
-it creates the permission groups, the standard folders, the Vorstand folder right and the start
-page „Aktuell“, logs the new account in and opens `/intern/konfiguration/`, whose banner lists the
-settings still missing (the club name). The box „Beispieldaten anlegen“ (on by default) adds a
+it creates the permission groups, the standard folders, the Vorstand folder right, the start
+page „Aktuell“, the help pages („Hilfe“ and `Hilfe:…`, written for members with little computer
+experience, including the phone set-up of calendar, contacts and chat) and neutral placeholder
+pictures for members without a photo, logs the new account in and opens
+`/intern/konfiguration/`, whose banner lists the settings still missing (the hoster and the
+data-protection authority for the privacy policy). The box „Beispieldaten anlegen“ (on by default) adds a
 place, a few German folk songs, six weekly rehearsals, a concert with its running order and
 homepage announcement, and the forum „Allgemeines“ — ordinary entries, to be edited or deleted. From then on `/einrichtung/` is
 gone, and every worker restricts the accepted hostnames to the stored address on its next
@@ -332,8 +335,11 @@ works well. The files must be readable by nginx inside the container. The templa
 tags are listed in `docs/startseite.md`.
 
 The same folder carries your **logo**: `startseite/statisch/logo.svg` replaces the shipped
-CantorHub seal everywhere in the portal (login, sidebar, error pages, favicon). Set
-`BRAND_FARBE` to match it; the default is a blue (`#2b6cb0`).
+CantorHub seal everywhere in the portal (login, sidebar, error pages, favicon). Its raster
+versions sit next to it: `statisch/brand/icon-192.png` (mail logo, phone home-screen icon),
+`statisch/brand/icon-512.png` and `statisch/brand/briefkopf.png` (PDF letterhead, wide format).
+Set `BRAND_FARBE` to match; the default is a blue (`#2b6cb0`). Name, sender and the other
+choir-specific values are `Konfiguration` keys — the list is in `docs/branding.md`.
 
 ## Background jobs
 
@@ -381,6 +387,7 @@ Run with `podman exec cantorhub python manage.py <command>`.
 | `ejabberd_bot` | Run the XMPP relay bot in the foreground |
 | `index_files`, `thumbnail_files` | Rebuild the file search index / pre-generate thumbnails |
 | `seitenmessung [--nutzer NAME] [--laeufe N] [--seite TEXT]` | Measure the response time and query count of the main pages. It copies the SQLite file first and throws the copy away afterwards, so the running database is never written to; the last column names a query that occurs more than three times, which is how a per-row query gives itself away |
+| `hilfe_anlegen [--autor BENUTZERNAME]` | Add the shipped help pages („Hilfe“, `Hilfe:…`) and their images to an existing installation. Pages and images that already exist under the same name are left alone; a new installation gets them from the first-run setup |
 | `createsuperuser` | Django's own — create an administrator |
 
 **Never run `filer_check --delete-orphans`.** File revisions are stored without a database row on

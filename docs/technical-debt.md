@@ -5,30 +5,9 @@ compliance items are tracked separately in `datenschutz.md`.
 
 ## Branding
 
-- **Branding is partly extracted** (October 2026). Done: the public homepage and the SVG logo
-  come from `DATEN/startseite/` over a neutral shipped default (`docs/startseite.md`), and the
-  default `BRAND_FARBE` is a neutral blue. Still open, each its own change — full plan in
-  `branding.md`:
-  - **Raster logos.** The mail logo (`intern/brand/logo.png`, `mail.py`), the PDF letterhead
-    (`intern/brand/JG-Frankfurt-transparent.png`, `pdf.py`) and the PWA icons
-    (`icon-192.png`, `icon-512.png`, also the notification icon in `intern.js`/`mail.py`) are
-    still this choir's PNGs. Ship PNGs rendered from the seal and look them up through
-    `finde_statisch()` like the SVG.
-  - **`manifest.json` is static** — `name` „Just Gospel! Frankfurt" and `theme_color`
-    `#c14468`. Build it in a view from `VEREINSNAME_LANG`/`_KURZ` and `BRAND_FARBE`.
-  - **Choir defaults in code.** `get_vereinsname*()` in `app_settings.py` and
-    `VEREINSNAME_LANG` in `apps.py` default to the choir's names, `DEFAULT_FROM_EMAIL` to
-    `webmaster@example.org` (`apps.py`, `config/settings.py`), the forum form's XMPP
-    placeholder to `conference.example.org` (`forms.py`). The privacy-policy defaults
-    (`HOSTING_ANBIETER_*`, `DSB_*` in `apps.py` and `views/auth.py`) name Hetzner and the
-    Hessian data-protection authority — generic placeholders, or required keys without a
-    default, so a new installation notices.
-  - **Dynamic homepage content.** Whitelisted placeholders and tags
-    (`oeffentliche_termine`, `konfig` restricted to public keys), sub-pages
-    `seiten/<name>.html` → `/<name>/` as the last route, and wiki articles opted in through a
-    new `STARTSEITE_ARTIKEL` key, rendered by a public mode of `apply_replacements()` (no
-    votes, internal links as plain text, no `/media/` embeds). Spelled out under
-    „Homepage override" in `branding.md`.
+- **What is left of the branding extraction** — dynamic homepage content (placeholders,
+  sub-pages, public wiki articles), the internal `jg` identifiers for the own recording and the
+  `!` of the wiki footer. All three under „Left to do" in `branding.md`.
 - **Config key naming is mixed** — existing `Konfiguration` keys mix German and
   English (`CALDAV_TAGE_RUECKWIRKEND` vs. `PWRESET_MAX_PER_HOUR`, `UPLOAD_MAX_MB`,
   `NOTIFY_POLL_MS`, `MAP_DEFAULT_ZOOM`). Renaming the existing keys would touch
@@ -102,31 +81,6 @@ a second file or subfolder of the same name into a folder. Left open on purpose:
 - **`DateiVersion.original_filename` is written but no longer read.** Revisions have no name
   of their own since `datei_restore` stopped renaming. The column can go in a migration,
   together with the writes in `dateiablage.zusammenfuehren`.
-
-## First install (built October 2026) — what is left
-
-`0003_import.py` used to mix the legacy import with the values every installation needs. Since
-October 2026 it is an empty placeholder (the import ran once and is never needed again), and a new
-installation gets its groups, standard folders, first administrator and first settings from the
-first-run setup (`intern/einrichtung.py`, `/einrichtung/`). Every mail text and the homepage texts
-carry a sample default in `_CONFIG_DEFAULTS` (`apps.py`), which `post_migrate` writes into any
-installation where the key is missing. What the legacy import supplied beyond that has no new
-home yet:
-
-- **No fallback avatars.** `kein_photo.png` and `bot.png` were filer files imported from `Avatare/`;
-  `avatare.fallback_avatar_datei()` returns `None` without them, so members without a picture and
-  the XMPP bot show no placeholder.
-
-One inconsistency surfaced while measuring this:
-
-- **`VEREINSNAME` is spelled three ways:** `""` in the catalog (`apps.py:121`), `"Join us singing
-  the Gospel e.V."` as the code fallback (`app_settings.py:211`) and `"Join Us Singing The Gospel
-  e.V."` in the former legacy seed. `VEREINSNAME_KURZ` has the same double default.
-
-Hardcoded organisation values that have no business in the code — same bucket, to be settled
-in `branding.md`: `DEFAULT_FROM_EMAIL` (`apps.py:30`, and again in `config/settings.py:275`),
-`VEREINSNAME_LANG` (`apps.py:122`), `BRAND_FARBE` (`apps.py:128`), `FILE_PREFIX` (`apps.py:475`),
-`MAP_CENTER_LAT`/`_LNG` (`apps.py:462,468`) and the hardcoded fallbacks in `app_settings.py:211,215,219,223,269-270`.
 
 ## Data model (audited September 2026)
 
@@ -276,9 +230,8 @@ but the measured effect on this data set does not justify touching the code:
 ## Medium risk (15-30%) — need testing after fixing
 
 - **No DB-backed tests yet.** Any `TestCase` used to replay the data migration `0003_import` against the legacy MySQL server, so everything worth testing was written free of DB access (see `intern/tests.py`). Since October 2026 `0003_import` is empty and a test database builds without that environment; the `SimpleTestCase`-only rule in `CLAUDE.md` stands until it is lifted deliberately.
-- `intern.js` (1022 lines) puts all JS in one file with global namespace pollution (`appMainDz`, `toggle()`, `fileAction()`, `saveOrder()`). Should be split into modules.
-- Dropzone, Sortable, Leaflet, and `osm-map.js` are loaded unconditionally in `base.html` on every page. Should be page-specific `<script>` loads.
-- `sortablejs@latest` in `base.html` is unpinned — a breaking upstream update could break the app.
+- `intern.js` (about 2,400 lines) puts most JS in one file with global namespace pollution (`appMainDz`, `toggle()`, `fileAction()`, `saveOrder()`). Should be split into modules.
+- Dropzone and Sortable are loaded unconditionally in `base.html` on every page (Leaflet and `osm-map.js` already load only where a map is shown, `_leaflet_assets.html`). Should be page-specific `<script>` loads.
 - Inline `<script>` blocks in 6 templates (`karte.html`, `termin.html`, `termin_edit.html`, `mitglied.html`, `artikel_history.html`, `ort_detail.html`) should be extracted to separate JS files. The shared OSM tile-referer patch has already been pulled out into `osm-map.js`; the map-init scripts themselves remain inline.
 - Inline `style=` attributes in templates bypass the design system and lack dark mode support.
 

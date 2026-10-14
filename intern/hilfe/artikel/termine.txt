@@ -1,0 +1,42 @@
+== Termine ==
+Unter '''Termine''' stehen alle Proben, Konzerte und sonstigen Treffen, die noch kommen. Damit die Chorleitung planen kann, ist es wichtig, dass Du bei jedem Termin sagst, ob Du kommst.
+
+=== Zusagen oder absagen ===
+[[Datei:hilfe-termin-zusage.png]]
+Am schnellsten geht es ganz oben auf jeder Seite: dort steht immer der nächste Termin mit drei Knöpfen.
+* '''Zusagen''' — Du kommst.
+* '''Eventuell''' — Du weißt es noch nicht. Sag später bitte noch Bescheid.
+* '''Absagen''' — Du kannst nicht.
+
+Für alle anderen Termine tippst Du in der Liste auf den Termin. Auf der Terminseite stehen bei '''Du''' dieselben drei Knöpfe.
+
+@ '''Eine Zusage gilt.''' Wenn Du einmal zugesagt hast, kannst Du sie selbst nicht mehr zurücknehmen. Kommt doch etwas dazwischen, sag bitte im Forum oder der Chorleitung Bescheid — sie kann Deine Antwort ändern.
+
+Ein '''Punkt''' neben '''Termine''' in der Seitenleiste bedeutet: Es gibt einen Termin, zu dem Du noch nichts gesagt hast.
+
+=== Die Terminliste ===
+* '''Datum''' und '''Termin''' — wann und was. Tippe auf eine Zeile, um alle Einzelheiten zu sehen.
+* Ein '''Mikrofon''' bedeutet: ein öffentlicher Auftritt. Er steht auch auf unserer öffentlichen Startseite.
+* Eine '''Zahl''' neben dem Mikrofon sagt, wie viele Lieder schon für diesen Auftritt geplant sind.
+* '''Aufstellung''' zeigt mit farbigen Punkten, wer aus welcher Stimme kommt: grün kommt, gelb vielleicht, rot nicht, grau hat noch nichts gesagt. Dein eigener Punkt blinkt, solange Du noch nicht fest zugesagt oder abgesagt hast.
+
+Vergangene Termine findest Du oben rechts über das '''Kalender-Symbol mit Pfeil''' (Vergangene Termine).
+
+=== Die Terminseite ===
+Tippst Du auf einen Termin, siehst Du:
+* '''Datum, Uhrzeit und Ort''' — ist die Adresse des Orts bekannt, zeigt eine '''Karte''' weiter unten, wo er liegt.
+* '''Beschreibung''' — was mitzubringen ist, Kleidung, Treffpunkt.
+* '''Lieder''' — der Ablauf eines Konzerts. Tippe auf die Überschrift '''Lieder''', um alle Lieder mit Noten und Aufnahmen zu öffnen.
+* '''Dateien''' — zum Beispiel ein Probenplan oder eine Wegbeschreibung.
+* '''Aufstellung''' und '''Anwesenheit''' — wer kommt, nach Stimmen sortiert.
+
+=== Der Kalender ===
+Unter '''Kalender''' siehst Du alle Termine eines Monats auf einen Blick, dazu die Geburtstage. Mit den Pfeilen blätterst Du zum vorigen oder nächsten Monat. Tippe auf einen Termin, um ihn zu öffnen.
+
+=== Für Organisatoren ===
+Wer Termine anlegen darf, sieht oben rechts ein ⊕. Wer die Anwesenheit pflegt, findet auf der Terminseite bei '''Anwesenheit''' einen Stift: danach lassen sich die Namen in eine andere Spalte ziehen. Auf dem Smartphone den Namen kurz gedrückt halten und dann ziehen — oder einfach antippen und die neue Spalte auswählen. Zum Schluss auf '''Übernehmen''' tippen.
+
+=== Termine im Kalender Deines Telefons ===
+Alle Termine können automatisch im Kalender Deines Smartphones erscheinen. Wie das geht, steht unter [[Hilfe:Termine aufs Telefon|Termine aufs Telefon]].
+
+Zurück zur [[Hilfe|Übersicht]].

@@ -25,14 +25,14 @@ Two processes:
 
 Forum→MUC deliberately runs through the bot's persistent connection rather than a per-message short-lived connection: the first TLS handshake is intermittently flaky (`RECORD_LAYER_FAILURE`), so opening a fresh connection per message was unreliable (random timeouts) and collided on the `CantorBot` nick with the persistent bot.
 
-All ejabberd admin operations (room config, affiliations, invitations) use the REST API, authenticated as the bot user. The bot JID has admin rights in ejabberd. This avoids cross-domain permission issues (bot JID is on `example.org`, MUC service on `conference.example.net`).
+All ejabberd admin operations (room config, affiliations, invitations) use the REST API, authenticated as the bot user. The bot JID has admin rights in ejabberd. This avoids cross-domain permission issues (bot JID is on `example.org`, MUC service on `conference.chat.example.org`).
 
 ## Model fields
 
 | Model | Field | Purpose |
 |---|---|---|
-| `User` | `xmpp` (CharField 255, nullable) | User's ejabberd JID, e.g. `holger@example.net`. Used for 1:1 user mapping. |
-| `Forum` | `xmpp_muc_jid` (CharField 255, nullable, unique) | MUC room JID, e.g. `forum-42@conference.example.net` |
+| `User` | `xmpp` (CharField 255, nullable) | User's ejabberd JID, e.g. `anna@chat.example.org`. Used for 1:1 user mapping. |
+| `Forum` | `xmpp_muc_jid` (CharField 255, nullable, unique) | MUC room JID, e.g. `forum-42@conference.chat.example.org` |
 | `Mitteilung` | `xmpp_stanza_id` (CharField 255, nullable, unique, indexed) | XMPP stanza ID for deduplication |
 
 ## Settings
@@ -41,8 +41,8 @@ Environment variables (see `config/settings.py`):
 
 ```
 EJABBERD_API_URL          ejabberd REST API URL, e.g. http://10.88.0.8:5280
-EJABBERD_HOST             XMPP domain, e.g. example.net  ← required to enable integration
-EJABBERD_MUC_SERVICE      MUC service domain, e.g. conference.example.net
+EJABBERD_HOST             XMPP domain, e.g. chat.example.org  ← required to enable integration
+EJABBERD_MUC_SERVICE      MUC service domain, e.g. conference.chat.example.org
 EJABBERD_BOT_JID          Bot JID (also used for REST API auth), e.g. forum@example.org  ← required to enable integration
 EJABBERD_BOT_PASSWORD
 EJABBERD_BOT_PORT         c2s port (default 5222)
@@ -336,10 +336,10 @@ All sub-commands require `EJABBERD_HOST` and `EJABBERD_BOT_JID` to be set. Destr
 
 ## ejabberd server configuration
 
-- `mod_http_api` under the `example.net` vhost
-- HAProxy injects `Host: example.net` header on the ejabberd backend
+- `mod_http_api` under the `chat.example.org` vhost
+- HAProxy injects `Host: chat.example.org` header on the ejabberd backend
 - `api_permissions` must allow the CantorHub backend IP for: `register`, `change_password`, `set_vcard`, `set_vcard2`, `get_room_affiliations`, `set_room_affiliation`, `get_room_occupants`, `change_room_option`, `send_direct_invitation`, `destroy_room`, `unregister`
 
 ## Cross-domain setup
 
-The bot JID uses `example.org` while the MUC service is on `conference.example.net`. ejabberd rejects admin IQs (affiliation changes, room config) from cross-domain users. All admin operations use the REST API instead, which runs as the admin user and is not subject to this restriction.
+The bot JID uses `example.org` while the MUC service is on `conference.chat.example.org`. ejabberd rejects admin IQs (affiliation changes, room config) from cross-domain users. All admin operations use the REST API instead, which runs as the admin user and is not subject to this restriction.

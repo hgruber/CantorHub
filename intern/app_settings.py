@@ -233,15 +233,24 @@ def get_from_email():
 
 
 def get_vereinsname():
-    return get_config("VEREINSNAME", "Join us singing the Gospel e.V.")
+    return get_config("VEREINSNAME", "CantorHub")
 
 
 def get_vereinsname_lang():
-    return get_config("VEREINSNAME_LANG", "Just Gospel! Frankfurt")
+    return get_config("VEREINSNAME_LANG", "CantorHub")
 
 
 def get_vereinsname_kurz():
-    return get_config("VEREINSNAME_KURZ", "Just Gospel")
+    return get_config("VEREINSNAME_KURZ", "CantorHub")
+
+
+def get_aufnahme_bezeichnung():
+    """Wie das Portal die eigene Aufnahme eines Titels nennt: „<FILE_PREFIX> Aufnahme“.
+
+    Dasselbe Präfix kennzeichnet die Dateien dieser Aufnahmen (``views/files.py``).
+    """
+    praefix = (get_config("FILE_PREFIX", "") or "").strip()
+    return f"{praefix} Aufnahme" if praefix else "Eigene Aufnahme"
 
 
 def get_brand_farbe():
@@ -281,7 +290,7 @@ def get_map_center():
     """Return (lat, lng) from the Ort configured as MAP_CENTER_ID.
 
     Fällt auf MAP_CENTER_LAT / MAP_CENTER_LNG zurück, wenn der Ort keine
-    Koordinaten hat oder nicht existiert — früher hartkodiert Frankfurt.
+    Koordinaten hat oder nicht existiert.
     """
     from intern.models import Ort
     ort_id = get_config_int("MAP_CENTER_ID", 1)
@@ -291,6 +300,6 @@ def get_map_center():
             return (ort.breite, ort.laenge)
     except Exception:
         pass
-    lat = float(get_config("MAP_CENTER_LAT", "50.1109"))
-    lng = float(get_config("MAP_CENTER_LNG", "8.6821"))
+    lat = float(get_config("MAP_CENTER_LAT", "51.1634"))
+    lng = float(get_config("MAP_CENTER_LNG", "10.4477"))
     return (lat, lng)

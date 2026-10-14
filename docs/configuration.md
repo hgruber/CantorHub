@@ -18,15 +18,16 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`
 - `UPLOAD_MAX_MB` (max upload size in MB, default `50`)
 - `MAP_CENTER_ID` (id of the `Ort` used as the map centre)
-- `MAP_DEFAULT_ZOOM` (default zoom of the overview map, default `12`)
+- `MAP_DEFAULT_ZOOM` (default zoom of the overview map, default `6`)
 - `MAP_CENTER_LAT` / `MAP_CENTER_LNG` (fallback map centre when `MAP_CENTER_ID` has no
-  coordinates or does not exist; defaults `50.1109` / `8.6821`)
+  coordinates or does not exist; defaults `51.1634` / `10.4477`, the centre of Germany)
 - `OSM_TILE_URL` (base URL of the tile server, default `https://tile.openstreetmap.org`; the
   proxy appends `/{z}/{x}/{y}.png`)
 - `OSM_NOMINATIM_URL` (base URL of the Nominatim geocoder, default
   `https://nominatim.openstreetmap.org`; the proxy appends `/search`)
-- `FILE_PREFIX` (prefix for the alternative filenames in the song archive, default `JG`;
-  both `JG-Titel` and `JG - Titel` spellings are derived from it)
+- `FILE_PREFIX` (prefix of the choir's own recordings in the song archive, default `Chor`;
+  both `Chor-Titel` and `Chor - Titel` spellings are derived from it, and it names the
+  recording in the portal: „Chor Aufnahme“, `get_aufnahme_bezeichnung()`)
 - `PWRESET_MAX_PER_HOUR` (max password-reset requests per IP per hour, default `5`)
 - `CARDDAV_AKTIV` (`1`/`0`, **default `0`**) — master switch of the read-only CardDAV address
   book. While off, every CardDAV URL answers `404`, not `401`: the service simply does not
@@ -72,9 +73,9 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   so `base.html` never includes `_termin_banner.html`. Independent of the per-member,
   per-login-dismissible state kept in `localStorage` — that dismissal only works while this key
   is on)
-- `VEREINSNAME` (choir display name / tagline, default `"Join us singing the Gospel e.V."`)
-- `VEREINSNAME_LANG` (formal long name with location, default `"Just Gospel! Frankfurt"` — used in email headers, page titles, join form)
-- `VEREINSNAME_KURZ` (short name for compact contexts, default `"Just Gospel"` — used in sidebar, alt texts, browser title)
+- `VEREINSNAME` (choir display name / tagline, default `"CantorHub"`)
+- `VEREINSNAME_LANG` (formal long name with location, default `"CantorHub"` — used in email headers, page titles, join form, web app manifest)
+- `VEREINSNAME_KURZ` (short name for compact contexts, default `"CantorHub"` — used in sidebar, alt texts, browser title, wiki footer)
 - `BRAND_FARBE` (accent colour, hex, default `#2b6cb0`, a medium blue; it carries white at 5.4:1) — overrides the `--brand` CSS custom
   property (`intern/templates/_brand_boot.html`, included right after the `intern.css` link on
   every portal page that loads it; the public homepage uses the tag `{% markenfarbe %}` after its
@@ -141,7 +142,7 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 
 ### Datenschutz-Texte
 
-Defaults are the original Just-Gospel values — overwrite on first setup.
+No default: the five keys are required and blank after a fresh install, so the settings banner reports them, and the privacy policy shows a visible marker in their place until they are filled.
 
 - `HOSTING_ANBIETER_NAME` (name of the hoster in the privacy policy's „Hosting und technischer Betrieb" section; multi-line allowed)
 - `HOSTING_ANBIETER_ANSCHRIFT` (address of the hoster in the same section; multi-line allowed)
@@ -170,8 +171,7 @@ computed in `intern/konfig_gruppen.py` and therefore DB-free and testable
 - **empty required key** — a key that must carry a value but whose row is blank. The list of
   keys where blank is *legitimate* is the explicit exception set `OPTIONAL_LEER`; everything
   else in the catalog counts as required. A blank required key is not an error — the code
-  falls back to its own default — it just means that default is in force, and for
-  `VEREINSNAME` and friends that default is another choir's name.
+  falls back to its own default — it just means that default is in force.
 - **missing key** — a catalog key with no row at all. Normally impossible (`_seed_config`
   creates every key on `post_migrate`); it shows up only after a row was deleted by hand, and
   the next restart re-creates it. These are named in the banner because the page has no field
@@ -192,8 +192,10 @@ A key belongs in `OPTIONAL_LEER` when the code has a working substitute
 list rather than a required list so that a **new** key counts as required by default and gets
 noticed instead of staying silently blank.
 
-After a fresh install the banner names exactly the five keys the operator has to supply:
-`VEREINS_URL`, `VEREINSNAME`, `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`, `HOMEPAGE_AUFNAHME`.
+After a fresh install the banner names exactly the five privacy-policy keys the operator has
+to supply: `HOSTING_ANBIETER_NAME`, `HOSTING_ANBIETER_ANSCHRIFT`, `DSB_NAME`, `DSB_ANSCHRIFT`,
+`DSB_URL`. Everything else carries a neutral default (`docs/branding.md`), and the first-run
+setup writes `VEREINS_URL` and `DEFAULT_FROM_EMAIL`.
 
 The banner is **server-rendered only** — no JavaScript, no per-group or per-field markers. Its
 number describes the state that was loaded, which is the state that matters: saving goes
@@ -252,12 +254,6 @@ mail sent to the general public. `Termin.kurz` (single line, max 64) and `Ort.na
 substitution: tags become gaps, whitespace collapsed, `{}` and `[]` removed. Neither a button nor
 a named link can be smuggled in. Bare URLs survive and are auto-linked (the ticket link in an
 announcement); an `<a>` link keeps only its text, the target is dropped.
-
-**`MAIL_MAILINGLISTE_ERINNERUNG` carries an empty default on purpose.** Its text is
-choir-specific, so it is seeded by `seed_konfiguration` in `migrations/0003_import.py` — the same
-rule as `VEREINSNAME` and `HOMEPAGE_UEBER_UNS`, and the reason those keys have `""` in
-`_CONFIG_DEFAULTS`. The key stays in the catalogue and stays required; the migration disappears
-once the migration is done, and a new installation writes its own text.
 
 **To add a new automated email:** add the key to `_CONFIG_DEFAULTS` in `apps.py` (description
 mentioning the placeholders), then call `mail.send_config_mail(subject, to, key, user=…,

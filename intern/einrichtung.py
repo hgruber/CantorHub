@@ -78,6 +78,14 @@ GRUPPEN = {
 
 GRUPPE_VORSTAND = "Vorstand"
 
+# Die Spalten, die eine Tabelle zeigt, solange ein Mitglied keine eigene Auswahl
+# getroffen hat (``TabellenPreferenzen`` ohne Person). Ohne Vorgabe zeigten
+# Mitgliederliste und Repertoire keine einzige Spalte.
+TABELLEN_VORGABEN = {
+    "MitgliederTabelle": ["first_name", "last_name", "stimme"],
+    "RepertoireTabelle": ["titel", "eigenschaften", "pdf", "noten"],
+}
+
 # Was vor dem Abschluss erreichbar bleibt: die Seite selbst und ihr CSS.
 EINRICHTUNG_FREI = ("/einrichtung/", "/static/")
 
@@ -120,7 +128,9 @@ AKTUELL_TEXT = (
     "== Willkommen im Mitgliederportal ==\n\n"
     "Diese Seite sehen alle Mitglieder nach der Anmeldung. Hier steht, was gerade "
     "wichtig ist: die nächste Probe, ein Konzert, eine Bitte an alle.\n\n"
-    "Bearbeiten dürfen sie Webmaster, Vorstand und KonzertOrga.\n"
+    "Bearbeiten dürfen sie Webmaster, Vorstand und KonzertOrga.\n\n"
+    "@ '''Neu hier?''' Unter [[Hilfe]] steht Schritt für Schritt, wie das Portal "
+    "funktioniert — und wie Termine, Kontakte und der Chat aufs Telefon kommen.\n"
 )
 
 AKTUELL_TEXT_BEISPIELE = AKTUELL_TEXT + (
@@ -281,6 +291,7 @@ def einrichten(*, konto, passwort, konfiguration, jetzt, beispieldaten=False):
     ``konto``: Felder des Benutzers (username, first_name, last_name, email);
     ``konfiguration``: ``{key: value}`` für die ``Konfiguration``-Tabelle;
     ``beispieldaten``: Ort, Lieder, Termine und ein Forum zum Ausprobieren.
+    Die Hilfe-Artikel (``intern/hilfe/``) kommen immer dazu.
     """
     global _eingerichtet
     from django.apps import apps
@@ -289,9 +300,9 @@ def einrichten(*, konto, passwort, konfiguration, jetzt, beispieldaten=False):
     from django.contrib.contenttypes.management import create_contenttypes
     from django.db import transaction
 
-    from . import folders
+    from . import folders, hilfe
     from .mitgliedschaft import GRUPPE_MITGLIED
-    from .models import FolderPermission, Konfiguration, User
+    from .models import FolderPermission, Konfiguration, TabellenPreferenzen, User
 
     with transaction.atomic():
         if User.objects.select_for_update().filter(is_superuser=True).exists():
@@ -322,6 +333,12 @@ def einrichten(*, konto, passwort, konfiguration, jetzt, beispieldaten=False):
             defaults={"can_read": True, "can_write": True, "can_delete": True},
         )
 
+        for tabelle, spalten in TABELLEN_VORGABEN.items():
+            if not TabellenPreferenzen.objects.filter(person=None, tabelle=tabelle).exists():
+                TabellenPreferenzen.objects.create(
+                    person=None, tabelle=tabelle, sichtbare_spalten=spalten
+                )
+
         nutzer = User(
             **konto,
             is_active=True,
@@ -340,6 +357,8 @@ def einrichten(*, konto, passwort, konfiguration, jetzt, beispieldaten=False):
             nutzer, jetzt, AKTUELL_TEXT_BEISPIELE if beispieldaten else AKTUELL_TEXT,
             [gruppen[name] for name in AKTUELL_SCHREIBGRUPPEN],
         )
+        _ersatzavatare_anlegen(nutzer)
+        hilfe.anlegen(nutzer, jetzt)
         if beispieldaten:
             _beispieldaten_anlegen(nutzer, jetzt)
 
@@ -359,6 +378,28 @@ def _aktuell_anlegen(nutzer, jetzt, text, schreibgruppen):
         ArtikelPermission.objects.create(
             artikel_name=ARTIKEL_AKTUELL, group=gruppe, can_edit=True
         )
+
+
+# Die Bilder, die das Portal zeigt, wo ein Profilbild fehlt
+# (``avatare.fallback_avatar_datei``): ein Mitglied ohne Foto und der XMPP-Bot.
+ERSATZAVATARE = ("kein_photo.png", "bot.png")
+
+
+def _ersatzavatare_anlegen(nutzer):
+    from pathlib import Path
+
+    from django.core.files.base import ContentFile
+
+    from . import dateiablage, folders
+
+    ordner = folders.avatare()
+    quelle = Path(__file__).resolve().parent / "avatare_ersatz"
+    for name in ERSATZAVATARE:
+        if dateiablage.gleichnamige(ordner, name) is None:
+            dateiablage.systemablage_inhalt(
+                ContentFile((quelle / name).read_bytes(), name=name), ordner, name,
+                nutzer, mime="image/png",
+            )
 
 
 def _beispieldaten_anlegen(nutzer, jetzt):

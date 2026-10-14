@@ -713,8 +713,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // ── Media Session (lock screen / OS media controls) ──────
     const HAS_MS = "mediaSession" in navigator;
     const ARTWORK = [
-      { src: "/static/intern/brand/icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/static/intern/brand/icon-512.png", sizes: "512x512", type: "image/png" },
+      { src: "/startseite/brand/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/startseite/brand/icon-512.png", sizes: "512x512", type: "image/png" },
     ];
     function msState(state) {
       if (HAS_MS) { try { navigator.mediaSession.playbackState = state; } catch (_) {} }
@@ -1866,6 +1866,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const SVG_PDF   = `<svg ${S}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>`;
     const SVG_NOTEN = `<svg ${S}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
     const jgLogoEl  = document.querySelector(".audio-btn-logo");
+    const AUFNAHME  = (document.getElementById("app-main") || document.body).dataset.aufnahmeBezeichnung || "Eigene Aufnahme";
     const JG_ICON   = jgLogoEl
       ? `<img src="${jgLogoEl.src}" width="18" height="18" alt="" aria-hidden="true"/>`
       : SVG_NOTEN;
@@ -1914,7 +1915,7 @@ document.addEventListener("DOMContentLoaded", function () {
             data-ctx-composer="${esc(komponist)}">
             <span class="dl-item-icon dl-icon-jg-rec">${JG_ICON}</span>
             <span class="dl-item-body">
-              <span class="dl-item-title">JG Aufnahme abspielen</span>
+              <span class="dl-item-title">${esc(AUFNAHME)} abspielen</span>
               <span class="dl-item-sub">MP3</span>
             </span></a>`;
         }
@@ -1933,7 +1934,7 @@ document.addEventListener("DOMContentLoaded", function () {
         h += `<a href="${esc(aufnahmeUrl)}" download class="dl-item">
           <span class="dl-item-icon dl-icon-jg-rec">${JG_ICON}</span>
           <span class="dl-item-body">
-            <span class="dl-item-title">JG Aufnahme</span>
+            <span class="dl-item-title">${esc(AUFNAHME)}</span>
             <span class="dl-item-sub">MP3</span>
           </span></a>`;
       }
@@ -1964,7 +1965,7 @@ document.addEventListener("DOMContentLoaded", function () {
       tmp.dataset.audioUrl = btn.dataset.ctxUrl;
       tmp.dataset.songId   = btn.dataset.ctxId;
       tmp.dataset.title    = btn.dataset.ctxTitle;
-      tmp.dataset.type     = btn.dataset.ctxKind === "jg" ? "JG Aufnahme" : "Original";
+      tmp.dataset.type     = btn.dataset.ctxKind === "jg" ? AUFNAHME : "Original";
       tmp.dataset.composer = btn.dataset.ctxComposer || "";
       tmp.style.cssText    = "position:fixed;opacity:0;pointer-events:none;top:-9999px;left:-9999px;";
       document.body.appendChild(tmp);

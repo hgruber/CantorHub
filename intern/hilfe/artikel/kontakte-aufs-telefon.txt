@@ -1,0 +1,75 @@
+== Kontakte aufs Telefon ==
+Mit dieser Einrichtung landen alle Mitglieder im Adressbuch Deines Smartphones — mit Telefonnummer, E-Mail, Adresse und Foto. So siehst Du, wer anruft, und findest jede Nummer auch ohne Portal. Kommt jemand neu dazu oder ändert seine Nummer, wird Dein Adressbuch von selbst aktualisiert.
+
+@ Dieser Dienst ist zurzeit '''{CARDDAV_STATUS}'''. Steht dort „noch nicht eingeschaltet“, muss ihn erst jemand aus dem Vorstand freischalten — bis dahin klappt die Anmeldung nicht.
+
+=== Gut zu wissen ===
+* Es werden nur Angaben übertragen, die das Mitglied in seinem Profil '''nicht verborgen''' hat.
+* Dein eigener Eintrag kommt nicht mit — Du kennst Dich ja.
+* Die Kontakte kannst Du auf dem Telefon nur '''ansehen'''. Änderungen machst Du im Portal unter [[Hilfe:Mein Profil|Mein Profil]].
+* Wer gar nicht in den Adressbüchern der anderen stehen möchte, schaltet das in seinem Profil unter '''Adressbuch auf dem Telefon''' ab.
+
+=== Das brauchst Du ===
+_ Adresse (Basis-URL) | {CARDDAV_URL}
+_ Server (nur für iPhone) | {SERVER}
+_ Benutzername | {BENUTZERNAME}
+_ Passwort | Dein Passwort für dieses Portal
+
+== Android ==
+Android braucht dafür die App '''DAVx⁵'''. Hast Du schon die [[Hilfe:Termine aufs Telefon|Termine aufs Telefon]] eingerichtet, ist sie schon da: Öffne dann Dein Konto in DAVx⁵ und mach gleich bei Schritt 4 weiter.
+
+=== Schritt 1: DAVx⁵ installieren ===
+* Im [https://play.google.com/store/apps/details?id=at.bitfire.davdroid Google Play Store] kostet DAVx⁵ einmalig ein paar Euro.
+* Über [https://f-droid.org/packages/at.bitfire.davdroid/ F-Droid] ist sie kostenlos, dafür musst Du zuerst F-Droid selbst installieren.
+
+Öffne DAVx⁵ und erlaube den Zugriff auf Kontakte und Kalender.
+
+=== Schritt 2: Konto hinzufügen ===
+[[Datei:hilfe-davx5-anmelden.png]]
+# Tippe unten rechts auf das runde '''+'''.
+# Wähle '''Mit URL und Benutzername anmelden'''.
+# '''Basis-URL:''' {CARDDAV_URL}
+# '''Benutzername:''' {BENUTZERNAME}
+# '''Passwort:''' Dein Portal-Passwort
+# Tippe auf '''Anmelden'''.
+
+=== Schritt 3: Konto anlegen ===
+[[Datei:hilfe-davx5-konto.png]]
+Bei '''Kontaktgruppen-Methode''' wählst Du '''Gruppen sind Kategorien der Kontakte'''. Dann ordnet Dein Telefon die Mitglieder nach Stimmen. Tippe auf '''Konto erstellen'''.
+
+=== Schritt 4: Adressbuch einschalten ===
+[[Datei:hilfe-davx5-adressbuch.png]]
+# Tippe auf das Konto und wechsle oben zum Reiter '''CardDAV'''.
+# Schalte '''{ADRESSBUCH_NAME}''' ein.
+# Tippe auf das Symbol mit den '''zwei Pfeilen im Kreis''' (Jetzt synchronisieren).
+
+Öffne die Kontakte-App. Nach einer Minute sollten die Mitglieder dort stehen. Fehlen sie, prüfe in den Einstellungen der Kontakte-App, welche Konten angezeigt werden, und wähle '''Alle Kontakte'''.
+
+== iPhone und iPad ==
+=== Schritt 1: Account hinzufügen ===
+[[Datei:hilfe-ios-andere.png]]
+# Öffne die '''Einstellungen'''.
+# Wische ganz nach unten und tippe auf '''Apps''', dann auf '''Kontakte'''.
+# Tippe auf '''Kontakte-Accounts''' und dann auf '''Account hinzufügen'''.
+# Tippe auf '''Andere''' und dann auf '''CardDAV-Account hinzufügen'''.
+
+% Bei älteren iPhones (vor iOS 18): '''Einstellungen → Kontakte → Accounts → Account hinzufügen → Andere'''.
+
+=== Schritt 2: Angaben eintragen ===
+[[Datei:hilfe-ios-carddav.png]]
+# '''Server:''' {SERVER}
+# '''Benutzername:''' {BENUTZERNAME}
+# '''Passwort:''' Dein Portal-Passwort
+# '''Beschreibung:''' z. B. „{VEREINSNAME_KURZ}“
+# Tippe oben rechts auf '''Weiter''' und danach auf '''Sichern'''.
+
+Öffne die Kontakte-App und tippe oben links auf '''Listen''' — dort findest Du die Mitglieder unter dem neuen Account.
+
+% Meldet das iPhone „Account kann nicht überprüft werden“? Trage bei '''Server''' die ganze Adresse ein: {CARDDAV_URL}
+
+== Wenn etwas nicht klappt ==
+* '''Anmeldung schlägt fehl:''' Prüfe Benutzername und Passwort, indem Du Dich damit im Portal anmeldest.
+* '''Passwort geändert?''' Trage das neue Passwort auch in DAVx⁵ bzw. in den iPhone-Einstellungen ein.
+* '''Du willst es wieder loswerden:''' Lösche das Konto in DAVx⁵ bzw. den Account in den iPhone-Einstellungen. Die Mitglieder verschwinden dann aus Deinem Adressbuch; Deine eigenen Kontakte bleiben unberührt.
+
+Zurück zur [[Hilfe|Übersicht]].

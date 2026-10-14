@@ -1766,10 +1766,10 @@ class KonfigurierteHelperTest(SimpleTestCase):
             self.assertEqual(_bestaetigung_max_age(), 60 * 24 * 3600)
 
     def test_map_center_fallback_default(self):
-        # Ohne DB und ohne env bleibt es beim Frankfurt-Fallback.
+        # Ohne DB und ohne env bleibt es beim neutralen Fallback (Mitte Deutschlands).
         from intern.app_settings import get_map_center
         with mock.patch.dict("os.environ", {}, clear=False):
-            self.assertEqual(get_map_center(), (50.1109, 8.6821))
+            self.assertEqual(get_map_center(), (51.1634, 10.4477))
 
     def test_map_center_fallback_aus_konfiguration(self):
         from intern.app_settings import get_map_center
@@ -4544,6 +4544,7 @@ class DatenbankUrlTest(SimpleTestCase):
         self.assertEqual(cfg["ENGINE"], "django.db.backends.sqlite3")
         self.assertEqual(cfg["NAME"], "/data/db.sqlite3")
         self.assertEqual(cfg["OPTIONS"]["timeout"], 20)
+        self.assertEqual(cfg["OPTIONS"]["transaction_mode"], "IMMEDIATE")
 
     def test_unbekanntes_schema_bricht_ab(self):
         from config.datenbank import KonfigurationsFehler, datenbank_aus_url
@@ -7080,6 +7081,13 @@ class NeutraleDemoTest(SimpleTestCase):
 
     VERBOTEN = ("just gospel", "jg-frankfurt", "jg frankfurt", "frankfurt")
 
+    # Die einzigen Binärdateien: aus logo.svg gerendert (Mail, PDF, PWA).
+    NEUTRALE_BINAERDATEIEN = {
+        "statisch/brand/icon-192.png",
+        "statisch/brand/icon-512.png",
+        "statisch/brand/briefkopf.png",
+    }
+
     def test_keine_chornamen_in_der_mitgelieferten_seite(self):
         wurzel = Path(__file__).resolve().parent / "startseite"
         gefunden = []
@@ -7087,9 +7095,227 @@ class NeutraleDemoTest(SimpleTestCase):
             if not pfad.is_file():
                 continue
             if pfad.suffix not in (".html", ".css", ".svg", ".js", ".txt", ".md"):
-                gefunden.append(f"{pfad.relative_to(wurzel)} (Binärdatei — Foto/Logo?)")
+                if str(pfad.relative_to(wurzel)) not in self.NEUTRALE_BINAERDATEIEN:
+                    gefunden.append(f"{pfad.relative_to(wurzel)} (Binärdatei — Foto/Logo?)")
                 continue
             text = pfad.read_text(encoding="utf-8").lower()
             gefunden += [f"{pfad.relative_to(wurzel)}: {wort}"
                          for wort in self.VERBOTEN if wort in text]
         self.assertEqual(gefunden, [], "Chorspezifisches gehört in DATEN/startseite/")
+
+
+class KeineChorliteraleTest(SimpleTestCase):
+    """Kein Code nennt den Chor, für den CantorHub entstanden ist.
+
+    Name, Domain, Farbe und Logos einer Installation kommen aus ``Konfiguration``
+    und ``DATEN/startseite/`` (``docs/branding.md``); der Code liefert neutrale
+    Vorgaben. Ausgenommen sind diese Testdatei und die Migrationen.
+    """
+
+    VERBOTEN = ("just gospel", "jg-frankfurt", "jg frankfurt", "frankfurt",
+                "join us singing", "c14468", "jg aufnahme", "hetzner", "hessisch")
+    # Ein Passwort-Wörterbuch: „frankfurt“ ist dort ein Wort, kein Name.
+    AUSNAHMEN = {"intern/static/intern/js/zxcvbn.js", "intern/tests.py"}
+    ENDUNGEN = (".py", ".html", ".js", ".css", ".json", ".svg", ".txt")
+
+    def test_kein_chorname_im_code(self):
+        basis = Path(__file__).resolve().parent.parent
+        gefunden = []
+        for wurzel in ("intern", "config"):
+            for pfad in sorted((basis / wurzel).rglob("*")):
+                rel = str(pfad.relative_to(basis))
+                if (not pfad.is_file() or pfad.suffix not in self.ENDUNGEN
+                        or rel in self.AUSNAHMEN or "/migrations/" in rel
+                        or "__pycache__" in rel):
+                    continue
+                text = pfad.read_text(encoding="utf-8", errors="replace").lower()
+                gefunden += [f"{rel}: {wort}" for wort in self.VERBOTEN if wort in text]
+        self.assertEqual(gefunden, [])
+
+
+class AufnahmeBezeichnungTest(SimpleTestCase):
+    """Die eigene Aufnahme heißt nach dem Datei-Präfix (``FILE_PREFIX``)."""
+
+    def test_aus_dem_praefix(self):
+        with mock.patch.dict("os.environ", {"FILE_PREFIX": "JG"}):
+            self.assertEqual(app_settings.get_aufnahme_bezeichnung(), "JG Aufnahme")
+
+    def test_ohne_praefix(self):
+        with mock.patch.dict("os.environ", {"FILE_PREFIX": " "}):
+            self.assertEqual(app_settings.get_aufnahme_bezeichnung(), "Eigene Aufnahme")
+
+
+class WikiPlatzhalterTest(SimpleTestCase):
+    """``{NAME}`` in Artikeln — nur die bekannten Namen, Werte escapet."""
+
+    def _werte(self, **werte):
+        aufrufe = []
+
+        def liefern():
+            aufrufe.append(1)
+            return werte
+
+        return liefern, aufrufe
+
+    def test_bekannter_name_wird_ersetzt(self):
+        from intern.wiki_platzhalter import ersetzen
+        werte, _ = self._werte(BENUTZERNAME="anna")
+        self.assertEqual(ersetzen("Hallo {BENUTZERNAME}!", werte), "Hallo anna!")
+
+    def test_unbekannt_und_konfiguration_bleiben(self):
+        from intern.wiki_platzhalter import ersetzen
+        werte, _ = self._werte(EMAIL_HOST_PASSWORD="geheim")
+        text = "{EMAIL_HOST_PASSWORD} {abstimmung:x} {Klein}"
+        self.assertEqual(ersetzen(text, werte), text)
+
+    def test_ohne_platzhalter_keine_werte(self):
+        from intern.wiki_platzhalter import ersetzen
+        werte, aufrufe = self._werte()
+        ersetzen("Nur Text {und Klammern}", werte)
+        self.assertEqual(aufrufe, [])
+
+    def test_wert_wird_escapet_und_fehlender_markiert(self):
+        from intern.wiki_platzhalter import FEHLT, ersetzen
+        werte, _ = self._werte(VEREINSNAME="<b>Chor</b>")
+        self.assertEqual(ersetzen("{VEREINSNAME}", werte), "&lt;b&gt;Chor&lt;/b&gt;")
+        self.assertEqual(ersetzen("{XMPP_DOMAIN}", werte), FEHLT)
+
+    def test_werte_berechnen(self):
+        from intern.wiki_platzhalter import AUS, EIN, werte_berechnen
+        w = werte_berechnen(
+            basis="https://portal.example.org:8443", ical_pfad="/intern/calendar/abc.ics",
+            xmpp_domain="", xmpp_adresse="", benutzername="anna",
+            caldav_aktiv=True, carddav_aktiv=False, namen={"VEREINSNAME": "Chor"},
+        )
+        self.assertEqual(w["SERVER"], "portal.example.org:8443")
+        self.assertEqual(w["CALDAV_URL"], "https://portal.example.org:8443/caldav/")
+        self.assertEqual(w["CARDDAV_URL"], "https://portal.example.org:8443/carddav/")
+        self.assertEqual(w["ICAL_URL"], "https://portal.example.org:8443/intern/calendar/abc.ics")
+        self.assertEqual(w["WEBCAL_URL"], "webcal://portal.example.org:8443/intern/calendar/abc.ics")
+        self.assertEqual((w["CALDAV_STATUS"], w["CARDDAV_STATUS"], w["XMPP_STATUS"]), (EIN, AUS, AUS))
+        self.assertEqual(w["VEREINSNAME"], "Chor")
+
+    def test_jeder_name_wird_berechnet(self):
+        from intern.wiki_platzhalter import BESCHREIBUNG, werte_berechnen
+        namen = {"KALENDER_NAME": "", "GEBURTSTAGE_NAME": "", "ADRESSBUCH_NAME": "",
+                 "VEREINSNAME": "", "VEREINSNAME_LANG": "", "VEREINSNAME_KURZ": ""}
+        w = werte_berechnen(basis="", ical_pfad="", xmpp_domain="", xmpp_adresse="",
+                            benutzername="", caldav_aktiv=False, carddav_aktiv=False,
+                            namen=namen)
+        self.assertEqual(set(w), set(BESCHREIBUNG))
+
+
+class WikiMarkupTest(SimpleTestCase):
+    """``apply_replacements``: Hervorhebung, Blöcke und Platzhalter."""
+
+    def _rendern(self, text, werte=None, request=True):
+        from intern import replacements, wiki_platzhalter
+        req = SimpleNamespace(user=None) if request else None
+        with mock.patch.object(replacements, "get_vereinsname_kurz", return_value="Chor"), \
+                mock.patch.object(wiki_platzhalter, "werte_fuer",
+                                  return_value=lambda: werte or {}):
+            return replacements.apply_replacements(text, req)
+
+    def test_zwei_hervorhebungen_in_einer_zeile(self):
+        out = self._rendern("Ein '''fettes''' und ein '''zweites''' und ''schräg''")
+        self.assertIn("<strong>fettes</strong> und ein <strong>zweites</strong>", out)
+        self.assertIn("<em>schräg</em>", out)
+
+    def test_hervorhebung_im_kasten(self):
+        out = self._rendern("@ '''Wichtig:''' Text")
+        self.assertIn('<div class="boxed"><strong>Wichtig:</strong> Text</div>', out)
+
+    def test_bloecke_in_ihrer_reihenfolge(self):
+        out = self._rendern("@ Kasten\n% Hinweis\n Code")
+        self.assertLess(out.index('class="boxed"'), out.index('class="citation"'))
+        self.assertLess(out.index('class="citation"'), out.index("<pre><code>"))
+
+    def test_platzhalter_nur_ausserhalb_von_code(self):
+        out = self._rendern("Adresse: {VEREINS_URL}\n {VEREINS_URL}",
+                            {"VEREINS_URL": "https://portal.example.org"})
+        self.assertIn('<a href="https://portal.example.org">', out)
+        self.assertIn("<pre><code> {VEREINS_URL}", out)
+
+    def test_im_forum_keine_platzhalter(self):
+        out = self._rendern("{BENUTZERNAME}", {"BENUTZERNAME": "anna"}, request=False)
+        self.assertIn("{BENUTZERNAME}", out)
+
+    def test_webcal_link(self):
+        out = self._rendern("[webcal://portal.example.org/k.ics Abonnieren]")
+        self.assertIn('<a href="webcal://portal.example.org/k.ics">Abonnieren</a>', out)
+
+
+class HilfeArtikelTest(SimpleTestCase):
+    """Die mitgelieferten Hilfe-Artikel sind in sich stimmig."""
+
+    def _texte(self):
+        from intern import hilfe
+        return {name: hilfe.text(name) for name in hilfe.ARTIKEL}
+
+    def test_bilder_vorhanden_und_genutzt(self):
+        from intern import hilfe
+        vorhanden = {p.name for p in hilfe.bilder()}
+        genutzt = set()
+        for text in self._texte().values():
+            for zeile in text.splitlines():
+                if not zeile.startswith(" "):  # Codezeilen sind nur Beispiele
+                    genutzt |= set(re.findall(r"\[\[Datei:([^\]|]+)", zeile))
+        self.assertEqual(genutzt - vorhanden, set(), "Bild fehlt unter intern/hilfe/bilder/")
+        self.assertEqual(vorhanden - genutzt, set(), "Bild wird von keinem Artikel genutzt")
+
+    def test_platzhalter_bekannt(self):
+        from intern.wiki_platzhalter import BESCHREIBUNG, MUSTER
+        for name, text in self._texte().items():
+            for zeile in text.splitlines():
+                if zeile.startswith(" "):
+                    continue  # Codezeile: zeigt den Platzhalter absichtlich roh
+                unbekannt = set(MUSTER.findall(zeile)) - set(BESCHREIBUNG)
+                self.assertEqual(unbekannt, set(), name)
+
+    def test_hilfe_links_fuehren_zu_hilfe_artikeln(self):
+        from intern import hilfe
+        for name, text in self._texte().items():
+            for ziel in re.findall(r"\[\[(Hilfe[^\]|]*)", text):
+                self.assertIn(ziel, hilfe.ARTIKEL, f"{name} → {ziel}")
+
+    def test_platzhalterliste_eingesetzt(self):
+        from intern import hilfe
+        text = hilfe.text("Hilfe:Wiki")
+        self.assertNotIn(hilfe.PLATZHALTER_MARKE, text)
+        self.assertIn(" {XMPP_ADRESSE} — ", text)
+
+    def test_uebersicht_nennt_jeden_artikel(self):
+        from intern import hilfe
+        uebersicht = hilfe.text("Hilfe")
+        for name in hilfe.ARTIKEL:
+            if name != "Hilfe":
+                self.assertIn(f"[[{name}", uebersicht)
+
+
+class ManifestTest(SimpleTestCase):
+    """Das Web-App-Manifest folgt der Konfiguration."""
+
+    def test_daten(self):
+        from intern.views.auth import manifest_daten
+        m = manifest_daten("Unser Chor", "#123456", "/startseite/a.png", "/startseite/b.png")
+        self.assertEqual(m["name"], "Unser Chor")
+        self.assertEqual(m["theme_color"], "#123456")
+        self.assertEqual([i["src"] for i in m["icons"]], ["/startseite/a.png", "/startseite/b.png"])
+
+
+class WikiListenTest(SimpleTestCase):
+    """Die Ebene einer Liste zählt nur die führenden * bzw. #."""
+
+    def _rendern(self, text):
+        from intern import replacements
+        with mock.patch.object(replacements, "get_vereinsname_kurz", return_value="Chor"):
+            return replacements.apply_replacements(text)
+
+    def test_hervorhebung_in_nummerierter_liste(self):
+        out = self._rendern("# Bei '''XMPP-Adresse''' eintragen\n# zweiter Schritt")
+        self.assertIn("<ol><li>Bei <strong>XMPP-Adresse</strong> eintragen</li>", out)
+        self.assertEqual(out.count("<ol>"), 1)
+
+    def test_stern_im_text_aendert_die_ebene_nicht(self):
+        out = self._rendern("* Note 5* gibt es nicht\n* zweiter")
+        self.assertEqual(out.count("<ul>"), 1)

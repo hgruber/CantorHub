@@ -564,7 +564,7 @@ class RepertoireTabelle(tables.Table):
         orderable=False,
         attrs={
             "td": {"class": "audio-cell"},
-            "th": {"class": "audio-cell-head", "title": "Original / JG Aufnahme"},
+            "th": {"class": "audio-cell-head", "title": "Original / eigene Aufnahme"},
         },
     )
     titel = tables.Column(

@@ -131,7 +131,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const FRANKFURT = [{{ map_center_lat }}, {{ map_center_lng }}];
+  const ZENTRUM = [{{ map_center_lat }}, {{ map_center_lng }}];
   const orte      = JSON.parse(document.getElementById('orte-data').textContent);
   const members   = JSON.parse(document.getElementById('members-data').textContent);
   const standorte = JSON.parse(document.getElementById('standorte-data').textContent);
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const escHtml = CantorMap.esc;
 
   // ── Map init ─────────────────────────────────────────
-  const map = L.map('map', { zoomControl: false }).setView(FRANKFURT, {{ map_default_zoom }});
+  const map = L.map('map', { zoomControl: false }).setView(ZENTRUM, {{ map_default_zoom }});
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   CantorMap.tiles(map, { maxZoom: 19 });
 

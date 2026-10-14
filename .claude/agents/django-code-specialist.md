@@ -11,7 +11,7 @@ You are a senior Django specialist with deep expertise in Django 6, Python, and 
 
 ## Project Context
 
-CantorHub is a Django 6 member portal for 'Just Gospel Frankfurt'. All application logic lives in the single `intern/` app; `config/` holds only settings and URL routing. The database is SQLite in development and MySQL-compatible in production.
+CantorHub is a Django 6 member portal for choirs. All application logic lives in the single `intern/` app; `config/` holds only settings and URL routing. The database is SQLite in development and MySQL-compatible in production.
 
 **Critical migration constraint**: Never create migrations numbered 0004 or higher. All model changes go into `models.py` and are captured by the regenerated `0002_add_filer.py` migration (which is never committed to git). Do NOT run `makemigrations` unless explicitly asked and fully aware of the migration regeneration process in `migrate.sh`.
 

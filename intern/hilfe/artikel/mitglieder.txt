@@ -1,0 +1,18 @@
+== Mitglieder ==
+Unter '''Mitglieder''' in der Seitenleiste stehen alle, die mitsingen. Tippe auf einen Namen, um das Profil zu sehen: Telefonnummer, E-Mail, Adresse — so weit die Person sie nicht verborgen hat.
+
+=== Jemanden finden ===
+* Tippe oben rechts auf das '''Trichter-Symbol''' (Filtern). Dort kannst Du zum Beispiel nur den Sopran oder nur eine Gruppe anzeigen lassen. Ein Filter erscheint oben als kleines Kästchen; mit dem × daneben nimmst Du ihn wieder weg.
+* Tippe auf eine Spaltenüberschrift, um nach dieser Spalte zu sortieren. Ein zweiter Tipp dreht die Reihenfolge um.
+* Mit dem '''Spalten-Symbol''' (drei senkrechte Streifen) wählst Du, welche Angaben die Liste zeigt, zum Beispiel Telefon oder Geburtstag. Das merkt sich das Portal nur für Dich.
+
+=== Allen oder einer Stimme schreiben ===
+Mit dem '''Papierflieger''' oben rechts schreibst Du eine E-Mail an alle Mitglieder, die gerade in der Liste stehen. Setze vorher einen Filter, wenn nur der Alt die Nachricht bekommen soll.
+
+=== Wo wohnen die anderen? ===
+Unter '''Karte''' siehst Du, wo die Mitglieder ungefähr wohnen — praktisch für Fahrgemeinschaften. Wer seine Adresse verborgen hat, erscheint dort nicht.
+
+=== Alle Mitglieder im Telefon ===
+Du kannst alle Mitglieder in das Adressbuch Deines Smartphones holen. Wie das geht, steht unter [[Hilfe:Kontakte aufs Telefon|Kontakte aufs Telefon]].
+
+Zurück zur [[Hilfe|Übersicht]].

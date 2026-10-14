@@ -1,0 +1,96 @@
+== Artikel schreiben ==
+Seiten wie diese heißen '''Artikel'''. Jedes Mitglied kann Artikel lesen, und die meisten Artikel darf auch jedes Mitglied verbessern. Keine Sorge: Jede Fassung wird aufbewahrt. Geht etwas schief, lässt sich die vorige Fassung jederzeit zurückholen.
+
+=== Einen Artikel bearbeiten ===
+# Öffne den Artikel.
+# Tippe oben rechts auf den '''Stift''' (Bearbeiten).
+# Ändere den Text. Wie Du Überschriften, Listen und Fettschrift schreibst, steht weiter unten.
+# Tippe auf '''Speichern'''.
+
+Fehlt der Stift, darf diesen Artikel nur eine bestimmte Gruppe bearbeiten — zum Beispiel diese Hilfe nur Webmaster und Vorstand.
+
+=== Einen neuen Artikel anlegen ===
+* Tippe oben rechts auf den '''Pfeil''' (Zurück zur Übersicht). Du siehst die Liste aller Artikel. Dort legst Du mit ⊕ einen neuen an.
+* Oder schreibe in einen Artikel einen Link auf eine Seite, die es noch nicht gibt (wie Links gehen, steht unten). Wer auf den Link tippt, kann den neuen Artikel gleich schreiben.
+
+=== Frühere Fassungen ===
+Das '''Uhr-Symbol''' oben rechts zeigt alle Fassungen eines Artikels: wer wann was geändert hat. Dort kannst Du zwei Fassungen vergleichen und eine alte wiederherstellen.
+
+=== Bilder und Dateien einfügen ===
+Ziehe beim Bearbeiten eine Datei auf die Seite oder tippe auf das Symbol '''Hochladen'''. Das Portal fügt dann eine Zeile wie diese ein:
+ [[Datei:Probenplan.pdf]]
+Bilder erscheinen als kleines Vorschaubild am rechten Rand, Musik und Videos mit einem Abspiel-Knopf.
+
+== Die Schreibweisen ==
+Jede Anweisung gilt für eine ganze Zeile oder steht innerhalb einer Zeile. Links steht jeweils, was Du schreibst, darunter, wie es aussieht.
+
+=== Überschriften ===
+ == Große Überschrift ==
+ === Mittlere Überschrift ===
+ ==== Kleine Überschrift ====
+
+=== Hervorheben ===
+ ''kursiv'' und '''fett''' und ''''beides''''
+''kursiv'' und '''fett''' und ''''beides''''
+
+=== Listen ===
+ * Milch
+ ** H-Milch
+ * Eier
+ # Begrüßung
+ # Rückblick
+* Milch
+** H-Milch
+* Eier
+# Begrüßung
+# Rückblick
+
+=== Links ===
+ [[Hilfe:Termine]]
+ [[Hilfe:Termine|Hilfe zu den Terminen]]
+ [https://www.example.org Eine andere Internetseite]
+[[Hilfe:Termine]], [[Hilfe:Termine|Hilfe zu den Terminen]] und [https://www.example.org Eine andere Internetseite]
+
+=== Tabellen ===
+ ! Stimme ! Probe
+ | Sopran | Raum 1
+ | Alt | Raum 2
+! Stimme ! Probe
+| Sopran | Raum 1
+| Alt | Raum 2
+
+Eine Zeile mit _ am Anfang macht die erste Spalte zur Überschrift:
+ _ Sopran | Raum 1
+
+=== Kästen und Hinweise ===
+ @ Ein Kasten für Wichtiges
+ % Ein grauer Hinweis
+ : Ein eingerückter Absatz
+@ Ein Kasten für '''Wichtiges'''
+
+% Ein grauer Hinweis
+
+: Ein eingerückter Absatz
+
+=== Schreibweisen zeigen, ohne dass sie wirken ===
+Beginnt eine Zeile mit einem '''Leerzeichen''', erscheint sie genau so, wie sie geschrieben ist — so sind die Beispiele auf dieser Seite gemacht.
+
+=== Abstimmungen ===
+Mit einer Abstimmung findet Ihr einen Termin oder sammelt Meinungen. Jedes Mitglied setzt seine Häkchen direkt im Artikel.
+ {abstimmung:Name:Anzahl:Ende:Vorschlag 1;Vorschlag 2;Vorschlag 3}
+* '''Name''' — der Name der Abstimmung, eindeutig in diesem Artikel.
+* '''Anzahl''' — wie viele Häkchen jeder setzen darf; 0 heißt beliebig viele.
+* '''Ende''' — das Datum, bis zu dem abgestimmt wird, als TT.MM.JJJJ.
+* Die '''Vorschläge''' werden durch Semikolons getrennt.
+
+Beispiel für eine Terminsuche:
+ {abstimmung:Probenwochenende:0:31.12.2039:Sa 14.03.;Sa 21.03.;Sa 28.03.}
+
+Bei sehr vielen Vorschlägen sortiert eine Auswertung sie nach Stimmen. Anzugeben sind der Artikel, der Name der Abstimmung und die Mindestzahl an Stimmen:
+ {auswertung:Name des Artikels:Name der Abstimmung:1}
+
+=== Platzhalter ===
+Diese Wörter in geschweiften Klammern ersetzt das Portal beim Anzeigen durch den passenden Wert — für jeden Leser seinen eigenen. Die Hilfe-Artikel nutzen sie, damit dort immer die richtige Adresse steht.
+<<PLATZHALTER>>
+
+Zurück zur [[Hilfe|Übersicht]].

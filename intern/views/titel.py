@@ -15,6 +15,7 @@ from filer.models import File
 
 from intern import dateiablage, folders
 
+from ..app_settings import get_aufnahme_bezeichnung
 from ..filterbau_titel import TITEL
 from ..forms import LiedEditForm
 from ..models import Konzert, Lied, Termin, User
@@ -121,7 +122,7 @@ def _warteschlangen_zaehlen(qs):
 
 
 def _warteschlangen(qs):
-    """Die drei Wiedergabelisten des Repertoires: Originale, JG-Aufnahmen, beides.
+    """Die drei Wiedergabelisten des Repertoires: Originale, eigene Aufnahmen, beides.
 
     Nur die Speicherpfade, nicht die ``File``-Zeilen: fuer die URL braucht es die
     Objekte nicht, und filer legt pro Zeile ein MultiStorageFieldFile samt
@@ -129,6 +130,7 @@ def _warteschlangen(qs):
     2,9 ms so — bei gleichen URLs.
     """
     originals, aufnahmen, alle = [], [], []
+    aufnahme_typ = get_aufnahme_bezeichnung()
     for titel, komponist, original, aufnahme in qs.values_list(
         "titel", "komponist", "original__file", "aufnahme__file"
     ):
@@ -136,10 +138,10 @@ def _warteschlangen(qs):
         if original:
             originals.append({"url": datei_url(original), "title": titel, "type": "Original", "composer": composer})
         if aufnahme:
-            aufnahmen.append({"url": datei_url(aufnahme), "title": titel, "type": "JG Aufnahme", "composer": composer})
+            aufnahmen.append({"url": datei_url(aufnahme), "title": titel, "type": aufnahme_typ, "composer": composer})
         audio = original or aufnahme
         if audio:
-            alle.append({"url": datei_url(audio), "title": titel, "type": "Original" if original else "JG Aufnahme", "composer": composer})
+            alle.append({"url": datei_url(audio), "title": titel, "type": "Original" if original else aufnahme_typ, "composer": composer})
     return {"originals": originals, "aufnahmen": aufnahmen, "all": alle}
 
 

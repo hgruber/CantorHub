@@ -1,0 +1,22 @@
+== Hilfe ==
+Hier findest Du Anleitungen zu allem, was das Mitgliederportal kann. Sie sind für Menschen geschrieben, die mit Computer und Smartphone nicht viel Erfahrung haben. Lies in Ruhe und probiere einfach aus — kaputt machen kannst Du nichts.
+
+=== Die ersten Schritte ===
+* [[Hilfe:Erste Schritte|Erste Schritte]] — anmelden, sich zurechtfinden, abmelden
+* [[Hilfe:Mein Profil|Mein Profil]] — Foto, Telefonnummer, Adresse und wer was sehen darf
+
+=== Im Portal ===
+* [[Hilfe:Termine|Termine]] — Proben und Konzerte, zusagen und absagen
+* [[Hilfe:Forum|Forum]] — Nachrichten an alle lesen und schreiben
+* [[Hilfe:Repertoire|Repertoire]] — unsere Lieder, Noten und Aufnahmen zum Üben
+* [[Hilfe:Mitglieder|Mitglieder]] — wer singt mit, und wie erreiche ich jemanden?
+* [[Hilfe:Dateien|Dateien]] — Noten, Fotos und Dokumente
+* [[Hilfe:Wiki|Artikel schreiben]] — Seiten wie diese selbst gestalten
+
+=== Das Portal auf dem Smartphone ===
+* [[Hilfe:Termine aufs Telefon|Termine aufs Telefon]] — alle Termine im Kalender Deines Telefons
+* [[Hilfe:Kalender abonnieren|Kalender abonnieren]] — dasselbe ohne Passwort, z. B. für Google Kalender
+* [[Hilfe:Kontakte aufs Telefon|Kontakte aufs Telefon]] — alle Mitglieder im Adressbuch Deines Telefons
+* [[Hilfe:Chat auf dem Telefon|Chat auf dem Telefon]] — das Forum als Chat mit Conversations (Android) oder Monal (iPhone)
+
+@ '''Du kommst nicht weiter?''' Frag jemanden aus dem Vorstand oder schreib im Forum — dort hilft Dir bestimmt jemand.

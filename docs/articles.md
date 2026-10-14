@@ -82,6 +82,52 @@ code blocks, indentation, notes, external links, and `[[Datei:name.pdf]]` file l
 against filer by **name**. `internal_links` must use `filter().first()`, not `get()` — a file
 linked into several folders has several rows (see `files.md`).
 
+Every line is HTML-escaped **before** any rule runs (the XSS fix of June 2026), and three rules
+depend on that:
+
+- **Emphasis matches the escaped quotes.** `'` arrives as `&#x27;` and `"` as `&quot;`, so the
+  bold/italic patterns look for `(?:&#x27;){3}` and so on, non-greedy — until October 2026 they
+  looked for the raw `'''` and no article showed bold or italic at all, and a greedy pattern
+  would merge two emphases of one line into one.
+- **List depth counts only the leading `*`/`#`.** `line.count("#")` used to count the `#` of
+  every escaped `'` as well, which turned `# Bei '''X'''` into a fourth-level list.
+- **Blocks (`%` note, `:` indent, `@` box) format their text inline** (links, emphasis) and
+  close before any line that does not belong to them. They used to be emitted only when the next
+  line of their own processor arrived, which put a box behind the following note or code block.
+
+`WikiMarkupTest` and `WikiListenTest` pin all three.
+
+### Placeholders
+
+`{NAME}` in an article is replaced when the article is shown (`intern/wiki_platzhalter.py`) —
+the address of the portal, the CalDAV/CardDAV/iCal URLs, the reader's username and XMPP
+address, whether a service is switched on. Only the names in `BESCHREIBUNG` are replaced; any
+other `Konfiguration` key would leak secrets such as `EMAIL_HOST_PASSWORD`, so everything else in
+braces — `{abstimmung:…}`, unknown names — stays as written. Details:
+
+- Only in the article view (`request` given); a forum message keeps the braces.
+- Not on a line that starts with a space: that line is code and shows the placeholder raw, which
+  is how „Hilfe:Wiki" documents them.
+- The values are escaped and computed at most once per page, and only if a line contains a
+  known name; a blank value renders as `(noch nicht eingerichtet)`.
+- External links also accept `webcal://` (`[{WEBCAL_URL} Abonnieren]`).
+
+### Help articles
+
+`intern/hilfe/` ships the help pages every installation starts with: the overview `Hilfe` and
+`Hilfe:…` pages for first steps, profile, events, forum, repertoire, members, files, the wiki
+markup, and the four phone set-ups (CalDAV, iCal subscription, CardDAV, XMPP with Conversations
+and Monal) that replaced the info boxes on the event and member lists. The texts are wiki markup
+in `intern/hilfe/artikel/`, their images in `intern/hilfe/bilder/` — schematic drawings of the
+phone screens (no freely licensed screenshots of the set-up steps exist) and cut-outs of the
+portal itself.
+
+The first-run setup creates them (`hilfe.anlegen()`), `manage.py hilfe_anlegen` adds them to an
+existing installation. Neither overwrites: an existing article name and an existing image name
+are skipped. The images land in Backstage/Wiki-Anhänge; edit rights go to Webmaster and Vorstand
+only, reading stays open. `HilfeArtikelTest` checks that every image is used and present, every
+placeholder known and every `[[Hilfe…]]` link resolvable.
+
 ### Embedded media
 
 A `[[Datei:…]]` whose target `intern/medientypen.py` calls playable is rendered so that there is
@@ -104,7 +150,7 @@ Two constraints on `_medienleiste()` come from `apply_replacements()` and are ea
 - The bar must be **phrasing content on a single line**. The `<p>` rule runs over the same line
   *after* this substitution, so a `<div>` would tear the paragraph open. It costs nothing
   visually, because every `.mp-*` rule sets its own `display`.
-- The `''italic''`, `""quote""` and `$raw$` rules run afterwards too. So: no single quotes, no
+- The emphasis, quote and `$raw$` rules run afterwards too. So: no single quotes, no
   empty attribute values (two of them would read as `""…""`), no `$`. `MedienleisteMarkupTest`
   guards all of this.
 
@@ -121,8 +167,8 @@ without one a poll would never lock, so `ABSTIMMUNG_DIRECTIVE` does not match, `
 refuses to write the version and names the offending lines (`replacements.abstimmungen_ohne_ende`),
 and a date that matches the pattern but is no calendar day (`31.02.2026`) leaves the line as
 written. The editor snippet (two weeks out), its field hints and the cheat sheet in `artikel.html`
-all show that form; the legacy import fills the date in for the old articles — `30.06.2026` for the
-bulk, `31.12.2039` for the examples in „Hilfe:Wiki", both in `0003_import.py`.
+all show that form; the legacy import filled the date in for the old articles — `30.06.2026` for
+the bulk, `31.12.2039` for the examples in „Hilfe:Wiki".
 
 The same markup vocabulary — plus the mail-only `{button:…}` directive — is re-implemented for
 mail bodies in `mail_markup.py`; see `mail.md`.

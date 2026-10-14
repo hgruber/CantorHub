@@ -1,0 +1,35 @@
+== Mein Profil ==
+In Deinem Profil steht, wie die anderen Dich erreichen: Telefonnummer, E-Mail, Adresse, dazu Dein Foto und Deine Stimme. Du entscheidest selbst, was die anderen davon sehen.
+
+=== Profil öffnen ===
+# Tippe in der Seitenleiste auf '''Einstellungen'''. Darunter klappen drei Zeilen auf.
+# Tippe neben '''Mein Profil''' auf den kleinen '''Stift'''. Jetzt kannst Du alles ändern.
+# Wenn Du fertig bist, tippe ganz unten auf '''Speichern'''.
+
+Tippst Du auf '''Mein Profil''' selbst (nicht auf den Stift), siehst Du Dein Profil so, wie die anderen es sehen.
+
+=== Ein Foto hochladen ===
+[[Datei:hilfe-profilbild.png]]
+Ein Foto hilft allen, sich Namen zu merken — besonders den Neuen.
+* '''Smartphone:''' Tippe im Feld '''Avatar''' auf die gestrichelte Fläche. Wähle ein Bild aus Deiner Galerie oder mach direkt ein Foto.
+* '''Computer:''' Ziehe ein Bild mit der Maus auf die gestrichelte Fläche, oder klicke darauf und wähle eine Datei aus.
+
+Das Foto wird sofort übernommen. Nimm am besten ein Bild, auf dem man Dein Gesicht gut erkennt.
+
+=== Was die anderen sehen dürfen ===
+Unter fast jedem Feld steht ein Kästchen '''verbergen'''.
+* Ohne Häkchen sehen alle Mitglieder diese Angabe.
+* Mit Häkchen ist sie für die anderen Mitglieder unsichtbar. Nur wer im Portal Mitglieder verwalten darf (meist der Vorstand), sieht sie noch — zum Beispiel, um Dich vor einem Auftritt anzurufen.
+
+Verborgene Angaben kommen auch nicht in die Adressbücher der anderen, wenn diese die [[Hilfe:Kontakte aufs Telefon|Kontakte aufs Telefon]] holen.
+
+=== Adressbuch auf dem Telefon ===
+Wenn Du gar nicht im Telefon-Adressbuch der anderen auftauchen möchtest, setze das Häkchen bei '''Meinen Eintrag gar nicht übertragen'''. Im Portal bleibst Du trotzdem sichtbar. Diesen Abschnitt gibt es nur, wenn der Dienst eingeschaltet ist.
+
+=== Deine Stimme ===
+Bei '''Stimme''' wählst Du, wo Du singst: Sopran, Alt, Tenor oder Bass — oder Chorleiter und Musiker. Danach richten sich die Aufstellung bei den Terminen und die Farben in der Mitgliederliste.
+
+=== Passwort ändern ===
+Ein neues Passwort bekommst Du über die Anmeldeseite: melde Dich ab und tippe unten auf '''Hier anfordern'''. Wie das geht, steht unter [[Hilfe:Erste Schritte|Erste Schritte]].
+
+Zurück zur [[Hilfe|Übersicht]].

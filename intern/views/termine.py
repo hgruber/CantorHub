@@ -23,7 +23,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from icalendar import Calendar, Event
 
 from intern import folders
-from intern.app_settings import get_config, get_config_bool, get_config_int
+from intern.app_settings import get_config, get_config_int
 from intern.folder_access import visible_folder_ids
 
 from ..aufstellung import aufstellung
@@ -163,15 +163,6 @@ def termin_list(request):
         return nachlade_antwort("table_rows.html", {"table": table},
                                 has_more, offset + _PAGE_SIZE)
 
-    from django.urls import reverse
-
-    ical_secret = get_config("ICAL_SECRET")
-    if ical_secret:
-        ical_path = reverse("calendar_ics", args=[ical_secret])
-        ical_url = request.build_absolute_uri(ical_path)
-        webcal_url = "webcal://" + request.get_host() + ical_path
-    else:
-        ical_url = webcal_url = None
     add = "termin_add" if request.user.has_perm("intern.add_termin") else None
     return render(
         request,
@@ -180,14 +171,6 @@ def termin_list(request):
             "table": table,
             "seitentitel": "Vergangene Termine" if past else "Termine",
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-            "ical_url": ical_url,
-            "webcal_url": webcal_url,
-            # Nur wenn der Dienst freigeschaltet ist — sonst führte der Hinweis
-            # ins Leere (jede CalDAV-URL antwortet dann 404).
-            "caldav_url": (
-                request.build_absolute_uri("/caldav/")
-                if get_config_bool("CALDAV_AKTIV", False) else None
-            ),
             "upload_folder_id": folders.termine(),
             "upload_folder_name": folders.TERMIN_ANHAENGE,
             "add": add,

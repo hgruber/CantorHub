@@ -184,6 +184,12 @@ overrides the `--aufst-*` size variables). The card has to follow every change o
 drag-and-drop editor does not go through htmx, so `anwesenheit.js` swaps `#aufstellung-section`
 from the same response by hand.
 
+That editor offers both gestures in both layouts — the wide table and the split tables below
+768 px: drag (SortableJS; on touch only after a 200 ms hold, `delayOnTouchOnly`, so a swipe still
+scrolls the page) and tap → target popover (`.att-move-picker`). Each layout used to have only
+one of them, which left a tablet in the wide layout with drag alone and a phone with the popover
+alone. The click a browser may fire after a drop is swallowed (`gezogenBis`).
+
 A slim banner is shown site-wide in `base.html` (`_termin_banner.html`), directly below the
 top bar and — deliberately — *next to* `<main class="content">`, not inside it: `.content` is the
 scroll container, and a page that fills it (`.table-view`, `.forum-layout`, `.article-editor`,
@@ -817,4 +823,5 @@ A superuser sees a hint strip under the hero explaining where the texts are set 
 the page; visitors never see it.
 
 `NeutraleDemoTest` keeps the demo neutral: no file under `intern/startseite/` may name a choir
-(„Just Gospel", „Frankfurt") or be a binary such as a photo or logo.
+or be a binary other than the three PNGs rendered from the seal (`statisch/brand/`, see
+`docs/startseite.md`).

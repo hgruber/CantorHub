@@ -1,0 +1,48 @@
+== Kalender abonnieren ==
+Ein '''Kalender-Abo''' ist der einfachste Weg, unsere Termine in einen anderen Kalender zu holen: Du brauchst weder Passwort noch zusätzliche App. Das ist das Richtige für '''Google Kalender''', '''Outlook''' oder '''Thunderbird''' — und für jeden, dem die Einrichtung unter [[Hilfe:Termine aufs Telefon|Termine aufs Telefon]] zu aufwendig ist.
+
+Der Nachteil: Ein Abo wird seltener aktualisiert, bei Google manchmal nur einmal am Tag. Eine kurzfristige Änderung siehst Du dann erst später. Geburtstage sind nicht dabei.
+
+=== Die Abo-Adresse ===
+{ICAL_URL}
+
+@ Diese Adresse ist wie ein Schlüssel: Wer sie kennt, sieht unsere Termine, auch ohne Mitglied zu sein. Gib sie deshalb '''nicht''' an Fremde weiter und poste sie nirgends öffentlich.
+
+== iPhone und iPad ==
+Am einfachsten: Öffne diese Seite auf dem iPhone und tippe hier:
+
+[{WEBCAL_URL} → Kalender abonnieren]
+
+Das iPhone fragt, ob Du den Kalender abonnieren möchtest. Tippe auf '''Abonnieren''' und danach auf '''Hinzufügen'''.
+
+Klappt das nicht, geht es auch von Hand:
+[[Datei:hilfe-ios-andere.png]]
+# Öffne '''Einstellungen → Apps → Kalender → Kalender-Accounts → Account hinzufügen → Andere'''.
+# Tippe auf '''Kalenderabo hinzufügen'''.
+# Bei '''Server''' trägst Du die Abo-Adresse von oben ein.
+# Tippe auf '''Weiter''' und dann auf '''Sichern'''.
+
+% Wichtig: Stelle danach unter '''Einstellungen → Apps → Kalender → Kalender-Accounts → Datenabgleich''' (bei älteren iPhones '''Datenabgleich''' oder '''Abrufen''') das Abrufen auf '''Alle 15 Minuten'''. Sonst holt das iPhone neue Termine nur selten ab.
+
+== Android ==
+Android kann von sich aus keine Abos. Du brauchst die kleine App '''ICSx⁵''' — aus dem [https://play.google.com/store/apps/details?id=at.bitfire.icsdroid Google Play Store] oder kostenlos über [https://f-droid.org/packages/at.bitfire.icsdroid/ F-Droid].
+# Öffne ICSx⁵ und tippe auf das runde '''+'''.
+# Füge die Abo-Adresse von oben ein. Tipp: Halte oben den Finger auf die Adresse, wähle '''Link kopieren''', und füge sie in ICSx⁵ mit langem Druck und '''Einfügen''' ein.
+# Tippe auf '''Weiter''', gib dem Kalender einen Namen und wähle eine Farbe.
+# Tippe auf '''Hinzufügen'''.
+
+Die Termine erscheinen danach in der Kalender-App Deines Telefons.
+
+== Google Kalender (am Computer) ==
+# Öffne [https://calendar.google.com Google Kalender] im Browser.
+# Klicke links neben '''Weitere Kalender''' auf das '''+'''.
+# Wähle '''Per URL'''.
+# Füge die Abo-Adresse von oben ein und klicke auf '''Kalender hinzufügen'''.
+
+Der Kalender erscheint danach auch in der Google-Kalender-App auf Deinem Telefon. Google aktualisiert Abos allerdings nur alle paar Stunden.
+
+== Thunderbird und Outlook ==
+* '''Thunderbird:''' Kalender → '''Neuer Kalender''' → '''Im Netzwerk''' → Abo-Adresse einfügen → '''Kalender suchen''' → '''Abonnieren'''.
+* '''Outlook:''' Kalender → '''Kalender hinzufügen''' → '''Aus dem Internet abonnieren''' → Abo-Adresse einfügen.
+
+Zurück zur [[Hilfe|Übersicht]].

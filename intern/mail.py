@@ -1,6 +1,6 @@
 """Branded HTML email helper.
 
-Sends a `multipart/alternative` email whose HTML part embeds the Just-Gospel
+Sends a `multipart/alternative` email whose HTML part embeds the portal's
 logo via ``cid:logo`` (referenced as ``<img src="cid:logo">`` in templates) and
 carries a plain-text fallback. The sender address is resolved at send time via
 ``get_from_email()``. Never raises — failures are logged.
@@ -14,7 +14,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 
-from django.contrib.staticfiles import finders
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
@@ -22,7 +21,8 @@ from intern.app_settings import get_brand_farbe, get_config, get_from_email, get
 
 logger = logging.getLogger(__name__)
 
-_LOGO_STATIC = "intern/brand/icon-192.png"
+# Unter DATEN/startseite/statisch/ überlagerbar wie logo.svg (docs/startseite.md).
+_LOGO = "brand/icon-192.png"
 
 # Inline-Farben fuer die HTML-Mails. E-Mail-Clients koennen var() nicht
 # verlaesslich, daher werden die Farben als String direkt ins Template
@@ -82,7 +82,9 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
 
     related = MIMEMultipart("related")
     related.attach(MIMEText(html_message, "html", "utf-8"))
-    logo_path = finders.find(_LOGO_STATIC)
+    from intern.templatetags.startseite_tags import finde_statisch
+
+    logo_path = finde_statisch(_LOGO)
     if logo_path:
         with open(logo_path, "rb") as f:
             logo_img = MIMEImage(f.read())

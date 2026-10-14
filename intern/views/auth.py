@@ -18,10 +18,12 @@ from django.utils.timezone import now as tz_now
 from django.views.static import serve
 from intern import dateiablage, ejabberd, folders
 from intern.app_settings import (
+    get_brand_farbe,
     get_config,
     get_config_int,
     get_from_email,
     get_vereinsname,
+    get_vereinsname_lang,
     is_ejabberd_configured,
     is_email_configured,
 )
@@ -68,6 +70,7 @@ __all__ = [
     "datenschutz_bestaetigen",
     "home",
     "make_invite_token",
+    "manifest",
     "mitglied_antrag_bestand",
     "mitglied_beitritt",
     "mitglied_bestaetigung",
@@ -216,6 +219,39 @@ def startseite_statisch(request, pfad):
     return serve(request, datei.name, document_root=datei.parent)
 
 
+def manifest_daten(name, farbe, symbol_192, symbol_512):
+    """Das Web-App-Manifest als Wörterbuch — ohne DB, deshalb testbar."""
+    return {
+        "name": name,
+        "short_name": "Intern",
+        "start_url": "/intern/login/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": farbe,
+        "icons": [
+            {"src": symbol_192, "sizes": "192x192", "type": "image/png"},
+            {"src": symbol_512, "sizes": "512x512", "type": "image/png"},
+        ],
+    }
+
+
+def manifest(request):
+    """``/manifest.webmanifest``: Name und Farbe aus der Konfiguration, die
+    Symbole aus ``startseite/statisch/brand/`` — überlagerbar wie das Logo."""
+    from django.http import JsonResponse
+
+    from intern.templatetags.startseite_tags import startseite_datei
+
+    return JsonResponse(
+        manifest_daten(
+            get_vereinsname_lang(), get_brand_farbe(),
+            startseite_datei("brand/icon-192.png"), startseite_datei("brand/icon-512.png"),
+        ),
+        content_type="application/manifest+json",
+        json_dumps_params={"ensure_ascii": False},
+    )
+
+
 def datenschutz(request):
     vorstand = (
         User.objects.filter(groups__name="Vorstand")
@@ -225,21 +261,13 @@ def datenschutz(request):
         "vorstand": vorstand,
         "kontakt_email": get_from_email(),
         "vereinsadresse": get_config("VEREINSADRESSE"),
-        "hosting_anbieter_name": get_config(
-            "HOSTING_ANBIETER_NAME", "Hetzner Online GmbH"
-        ),
-        "hosting_anbieter_anschrift": get_config(
-            "HOSTING_ANBIETER_ANSCHRIFT",
-            "Industriestr. 25, 91710 Gunzenhausen, Deutschland",
-        ),
-        "dsb_name": get_config(
-            "DSB_NAME",
-            "Der Hessische Beauftragte für Datenschutz und Informationsfreiheit (HBDI)",
-        ),
-        "dsb_anschrift": get_config(
-            "DSB_ANSCHRIFT", "Gustav-Stresemann-Ring 1, 65189 Wiesbaden"
-        ),
-        "dsb_url": get_config("DSB_URL", "https://www.datenschutz.hessen.de"),
+        # Leer, solange die Installation sie nicht eingetragen hat — die
+        # Vorlage zeigt dann einen sichtbaren Hinweis statt einer Lücke.
+        "hosting_anbieter_name": get_config("HOSTING_ANBIETER_NAME", ""),
+        "hosting_anbieter_anschrift": get_config("HOSTING_ANBIETER_ANSCHRIFT", ""),
+        "dsb_name": get_config("DSB_NAME", ""),
+        "dsb_anschrift": get_config("DSB_ANSCHRIFT", ""),
+        "dsb_url": get_config("DSB_URL", ""),
     })
 
 

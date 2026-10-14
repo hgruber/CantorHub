@@ -287,10 +287,10 @@
             <h2 id="ds-hosting">7. Hosting und technischer Betrieb</h2>
             <p>
                 Das Mitgliederportal wird auf einem virtuellen Server (vServer) bei
-                <strong>{{ hosting_anbieter_name }}</strong>,
-                {{ hosting_anbieter_anschrift }} betrieben. Der Serverstandort liegt in
-                Deutschland. Mit {{ hosting_anbieter_name }} besteht ein Vertrag zur
-                Auftragsverarbeitung nach Art. 28 DSGVO; {{ hosting_anbieter_name }}
+                <strong>{{ hosting_anbieter_name|default:"[Hosting-Anbieter — HOSTING_ANBIETER_NAME in der Konfiguration eintragen]" }}</strong>,
+                {{ hosting_anbieter_anschrift|default:"[Anschrift — HOSTING_ANBIETER_ANSCHRIFT]" }} betrieben. Der Serverstandort liegt in
+                Deutschland. Mit {{ hosting_anbieter_name|default:"dem Hosting-Anbieter" }} besteht ein Vertrag zur
+                Auftragsverarbeitung nach Art. 28 DSGVO; {{ hosting_anbieter_name|default:"er" }}
                 verarbeitet die Daten ausschließlich weisungsgebunden in unserem Auftrag
                 und gewährleistet geeignete technische und organisatorische
                 Schutzmaßnahmen. Zusätzlich liegen die Daten verschlüsselt auf dem Server
@@ -434,9 +434,9 @@
                 Du hast das Recht, Dich bei der zuständigen Datenschutz-Aufsichtsbehörde zu beschweren:
             </p>
             <address>
-                {{ dsb_name|linebreaksbr }}<br>
-                {{ dsb_anschrift|linebreaksbr }}<br>
-                <a href="{{ dsb_url }}" target="_blank" rel="noopener">{{ dsb_url }}</a>
+                {% if dsb_name %}{{ dsb_name|linebreaksbr }}{% else %}[Aufsichtsbehörde — DSB_NAME in der Konfiguration eintragen]{% endif %}<br>
+                {% if dsb_anschrift %}{{ dsb_anschrift|linebreaksbr }}<br>{% endif %}
+                {% if dsb_url %}<a href="{{ dsb_url }}" target="_blank" rel="noopener">{{ dsb_url }}</a>{% endif %}
             </address>
 
             <h2 id="ds-mailingliste">14. Auftritts-Mailingliste</h2>

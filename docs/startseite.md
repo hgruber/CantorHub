@@ -79,16 +79,29 @@ next to `static` and call `{% startseite_datei 'logo.svg' %}`; Python (`tables.p
 `replacements.py`) calls `startseite_datei("logo.svg")`. A test fails if any of them points at
 the old `intern/brand/logo.svg` again or at a file the shipped page does not have.
 
-Mail, PDF and the PWA icons still use PNGs from `intern/static/intern/brand/` — open in
-`docs/branding.md`.
+The raster logos follow the same overlay, under `statisch/brand/`:
+
+| File | Used by |
+|---|---|
+| `brand/icon-192.png` | inline logo of every automated mail (`mail.py`), `apple-touch-icon`, PWA icon, lock-screen artwork of the audio player (`intern.js`) |
+| `brand/icon-512.png` | PWA icon, lock-screen artwork |
+| `brand/briefkopf.png` | PDF letterhead (`pdf.py`), drawn 5.5 cm wide — keep the wide aspect (the shipped one is 1400 × 471) |
+
+Python finds them with `finde_statisch()`, templates and the manifest with `startseite_datei`.
+The shipped PNGs are rendered from `logo.svg`; an installation that replaces the SVG should
+replace these three as well. The web app manifest is no static file any more but the view
+`/manifest.webmanifest` (`views/auth.py`): name from `VEREINSNAME_LANG`, `theme_color` from
+`BRAND_FARBE`, icons from this overlay.
 
 ## The shipped page and this choir's own page
 
 `intern/startseite/` is a neutral demo (described under „Public homepage" in
 `docs/frontend.md`): no photo, the CantorHub logo, every text from `Konfiguration`. `NeutraleDemoTest`
-fails as soon as a file there names a choir or is a binary such as a photo.
+fails as soon as a file there names a choir or is a binary other than the three PNGs rendered
+from the seal; `KeineChorliteraleTest` does the same for the whole code base.
 
-This choir's page — photo, logos, `main.css` and the design notes in `GESTALTUNG.md` — lives in
+This choir's page — photo, logos (including the three PNGs above), `main.css` and the design
+notes in `GESTALTUNG.md` — lives in
 the repository `cantorhub-jg-startseite`, checked out as `/data/startseite` on the server; a push
 there is live on the next page view. Sub-pages (`seiten/<name>.html` → `/<name>/`), whitelisted
 placeholders and public wiki articles are planned on top (`docs/branding.md`).

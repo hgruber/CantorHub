@@ -1,0 +1,64 @@
+== Chat auf dem Telefon ==
+Jedes [[Hilfe:Forum|Forum]] ist auch ein '''Gruppenchat'''. Mit einer Chat-App auf Deinem Smartphone bekommst Du neue Nachrichten sofort — wie bei WhatsApp, nur auf unserem eigenen Server. Was Du in der App schreibst, steht auch im Forum, und umgekehrt. Wer keine App installiert, verpasst also nichts.
+
+Die Technik dahinter heißt '''XMPP'''. Für Android empfehlen wir die App '''Conversations''', für iPhone und iPad die App '''Monal'''.
+
+@ Der Chat ist zurzeit '''{XMPP_STATUS}'''. Steht dort „noch nicht eingeschaltet“, gibt es noch keinen Chat-Server — dann musst Du nichts einrichten.
+
+=== Das brauchst Du ===
+_ Deine Chat-Adresse | {XMPP_ADRESSE}
+_ Passwort | Dein Passwort für dieses Portal
+
+Deine Chat-Adresse sieht aus wie eine E-Mail-Adresse, ist aber keine. Du hast sie bereits — Du musst '''kein''' neues Konto anlegen.
+
+% Dein Chat-Konto entsteht, wenn Du Dich zum ersten Mal im Portal anmeldest. Hast Du Dich bisher nur auf einem anderen Gerät angemeldet, ist das kein Problem. Hast Du gerade erst Dein Passwort geändert, nimm in der App das neue.
+
+== Android: Conversations ==
+=== Schritt 1: Conversations installieren ===
+* Im [https://play.google.com/store/apps/details?id=eu.siacs.conversations Google Play Store] kostet Conversations einmalig ein paar Euro.
+* Über [https://f-droid.org/packages/eu.siacs.conversations/ F-Droid] ist sie kostenlos, dafür musst Du zuerst F-Droid selbst installieren.
+
+=== Schritt 2: „Ich habe bereits ein Konto“ ===
+[[Datei:hilfe-conversations-start.png]]
+Öffne Conversations. Du siehst die Begrüßung '''Nimm an der Unterhaltung teil''' und darunter zwei Knöpfe.
+
+@ '''Ganz wichtig:''' Tippe '''nicht''' auf den großen Knopf '''Neues Konto erstellen''', sondern auf den kleinen Text darunter: '''Ich habe bereits ein Konto'''. Dein Konto gibt es nämlich schon. Ein neues Konto würde Dich auf einen fremden Server bringen, und Du sähest unsere Foren nicht.
+
+=== Schritt 3: Anmelden ===
+[[Datei:hilfe-conversations-anmelden.png]]
+# Bei '''XMPP-Adresse''' trägst Du ein: {XMPP_ADRESSE}
+# Bei '''Passwort''': Dein Portal-Passwort.
+# Tippe auf '''Weiter'''.
+
+Fragt Conversations nach einem '''Profilbild''', kannst Du '''Überspringen''' tippen — Dein Foto aus dem Portal wird automatisch übernommen. Erlaube Benachrichtigungen, und erlaube der App, im Hintergrund zu laufen (Akku-Optimierung ausschalten). Sonst kommen Nachrichten verspätet an.
+
+=== Schritt 4: Die Gruppenchats ===
+Sobald jemand in einem Forum schreibt, bekommst Du eine '''Einladung''' in den passenden Gruppenchat. Tippe die Einladung an und tritt bei. Ab dann siehst Du die Nachrichten des Forums in Conversations.
+
+Alle Deine Gruppenchats findest Du in Conversations, wenn Du unten rechts auf das '''+''' und dann oben auf '''Gruppenchats''' tippst.
+
+== iPhone und iPad: Monal ==
+=== Schritt 1: Monal installieren ===
+Lade '''Monal''' kostenlos aus dem [https://apps.apple.com/de/app/monal-xmpp-chat/id317711500 App Store].
+
+=== Schritt 2: Mit dem vorhandenen Konto anmelden ===
+[[Datei:hilfe-monal-anmelden.png]]
+Öffne Monal. Auch hier gibt es zwei Wege — einen zum Anmelden und einen zum Registrieren.
+
+@ '''Ganz wichtig:''' Wähle '''Anmelden''' (auf Englisch '''Login'''), '''nicht''' „Registrieren“ (Register). Dein Konto gibt es schon.
+
+# Bei '''XMPP-Adresse''' (oder '''Jabber-ID''') trägst Du ein: {XMPP_ADRESSE}
+# Bei '''Passwort''': Dein Portal-Passwort.
+# Tippe auf '''Anmelden''' bzw. '''Login'''.
+# Erlaube Mitteilungen, damit Du neue Nachrichten mitbekommst.
+
+=== Schritt 3: Die Gruppenchats ===
+Wie bei Android: Schreibt jemand im Forum, bekommst Du eine Einladung in den Gruppenchat. Nimm sie an, dann erscheinen die Nachrichten in Monal.
+
+== Wenn etwas nicht klappt ==
+* '''„Falsches Passwort“ oder „Anmeldung fehlgeschlagen“:''' Melde Dich einmal im Portal an, damit Dein Chat-Konto angelegt wird, und versuche es dann noch einmal. Prüfe die Chat-Adresse Buchstabe für Buchstabe: {XMPP_ADRESSE}
+* '''Aus Versehen „Neues Konto erstellen“ getippt?''' Kein Problem: In Conversations oben rechts auf die drei Punkte ⋮ → '''Konten verwalten''' → das falsche Konto löschen und mit '''Konto hinzufügen''' das richtige eintragen.
+* '''Keine Einladung bekommen?''' Einladungen kommen, sobald im Forum jemand schreibt. Schreib selbst etwas im Forum, wenn Du es eilig hast.
+* '''Nachrichten kommen spät an:''' Erlaube der App, im Hintergrund zu laufen, und schalte Benachrichtigungen ein.
+
+Zurück zur [[Hilfe|Übersicht]].

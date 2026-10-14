@@ -97,8 +97,13 @@
       popover.style.left = Math.max(window.scrollX + 4, Math.min(left, maxLeft)) + "px";
     }
 
+    // Zeitpunkt des letzten Ziehens: der Klick, den manche Browser danach noch
+    // auslösen, soll kein Auswahlmenü öffnen.
+    let gezogenBis = 0;
+
     function enableTapMode() {
       tapModeHandler = (e) => {
+        if (Date.now() < gezogenBis) return;
         const chip = e.target.closest(".att-chip");
         if (chip && activeRoot.contains(chip)) {
           e.stopPropagation();
@@ -121,11 +126,11 @@
     function enableEditMode() {
       activeRoot = isSplitVisible() ? splitRoot : singleRoot;
 
-      if (activeRoot === singleRoot) {
-        if (typeof Sortable === "undefined") {
-          activeRoot = null;
-          return;
-        }
+      // Beide Wege in beiden Ansichten: ziehen (auf Touch nach kurzem Halten,
+      // damit sich die Seite weiter wischen lässt) und antippen → Auswahlmenü.
+      // Vorher gab es auf der breiten Tabelle nur das Ziehen und auf der
+      // schmalen nur das Antippen — auf einem Tablet ging damit nichts.
+      if (typeof Sortable !== "undefined") {
         activeRoot.querySelectorAll(".att-chips").forEach((ul) => {
           const stimme = ul.dataset.stimme;
           sortables.push(
@@ -139,15 +144,19 @@
                 },
               },
               animation: 120,
+              delay: 200,
+              delayOnTouchOnly: true,
+              touchStartThreshold: 5,
               ghostClass: "sortable-ghost",
               chosenClass: "sortable-chosen",
+              onStart: closePopover,
+              onEnd: () => { gezogenBis = Date.now() + 400; },
               onSort: refreshDirty,
             })
           );
         });
-      } else {
-        enableTapMode();
       }
+      enableTapMode();
 
       section.classList.add("attendance-edit-mode");
       editBtn.hidden = true;

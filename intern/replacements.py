@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from typing import Union
 
 from intern.app_settings import get_vereinsname_kurz
+from intern import wiki_platzhalter
 from intern.medientypen import medientyp
 from intern.templatetags.startseite_tags import startseite_datei
 
@@ -18,11 +19,13 @@ class ListProcessor:
         self.stack = []  # Speichert die aktiven Listenarten ('ul' oder 'ol') auf den Ebenen
 
     def process_line(self, line):
+        # Nur die führenden Zeichen zählen: die Zeile ist schon escapet, und
+        # jedes ' im Text steht als &#x27; — mit einem # darin.
         if line.startswith("*"):
-            level = line.count("*")
+            level = len(line) - len(line.lstrip("*"))
             return False, self._handle_level(level, line[level:].strip(), "ul")
         elif line.startswith("#"):
-            level = line.count("#")
+            level = len(line) - len(line.lstrip("#"))
             return False, self._handle_level(level, line[level:].strip(), "ol")
         else:
             # Normale Zeile - schließe alle offenen Ebenen
@@ -116,9 +119,10 @@ class TableProcessor:
 class BlockLineProcessor:
     """Buffers consecutive lines sharing a prefix char into a single <div>."""
 
-    def __init__(self, prefix_char, css_class):
+    def __init__(self, prefix_char, css_class, inline=None):
         self.prefix_char = prefix_char
         self.css_class = css_class
+        self.inline = inline or (lambda zeile: zeile)
         self.active = False
         self.lines = []
 
@@ -126,7 +130,7 @@ class BlockLineProcessor:
         """Returns (prefix_to_emit, modified_line).
         modified_line is None while buffering — caller must skip."""
         if line.startswith(self.prefix_char):
-            self.lines.append(line[1:].strip())
+            self.lines.append(self.inline(line[1:].strip()))
             self.active = True
             return '', None
         if self.active:
@@ -604,9 +608,6 @@ def apply_replacements(text, request=None):
     list_processor = ListProcessor()
     code_processor = CodeBlockProcessor()
     table_processor = TableProcessor()
-    citation_processor = BlockLineProcessor('%', 'citation')
-    indent_processor = BlockLineProcessor(':', 'indent')
-    boxed_processor = BlockLineProcessor('@', 'boxed')
 
     # Definiere deine regulären Ausdrücke und Ersetzungen
     REPLACEMENTS = [
@@ -619,7 +620,7 @@ def apply_replacements(text, request=None):
             r"(\[\[(([^\]]*?)\:)?\s*([^\[\]]*?)(\|([^\[\]]+?))?\]\]([a-z]+)?)",
             lambda match: internal_links(match, request),
         ),
-        (r"\[(https?://[^\s\]]+)\s+([^\]]+)\]", lambda m: f'<a href="{m.group(1)}">{m.group(2)}</a>'),  # [URL Name]
+        (r"\[((?:https?|webcal)://[^\s\]]+)\s+([^\]]+)\]", lambda m: f'<a href="{m.group(1)}">{m.group(2)}</a>'),  # [URL Name]
         (
             r"(?<![\"])(https?://[^\s\"]+\.(?:png|jpg|jpeg|gif|bmp|svg|webp))(?![\"])",
             r'<img src="\1"></img>',
@@ -637,13 +638,28 @@ def apply_replacements(text, request=None):
             r'<a href="\1">\1</a>',
         ),  # URL
         (r"^\s*([^<].*)$", r"<p>\1</p>"),
-        (r"''''([\s\S]*)''''", lambda m: f"<em><strong>{m.group(1)}</strong></em>"),
-        (r"'''([\s\S]*)'''", lambda m: f"<strong>{m.group(1)}</strong>"),
-        (r"''([\s\S]*)''", lambda m: f"<em>{m.group(1)}</em>"),
-        (r'""([\s\S]*)""', lambda m: f"&quot;{m.group(1)}&quot;"),
+        # Die Zeile ist schon escapet: ' steht als &#x27;, " als &quot;. Nicht
+        # gierig, sonst würden zwei Hervorhebungen einer Zeile zu einer.
+        (r"(?:&#x27;){4}(.+?)(?:&#x27;){4}", lambda m: f"<em><strong>{m.group(1)}</strong></em>"),
+        (r"(?:&#x27;){3}(.+?)(?:&#x27;){3}", lambda m: f"<strong>{m.group(1)}</strong>"),
+        (r"(?:&#x27;){2}(.+?)(?:&#x27;){2}", lambda m: f"<em>{m.group(1)}</em>"),
+        (r"(?:&quot;){2}(.+?)(?:&quot;){2}", lambda m: f"&quot;{m.group(1)}&quot;"),
         (r"\$([\s\S]*)\$", r"\1"),  # no format (content pre-escaped)
         (r"(^|\s)(@\w+)", r'<span class="mention">\2</span>'),  # Erwähnungen
     ]
+
+    # Innerhalb einer Zeile — für die Blöcke (% : @), deren Text nicht durch
+    # die Zeilenschleife unten läuft. Ohne Überschriften und ohne <p>.
+    def _inline(zeile):
+        for pattern, replacement in REPLACEMENTS:
+            if not pattern.startswith("^"):
+                zeile = re.sub(pattern, replacement, zeile, flags=re.IGNORECASE)
+        return zeile
+
+    citation_processor = BlockLineProcessor('%', 'citation', _inline)
+    indent_processor = BlockLineProcessor(':', 'indent', _inline)
+    boxed_processor = BlockLineProcessor('@', 'boxed', _inline)
+    block_processors = (citation_processor, indent_processor, boxed_processor)
 
     FULLTEXT_REPLACEMENTS = [
         (ABSTIMMUNG_DIRECTIVE, lambda match: abstimmung(match, request)),
@@ -665,12 +681,23 @@ def apply_replacements(text, request=None):
 
         text = re.sub(pattern, _store, text, flags=re.IGNORECASE | re.MULTILINE)
 
+    # Platzhalter wie {VEREINS_URL} nur im Artikel (siehe wiki_platzhalter);
+    # eine eingerückte Zeile ist Code und zeigt sie unersetzt.
+    platzhalter = wiki_platzhalter.werte_fuer(request) if request is not None else None
+
     result = []
     for line in text.splitlines():
         if line is None or line == "" or re.match(r"^\s+$", line):
             continue
         if not (line.startswith('<!--block-') and line.endswith('-->')):
             line = html.escape(line)
+            if platzhalter is not None and not line.startswith(" "):
+                line = wiki_platzhalter.ersetzen(line, platzhalter)
+        # Ein offener Block endet vor jeder Zeile, die nicht zu ihm gehört —
+        # sonst stünde er hinter dem nächsten Block oder Codeblock.
+        for block in block_processors:
+            if block.active and not line.startswith(block.prefix_char):
+                result.append(block.close())
         line, repl = list_processor.process_line(line)
         if line:
             result.append(f"{line}")

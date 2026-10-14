@@ -1,0 +1,53 @@
+== Erste Schritte ==
+Das Mitgliederportal ist eine Internetseite nur für uns. Du erreichst es auf dem Computer, dem Tablet und dem Smartphone unter dieser Adresse:
+
+{VEREINS_URL}
+
+Am besten speicherst Du sie Dir gleich als Lesezeichen.
+
+=== Anmelden ===
+[[Datei:hilfe-anmelden.png]]
+# Öffne die Adresse oben. Auf der Startseite tippst Du oben rechts auf '''Login'''.
+# Gib Deinen '''Benutzernamen''' ein. Deiner lautet: '''{BENUTZERNAME}'''
+# Gib Dein '''Passwort''' ein.
+# Tippe auf '''Anmelden'''.
+
+Groß- und Kleinschreibung spielen beim Passwort eine Rolle. Achte darauf, dass auf dem Smartphone nicht automatisch ein Großbuchstabe am Anfang entsteht.
+
+=== Passwort vergessen oder noch keins bekommen? ===
+# Tippe auf der Anmeldeseite unten auf '''Hier anfordern'''.
+# Gib Deinen Benutzernamen ein. Das genügt meistens.
+# Tippe auf '''zurücksetzen'''.
+# Du bekommst eine E-Mail mit einem Link. Öffne ihn, denke Dir ein neues Passwort aus und tippe auf '''Passwort speichern'''.
+
+% Keine E-Mail bekommen? Schau im Spam-Ordner nach. Wenn sie auch dort nicht ist, frag jemanden aus dem Vorstand.
+
+=== Sich zurechtfinden ===
+[[Datei:hilfe-seitenleiste.png]]
+Links siehst Du die '''Seitenleiste''' mit allen Bereichen. Auf dem Smartphone ist sie eingeklappt: tippe oben links auf die drei Striche ☰, dann klappt sie auf.
+
+* '''Aktuell''' — das Wichtigste der Woche. Diese Seite siehst Du nach jeder Anmeldung.
+* '''Forum''' — Nachrichten an alle, siehe [[Hilfe:Forum|Forum]].
+* '''Termine''' und '''Kalender''' — Proben und Auftritte, siehe [[Hilfe:Termine|Termine]].
+* '''Repertoire''' — unsere Lieder, siehe [[Hilfe:Repertoire|Repertoire]].
+* '''Mitglieder''' — wer singt mit, siehe [[Hilfe:Mitglieder|Mitglieder]].
+* '''Karte''' und '''Orte''' — wo wir proben und auftreten und wo die Mitglieder wohnen.
+* '''Dateien''' — Noten, Fotos und Dokumente, siehe [[Hilfe:Dateien|Dateien]].
+* '''Einstellungen''' — hier stellst Du die Schrift größer, schaltest auf dunkle Farben um und kommst zu '''Mein Profil'''.
+
+Ein '''Punkt''' neben einem Bereich bedeutet: hier gibt es etwas Neues für Dich, zum Beispiel eine ungelesene Nachricht oder einen Termin, zu dem Du noch nichts gesagt hast.
+
+Oben rechts auf jeder Seite stehen kleine Symbole für das, was Du auf dieser Seite tun kannst, etwa ⊕ für „neu anlegen“ oder ein Stift für „bearbeiten“. Wenn Du mit der Maus kurz darauf zeigst, erscheint eine Erklärung.
+
+=== Der nächste Termin immer im Blick ===
+Ganz oben auf jeder Seite steht der nächste Termin. Dort kannst Du mit einem Tipp '''Zusagen''', '''Eventuell''' sagen oder '''Absagen'''. Mit dem × blendest Du den Hinweis aus.
+
+=== Das Portal wie eine App ===
+Du kannst das Portal auf den Startbildschirm Deines Smartphones legen. Dann öffnest Du es mit einem Tipp wie eine App.
+* '''iPhone:''' Öffne die Adresse in Safari, tippe unten auf das Teilen-Symbol (Quadrat mit Pfeil nach oben) und dann auf '''Zum Home-Bildschirm'''.
+* '''Android:''' Öffne die Adresse in Chrome, tippe oben rechts auf die drei Punkte ⋮ und dann auf '''Zum Startbildschirm hinzufügen''' oder '''App installieren'''.
+
+=== Abmelden ===
+Ganz unten in der Seitenleiste steht '''Abmelden'''. Auf Deinem eigenen Gerät musst Du Dich nicht abmelden. Auf einem fremden Computer solltest Du es immer tun.
+
+Weiter geht es mit [[Hilfe:Mein Profil|Mein Profil]] oder zurück zur [[Hilfe|Übersicht]].

@@ -60,7 +60,9 @@ The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
 - `/einrichtung/` — first-run setup of a new installation (`intern/einrichtung.py`); `404`
   once a superuser exists
 - `/datenschutz/` — public privacy policy (`intern/templates/datenschutz.html`, no login
-  required, `TemplateView` in `config/urls.py`)
+  required, view `datenschutz` in `views/auth.py`)
+- `/manifest.webmanifest` — the web app manifest, built from `VEREINSNAME_LANG` and
+  `BRAND_FARBE` with icons from the homepage overlay (`views/auth.py`, `docs/startseite.md`)
 - `/auftritte/`, `/auftritte/bestaetigen/<token>/`, `/auftritte/abmelden/<token>/` — public
   gig-reminder mailing list, no login (`mailinglist.md`)
 - `/.well-known/carddav` → `301` → `/carddav/`, and `/carddav/*` — read-only CardDAV address
@@ -158,8 +160,12 @@ is the brake that actually prevents mail-bombing a foreign address.
 
 ## Database
 
-SQLite in development (`db.sqlite3`, excluded from git). MySQL-compatible for production via
-`pymysql`.
+SQLite in development and for a throwaway demo (`db.sqlite3` in the data directory, excluded
+from git); MariaDB/MySQL in production through `mysqlclient`. SQLite runs with `timeout: 20` and
+`transaction_mode: IMMEDIATE` (`config/datenbank.py`): every new file starts an indexing thread
+(`signals.py`), and without `IMMEDIATE` a transaction that upgrades from reading to writing
+fails at once with „database is locked“ instead of waiting — the first-run setup, which places
+the help images and fallback avatars, ran into exactly that.
 
 ## Environment variables
 

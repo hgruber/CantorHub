@@ -92,7 +92,7 @@ def karte_view(request):
         "search_query": (request.GET.get("q") or "").strip(),
         "map_center_lat": str(map_center[0]),
         "map_center_lng": str(map_center[1]),
-        "map_default_zoom": get_config_int("MAP_DEFAULT_ZOOM", 12),
+        "map_default_zoom": get_config_int("MAP_DEFAULT_ZOOM", 6),
     })
 
 

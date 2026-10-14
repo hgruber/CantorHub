@@ -2,8 +2,6 @@
 
 from io import BytesIO
 
-from django.contrib.staticfiles import finders
-
 from intern.app_settings import get_brand_farbe, get_config
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
@@ -31,7 +29,8 @@ LINE_H   = 0.65 * cm
 LABEL_X  = MARGIN
 VALUE_X  = MARGIN + 5.0 * cm
 
-_LOGO_STATIC = "intern/brand/JG-Frankfurt-transparent.png"
+# Unter DATEN/startseite/statisch/ überlagerbar wie logo.svg (docs/startseite.md).
+_LOGO = "brand/briefkopf.png"
 
 
 _ADDR_LINE_H = 0.46 * cm
@@ -56,9 +55,11 @@ def _draw_header(c, vereinsname, vereinsadresse):
     bottom_y = PAGE_H - HEADER_H + _BOTTOM_PAD
 
     # Logo: Unterkante bündig mit Textblock
-    logo_path = finders.find(_LOGO_STATIC)
+    from intern.templatetags.startseite_tags import finde_statisch
+
+    logo_path = finde_statisch(_LOGO)
     if logo_path:
-        img = ImageReader(logo_path)
+        img = ImageReader(str(logo_path))
         iw, ih = img.getSize()
         logo_w = 5.5 * cm
         logo_h = logo_w * ih / iw

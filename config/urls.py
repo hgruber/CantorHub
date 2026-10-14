@@ -19,6 +19,7 @@ urlpatterns = [
     # Bilder/CSS der Startseite; im Container beantwortet nginx den Pfad vorher.
     path("startseite/<path:pfad>", views.startseite_statisch, name="startseite_statisch"),
     path("datenschutz/", views.datenschutz, name="datenschutz"),
+    path("manifest.webmanifest", views.manifest, name="manifest"),
     path("einrichtung/", views.einrichtung, name="einrichtung"),
     path("tiles/<int:z>/<int:x>/<int:y>.png", views.tiles_proxy, name="tiles_proxy"),
     # Oeffentliche Auftritts-Mailingliste (kein Login)

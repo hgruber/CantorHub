@@ -144,12 +144,6 @@ def mitglied_list(request):
             "next_offset": offset + _PAGE_SIZE,
             "show_email_copy": "email" in fields,
             "notify_url": reverse("mitglied_benachrichtigen") if request.user.has_perm("intern.notify_user") else None,
-            # Nur wenn der Dienst freigeschaltet ist — sonst führte der Hinweis
-            # ins Leere (jede CardDAV-URL antwortet dann 404).
-            "carddav_url": (
-                request.build_absolute_uri("/carddav/")
-                if get_config_bool("CARDDAV_AKTIV", False) else None
-            ),
         },
     )
 

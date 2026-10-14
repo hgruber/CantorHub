@@ -62,14 +62,14 @@ ejabberd admin) are listed in `README.md`.
 | Members: joining, re-confirmation, leaving, field privacy | `docs/members.md` |
 | Permissions: where each right of `/intern/gruppen/` is checked, and the rules it does not show | `docs/permissions.md` |
 | Forums: read permissions, reactions and unread markers | `docs/forum.md` |
-| Articles: versioning, editor, permissions, wiki markup | `docs/articles.md` |
+| Articles: versioning, editor, permissions, wiki markup, placeholders, help articles | `docs/articles.md` |
 | Public gig-reminder mailing list | `docs/mailinglist.md` |
 | CardDAV and CalDAV | `docs/dav.md` |
 | XMPP/ejabberd bridge | `docs/xmpp.md` |
 | `Konfiguration` key catalog and mail placeholders | `docs/configuration.md` |
 | Privacy-policy compliance tracking | `docs/datenschutz.md` |
 | Known technical debt | `docs/technical-debt.md` |
-| Branding extraction plan (open-sourcing) | `docs/branding.md` |
+| Branding: the keys and files an installation sets, what is left | `docs/branding.md` |
 
 ## Code map
 
@@ -117,10 +117,13 @@ filter builder" in `docs/frontend.md`), `mitgliedschaft.py` (the two axes of bel
 access, the group „Mitglied" = club membership, plus the admission itself — guarded by
 `MitgliedschaftTest`, see `docs/members.md`), `avatare.py` (fallback avatar files and thumbnails, so lists do not
 load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TRIGGER_FIELDS`),
-`mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup), `pdf.py`,
+`mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup),
+`wiki_platzhalter.py` (the `{VEREINS_URL}`-style placeholders of articles — a whitelist, see
+`docs/articles.md`), `pdf.py`,
 `ejabberd.py`, `konfig_gruppen.py`, `einrichtung.py` (the first-run setup of a new
 installation: groups, standard folders, first administrator, first settings, the start page
-„Aktuell“ and optional sample data, behind
+„Aktuell“, the help articles from `intern/hilfe/`, the fallback avatars from
+`intern/avatare_ersatz/` and optional sample data, behind
 `/einrichtung/`, open to whoever comes first — see `README.md`),
 `middleware.py` (the throttled session refresh, see
 `docs/architecture.md`, the privacy gate for access without membership, see `docs/members.md`,

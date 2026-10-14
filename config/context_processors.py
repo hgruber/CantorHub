@@ -28,7 +28,8 @@ def project_meta(request):
 
 def _project_meta_berechnen(request):
     from intern.app_settings import (
-        get_brand_farbe, get_config_bool, get_config_int, get_vereinsname,
+        get_aufnahme_bezeichnung, get_brand_farbe, get_config_bool, get_config_int,
+        get_vereinsname,
         get_vereinsname_lang, get_vereinsname_kurz,
     )
     result = {
@@ -39,6 +40,7 @@ def _project_meta_berechnen(request):
         "vereinsname_lang": get_vereinsname_lang(),
         "vereinsname_kurz": get_vereinsname_kurz(),
         "brand_farbe":      get_brand_farbe(),
+        "aufnahme_bezeichnung": get_aufnahme_bezeichnung(),
     }
     # Fehlerseiten rendern durch denselben Prozessor, und ein Fehler aus
     # `CommonMiddleware` (etwa ein unerlaubter Host) tritt auf, bevor
