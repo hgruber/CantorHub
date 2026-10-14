@@ -797,18 +797,21 @@ logos and the design notes behind them, lives in its own repository (`cantorhub-
 `GESTALTUNG.md` there).
 
 The demo is a standalone one-pager: it extends neither `base.html` nor uses `intern.css`. It has
-no photo and no logo — the site name is text (`VEREINSNAME_KURZ`, falling back to
-`VEREINSNAME_LANG`), and the hero is a gradient between two darkenings of `--brand`
-(`--buehne-a` at 90 %, `--buehne-b` at 62 % towards black), so white type holds at 5.8:1 on the
-default brand colour. `{% markenfarbe %}` after the stylesheet link sets `--brand` from
+no photo; the site name is text (`VEREINSNAME_KURZ`, falling back to `VEREINSNAME_LANG`) next to
+the portal logo (`logo.svg`, see „The portal logo" in `docs/startseite.md`), and the hero is a
+gradient between two darkenings of `--brand` (`--buehne-a` at 90 %, `--buehne-b` at 62 % towards
+black), so white type holds at 5.8:1 on the default brand colour. The shipped seal is coloured
+with exactly these values for the default blue — `#27619e` → `#1b436d`, ring `#2b6cb0` — which is
+why it sits on a white disc in the hero, where it would otherwise vanish into the gradient. `{% markenfarbe %}` after the stylesheet link sets `--brand` from
 `BRAND_FARBE`; every other accent is derived with `color-mix()`. Unlike the old page it follows
 `prefers-color-scheme` with a dark token block — there is no theme toggle on a public page, so the
 system setting decides.
 
-Sections: sticky header (name, Termine, Kontakt, Login), hero (`VEREINSNAME` as a small line when
-it differs from the long name, the long name as `<h1>`, two buttons), Über uns and Mitsingen cards
+Sections: sticky header (logo and name, Termine, Kontakt, Login), hero (the logo,
+`VEREINSNAME` as a small line when it differs from the long name, the long name as `<h1>`, two
+buttons), Über uns and Mitsingen cards
 (each only when its `HOMEPAGE_*` text is set), Termine (date, title, place and the rendered
-`Termin.extern` text — the selection rule is the one described under „The Konzerte list" in
+`Termin.extern` text — the selection rule is the one described under „The Termine list" in
 `docs/startseite.md`), a link to the gig-reminder sign-up, Kontakt and Impressum cards, footer.
 A superuser sees a hint strip under the hero explaining where the texts are set and how to replace
 the page; visitors never see it.

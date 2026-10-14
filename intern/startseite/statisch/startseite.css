@@ -88,10 +88,18 @@ a {
 }
 
 .wortmarke {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
     font-weight: 700;
     font-size: 1.125rem;
     color: var(--tinte);
     text-decoration: none;
+}
+
+.wortmarke img {
+    width: 2rem;
+    height: 2rem;
 }
 
 .kopf nav {
@@ -122,6 +130,18 @@ a {
     padding: clamp(4rem, 12vw, 7.5rem) 0;
     color: #fff;
     background: linear-gradient(135deg, var(--buehne-a), var(--buehne-b));
+}
+
+/* Weiße Scheibe hinter dem Logo: Das Siegel trägt die Blautöne des Verlaufs. */
+.buehne-logo {
+    display: block;
+    width: clamp(4.5rem, 10vw, 6rem);
+    height: clamp(4.5rem, 10vw, 6rem);
+    margin-bottom: 1.5rem;
+    padding: 0.25rem;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .buehne .zeile {

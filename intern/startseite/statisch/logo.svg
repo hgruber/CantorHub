@@ -7,16 +7,16 @@
        den Dark Mode auf. Renderer ohne CSS-Unterstuetzung bleiben so korrekt. -->
   <style>
     @media (prefers-color-scheme: dark) {
-      .hell   { stop-color: #8fbcef; }
-      .dunkel { stop-color: #3b78c2; }
-      .ring   { stroke: #6aa2e3; }
+      .hell   { stop-color: #8aaed4; }
+      .dunkel { stop-color: #2b6cb0; }
+      .ring   { stroke: #6091c4; }
     }
   </style>
 
   <defs>
     <linearGradient id="chc-scheibe" x1="18" y1="18" x2="110" y2="110" gradientUnits="userSpaceOnUse">
-      <stop offset="0" class="hell"   stop-color="#4a8bd0"/>
-      <stop offset="1" class="dunkel" stop-color="#1f5490"/>
+      <stop offset="0" class="hell"   stop-color="#27619e"/>
+      <stop offset="1" class="dunkel" stop-color="#1b436d"/>
     </linearGradient>
 
     <!-- Die Gabel wird ausgestanzt, nicht uebermalt: das Zeichen bleibt

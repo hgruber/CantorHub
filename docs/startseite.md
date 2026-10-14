@@ -85,7 +85,7 @@ Mail, PDF and the PWA icons still use PNGs from `intern/static/intern/brand/` �
 ## The shipped page and this choir's own page
 
 `intern/startseite/` is a neutral demo (described under „Public homepage" in
-`docs/frontend.md`): no photo, no logo, every text from `Konfiguration`. `NeutraleDemoTest`
+`docs/frontend.md`): no photo, the CantorHub logo, every text from `Konfiguration`. `NeutraleDemoTest`
 fails as soon as a file there names a choir or is a binary such as a photo.
 
 This choir's page — photo, logos, `main.css` and the design notes in `GESTALTUNG.md` — lives in

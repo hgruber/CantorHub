@@ -11,7 +11,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
-- Startseite: Die mitgelieferte Startseite ist eine neutrale Vorlage ohne Foto und Logo, mit
+- Startseite: Die mitgelieferte Startseite ist eine neutrale Vorlage ohne Foto, mit dem CantorHub-Logo und
   Texten aus der Konfiguration und dunkler Darstellung nach Systemeinstellung. Administratoren
   sehen darauf einen Hinweis, wie sie Texte einstellen oder eine eigene Seite hinterlegen.
 - Portal: Das mitgelieferte Logo ist das blaue CantorHub-Siegel; ein eigenes Logo unter

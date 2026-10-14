@@ -9,7 +9,7 @@
         <link rel="stylesheet" href="{% startseite_datei 'startseite.css' %}" />
         {# überschreibt --brand mit BRAND_FARBE — muss nach dem Stylesheet stehen #}
         {% markenfarbe %}
-        <link rel="icon" href="{% startseite_datei 'favicon.svg' %}" />
+        <link rel="icon" href="{% startseite_datei 'logo.svg' %}" />
     </head>
     <body>
         {% comment %}
@@ -18,7 +18,10 @@
         DATEN/startseite/ — Datei für Datei, siehe docs/startseite.md.
         {% endcomment %}
         <header class="kopf">
-            <a href="#start" class="wortmarke">{{ vereinsname_kurz|default:vereinsname_lang }}</a>
+            <a href="#start" class="wortmarke">
+                <img src="{% startseite_datei 'logo.svg' %}" alt="" />
+                {{ vereinsname_kurz|default:vereinsname_lang }}
+            </a>
             <nav>
                 <a href="#termine">Termine</a>
                 <a href="#kontakt">Kontakt</a>
@@ -29,6 +32,11 @@
         <main>
             <section id="start" class="buehne">
                 <div class="rahmen">
+                    {% comment %}
+                    Das Logo auf einer weißen Scheibe: Das Siegel trägt dieselben
+                    Blautöne wie der Verlauf dahinter und verschwände sonst.
+                    {% endcomment %}
+                    <img class="buehne-logo" src="{% startseite_datei 'logo.svg' %}" alt="" />
                     {% if vereinsname and vereinsname != vereinsname_lang %}
                     <p class="zeile">{{ vereinsname }}</p>
                     {% endif %}
