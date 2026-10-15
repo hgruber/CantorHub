@@ -1,0 +1,77 @@
+== Betrieb und Kosten ==
+Diese Seite ist für den '''Vorstand''' und alle, die entscheiden, wo das Portal laufen soll. Sie zählt auf, was der Betrieb wirklich braucht, und rechnet drei Wege durch — jeweils für einen Chor mit '''bis zu 100 Personen'''. Gerechnet ist nur der Server selbst, keine Beratung und keine bezahlte Hilfe beim Einrichten.
+
+% Alle Preise sind '''Richtwerte mit Stand Oktober 2026''', gerundet und '''einschließlich 19 % Mehrwertsteuer''' (ein Verein kann sie meist nicht abziehen). Server- und Speicherpreise sind 2026 mehrfach gestiegen — prüft die Angebote vor der Bestellung.
+
+=== Was das Portal braucht ===
+! Baustein ! Wozu ! Kosten
+| '''Ein Rechner, der rund um die Uhr läuft''' | Darauf läuft das Portal mit seiner Datenbank | siehe unten
+| '''Eine eigene Adresse''' (Domain, z. B. eine .de-Adresse) | Darunter ist das Portal zu erreichen | etwa 5 € im Jahr
+| '''Ein E-Mail-Postfach mit Versand''' (SMTP) | Passwort vergessen, Einladungen, Auftrittserinnerungen | oft schon vorhanden, sonst etwa 5 € im Monat zusammen mit der Domain
+| '''Eine Sicherung''' | Datenbank und alle hochgeladenen Dateien, an einem zweiten Ort | 1 bis 4 € im Monat
+| '''Ein HTTPS-Zertifikat''' | Verschlüsselte Verbindung, das Schloss im Browser | kostenlos (Let's Encrypt)
+| '''Die Software''' | Linux, Podman oder Docker, MariaDB, ein Proxy für HTTPS, auf Wunsch ejabberd für den Chat | kostenlos
+
+==== Wie groß der Rechner sein muss ====
+* '''Prozessor:''' 2 Kerne reichen für 100 Personen gut.
+* '''Arbeitsspeicher:''' mindestens 4 GB. Das Portal selbst braucht etwa 0,5 GB, die Datenbank noch einmal so viel; mit 4 GB bleibt Luft für den Chat-Server und für Zeiten, in denen alle gleichzeitig zusagen.
+* '''Festplatte:''' 40 GB genügen für den Anfang. Den meisten Platz brauchen Noten und vor allem Übe-Aufnahmen; ein Chor mit vielen Aufnahmen wächst schnell auf 20 GB und mehr.
+* '''Internet:''' Der Rechner muss von außen erreichbar sein. Bei einem gemieteten Server ist das selbstverständlich, zu Hause nicht immer (siehe Weg 1).
+
+=== Weg 1: Ein kleiner Rechner zu Hause ===
+Ein sparsamer Mini-PC steht bei jemandem aus dem Chor am Internet-Router.
+
+! Posten ! Einmalig ! Pro Jahr
+| Mini-PC (Intel N100 o. ä., 16 GB, 500 GB SSD) | etwa 300 € |
+| Externe Festplatte für die Sicherung | etwa 70 € |
+| Strom (rund 8 Watt Dauerbetrieb, etwa 70 kWh) | | etwa 26 €
+| Domain mit E-Mail-Postfach | | etwa 60 €
+| '''Summe''' | '''etwa 370 €''' | '''etwa 86 €'''
+
+Im ersten Jahr also rund '''456 €''', danach rund '''86 € im Jahr'''. Rechnet zusätzlich eine Rücklage ein: Nach etwa fünf Jahren ist ein Ersatzgerät fällig.
+
+@ '''Vorher prüfen:''' Viele Kabel- und Glasfaseranschlüsse (Stichwort ''DS-Lite'') lassen keine Verbindung von außen über IPv4 zu — dann ist das Portal von unterwegs nicht erreichbar. Außerdem fällt das Portal aus, wenn zu Hause der Strom oder das Internet weg ist, und die Daten der Mitglieder stehen in einer Privatwohnung. Die Sicherung muss jemand regelmäßig anstoßen und am besten außer Haus aufbewahren.
+
+Ein Raspberry Pi ginge grundsätzlich auch, kostet mit 8 GB wegen der gestiegenen Speicherpreise inzwischen aber fast so viel wie ein Mini-PC.
+
+=== Weg 2: Ein kleiner Mietserver (das Minimum) ===
+Ein virtueller Server (''Cloud-Server'' oder ''VPS'') mit '''2 Kernen, 4 GB Arbeitsspeicher und 40 GB Festplatte''' in einem deutschen Rechenzentrum, monatlich kündbar. Die Preise unten stammen von einem großen deutschen Anbieter; vergleichbare Angebote gibt es bei mehreren Hostern.
+
+! Posten ! Pro Monat
+| Server mit fester IPv4-Adresse | etwa 7,15 €
+| Automatische Sicherung beim Anbieter (7 Stände) | etwa 1,30 €
+| Domain mit E-Mail-Postfach (kleinstes Webhosting-Paket eines Hosters) | etwa 4,95 €
+| '''Summe''' | '''etwa 13,40 €'''
+
+'''Keine einmaligen Kosten''', laufend rund '''160 € im Jahr'''. Hat der Verein schon eine Domain mit Postfach, sind es nur rund 100 € im Jahr.
+
+Strom, Ausfallsicherheit und Ersatzteile sind Sache des Anbieters. Wird der Platz knapp, lässt sich der Server mit wenigen Klicks vergrößern. Der Anbieter verarbeitet dabei Daten Eurer Mitglieder: Schließt mit ihm einen '''Vertrag zur Auftragsverarbeitung''' ab (bei großen Anbietern meist ein Formular im Kundenkonto) und tragt ihn in der Datenschutzerklärung als Hoster ein.
+
+=== Weg 3: Mietserver mit Reserve ===
+Wie Weg 2, aber mit doppelt so viel Leistung und einer zweiten, getrennten Sicherung — für Chöre mit vielen Aufnahmen, mit Chat-Anbindung oder für alle, die ruhig schlafen wollen. Der Server hat '''4 Kerne, 8 GB Arbeitsspeicher und 80 GB Festplatte'''.
+
+! Posten ! Pro Monat
+| Server mit fester IPv4-Adresse | etwa 10,70 €
+| Automatische Sicherung beim Anbieter (7 Stände) | etwa 2,00 €
+| Zusätzlicher Sicherungsspeicher (1 TB, ein getrennt gemieteter Speicher) für nächtliche Kopien von Datenbank und Dateien | etwa 3,80 €
+| Domain mit E-Mail-Postfach | etwa 4,95 €
+| '''Summe''' | '''etwa 21,45 €'''
+
+'''Keine einmaligen Kosten''', laufend rund '''260 € im Jahr'''.
+
+=== Vergleich ===
+! ! Weg 1: zu Hause ! Weg 2: Minimum ! Weg 3: mit Reserve
+| '''Einmalig''' | etwa 370 € | 0 € | 0 €
+| '''Pro Jahr''' | etwa 86 € | etwa 160 € | etwa 260 €
+| '''Nach 3 Jahren''' | etwa 630 € | etwa 480 € | etwa 770 €
+| '''Erreichbarkeit''' | hängt am Hausanschluss | Rechenzentrum | Rechenzentrum
+| '''Sicherung''' | von Hand | automatisch | automatisch, an zwei Orten
+
+'''Unsere Empfehlung:''' Weg 2. Er kostet nichts im Voraus, ist über drei Jahre am günstigsten und hängt an keinem Wohnzimmer. Auf Weg 3 wechselt Ihr später ohne Umzug, indem Ihr den Server vergrößert und den Sicherungsspeicher dazubucht.
+
+=== Woran Ihr denken solltet ===
+* '''Jemand muss sich kümmern.''' Der Server braucht ab und zu Updates — für das Betriebssystem und für das Portal. Das ist wenig Arbeit, aber sie muss jemand verlässlich tun.
+* '''Datenbank und Dateien gehören zusammen.''' Eine Sicherung ist nur vollständig, wenn beide vom selben Zeitpunkt stammen.
+* '''Die Rechnung läuft auf den Verein.''' Bucht Server und Domain auf den Verein, nicht auf eine Privatperson — sonst hängt das Portal an einem einzelnen Konto.
+
+Zurück zur [[Hilfe|Übersicht]].

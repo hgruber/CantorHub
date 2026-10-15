@@ -37,6 +37,7 @@ ARTIKEL = {
     "Hilfe:Kalender abonnieren": "kalender-abonnieren.txt",
     "Hilfe:Kontakte aufs Telefon": "kontakte-aufs-telefon.txt",
     "Hilfe:Chat auf dem Telefon": "chat-auf-dem-telefon.txt",
+    "Hilfe:Betrieb und Kosten": "betrieb-und-kosten.txt",
 }
 
 # Bearbeiten dürfen nur diese Gruppen — eine Anleitung, die ein Neuling beim

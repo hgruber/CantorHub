@@ -7,6 +7,14 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Neuer Hilfe-Artikel „Hilfe:Betrieb und Kosten“ für den Vorstand: was ein eigener Server
+  braucht und drei durchgerechnete Wege (zu Hause, kleiner Mietserver, Mietserver mit Reserve)
+  für bis zu 100 Personen. Bestehende Installationen holen ihn mit `manage.py hilfe_anlegen` nach.
+
 ## v1.0.8 — 2026-10-15
 
 ### Hinzugefügt

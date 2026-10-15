@@ -19,4 +19,7 @@ Hier findest Du Anleitungen zu allem, was das Mitgliederportal kann. Sie sind f�
 * [[Hilfe:Kontakte aufs Telefon|Kontakte aufs Telefon]] — alle Mitglieder im Adressbuch Deines Telefons
 * [[Hilfe:Chat auf dem Telefon|Chat auf dem Telefon]] — das Forum als Chat mit Conversations (Android) oder Monal (iPhone)
 
+=== Für den Vorstand ===
+* [[Hilfe:Betrieb und Kosten|Betrieb und Kosten]] — was ein eigener Server braucht und was er kostet
+
 @ '''Du kommst nicht weiter?''' Frag jemanden aus dem Vorstand oder schreib im Forum — dort hilft Dir bestimmt jemand.

@@ -69,7 +69,8 @@ The page asks for the first account (it becomes superuser and joins „Mitglied�
 „Vorstand“), the portal address, the sender address and, optionally, the SMTP server. Finishing
 it creates the permission groups, the standard folders, the Vorstand folder right, the start
 page „Aktuell“, the help pages („Hilfe“ and `Hilfe:…`, written for members with little computer
-experience, including the phone set-up of calendar, contacts and chat) and neutral placeholder
+experience, including the phone set-up of calendar, contacts and chat, and for the board what running
+an own server needs and costs) and neutral placeholder
 pictures for members without a photo, logs the new account in and opens
 `/intern/konfiguration/`, whose banner lists the settings still missing (the hoster and the
 data-protection authority for the privacy policy). The box „Beispieldaten anlegen“ (on by default) adds a
