@@ -24,6 +24,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Hilfe: „Erste Schritte“ beginnt nach der Anmeldung; wie man ein neues Passwort anfordert,
   steht jetzt unter „Mein Profil“, ebenso genauer, wann das Kästchen gegen die Übertragung ins
   Telefon-Adressbuch erscheint.
+- Hilfe: Bei Rückfragen verweisen die Artikel aufs Forum statt auf den Vorstand.
 - Startseite: Fehlt `/data/startseite` beim Containerstart, legt `start.sh` dort eine Kopie der
   mitgelieferten Demo-Seite an, deren Dateien man direkt mit eigenen überschreibt. Ein
   vorhandener Ordner bleibt unberührt.

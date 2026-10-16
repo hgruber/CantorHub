@@ -38,4 +38,4 @@ Ein neues Passwort bekommst Du über die Anmeldeseite:
 # Tippe auf '''zurücksetzen'''.
 # Du bekommst eine E-Mail mit einem Link. Öffne ihn, denke Dir ein neues Passwort aus und tippe auf '''Passwort speichern'''.
 
-% Keine E-Mail bekommen? Schau im Spam-Ordner nach. Wenn sie auch dort nicht ist, frag jemanden aus dem Vorstand.
+% Keine E-Mail bekommen? Schau im Spam-Ordner nach. Wenn sie auch dort nicht ist, frag im Forum nach.
