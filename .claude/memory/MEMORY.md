@@ -2,4 +2,3 @@
 - [Dark and Light Mode](project_dark_light_mode.md) — Dark/light mode is live: CSS token block, sidebar toggle, localStorage, prefers-color-scheme fallback
 - [Permission Structure](permission_structure.md) — Vollständige Referenz: Gruppen, PERMISSION_DEFS, View-Enforcement, Lücken und Korrekturregeln
 - [Media Access Architecture](project_media_access.md) — nginx auth_request gates /media/; HMAC capability URLs for XMPP clients; no expiry for MAM history
-- [Committed ejabberd Credentials](project_ejabberd_creds.md) — EJABBERD_BOT_PASSWORD in migrate.sh needs rotation; no separate admin account exists
