@@ -44,5 +44,3 @@ Der Kalender erscheint danach auch in der Google-Kalender-App auf Deinem Telefon
 == Thunderbird und Outlook ==
 * '''Thunderbird:''' Kalender → '''Neuer Kalender''' → '''Im Netzwerk''' → Abo-Adresse einfügen → '''Kalender suchen''' → '''Abonnieren'''.
 * '''Outlook:''' Kalender → '''Kalender hinzufügen''' → '''Aus dem Internet abonnieren''' → Abo-Adresse einfügen.
-
-Zurück zur [[Hilfe|Übersicht]].

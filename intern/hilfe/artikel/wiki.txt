@@ -92,5 +92,3 @@ Bei sehr vielen Vorschlägen sortiert eine Auswertung sie nach Stimmen. Anzugebe
 === Platzhalter ===
 Diese Wörter in geschweiften Klammern ersetzt das Portal beim Anzeigen durch den passenden Wert — für jeden Leser seinen eigenen. Die Hilfe-Artikel nutzen sie, damit dort immer die richtige Adresse steht.
 <<PLATZHALTER>>
-
-Zurück zur [[Hilfe|Übersicht]].

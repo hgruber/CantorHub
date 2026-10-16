@@ -71,5 +71,3 @@ Bei '''Kontaktgruppen-Methode''' wählst Du '''Gruppen sind Kategorien der Konta
 * '''Anmeldung schlägt fehl:''' Prüfe Benutzername und Passwort, indem Du Dich damit im Portal anmeldest.
 * '''Passwort geändert?''' Trage das neue Passwort auch in DAVx⁵ bzw. in den iPhone-Einstellungen ein.
 * '''Du willst es wieder loswerden:''' Lösche das Konto in DAVx⁵ bzw. den Account in den iPhone-Einstellungen. Die Mitglieder verschwinden dann aus Deinem Adressbuch; Deine eigenen Kontakte bleiben unberührt.
-
-Zurück zur [[Hilfe|Übersicht]].

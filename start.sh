@@ -14,6 +14,15 @@ fi
 
 mkdir -p "${CANTORHUB_DATA}/media" "${CANTORHUB_DATA}/tiles"
 
+# Die eigene Startseite: fehlt der Ordner, kommt die mitgelieferte Demo als
+# Kopie hinein — zum Ueberschreiben mit eigenen Dateien. Ein vorhandener Ordner
+# (auch ein leerer oder ein git-Checkout) bleibt unangetastet; was darin fehlt,
+# liefert weiterhin intern/startseite (docs/startseite.md).
+if [ ! -e "${CANTORHUB_DATA}/startseite" ]; then
+    cp -R intern/startseite "${CANTORHUB_DATA}/startseite"
+    echo "Startseite: Demo nach ${CANTORHUB_DATA}/startseite kopiert."
+fi
+
 # Bringt die Datenbank auf den Stand des Abbilds: jede eingecheckte Migration
 # unter intern/migrations/, die noch nicht verbucht ist, laeuft hier — bei jedem
 # Start, eine schon angewendete ist ein No-op. set -e: scheitert eine, startet

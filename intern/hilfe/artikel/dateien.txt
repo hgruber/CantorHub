@@ -31,5 +31,3 @@ Setze links die Häkchen vor die Dateien. Dann erscheinen Knöpfe, um alle zusam
 
 === Einen neuen Ordner anlegen ===
 Tippe oben rechts auf das '''Ordner-Symbol mit dem Plus''' und gib einen Namen ein.
-
-Zurück zur [[Hilfe|Übersicht]].

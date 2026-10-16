@@ -14,6 +14,19 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Neuer Hilfe-Artikel „Hilfe:Betrieb und Kosten“ für den Vorstand: was ein eigener Server
   braucht und drei durchgerechnete Wege (zu Hause, kleiner Mietserver, Mietserver mit Reserve)
   für bis zu 100 Personen. Bestehende Installationen holen ihn mit `manage.py hilfe_anlegen` nach.
+- Hilfe: Jede Seite „Hilfe:…“ verlinkt oben und unten die vorherige und die folgende Seite sowie
+  die Übersicht.
+- `manage.py hilfe_anlegen --force` bringt vorhandene Hilfe-Artikel und -Bilder auf den
+  mitgelieferten Stand, als neue Version bzw. Fassung; die bisherigen bleiben in der Geschichte.
+
+### Geändert
+
+- Hilfe: „Erste Schritte“ beginnt nach der Anmeldung; wie man ein neues Passwort anfordert,
+  steht jetzt unter „Mein Profil“, ebenso genauer, wann das Kästchen gegen die Übertragung ins
+  Telefon-Adressbuch erscheint.
+- Startseite: Fehlt `/data/startseite` beim Containerstart, legt `start.sh` dort eine Kopie der
+  mitgelieferten Demo-Seite an, deren Dateien man direkt mit eigenen überschreibt. Ein
+  vorhandener Ordner bleibt unberührt.
 
 ## v1.0.8 — 2026-10-15
 

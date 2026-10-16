@@ -21,8 +21,14 @@ startseite/
   statisch/…     images, CSS, fonts → served under /startseite/…
 ```
 
-So an installation may start with nothing but its own `index.html` and keep using the shipped
-CSS and images, or replace only one image.
+**First start.** If `DATEN/startseite/` does not exist when the container starts, `start.sh`
+copies `intern/startseite/` there, so an operator finds the demo page in the volume and makes it
+their own by overwriting its files. An existing folder — even an empty one, or a git checkout —
+is never touched, and nothing is copied again after an update: a changed demo reaches only
+installations that never had the folder. The second root stays as the fallback for whatever the
+folder lacks, e.g. a file a later version starts to reference, or one an operator deleted. So an
+installation may also keep nothing but its own `index.html` and use the shipped CSS and images,
+or replace only one image.
 
 ## The `startseite` template engine
 

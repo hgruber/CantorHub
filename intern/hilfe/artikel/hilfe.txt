@@ -2,7 +2,7 @@
 Hier findest Du Anleitungen zu allem, was das Mitgliederportal kann. Sie sind für Menschen geschrieben, die mit Computer und Smartphone nicht viel Erfahrung haben. Lies in Ruhe und probiere einfach aus — kaputt machen kannst Du nichts.
 
 === Die ersten Schritte ===
-* [[Hilfe:Erste Schritte|Erste Schritte]] — anmelden, sich zurechtfinden, abmelden
+* [[Hilfe:Erste Schritte|Erste Schritte]] — sich zurechtfinden, das Portal als App, abmelden
 * [[Hilfe:Mein Profil|Mein Profil]] — Foto, Telefonnummer, Adresse und wer was sehen darf
 
 === Im Portal ===

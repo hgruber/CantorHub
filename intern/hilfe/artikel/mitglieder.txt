@@ -14,5 +14,3 @@ Unter '''Karte''' siehst Du, wo die Mitglieder ungefähr wohnen — praktisch f�
 
 === Alle Mitglieder im Telefon ===
 Du kannst alle Mitglieder in das Adressbuch Deines Smartphones holen. Wie das geht, steht unter [[Hilfe:Kontakte aufs Telefon|Kontakte aufs Telefon]].
-
-Zurück zur [[Hilfe|Übersicht]].

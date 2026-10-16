@@ -8,8 +8,9 @@ from intern.models import User
 class Command(BaseCommand):
     help = (
         "Legt die mitgelieferten Hilfe-Artikel (Hilfe, Hilfe:…) samt Bildern an, "
-        "soweit es sie noch nicht gibt. Vorhandene Artikel bleiben unverändert — "
-        "für bestehende Installationen; eine neue bekommt sie bei der Ersteinrichtung."
+        "soweit es sie noch nicht gibt. Vorhandene Artikel bleiben unverändert, "
+        "außer mit --force — für bestehende Installationen; eine neue bekommt sie "
+        "bei der Ersteinrichtung."
     )
 
     def add_arguments(self, parser):
@@ -17,6 +18,12 @@ class Command(BaseCommand):
             "--autor",
             metavar="BENUTZERNAME",
             help="Wer als Autor eingetragen wird (Standard: der älteste Administrator).",
+        )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Vorhandene Artikel auf den mitgelieferten Text bringen (als neue Version, "
+                 "nur wo er abweicht) und vorhandene Bilder als neue Fassung ablegen.",
         )
 
     def handle(self, *args, **options):
@@ -29,9 +36,10 @@ class Command(BaseCommand):
             if autor is None:
                 raise CommandError("Kein Administrator vorhanden — erst die Ersteinrichtung abschließen.")
 
-        neu = hilfe.anlegen(autor, timezone.now())
+        neu = hilfe.anlegen(autor, timezone.now(), erneuern=options["force"])
+        was = "angelegt oder erneuert" if options["force"] else "angelegt"
         for name in neu:
-            self.stdout.write(f"angelegt: {name}")
+            self.stdout.write(f"{was}: {name}")
         self.stdout.write(self.style.SUCCESS(
-            f"{len(neu)} von {len(hilfe.ARTIKEL)} Hilfe-Artikeln neu angelegt."
+            f"{len(neu)} von {len(hilfe.ARTIKEL)} Hilfe-Artikeln {was}."
         ))

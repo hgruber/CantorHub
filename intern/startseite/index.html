@@ -14,8 +14,9 @@
     <body>
         {% comment %}
         Die mitgelieferte Startseite: neutral, ohne Foto und ohne Logo, alle Texte
-        aus der Konfiguration. Eine Installation ersetzt sie durch eine eigene unter
-        DATEN/startseite/ — Datei für Datei, siehe docs/startseite.md.
+        aus der Konfiguration. start.sh kopiert sie beim ersten Start nach
+        DATEN/startseite/; dort überschreibt eine Installation sie mit ihrer eigenen
+        — Datei für Datei, siehe docs/startseite.md.
         {% endcomment %}
         <header class="kopf">
             <a href="#start" class="wortmarke">
@@ -56,10 +57,11 @@
                         mitgelieferte Startseite. Die Texte stellst Du unter
                         <a href="/intern/konfiguration/">Konfiguration</a> ein
                         (<code>HOMEPAGE_UEBER_UNS</code>, <code>HOMEPAGE_AUFNAHME</code>,
-                        <code>VEREINSNAME*</code>, <code>BRAND_FARBE</code>). Eine ganz
-                        eigene Seite legst Du im Datenverzeichnis unter
-                        <code>startseite/index.html</code> ab — sie ersetzt diese hier
-                        sofort, ohne Neustart.
+                        <code>VEREINSNAME*</code>, <code>BRAND_FARBE</code>). Diese Seite liegt
+                        als Kopie im Datenverzeichnis unter <code>startseite/</code>:
+                        überschreibe <code>index.html</code> und die Dateien unter
+                        <code>statisch/</code> mit Deinen eigenen — das wirkt sofort,
+                        ohne Neustart.
                     </p>
                 </div>
             </section>

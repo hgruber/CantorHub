@@ -122,9 +122,18 @@ in `intern/hilfe/artikel/`, their images in `intern/hilfe/bilder/` — schematic
 phone screens (no freely licensed screenshots of the set-up steps exist) and cut-outs of the
 portal itself.
 
+Every `Hilfe:…` page gets a navigation line at its top and bottom — previous page, overview,
+next page in the order of `hilfe.ARTIKEL`. `hilfe.text()` adds it when the text is produced;
+the files under `artikel/` do not carry it, so reordering or adding a page needs no edit
+elsewhere.
+
 The first-run setup creates them (`hilfe.anlegen()`), `manage.py hilfe_anlegen` adds them to an
 existing installation. Neither overwrites: an existing article name and an existing image name
-are skipped. The images land in Backstage/Wiki-Anhänge; edit rights go to Webmaster and Vorstand
+are skipped. `hilfe_anlegen --force` (`anlegen(erneuern=True)`) brings existing ones to the
+shipped state: an article whose newest version differs gets the shipped text as its next
+version — articles are immutable per version — and an image goes through
+`dateiablage.systemablage_inhalt()`, which makes it a new revision unless its content is already
+in the chain. The images land in Backstage/Wiki-Anhänge; edit rights go to Webmaster and Vorstand
 only, reading stays open. `HilfeArtikelTest` checks that every image is used and present, every
 placeholder known and every `[[Hilfe…]]` link resolvable.
 

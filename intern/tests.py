@@ -7284,6 +7284,20 @@ class HilfeArtikelTest(SimpleTestCase):
         self.assertNotIn(hilfe.PLATZHALTER_MARKE, text)
         self.assertIn(" {XMPP_ADRESSE} — ", text)
 
+    def test_navigation_oben_und_unten(self):
+        from intern import hilfe
+        seiten = [n for n in hilfe.ARTIKEL if n.startswith("Hilfe:")]
+        for i, name in enumerate(seiten):
+            zeilen = hilfe.text(name).strip().splitlines()
+            self.assertEqual(zeilen[0], zeilen[-1], name)
+            nav = zeilen[0]
+            self.assertIn("[[Hilfe|Übersicht]]", nav)
+            vorher = f"← [[{seiten[i - 1]}|" if i > 0 else "←"
+            nachher = f"[[{seiten[i + 1]}|" if i + 1 < len(seiten) else "→"
+            self.assertEqual(vorher in nav, i > 0, name)
+            self.assertEqual(nachher in nav, i + 1 < len(seiten), name)
+        self.assertNotIn("←", hilfe.text("Hilfe"))
+
     def test_uebersicht_nennt_jeden_artikel(self):
         from intern import hilfe
         uebersicht = hilfe.text("Hilfe")

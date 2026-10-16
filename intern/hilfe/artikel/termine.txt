@@ -38,5 +38,3 @@ Wer Termine anlegen darf, sieht oben rechts ein ⊕. Wer die Anwesenheit pflegt,
 
 === Termine im Kalender Deines Telefons ===
 Alle Termine können automatisch im Kalender Deines Smartphones erscheinen. Wie das geht, steht unter [[Hilfe:Termine aufs Telefon|Termine aufs Telefon]].
-
-Zurück zur [[Hilfe|Übersicht]].

@@ -35,5 +35,3 @@ In der Forenliste steht oben rechts ein Suchfeld. Gib ein Wort ein, und Du bekom
 
 === Das Forum als Chat auf dem Smartphone ===
 Jedes Forum ist auch ein Gruppenchat. Mit einer Chat-App bekommst Du neue Nachrichten sofort aufs Telefon, und was Du dort schreibst, steht auch hier im Forum. Wie Du das einrichtest, steht unter [[Hilfe:Chat auf dem Telefon|Chat auf dem Telefon]].
-
-Zurück zur [[Hilfe|Übersicht]].

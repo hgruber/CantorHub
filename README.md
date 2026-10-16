@@ -326,14 +326,14 @@ is in `docs/configuration.md`; these are the ones that decide whether things wor
 
 ### Your own homepage
 
-The public homepage ships with the image. To use your own, create `startseite/` in the data
-volume (`/data/startseite/` inside the container): an `index.html` there replaces the shipped
-page, and files under `startseite/statisch/` are served at `/startseite/…` and replace shipped
-files of the same name. Anything you leave out keeps coming from the image, so you can start by
-copying the shipped `intern/startseite/index.html` and changing it. Changes take effect on the
-next page view, no restart needed — keeping the folder as a git checkout and pulling into it
-works well. The files must be readable by nginx inside the container. The template variables and
-tags are listed in `docs/startseite.md`.
+The public homepage ships with the image. On a start without `startseite/` in the data volume
+(`/data/startseite/` inside the container), `start.sh` copies the shipped demo page there — so
+the files you see are the ones you edit: overwrite `index.html` and the files under
+`startseite/statisch/` (served at `/startseite/…`) with your own. An existing folder is never
+touched, even an empty one, so you can also provide it yourself, e.g. as a git checkout you pull
+into. A file missing from the folder keeps coming from the image. Changes take effect on the
+next page view, no restart needed. The files must be readable by nginx inside the container. The
+template variables and tags are listed in `docs/startseite.md`.
 
 The same folder carries your **logo**: `startseite/statisch/logo.svg` replaces the shipped
 CantorHub seal everywhere in the portal (login, sidebar, error pages, favicon). Its raster
@@ -388,7 +388,7 @@ Run with `podman exec cantorhub python manage.py <command>`.
 | `ejabberd_bot` | Run the XMPP relay bot in the foreground |
 | `index_files`, `thumbnail_files` | Rebuild the file search index / pre-generate thumbnails |
 | `seitenmessung [--nutzer NAME] [--laeufe N] [--seite TEXT]` | Measure the response time and query count of the main pages. It copies the SQLite file first and throws the copy away afterwards, so the running database is never written to; the last column names a query that occurs more than three times, which is how a per-row query gives itself away |
-| `hilfe_anlegen [--autor BENUTZERNAME]` | Add the shipped help pages („Hilfe“, `Hilfe:…`) and their images to an existing installation. Pages and images that already exist under the same name are left alone; a new installation gets them from the first-run setup |
+| `hilfe_anlegen [--autor BENUTZERNAME] [--force]` | Add the shipped help pages („Hilfe“, `Hilfe:…`) and their images to an existing installation. Pages and images that already exist under the same name are left alone; `--force` brings them to the shipped state as well — a new article version where the text differs, a new image revision — and keeps the old ones in the history. A new installation gets them from the first-run setup |
 | `createsuperuser` | Django's own — create an administrator |
 
 **Never run `filer_check --delete-orphans`.** File revisions are stored without a database row on

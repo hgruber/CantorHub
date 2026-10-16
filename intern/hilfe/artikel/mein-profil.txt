@@ -24,12 +24,18 @@ Unter fast jedem Feld steht ein Kästchen '''verbergen'''.
 Verborgene Angaben kommen auch nicht in die Adressbücher der anderen, wenn diese die [[Hilfe:Kontakte aufs Telefon|Kontakte aufs Telefon]] holen.
 
 === Adressbuch auf dem Telefon ===
-Wenn Du gar nicht im Telefon-Adressbuch der anderen auftauchen möchtest, setze das Häkchen bei '''Meinen Eintrag gar nicht übertragen'''. Im Portal bleibst Du trotzdem sichtbar. Diesen Abschnitt gibt es nur, wenn der Dienst eingeschaltet ist.
+Wenn Du gar nicht im Telefon-Adressbuch der anderen auftauchen möchtest, setze das Häkchen bei '''Meinen Eintrag gar nicht übertragen'''. Im Portal bleibst Du trotzdem sichtbar.
+
+Das Kästchen steht nur in Deinem eigenen Profil, und nur solange die [[Hilfe:Kontakte aufs Telefon|Kontakte aufs Telefon]] eingeschaltet sind — zurzeit sind sie '''{CARDDAV_STATUS}'''. Hast Du das Häkchen einmal gesetzt, bleibt es auch dann gültig, wenn der Dienst zwischendurch aus- und wieder eingeschaltet wird.
 
 === Deine Stimme ===
 Bei '''Stimme''' wählst Du, wo Du singst: Sopran, Alt, Tenor oder Bass — oder Chorleiter und Musiker. Danach richten sich die Aufstellung bei den Terminen und die Farben in der Mitgliederliste.
 
 === Passwort ändern ===
-Ein neues Passwort bekommst Du über die Anmeldeseite: melde Dich ab und tippe unten auf '''Hier anfordern'''. Wie das geht, steht unter [[Hilfe:Erste Schritte|Erste Schritte]].
+Ein neues Passwort bekommst Du über die Anmeldeseite:
+# Melde Dich ab (ganz unten in der Seitenleiste) und tippe auf der Anmeldeseite unten auf '''Hier anfordern'''.
+# Gib Deinen Benutzernamen ein. Deiner lautet: '''{BENUTZERNAME}'''
+# Tippe auf '''zurücksetzen'''.
+# Du bekommst eine E-Mail mit einem Link. Öffne ihn, denke Dir ein neues Passwort aus und tippe auf '''Passwort speichern'''.
 
-Zurück zur [[Hilfe|Übersicht]].
+% Keine E-Mail bekommen? Schau im Spam-Ordner nach. Wenn sie auch dort nicht ist, frag jemanden aus dem Vorstand.

@@ -73,5 +73,3 @@ Wie Weg 2, aber mit doppelt so viel Leistung und einer zweiten, getrennten Siche
 * '''Jemand muss sich kümmern.''' Der Server braucht ab und zu Updates — für das Betriebssystem und für das Portal. Das ist wenig Arbeit, aber sie muss jemand verlässlich tun.
 * '''Datenbank und Dateien gehören zusammen.''' Eine Sicherung ist nur vollständig, wenn beide vom selben Zeitpunkt stammen.
 * '''Die Rechnung läuft auf den Verein.''' Bucht Server und Domain auf den Verein, nicht auf eine Privatperson — sonst hängt das Portal an einem einzelnen Konto.
-
-Zurück zur [[Hilfe|Übersicht]].

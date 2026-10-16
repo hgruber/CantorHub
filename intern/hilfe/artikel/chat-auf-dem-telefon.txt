@@ -60,5 +60,3 @@ Wie bei Android: Schreibt jemand im Forum, bekommst Du eine Einladung in den Gru
 * '''Aus Versehen „Neues Konto erstellen“ getippt?''' Kein Problem: In Conversations oben rechts auf die drei Punkte ⋮ → '''Konten verwalten''' → das falsche Konto löschen und mit '''Konto hinzufügen''' das richtige eintragen.
 * '''Keine Einladung bekommen?''' Einladungen kommen, sobald im Forum jemand schreibt. Schreib selbst etwas im Forum, wenn Du es eilig hast.
 * '''Nachrichten kommen spät an:''' Erlaube der App, im Hintergrund zu laufen, und schalte Benachrichtigungen ein.
-
-Zurück zur [[Hilfe|Übersicht]].

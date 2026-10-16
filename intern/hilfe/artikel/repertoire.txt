@@ -36,5 +36,3 @@ Auf der Seite eines Konzerts (unter [[Hilfe:Termine|Termine]]) tippst Du auf die
 
 === Noch mehr zu einer Zeile ===
 Am Computer klickst Du mit der '''rechten''' Maustaste auf eine Zeile, auf dem Smartphone hältst Du den Finger etwas länger darauf. Es öffnet sich ein Menü zum Abspielen und Herunterladen.
-
-Zurück zur [[Hilfe|Übersicht]].

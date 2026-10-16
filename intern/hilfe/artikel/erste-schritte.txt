@@ -5,23 +5,6 @@ Das Mitgliederportal ist eine Internetseite nur für uns. Du erreichst es auf de
 
 Am besten speicherst Du sie Dir gleich als Lesezeichen.
 
-=== Anmelden ===
-[[Datei:hilfe-anmelden.png]]
-# Öffne die Adresse oben. Auf der Startseite tippst Du oben rechts auf '''Login'''.
-# Gib Deinen '''Benutzernamen''' ein. Deiner lautet: '''{BENUTZERNAME}'''
-# Gib Dein '''Passwort''' ein.
-# Tippe auf '''Anmelden'''.
-
-Groß- und Kleinschreibung spielen beim Passwort eine Rolle. Achte darauf, dass auf dem Smartphone nicht automatisch ein Großbuchstabe am Anfang entsteht.
-
-=== Passwort vergessen oder noch keins bekommen? ===
-# Tippe auf der Anmeldeseite unten auf '''Hier anfordern'''.
-# Gib Deinen Benutzernamen ein. Das genügt meistens.
-# Tippe auf '''zurücksetzen'''.
-# Du bekommst eine E-Mail mit einem Link. Öffne ihn, denke Dir ein neues Passwort aus und tippe auf '''Passwort speichern'''.
-
-% Keine E-Mail bekommen? Schau im Spam-Ordner nach. Wenn sie auch dort nicht ist, frag jemanden aus dem Vorstand.
-
 === Sich zurechtfinden ===
 [[Datei:hilfe-seitenleiste.png]]
 Links siehst Du die '''Seitenleiste''' mit allen Bereichen. Auf dem Smartphone ist sie eingeklappt: tippe oben links auf die drei Striche ☰, dann klappt sie auf.
@@ -49,5 +32,3 @@ Du kannst das Portal auf den Startbildschirm Deines Smartphones legen. Dann öff
 
 === Abmelden ===
 Ganz unten in der Seitenleiste steht '''Abmelden'''. Auf Deinem eigenen Gerät musst Du Dich nicht abmelden. Auf einem fremden Computer solltest Du es immer tun.
-
-Weiter geht es mit [[Hilfe:Mein Profil|Mein Profil]] oder zurück zur [[Hilfe|Übersicht]].

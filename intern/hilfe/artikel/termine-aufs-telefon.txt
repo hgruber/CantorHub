@@ -83,5 +83,3 @@ Auf dem iPhone brauchst Du keine zusätzliche App.
 * '''Du willst es wieder loswerden:''' Lösche das Konto in DAVx⁵ bzw. den Account in den iPhone-Einstellungen. Die Termine verschwinden dann vom Telefon, im Portal bleibt alles erhalten.
 
 Keine App installieren und kein Passwort eingeben? Dann ist [[Hilfe:Kalender abonnieren|Kalender abonnieren]] das Richtige für Dich.
-
-Zurück zur [[Hilfe|Übersicht]].
