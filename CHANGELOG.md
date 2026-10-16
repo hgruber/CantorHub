@@ -21,6 +21,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ### Geändert
 
+- Artikel: Die Fußzeile zeigt den Vereinsnamen ohne angehängtes Ausrufezeichen.
 - Hilfe: „Erste Schritte“ beginnt nach der Anmeldung; wie man ein neues Passwort anfordert,
   steht jetzt unter „Mein Profil“, ebenso genauer, wann das Kästchen gegen die Übertragung ins
   Telefon-Adressbuch erscheint.
