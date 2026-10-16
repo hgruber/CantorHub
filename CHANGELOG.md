@@ -33,6 +33,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Startseite: Fehlt `/data/startseite` beim Containerstart, legt `start.sh` dort eine Kopie der
   mitgelieferten Demo-Seite an, deren Dateien man direkt mit eigenen überschreibt. Ein
   vorhandener Ordner bleibt unberührt.
+- Konfiguration: Pflichtfelder tragen hinter ihrem Schlüssel einen Stern.
 
 ## v1.0.8 — 2026-10-15
 

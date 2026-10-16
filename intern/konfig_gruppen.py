@@ -527,13 +527,14 @@ def gruppiere(rows: list[dict]) -> list[dict]:
     nach_id: dict[str, list[dict]] = {g.id: [] for g in GRUPPEN}
     nach_id[_SONSTIGE.id] = []
     for row in rows:
-        # Kopie mit angereichertem ``typ``/``manuell`` — der Eingabe-dict wird nicht mutiert.
+        # Kopie mit angereichertem ``typ``/``manuell``/``pflicht`` — der Eingabe-dict wird nicht mutiert.
         gid = zuordnung(row["key"])
         typ = feldtyp(row["key"])
         eintrag = {
             **row,
             "typ": typ,
             "manuell": gid == _SONSTIGE.id,
+            "pflicht": ist_pflicht(row["key"]),
             "optionen": SELECT_OPTIONEN.get(row["key"], ()) if typ == "select" else (),
         }
         nach_id[gid].append(eintrag)

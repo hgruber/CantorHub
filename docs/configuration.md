@@ -171,7 +171,8 @@ computed in `intern/konfig_gruppen.py` and therefore DB-free and testable
 - **empty required key** — a key that must carry a value but whose row is blank. The list of
   keys where blank is *legitimate* is the explicit exception set `OPTIONAL_LEER`; everything
   else in the catalog counts as required. A blank required key is not an error — the code
-  falls back to its own default — it just means that default is in force.
+  falls back to its own default — it just means that default is in force. Every required key
+  carries a `*` after its name on the page (`ist_pflicht()`, passed on by `gruppiere()`).
 - **missing key** — a catalog key with no row at all. Normally impossible (`_seed_config`
   creates every key on `post_migrate`); it shows up only after a row was deleted by hand, and
   the next restart re-creates it. These are named in the banner because the page has no field
