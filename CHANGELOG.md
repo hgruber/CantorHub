@@ -7,6 +7,13 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Sicherheit
+
+- Django auf 6.0.8 und Pillow auf 12.3.0 angehoben; beide Versionen schließen bekannte Lücken,
+  unter anderem beim Datei-Upload und beim Öffnen präparierter Bilddateien.
+
 ## v1.0.9 — 2026-10-16
 
 ### Hinzugefügt
