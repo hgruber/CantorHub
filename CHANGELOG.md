@@ -9,6 +9,13 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Geändert
+
+- Abbilder entstehen bei jedem Versions-Tag auf GitHub und liegen als `ghcr.io/hgruber/cantorhub`
+  für amd64 und arm64 (Raspberry Pi) in der Registry; vor der Veröffentlichung laufen die Tests im
+  Abbild. Der Server zieht neue Fassungen mit `podman pull`, der Bau per `post-receive` auf dem
+  Server entfällt.
+
 ### Sicherheit
 
 - Django auf 6.0.8 und Pillow auf 12.3.0 angehoben; beide Versionen schließen bekannte Lücken,

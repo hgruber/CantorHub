@@ -1,55 +1,39 @@
 #!/bin/bash
 #
-# update-Hook des Bare-Repos auf dem Server
-# (/root/podman/CantorHub.git/hooks/update).
+# Changelog-Sperre fuer Versions-Tags. Aufgerufen vom Workflow
+# .github/workflows/abbild.yml, bevor er ein Abbild baut, mit denselben
+# Argumenten wie ein git-update-Hook:
 #
-# Ein Versions-Tag ist die Freigabe — post-receive baut auf es hin ein Abbild.
-# Dieser Hook laesst so ein Tag nur durch, wenn der getaggte Commit in
-# CHANGELOG.md einen gefuellten Abschnitt fuer genau diese Version traegt. Ohne
-# ihn ginge eine Fassung in Betrieb, von der niemand mehr nachlesen kann, was
-# sich geaendert hat.
+#   bash update.sh refs/tags/v1.2.3 <alte-rev> <rev-des-tags>
+#
+# Ein Versions-Tag ist die Freigabe — der Workflow baut auf es hin ein Abbild
+# und legt es in die Registry. Dieses Skript laesst so ein Tag nur durch, wenn
+# der getaggte Commit in CHANGELOG.md einen gefuellten Abschnitt fuer genau
+# diese Version traegt. Ohne ihn ginge eine Fassung in Betrieb, von der niemand
+# mehr nachlesen kann, was sich geaendert hat.
 #
 # Streng gilt das fuer Endfassungen. Eine Vorabversion (v1.0.0-rc2) darf sich
 # auch auf den Abschnitt ihrer Endfassung oder auf die Sammlung
 # "## Unveroeffentlicht" stuetzen — in der rc-Phase wird oft getaggt, und wer
 # jeden Zwischenstand einzeln beschreiben muss, beschreibt am Ende gar nichts.
 #
-# Warum update und nicht pre-receive: pre-receive laeuft einmal fuer den ganzen
-# Push und kennt nur alles oder nichts. update laeuft je Ref, also landet master
-# und nur das Tag wird verweigert — und ohne Tag baut post-receive nicht. Die
-# Arbeit haengt damit nicht am Changelog, die Auslieferung schon.
-#
-# Installation:
-#   scp update.sh root@server:/root/podman/CantorHub.git/hooks/update
-#   ssh root@server chmod +x /root/podman/CantorHub.git/hooks/update
-#
-# ACHTUNG, hier anders als in post-receive: GIT_OBJECT_DIRECTORY,
-# GIT_QUARANTINE_PATH und Verwandte bleiben stehen. Die gerade empfangenen
-# Objekte liegen noch in der Quarantaene; ohne diese Variablen ist der neue
-# Commit unlesbar und der Hook wuerde jedes Tag ablehnen. post-receive wirft sie
-# weg, weil es in einem anderen Verzeichnis baut — das nicht "vereinheitlichen".
-#
-# Der Exit-Status entscheidet ueber genau dieses Ref: 0 laesst es durch, alles
-# andere lehnt es ab. Die Ausgabe erreicht den Pushenden mit "remote:" davor.
+# Bis Oktober 2026 lief es als update-Hook im Bare-Repo des Servers; daher die
+# Hook-Argumente und das Protokoll unter /var/log, das im Workflow still
+# ausfaellt. Der Exit-Status entscheidet: 0 laesst bauen, alles andere bricht
+# den Workflow ab; die Ausgabe steht in dessen Protokoll.
 #
 # Notausgang: die Marke [ohne-changelog] in der Nachricht eines annotierten
 # Tags. Sie bleibt im Tag nachlesbar — ein uebergangener Changelog steht damit
-# dort, wo man spaeter nach der Freigabe sieht.
-#
-# "git push -o changelog=skip" waere der bequemere Weg und ist unten mit
-# vorgesehen, wirkt aber nicht: githooks(5) sichert Push-Optionen nur
-# pre-receive und post-receive zu, und gemessen (git 2.55, mit
-# receive.advertisePushOptions=true) kommen sie im update-Hook wirklich nicht
-# an — GIT_PUSH_OPTION_COUNT ist hier nicht gesetzt. Der Zweig bleibt stehen,
-# damit er greift, sobald git sie durchreicht; verlassen kann man sich nur auf
-# die Tagmarke.
+# dort, wo man spaeter nach der Freigabe sieht. Der Zweig fuer
+# "git push -o changelog=skip" bleibt stehen, GitHub reicht Push-Optionen aber
+# nicht an den Workflow weiter; verlassen kann man sich nur auf die Tagmarke.
 
 set -uo pipefail
 
 # ---------------------------------------------------------------- Einstellungen
 
-# Dasselbe Muster, das post-receive fuer baubare Tags anlegt. Was nicht darauf
-# passt, wird dort nicht gebaut und geht diesen Hook nichts an.
+# Dasselbe Muster, das der Workflow fuer baubare Tags anlegt. Was nicht darauf
+# passt, wird dort nicht gebaut und geht dieses Skript nichts an.
 readonly TAG_MUSTER='^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$'
 
 readonly DATEI='CHANGELOG.md'

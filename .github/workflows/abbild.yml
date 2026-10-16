@@ -1,0 +1,106 @@
+# Baut zu jedem Versions-Tag das Abbild und legt es nach ghcr.io.
+#
+# Der Tag ist die Freigabe: ein Push auf master baut nichts. Vor dem Bau gelten
+# dieselben Sperren wie frueher im Bare-Repo des Servers (post-receive.sh und
+# update.sh, bis Oktober 2026): Tagname v<major>.<minor>.<patch>[-vorab], der
+# Tag liegt auf master, und CHANGELOG.md traegt den Abschnitt (update.sh, hier
+# nur aufgerufen). Dann laufen die Tests im gebauten amd64-Abbild — nicht auf
+# dem Runner, weil WochentagsnamenTest die Locale des Abbilds prueft — und erst
+# danach wird fuer amd64 und arm64 veroeffentlicht.
+#
+# Der Server zieht neue Fassungen von Hand (podman pull + Neustart), siehe
+# README.md, „Updating“.
+
+name: Abbild
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: abbild-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bauen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag pruefen
+        id: tag
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          # Das annotierte Tag-Objekt holen: update.sh liest die Tagnachricht
+          # (Notausgang [ohne-changelog]).
+          git fetch --force origin "refs/tags/${tag}:refs/tags/${tag}"
+          if ! [[ "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "::error::Tagname ${tag} passt nicht auf v<major>.<minor>.<patch>[-vorab]."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/master; then
+            echo "::error::${tag} liegt nicht auf master."
+            exit 1
+          fi
+          bash update.sh "refs/tags/${tag}" \
+            0000000000000000000000000000000000000000 \
+            "$(git rev-parse "refs/tags/${tag}")"
+
+          abbild="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cantorhub"
+          marken="${abbild}:${tag}"
+          # :latest gehoert Endfassungen. Eine Vorabversion zieht es nur mit,
+          # solange es noch keine Endfassung gibt (wie post-receive.sh).
+          if [[ "${tag}" != *-* ]] || ! git tag --list 'v[0-9]*' | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            marken="${marken},${abbild}:latest"
+          fi
+          echo "marken=${marken}" >>"${GITHUB_OUTPUT}"
+          echo "Marken: ${marken}"
+
+      # BuildKit liest .dockerignore, nicht .containerignore. Ohne diese Kopie
+      # landeten .git und alles andere im Abbild.
+      - name: Ausschlussliste fuer BuildKit
+        run: cp .containerignore .dockerignore
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Testabbild bauen (amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: cantorhub:test
+          build-args: CANTORHUB_VERSION=${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Tests im Abbild
+        run: docker run --rm -e DEBUG=1 --entrypoint python cantorhub:test manage.py test intern
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Veroeffentlichen (amd64 + arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tag.outputs.marken }}
+          build-args: CANTORHUB_VERSION=${{ github.ref_name }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

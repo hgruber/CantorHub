@@ -3882,10 +3882,10 @@ class StatikQuellkartenTest(SimpleTestCase):
 
 
 class ChangelogTest(SimpleTestCase):
-    """``CHANGELOG.md`` in genau der Form, auf die der ``update``-Hook parst.
+    """``CHANGELOG.md`` in genau der Form, auf die ``update.sh`` parst.
 
-    Das Bare-Repo nimmt ein Versions-Tag nur an, wenn der getaggte Commit einen
-    gefüllten Abschnitt für diese Version trägt (``update.sh``). Der Hook
+    Der Workflow baut zu einem Versions-Tag nur, wenn der getaggte Commit einen
+    gefüllten Abschnitt für diese Version trägt (``update.sh``). Das Skript
     vergleicht dazu das zweite Feld der Überschriftzeile mit dem Tagnamen —
     ``## v1.0.1 — 2026-09-21`` ergibt ``v1.0.1``. Verrutscht das Format, fällt
     das sonst erst beim Freigeben auf, und dann steht der Auftritt schon im

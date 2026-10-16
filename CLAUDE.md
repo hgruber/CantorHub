@@ -208,16 +208,18 @@ reasoning where it matters.
   production data and on a freshly set-up database alike. Migrations run against a live MariaDB
   with data: a nullable → non-nullable change needs a default or a data step in the migration
   itself.
-- **A version tag needs its `CHANGELOG.md` section.** The tag is the release: the bare
-  repository's `update` hook (`update.sh`) refuses `v<x.y.z>` whose commit carries no filled
-  `## v<x.y.z>` section, so `post-receive` never builds an undocumented delivery. Only the tag is
-  refused — `master` lands either way. Collect under `## Unveröffentlicht` and rename that heading
+- **A version tag needs its `CHANGELOG.md` section.** The tag is the release: the GitHub
+  workflow `.github/workflows/abbild.yml` builds the multi-arch image (amd64 + arm64), runs the
+  tests inside it and publishes it to `ghcr.io/hgruber/cantorhub`, but first calls `update.sh`,
+  which refuses `v<x.y.z>` whose commit carries no filled `## v<x.y.z>` section — so no
+  undocumented delivery reaches the registry. Only the image is refused — `master` and the tag
+  land either way. Collect under `## Unveröffentlicht` and rename that heading
   at release time; a pre-release (`v1.0.0-rc2`) may lean on that section or on the one of its final
   version, a final version may not. Inside a version the entries sit in `###` groups by the kind
   of change (Keep a Changelog: `Hinzugefügt`, `Geändert`, `Behoben`, `Entfernt`, `Veraltet`,
   `Sicherheit`) and stay within three sentences — *what* changed, not why, the reasoning belongs in
   the commit message. Three hashes for a group, never two: `## Added` is a release heading and
-  would reach the portal as a card without a date. `ChangelogTest` guards the format the hook
+  would reach the portal as a card without a date. `ChangelogTest` guards the format the check
   parses, `AuslieferungenDateiTest` the group structure and the sentence rule, the release
   steps and the escape hatch are in `README.md`.
 - **All tests are `SimpleTestCase`.** A `TestCase` used to build a test database through the data

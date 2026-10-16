@@ -108,54 +108,47 @@ Schema changes ship as checked-in migrations; `start.sh` applies the ones still 
 
 ### Updating
 
-Build a new image and restart the container — the code is part of the image, so there is no
-`git pull` on the server any more, and `nginx.conf` is no longer a special case. The volume is
-untouched by an update. To verify what is actually loaded:
+The images are built on GitHub and published to the GitHub container registry as
+`ghcr.io/hgruber/cantorhub` — one multi-arch image for `linux/amd64` and `linux/arm64`, so a
+server and a 64-bit Raspberry Pi pull the same tag. The code is part of the image, so there is
+no `git pull` on the server, and `nginx.conf` is no longer a special case. The volume is
+untouched by an update. Updating is a deliberate step, because the start applies migrations:
 
 ```bash
-podman exec cantorhub nginx -T | grep real_ip
+podman pull ghcr.io/hgruber/cantorhub:latest
+systemctl restart container-cantorhub.service     # or: podman rm -f cantorhub && podman run …
+podman exec cantorhub nginx -T | grep real_ip     # verify what is actually loaded
+podman image prune                                # drop the superseded images
 ```
 
-If the server hosts the bare repository the project is pushed to, `post-receive.sh` does the
-build there. Install it once:
+While the repository is private, so is the package: log in once on the server with a personal
+access token that has the `read:packages` scope (`podman login ghcr.io -u hgruber`). Making the
+package public under its *Package settings* lets anyone pull without a login.
 
-```bash
-scp post-receive.sh root@server:/root/podman/CantorHub.git/hooks/post-receive
-ssh root@server chmod +x /root/podman/CantorHub.git/hooks/post-receive
-```
-
-From then on a push to `master` changes nothing on the server; **a version tag builds the
-image**. The hook accepts a tag only if it is named `v<major>.<minor>.<patch>` (optionally with
-a pre-release suffix, `v1.0.0-rc1`) and sits on `master`, exports that tag with `git archive`
-into a scratch directory, and builds `cantorhub:<tag>` plus `cantorhub:latest` from it. Older
-version images beyond the newest three are removed, and the build log is appended to
-`/var/log/cantorhub-build.log`. `NEUSTART=1` at the top of the script restarts the container after
-a successful build — leave that off until the unit no longer mounts the old working copy over
-`/app`.
+A push to `master` builds nothing; **a version tag builds the image**. The workflow
+`.github/workflows/abbild.yml` accepts a tag only if it is named `v<major>.<minor>.<patch>`
+(optionally with a pre-release suffix, `v1.0.0-rc1`), sits on `master` and passes the changelog
+check below. It then builds the amd64 image, runs the test suite inside it, and only then
+publishes `cantorhub:<tag>` for both platforms. The run and its log are under *Actions* on GitHub.
 
 A pre-release moves `:latest` **only while no final version is tagged yet**: during the run-up to
 1.0.0 the service, which starts `:latest`, follows every `v1.0.0-rcN`; once `v1.0.0` exists,
 `:latest` belongs to final versions and a later `v1.1.0-rc1` no longer drags production along.
-The hook decides that from the tags in the repository, so there is no switch to remember.
+The workflow decides that from the tags in the repository, so there is no switch to remember.
 
 ```bash
 git tag -a v1.0.1 -m "Release 1.0.1"
-git push origin master v1.0.1     # the build runs on the server, output comes back as `remote:`
+git push origin master v1.0.1     # the build runs on GitHub, see Actions
 ```
+
+`./build.sh` still builds an image locally, named after `git describe --tags`.
 
 ### The changelog is part of the release
 
-A second hook makes sure a release says what changed. Install it next to the first one:
-
-```bash
-scp update.sh root@server:/root/podman/CantorHub.git/hooks/update
-ssh root@server chmod +x /root/podman/CantorHub.git/hooks/update
-```
-
-`update` runs once per ref, before the ref is written, and **refuses a version tag whose commit
-carries no filled section for exactly that version in `CHANGELOG.md`** — a heading
-`## v1.0.1 — 2026-09-21` followed by at least one bullet. Only the tag is refused; `master` still
-lands, and since a branch push changes nothing on the server, nothing is built. The work
+`update.sh`, called by the workflow before anything is built, **refuses a version tag whose
+commit carries no filled section for exactly that version in `CHANGELOG.md`** — a heading
+`## v1.0.1 — 2026-09-21` followed by at least one bullet. Only the image is refused; `master`
+and the tag are on GitHub either way, and the failed run says what is missing. The work
 therefore never waits for the changelog, the delivery does. A release is:
 
 1. rename the `## Unveröffentlicht` heading in `CHANGELOG.md` to `## v1.0.1 — <date>`
@@ -175,21 +168,18 @@ inside a version, the entries are grouped by the kind of change, under `### Hinz
 and each entry is **at most three sentences** — what changed, not why. The reasoning, the
 measurements, the alternatives that were rejected: that belongs in the commit message, which is
 where anyone wanting the details should look. Three hashes for the groups, never two: `## Added`
-would be read as a release section and would reach the portal as a card. The hook does not care —
+would be read as a release section and would reach the portal as a card. The check does not care —
 it only looks for `## ` headings and at least one bullet inside — but the page does.
 
 A rejection names the missing section and the way out; forgetting it costs one commit and a
-`git tag -f`. In an emergency the marker `[ohne-changelog]` in the message of an annotated tag
-lets the tag through, and that is written to `/var/log/cantorhub-build.log`:
+`git tag -f` plus `git push --force origin v1.0.1`, which starts a new run. In an emergency the
+marker `[ohne-changelog]` in the message of an annotated tag lets the tag through; it stays
+readable in the tag:
 
 ```bash
 git tag -f -a v1.0.1 -m "Release 1.0.1 [ohne-changelog]"
 git push --force origin v1.0.1
 ```
-
-`git push -o changelog=skip` would be the more convenient escape hatch and the hook does look for
-it, but git hands push options to `pre-receive` and `post-receive` only — measured with 2.55, the
-`update` hook sees none — so the tag message is the escape hatch that works.
 
 ## Bootstrap environment variables
 
