@@ -24,7 +24,7 @@ Klicke am Computer mit der '''rechten''' Maustaste auf eine Datei, auf dem Smart
 * '''Abspielen''' — Musik und Videos direkt im Portal abspielen.
 * '''Löschen''' — wenn Du das darfst.
 
-Was Du in einem Ordner darfst, legt der Vorstand fest. Fehlt ein Menüpunkt, hast Du dort dieses Recht nicht.
+Was Du in einem Ordner darfst, legt der Webmaster fest. Fehlt ein Menüpunkt, hast Du dort dieses Recht nicht.
 
 === Mehrere Dateien auf einmal ===
 Setze links die Häkchen vor die Dateien. Dann erscheinen Knöpfe, um alle zusammen zu verschieben, herunterzuladen oder zu löschen.

@@ -24,7 +24,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Hilfe: „Erste Schritte“ beginnt nach der Anmeldung; wie man ein neues Passwort anfordert,
   steht jetzt unter „Mein Profil“, ebenso genauer, wann das Kästchen gegen die Übertragung ins
   Telefon-Adressbuch erscheint.
-- Hilfe: Bei Rückfragen verweisen die Artikel aufs Forum statt auf den Vorstand.
+- Hilfe: Bei Rückfragen verweisen die Artikel aufs Forum statt auf den Vorstand. Für Ordnerrechte
+  und das Freischalten von Diensten nennen sie wie die Seite „Passwort zurücksetzen“ den Webmaster
+  bzw. einen Administrator.
+- Ersteinrichtung: Die Startseite „Aktuell“ darf nur noch der Webmaster bearbeiten; die Gruppen
+  „Kassenprüfer“, „Gründer“, „kein Bild“ und „DSGVO“ werden nicht mehr vorab angelegt.
 - Startseite: Fehlt `/data/startseite` beim Containerstart, legt `start.sh` dort eine Kopie der
   mitgelieferten Demo-Seite an, deren Dateien man direkt mit eigenen überschreibt. Ein
   vorhandener Ordner bleibt unberührt.

@@ -1,5 +1,5 @@
 == Betrieb und Kosten ==
-Diese Seite ist für den '''Vorstand''' und alle, die entscheiden, wo das Portal laufen soll. Sie zählt auf, was der Betrieb wirklich braucht, und rechnet drei Wege durch — jeweils für einen Chor mit '''bis zu 100 Personen'''. Gerechnet ist nur der Server selbst, keine Beratung und keine bezahlte Hilfe beim Einrichten.
+Diese Seite ist für alle, die entscheiden, wo das Portal laufen soll. Sie zählt auf, was der Betrieb wirklich braucht, und rechnet drei Wege durch — jeweils für einen Chor mit '''bis zu 100 Personen'''. Gerechnet ist nur der Server selbst, keine Beratung und keine bezahlte Hilfe beim Einrichten.
 
 % Alle Preise sind '''Richtwerte mit Stand Oktober 2026''', gerundet und '''einschließlich 19 % Mehrwertsteuer''' (ein Verein kann sie meist nicht abziehen). Server- und Speicherpreise sind 2026 mehrfach gestiegen — prüft die Angebote vor der Bestellung.
 

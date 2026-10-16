@@ -1,7 +1,7 @@
 == Termine aufs Telefon ==
 Mit dieser Einrichtung erscheinen alle Proben und Auftritte im Kalender Deines Smartphones — mit Uhrzeit und Ort, und auf Wunsch auch die Geburtstage. Wird ein Termin im Portal geändert, ändert er sich auch auf Deinem Telefon. Du richtest das nur einmal ein.
 
-@ Dieser Dienst ist zurzeit '''{CALDAV_STATUS}'''. Steht dort „noch nicht eingeschaltet“, muss ihn erst jemand aus dem Vorstand freischalten — bis dahin klappt die Anmeldung nicht.
+@ Dieser Dienst ist zurzeit '''{CALDAV_STATUS}'''. Steht dort „noch nicht eingeschaltet“, muss ihn erst ein Administrator des Portals freischalten — bis dahin klappt die Anmeldung nicht.
 
 === Das brauchst Du ===
 Schreib Dir diese Angaben auf oder lass diese Seite offen, während Du Dein Telefon einrichtest:

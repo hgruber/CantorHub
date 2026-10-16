@@ -4783,18 +4783,19 @@ class MitgliedschaftTest(SimpleTestCase):
         self.assertFalse(aufnahme_setzt_aktiv(True))
 
     def test_gruppennamen_stehen_in_der_einrichtung(self):
-        """Die Gruppennamen muessen in ``einrichtung.GRUPPEN`` stehen.
+        """Die Gruppen, die der Code per ``get()`` erwartet, stehen in ``einrichtung.GRUPPEN``.
 
         Sonst legt die Ersteinrichtung sie auf einer neuen Installation nicht an und
-        die Aufnahme liefe gegen eine Gruppe, die es nur per ``get_or_create`` gibt.
+        die Aufnahme liefe ins Leere. „kein Bild" und „DSGVO" legt ``_setze_tag()``
+        per ``get_or_create`` beim ersten Gebrauch selbst an; „Gründer" ist nur noch
+        ein Etikett des Altimports.
         """
         from intern.einrichtung import GRUPPE_VORSTAND, GRUPPEN
 
-        for name in (
-            GRUPPE_MITGLIED, GRUPPE_FOERDERMITGLIED, GRUPPE_GRUENDER, GRUPPE_KEIN_BILD,
-            GRUPPE_DATENSCHUTZ_BESTAETIGT, GRUPPE_VORSTAND,
-        ):
+        for name in (GRUPPE_MITGLIED, GRUPPE_FOERDERMITGLIED, GRUPPE_VORSTAND):
             self.assertIn(name, GRUPPEN)
+        for name in (GRUPPE_GRUENDER, GRUPPE_KEIN_BILD, GRUPPE_DATENSCHUTZ_BESTAETIGT):
+            self.assertNotIn(name, GRUPPEN)
 
     def test_kein_bild_ohne_foto_einwilligung(self):
         """Ohne Foto-Haekchen gibt es das Tag „kein Bild", mit Haekchen nicht."""

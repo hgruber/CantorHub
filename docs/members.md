@@ -16,8 +16,10 @@ legacy portal is „access, no tag" (`legacy_id=232`, see `migration.md`); „F�
 
 The tag also carries the permissions every member has — initially „Mitglieder: benachrichtigen"
 and all of „Orte" (`GRUPPEN` in `intern/einrichtung.py`); ending the membership takes them away with it.
-„Gründer", „Fördermitglied" and „Kassenprüfer" are bare labels. „Gründer" has lost its function
-entirely: it steers the import and nothing else, and may be deleted later.
+„Fördermitglied" is a bare label set by the join form. „Gründer" and „Kassenprüfer" exist only on
+the imported installation: „Gründer" has lost its function entirely (it steered the import and
+nothing else) and may be deleted, and the first-run setup creates neither. It does not create
+„kein Bild" and „DSGVO" either — `mitgliedschaft._setze_tag()` creates them on first use.
 
 **Admission** is its own action, „Mitgliedschaft genehmigen" in `mitglied_edit`
 (`action="aufnehmen"`, perm `intern.change_user`). `mitgliedschaft.nimm_auf()` adds the tag,

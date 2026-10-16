@@ -1,7 +1,7 @@
 == Kontakte aufs Telefon ==
 Mit dieser Einrichtung landen alle Mitglieder im Adressbuch Deines Smartphones — mit Telefonnummer, E-Mail, Adresse und Foto. So siehst Du, wer anruft, und findest jede Nummer auch ohne Portal. Kommt jemand neu dazu oder ändert seine Nummer, wird Dein Adressbuch von selbst aktualisiert.
 
-@ Dieser Dienst ist zurzeit '''{CARDDAV_STATUS}'''. Steht dort „noch nicht eingeschaltet“, muss ihn erst jemand aus dem Vorstand freischalten — bis dahin klappt die Anmeldung nicht.
+@ Dieser Dienst ist zurzeit '''{CARDDAV_STATUS}'''. Steht dort „noch nicht eingeschaltet“, muss ihn erst ein Administrator des Portals freischalten — bis dahin klappt die Anmeldung nicht.
 
 === Gut zu wissen ===
 * Es werden nur Angaben übertragen, die das Mitglied in seinem Profil '''nicht verborgen''' hat.

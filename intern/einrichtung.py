@@ -28,7 +28,6 @@ GRUPPEN = {
         ("intern", "change_termin"),
         ("intern", "delete_termin"),
     ],
-    "Kassenprüfer": [],
     "Webmaster": [
         ("intern", "delete_user"),
         ("intern", "delete_folder"),
@@ -69,11 +68,9 @@ GRUPPEN = {
         ("intern", "change_ort"),
         ("intern", "delete_ort"),
     ],
-    # Nur Etiketten.
-    "Gründer": [],
+    # Nur ein Etikett, das der Beitritt setzt. „kein Bild" und „DSGVO" legt
+    # ``mitgliedschaft._setze_tag()`` beim ersten Gebrauch selbst an.
     "Fördermitglied": [],
-    "kein Bild": [],
-    "DSGVO": [],
 }
 
 GRUPPE_VORSTAND = "Vorstand"
@@ -122,13 +119,13 @@ def smtp_konfiguration(host, port, benutzer, passwort, verschluesselung):
 # Die Seite nach dem Login. Ohne sie landete jedes Mitglied im Editor; anlegen
 # darf sie deshalb jede Einrichtung, bearbeiten nur diese Gruppen.
 ARTIKEL_AKTUELL = "Aktuell"
-AKTUELL_SCHREIBGRUPPEN = ("Webmaster", GRUPPE_VORSTAND, "KonzertOrga")
+AKTUELL_SCHREIBGRUPPEN = ("Webmaster",)
 
 AKTUELL_TEXT = (
     "== Willkommen im Mitgliederportal ==\n\n"
     "Diese Seite sehen alle Mitglieder nach der Anmeldung. Hier steht, was gerade "
     "wichtig ist: die nächste Probe, ein Konzert, eine Bitte an alle.\n\n"
-    "Bearbeiten dürfen sie Webmaster, Vorstand und KonzertOrga.\n\n"
+    "Bearbeiten darf sie der Webmaster.\n\n"
     "@ '''Neu hier?''' Unter [[Hilfe]] steht Schritt für Schritt, wie das Portal "
     "funktioniert — und wie Termine, Kontakte und der Chat aufs Telefon kommen.\n"
 )

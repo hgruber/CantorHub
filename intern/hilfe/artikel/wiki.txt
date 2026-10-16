@@ -7,7 +7,7 @@ Seiten wie diese heißen '''Artikel'''. Jedes Mitglied kann Artikel lesen, und d
 # Ändere den Text. Wie Du Überschriften, Listen und Fettschrift schreibst, steht weiter unten.
 # Tippe auf '''Speichern'''.
 
-Fehlt der Stift, darf diesen Artikel nur eine bestimmte Gruppe bearbeiten — zum Beispiel diese Hilfe nur Webmaster und Vorstand.
+Fehlt der Stift, darf diesen Artikel nur eine bestimmte Gruppe bearbeiten — zum Beispiel diese Hilfe.
 
 === Einen neuen Artikel anlegen ===
 * Tippe oben rechts auf den '''Pfeil''' (Zurück zur Übersicht). Du siehst die Liste aller Artikel. Dort legst Du mit ⊕ einen neuen an.
