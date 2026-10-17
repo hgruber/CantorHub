@@ -5,6 +5,18 @@ table — no sentence lives in a template.** The templates only supply the brand
 remain in Python. That is the rule to keep in mind before adding a mail: if you find yourself
 writing prose into an HTML file, you are on the wrong path.
 
+## SMTP access
+
+`intern/email_backend.py` (`DbEmailBackend`) reads the `EMAIL_*` keys on every connection, so a
+changed access takes effect with the next mail — no restart, unlike the XMPP bot. Because a
+failed send only reaches the log (`send_branded_mail` swallows every exception), both places that
+write the access check it first: `/intern/konfiguration/` and the first-run setup log in with the
+new values (`anmeldung_pruefen()` in `intern/smtp_zugang.py`, 10 s timeout) and store nothing if
+that fails. A checkbox („Ohne Prüfung speichern“, in the setup „Ohne Anmeldeprüfung
+übernehmen“) skips the check for a server that is not reachable yet. An empty host is never
+checked, and `EMAIL_USE_TLS` together with `EMAIL_USE_SSL` is always refused — Django's SMTP
+backend raises on that combination, so every send would fail.
+
 ## Templates
 
 There are four, and there is no per-mail template:

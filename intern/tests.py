@@ -7433,3 +7433,62 @@ class BotZugangTest(SimpleTestCase):
         # neustart_bei_absturz in start.sh startet nur bei Code ungleich 0 neu.
         from intern.management.commands.ejabberd_bot import NEUSTART
         self.assertNotEqual(NEUSTART, 0)
+
+
+class SmtpZugangTest(SimpleTestCase):
+    """Wann die Konfigurationsseite einen neuen SMTP-Zugang vor dem Speichern prüft."""
+
+    ALT = {
+        "EMAIL_HOST": "smtp.example.org",
+        "EMAIL_PORT": "587",
+        "EMAIL_HOST_USER": "portal",
+        "EMAIL_HOST_PASSWORD": "alt",
+        "EMAIL_USE_TLS": "1",
+        "EMAIL_USE_SSL": "0",
+    }
+
+    def _pruefung(self, neu, nur_speichern=False):
+        from intern.smtp_zugang import smtp_pruefung
+        return smtp_pruefung(self.ALT, neu, nur_speichern)
+
+    def test_ohne_aenderung_nichts(self):
+        self.assertIsNone(self._pruefung({"EMAIL_HOST": "smtp.example.org", "VEREINSNAME": "x"}))
+
+    def test_neues_passwort_wird_geprueft(self):
+        from intern.smtp_zugang import PRUEFEN
+        self.assertEqual(self._pruefung({"EMAIL_HOST_PASSWORD": "neu"}), PRUEFEN)
+
+    def test_tls_und_ssl_immer_abgelehnt(self):
+        from intern.smtp_zugang import FEHLER_TLS_SSL
+        self.assertEqual(self._pruefung({"EMAIL_USE_SSL": "1"}), FEHLER_TLS_SSL)
+        self.assertEqual(self._pruefung({"EMAIL_USE_SSL": "true"}, nur_speichern=True),
+                         FEHLER_TLS_SSL)
+
+    def test_leerer_host_schaltet_ab_ohne_pruefung(self):
+        from intern.smtp_zugang import NUR_SPEICHERN
+        self.assertEqual(self._pruefung({"EMAIL_HOST": " "}), NUR_SPEICHERN)
+
+    def test_angekreuzt_nur_speichern(self):
+        from intern.smtp_zugang import NUR_SPEICHERN
+        self.assertEqual(self._pruefung({"EMAIL_HOST_PASSWORD": "neu"}, nur_speichern=True),
+                         NUR_SPEICHERN)
+
+    def test_zusammengefuehrt_mischt_alt_und_neu(self):
+        from intern.smtp_zugang import zusammengefuehrt
+        werte = zusammengefuehrt(self.ALT, {"EMAIL_PORT": "465", "VEREINSNAME": "x"})
+        self.assertEqual(werte["EMAIL_PORT"], "465")
+        self.assertEqual(werte["EMAIL_HOST_PASSWORD"], "alt")
+        self.assertNotIn("VEREINSNAME", werte)
+
+    def test_fehlertext_unterscheidet_anmeldung_und_verbindung(self):
+        import smtplib
+
+        from intern.smtp_zugang import fehlertext
+        self.assertIn("Anmeldung abgelehnt",
+                      fehlertext(smtplib.SMTPAuthenticationError(535, b"no")))
+        self.assertIn("nicht erreichbar", fehlertext(ConnectionRefusedError()))
+
+    def test_unerreichbarer_server_liefert_text(self):
+        from intern.smtp_zugang import anmeldung_pruefen, zusammengefuehrt
+        werte = zusammengefuehrt(self.ALT, {"EMAIL_HOST": "127.0.0.1", "EMAIL_PORT": "1"})
+        self.assertIn("nicht erreichbar", anmeldung_pruefen(werte))

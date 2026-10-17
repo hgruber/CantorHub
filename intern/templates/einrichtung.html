@@ -54,6 +54,9 @@
             {% form_field form.email_host_user "Benutzername" %}
             {% form_field form.email_host_password "Passwort" %}
         </div>
+        <div class="join-consents">
+            <label class="checkbox-label join-consent">{{ form.smtp_ungeprueft }} <span>{{ form.smtp_ungeprueft.label }}</span></label>
+        </div>
     </div>
 
     {# ── Beispieldaten ───────────────────────────────────────── #}

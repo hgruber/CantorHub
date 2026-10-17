@@ -17,7 +17,9 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `EJABBERD_BOT_RESCAN_SECONDS` (interval at which the bot rescans for new forums, default `60`)
 - `EJABBERD_BOT_RELAY_SECONDS` (interval at which the bot relays forum→MUC and reactions, default `3`)
 - `ICAL_SECRET`
-- the `EMAIL_*` set, `DEFAULT_FROM_EMAIL`
+- the `EMAIL_*` set, `DEFAULT_FROM_EMAIL` — saving a changed SMTP access first logs in with the
+  new values and stores nothing if that fails; `EMAIL_USE_TLS` and `EMAIL_USE_SSL` together are
+  always refused (`intern/smtp_zugang.py`, see „SMTP access“ in `docs/mail.md`)
 - `UPLOAD_MAX_MB` (max upload size in MB, default `50`)
 - `MAP_CENTER_ID` (id of the `Ort` used as the map centre)
 - `MAP_DEFAULT_ZOOM` (default zoom of the overview map, default `6`)

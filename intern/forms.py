@@ -511,6 +511,11 @@ class EinrichtungForm(forms.Form):
         required=False,
         widget=forms.Select(attrs=_text),
     )
+    smtp_ungeprueft = forms.BooleanField(
+        required=False,
+        label="Ohne Anmeldeprüfung übernehmen — sonst meldet sich das Portal beim "
+        "Abschließen mit diesen Daten am SMTP-Server an.",
+    )
     beispieldaten = forms.BooleanField(
         required=False,
         initial=True,
@@ -542,7 +547,27 @@ class EinrichtungForm(forms.Form):
                     validate_password(p1)
                 except ValidationError as exc:
                     self.add_error("password1", exc)
+        self._smtp_pruefen(cleaned)
         return cleaned
+
+    def _smtp_pruefen(self, cleaned):
+        """Ein eingetragener SMTP-Zugang muss sich anmelden können (smtp_zugang.py)."""
+        from .einrichtung import smtp_konfiguration
+        from .smtp_zugang import anmeldung_pruefen
+
+        if cleaned.get("smtp_ungeprueft") or self.errors:
+            return
+        werte = smtp_konfiguration(
+            (cleaned.get("email_host") or "").strip(),
+            cleaned.get("email_port"),
+            cleaned.get("email_host_user") or "",
+            cleaned.get("email_host_password") or "",
+            cleaned.get("email_verschluesselung") or "",
+        )
+        if werte:
+            fehler = anmeldung_pruefen(werte)
+            if fehler:
+                self.add_error("email_host", fehler)
 
 
 class CantorAuthenticationForm(AuthenticationForm):

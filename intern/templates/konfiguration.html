@@ -155,4 +155,18 @@ Was beim Speichern passiert, steht in intern/bot_passwort.py.
         <button type="button" class="btn btn-primary" onclick="this.closest('dialog').close()">Verstanden</button>
     </div>
 </dialog>
+{% comment %}
+Geht beim ersten Tippen in einen SMTP-Schlüssel auf (konfiguration.js).
+Was beim Speichern passiert, steht in intern/smtp_zugang.py.
+{% endcomment %}
+<dialog id="kf-smtp-dialog" class="app-dialog">
+    <h3>SMTP-Zugang ändern</h3>
+    <p>Beim Speichern meldet sich das Portal mit den neuen Daten beim SMTP-Server an. Gelingt das
+    nicht, wird nichts gespeichert und die Seite nennt den Grund.</p>
+    <p>STARTTLS und SSL schließen sich aus; beide zugleich lehnt die Seite immer ab.</p>
+    <label><input type="checkbox" id="kf-smtp-nur-speichern"> Ohne Prüfung speichern</label>
+    <div class="dialog-actions">
+        <button type="button" class="btn btn-primary" onclick="this.closest('dialog').close()">Verstanden</button>
+    </div>
+</dialog>
 {% endblock %}

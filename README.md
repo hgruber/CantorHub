@@ -66,7 +66,8 @@ guard, so on a public address do it right after the first start. Until then Djan
 hostname, because the address is not known yet; the form prefills it from the call itself.
 
 The page asks for the first account (it becomes superuser and joins „Mitglied“ and
-„Vorstand“), the portal address, the sender address and, optionally, the SMTP server. Finishing
+„Vorstand“), the portal address, the sender address and, optionally, the SMTP server, which it
+logs in to before accepting it (a checkbox skips that for a server not reachable yet). Finishing
 it creates the permission groups, the standard folders, the Vorstand folder right, the start
 page „Aktuell“, the help pages („Hilfe“ and `Hilfe:…`, written for members with little computer
 experience, including the phone set-up of calendar, contacts and chat, and for the board what running

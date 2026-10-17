@@ -9,6 +9,9 @@ from ..konfig_gruppen import (
     abgeschaltete_dienste, fehlende_schluessel, gruppiere, zaehle_unvollstaendig,
 )
 from ..models import Konfiguration
+from ..smtp_zugang import (
+    FEHLER_TLS_SSL, PRUEFEN, TEXT_TLS_SSL, anmeldung_pruefen, smtp_pruefung, zusammengefuehrt,
+)
 
 __all__ = ["konfiguration"]
 
@@ -44,6 +47,20 @@ def konfiguration(request):
             key = (new.get("key") or "").strip()
             if key:
                 neu[key] = new.get("value", "")
+        # Ein geänderter SMTP-Zugang muss sich erst anmelden können
+        # (intern/smtp_zugang.py) — vor dem ejabberd-Aufruf, der extern etwas ändert.
+        smtp = smtp_pruefung(alt, neu, bool(data.get("smtp_nur_speichern")))
+        if smtp == FEHLER_TLS_SSL:
+            return JsonResponse({"ok": False, "error": TEXT_TLS_SSL}, status=400)
+        if smtp == PRUEFEN:
+            fehler = anmeldung_pruefen(zusammengefuehrt(alt, neu))
+            if fehler:
+                return JsonResponse({
+                    "ok": False,
+                    "error": f"{fehler} Nichts wurde gespeichert. Stimmt der Zugang "
+                             "trotzdem, im Hinweis „Ohne Prüfung speichern“ ankreuzen.",
+                }, status=502)
+
         weg = bot_passwort_weg(alt, neu, bool(data.get("bot_passwort_nur_speichern")))
         if weg == EJABBERD:
             from ..ejabberd import set_user_password

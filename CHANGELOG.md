@@ -19,6 +19,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   Eintragen erklärt ein Hinweis das. Der Chat-Bot meldet sich nach geänderten Zugangsdaten binnen
   etwa anderthalb Minuten neu an, wartet nach Anmeldefehlern, statt aufzugeben, und startet auch,
   wenn XMPP erst nach dem Containerstart eingerichtet wird.
+- Einen geänderten SMTP-Zugang prüfen Konfigurationsseite und Ersteinrichtung vor dem Speichern
+  durch eine Anmeldung am Server; scheitert sie, bleibt alles beim Alten und die Seite nennt den
+  Grund. STARTTLS und SSL zugleich lehnt die Konfigurationsseite ab, weil damit jeder Versand
+  scheiterte.
 
 ### Behoben
 

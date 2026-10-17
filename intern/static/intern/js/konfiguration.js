@@ -7,6 +7,10 @@
 
     const MAIL_NON_TEXT_KEYS = ["MAIL_BEI_AKTIVIERUNG"];
     const STORAGE_KEY = "konfig-gruppen-offen";
+    // Wie SCHLUESSEL in intern/smtp_zugang.py.
+    const SMTP_SCHLUESSEL = ["EMAIL_HOST", "EMAIL_PORT", "EMAIL_HOST_USER",
+        "EMAIL_HOST_PASSWORD", "EMAIL_USE_TLS", "EMAIL_USE_SSL"];
+    let smtpHinweisGezeigt = false;
     // Modul-Flag: toggle feuert auch bei programmatischem details.open = true.
     // Die Suche würde sonst den gemerkten Aufklapp-Zustand aller Gruppen überschreiben.
     let programmatisch = false;
@@ -167,6 +171,17 @@
             widget.addEventListener("input", function () {
                 if (dlg && !dlg.open) dlg.showModal();
             }, { once: true });
+        }
+        // Hinweis beim ersten Tippen in den SMTP-Zugang: das Portal meldet sich
+        // beim Speichern damit an (intern/smtp_zugang.py). Einmal je Seite.
+        if (SMTP_SCHLUESSEL.indexOf(entry.dataset.key) !== -1) {
+            widget.addEventListener("input", function () {
+                const dlg = document.getElementById("kf-smtp-dialog");
+                if (dlg && !dlg.open && !smtpHinweisGezeigt) {
+                    smtpHinweisGezeigt = true;
+                    dlg.showModal();
+                }
+            });
         }
         if (delBtn) {
             // Nur manuell angelegte Schluessel haben ueberhaupt einen Loeschen-Button
@@ -366,6 +381,7 @@
         const btn = document.getElementById("konfig-apply-btn");
         const fehler = document.getElementById("konfig-fehler");
         const nurSpeichern = document.getElementById("kf-bot-passwort-nur-speichern");
+        const smtpNurSpeichern = document.getElementById("kf-smtp-nur-speichern");
         function zeigeFehler(text) {
             fehler.textContent = text;
             fehler.hidden = false;
@@ -379,6 +395,7 @@
             new: [],
             delete: Array.from(deleteIds),
             bot_passwort_nur_speichern: !!(nurSpeichern && nurSpeichern.checked),
+            smtp_nur_speichern: !!(smtpNurSpeichern && smtpNurSpeichern.checked),
         };
         changeMap.forEach(function (v, id) {
             payload.changes.push({ id: id, value: v.value, description: v.description });
