@@ -4083,11 +4083,12 @@ span.not_found {
     box-shadow: 0 0 0 3px var(--brand-ring);
 }
 
+/* Außen .wiki-page wie in der Ansicht — deren Abstände bleiben, nur die
+   Mindesthöhe nicht, sonst scrollt der Kasten nicht. */
 .article-editor .ae-vorschau {
-    display: block;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    background: var(--bg-card);
-    padding: 16px 18px;
     border: 1px solid var(--border-dark);
     border-radius: var(--r);
     box-shadow: var(--shadow-sm);

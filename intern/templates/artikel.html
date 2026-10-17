@@ -116,9 +116,10 @@
     {% comment %}
       inert: die Vorschau liegt im Editor-Formular; ein Knopf darin (etwa der
       einer Abstimmung, deren eigenes <form> der Parser hier verwirft) würde
-      sonst den Artikel abschicken. Gescrollt wird der äußere Kasten.
+      sonst den Artikel abschicken. Gescrollt wird der äußere Kasten. Die
+      Klassen wiki-page > wiki wie in der Ansicht, damit dieselben Regeln greifen.
     {% endcomment %}
-    <div class="wiki ae-vorschau" hidden><div class="ae-vorschau-inhalt" inert></div></div>
+    <div class="wiki-page ae-vorschau" hidden><div class="wiki ae-vorschau-inhalt" inert></div></div>
   </div>
 
   <div class="ae-bar ae-bar-foot">

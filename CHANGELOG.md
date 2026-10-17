@@ -14,6 +14,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 - Zu jedem Versions-Tag legt der Workflow nach dem Abbild auch das GitHub-Release an, mit dem
   Changelog-Abschnitt als Text; Vorabversionen sind als solche markiert.
 
+### Behoben
+
+- Die Vorschau im Artikel-Editor sieht jetzt aus wie die Artikelseite (Überschriften, Listen,
+  Zitate, Bilder, Schriftgröße).
+
 ## v1.0.10 — 2026-10-17
 
 ### Hinzugefügt
