@@ -9,6 +9,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Die Seitenleiste hat unter „Einstellungen“ einen Eintrag „Hilfe“, der zur Übersicht der
+  Hilfe-Artikel führt.
+
 ### Geändert
 
 - Abbilder entstehen bei jedem Versions-Tag auf GitHub und liegen als `ghcr.io/hgruber/cantorhub`

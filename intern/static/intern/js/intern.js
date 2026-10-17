@@ -118,18 +118,24 @@ if (overlay) {
   });
 })();
 
-// Active navigation state
-document.querySelectorAll(".sidebar-nav .nav-item[href]").forEach((link) => {
-  try {
-    const linkPath = new URL(link.href).pathname;
-    const current = window.location.pathname;
-    const dataPath = link.dataset.path;
-    const matchPath = dataPath || linkPath;
-    if (matchPath.length > 1 && current.startsWith(matchPath)) {
-      link.classList.add("active");
-    }
-  } catch (e) {}
-});
+// Active navigation state — only the longest matching prefix, so "Hilfe"
+// (/intern/artikel/Hilfe) wins over "Aktuell" (/intern/artikel/)
+(() => {
+  let best = null, bestLen = 1;
+  document.querySelectorAll(".sidebar-nav .nav-item[href]").forEach((link) => {
+    try {
+      const linkPath = new URL(link.href).pathname;
+      const current = window.location.pathname;
+      const dataPath = link.dataset.path;
+      const matchPath = dataPath || linkPath;
+      if (matchPath.length > bestLen && current.startsWith(matchPath)) {
+        best = link;
+        bestLen = matchPath.length;
+      }
+    } catch (e) {}
+  });
+  if (best) best.classList.add("active");
+})();
 
 // Settings submenu toggle
 function toggleSettingsMenu() {
