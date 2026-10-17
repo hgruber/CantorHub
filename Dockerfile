@@ -17,6 +17,8 @@ WORKDIR /app
 # Set environment variables to optimize Python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+# The build stage is throwaway, root is fine; silence pip's warning about it
+ENV PIP_ROOT_USER_ACTION=ignore
 
 # Upgrade pip and install dependencies
 RUN pip install --upgrade pip
