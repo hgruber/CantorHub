@@ -4,6 +4,7 @@
 <script src="{% static 'intern/js/abstimmung.js' %}" defer></script>
 <script src="{% static 'intern/js/wiki-einfuegen.js' %}" defer></script>
 <script src="{% static 'intern/js/wiki-dateimenue.js' %}" defer></script>
+<script src="{% static 'intern/js/wiki-vorschau.js' %}" defer></script>
 {% endblock %}
 {% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>{% endblock %}
 {% block topbar_actions_extra %}
@@ -46,6 +47,11 @@
         <div class="ae-base ae-base-new">Neuer Artikel</div>
         {% endif %}
       </div>
+    </div>
+    {# Bearbeiten/Vorschau — wiki-vorschau.js holt das Rendering von article_preview. #}
+    <div class="ae-modus" role="group" aria-label="Ansicht" data-vorschau-url="{% url 'article_preview' name=id %}">
+      <button type="button" class="ae-modus-seg" data-modus="edit" aria-pressed="true">Bearbeiten</button>
+      <button type="button" class="ae-modus-seg" data-modus="vorschau" aria-pressed="false">Vorschau</button>
     </div>
   </div>
 
@@ -107,6 +113,12 @@
     <div class="wiki">
       <textarea name="text" wrap="soft" spellcheck="false" placeholder="Artikeltext …">{{ edit_text }}</textarea>
     </div>
+    {% comment %}
+      inert: die Vorschau liegt im Editor-Formular; ein Knopf darin (etwa der
+      einer Abstimmung, deren eigenes <form> der Parser hier verwirft) würde
+      sonst den Artikel abschicken. Gescrollt wird der äußere Kasten.
+    {% endcomment %}
+    <div class="wiki ae-vorschau" hidden><div class="ae-vorschau-inhalt" inert></div></div>
   </div>
 
   <div class="ae-bar ae-bar-foot">

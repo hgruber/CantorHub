@@ -13,6 +13,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
 
 - Die Seitenleiste hat unter „Einstellungen“ einen Eintrag „Hilfe“, der zur Übersicht der
   Hilfe-Artikel führt.
+- Der Artikel-Editor hat einen Umschalter „Bearbeiten | Vorschau“; die Vorschau zeigt den
+  ungespeicherten Text so, wie ihn die Artikelseite darstellen würde.
 
 ### Geändert
 

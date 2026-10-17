@@ -4045,6 +4045,57 @@ span.not_found {
     box-shadow: 0 0 0 3px var(--brand-ring);
 }
 
+/* Bearbeiten/Vorschau — zwei Segmente rechts in der Kopfleiste */
+.ae-modus {
+    margin-left: auto;
+    display: inline-flex;
+    flex-shrink: 0;
+    padding: 2px;
+    background: var(--bg-app);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+}
+.ae-modus-seg {
+    border: none;
+    background: transparent;
+    color: var(--t3);
+    font: inherit;
+    font-size: calc(12rem / 14);
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background var(--ease), color var(--ease);
+}
+.ae-modus-seg:hover {
+    background: transparent;
+    box-shadow: none;
+    color: var(--brand-text);
+}
+.ae-modus-seg[aria-pressed="true"],
+.ae-modus-seg[aria-pressed="true"]:hover {
+    background: var(--brand-dark);
+    color: #fff;
+    cursor: default;
+}
+.ae-modus-seg:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--brand-ring);
+}
+
+.article-editor .ae-vorschau {
+    display: block;
+    overflow-y: auto;
+    background: var(--bg-card);
+    padding: 16px 18px;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-sm);
+}
+/* .wiki ist flex — hidden muss es ausdrücklich schlagen */
+.article-editor .ae-body > [hidden],
+.ae-help[hidden] { display: none; }
+
 /* Footer change-summary input */
 .ae-comment {
     flex: 1;

@@ -20,6 +20,14 @@ The editor (`artikel.html`, edit branch) renders the `.article-editor` shell: an
 collapsible `.ae-help` syntax cheat-sheet, the textarea inside a `.wiki` container (kept so
 `abstimmung.js`'s `{abstimmung:...}` helper still binds), and a footer action bar.
 
+The identity bar carries the `.ae-modus` switch „Bearbeiten | Vorschau“. `wiki-vorschau.js` posts
+the unsaved textarea to `/intern/artikel/<name>/vorschau/` (`article_preview`), which returns
+`apply_replacements()` of it and saves nothing; it checks the edit right like `article_edit` and
+lives under the article's URL because a poll reads the article name from `resolver_match`. The
+preview hides the textarea and the cheat-sheet; its content sits in an `inert` box, because it is
+inside the editor form — a poll's own `<form>` is dropped by the parser there, and its button
+would submit the article.
+
 Every `.ae-cheat` in that cheat-sheet is a `<button type="button">` carrying its own snippet in
 `data-einfuegen`, so the markup lives in exactly one place; `wiki-einfuegen.js` inserts it at the
 caret and selects the `${…}` placeholder. `data-block` puts the snippet on its own line,

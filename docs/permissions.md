@@ -120,8 +120,9 @@ criterion.
 Reading and editing an article are decided by `ArtikelPermission` groups alone
 (`_artikel_access`), and so is creating one — there is no right for either, and neither
 `manage_artikel_permissions` nor superuser status lifts a restriction on the article page itself.
-The edit right also gates uploading on the article view and the writing entries of the
-thumbnail menu (see „Files in an article" in `articles.md`).
+The edit right also gates uploading on the article view, the writing entries of the
+thumbnail menu (see „Files in an article" in `articles.md`) and the editor's preview
+(`article_preview`, the same check as `article_edit`).
 
 ## Forum
 

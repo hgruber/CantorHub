@@ -149,6 +149,7 @@ urlpatterns = [
     path("artikel/", views.article_list, name="article_list"),
     path("artikel/<str:name>/", views.article_view, name="article_view"),
     path("artikel/<str:name>/edit/", views.article_edit, name="article_edit"),
+    path("artikel/<str:name>/vorschau/", views.article_preview, name="article_preview"),
     path("artikel/<str:name>/versionen/", views.article_history, name="article_history"),
     path("artikel/<str:name>/diff/", views.article_diff, name="article_diff"),
     path("artikel/<str:name>/berechtigungen/", views.article_permissions, name="article_permissions"),

@@ -3848,6 +3848,35 @@ class SyntaxhilfeTest(SimpleTestCase):
         self.assertIn("intern/js/wiki-einfuegen.js", self._leiste())
 
 
+class ArtikelVorschauTest(SimpleTestCase):
+    """Der Umschalter Bearbeiten/Vorschau im Artikel-Editor.
+
+    Die Vorschau rendert über ``apply_replacements``; eine Abstimmung darin
+    liest den Artikelnamen aus ``resolver_match.kwargs["name"]``. Hinge die
+    Vorschau-URL nicht unter dem Artikel, fände sie ihre Stimmen nicht.
+    """
+
+    def test_url_traegt_den_artikelnamen(self):
+        from django.urls import resolve, reverse
+
+        treffer = resolve(reverse("article_preview", args=["Probe"]))
+
+        self.assertEqual(treffer.url_name, "article_preview")
+        self.assertEqual(treffer.kwargs["name"], "Probe")
+
+    def test_umschalter_und_skript_sind_eingebunden(self):
+        vorlage = (Path(__file__).resolve().parent / "templates" / "artikel.html").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("intern/js/wiki-vorschau.js", vorlage)
+        self.assertIn("{% url 'article_preview' name=id %}", vorlage)
+        # Ohne type="button" schickte ein Klick auf den Umschalter das Formular ab.
+        for modus in ("edit", "vorschau"):
+            with self.subTest(modus=modus):
+                self.assertIn(f'type="button" class="ae-modus-seg" data-modus="{modus}"', vorlage)
+
+
 class StatikQuellkartenTest(SimpleTestCase):
     """Eine ``sourceMappingURL`` ohne die zugehörige ``.map`` legt den Start lahm.
 

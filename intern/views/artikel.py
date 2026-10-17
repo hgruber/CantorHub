@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.db.models import OuterRef, Subquery
 from django.db.models.functions import Length
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.timezone import now
@@ -33,6 +33,7 @@ from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 __all__ = [
     "article_list",
     "article_edit",
+    "article_preview",
     "article_view",
     "article_history",
     "article_diff",
@@ -176,6 +177,18 @@ def article_edit(request, name):
         "upload_folder_name": folders.WIKI_ANHAENGE,
     }
     return render(request, "artikel.html", context)
+
+
+@login_required
+@require_POST
+def article_preview(request, name):
+    """Der ungespeicherte Editortext, gerendert wie in der Artikelansicht —
+    für den Umschalter Bearbeiten/Vorschau. Speichert nichts."""
+    if Artikel.objects.filter(name=name).exists():
+        _can_read, can_edit = _artikel_access(request.user, name)
+        if not can_edit:
+            raise PermissionDenied
+    return HttpResponse(apply_replacements(request.POST.get("text", ""), request))
 
 
 @login_required
