@@ -1,0 +1,32 @@
+# Meldet neue Versionen der gepinnten Abhaengigkeiten als Pull Request.
+#
+# Die Pins in requirements.txt bleiben exakt, damit jedes Abbild reproduzierbar
+# ist; dieser Lauf sorgt dafuer, dass ein Sicherheits-Patch trotzdem auffaellt.
+# Uebernommen wird ein Update erst mit dem Merge, ausgeliefert erst mit dem
+# naechsten Versions-Tag (siehe README.md, „Updating“).
+
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      python:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # tables2_beschleunigung.py greift in Interna von django_tables2 und ist
+      # gegen genau diese Version geprueft: nur Patches automatisch vorschlagen.
+      - dependency-name: django-tables2
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly

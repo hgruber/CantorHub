@@ -144,6 +144,13 @@ git push origin master v1.0.1     # the build runs on GitHub, see Actions
 
 `./build.sh` still builds an image locally, named after `git describe --tags`.
 
+**Dependencies stay pinned exactly** in `requirements.txt`, so every image of a tag is the same.
+Dependabot (`.github/dependabot.yml`) opens a weekly pull request for newer Python packages, the
+GitHub Actions and the base image; with *Dependabot alerts* and *security updates* switched on
+under *Settings → Code security*, a security fix arrives as its own pull request at once. Review
+and merge it, and tag a release soon if it closes a vulnerability — the server only gets it with
+the next image.
+
 ### The changelog is part of the release
 
 `update.sh`, called by the workflow before anything is built, **refuses a version tag whose
