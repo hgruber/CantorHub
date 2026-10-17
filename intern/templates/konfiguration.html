@@ -132,9 +132,27 @@
 </div>
 
 <div class="konfig-apply-bar" id="konfig-apply-bar">
+    <p class="error" id="konfig-fehler" role="alert" hidden></p>
     <span class="konfig-change-summary" id="konfig-change-summary"></span>
     <button type="button" class="btn btn-primary" id="konfig-apply-btn">
         Änderungen anwenden (<span id="konfig-change-count">0</span>)
     </button>
 </div>
+
+{% comment %}
+Geht beim ersten Tippen ins Feld EJABBERD_BOT_PASSWORD auf (konfiguration.js).
+Was beim Speichern passiert, steht in intern/bot_passwort.py.
+{% endcomment %}
+<dialog id="kf-bot-passwort-dialog" class="app-dialog">
+    <h3>Bot-Passwort ändern</h3>
+    <p>Beim Speichern setzt das Portal das neue Passwort auch in ejabberd. Der Chat-Bot meldet sich
+    danach innerhalb von etwa anderthalb Minuten damit neu an.</p>
+    <p>Ist XMPP hier noch nicht eingerichtet, startet der Bot, sobald Host, JID und Passwort
+    eingetragen sind.</p>
+    <label><input type="checkbox" id="kf-bot-passwort-nur-speichern"> Das Passwort ist in ejabberd
+    schon geändert &ndash; nur hier eintragen</label>
+    <div class="dialog-actions">
+        <button type="button" class="btn btn-primary" onclick="this.closest('dialog').close()">Verstanden</button>
+    </div>
+</dialog>
 {% endblock %}

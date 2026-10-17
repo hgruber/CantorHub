@@ -2,7 +2,9 @@
 Management command: ejabberd_bot
 
 Long-running slixmpp bot that bridges ejabberd MUC rooms <-> CantorHub forum.
-Started as a background process by start.sh; exits cleanly if ejabberd is not configured.
+Started as a background process by start.sh. Without an ejabberd configuration
+it waits for one; when the credentials in Konfiguration change (host, port, JID,
+password) it exits with NEUSTART, and start.sh restarts it with the new ones.
 
 Responsibilities:
 - Joins (and thereby creates) all MUC rooms listed in Forum.xmpp_muc_jid of
@@ -23,6 +25,7 @@ SynchronousOnlyOperation errors.
 import asyncio
 import logging
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -31,6 +34,41 @@ from django.core.management.base import BaseCommand
 from intern.app_settings import get_config, get_config_int
 
 logger = logging.getLogger(__name__)
+
+# Ein Exit-Code ungleich 0 laesst neustart_bei_absturz (start.sh) den Bot nach
+# 30 s neu starten — mit den dann gueltigen Zugangsdaten.
+NEUSTART = 3
+
+# Wie oft der Bot nachsieht, ob XMPP konfiguriert ist bzw. ob sich seine
+# Zugangsdaten geaendert haben.
+ZUGANG_PRUEFEN_SEKUNDEN = 60
+
+
+def _lese_zugang():
+    """Die Werte, mit denen sich der Bot anmeldet, in einem Lesevorgang.
+
+    Synchron (DB) — im Event-Loop nur ueber asyncio.to_thread(). Schliesst vorher
+    veraltete Verbindungen: der Prozess laeuft tagelang, und MariaDB trennt eine
+    ruhende Verbindung nach wait_timeout.
+    """
+    from django.db import close_old_connections
+
+    from intern.app_settings import konfiguration_gepuffert
+
+    close_old_connections()
+    with konfiguration_gepuffert():
+        return (
+            get_config("EJABBERD_HOST", ""),
+            get_config_int("EJABBERD_BOT_PORT", 5222),
+            get_config("EJABBERD_BOT_JID", ""),
+            get_config("EJABBERD_BOT_PASSWORD", ""),
+        )
+
+
+def _warte_bis(bedingung):
+    """Prueft ``bedingung()`` alle ZUGANG_PRUEFEN_SEKUNDEN, bis sie wahr ist."""
+    while not bedingung():
+        time.sleep(ZUGANG_PRUEFEN_SEKUNDEN)
 
 
 def _db_ensure_rooms(joined_rooms):
@@ -318,10 +356,15 @@ class CantorBot:
         self._relay_cursor = None  # highest forum Mitteilung id relayed to MUC
         # nick→bare_jid per room, populated from MUC presence stanzas
         self._nick_jid_cache: dict = {}
+        # Die Zugangsdaten dieses Laufs. slixmpp behaelt das Passwort im Client und
+        # nutzt es bei jedem Wiederverbinden; _zugang_pruefen vergleicht deshalb mit
+        # der Konfiguration und laesst den Prozess neu starten, wenn sie abweicht.
+        self._zugang = _lese_zugang()
+        self._neustart = False
 
         self._client = slixmpp.ClientXMPP(
-            get_config("EJABBERD_BOT_JID", ""),
-            get_config("EJABBERD_BOT_PASSWORD", ""),
+            self._zugang[2],
+            self._zugang[3],
             sasl_mech="PLAIN",
         )
         self._client.register_plugin("xep_0045")  # MUC
@@ -408,23 +451,29 @@ class CantorBot:
         return None
 
     def run(self):
-        host = get_config("EJABBERD_HOST", "")
-        port = get_config_int("EJABBERD_BOT_PORT", 5222)
-        logger.info(
-            "ejabberd_bot: connecting to %s:%s as %s",
-            host, port, get_config("EJABBERD_BOT_JID", ""),
-        )
+        """Laeuft, bis sich die Zugangsdaten aendern, und gibt dann NEUSTART zurueck."""
+        host, port, jid, _ = self._zugang
+        logger.info("ejabberd_bot: connecting to %s:%s as %s", host, port, jid)
         self._client.connect((host, port))
         loop = asyncio.get_event_loop()
         while True:
+            loop.call_later(ZUGANG_PRUEFEN_SEKUNDEN, self._zugang_pruefen_sync)
             try:
                 loop.run_forever()
             except Exception:
                 logger.exception("ejabberd_bot: unhandled exception")
-            # If auth failed too many times, the loop was stopped deliberately.
+            if self._neustart:
+                return NEUSTART
+            # Nach wiederholten Anmeldefehlern ist der Loop absichtlich gestoppt.
+            # Nicht aufgeben (frueher Exit 0, dann blieb der Bot bis zum naechsten
+            # Containerstart aus), sondern still auf neue Zugangsdaten warten.
             if self._auth_retries > 3:
-                logger.error("ejabberd_bot: stopping due to repeated auth failures")
-                return
+                logger.error(
+                    "ejabberd_bot: wartet auf geaenderte Zugangsdaten in /intern/konfiguration/"
+                )
+                _warte_bis(lambda: _lese_zugang() != self._zugang)
+                logger.info("ejabberd_bot: Zugangsdaten geaendert — Neustart")
+                return NEUSTART
             logger.info("ejabberd_bot: reconnecting...")
             self._joined_rooms.clear()
             self._cancel_all_schedules()
@@ -454,6 +503,26 @@ class CantorBot:
         )
 
         self._stdout.write("ejabberd_bot: ready.")
+
+    def _zugang_pruefen_sync(self):
+        """Sync wrapper for loop.call_later."""
+        asyncio.ensure_future(self._zugang_pruefen())
+
+    async def _zugang_pruefen(self):
+        """Stoppt den Loop fuer einen Neustart, wenn die Konfiguration andere
+        Zugangsdaten nennt als die, mit denen dieser Lauf begann."""
+        try:
+            aktuell = await asyncio.to_thread(_lese_zugang)
+        except Exception as exc:
+            logger.warning("ejabberd_bot: Zugangsdaten nicht lesbar: %s", exc)
+            aktuell = self._zugang
+        loop = asyncio.get_event_loop()
+        if aktuell != self._zugang:
+            logger.info("ejabberd_bot: Zugangsdaten in der Konfiguration geaendert — Neustart")
+            self._neustart = True
+            loop.stop()
+            return
+        loop.call_later(ZUGANG_PRUEFEN_SEKUNDEN, self._zugang_pruefen_sync)
 
     def _ensure_rooms_sync(self):
         """Sync wrapper called by slixmpp scheduler."""
@@ -711,9 +780,8 @@ class CantorBot:
         asyncio.get_event_loop().call_later(5, self._reconnect)
 
     def _reconnect(self):
-        """Attempt to reconnect."""
-        host = get_config("EJABBERD_HOST", "")
-        port = get_config_int("EJABBERD_BOT_PORT", 5222)
+        """Attempt to reconnect — with this run's credentials (see _zugang)."""
+        host, port, _, _ = self._zugang
         self._client.connect((host, port))
 
 
@@ -723,14 +791,33 @@ class Command(BaseCommand):
     help = "Run the ejabberd bot for MUC <-> Forum bridging."
 
     def handle(self, *args, **options):
+        from django.core.management import call_command
+        from django.db import close_old_connections
+
         from intern.app_settings import is_ejabberd_configured
 
-        if not is_ejabberd_configured():
-            self.stderr.write("EJABBERD_HOST and EJABBERD_BOT_JID must be set.")
-            return
+        def konfiguriert():
+            close_old_connections()
+            return is_ejabberd_configured()
+
+        # Ohne Konfiguration warten statt enden: so startet der Bot auf einer neuen
+        # Installation, sobald Host und JID eingetragen sind, ohne Containerneustart.
+        # Den Abgleich, den start.sh sonst vorweg macht (Bot-Konto, Raeume), holt
+        # er dann selbst nach.
+        if not konfiguriert():
+            logger.info(
+                "ejabberd_bot: XMPP nicht konfiguriert — wartet auf EJABBERD_HOST und EJABBERD_BOT_JID"
+            )
+            _warte_bis(konfiguriert)
+            logger.info("ejabberd_bot: XMPP konfiguriert — Abgleich, dann Start")
+            try:
+                call_command("ejabberd_admin", "sync")
+            except Exception:
+                logger.exception("ejabberd_bot: ejabberd_admin sync fehlgeschlagen")
         try:
-            bot = CantorBot(self.stdout)
-            bot.run()
+            code = CantorBot(self.stdout).run()
         except Exception:
             logger.exception("ejabberd_bot: fatal startup error")
             raise
+        if code:
+            raise SystemExit(code)

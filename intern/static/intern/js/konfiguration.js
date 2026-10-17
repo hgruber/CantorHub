@@ -160,6 +160,14 @@
             widget.addEventListener("input", track);
             widget.addEventListener("change", track);
         }
+        // Hinweis beim ersten Tippen ins Bot-Passwort: das Portal setzt es beim
+        // Speichern auch in ejabberd, der Bot startet neu (intern/bot_passwort.py).
+        if (entry.dataset.key === "EJABBERD_BOT_PASSWORD") {
+            const dlg = document.getElementById("kf-bot-passwort-dialog");
+            widget.addEventListener("input", function () {
+                if (dlg && !dlg.open) dlg.showModal();
+            }, { once: true });
+        }
         if (delBtn) {
             // Nur manuell angelegte Schluessel haben ueberhaupt einen Loeschen-Button
             // im Markup (siehe konfiguration.html) — vordefinierte koennten das Portal
@@ -356,11 +364,21 @@
     // --- Anwenden --------------------------------------------------------
     document.getElementById("konfig-apply-btn").addEventListener("click", async function () {
         const btn = document.getElementById("konfig-apply-btn");
+        const fehler = document.getElementById("konfig-fehler");
+        const nurSpeichern = document.getElementById("kf-bot-passwort-nur-speichern");
+        function zeigeFehler(text) {
+            fehler.textContent = text;
+            fehler.hidden = false;
+            measureBars();
+            btn.disabled = false;
+        }
         btn.disabled = true;
+        fehler.hidden = true;
         const payload = {
             changes: [],
             new: [],
             delete: Array.from(deleteIds),
+            bot_passwort_nur_speichern: !!(nurSpeichern && nurSpeichern.checked),
         };
         changeMap.forEach(function (v, id) {
             payload.changes.push({ id: id, value: v.value, description: v.description });
@@ -383,10 +401,10 @@
             if (data.ok) {
                 location.reload();
             } else {
-                btn.disabled = false;
+                zeigeFehler(data.error || "Speichern fehlgeschlagen.");
             }
         } catch (_) {
-            btn.disabled = false;
+            zeigeFehler("Speichern fehlgeschlagen.");
         }
     });
 

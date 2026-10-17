@@ -1839,6 +1839,10 @@ time {
     font-family: var(--font);
     font-size: 0.9375rem;
     position: relative;
+    /* Ohne beides bliebe der Dialog im dunklen Thema weiß, während Überschrift
+       und Beschriftungen die helle Schrift des Themas erben. */
+    background: var(--bg-card);
+    color: var(--t1);
 }
 
 .app-dialog::backdrop {

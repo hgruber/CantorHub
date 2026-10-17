@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
+from ..bot_passwort import EJABBERD, SCHLUESSEL, bot_passwort_weg, lokalteil
 from ..konfig_gruppen import (
     abgeschaltete_dienste, fehlende_schluessel, gruppiere, zaehle_unvollstaendig,
 )
@@ -22,6 +23,39 @@ def konfiguration(request):
             data = json.loads(request.body)
         except json.JSONDecodeError:
             return JsonResponse({"ok": False, "error": "Invalid JSON"}, status=400)
+
+        # Ein neues Bot-Passwort zuerst in ejabberd setzen, solange die alten
+        # Zugangsdaten noch gespeichert sind (intern/bot_passwort.py). Scheitert
+        # das, wird nichts gespeichert — sonst passten Portal und ejabberd nicht
+        # mehr zusammen und der Bot kaeme nicht mehr hinein.
+        alt, schluessel_von = {}, {}
+        for pk, key, value in Konfiguration.objects.values_list("pk", "key", "value"):
+            alt[key] = value
+            schluessel_von[pk] = key
+        neu = {}
+        for change in data.get("changes", []):
+            try:
+                key = schluessel_von.get(int(change["id"]))
+            except (KeyError, TypeError, ValueError):
+                continue
+            if key and "value" in change:
+                neu[key] = change["value"]
+        for new in data.get("new", []):
+            key = (new.get("key") or "").strip()
+            if key:
+                neu[key] = new.get("value", "")
+        weg = bot_passwort_weg(alt, neu, bool(data.get("bot_passwort_nur_speichern")))
+        if weg == EJABBERD:
+            from ..ejabberd import set_user_password
+
+            if not set_user_password(lokalteil(alt["EJABBERD_BOT_JID"]), neu[SCHLUESSEL]):
+                return JsonResponse({
+                    "ok": False,
+                    "error": "ejabberd hat das neue Bot-Passwort nicht übernommen "
+                             "(Server nicht erreichbar oder altes Passwort abgelehnt). "
+                             "Nichts wurde gespeichert. Ist das Passwort in ejabberd "
+                             "schon geändert, im Hinweis „nur hier eintragen“ ankreuzen.",
+                }, status=502)
 
         for change in data.get("changes", []):
             try:

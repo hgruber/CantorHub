@@ -44,8 +44,8 @@ python manage.py cleanup_dateiversionen --days 36500 --keep 25 &
 
 # Haelt einen Dauerprozess am Leben: endet er mit Fehler (Ausnahme, Signal wie
 # ein OOM-Kill), startet er nach 30 s neu. Ein Ende mit 0 ist gewollt und bleibt
-# dabei — so gibt der Bot nach wiederholten Anmeldefehlern auf, statt das Log
-# im Takt mit Fehlversuchen zu fuellen.
+# dabei. Der Bot nutzt das fuer neue Zugangsdaten: er endet mit Code 3, sobald
+# sie sich in der Konfiguration aendern, und kommt hier mit ihnen wieder hoch.
 neustart_bei_absturz() {
     local code
     while true; do
@@ -56,8 +56,9 @@ neustart_bei_absturz() {
     done
 }
 
-# XMPP nur anfassen, wenn es konfiguriert ist: ohne EJABBERD_HOST/BOT_JID laufen
-# beide Kommandos in Verbindungsfehler und fuellen bei jedem Start das Log.
+# Der Abgleich nur, wenn XMPP konfiguriert ist: ohne EJABBERD_HOST/BOT_JID liefe
+# er in Verbindungsfehler und fuellte bei jedem Start das Log. Der Bot startet
+# immer — ohne Konfiguration wartet er darauf und holt den Abgleich selbst nach.
 # Der ganze Block laeuft im Hintergrund, damit das Portal nicht auf den Abgleich
 # wartet; darin nacheinander, weil der Bot das Konto braucht, das sync anlegt.
 # Forenbeitraege aus der Zwischenzeit gehen nicht verloren: der Bot fuehrt seinen
@@ -70,10 +71,10 @@ sys.exit(0 if is_ejabberd_configured() else 1)
 " >/dev/null 2>&1; then
         python manage.py ejabberd_admin sync \
             || echo "ejabberd_admin sync fehlgeschlagen — Bot startet trotzdem."
-        neustart_bei_absturz python manage.py ejabberd_bot
     else
-        echo "XMPP nicht konfiguriert (EJABBERD_HOST/EJABBERD_BOT_JID) — Bot bleibt aus."
+        echo "XMPP nicht konfiguriert — Bot wartet auf die Zugangsdaten (/intern/konfiguration/)."
     fi
+    neustart_bei_absturz python manage.py ejabberd_bot
 ) &
 
 # Erinnerungen an oeffentliche Auftritte (Auftritts-Mailingliste); Dauerloop wie

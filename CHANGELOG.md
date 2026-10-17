@@ -15,6 +15,15 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `READ
   für amd64 und arm64 (Raspberry Pi) in der Registry; vor der Veröffentlichung laufen die Tests im
   Abbild. Der Server zieht neue Fassungen mit `podman pull`, der Bau per `post-receive` auf dem
   Server entfällt.
+- Ein neues Bot-Passwort setzt das Portal beim Speichern der Konfiguration auch in ejabberd; beim
+  Eintragen erklärt ein Hinweis das. Der Chat-Bot meldet sich nach geänderten Zugangsdaten binnen
+  etwa anderthalb Minuten neu an, wartet nach Anmeldefehlern, statt aufzugeben, und startet auch,
+  wenn XMPP erst nach dem Containerstart eingerichtet wird.
+
+### Behoben
+
+- Dialoge wie der Ort auf der Karte sind im dunklen Design lesbar; sie blieben weiß, während die
+  Schrift hell wurde.
 
 ### Sicherheit
 

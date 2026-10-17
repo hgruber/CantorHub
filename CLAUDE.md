@@ -120,7 +120,9 @@ load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TR
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup),
 `wiki_platzhalter.py` (the `{VEREINS_URL}`-style placeholders of articles — a whitelist, see
 `docs/articles.md`), `pdf.py`,
-`ejabberd.py`, `konfig_gruppen.py`, `einrichtung.py` (the first-run setup of a new
+`ejabberd.py`, `bot_passwort.py` (whether saving a new bot password on the settings page sets
+it in ejabberd first — see „Credentials and restarts“ in `docs/xmpp.md`),
+`konfig_gruppen.py`, `einrichtung.py` (the first-run setup of a new
 installation: groups, standard folders, first administrator, first settings, the start page
 „Aktuell“, the help articles from `intern/hilfe/`, the fallback avatars from
 `intern/avatare_ersatz/` and optional sample data, behind

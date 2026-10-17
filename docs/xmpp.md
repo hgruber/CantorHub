@@ -99,7 +99,7 @@ All calls are `POST /api/<endpoint>` with HTTP Basic auth (bot credentials). A `
 
 This replaced an earlier per-message short-lived slixmpp connection that was unreliable (flaky first TLS handshake → random timeouts) and collided on the `CantorBot` nick.
 
-**Persistent relay cursor:** the last relayed `Mitteilung` id is written to `$CANTORHUB_DATA/xmpp_relay_cursor` after every sent message (atomically, temp file + `os.replace`), and the first relay tick of a bot **process** resumes from it. So posts written while the bot is down — a deploy, a crash, or the window in which `start.sh` already serves the portal while `ejabberd_admin sync` still runs in the background — are relayed once the bot has joined the room; until then the „not joined yet“ rule holds them back. Without the file (first start) `_db_init_relay_cursor()` takes the highest id as baseline, so existing history is not replayed; a stored value above that id (database restored from an older dump) is pulled back to it, or new posts would never relay. A crash between send and write repeats at most one message. `start.sh` restarts a crashed bot process after 30 s (non-zero exit only; giving up after repeated authentication failures exits with 0 and stays down).
+**Persistent relay cursor:** the last relayed `Mitteilung` id is written to `$CANTORHUB_DATA/xmpp_relay_cursor` after every sent message (atomically, temp file + `os.replace`), and the first relay tick of a bot **process** resumes from it. So posts written while the bot is down — a deploy, a crash, or the window in which `start.sh` already serves the portal while `ejabberd_admin sync` still runs in the background — are relayed once the bot has joined the room; until then the „not joined yet“ rule holds them back. Without the file (first start) `_db_init_relay_cursor()` takes the highest id as baseline, so existing history is not replayed; a stored value above that id (database restored from an older dump) is pulled back to it, or new posts would never relay. A crash between send and write repeats at most one message. `start.sh` restarts a crashed bot process after 30 s (non-zero exit only — including the deliberate exit 3 on changed credentials, see „Credentials and restarts“).
 
 ## MUC → Forum forwarding (`intern/management/commands/ejabberd_bot.py`)
 
@@ -159,12 +159,37 @@ History messages (identified by `<delay/>` tags) ARE stored, relying on `xmpp_st
 
 ### Reconnection
 
-The bot never exits under normal operation:
+The bot never exits on its own except to pick up new credentials:
 
 - **Network disconnect**: reconnects after 5 s via `asyncio.call_later`
-- **Auth failure**: retries with exponential backoff (30 s, 60 s, 120 s), then stops after 3 failures
+- **Auth failure**: retries with exponential backoff (30 s, 60 s, 120 s, 240 s); after the fourth
+  failure it logs one line and **waits** for different credentials in `Konfiguration` instead of
+  giving up (it used to exit with 0, and `start.sh` then left it down until the next container start)
 - **Unhandled exceptions**: caught in the `run()` event loop, bot reconnects with a fresh event loop
 - **Schedule cleanup**: `_cancel_all_schedules()` clears all slixmpp scheduled events before reconnecting to avoid `ValueError: There is already a scheduled event of name: Whitespace Keepalive`
+
+### Credentials and restarts
+
+slixmpp keeps the password inside the client and reuses it on every reconnect, so a changed
+`EJABBERD_BOT_PASSWORD` would never be used by a running bot. Instead, each run remembers the
+credentials it started with (`_lese_zugang()`: host, port, JID, password — read in one pass,
+after `close_old_connections()`) and compares them every `ZUGANG_PRUEFEN_SEKUNDEN` (60 s) via
+`loop.call_later`, independent of the XMPP session. On a difference it stops the loop and the
+command exits with `NEUSTART` (3); `neustart_bei_absturz` in `start.sh` restarts it after 30 s
+with the new values — about 90 s from saving to the new login.
+
+`start.sh` always starts the bot. If XMPP is not configured (`is_ejabberd_configured()`), the
+command waits, checking every 60 s, and once host and JID are set it runs `ejabberd_admin sync`
+itself (which registers the bot account via `ensure_bot()`) before connecting. A fresh
+installation therefore needs no container restart to bring the bridge up.
+
+**Changing the bot password on `/intern/konfiguration/`** also changes it in ejabberd: before
+anything is saved, the view calls `set_user_password(<bot localpart>, <new>)`, still authenticated
+with the stored old credentials. If ejabberd refuses (unreachable, old password wrong), nothing is
+saved and the page shows the error. The REST call is skipped — the value is only saved — on a
+first assignment (old password, host or JID empty), when the same save also changes the JID, host
+or API URL, or when the administrator ticks „schon in ejabberd geändert“ in the dialog that opens
+on the first keystroke in the field. The decision is `intern/bot_passwort.py` (`BotPasswortTest`).
 
 ### Async/sync boundary
 

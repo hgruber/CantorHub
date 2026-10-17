@@ -7334,3 +7334,102 @@ class WikiListenTest(SimpleTestCase):
     def test_stern_im_text_aendert_die_ebene_nicht(self):
         out = self._rendern("* Note 5* gibt es nicht\n* zweiter")
         self.assertEqual(out.count("<ul>"), 1)
+
+
+class BotPasswortTest(SimpleTestCase):
+    """Wann die Konfigurationsseite ein neues Bot-Passwort in ejabberd setzt."""
+
+    ALT = {
+        "EJABBERD_HOST": "chat.example.org",
+        "EJABBERD_BOT_JID": "bot@chat.example.org",
+        "EJABBERD_BOT_PASSWORD": "alt",
+        "EJABBERD_API_URL": "http://127.0.0.1:5280",
+    }
+
+    def _weg(self, neu, alt=None, nur_speichern=False):
+        from intern.bot_passwort import bot_passwort_weg
+        return bot_passwort_weg(self.ALT if alt is None else alt, neu, nur_speichern)
+
+    def test_neues_passwort_geht_an_ejabberd(self):
+        from intern.bot_passwort import EJABBERD
+        self.assertEqual(self._weg({"EJABBERD_BOT_PASSWORD": "neu"}), EJABBERD)
+
+    def test_ohne_aenderung_nichts(self):
+        self.assertIsNone(self._weg({"EJABBERD_HOST": "chat.example.org"}))
+        self.assertIsNone(self._weg({"EJABBERD_BOT_PASSWORD": "alt"}))
+
+    def test_angekreuzt_nur_speichern(self):
+        from intern.bot_passwort import NUR_SPEICHERN
+        self.assertEqual(
+            self._weg({"EJABBERD_BOT_PASSWORD": "neu"}, nur_speichern=True), NUR_SPEICHERN
+        )
+
+    def test_erstbelegung_nur_speichern(self):
+        from intern.bot_passwort import NUR_SPEICHERN
+        for leer in ("EJABBERD_BOT_PASSWORD", "EJABBERD_HOST", "EJABBERD_BOT_JID"):
+            with self.subTest(leer=leer):
+                alt = dict(self.ALT, **{leer: ""})
+                self.assertEqual(self._weg({"EJABBERD_BOT_PASSWORD": "neu"}, alt), NUR_SPEICHERN)
+
+    def test_anderes_konto_im_selben_speichern_nur_speichern(self):
+        from intern.bot_passwort import NUR_SPEICHERN
+        for key, wert in (("EJABBERD_BOT_JID", "neu@chat.example.org"),
+                          ("EJABBERD_HOST", "anders.example.org"),
+                          ("EJABBERD_API_URL", "https://anders.example.org")):
+            with self.subTest(key=key):
+                neu = {"EJABBERD_BOT_PASSWORD": "neu", key: wert}
+                self.assertEqual(self._weg(neu), NUR_SPEICHERN)
+
+    def test_unveraenderter_host_im_payload_stoert_nicht(self):
+        from intern.bot_passwort import EJABBERD
+        neu = {"EJABBERD_BOT_PASSWORD": "neu", "EJABBERD_HOST": "chat.example.org"}
+        self.assertEqual(self._weg(neu), EJABBERD)
+
+    def test_lokalteil(self):
+        from intern.bot_passwort import lokalteil
+        self.assertEqual(lokalteil("bot@chat.example.org"), "bot")
+        self.assertEqual(lokalteil(""), "")
+
+
+class BotZugangTest(SimpleTestCase):
+    """Der Bot startet neu, wenn die Konfiguration andere Zugangsdaten nennt."""
+
+    def _pruefen(self, aktuell):
+        import asyncio
+        from intern.management.commands import ejabberd_bot as modul
+
+        bot = object.__new__(modul.CantorBot)
+        bot._zugang = ("chat.example.org", 5222, "bot@chat.example.org", "alt")
+        bot._neustart = False
+
+        async def lauf():
+            loop = asyncio.get_running_loop()
+            with mock.patch.object(modul, "_lese_zugang", return_value=aktuell), \
+                    mock.patch.object(loop, "stop") as stop, \
+                    mock.patch.object(loop, "call_later") as call_later:
+                await bot._zugang_pruefen()
+                return stop.called, call_later.called
+
+        gestoppt, neu_geplant = asyncio.run(lauf())
+        return bot, gestoppt, neu_geplant
+
+    def test_geaendertes_passwort_stoppt_fuer_neustart(self):
+        bot, gestoppt, neu_geplant = self._pruefen(
+            ("chat.example.org", 5222, "bot@chat.example.org", "neu")
+        )
+        self.assertTrue(bot._neustart)
+        self.assertTrue(gestoppt)
+        self.assertFalse(neu_geplant)
+
+    def test_gleiche_zugangsdaten_pruefen_weiter(self):
+        bot, gestoppt, neu_geplant = self._pruefen(
+            ("chat.example.org", 5222, "bot@chat.example.org", "alt")
+        )
+        self.assertFalse(bot._neustart)
+        self.assertFalse(gestoppt)
+        self.assertTrue(neu_geplant)
+
+    def test_neustart_ist_kein_regulaeres_ende(self):
+        # neustart_bei_absturz in start.sh startet nur bei Code ungleich 0 neu.
+        from intern.management.commands.ejabberd_bot import NEUSTART
+        self.assertNotEqual(NEUSTART, 0)
