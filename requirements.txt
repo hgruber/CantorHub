@@ -10,6 +10,6 @@ icalendar==7.0.3
 Pillow==12.3.0
 mysqlclient>=2.2.1
 pypdfium2==5.13.0
-reportlab==4.4.9
+reportlab==5.0.1
 slixmpp==1.13.2
 tzdata==2025.3
