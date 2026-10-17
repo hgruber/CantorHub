@@ -130,7 +130,9 @@ A push to `master` builds nothing; **a version tag builds the image**. The workf
 `.github/workflows/abbild.yml` accepts a tag only if it is named `v<major>.<minor>.<patch>`
 (optionally with a pre-release suffix, `v1.0.0-rc1`), sits on `master` and passes the changelog
 check below. It then builds the amd64 image, runs the test suite inside it, and only then
-publishes `cantorhub:<tag>` for both platforms. The run and its log are under *Actions* on GitHub.
+publishes `cantorhub:<tag>` for both platforms. Last, it creates the GitHub release of the tag
+with the changelog section as its text — a pre-release marked as such, a final version as
+*Latest*; a re-pushed tag updates the release. The run and its log are under *Actions* on GitHub.
 
 A pre-release moves `:latest` **only while no final version is tagged yet**: during the run-up to
 1.0.0 the service, which starts `:latest`, follows every `v1.0.0-rcN`; once `v1.0.0` exists,

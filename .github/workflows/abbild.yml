@@ -6,7 +6,8 @@
 # Tag liegt auf master, und CHANGELOG.md traegt den Abschnitt (update.sh, hier
 # nur aufgerufen). Dann laufen die Tests im gebauten amd64-Abbild — nicht auf
 # dem Runner, weil WochentagsnamenTest die Locale des Abbilds prueft — und erst
-# danach wird fuer amd64 und arm64 veroeffentlicht.
+# danach wird fuer amd64 und arm64 veroeffentlicht. Zuletzt legt er das
+# GitHub-Release des Tags an, mit dem Changelog-Abschnitt als Text.
 #
 # Der Server zieht neue Fassungen von Hand (podman pull + Neustart), siehe
 # README.md, „Updating“.
@@ -18,7 +19,7 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: read
+  contents: write   # das Release
   packages: write
 
 concurrency:
@@ -104,3 +105,46 @@ jobs:
             org.opencontainers.image.version=${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Der Text ist der Abschnitt, den update.sh oben gelten liess: der eigene,
+      # bei einer Vorabversion sonst der ihrer Endfassung oder die Sammlung.
+      # Umbrochene Eintraege werden zu einer Zeile, sonst bricht GitHub sie
+      # mitten im Satz. Ein neu gesetzter Tag ueberschreibt das Release.
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          abschnitt() {
+            awk -v h="## $1" '$0 == h || index($0, h " ") == 1 { f = 1; next } /^## / { if (f) exit } f' CHANGELOG.md
+          }
+          kandidaten=("${tag}")
+          if [[ "${tag}" == *-* ]]; then
+            kandidaten+=("${tag%%-*}" "Unveröffentlicht")
+          fi
+          text=""
+          for k in "${kandidaten[@]}"; do
+            text="$(abschnitt "${k}")"
+            grep -q '^- ' <<<"${text}" && break
+            text=""
+          done
+          notizen="${RUNNER_TEMP}/release.md"
+          {
+            if [[ -n "${text}" ]]; then
+              awk '!n && /^$/ { next } { n = 1 } /^  +[^ -]/ { sub(/^ +/, " "); printf "%s", $0; next } { if (z++) print ""; printf "%s", $0 } END { print "" }' <<<"${text}"
+            else
+              echo "Ohne Changelog-Abschnitt freigegeben ([ohne-changelog])."
+            fi
+            printf '\n---\n\nImage: `podman pull ghcr.io/%s/cantorhub:%s` (amd64, arm64)\n' "${GITHUB_REPOSITORY_OWNER,,}" "${tag}"
+          } >"${notizen}"
+          if [[ "${tag}" == *-* ]]; then
+            art=(--prerelease=true --latest=false)
+          else
+            art=(--prerelease=false --latest)
+          fi
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            gh release edit "${tag}" --title "${tag}" --notes-file "${notizen}" "${art[@]}"
+          else
+            gh release create "${tag}" --verify-tag --title "${tag}" --notes-file "${notizen}" "${art[@]}"
+          fi

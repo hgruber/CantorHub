@@ -7,6 +7,13 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Zu jedem Versions-Tag legt der Workflow nach dem Abbild auch das GitHub-Release an, mit dem
+  Changelog-Abschnitt als Text; Vorabversionen sind als solche markiert.
+
 ## v1.0.10 — 2026-10-17
 
 ### Hinzugefügt

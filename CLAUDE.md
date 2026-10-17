@@ -214,7 +214,8 @@ reasoning where it matters.
   itself.
 - **A version tag needs its `CHANGELOG.md` section.** The tag is the release: the GitHub
   workflow `.github/workflows/abbild.yml` builds the multi-arch image (amd64 + arm64), runs the
-  tests inside it and publishes it to `ghcr.io/hgruber/cantorhub`, but first calls `update.sh`,
+  tests inside it, publishes it to `ghcr.io/hgruber/cantorhub` and creates the GitHub release
+  with the changelog section as text, but first calls `update.sh`,
   which refuses `v<x.y.z>` whose commit carries no filled `## v<x.y.z>` section — so no
   undocumented delivery reaches the registry. Only the image is refused — `master` and the tag
   land either way. Collect under `## Unveröffentlicht` and rename that heading
