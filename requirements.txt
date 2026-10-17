@@ -12,4 +12,4 @@ mysqlclient>=2.2.1
 pypdfium2==5.13.0
 reportlab==4.4.9
 slixmpp==1.13.2
-tzdata==2025.3
+tzdata==2026.5
