@@ -11,11 +11,12 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Hinzugefügt
 
-- Neuer Hilfe-Artikel „Hilfe:Sicherung“: was gesichert wird, Speichergeräte einrichten und
-  annehmen, die Seite „Sicherung“ lesen, direkte Verbindung statt Relay und die
-  Wiederherstellung in der Ersteinrichtung. Die Seite „Sicherung“ verweist mit einem Hilfe-Icon
-  oben rechts darauf; bestehende Installationen holen den Artikel mit `manage.py hilfe_anlegen`
-  nach.
+- Zwei neue Hilfe-Artikel zur Sicherung: „Hilfe:Sicherung“ führt mit Bildschirmfotos Schritt
+  für Schritt durch Einrichten und Wiederherstellen, ganz im Browser und ohne Kommandozeile;
+  „Hilfe:Sicherung im Detail“ sammelt für Server-Betreuer, was gesichert wird, die Befehle,
+  Ports und Relay, den Klon und das Nachsehen ohne neue Installation. Die Seite „Sicherung“
+  verweist mit einem Hilfe-Icon oben rechts auf den ersten; bestehende Installationen holen
+  beide mit `manage.py hilfe_anlegen` nach.
 - Die Ersteinrichtung kann aus einer Sicherung auch einen Klon erstellen, der neben dem
   Original läuft. Er bekommt eine neue Syncthing-Identität ohne Freigaben, keinen Mailversand,
   keine XMPP-Brücke, die Adresse, unter der er eingerichtet wurde, und „Klon“ vor dem

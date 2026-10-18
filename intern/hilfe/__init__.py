@@ -45,6 +45,7 @@ ARTIKEL = {
     "Hilfe:Chat auf dem Telefon": "chat-auf-dem-telefon.txt",
     "Hilfe:Betrieb und Kosten": "betrieb-und-kosten.txt",
     "Hilfe:Sicherung": "sicherung.txt",
+    "Hilfe:Sicherung im Detail": "sicherung-im-detail.txt",
 }
 
 # Bearbeiten dürfen nur diese Gruppen — eine Anleitung, die ein Neuling beim
