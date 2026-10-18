@@ -22,6 +22,8 @@ account and the address of the portal; tick „Beispieldaten anlegen“ and you 
 concert with its running order, a few songs and a forum to click through. That is the whole
 installation. The same image runs on a PC, a server and a 64-bit Raspberry Pi.
 
+<p align="center"><img src="docs/screenshots/einrichtung.png" width="560" alt="The first-run setup: one page, and the portal is ready"></p>
+
 > Open it as `localhost` or over `https://`. Called by its bare IP address over `http://`
 > (`http://192.168.1.129:8000`), the browser refuses the login cookie and the setup ends in a
 > CSRF error. To try it on a Raspberry Pi from your desktop, tunnel the port:

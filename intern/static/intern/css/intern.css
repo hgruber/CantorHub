@@ -4431,6 +4431,11 @@ span.not_found {
     margin-top: 0;
 }
 
+/* Same for a field's help text ({% form_field … hilfe=True %}). */
+.form-grid .form-text {
+    grid-column: 1 / -1;
+}
+
 .pw-strength-track {
     flex: 1;
     height: 6px;

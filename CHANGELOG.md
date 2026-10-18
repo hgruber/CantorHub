@@ -22,6 +22,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 - Die Vorschau im Artikel-Editor sieht jetzt aus wie die Artikelseite (Überschriften, Listen,
   Zitate, Bilder, Schriftgröße).
+- Hilfetexte unter Formularfeldern stehen in einer eigenen Zeile, statt das folgende Feld zu
+  verschieben — sichtbar war das in der Karte „Portal“ der Ersteinrichtung.
 
 ## v1.0.10 — 2026-10-17
 
