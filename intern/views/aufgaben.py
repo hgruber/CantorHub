@@ -91,6 +91,8 @@ def aufgaben(request):
 
     return render(request, "aufgaben.html", {
         "seitentitel": "Aufgaben",
+        "hilfe_seite": "Hilfe:Aufgaben",
+        "upload_aus": True,
         "users": page,
         "groups": groups,
         "matrix": matrix,

@@ -1,0 +1,30 @@
+== Gruppen ==
+Auf der Seite '''Gruppen''' legst Du fest, was jede Gruppe im Portal darf. Wer zu welcher Gruppe gehört, regelst Du auf der Seite [[Hilfe:Aufgaben|Aufgaben]]. Eine Person darf alles, was eine ihrer Gruppen darf.
+
+Du findest die Seite in der Seitenleiste unter '''Admin → Gruppen'''. Sehen kann sie nur, wer das Recht '''Mitglieder › Berechtigungen''' hat.
+
+=== Die Tabelle lesen ===
+* Jede '''Zeile''' ist eine Gruppe. Die Zahl hinter dem Namen sagt, wie viele Personen dazugehören. Fährst Du mit der Maus darüber, siehst Du ihre Namen.
+* Die '''Spalten''' sind die Rechte, oben nach Bereichen geordnet: Mitglieder, Dateien, Termine, Repertoire, Artikel, Forum und Orte.
+* Ein Haken heißt: Diese Gruppe hat dieses Recht.
+* Was ein Recht genau bedeutet, verrät der Hinweis, wenn Du mit der Maus über die Spaltenüberschrift fährst. '''Klickst''' Du auf die Überschrift, öffnet sich eine Erklärung, an welchen Stellen im Portal das Recht wirkt.
+
+=== Rechte vergeben und wegnehmen ===
+# Klicke in das Kästchen von Gruppe und Recht. Ein Haken erscheint, ein zweiter Klick nimmt ihn weg.
+# Unten zählt eine Leiste Deine ungespeicherten Änderungen mit.
+# Klicke auf '''Änderungen anwenden'''.
+
+Die Änderung gilt sofort für alle Personen der Gruppe.
+
+=== Eine Gruppe anlegen oder löschen ===
+* '''Anlegen:''' Klicke oben rechts auf das '''Plus'''. Eine neue Zeile erscheint; gib den Namen ein, setze die gewünschten Haken und klicke auf '''Änderungen anwenden'''.
+* '''Löschen:''' Klicke auf den '''Papierkorb''' neben dem Namen. Das geht nur bei einer Gruppe, zu der niemand mehr gehört — nimm die Personen vorher auf der Seite '''Aufgaben''' heraus.
+
+=== Gut zu wissen ===
+* Die Gruppe '''Mitglied''' tragen alle Vereinsmitglieder. Ein Recht, das jedes Mitglied haben soll, gibst Du dieser Gruppe.
+* Das Recht '''Mitglieder › Berechtigungen''' ist das mächtigste: Wer es hat, kann sich über diese Seite jedes andere Recht selbst geben. Gib es nur Menschen, denen Du das zutraust.
+* '''Administratoren''' dürfen ohnehin alles; für sie spielt die Tabelle keine Rolle.
+* Manche Dinge regelt diese Seite nicht: Wer einen bestimmten Ordner, einen Artikel oder ein Forum sehen darf, stellst Du dort selbst ein, über das '''Schloss-Symbol''' oben rechts.
+* Welche Rechte Du selbst hast und woher sie kommen, zeigt die Karte '''Meine Rechte''' auf Deinem Profil.
+
+@ '''Jede Änderung wird festgehalten''' — im [[Hilfe:Änderungsprotokoll|Änderungsprotokoll]], Bereich ''Gruppe''.

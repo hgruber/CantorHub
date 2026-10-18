@@ -1,0 +1,25 @@
+== Aufgaben ==
+Auf der Seite '''Aufgaben''' legst Du fest, wer im Chor welche Aufgabe hat — also wer zu welcher '''Gruppe''' gehört. Über die Gruppe bekommt eine Person die Rechte, die sie für ihre Aufgabe braucht: Der Vorstand darf Mitglieder bearbeiten, die Gruppe ''Termine'' darf Termine anlegen und so weiter. Welche Gruppe was darf, steht auf der Seite [[Hilfe:Gruppen|Gruppen]].
+
+Du findest die Seite in der Seitenleiste unter '''Admin → Aufgaben'''. Sehen kann sie nur, wer in der Gruppenübersicht das Recht '''Mitglieder › Berechtigungen''' hat.
+
+=== Die Tabelle lesen ===
+* Jede '''Zeile''' ist eine Person, sortiert nach Stimme und Nachname. Neben dem Namen steht die Stimme.
+* Jede '''Spalte''' ist eine Gruppe. Ein Haken heißt: Die Person gehört zu dieser Gruppe.
+* Personen mit dem Hinweis '''kein Zugang''' können sich nicht anmelden — zum Beispiel ein Fördermitglied. Sie stehen trotzdem in der Liste, damit Du ihre Gruppen pflegen kannst.
+* Die Liste lädt beim Herunterscrollen von selbst weiter.
+
+=== Jemanden einer Gruppe zuordnen ===
+# Klicke in das Kästchen, wo die Zeile der Person und die Spalte der Gruppe sich treffen. Ein Haken erscheint, ein zweiter Klick nimmt ihn wieder weg.
+# Unten erscheint eine Leiste mit der Zahl Deiner ungespeicherten Änderungen. Du kannst mehrere Kästchen nacheinander ändern.
+# Klicke auf '''Änderungen anwenden'''. Erst jetzt wird gespeichert.
+
+Verlässt Du die Seite vorher, ist nichts geändert.
+
+=== Die Gruppe „Mitglied“ ===
+Die Gruppe '''Mitglied''' ist besonders: Sie zeigt, wer Mitglied im Verein ist, und was diese Gruppe darf, dürfen alle Mitglieder. Neue Mitglieder nimmst Du aber besser auf ihrem Profil auf ('''Mitgliedschaft genehmigen'''), und ein Austritt geht dort über '''Mitgliedschaft beenden'''. Nur so werden auch der Zugang zum Portal, das Eintrittsdatum und die Willkommens-E-Mail richtig gesetzt.
+
+=== Die Spalte „Admin“ ===
+Wer selbst Administrator ist, sieht ganz rechts eine Spalte '''Admin'''. Ein Administrator darf im Portal alles, auch ohne Gruppe, und sieht als Einziger die Seiten '''Konfiguration''' und '''Sicherung'''. Vergib das nur an sehr wenige Menschen, denen Du vertraust.
+
+@ '''Jede Änderung wird festgehalten.''' Wer wen wann in welche Gruppe gesteckt hat, steht im [[Hilfe:Änderungsprotokoll|Änderungsprotokoll]] — Bereich ''Gruppenzuordnung''.

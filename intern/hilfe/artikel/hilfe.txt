@@ -19,6 +19,12 @@ Hier findest Du Anleitungen zu allem, was das Mitgliederportal kann. Sie sind f�
 * [[Hilfe:Kontakte aufs Telefon|Kontakte aufs Telefon]] — alle Mitglieder im Adressbuch Deines Telefons
 * [[Hilfe:Chat auf dem Telefon|Chat auf dem Telefon]] — das Forum als Chat mit Conversations (Android) oder Monal (iPhone)
 
+=== Das Menü „Admin“ ===
+* [[Hilfe:Aufgaben|Aufgaben]] — wer zu welcher Gruppe gehört
+* [[Hilfe:Gruppen|Gruppen]] — was jede Gruppe im Portal darf
+* [[Hilfe:Änderungsprotokoll|Änderungsprotokoll]] — wer wann was geändert hat
+* [[Hilfe:Konfiguration|Konfiguration]] — Name, Farbe, E-Mail-Versand und alle anderen Einstellungen
+
 === Betrieb des Portals ===
 * [[Hilfe:Betrieb und Kosten|Betrieb und Kosten]] — was ein eigener Server braucht und was er kostet
 * [[Hilfe:Sicherung|Sicherung und Wiederherstellung]] — das Portal sichern und zurückholen, Schritt für Schritt im Browser

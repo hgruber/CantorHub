@@ -125,10 +125,13 @@ braces — `{abstimmung:…}`, unknown names — stays as written. Details:
 `intern/hilfe/` ships the help pages every installation starts with: the overview `Hilfe` and
 `Hilfe:…` pages for first steps, profile, events, forum, repertoire, members, files, the wiki
 markup, and the four phone set-ups (CalDAV, iCal subscription, CardDAV, XMPP with Conversations
-and Monal) that replaced the info boxes on the event and member lists, plus three for operators:
-running costs, backup/restore the browser-only way with screenshots (`Hilfe:Sicherung`, linked
-from the help icon of `/intern/sicherung/`) and everything that needs a shell — commands,
-ports, clone — in `Hilfe:Sicherung im Detail`. The texts are wiki markup
+and Monal) that replaced the info boxes on the event and member lists, one per page of the
+admin menu (`Hilfe:Aufgaben`, `Hilfe:Gruppen`, `Hilfe:Änderungsprotokoll`,
+`Hilfe:Konfiguration`), plus three for operators:
+running costs, backup/restore the browser-only way with screenshots (`Hilfe:Sicherung`) and
+everything that needs a shell — commands, ports, clone — in `Hilfe:Sicherung im Detail`. Each
+admin page links its article through the help icon at the right of the topbar: the view sets
+`hilfe_seite` to the article name and `base.html` renders the icon. The texts are wiki markup
 in `intern/hilfe/artikel/`, their images in `intern/hilfe/bilder/` — schematic drawings of the
 phone screens (no freely licensed screenshots of the set-up steps exist) and cut-outs of the
 portal itself and of Syncthing's web interface.

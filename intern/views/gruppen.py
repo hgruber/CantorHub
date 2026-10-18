@@ -590,6 +590,8 @@ def gruppen(request):
 
     return render(request, "gruppen.html", {
         "seitentitel": "Gruppen",
+        "hilfe_seite": "Hilfe:Gruppen",
+        "upload_aus": True,
         "groups": all_groups,
         "categories": categories,
         "permission_defs": PERMISSION_DEFS,

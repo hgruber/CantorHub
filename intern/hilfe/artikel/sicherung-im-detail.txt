@@ -38,7 +38,7 @@ Die Sicherung enthält die persönlichen Daten aller Mitglieder und den geheimen
 | '''Verschlüsselt''' | ein Gerät, das jemand anderes betreibt (das NAS eines Bekannten, ein gemieteter Speicher) | Auf dem Gerät liegen nur verschlüsselte Dateien. Ohne das Passwort ist die Sicherung '''wertlos''' — das Portal zeigt es später nicht wieder an.
 
 === Ein Speichergerät mit podman oder docker ===
-Statt der Syncthing-App kann das Speichergerät einen Container betreiben; ein Skript, das der Container des Portals mitbringt, richtet ihn ein. Die Seite '''Sicherung''' zeigt die beiden Befehle in der Karte '''Speichergerät einrichten''', mit der Geräte-ID dieses Servers schon eingesetzt. Auf dem Server holst Du das Skript:
+Statt der Syncthing-App kann das Speichergerät einen Container betreiben; ein Skript, das der Container des Portals mitbringt, richtet ihn ein. Die Seite '''Sicherung''' zeigt die beiden Befehle in der Karte '''Speichergerät einrichten''' unter '''Mit podman oder docker''', mit der Geräte-ID dieses Servers schon eingesetzt. Auf dem Server holst Du das Skript:
  podman exec cantorhub cat /app/sicherung-speicherseite.sh > sicherung-speicherseite.sh
 Kopiere die Datei auf das Speichergerät und starte sie dort:
  bash sicherung-speicherseite.sh SERVER-ID [ZIELORDNER] [--verschluesselt]
@@ -61,7 +61,7 @@ Annehmen geht auf dem Server auch auf der Kommandozeile:
 | '''Syncthing''' | die Geräte-ID dieses Servers | Diese ID braucht jedes Speichergerät. Sie ist kein Geheimnis.
 | '''Speichergeräte''' | jedes angenommene Gerät mit Verbindung und Abgleich | Ein grüner Punkt mit ''auf dem Stand'' ist der Normalfall.
 | '''Wartende Geräte''' | Geräte, die sich gemeldet haben, aber noch nicht angenommen sind | Nur Geräte annehmen, die Du selbst eingerichtet hast.
-| '''Speichergerät einrichten''' | die Befehle für ein Speichergerät mit podman oder docker, mit der ID schon eingesetzt | —
+| '''Speichergerät einrichten''' | den Weg über die Syncthing-App, aufgeklappt die Befehle für ein Speichergerät mit podman oder docker, mit der ID schon eingesetzt | —
 
 Bei einem Speichergerät bedeuten:
 * '''verbunden direkt''' — schnellster Weg.

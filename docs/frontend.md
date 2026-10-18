@@ -579,7 +579,7 @@ both empty) gets no page dropzone at all — no overlay, no icon — unless the 
 `intern.manage_folder_permissions` (`data-upload-wurzel`); then a drop lands at the root and the
 upload card asks to move it. The folder browser follows `can_write_here`, at the root only with
 that right. `upload_aus` switches the page dropzone off for everyone (the profile page, where
-the avatar field is enough). `upload` in `views/files.py` enforces write access and the root
+the avatar field is enough, and the five pages of the admin menu, which hold no files). `upload` in `views/files.py` enforces write access and the root
 rule either way. **Icon and dropzone go together:** `base.html` renders `#uploadBtn` `hidden`
 wherever an upload could happen, and the same `uploadGesperrt` rule in `intern.js` that
 disables the dropzone decides whether it is shown — there is no second condition to keep in

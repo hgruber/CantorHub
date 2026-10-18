@@ -21,6 +21,21 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
   Original läuft. Er bekommt eine neue Syncthing-Identität ohne Freigaben, keinen Mailversand,
   keine XMPP-Brücke, die Adresse, unter der er eingerichtet wurde, und „Klon“ vor dem
   Vereinsnamen.
+- Hilfe-Artikel zu den Admin-Seiten Aufgaben, Gruppen, Änderungsprotokoll und Konfiguration.
+  Alle fünf Seiten des Admin-Menüs verweisen jetzt mit dem Hilfe-Icon oben rechts auf ihren
+  Artikel; bestehende Installationen holen die neuen mit `manage.py hilfe_anlegen` nach, die
+  erweiterte Übersicht „Hilfe“ mit `--force`.
+
+### Geändert
+
+- Die Seiten „Sicherung“ und „Wiederherstellen“ nennen zuerst den Weg über die Syncthing-App;
+  die Befehle für podman und das Speicherseiten-Skript stehen zugeklappt darunter.
+- Die Admin-Seiten zeigen weder Hochladen-Symbol noch Ablagefläche für Dateien.
+
+### Behoben
+
+- Die Seite „Sicherung“ nennt die Einstellung jetzt wie Syncthing selbst „Stufenweise
+  Dateiversionierung“ statt „Gestaffelte“.
 
 ## v1.0.11 — 2026-10-18
 

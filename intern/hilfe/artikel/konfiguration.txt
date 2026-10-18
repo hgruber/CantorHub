@@ -1,0 +1,33 @@
+== Konfiguration ==
+Auf der Seite '''Konfiguration''' stehen alle Einstellungen des Portals: der Name des Vereins, die Akzentfarbe, der Zugang zum E-Mail-Versand, die Texte der automatischen E-Mails, Fristen und vieles mehr. Was Du hier änderst, gilt sofort — nur eine neue Zeitzone wirkt überall erst nach dem nächsten Neustart des Portals.
+
+Du findest die Seite in der Seitenleiste unter '''Admin → Konfiguration'''. Sie ist nur für '''Administratoren''' da.
+
+=== Sich zurechtfinden ===
+* Die Einstellungen sind in '''Gruppen''' sortiert, etwa ''Verein & Portal'', ''E-Mail-Versand'' oder ''E-Mail-Texte''. Ein Klick auf eine Gruppe klappt sie auf; der '''Doppelpfeil''' oben rechts klappt alle auf einmal auf oder zu.
+* Mit dem '''Suchfeld''' oben findest Du eine Einstellung schnell, zum Beispiel ''Farbe'' oder ''Mail''.
+* Jede Zeile hat links den Namen der Einstellung, in der Mitte den Wert und rechts eine kurze Erklärung.
+* Ein '''Sternchen''' am Namen heißt: Diese Einstellung sollte ausgefüllt sein.
+
+=== Etwas ändern ===
+# Ändere den Wert — je nach Einstellung ein Schalter, eine Zahl, eine Auswahl, eine Farbe oder ein Text.
+# Unten zählt eine Leiste Deine ungespeicherten Änderungen mit. Du kannst mehrere Werte nacheinander ändern.
+# Klicke auf '''Änderungen anwenden'''. Die Seite lädt neu und zeigt den gespeicherten Stand.
+
+Bei zwei Gruppen prüft das Portal vor dem Speichern, ob die neuen Werte funktionieren:
+* '''E-Mail-Versand:''' Mit einem geänderten Zugang meldet sich das Portal erst probeweise beim Mail-Server an. Klappt das nicht, bleibt alles beim Alten, und Du siehst den Grund.
+* '''Forum-Chat (XMPP):''' Ein neues Passwort für den Chat-Bot wird zuerst im Chat-Server gesetzt. Der Bot meldet sich danach innerhalb von etwa anderthalb Minuten von selbst neu an.
+
+=== Der Kasten oben ===
+Fehlt etwas Wichtiges, steht ganz oben ein '''Hinweiskasten'''.
+* '''Einstellungen sind unvollständig''' — ein Feld mit Sternchen ist leer. Solange es leer ist, nimmt das Portal still einen Vorgabewert, der für Euren Verein meist nicht passt.
+* '''Nicht konfiguriert und deshalb abgeschaltet''' — ein Dienst wie der E-Mail-Versand oder der Chat ist noch nicht eingerichtet. Das ist kein Fehler, wenn Ihr ihn nicht braucht.
+
+=== Beschreibungen und eigene Einstellungen ===
+* Mit dem '''Stift''' neben einer Erklärung kannst Du sie umschreiben, etwa um Dir eine Notiz für Euren Verein zu hinterlassen.
+* Mit dem '''Plus''' oben rechts legst Du eine eigene Einstellung an. Sie landet in der Gruppe ''Zusätzliche Parameter'' und lässt sich dort mit dem '''Papierkorb''' wieder löschen. Die Einstellungen, die das Portal mitbringt, kannst Du nicht löschen.
+
+=== Gut zu wissen ===
+* Jede Änderung steht im [[Hilfe:Änderungsprotokoll|Änderungsprotokoll]], Bereich ''Konfiguration''. Passwörter erscheinen dort nur als Sternchen.
+* Wer den Server betreut, kann einzelne Einstellungen auch beim Start des Portals vorgeben (zum Beispiel ''-e EMAIL_HOST=…''). Eine so vorgegebene Einstellung wird bei jedem Neustart wieder auf diesen Wert gesetzt — eine Änderung hier hält dann nur bis zum nächsten Neustart. Sprich in diesem Fall mit der Person, die den Server betreut.
+* Die Texte der automatischen E-Mails sind Wiki-Markup, wie in einem Artikel. Wie das geht, steht unter [[Hilfe:Wiki|Artikel schreiben]].

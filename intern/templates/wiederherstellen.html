@@ -39,10 +39,13 @@
             <span class="label">Geräte-ID</span>
             <span class="value"><code class="sicherung-id">{{ eigene_id }}</code></span>
         </div>
-        <p class="sicherung-text"><strong>Eingerichtet mit <code>sicherung-speicherseite.sh</code></strong> — dort ausführen:</p>
-        <pre class="sicherung-befehl">bash sicherung-speicherseite.sh --freigeben {{ eigene_id }}</pre>
-        <p class="sicherung-text">Ist das Skript dort nicht mehr zur Hand, holt es dieser Container: <code>podman exec cantorhub cat /app/sicherung-speicherseite.sh &gt; sicherung-speicherseite.sh</code></p>
         <p class="sicherung-text"><strong>Mit der Syncthing-App</strong>: die ID oben als Gerät hinzufügen, dann beim Ordner „CantorHub“ unter <em>Teilen</em> dieses neue Gerät anhaken.</p>
+        <details class="sicherung-manuell">
+            <summary>Eingerichtet mit <code>sicherung-speicherseite.sh</code></summary>
+            <p class="sicherung-text">Dort ausführen:</p>
+            <pre class="sicherung-befehl">bash sicherung-speicherseite.sh --freigeben {{ eigene_id }}</pre>
+            <p class="sicherung-text">Ist das Skript dort nicht mehr zur Hand, holt es dieser Container: <code>podman exec cantorhub cat /app/sicherung-speicherseite.sh &gt; sicherung-speicherseite.sh</code></p>
+        </details>
     </div>
 
     <div class="detail-card">

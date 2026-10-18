@@ -1,0 +1,29 @@
+== Änderungsprotokoll ==
+Das '''Änderungsprotokoll''' hält fest, wer im Portal wann was geändert hat: ein Termin verschoben, eine Adresse korrigiert, jemand in eine Gruppe aufgenommen, eine E-Mail an alle verschickt. So lässt sich später nachvollziehen, wie es zu einem Stand gekommen ist — und ein versehentlich gelöschter Wert lässt sich von Hand wieder eintragen.
+
+Du findest es in der Seitenleiste unter '''Admin → Änderungsprotokoll'''. Sehen kann es nur, wer das Recht '''Mitglieder › Berechtigungen''' hat.
+
+=== Die Liste lesen ===
+Der neueste Eintrag steht oben; weiter unten lädt die Liste beim Scrollen von selbst nach.
+* '''Datum''' — wann es geschah.
+* '''Benutzer''' — wer es getan hat. ''System'' heißt: Das Portal selbst, zum Beispiel ein nächtlicher Aufräum-Lauf.
+* '''Was''' — erstellt, geändert, gelöscht, eine E-Mail gesendet oder ein neuer Mitgliedsantrag.
+* '''Betreff''' — welcher Termin, welches Mitglied, welches Lied. Ein Klick darauf führt meist direkt dorthin.
+* '''Felder''' — bei einer Änderung der alte und der neue Wert. Passwörter erscheinen nie im Klartext.
+
+=== Etwas Bestimmtes finden ===
+Tippe oben rechts auf das '''Trichter-Symbol''' (Filtern). Du kannst eingrenzen nach:
+* '''Bereich''' — Termine, Anwesenheit, Ablauf, Lieder, Mitglieder, Foren, Orte, Gruppen, Gruppenzuordnung, E-Mails oder Konfiguration;
+* '''Aktion''' — etwa nur Gelöschtes;
+* '''Benutzer''' — was eine bestimmte Person geändert hat;
+* '''Gruppe''' — was die Personen einer Gruppe geändert haben;
+* '''Datum von''' und '''Datum bis'''.
+Klicke auf '''Filtern'''. Die gesetzten Filter stehen oben als kleine Kästchen; mit '''Zurücksetzen''' siehst Du wieder alles.
+
+=== Die Geschichte eines einzelnen Eintrags ===
+Wer einen Termin, ein Mitglied, ein Lied, einen Ort oder ein Forum bearbeiten darf, findet dort oben rechts das '''Uhr-Symbol'''. Es zeigt nur die Änderungen an genau diesem Eintrag — auch ohne Zugang zum ganzen Protokoll.
+
+=== Wie lange Einträge bleiben ===
+Einträge werden nach drei Jahren gelöscht, so wie es die Datenschutzerklärung unter „Speicherdauer“ sagt. Die Frist steht in der [[Hilfe:Konfiguration|Konfiguration]] unter ''Aufbewahrung & Bereinigung'' (AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE). Ändere sie nur zusammen mit der Datenschutzerklärung.
+
+@ '''Das Protokoll lässt sich nicht bearbeiten.''' Auf dieser Seite kann niemand einen Eintrag ändern oder löschen.
