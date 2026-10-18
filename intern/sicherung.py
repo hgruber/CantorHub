@@ -160,15 +160,18 @@ def _tabelle_kopieren(model, quelle, ziel):
     return anzahl
 
 
-def _orm_kopieren():
+def zeilen_kopieren(quelle_alias, ziel_alias):
+    """Jede Modelltabelle von ``quelle_alias`` zeilengleich nach ``ziel_alias``.
+
+    Beide Schemata müssen übereinstimmen (vorher ``migrate``). Im Ziel wird
+    jede Tabelle erst geleert. Die Sicherung kopiert so in die Kopie, die
+    Wiederherstellung (``intern/wiederherstellung.py``) aus ihr zurück.
+    """
     from django.apps import apps
-    from django.core.management import call_command
     from django.db import connections, transaction
 
-    call_command("migrate", database=ALIAS, verbosity=0, interactive=False)
-
-    quelle = connections["default"]
-    ziel = connections[ALIAS]
+    quelle = connections[quelle_alias]
+    ziel = connections[ziel_alias]
     modelle = zu_sichernde_modelle(apps.get_models(include_auto_created=True))
 
     if quelle.vendor == "mysql":
@@ -183,13 +186,21 @@ def _orm_kopieren():
         # Fremdschlüssel erst am Ende prüfen: die Tabellen kommen in
         # Registrierungs-, nicht in Abhängigkeitsfolge.
         with ziel.constraint_checks_disabled():
-            with transaction.atomic(using=quelle.alias), transaction.atomic(using=ALIAS):
+            with transaction.atomic(using=quelle_alias), transaction.atomic(using=ziel_alias):
                 for model in modelle:
                     zeilen[model._meta.db_table] = _tabelle_kopieren(model, quelle, ziel)
-        ziel.check_constraints()
+                # Noch in der Transaktion: ein Fehler rollt das Ziel zurück.
+                ziel.check_constraints()
     finally:
         quelle.close()
     return zeilen
+
+
+def _orm_kopieren():
+    from django.core.management import call_command
+
+    call_command("migrate", database=ALIAS, verbosity=0, interactive=False)
+    return zeilen_kopieren("default", ALIAS)
 
 
 def sichern(jetzt):

@@ -1,0 +1,163 @@
+{% extends 'mitglied_public_base.html' %}
+{% block title %}Wiederherstellen – CantorHub{% endblock %}
+{% block wrap_modifier %} join-wide{% endblock %}
+{% block head_extra %}{% comment %}
+   Selbst aktualisieren, solange gewartet oder empfangen wird — nicht, sobald
+   ein Gerät wartet (dann füllt jemand das Formular) und nicht nach Empfangsende
+   (dann wird geklickt). Den Neustart beobachtet das Skript unten.
+{% endcomment %}{% if phase == "start" and not wartend or phase == "empfangen" and not empfang.fertig %}<meta http-equiv="refresh" content="10">{% endif %}{% endblock %}
+
+{% block header %}
+    <h1>Aus einer Sicherung wiederherstellen</h1>
+    <p class="join-intro">
+        Holt das Datenverzeichnis eines früheren Portals von einem Speichergerät — Datenbank,
+        Dateien, Startseite und Schlüssel. Danach startet das Portal neu und ist das alte; Du
+        meldest Dich mit Deinem bisherigen Konto an.
+    </p>
+{% endblock %}
+
+{% block body %}
+<div class="sicherung">
+    {% if fehler %}<p class="sicherung-hinweis" role="alert">{{ fehler }}</p>{% endif %}
+    {% if syncthing_fehler %}<p class="sicherung-hinweis" role="alert">{{ syncthing_fehler }}</p>{% endif %}
+
+    {% if phase == "start" %}
+    <div class="detail-card">
+        <h3>1. Das Speichergerät mit diesem Server verbinden</h3>
+        <p class="sicherung-text">Dieser Server hat eine neue Geräte-ID — die alte steckt aus gutem Grund nicht in der Sicherung. Das Speichergerät muss sie einmal kennenlernen:</p>
+        <div class="detail-card-row">
+            <span class="label">Geräte-ID</span>
+            <span class="value"><code class="sicherung-id">{{ eigene_id }}</code></span>
+        </div>
+        <p class="sicherung-text"><strong>Eingerichtet mit <code>sicherung-speicherseite.sh</code></strong> — dort ausführen:</p>
+        <pre class="sicherung-befehl">bash sicherung-speicherseite.sh --freigeben {{ eigene_id }}</pre>
+        <p class="sicherung-text">Ist das Skript dort nicht mehr zur Hand, holt es dieser Container: <code>podman exec cantorhub cat /app/sicherung-speicherseite.sh &gt; sicherung-speicherseite.sh</code></p>
+        <p class="sicherung-text"><strong>Mit der Syncthing-App</strong>: die ID oben als Gerät hinzufügen, dann beim Ordner „CantorHub“ unter <em>Teilen</em> dieses neue Gerät anhaken.</p>
+    </div>
+
+    <div class="detail-card">
+        <h3>2. Gerät wählen{% if wartend %} <span class="badge badge-primary">{{ wartend|length }}</span>{% endif %}</h3>
+        {% for w in wartend %}
+        <div class="sicherung-geraet">
+            <div class="sicherung-geraet-kopf">
+                <strong>{{ w.name|default:"unbenannt" }}</strong>
+                <code title="{{ w.id }}">{{ w.kurz }}</code>
+            </div>
+            <div class="sicherung-geraet-zeile">meldet sich seit {{ w.zeit }}{% if w.adresse %} von {{ w.adresse }}{% endif %}</div>
+            <form method="post" class="sicherung-annehmen">
+                {% csrf_token %}
+                <input type="hidden" name="geraet" value="{{ w.id }}">
+                <input type="hidden" name="name" value="{{ w.name }}">
+                <fieldset class="sicherung-modus">
+                    <legend>Wie liegt die Sicherung dort?</legend>
+                    <label class="radio-label"><input type="radio" name="modus" value="klartext" checked> Lesbar (Klartext)</label>
+                    <label class="radio-label"><input type="radio" name="modus" value="verschluesselt"> Verschlüsselt — mit Passwort</label>
+                </fieldset>
+                <label class="sicherung-feld sicherung-passwort" for="pw-{{ w.kurz }}">
+                    <span>Passwort der Ablage</span>
+                    <input type="password" id="pw-{{ w.kurz }}" name="passwort" autocomplete="off">
+                </label>
+                <div class="sicherung-knoepfe">
+                    <button type="submit" class="btn btn-sm" name="aktion" value="annehmen">Von diesem Gerät wiederherstellen</button>
+                    <button type="submit" class="btn btn-sm btn-secondary" name="aktion" value="ablehnen">Ist es nicht</button>
+                </div>
+            </form>
+        </div>
+        {% empty %}
+        <p class="sicherung-text">Noch meldet sich kein Gerät. Nach Schritt 1 dauert es meist ein, zwei Minuten; diese Seite schaut alle zehn Sekunden nach.</p>
+        {% endfor %}
+    </div>
+
+    {% elif phase == "empfangen" %}
+    <div class="detail-card">
+        <h3>3. Empfang{% if zustand.verschluesselt %} <span class="tag">verschlüsselte Ablage</span>{% endif %}</h3>
+        <div class="detail-card-row">
+            <span class="label">Gerät</span>
+            <span class="value">{{ zustand.name|default:"Sicherung" }} <code>{{ zustand.geraet|slice:":7" }}</code>
+                {% if empfang %}· <span class="status-dot {% if empfang.verbunden %}status-dot--on{% else %}status-dot--off{% endif %}"></span>
+                {% if empfang.verbunden %}verbunden {% if empfang.ueber_relay %}über ein Relay{% else %}direkt{% endif %}{% else %}nicht verbunden{% endif %}{% endif %}</span>
+        </div>
+        {% if empfang %}
+        <div class="detail-card-row">
+            <span class="label">Stand</span>
+            <span class="value">
+                {% if empfang.dateien %}{{ empfang.prozent }} % von {{ empfang.gesamt_mb }} MB ({{ empfang.dateien }} Einträge){% else %}wartet auf die Liste des Geräts …{% endif %}
+            </span>
+        </div>
+        <div class="wiederherstellung-balken" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ empfang.prozent }}">
+            <span style="width: {{ empfang.prozent }}%"></span>
+        </div>
+        {% endif %}
+        {% if not empfang.fertig %}
+        <p class="sicherung-text">Bei vielen Dateien über ein Relay kann das dauern. Die Seite darf zu sein — der Empfang läuft weiter, und hier geht es später weiter.</p>
+        {% endif %}
+    </div>
+
+    {% if empfang.fertig %}
+    <div class="detail-card">
+        <h3>4. Einspielen</h3>
+        {% if pruefung %}
+        <p class="sicherung-hinweis" role="alert">{{ pruefung }}</p>
+        {% else %}
+        <div class="detail-card-row"><span class="label">Gesichert</span><span class="value">{{ inhalt.zeitpunkt|default:"—" }}{% if inhalt.version %} · Version {{ inhalt.version }}{% endif %}</span></div>
+        <div class="detail-card-row"><span class="label">Datenbank</span><span class="value">{{ inhalt.zeilen }} Zeilen</span></div>
+        <div class="detail-card-row"><span class="label">Dateien</span><span class="value">{{ inhalt.dateien }} Datei{{ inhalt.dateien|pluralize:"en" }}, {{ inhalt.dateien_mb }} MB</span></div>
+        <p class="sicherung-text">Das Portal startet dafür einmal neu und spielt alles ein, bevor es wieder erreichbar ist. Das Speichergerät sichert danach ohne weiteres Zutun von diesem Server.</p>
+        <form method="post" class="sicherung-knoepfe">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary" name="aktion" value="einspielen">Wiederherstellen und neu starten</button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% elif phase == "bereit" %}
+    <div class="detail-card">
+        <h3>Neustart</h3>
+        {% if neustart %}
+        <p class="sicherung-text" id="neustart-text">Das Portal startet neu und spielt die Sicherung ein. Diese Seite leitet zur Anmeldung weiter, sobald es wieder da ist.</p>
+        {% else %}
+        <p class="sicherung-text">Die Sicherung wird beim nächsten Start eingespielt. Jetzt neu starten:</p>
+        {% endif %}
+        <pre class="sicherung-befehl">podman restart cantorhub</pre>
+        <p class="sicherung-text">{% if neustart %}Kommt es nach einer Minute nicht zurück, läuft der Container ohne Neustart-Regel — dann diesen Befehl. {% endif %}Danach mit dem bisherigen Konto anmelden.</p>
+    </div>
+    <script>
+    (function () {
+      // Erst warten, bis der Container wirklich weg war, dann auf die Anmeldung.
+      var weg = false;
+      function pruefen() {
+        fetch('/intern/login/', { cache: 'no-store', redirect: 'manual' })
+          .then(function (r) {
+            if (weg && (r.ok || r.type === 'opaqueredirect')) { window.location = '/intern/login/'; return; }
+            setTimeout(pruefen, 3000);
+          })
+          .catch(function () { weg = true; setTimeout(pruefen, 3000); });
+      }
+      setTimeout(pruefen, 3000);
+    })();
+    </script>
+
+    {% elif phase == "fehler" %}
+    <div class="detail-card">
+        <h3>Wiederherstellung fehlgeschlagen</h3>
+        <p class="sicherung-hinweis" role="alert">{{ zustand.fehler }}</p>
+        <p class="sicherung-text">Die Datenbank ist unverändert, das Empfangene liegt noch da. Nach einer Korrektur — etwa einem neueren Abbild — erneut versuchen.</p>
+        <form method="post" class="sicherung-knoepfe">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary" name="aktion" value="erneut">Erneut versuchen</button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if zustand %}
+    <form method="post" class="wiederherstellung-abbrechen">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-secondary" name="aktion" value="abbrechen"
+                onclick="return confirm('Wiederherstellung abbrechen? Das bisher Empfangene wird gelöscht.')">Abbrechen und normal einrichten</button>
+    </form>
+    {% elif phase != "bereit" %}
+    <p class="sicherung-text"><a href="{% url 'einrichtung' %}">Zurück zur Einrichtung ohne Sicherung</a></p>
+    {% endif %}
+</div>
+{% endblock %}

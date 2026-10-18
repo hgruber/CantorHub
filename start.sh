@@ -23,6 +23,13 @@ if [ ! -e "${CANTORHUB_DATA}/startseite" ]; then
     echo "Startseite: Demo nach ${CANTORHUB_DATA}/startseite kopiert."
 fi
 
+# Eine ueber die Ersteinrichtung vorbereitete Wiederherstellung einspielen —
+# vor allem anderen, solange noch kein Dienst laeuft (intern/wiederherstellung.py).
+# Ohne Auftrag ein No-op. Scheitert sie, startet das Portal trotzdem und zeigt
+# den Grund auf /einrichtung/.
+python manage.py wiederherstellen \
+    || echo "Wiederherstellung abgebrochen — der Grund steht im Log und auf /einrichtung/."
+
 # Bringt die Datenbank auf den Stand des Abbilds: jede eingecheckte Migration
 # unter intern/migrations/, die noch nicht verbucht ist, laeuft hier — bei jedem
 # Start, eine schon angewendete ist ein No-op. set -e: scheitert eine, startet
@@ -105,6 +112,9 @@ if [ "${DEBUG}" != "1" ] && command -v syncthing >/dev/null; then
 /db.sqlite3-*
 // Halbfertige Sicherungen:
 /sicherung/*.tmp*
+// Eine laufende Wiederherstellung (Empfangsordner, Zustand, Arbeitskopie):
+/wiederherstellung
+/wiederherstellung.*
 // Quellen des einmaligen Altdaten-Imports:
 /migration
 EOF

@@ -7580,7 +7580,8 @@ class SicherungTest(SimpleTestCase):
         start = (Path(settings.BASE_DIR) / "start.sh").read_text()
         block = start.split("/.stignore\" <<'EOF'", 1)[1].split("\nEOF", 1)[0]
         zeilen = block.splitlines()
-        for muster in ("/syncthing", "/db.sqlite3", "/db.sqlite3-*", "/sicherung/*.tmp*"):
+        for muster in ("/syncthing", "/db.sqlite3", "/db.sqlite3-*", "/sicherung/*.tmp*",
+                       "/wiederherstellung", "/wiederherstellung.*"):
             self.assertIn(muster, zeilen)
 
 
@@ -7661,3 +7662,109 @@ class SyncthingTest(SimpleTestCase):
             antwort = view(anfrage, *args)
             self.assertEqual(antwort.status_code, 302)
             self.assertIn("/Aktuell/", antwort["Location"])
+
+    def test_ordner_umstellen_xml(self):
+        import xml.etree.ElementTree as ET
+
+        from intern.syncthing import ordner_umstellen_xml
+        xml = ('<configuration version="37">'
+               '<folder id="cantorhub" label="CantorHub" path="/data/wiederherstellung" '
+               'type="receiveonly"><device id="X"></device></folder>'
+               '<folder id="anderer" path="/x" type="sendreceive"></folder></configuration>')
+        wurzel = ET.fromstring(ordner_umstellen_xml(xml, "/data"))
+        ordner = {f.get("id"): f for f in wurzel.findall("folder")}
+        self.assertEqual(ordner["cantorhub"].get("path"), "/data")
+        self.assertEqual(ordner["cantorhub"].get("type"), "sendonly")
+        self.assertIsNotNone(ordner["cantorhub"].find("device"), msg="Freigabe bleibt")
+        self.assertEqual(ordner["anderer"].get("type"), "sendreceive")
+        self.assertIsNone(ordner_umstellen_xml("<configuration/>", "/data"))
+        self.assertIsNone(ordner_umstellen_xml("kaputt", "/data"))
+
+
+class WiederherstellungTest(SimpleTestCase):
+    """Wiederherstellen aus einer Sicherung (intern/wiederherstellung.py)."""
+
+    def _sicherung(self, wurzel, migrationen=(("intern", "0001_initial"),), schluessel=True):
+        import sqlite3
+
+        (wurzel / "sicherung").mkdir(parents=True)
+        db = sqlite3.connect(wurzel / "sicherung" / "cantorhub.sqlite3")
+        db.execute("CREATE TABLE django_migrations (id INTEGER PRIMARY KEY, app TEXT, name TEXT)")
+        db.executemany("INSERT INTO django_migrations (app, name) VALUES (?, ?)", migrationen)
+        db.commit()
+        db.close()
+        (wurzel / "sicherung" / "stand.json").write_text('{"zeitpunkt": "2026-10-18T03:00:00"}')
+        if schluessel:
+            (wurzel / "secret_key").write_text("alt")
+
+    def test_pruefen(self):
+        import tempfile
+
+        from intern.wiederherstellung import pruefen
+        bekannt = {("intern", "0001_initial")}
+        with tempfile.TemporaryDirectory() as tmp:
+            wurzel = Path(tmp) / "gut"
+            self._sicherung(wurzel)
+            self.assertIsNone(pruefen(wurzel, bekannt))
+        with tempfile.TemporaryDirectory() as tmp:
+            wurzel = Path(tmp) / "ohne-schluessel"
+            self._sicherung(wurzel, schluessel=False)
+            self.assertIn("Schlüssel", pruefen(wurzel, bekannt))
+        with tempfile.TemporaryDirectory() as tmp:
+            wurzel = Path(tmp) / "neuer"
+            self._sicherung(wurzel, migrationen=(("intern", "0001_initial"),
+                                                 ("intern", "9999_zukunft")))
+            self.assertIn("neueren Version", pruefen(wurzel, bekannt))
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIn("Datenbank-Kopie", pruefen(Path(tmp), bekannt))
+
+    def test_bekannte_migrationen_ohne_datenbank(self):
+        from intern.wiederherstellung import bekannte_migrationen
+        bekannt = bekannte_migrationen()
+        self.assertIn(("intern", "0001_initial"), bekannt)
+        self.assertIn(("auth", "0001_initial"), bekannt)
+
+    def test_dateien_uebernehmen(self):
+        import tempfile
+
+        from intern.wiederherstellung import _dateien_uebernehmen
+        with tempfile.TemporaryDirectory() as tmp:
+            daten = Path(tmp)
+            ordner = daten / "wiederherstellung"
+            for pfad, inhalt in (("media/a/bild.jpg", "bild"), ("startseite/index.html", "alt"),
+                                 ("secret_key", "alter-schluessel"), ("syncthing/key.pem", "fremd"),
+                                 ("db.sqlite3", "x")):
+                (ordner / pfad).parent.mkdir(parents=True, exist_ok=True)
+                (ordner / pfad).write_text(inhalt)
+            for pfad, inhalt in (("startseite/index.html", "demo"), ("startseite/demo.css", "d"),
+                                 ("secret_key", "neu"), ("syncthing/key.pem", "eigen")):
+                (daten / pfad).parent.mkdir(parents=True, exist_ok=True)
+                (daten / pfad).write_text(inhalt)
+            (daten / "media").mkdir()
+
+            _dateien_uebernehmen(ordner, daten)
+
+            self.assertEqual((daten / "media/a/bild.jpg").read_text(), "bild")
+            self.assertEqual((daten / "startseite/index.html").read_text(), "alt")
+            self.assertFalse((daten / "startseite/demo.css").exists(), msg="Demo weicht ganz")
+            self.assertEqual((daten / "secret_key").read_text(), "alter-schluessel")
+            self.assertEqual((daten / "secret_key").stat().st_mode & 0o777, 0o600)
+            self.assertEqual((daten / "syncthing/key.pem").read_text(), "eigen",
+                             msg="der Schlüssel dieses Syncthing bleibt")
+            self.assertFalse((daten / "db.sqlite3").exists(), msg="keine laufende SQLite-Datei")
+
+    def test_seite_nach_einrichtung_404(self):
+        from unittest import mock
+
+        from django.http import Http404
+        from django.test import RequestFactory
+
+        from intern.views.einrichtung import wiederherstellen
+        with mock.patch("intern.views.einrichtung.ist_eingerichtet", return_value=True):
+            with self.assertRaises(Http404):
+                wiederherstellen(RequestFactory().get("/einrichtung/wiederherstellen/"))
+
+    def test_kein_neustart_ausserhalb_des_containers(self):
+        # Unter DEBUG (Entwicklung, Tests) wäre PID 1 das init des Rechners.
+        from intern.views.einrichtung import _neu_starten
+        self.assertFalse(_neu_starten())

@@ -25,7 +25,7 @@ replaced *in place* out of band, change its path — or the week has to pass.
 ```bash
 ./build.sh                               # names the image after `git describe --tags`
 
-podman run -d --name cantorhub -p 8000:8000 \
+podman run -d --name cantorhub --restart unless-stopped -p 8000:8000 \
     -v cantorhub-data:/data \
     -e DATABASE_URL=mysql://cantorhub:secret@db:3306/cantorhub \
     -e VEREINS_URL=https://chor.example.de \
@@ -394,6 +394,7 @@ Run with `podman exec cantorhub python manage.py <command>`.
 | `ejabberd_admin <group> <verb>` | XMPP admin operations: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
 | `ejabberd_bot` | Run the XMPP relay bot in the foreground |
 | `sicherung` | Write the database to `/data/sicherung/` now, regardless of `SICHERUNG_STUNDEN` |
+| `wiederherstellen` | Apply a restore prepared on the first-run setup page; `start.sh` runs it before `migrate`, and without one it does nothing (see „Restoring“) |
 | `index_files`, `thumbnail_files` | Rebuild the file search index / pre-generate thumbnails |
 | `seitenmessung [--nutzer NAME] [--laeufe N] [--seite TEXT]` | Measure the response time and query count of the main pages. It copies the SQLite file first and throws the copy away afterwards, so the running database is never written to; the last column names a query that occurs more than three times, which is how a per-row query gives itself away |
 | `hilfe_anlegen [--autor BENUTZERNAME] [--force]` | Add the shipped help pages („Hilfe“, `Hilfe:…`) and their images to an existing installation. Pages and images that already exist under the same name are left alone; `--force` brings them to the shipped state as well — a new article version where the text differs, a new image revision — and keeps the old ones in the history. A new installation gets them from the first-run setup |
@@ -483,7 +484,11 @@ server would simply be mirrored. The script ends by printing the command for ste
 — plain or encrypted, with the password entered there — and also shows the last database copy,
 the server's device ID, the ready-made command for step 1, and per device whether it is
 connected, directly or through a relay, and up to date. Accepting and removing are recorded in
-the change log. The same on the command line:
+the change log.
+
+<img src="docs/screenshots/sicherung.png" alt="The page „Sicherung“: last database copy, the server's device ID and a connected storage device">
+
+The same on the command line:
 
 ```bash
 podman exec cantorhub /app/sicherung-geraet.sh                    # status, waiting devices
@@ -524,8 +529,47 @@ device elsewhere, so only that one link crosses the internet.
 
 ### Restoring
 
-Work on a **copy** of the mirrored folder — the receive-only folder itself must stay untouched,
-and a portal started on it would change it:
+**Onto a new installation, through the first-run setup.** Start a fresh container — empty
+volume, and an empty database if you use MariaDB — and open the portal. The setup page offers
+„Aus einer Sicherung wiederherstellen“; from there it is four steps on one page:
+
+1. The page shows the **new server's device ID** (the old one is deliberately not in the
+   backup). Give the storage device access to its copy for this server:
+   `bash sicherung-speicherseite.sh --freigeben NEW-ID` on a device set up with the script, or
+   in the Syncthing app: add the ID as a device, then tick it under *Sharing* of the folder
+   „CantorHub“.
+2. A minute or two later the device shows up as waiting. Say whether the copy lies there in plain
+   or encrypted form (then with its password) and click **„Von diesem Gerät wiederherstellen“**.
+
+   <img src="docs/screenshots/wiederherstellen-geraet.png" width="560" alt="The storage device waiting to be chosen">
+
+3. The page follows the transfer and refreshes itself; over a relay and with many files this
+   can take a while, and the page may be closed in between.
+4. When everything has arrived and the copy checks out, it shows what it would bring back. **„Wiederherstellen
+   und neu starten“** ends the container; the restart policy brings it back.
+
+   <img src="docs/screenshots/wiederherstellen-einspielen.png" width="560" alt="Everything received, ready to restore">
+
+On that start, before any service runs, `start.sh` applies it: the copy of the database is
+migrated to the image's schema and copied row by row into the portal's database (MariaDB or
+SQLite, the same routine the backup uses), then `media/`, the homepage and the secret key move
+into place, and the Syncthing folder switches from receiving to sending. Log in with your old
+account. **The device you restored from carries on as the backup target of the new server**
+without anything to do, and nothing is transferred again. Other storage devices still know only
+the old server: run `--freigeben` there too and accept them on `/intern/sicherung/`; their entry
+for the old server can be removed.
+
+- **It needs a restart policy:** `--restart unless-stopped` (as in the commands above), or
+  `Restart=always` in a systemd unit — the `Restart=on-failure` of `podman generate systemd`
+  does not restart after the clean exit. Without one, `podman start cantorhub` finishes the job.
+- **If it fails,** the database is rolled back, the page shows the reason, and what was received
+  stays for another try. A backup from a newer version is refused until the image is updated.
+- **Like the setup itself, the page is open to whoever comes first** while no superuser exists —
+  do not leave a fresh instance reachable from the internet.
+- „Abbrechen und normal einrichten“ drops what was received and returns to the normal setup.
+
+**By hand, without a new installation.** Work on a **copy** of the mirrored folder — the
+receive-only folder itself must stay untouched, and a portal started on it would change it:
 
 ```bash
 cp -a ~/cantorhub-sicherung/cantorhub ~/cantorhub-wiederhergestellt
@@ -539,10 +583,10 @@ podman run -d --name cantorhub -p 8000:8000 -v ~/cantorhub-wiederhergestellt:/da
     ghcr.io/hgruber/cantorhub:latest
 ```
 
-That is a running portal with the state of the last copy. An older state lies in `.stversions/`
-of the storage device. A portal running on its own copy does not back itself up
-(`sicherung` refuses and says so). The way back to MariaDB is Django's own
-`dumpdata`/`loaddata`; there is no dedicated tool for it.
+That is a running portal with the state of the last copy — handy to look something up while the
+real one is down. An older state lies in `.stversions/` of the storage device. A portal running on
+its own copy does not back itself up (`sicherung` refuses and says so); to get onto MariaDB,
+use the first-run setup above.
 
 ## License
 

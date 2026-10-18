@@ -5,10 +5,13 @@
 # aufhebt. Braucht podman oder docker, sonst nichts.
 #
 #   ./sicherung-speicherseite.sh SERVER-ID [ZIELORDNER] [--verschluesselt]
+#   ./sicherung-speicherseite.sh --freigeben NEUE-SERVER-ID
 #
 # SERVER-ID gibt der Server aus: podman exec cantorhub /app/sicherung-geraet.sh
 # Danach nimmt der Server dieses Geraet an — mit --verschluesselt dort mit einem
 # Passwort, hier liegen dann nur verschluesselte Dateien.
+# --freigeben gibt die vorhandene Sicherung einem neuen Server frei, der aus ihr
+# wiederhergestellt wird (die Ersteinrichtung dort zeigt seine ID).
 
 set -e
 
@@ -22,15 +25,17 @@ AUFHEBEN_S=31536000
 server_id=""
 ziel="${HOME}/cantorhub-sicherung"
 typ="receiveonly"
+freigeben=""
 for arg in "$@"; do
     case "${arg}" in
         --verschluesselt) typ="receiveencrypted" ;;
+        --freigeben) freigeben=1 ;;
         -*) echo "Unbekannte Option: ${arg}" >&2; exit 2 ;;
         *) if [ -z "${server_id}" ]; then server_id="${arg}"; else ziel="${arg}"; fi ;;
     esac
 done
 if [ -z "${server_id}" ]; then
-    sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
     exit 2
 fi
 
@@ -41,6 +46,23 @@ elif command -v docker >/dev/null; then
 else
     echo "Weder podman noch docker gefunden." >&2
     exit 1
+fi
+
+# Ohne STGUIADDRESS: mit ihr verlangt die CLI auch den API-Schluessel; ohne
+# liest sie beides aus der config.xml.
+st() { "${rt}" exec "${NAME}" env -u STGUIADDRESS syncthing cli "$@"; }
+
+if [ -n "${freigeben}" ]; then
+    if ! st show system >/dev/null 2>&1; then
+        echo "Der Container ${NAME} laeuft hier nicht." >&2
+        exit 1
+    fi
+    # Der neue Server holt sich den Ordner, wie er hier liegt — Typ und
+    # Versionierung bleiben; nach dem Einspielen sendet er selbst hierher.
+    st config devices add --device-id "${server_id}" --name "CantorHub (neu)"
+    st config folders "${ORDNER_ID}" devices add --device-id "${server_id}"
+    echo "Freigegeben. Der neue Server sieht dieses Geraet gleich als wartend."
+    exit 0
 fi
 
 mkdir -p "${ziel}"
@@ -55,14 +77,14 @@ if [ "${rt}" = podman ] && [ "$(podman info --format '{{.Host.Security.Rootless}
     puid=0
     pgid=0
 fi
+# --hostname: Syncthing nennt das Geraet nach ihm — beim Server erscheint so der
+# Name dieses Rechners statt einer Container-ID.
 "${rt}" run -d --name "${NAME}" --restart unless-stopped \
+    --hostname "$(hostname -s 2>/dev/null || echo "${NAME}")" \
     -e PUID="${puid}" -e PGID="${pgid}" -e STNODEFAULTFOLDER=1 \
     -e STGUIADDRESS=127.0.0.1:8384 \
     -v "${ziel}:/var/syncthing:Z" "${ABBILD}" >/dev/null
 
-# Ohne STGUIADDRESS: mit ihr verlangt die CLI auch den API-Schluessel; ohne
-# liest sie beides aus der config.xml.
-st() { "${rt}" exec "${NAME}" env -u STGUIADDRESS syncthing cli "$@"; }
 for _ in $(seq 60); do st show system >/dev/null 2>&1 && break; sleep 2; done
 
 st config devices add --device-id "${server_id}" --name CantorHub

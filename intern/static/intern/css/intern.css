@@ -8551,3 +8551,23 @@ button.tag:focus-visible {
     color: var(--brand-text);
     font-size: calc(13rem / 14);
 }
+
+/* Wiederherstellen (/einrichtung/wiederherstellen/) */
+.join-card .sicherung > .detail-card { margin-bottom: 16px; }
+
+.wiederherstellung-balken {
+    height: 8px;
+    margin: 10px 0 0;
+    background: var(--bg-row-hover);
+    border-radius: 99px;
+    overflow: hidden;
+}
+.wiederherstellung-balken > span {
+    display: block;
+    height: 100%;
+    background: var(--brand-dark);
+    transition: width 0.4s ease;
+}
+
+.wiederherstellung-abbrechen { margin-top: 4px; }
+.detail-card > form.sicherung-knoepfe { margin-top: 12px; }

@@ -19,6 +19,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 - Die Seite „Sicherung“ (Admin, nur für Superuser) zeigt die letzte Datenbank-Sicherung und die
   Speichergeräte samt Verbindung und Abgleich. Wartende Geräte lassen sich dort mit einem Klick
   annehmen, wahlweise verschlüsselt, oder wieder entfernen.
+- Eine neue Installation lässt sich in der Ersteinrichtung aus einer solchen Sicherung
+  wiederherstellen, auch auf MariaDB: Speichergerät wählen, Empfang abwarten, „Wiederherstellen
+  und neu starten“. Das Gerät sichert danach ohne Zutun vom neuen Server weiter;
+  `sicherung-speicherseite.sh --freigeben` gibt ihm die Sicherung frei.
 
 ### Geändert
 

@@ -6,12 +6,19 @@ Die Logik liegt in ``intern/einrichtung.py``; die Weiterleitung hierher macht
 
 import logging
 import os
+import shutil
+import signal
+import threading
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth import login
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
+from intern import syncthing
+from intern import wiederherstellung as wh
 from intern.einrichtung import (
     BereitsEingerichtet,
     einrichten,
@@ -23,10 +30,16 @@ from intern.forms import EinrichtungForm
 
 logger = logging.getLogger(__name__)
 
+__all__ = ["einrichtung", "wiederherstellen"]
+
 
 def einrichtung(request):
     if ist_eingerichtet():
         raise Http404
+    # Eine begonnene Wiederherstellung schließt die Einrichtung von Hand aus —
+    # wer hierher kommt, landet bei ihr, bis sie fertig oder abgebrochen ist.
+    if wh.lese_zustand():
+        return redirect("einrichtung_wiederherstellen")
 
     url_aus_umgebung = os.environ.get("VEREINS_URL", "")
     # Die Adresse ergibt sich aus dem Aufruf selbst; hinter dem Proxy liefert
@@ -80,3 +93,108 @@ def einrichtung(request):
         return redirect("konfiguration")
 
     return render(request, "einrichtung.html", {"form": form})
+
+
+def _im_container():
+    """Läuft das Portal im Abbild, mit gunicorn als PID 1 (start.sh: exec)?
+
+    Nur dann darf die Wiederherstellung den Container beenden — in der
+    Entwicklung wäre PID 1 das init des Rechners.
+    """
+    if settings.DEBUG:
+        return False
+    try:
+        return b"gunicorn" in Path("/proc/1/cmdline").read_bytes()
+    except OSError:
+        return False
+
+
+def _neu_starten():
+    """gunicorn (PID 1) sauber beenden; die Restart-Policy startet den Container neu.
+
+    Kurz verzögert, damit die Antwort mit dem Hinweis noch ankommt.
+    """
+    if not _im_container():
+        return False
+    threading.Timer(1.5, os.kill, args=(1, signal.SIGTERM)).start()
+    return True
+
+
+def _annehmen(request):
+    """Formular „Von diesem Gerät wiederherstellen“; Fehlertext oder ``None``."""
+    gid = syncthing.geraete_id(request.POST.get("geraet"))
+    if not gid:
+        return "Das ist keine gültige Geräte-ID."
+    passwort = ""
+    if request.POST.get("modus") == "verschluesselt":
+        passwort = request.POST.get("passwort", "")
+        if not passwort:
+            return "Für eine verschlüsselte Ablage braucht es ihr Passwort."
+    name = request.POST.get("name", "").strip()[:60]
+    syncthing.empfang_beginnen(gid, name, passwort, wh.empfangsordner())
+    wh.schreibe_zustand(phase=wh.EMPFANGEN, geraet=gid, name=name, verschluesselt=bool(passwort))
+    logger.info("Wiederherstellung: Empfang von %s begonnen", gid.split("-", 1)[0])
+    return None
+
+
+def wiederherstellen(request):
+    """Eine neue Installation aus einer Sicherung herstellen (intern/wiederherstellung.py).
+
+    Offen wie die Ersteinrichtung selbst: solange es keinen Superuser gibt, für
+    wen auch immer zuerst kommt. Eine eingespielte Sicherung bringt ihren
+    Superuser mit und schließt die Seite damit.
+    """
+    if ist_eingerichtet():
+        raise Http404
+
+    zustand = wh.lese_zustand()
+    phase = (zustand or {}).get("phase")
+    fehler = None
+    if request.method == "POST":
+        aktion = request.POST.get("aktion")
+        try:
+            if aktion == "annehmen" and not zustand:
+                fehler = _annehmen(request)
+            elif aktion == "ablehnen" and not zustand:
+                gid = syncthing.geraete_id(request.POST.get("geraet"))
+                if gid:
+                    syncthing.ablehnen(gid)
+            elif aktion == "abbrechen" and zustand:
+                syncthing.empfang_abbrechen(zustand.get("geraet"), wh.datenverzeichnis())
+                shutil.rmtree(wh.empfangsordner(), ignore_errors=True)
+                wh.zustand_loeschen()
+                logger.info("Wiederherstellung abgebrochen")
+                return redirect("einrichtung")
+            elif aktion == "erneut" and phase == wh.FEHLER:
+                wh.schreibe_zustand(**{**zustand, "phase": wh.EMPFANGEN, "fehler": ""})
+            elif aktion == "einspielen" and phase == wh.EMPFANGEN:
+                if not syncthing.empfang_stand(zustand["geraet"])["fertig"]:
+                    fehler = "Der Empfang ist noch nicht vollständig."
+                else:
+                    fehler = wh.pruefen(wh.empfangsordner(), wh.bekannte_migrationen())
+                if not fehler:
+                    wh.schreibe_zustand(**{**zustand, "phase": wh.BEREIT})
+                    logger.info("Wiederherstellung: bereit, Neustart angefordert")
+                    return render(request, "wiederherstellen.html", {
+                        "phase": wh.BEREIT, "neustart": _neu_starten(),
+                    })
+        except syncthing.SyncthingFehler as ausnahme:
+            fehler = str(ausnahme)
+        if not fehler:
+            return redirect("einrichtung_wiederherstellen")
+        zustand = wh.lese_zustand()
+        phase = (zustand or {}).get("phase")
+
+    kontext = {"phase": phase or "start", "zustand": zustand, "fehler": fehler}
+    try:
+        kontext["eigene_id"] = syncthing.eigene_id()
+        if not zustand:
+            kontext["wartend"] = syncthing.status()["wartend"]
+        elif phase == wh.EMPFANGEN:
+            kontext["empfang"] = empfang = syncthing.empfang_stand(zustand["geraet"])
+            if empfang["fertig"]:
+                kontext["pruefung"] = wh.pruefen(wh.empfangsordner(), wh.bekannte_migrationen())
+                kontext["inhalt"] = wh.zusammenfassung(wh.empfangsordner())
+    except syncthing.SyncthingFehler as ausnahme:
+        kontext["syncthing_fehler"] = str(ausnahme)
+    return render(request, "wiederherstellen.html", kontext)

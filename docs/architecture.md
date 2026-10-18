@@ -58,7 +58,9 @@ The dev branch (`runserver 0.0.0.0:8001`) stays open deliberately.
 - `/` — public homepage (`index.html` of the `startseite` template engine, see
   `docs/startseite.md`), `/startseite/*` its images and CSS
 - `/einrichtung/` — first-run setup of a new installation (`intern/einrichtung.py`); `404`
-  once a superuser exists
+  once a superuser exists. `/einrichtung/wiederherstellen/` restores a backup instead
+  (`intern/wiederherstellung.py`), under the same rule; while a restore is under way, it is
+  where `/einrichtung/` sends you
 - `/datenschutz/` — public privacy policy (`intern/templates/datenschutz.html`, no login
   required, view `datenschutz` in `views/auth.py`)
 - `/manifest.webmanifest` — the web app manifest, built from `VEREINSNAME_LANG` and

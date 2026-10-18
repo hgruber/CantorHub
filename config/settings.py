@@ -203,6 +203,11 @@ try:
         "sicherung": datenbank_aus_url(
             f"sqlite:///{DATEN.resolve()}/sicherung/cantorhub.sqlite3.tmp", DATEN
         ),
+        # Quelle beim Wiederherstellen (intern/wiederherstellung.py): eine
+        # Arbeitskopie der empfangenen Sicherung, die migriert werden darf.
+        "wiederherstellung": datenbank_aus_url(
+            f"sqlite:///{DATEN.resolve()}/wiederherstellung.sqlite3", DATEN
+        ),
     }
 except KonfigurationsFehler as fehler:
     from django.core.exceptions import ImproperlyConfigured

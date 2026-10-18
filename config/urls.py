@@ -21,6 +21,8 @@ urlpatterns = [
     path("datenschutz/", views.datenschutz, name="datenschutz"),
     path("manifest.webmanifest", views.manifest, name="manifest"),
     path("einrichtung/", views.einrichtung, name="einrichtung"),
+    path("einrichtung/wiederherstellen/", views.wiederherstellen,
+         name="einrichtung_wiederherstellen"),
     path("tiles/<int:z>/<int:x>/<int:y>.png", views.tiles_proxy, name="tiles_proxy"),
     # Oeffentliche Auftritts-Mailingliste (kein Login)
     path("auftritte/", views.auftritte_anmeldung, name="auftritte_anmeldung"),

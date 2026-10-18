@@ -194,14 +194,18 @@ def status():
     return {"eigene_id": eigene_id, "geraete": geraete, "wartend": wartend}
 
 
-def annehmen(gid, name="", passwort=""):
-    """Gerät hinzufügen und den Ordner mit ihm teilen — mit Passwort verschlüsselt."""
+def _geraet_anlegen(gid, name, passwort):
     _anfrage("PUT", f"/rest/config/devices/{quote(gid)}", {
         "deviceID": gid,
         "name": name or "Sicherung",
         "addresses": ["dynamic"],
         "untrusted": bool(passwort),
     })
+
+
+def annehmen(gid, name="", passwort=""):
+    """Gerät hinzufügen und den Ordner mit ihm teilen — mit Passwort verschlüsselt."""
+    _geraet_anlegen(gid, name, passwort)
     ordner = _anfrage("GET", f"/rest/config/folders/{ORDNER_ID}")
     freigaben = [f for f in ordner.get("devices", []) if f.get("deviceID") != gid]
     freigaben.append({"deviceID": gid, "encryptionPassword": passwort})
@@ -221,3 +225,107 @@ def entfernen(gid):
     name = (_anfrage("GET", f"/rest/config/devices/{quote(gid)}") or {}).get("name", "")
     _anfrage("DELETE", f"/rest/config/devices/{quote(gid)}")
     return name
+
+
+# ── Wiederherstellen (intern/wiederherstellung.py) ───────────────────────────
+#
+# Während des Empfangs trägt der Ordner dieselbe ID wie sonst — nur so erkennt
+# das Speichergerät in ihm seinen eigenen Ordner wieder —, liegt aber im
+# Empfangsordner und nimmt nur an. Nach dem Einspielen wird er offline zum
+# normalen Ordner umgestellt (ordner_umstellen_xml); sein Index bleibt, das
+# Gerät sichert ohne neue Übertragung weiter.
+
+
+def eigene_id():
+    return _anfrage("GET", "/rest/system/status")["myID"]
+
+
+def _normaler_ordner(pfad):
+    return {"id": ORDNER_ID, "label": "CantorHub", "path": str(pfad), "type": "sendonly",
+            "devices": []}
+
+
+def empfang_beginnen(gid, name, passwort, empfangsordner):
+    """Den Ordner auf Empfang von ``gid`` umstellen; mit Passwort aus einer verschlüsselten Ablage."""
+    ich = eigene_id()
+    ordner = _anfrage("GET", f"/rest/config/folders/{ORDNER_ID}") or {}
+    fremde = [f for f in ordner.get("devices", []) if f.get("deviceID") != ich]
+    if fremde:
+        raise SyncthingFehler(
+            "Diese Installation teilt ihr Datenverzeichnis schon mit einem Gerät — "
+            "wiederherstellen lässt sich nur eine neue."
+        )
+    _geraet_anlegen(gid, name, passwort)
+    # Löschen statt umbiegen: der neue Ordner beginnt mit leerem Index. Der alte
+    # kennt die Dateien der leeren Installation, und die stünden sonst gegen die
+    # der Sicherung.
+    _anfrage("DELETE", f"/rest/config/folders/{ORDNER_ID}")
+    _anfrage("PUT", f"/rest/config/folders/{ORDNER_ID}", {
+        "id": ORDNER_ID,
+        "label": "CantorHub",
+        "path": str(empfangsordner),
+        "type": "receiveonly",
+        "devices": [{"deviceID": gid, "encryptionPassword": passwort}],
+    })
+
+
+def empfang_stand(gid):
+    """Wie weit der Empfang ist — für die Fortschrittsanzeige."""
+    stand = _anfrage("GET", f"/rest/db/status?folder={ORDNER_ID}") or {}
+    verbindung = (_anfrage("GET", "/rest/system/connections") or {}).get(
+        "connections", {}).get(gid, {})
+    gesamt = stand.get("globalBytes", 0)
+    fehlt = stand.get("needBytes", 0)
+    return {
+        "verbunden": bool(verbindung.get("connected")),
+        "ueber_relay": (verbindung.get("type") or "").startswith("relay"),
+        "zustand": stand.get("state", ""),
+        "dateien": stand.get("globalFiles", 0),
+        "gesamt_mb": round(gesamt / 1e6, 1),
+        "fehlt_mb": round(fehlt / 1e6, 1),
+        "prozent": round(100 * (gesamt - fehlt) / gesamt) if gesamt else 0,
+        # Erst wenn das Gerät seinen Index geschickt hat, gibt es etwas zu warten.
+        "fertig": stand.get("globalFiles", 0) > 0 and fehlt == 0
+        and stand.get("state") == "idle",
+    }
+
+
+def empfang_abbrechen(gid, datenverzeichnis):
+    """Gerät und Empfangsordner weg, der normale Ordner wieder da."""
+    if gid:
+        _anfrage("DELETE", f"/rest/config/devices/{quote(gid)}")
+    _anfrage("DELETE", f"/rest/config/folders/{ORDNER_ID}")
+    _anfrage("PUT", f"/rest/config/folders/{ORDNER_ID}", _normaler_ordner(datenverzeichnis))
+
+
+def ordner_umstellen_xml(xml_text, pfad):
+    """``config.xml`` mit dem Empfangsordner als normalem Ordner — ``None`` ohne ihn.
+
+    Läuft, solange Syncthing steht (start.sh, vor dem Start): liefe es, sähe es
+    den geleerten Empfangsordner und hielte die Dateien für gelöscht.
+    """
+    try:
+        wurzel = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return None
+    for ordner in wurzel.findall("folder"):
+        if ordner.get("id") == ORDNER_ID:
+            ordner.set("path", str(pfad))
+            ordner.set("type", "sendonly")
+            return ET.tostring(wurzel, encoding="unicode")
+    return None
+
+
+def ordner_umstellen(datenverzeichnis):
+    """``ordner_umstellen_xml`` auf die ``config.xml`` dieses Servers; ``False`` ohne sie."""
+    pfad = _config_pfad()
+    try:
+        neu = ordner_umstellen_xml(pfad.read_text(), datenverzeichnis)
+    except OSError:
+        return False
+    if neu is None:
+        return False
+    tmp = pfad.with_suffix(".xml.tmp")
+    tmp.write_text(neu)
+    tmp.replace(pfad)
+    return True

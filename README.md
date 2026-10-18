@@ -14,7 +14,8 @@ name. The portal speaks German throughout.
 With [Podman](https://podman.io/) or Docker installed, one command starts it:
 
 ```bash
-podman run -d -p 8000:8000 -v cantorhub-data:/data ghcr.io/hgruber/cantorhub:latest
+podman run -d --name cantorhub --restart unless-stopped -p 8000:8000 \
+    -v cantorhub-data:/data ghcr.io/hgruber/cantorhub:latest
 ```
 
 Then open **<http://localhost:8000>** on the same machine. A single page asks for the first
@@ -72,6 +73,8 @@ And besides:
   that one folder is the whole backup and starts as a portal again. A built-in
   [Syncthing](https://syncthing.net/) mirrors it to a NAS, a home server or a laptop —
   encrypted, if the device is not yours. You accept the device with a click; no port to open.
+  After a lost server, a fresh installation brings it all back from there in its first-run
+  setup.
 - **Your look** — name, logo and accent colour are settings, not code.
 - Light and dark theme, made for phones as much as for the desktop.
 

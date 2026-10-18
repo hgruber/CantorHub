@@ -104,7 +104,10 @@ behind `cleanup_verwaiste_blobs`, see `docs/files.md`), `sicherung.py` (the data
 startable SQLite copy under `DATEN/sicherung/`, written by `sicherung --loop` through the
 second DB alias `sicherung`; the built-in Syncthing mirrors the data directory — see „Backup"
 in `INSTALL.md`), `syncthing.py` (that Syncthing through its local REST API, address and key
-from `DATEN/syncthing/config.xml` — behind `/intern/sicherung/`),
+from `DATEN/syncthing/config.xml` — behind `/intern/sicherung/`), `wiederherstellung.py` (the
+way back: a new installation receives a backup in its first-run setup at
+`/einrichtung/wiederherstellen/`, and `start.sh` applies it before `migrate` through the DB alias
+`wiederherstellung` and the same row copy as the backup — see „Restoring" in `INSTALL.md`),
 `terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
 events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
 `docs/forum.md`), `aufstellung.py` (the stage picture of the answers

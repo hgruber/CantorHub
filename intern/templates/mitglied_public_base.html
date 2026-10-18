@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{% static 'intern/css/intern.css' %}" />
     {% include "_theme_boot.html" %}
     {% include "_brand_boot.html" %}
+    {% block head_extra %}{% endblock %}
 </head>
 <body class="join-page">
     <div class="join-wrap{% block wrap_modifier %}{% endblock %}">
