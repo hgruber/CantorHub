@@ -29,6 +29,9 @@ __all__ = [
 FIELD_LABELS = {
     # Benachrichtigung
     "betreff": "Betreff",
+    # Sicherungsgerät
+    "geraet": "Geräte-ID",
+    "verschluesselt": "Verschlüsselt",
     "empfaenger": "Empfänger",
     "text": "Text",
     "anhaenge": "Anhänge",
@@ -143,6 +146,7 @@ MODEL_LABELS = {
     "Artikel": "Artikel",
     "Benachrichtigung": "E-Mail",
     "Konfiguration": "Konfiguration",
+    "Sicherungsgeraet": "Sicherungsgerät",
 }
 
 # model_name → URL name used to build a detail-page link (only for non-delete actions)

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>{% endblock %}
+{% block content %}
+{% comment %}
+   Stand der Datenbank-Sicherung und die Speichergeräte, an die das
+   mitlaufende Syncthing das Datenverzeichnis spiegelt (views/sicherung.py,
+   „Backup“ in INSTALL.md). Ohne Syncthing (Entwicklung, DEBUG=1) bleibt nur
+   die erste Karte.
+{% endcomment %}
+<div class="detail-page sicherung">
+    {% if fehler %}
+    <p class="sicherung-hinweis" role="alert">{{ fehler }}</p>
+    {% endif %}
+    {% if syncthing and not stignore_ok %}
+    <p class="sicherung-hinweis" role="alert">
+        Die Datei <code>.stignore</code> im Datenverzeichnis nimmt <code>/syncthing</code> nicht
+        aus — damit ginge der Schlüssel dieses Servers auf jedes Speichergerät. Zeile ergänzen
+        oder die Datei löschen; der nächste Start legt sie neu an.
+    </p>
+    {% endif %}
+
+    <div class="detail-cards">
+        <div class="detail-card">
+            <h3>Datenbank-Sicherung</h3>
+            {% if stand %}
+            <div class="detail-card-row">
+                <span class="label">Letzte</span>
+                <span class="value">{{ stand.zeitpunkt }}</span>
+            </div>
+            <div class="detail-card-row">
+                <span class="label">Umfang</span>
+                <span class="value">{{ stand.zeilen }} Zeilen aus {{ stand.tabellen }} Tabellen, {{ stand.groesse_mb }} MB</span>
+            </div>
+            <div class="detail-card-row">
+                <span class="label">Dauer</span>
+                <span class="value">{{ stand.dauer }} s</span>
+            </div>
+            {% else %}
+            <div class="detail-card-row">
+                <span class="label">Letzte</span>
+                <span class="value">noch keine</span>
+            </div>
+            {% endif %}
+            <div class="detail-card-row">
+                <span class="label">Abstand</span>
+                <span class="value">{% if stunden > 0 %}alle {{ stunden }} Stunden{% else %}abgeschaltet{% endif %}
+                    · <a href="{% url 'konfiguration' %}">SICHERUNG_STUNDEN</a></span>
+            </div>
+            <div class="detail-card-row">
+                <span class="label">Ablage</span>
+                <span class="value"><code>{{ ablage }}</code></span>
+            </div>
+            <p class="sicherung-text">Mit Uploads, Startseite und Schlüssel ist das Datenverzeichnis damit das ganze Backup — wiederhergestellt startet es mit <code>DATABASE_URL=sqlite:///{{ ablage }}</code>.</p>
+        </div>
+
+        <div class="detail-card">
+            <h3>Syncthing</h3>
+            {% if syncthing %}
+            <div class="detail-card-row">
+                <span class="label">Geräte-ID</span>
+                <span class="value"><code class="sicherung-id">{{ syncthing.eigene_id }}</code></span>
+            </div>
+            <p class="sicherung-text">Dieser Server sendet das Datenverzeichnis nur — was auf einem Speichergerät geschieht, wirkt nicht zurück. Ein Gerät bekommt erst etwas, wenn es hier angenommen ist.</p>
+            {% else %}
+            <div class="detail-card-row">
+                <span class="label">Status</span>
+                <span class="value"><span class="status-dot status-dot--off"></span> {{ syncthing_fehler }}</span>
+            </div>
+            <p class="sicherung-text">Syncthing läuft nur im Container; in der Entwicklung (<code>DEBUG=1</code>) startet es nicht.</p>
+            {% endif %}
+        </div>
+
+        {% if syncthing %}
+        <div class="detail-card">
+            <h3>Speichergeräte{% if syncthing.geraete %} <span class="badge">{{ syncthing.geraete|length }}</span>{% endif %}</h3>
+            {% for g in syncthing.geraete %}
+            <div class="sicherung-geraet">
+                <div class="sicherung-geraet-kopf">
+                    <span class="status-dot {% if g.verbunden %}status-dot--on{% else %}status-dot--off{% endif %}"
+                          title="{% if g.verbunden %}verbunden{% else %}getrennt{% endif %}"></span>
+                    <strong>{{ g.name|default:"Sicherung" }}</strong>
+                    <code title="{{ g.id }}">{{ g.kurz }}</code>
+                    {% if g.verschluesselt %}<span class="tag">verschlüsselt</span>{% endif %}
+                    <button type="button" class="btn btn-sm btn-secondary sicherung-entfernen"
+                            onclick="document.getElementById('entfernen-{{ g.kurz }}').showModal()">Entfernen</button>
+                </div>
+                <div class="sicherung-geraet-zeile">
+                    {% if g.verbunden %}
+                    verbunden {% if g.ueber_relay %}über ein Relay{% else %}direkt{% endif %}
+                    {% if g.fortschritt is not None %} · {% if g.fortschritt == 100 %}auf dem Stand{% else %}{{ g.fortschritt|floatformat:0 }} % abgeglichen{% endif %}{% endif %}
+                    {% else %}
+                    getrennt{% if g.zuletzt %} · zuletzt gesehen {{ g.zuletzt }}{% else %} · noch nie verbunden{% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% with titel="Speichergerät entfernen" objekt=g.name|default:g.kurz action=g.entfernen_url dialog_id="entfernen-"|add:g.kurz %}
+            {% include "_confirm_delete_dialog.html" with warnungen=entfernen_warnungen %}
+            {% endwith %}
+            {% empty %}
+            <p class="sicherung-text">Noch kein Gerät angenommen — es gibt also noch keine Kopie außerhalb dieses Servers.</p>
+            {% endfor %}
+        </div>
+
+        <div class="detail-card">
+            <h3>Wartende Geräte{% if syncthing.wartend %} <span class="badge badge-primary">{{ syncthing.wartend|length }}</span>{% endif %}</h3>
+            {% for w in syncthing.wartend %}
+            <div class="sicherung-geraet">
+                <div class="sicherung-geraet-kopf">
+                    <strong>{{ w.name|default:"unbenannt" }}</strong>
+                    <code title="{{ w.id }}">{{ w.kurz }}</code>
+                </div>
+                <div class="sicherung-geraet-zeile">meldet sich seit {{ w.zeit }}{% if w.adresse %} von {{ w.adresse }}{% endif %}</div>
+                {% include "_sicherung_annehmen.html" with geraet=w.id name=w.name feld_id="w"|add:w.kurz %}
+            </div>
+            {% empty %}
+            <p class="sicherung-text">Kein Gerät wartet. Ein Speichergerät erscheint hier, sobald es diesen Server als Gerät eingetragen hat — meist nach ein, zwei Minuten.</p>
+            {% endfor %}
+        </div>
+
+        <div class="detail-card sicherung-einrichten">
+            <h3>Speichergerät einrichten</h3>
+            <p class="sicherung-text"><strong>Mit podman oder docker</strong> (NAS, Heimserver, Laptop): das Skript aus diesem Container holen und dort mit der Geräte-ID dieses Servers starten.</p>
+            <pre class="sicherung-befehl">podman exec cantorhub cat /app/sicherung-speicherseite.sh &gt; sicherung-speicherseite.sh
+bash sicherung-speicherseite.sh {{ syncthing.eigene_id }} [ZIELORDNER] [--verschluesselt]</pre>
+            <p class="sicherung-text"><strong>Mit der Syncthing-App</strong>: die Geräte-ID oben als Gerät hinzufügen, hier annehmen, den angebotenen Ordner „CantorHub“ als <em>Nur empfangen</em> (bzw. <em>Verschlüsselt empfangen</em>) übernehmen und <em>Gestaffelte Dateiversionierung</em> einschalten — erst die Versionierung macht den Spiegel zum Backup.</p>
+            <details class="sicherung-manuell">
+                <summary>Gerät mit bekannter ID vorab annehmen</summary>
+                {% include "_sicherung_annehmen.html" with geraet="" name=eingabe.name feld_id="neu" %}
+            </details>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

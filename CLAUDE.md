@@ -77,7 +77,7 @@ ejabberd admin) are listed in `INSTALL.md`.
 All application logic lives in the `intern/` app; `config/` holds only settings and URL routing.
 Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`, `folders.py`,
 `forums.py`, `titel.py`, `termine.py`, `mitglieder.py`, `artikel.py`, `karte.py`, `orte.py`,
-`gallerie.py`, `auftritte.py`, `auslieferungen.py`, `konfiguration.py`, `notify.py`). The package's `__init__.py`
+`gallerie.py`, `auftritte.py`, `auslieferungen.py`, `konfiguration.py`, `sicherung.py`, `notify.py`). The package's `__init__.py`
 re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
 
 Three underscore-prefixed modules hold what the view modules share:
@@ -103,7 +103,8 @@ shared by the folder browser and the wiki media bar), `verwendung.py` (what a de
 behind `cleanup_verwaiste_blobs`, see `docs/files.md`), `sicherung.py` (the database as a
 startable SQLite copy under `DATEN/sicherung/`, written by `sicherung --loop` through the
 second DB alias `sicherung`; the built-in Syncthing mirrors the data directory — see „Backup"
-in `INSTALL.md`),
+in `INSTALL.md`), `syncthing.py` (that Syncthing through its local REST API, address and key
+from `DATEN/syncthing/config.xml` — behind `/intern/sicherung/`),
 `terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
 events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
 `docs/forum.md`), `aufstellung.py` (the stage picture of the answers

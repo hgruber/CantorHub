@@ -160,7 +160,7 @@ missing from the page. The Django default rights that are not listed (e.g. `add_
 
 | Rule | Where it is set | What it decides |
 |---|---|---|
-| Superuser („Admin-Status") | `/intern/aufgaben/`, by superusers only (`views/aufgaben.py`) | passes every right above except `view_forum_archiv`; alone opens `/intern/konfiguration/` (`views/konfiguration.py`, sidebar entry); bypasses `FolderPermission` (`folder_access.py`) and sees „Backstage" in breadcrumbs (`views/folders.py` · `_folder_breadcrumb`) |
+| Superuser („Admin-Status") | `/intern/aufgaben/`, by superusers only (`views/aufgaben.py`) | passes every right above except `view_forum_archiv`; alone opens `/intern/konfiguration/` (`views/konfiguration.py`, sidebar entry) and `/intern/sicherung/` with its accept/remove actions (`views/sicherung.py` · `sicherung`, `sicherung_entfernen`, sidebar entry) — accepting a storage device hands out every member's data; bypasses `FolderPermission` (`folder_access.py`) and sees „Backstage" in breadcrumbs (`views/folders.py` · `_folder_breadcrumb`) |
 | `is_staff` | `/admin/` only | access to the Django admin at `/admin/` |
 | `FolderPermission` (per folder and group) | `/intern/ordner/<pk>/berechtigungen/` | read, write and delete in that folder and, per axis without an own rule, in its subfolders; with no rule at all read and write are open, delete closed — see `docs/files.md` |
 | Standard folders (`folders.PFADE`) | code only | nobody renames, moves or deletes them in the portal, superusers included — nor a folder holding one (`views/folders.py` · `_enthaelt_standardordner`); `/admin/` still can — see `docs/files.md` |

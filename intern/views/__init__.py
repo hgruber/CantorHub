@@ -17,5 +17,6 @@ from .media import *
 from .mitglieder import *
 from .notify import *
 from .orte import *
+from .sicherung import *
 from .termine import *
 from .titel import *

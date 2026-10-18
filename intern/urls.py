@@ -43,6 +43,9 @@ urlpatterns = [
     path("notify/", views.site_notify, name="site_notify"),
     # Konfiguration URLs
     path("konfiguration/", views.konfiguration, name="konfiguration"),
+    path("sicherung/", views.sicherung, name="sicherung"),
+    path("sicherung/entfernen/<str:geraet_id>/", views.sicherung_entfernen,
+         name="sicherung_entfernen"),
     path("aufgaben/", views.aufgaben, name="aufgaben"),
     path("gruppen/", views.gruppen, name="gruppen"),
     # Die Release-Notizen aus CHANGELOG.md (nicht das Aenderungsprotokoll)

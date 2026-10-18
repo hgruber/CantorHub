@@ -16,6 +16,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
   `sicherung/` ab. Ein mitlaufendes Syncthing spiegelt das Verzeichnis auf angenommene
   Speichergeräte, wahlweise verschlüsselt; `sicherung-speicherseite.sh` richtet ein solches
   Gerät mit einem Befehl ein.
+- Die Seite „Sicherung“ (Admin, nur für Superuser) zeigt die letzte Datenbank-Sicherung und die
+  Speichergeräte samt Verbindung und Abgleich. Wartende Geräte lassen sich dort mit einem Klick
+  annehmen, wahlweise verschlüsselt, oder wieder entfernen.
 
 ### Geändert
 

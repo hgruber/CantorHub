@@ -468,8 +468,12 @@ for one year**: every replaced or deleted file — including each earlier databa
 in `.stversions/`. That is what makes the mirror a backup; without versioning a deletion on the
 server would simply be mirrored. The script ends by printing the command for step 2.
 
-**2. On the server**, accept the device; it shows up under „Wartende Geraete" a minute or two
-after step 1:
+**2. On the server**, accept the device; it shows up a minute or two after step 1. The page
+**`/intern/sicherung/`** (superusers only, sidebar „Admin" → „Sicherung") does it with a click
+— plain or encrypted, with the password entered there — and also shows the last database copy,
+the server's device ID, the ready-made command for step 1, and per device whether it is
+connected, directly or through a relay, and up to date. Accepting and removing are recorded in
+the change log. The same on the command line:
 
 ```bash
 podman exec cantorhub /app/sicherung-geraet.sh                    # status, waiting devices

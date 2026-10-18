@@ -8441,3 +8441,113 @@ button.tag:focus-visible {
     color: var(--brand-text);
     box-shadow: none;
 }
+
+/* =================================================== */
+/* Sicherung (/intern/sicherung/)                      */
+/* =================================================== */
+.sicherung .detail-cards { margin-top: 0; }
+
+.sicherung-hinweis {
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: var(--r-lg);
+    color: var(--warn-text);
+    font-size: calc(13rem / 14);
+}
+
+.sicherung-text {
+    margin: 10px 0 0;
+    color: var(--t3);
+    font-size: calc(12.5rem / 14);
+    line-height: 1.5;
+}
+
+.sicherung code,
+.sicherung-befehl {
+    font-family: var(--mono);
+    font-size: calc(12rem / 14);
+    overflow-wrap: anywhere;
+}
+
+/* Die eigene ID zum Kopieren: ein Klick markiert sie ganz. */
+.sicherung-id { user-select: all; }
+
+.sicherung-befehl {
+    margin: 8px 0 0;
+    padding: 10px 12px;
+    background: var(--bg-row-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--t1);
+    white-space: pre-wrap;
+    user-select: all;
+}
+
+.sicherung-geraet {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--bg-row-hover);
+}
+.sicherung-geraet:last-of-type { border-bottom: none; }
+
+.sicherung-geraet-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    color: var(--t1);
+    font-size: calc(13rem / 14);
+}
+.sicherung-geraet-kopf code { color: var(--t3); }
+.sicherung-entfernen { margin-left: auto; }
+
+.sicherung-geraet-zeile {
+    margin-top: 4px;
+    color: var(--t3);
+    font-size: calc(12.5rem / 14);
+}
+
+.sicherung-annehmen {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.sicherung-feld {
+    display: grid;
+    gap: 4px;
+    color: var(--t2);
+    font-size: calc(12.5rem / 14);
+}
+.sicherung-feld small { color: var(--t3); font-size: calc(12rem / 14); }
+
+.sicherung-modus {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+.sicherung-modus .radio-label { font-size: calc(13rem / 14); }
+.sicherung-modus legend {
+    padding: 0;
+    color: var(--t2);
+    font-size: calc(12.5rem / 14);
+}
+
+/* Das Passwort nur bei „verschlüsselt“ — ohne JavaScript. */
+.sicherung-passwort { display: none; }
+.sicherung-annehmen:has(input[name="modus"][value="verschluesselt"]:checked) .sicherung-passwort {
+    display: grid;
+}
+
+.sicherung-knoepfe {
+    display: flex;
+    gap: 8px;
+}
+
+.sicherung-manuell { margin-top: 12px; }
+.sicherung-manuell summary {
+    cursor: pointer;
+    color: var(--brand-text);
+    font-size: calc(13rem / 14);
+}

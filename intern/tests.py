@@ -7582,3 +7582,82 @@ class SicherungTest(SimpleTestCase):
         zeilen = block.splitlines()
         for muster in ("/syncthing", "/db.sqlite3", "/db.sqlite3-*", "/sicherung/*.tmp*"):
             self.assertIn(muster, zeilen)
+
+
+class SyncthingTest(SimpleTestCase):
+    """Das mitlaufende Syncthing hinter /intern/sicherung/ (intern/syncthing.py)."""
+
+    ID = "4GTKHTA-NWIV7MD-H5R6NM2-KUNYIZO-UV44DQV-RRGCYYI-KSPOP6R-PV4YBAD"
+
+    def test_geraete_id_normalisiert(self):
+        from intern.syncthing import geraete_id
+        self.assertEqual(geraete_id(self.ID), self.ID)
+        self.assertEqual(geraete_id(self.ID.lower().replace("-", " ")), self.ID)
+        self.assertEqual(geraete_id(self.ID.replace("-", "")), self.ID)
+        self.assertIsNone(geraete_id("UNSINN"))
+        self.assertIsNone(geraete_id(self.ID[:-1] + "1"), msg="1 ist kein Base32-Zeichen")
+        self.assertIsNone(geraete_id(None))
+
+    def test_zugang_aus_config(self):
+        from intern.syncthing import zugang_aus_config
+        xml = ('<configuration><gui enabled="true" tls="false"><address>0.0.0.0:8384</address>'
+               '<apikey>abc</apikey></gui></configuration>')
+        self.assertEqual(zugang_aus_config(xml), ("http://127.0.0.1:8384", "abc"))
+        xml_lokal = xml.replace("0.0.0.0", "127.0.0.1").replace('tls="false"', 'tls="true"')
+        self.assertEqual(zugang_aus_config(xml_lokal), ("https://127.0.0.1:8384", "abc"))
+        self.assertIsNone(zugang_aus_config("<configuration/>"))
+        self.assertIsNone(zugang_aus_config("kaputt"))
+
+    def test_stignore_schuetzt(self):
+        from intern.syncthing import stignore_schuetzt
+        self.assertTrue(stignore_schuetzt("// Kommentar\n/syncthing\n/tiles\n"))
+        self.assertFalse(stignore_schuetzt("/tiles\n"))
+        self.assertFalse(stignore_schuetzt("/syncthing-alt\n"))
+        self.assertFalse(stignore_schuetzt(None))
+
+    def test_ortszeit(self):
+        from datetime import datetime, timezone
+
+        from intern.syncthing import ortszeit
+        erwartet = datetime(2026, 10, 18, 14, 0, tzinfo=timezone.utc).astimezone()
+        self.assertEqual(ortszeit("2026-10-18T14:00:00Z"), erwartet.strftime("%d.%m.%Y %H:%M"))
+        self.assertEqual(ortszeit("2026-10-18T14:00:00"), "18.10.2026 14:00")
+        self.assertEqual(ortszeit("1970-01-01T00:00:00Z"), "", msg="Syncthings „nie“")
+        self.assertEqual(ortszeit(""), "")
+        self.assertEqual(ortszeit("unsinn"), "")
+
+    def test_geraete_aufbereiten(self):
+        from intern.syncthing import geraete_aufbereiten
+        eigen = "EIGENE1-" + "A" * 7
+        anderes = self.ID.replace("4GTKHTA", "ZJFYPCB")
+        ordner = {"devices": [
+            {"deviceID": eigen, "encryptionPassword": ""},
+            {"deviceID": self.ID, "encryptionPassword": ""},
+            {"deviceID": anderes, "encryptionPassword": "geheim"},
+        ]}
+        verbindungen = {"connections": {
+            self.ID: {"connected": True, "type": "tcp-client", "address": "127.0.0.1:22001"},
+            anderes: {"connected": True, "type": "relay-client", "address": "1.2.3.4:22067"},
+        }}
+        geraete = geraete_aufbereiten(ordner, verbindungen, {}, {self.ID: {"completion": 100}}, eigen)
+        self.assertEqual([g["kurz"] for g in geraete], ["4GTKHTA", "ZJFYPCB"],
+                         msg="das eigene Gerät gehört nicht in die Liste")
+        self.assertFalse(geraete[0]["verschluesselt"])
+        self.assertTrue(geraete[1]["verschluesselt"])
+        self.assertFalse(geraete[0]["ueber_relay"])
+        self.assertTrue(geraete[1]["ueber_relay"])
+        self.assertEqual(geraete[0]["fortschritt"], 100)
+        self.assertIsNone(geraete[1]["fortschritt"])
+
+    def test_seite_nur_fuer_superuser(self):
+        from types import SimpleNamespace
+
+        from django.test import RequestFactory
+
+        from intern.views.sicherung import sicherung, sicherung_entfernen
+        for view, methode, args in ((sicherung, "get", ()), (sicherung_entfernen, "post", (self.ID,))):
+            anfrage = getattr(RequestFactory(), methode)("/intern/sicherung/")
+            anfrage.user = SimpleNamespace(is_authenticated=True, is_superuser=False)
+            antwort = view(anfrage, *args)
+            self.assertEqual(antwort.status_code, 302)
+            self.assertIn("/Aktuell/", antwort["Location"])

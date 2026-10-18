@@ -1,0 +1,52 @@
+{% comment %}
+Formular „Gerät annehmen“ der Seite Sicherung — für ein wartendes Gerät (geraet
+gesetzt, die ID wird mitgeschickt) und für eine von Hand eingetragene ID (geraet
+leer, dann ein Eingabefeld). Das Passwortfeld erscheint per CSS (:has), sobald
+„verschlüsselt“ gewählt ist; ohne Passwort bekommt das Gerät die Dateien im Klartext.
+
+Parameter:
+  geraet    Geräte-ID oder leer
+  name      Vorschlag für den Gerätenamen
+  feld_id   eindeutiger Präfix für die ids der Felder
+{% endcomment %}
+<form method="post" class="sicherung-annehmen">
+    {% csrf_token %}
+    <input type="hidden" name="aktion" value="annehmen">
+    {% if geraet %}
+    <input type="hidden" name="geraet" value="{{ geraet }}">
+    {% else %}
+    <label class="sicherung-feld" for="{{ feld_id }}-id">
+        <span>Geräte-ID</span>
+        <input type="text" id="{{ feld_id }}-id" name="geraet" value="{{ eingabe.geraet|default:'' }}"
+               placeholder="XXXXXXX-XXXXXXX-…" autocomplete="off" spellcheck="false" required>
+    </label>
+    {% endif %}
+    <label class="sicherung-feld" for="{{ feld_id }}-name">
+        <span>Name</span>
+        <input type="text" id="{{ feld_id }}-name" name="name" maxlength="60" value="{{ name|default:'' }}"
+               placeholder="z. B. NAS im Probenraum">
+    </label>
+    <fieldset class="sicherung-modus">
+        <legend>Ablage auf dem Gerät</legend>
+        <label class="radio-label">
+            <input type="radio" name="modus" value="klartext" checked>
+            Klartext — direkt startbar, für ein eigenes Gerät
+        </label>
+        <label class="radio-label">
+            <input type="radio" name="modus" value="verschluesselt">
+            Verschlüsselt — für ein Gerät, das jemand anderes betreibt
+        </label>
+    </fieldset>
+    <label class="sicherung-feld sicherung-passwort" for="{{ feld_id }}-passwort">
+        <span>Passwort</span>
+        <input type="password" id="{{ feld_id }}-passwort" name="passwort" minlength="{{ passwort_min }}"
+               autocomplete="new-password">
+        <small>Mindestens {{ passwort_min }} Zeichen. Gut aufheben — ohne das Passwort ist die Sicherung wertlos, und es lässt sich hier nicht wieder anzeigen.</small>
+    </label>
+    <div class="sicherung-knoepfe">
+        <button type="submit" class="btn btn-sm">Annehmen</button>
+        {% if geraet %}
+        <button type="submit" class="btn btn-sm btn-secondary" name="aktion" value="ablehnen" formnovalidate>Ablehnen</button>
+        {% endif %}
+    </div>
+</form>
