@@ -21,5 +21,6 @@ Hier findest Du Anleitungen zu allem, was das Mitgliederportal kann. Sie sind f�
 
 === Betrieb des Portals ===
 * [[Hilfe:Betrieb und Kosten|Betrieb und Kosten]] — was ein eigener Server braucht und was er kostet
+* [[Hilfe:Sicherung|Sicherung und Wiederherstellung]] — Speichergeräte einrichten, die Seite „Sicherung“ lesen, das Portal zurückholen
 
 @ '''Du kommst nicht weiter?''' Schreib im '''Forum''' — dort hilft Dir bestimmt jemand.

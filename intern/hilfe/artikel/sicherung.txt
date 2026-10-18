@@ -1,0 +1,195 @@
+== Sicherung und Wiederherstellung ==
+Diese Seite ist für alle, die das Portal betreiben. Sie erklärt, was das Portal von sich aus sichert, wie die Sicherung auf ein zweites Gerät kommt, wie Du die Seite '''Sicherung''' liest und wie Du das Portal nach einem Ausfall zurückholst. Die Seite '''Sicherung''' findest Du in der Seitenleiste unter '''Admin → Sicherung'''; sie ist nur für Administratoren (Superuser) sichtbar.
+
+% Die Befehle auf dieser Seite gehen davon aus, dass der Container des Portals '''cantorhub''' heißt, wie in der Installationsanleitung. Heißt er bei Dir anders, ersetze den Namen.
+
+=== Das Wichtigste in Kürze ===
+* Das '''Datenverzeichnis''' des Portals (im Container ''/data'') ist die ganze Sicherung: Datenbank, alle hochgeladenen Dateien, die Startseite und der geheime Schlüssel.
+* Einmal am Tag legt das Portal die Datenbank als Datei in dieses Verzeichnis. Darum musst Du Dich nicht kümmern.
+* Eine Sicherung auf demselben Rechner schützt nicht vor dem Verlust des Rechners. Das mitgelieferte '''Syncthing''' spiegelt das Verzeichnis deshalb auf ein oder mehrere '''Speichergeräte''' an einem anderen Ort.
+* Wiederhergestellt wird in der '''Ersteinrichtung''' einer neuen Installation: Speichergerät wählen, warten, auf '''Wiederherstellen und neu starten''' klicken.
+
+=== Was gesichert wird ===
+! Teil ! Wo im Datenverzeichnis ! Gesichert
+| Die Datenbank (Mitglieder, Termine, Zusagen, Forum, Artikel, Einstellungen …) | sicherung/cantorhub.sqlite3, dazu sicherung/stand.json | ja, als Kopie
+| Alle hochgeladenen Dateien samt ihren früheren Fassungen | media/ | ja
+| Eine eigene Startseite | startseite/ | ja
+| Der geheime Schlüssel des Portals | secret_key | ja
+| Der Schlüssel des Syncthing dieses Servers | syncthing/ | '''nein''', mit Absicht
+| Kartenkacheln | tiles/ | nein, sie werden neu geladen
+| Anmeldungen und Zwischenspeicher | — | nein: nach einer Wiederherstellung melden sich alle neu an
+
+==== Die Datenbank-Kopie ====
+Das Portal schreibt alle '''24 Stunden''' eine vollständige Kopie der Datenbank als SQLite-Datei nach ''sicherung/cantorhub.sqlite3''. Den Abstand stellst Du in den '''Einstellungen''' mit '''SICHERUNG_STUNDEN''' ein; '''0''' schaltet die Kopie ab. Die Kopie ist in sich stimmig, auch wenn währenddessen jemand zusagt oder schreibt, und sie wird erst unter ihrem Namen abgelegt, wenn sie fertig ist. Ein Spiegel sieht also nie eine halbe Datei.
+
+Eine Kopie '''sofort''', zum Beispiel vor einem Update:
+ podman exec cantorhub python manage.py sicherung
+
+Die hochgeladenen Dateien können ein wenig neuer sein als die Datenbank-Kopie, nie aber älter. Schlimmstenfalls bringt eine Wiederherstellung ein paar Dateien mit, auf die nichts mehr zeigt; das schadet nicht.
+
+Weil das Datenverzeichnis alles enthält, sichert '''jedes''' Werkzeug, das ein Verzeichnis kopiert, das ganze Portal — rsync, restic oder eine USB-Festplatte gehen also auch. Der Rest dieser Seite beschreibt den eingebauten Weg mit Syncthing, weil er ohne weiteres Zutun läuft und das Zurückholen in der Ersteinrichtung nur ihn kennt.
+
+=== Wie die Sicherung aus dem Haus kommt ===
+Im Container läuft [https://syncthing.net/ Syncthing]. Es bietet das Datenverzeichnis als Ordner '''CantorHub''' an, und zwar nur zum '''Senden''': Was auf einem Speichergerät passiert — Löschen, Ändern, eine kaputte Festplatte —, wirkt nie auf den Server zurück. Solange Du kein Gerät angenommen hast, bekommt niemand etwas.
+
+Auf dem Speichergerät läuft ebenfalls Syncthing, mit dem Ordner nur zum '''Empfangen''' und mit '''gestaffelter Versionierung für ein Jahr''': Jede ersetzte oder gelöschte Datei, auch jede frühere Datenbank-Kopie, bleibt dort im versteckten Ordner ''.stversions'' liegen. Erst das macht aus dem Spiegel eine Sicherung — ohne Versionierung würde ein versehentliches Löschen auf dem Server einfach mitgespiegelt.
+
+Die Geräte finden sich über das Internet von selbst, auch ohne geöffneten Port. Die Verbindung ist immer Ende-zu-Ende verschlüsselt.
+
+==== Klartext oder verschlüsselt? ====
+Die Sicherung enthält die persönlichen Daten aller Mitglieder und den geheimen Schlüssel des Portals. Wähle deshalb beim Annehmen eines Geräts:
+! Ablage ! Wofür ! Was Du beachten musst
+| '''Klartext''' | ein Gerät, das Du selbst betreibst (Heimserver, eigenes NAS) | Die Kopie lässt sich direkt starten. Wer an das Gerät kommt, kann alles lesen.
+| '''Verschlüsselt''' | ein Gerät, das jemand anderes betreibt (das NAS eines Bekannten, ein gemieteter Speicher) | Auf dem Gerät liegen nur verschlüsselte Dateien. Ohne das Passwort ist die Sicherung '''wertlos''' — das Portal zeigt es später nicht wieder an.
+
+@ '''Bewahre das Passwort einer verschlüsselten Ablage außerhalb des Portals auf''', zum Beispiel ausgedruckt beim Vorstand oder in einem Passwort-Manager. Fällt der Server aus, brauchst Du es, um die Sicherung zurückzuholen.
+
+=== Ein Speichergerät einrichten ===
+Ein Speichergerät ist jeder Rechner, der möglichst immer läuft und genug Platz hat: ein NAS, ein Heimserver, zur Not ein Laptop. Am besten steht er an einem anderen Ort als der Server.
+
+==== Schritt 1: Auf dem Speichergerät ====
+'''Mit podman oder docker''' geht es mit einem Skript, das der Container mitbringt. Die Seite '''Sicherung''' zeigt die beiden Befehle in der Karte '''Speichergerät einrichten''', mit der Geräte-ID dieses Servers schon eingesetzt. Auf dem Server holst Du das Skript:
+ podman exec cantorhub cat /app/sicherung-speicherseite.sh > sicherung-speicherseite.sh
+Kopiere die Datei auf das Speichergerät und starte sie dort:
+ bash sicherung-speicherseite.sh SERVER-ID [ZIELORDNER] [--verschluesselt]
+* '''SERVER-ID''' ist die Geräte-ID aus der Karte '''Syncthing''' auf der Seite '''Sicherung'''.
+* '''ZIELORDNER''' ist frei wählbar; ohne Angabe landet die Sicherung in ''cantorhub-sicherung'' im Heimverzeichnis.
+* '''--verschluesselt''' für eine verschlüsselte Ablage (siehe oben).
+Das Skript startet einen Container '''cantorhub-sicherung''', der bei jedem Neustart des Geräts wieder anläuft, und nennt am Ende den Befehl für Schritt 2.
+
+'''Mit der Syncthing-App''' (Desktop-Programm, NAS-Paket):
+# Füge die Geräte-ID des Servers als '''Gerät''' hinzu.
+# Nimm das Gerät auf dem Server an (Schritt 2).
+# Nimm den angebotenen Ordner '''CantorHub''' als '''Nur empfangen''' an, bei einem fremden Gerät als '''Verschlüsselt empfangen'''.
+# Schalte für den Ordner '''Gestaffelte Dateiversionierung''' ein.
+
+==== Schritt 2: Auf dem Server annehmen ====
+Nach ein, zwei Minuten erscheint das Speichergerät auf der Seite '''Sicherung''' in der Karte '''Wartende Geräte'''.
+# Prüfe die angezeigte Kurz-ID gegen die des Speichergeräts. Ein Gerät, das Du nicht kennst, lehnst Du mit '''Ablehnen''' ab.
+# Gib ihm einen '''Namen''', unter dem Du es wiedererkennst, etwa ''NAS im Probenraum''.
+# Wähle '''Klartext''' oder '''Verschlüsselt'''. Für eine verschlüsselte Ablage vergibst Du hier das Passwort, mindestens 12 Zeichen.
+# Klicke auf '''Annehmen'''.
+Das Gerät steht danach unter '''Speichergeräte''', und der erste Abgleich beginnt. Er kann bei vielen Noten und Aufnahmen eine Weile dauern.
+
+Kennst Du die ID des Speichergeräts schon, kannst Du es auch vorab annehmen: Karte '''Speichergerät einrichten''' → '''Gerät mit bekannter ID vorab annehmen'''. Annehmen und Entfernen stehen im '''Änderungsprotokoll'''.
+
+Dasselbe geht auf dem Server auch auf der Kommandozeile:
+ podman exec cantorhub /app/sicherung-geraet.sh                    # Stand und wartende Geräte
+ podman exec cantorhub /app/sicherung-geraet.sh GERAETE-ID           # annehmen, Klartext
+ podman exec cantorhub /app/sicherung-geraet.sh GERAETE-ID PASSWORT  # annehmen, verschlüsselt
+ podman exec cantorhub /app/sicherung-geraet.sh --entfernen GERAETE-ID
+
+=== Die Seite „Sicherung“ lesen ===
+! Karte ! Was sie zeigt ! Worauf Du achtest
+| '''Datenbank-Sicherung''' | Zeitpunkt, Umfang und Dauer der letzten Kopie, den Abstand und die Ablage | '''Letzte''' sollte nicht älter sein als der eingestellte Abstand. Steht dort ''noch keine'' oder ''abgeschaltet'', gibt es keine Datenbank-Kopie.
+| '''Syncthing''' | die Geräte-ID dieses Servers | Diese ID braucht jedes Speichergerät. Sie ist kein Geheimnis.
+| '''Speichergeräte''' | jedes angenommene Gerät mit Verbindung und Abgleich | Ein grüner Punkt mit ''auf dem Stand'' ist der Normalfall.
+| '''Wartende Geräte''' | Geräte, die sich gemeldet haben, aber noch nicht angenommen sind | Nur Geräte annehmen, die Du selbst eingerichtet hast.
+| '''Speichergerät einrichten''' | die Befehle für Schritt 1, mit der ID schon eingesetzt | —
+
+Bei einem Speichergerät bedeuten:
+* '''verbunden direkt''' — schnellster Weg.
+* '''verbunden über ein Relay''' — die Verbindung läuft über einen öffentlichen Vermittlungsserver von Syncthing. Sie bleibt verschlüsselt, ist aber gedrosselt; siehe '''Direkt statt über ein Relay''' weiter unten.
+* '''… % abgeglichen''' — der Abgleich läuft noch.
+* '''getrennt · zuletzt gesehen …''' — das Gerät ist aus oder nicht erreichbar. Ein paar Stunden sind kein Problem; Syncthing holt alles nach. Bleibt es tagelang getrennt, sieh am Gerät nach.
+* '''noch nie verbunden''' — das Gerät hat diesen Server noch nicht als Gerät eingetragen.
+
+'''Entfernen''' beendet die Sicherung auf ein Gerät. Die Kopie dort bleibt liegen, bekommt aber keine neuen Stände mehr.
+
+@ Zeigt die Seite oben einen roten Hinweis zur Datei ''.stignore'', geht der Syncthing-Schlüssel des Servers mit auf die Speichergeräte. Ergänze dort die Zeile ''/syncthing'' oder lösche die Datei; der nächste Start des Containers legt sie neu an.
+
+=== Direkt statt über ein Relay ===
+Über ein Relay kann schon der erste Abgleich der Dateien Stunden dauern. Für eine direkte Verbindung muss '''nur eine Seite''' die andere erreichen. Steht das Speichergerät hinter einer Firewall oder einem Heimrouter, wählt es selbst nach außen zum Server; dafür braucht nur der Server einen offenen Port.
+
+==== Der Server hat den Port 22000 frei ====
+Gib beim Start des Containers den Port von Syncthing frei, also im '''podman run''' von '''cantorhub''' zusätzlich:
+ -p 22000:22000/tcp -p 22000:22000/udp
+und öffne 22000 (TCP und UDP) in der Firewall des Servers. Mehr ist nicht nötig: Das Speichergerät erfährt die Adresse über die Syncthing-Suche von selbst.
+
+==== Der Port 22000 ist auf dem Server schon belegt ====
+Das ist der Fall, wenn auf dem Rechner, der den Container trägt, selbst ein Syncthing läuft. Dann lauscht das Syncthing im Container auf einem anderen Port, zum Beispiel 22001. Einmal auf dem Server:
+ st() { podman exec cantorhub syncthing cli --home=/data/syncthing "$@"; }
+ st config options raw-listen-addresses 0 set tcp://:22001
+ st config options raw-listen-addresses add quic://:22001
+ st config options raw-listen-addresses add dynamic+https://relays.syncthing.net/endpoint
+ st config options raw-listen-addresses list
+Die Einstellung liegt im Datenverzeichnis und übersteht Neustarts und Updates. Dann legst Du den Container mit dieser Portfreigabe neu an und öffnest 22001 (TCP und UDP) in der Firewall:
+ -p 22001:22001/tcp -p 22001:22001/udp
+Wichtig ist, dass innen und außen '''derselbe''' Port steht: Syncthing nennt den Speichergeräten den Port, auf dem es innen lauscht. Auf den Speichergeräten ist nichts einzutragen.
+
+Prüfen kannst Du von außen, etwa vom Speichergerät:
+ nc -vz SERVERNAME 22001
+
+==== Speichergerät und Container auf demselben Rechner ====
+Hier finden sich die beiden nicht direkt, und die Verbindung liefe über das Internet und zurück. Gib den Port nur für den Rechner selbst frei, im '''podman run''' von '''cantorhub''':
+ -p 127.0.0.1:22001:22000/tcp
+und trage im Syncthing des Rechners beim Gerät '''CantorHub''' unter '''Erweitert → Adressen''' ein:
+ tcp://127.0.0.1:22001, dynamic
+Denk daran: Eine Kopie auf demselben Rechner schützt vor Versehen, nicht vor dem Verlust des Rechners. Lass dieses Syncthing den Ordner an ein Gerät an einem anderen Ort weitergeben.
+
+==== Es bleibt beim Relay ====
+* '''Geduld.''' Ein Speichergerät merkt sich die alte Adresse eine Weile und versucht erst nach einigen Minuten, eine Relay-Verbindung gegen eine direkte zu tauschen. Ein Neustart des Speichergeräts (bzw. seines Containers) beschleunigt das.
+* '''Ist der Port von dort erreichbar?''' Manche Netze (Firma, Gäste-WLAN, Mobilfunk) lassen nach außen nur die Ports für Webseiten durch. Dann bleibt nur das Relay.
+* '''Steht beim Gerät eine alte Adresse?''' Im Syncthing des Speichergeräts beim Gerät '''CantorHub''' unter '''Erweitert → Adressen''' sollte ''dynamic'' stehen oder die richtige Adresse mit dem richtigen Port.
+* '''Was sagt das Protokoll?''' Der Befehl unten zeigt auf dem Speichergerät, woran der direkte Versuch scheitert: ''i/o timeout'' heißt Firewall, ''connection refused'' falscher Port.
+ podman logs cantorhub-sicherung 2>&1 | grep -i -E "dial|connection" | tail -20
+
+=== Wiederherstellen auf einer neuen Installation ===
+Ist der Server verloren oder ziehst Du auf einen neuen um, holt eine '''neue''' Installation die Sicherung in ihrer Ersteinrichtung zurück — auch auf eine MariaDB-Datenbank.
+
+==== Vorher ====
+* Starte einen neuen Container mit einem '''leeren''' Datenverzeichnis und, wenn Du MariaDB nutzt, einer '''leeren''' Datenbank.
+* Der Container braucht eine '''Neustart-Regel''': '''--restart unless-stopped''' im '''podman run''' oder '''Restart=always''' in einer systemd-Unit. Das ''Restart=on-failure'' von ''podman generate systemd'' reicht nicht.
+* Halte für eine verschlüsselte Ablage das '''Passwort''' bereit.
+* Wie die Ersteinrichtung selbst steht diese Seite jedem offen, der zuerst kommt. Lass eine frische Installation nicht unbeaufsichtigt aus dem Internet erreichbar.
+
+==== Die vier Schritte ====
+Öffne das neue Portal im Browser. Die Ersteinrichtung bietet '''Aus einer Sicherung wiederherstellen''' an; alles weitere geschieht auf einer Seite.
+
+'''1. Das Speichergerät mit diesem Server verbinden.''' Der neue Server hat eine neue Geräte-ID — die alte ist mit Absicht nicht in der Sicherung. Die Seite zeigt sie und den passenden Befehl. Auf einem Gerät, das mit dem Skript eingerichtet ist, führst Du dort aus:
+ bash sicherung-speicherseite.sh --freigeben NEUE-ID
+Ist das Skript dort nicht mehr zur Hand, holt es der neue Container wie in Schritt 1 oben. In der Syncthing-App fügst Du stattdessen die neue ID als Gerät hinzu und hakst sie beim Ordner '''CantorHub''' unter '''Teilen''' an.
+
+'''2. Gerät wählen.''' Nach ein, zwei Minuten meldet sich das Speichergerät; die Seite schaut alle zehn Sekunden nach. Wähle '''Lesbar (Klartext)''' oder '''Verschlüsselt — mit Passwort''' und klicke auf '''Von diesem Gerät wiederherstellen'''. Ein fremdes Gerät weist Du mit '''Ist es nicht''' ab.
+
+'''3. Empfang.''' Die Seite zeigt den Fortschritt und aktualisiert sich selbst. Über ein Relay und mit vielen Dateien kann das dauern. Du darfst die Seite schließen; der Empfang läuft weiter, und beim nächsten Öffnen geht es dort weiter.
+
+'''4. Einspielen.''' Ist alles da und die Kopie geprüft, zeigt die Seite, was sie zurückbringt: Zeitpunkt und Version der Sicherung, Zeilen der Datenbank, Zahl und Größe der Dateien. '''Wiederherstellen und neu starten''' beendet den Container; die Neustart-Regel bringt ihn zurück.
+
+Beim Neustart spielt das Portal die Sicherung ein, bevor es wieder erreichbar ist: Die Datenbank-Kopie wird auf den Stand der laufenden Version gebracht und in die Datenbank des Portals übernommen, danach kommen Dateien, Startseite und Schlüssel an ihren Platz. Die Seite leitet von selbst zur Anmeldung weiter. '''Melde Dich mit Deinem bisherigen Konto an.'''
+
+Kommt das Portal nach einer Minute nicht zurück, fehlt die Neustart-Regel. Dann startest Du es selbst:
+ podman restart cantorhub
+
+==== Danach ====
+* '''Das Speichergerät, von dem Du wiederhergestellt hast, sichert ohne weiteres Zutun vom neuen Server weiter.''' Es wird nichts erneut übertragen.
+* '''Weitere Speichergeräte''' kennen nur den alten Server. Führe dort ebenfalls ''--freigeben'' mit der neuen ID aus und nimm sie auf der Seite '''Sicherung''' an. Den Eintrag des alten Servers kannst Du dort entfernen.
+* Alle Mitglieder melden sich einmal neu an.
+
+==== Wenn etwas schiefgeht ====
+* '''Die Wiederherstellung schlägt fehl:''' Die Datenbank bleibt unverändert, die Seite nennt den Grund, und das Empfangene bleibt liegen. Nach der Korrektur klickst Du auf '''Erneut versuchen'''.
+* '''Die Sicherung stammt von einer neueren Version''' als das neue Portal: Sie wird abgelehnt. Aktualisiere erst das Abbild des Containers und versuche es dann erneut.
+* '''Doch lieber neu anfangen:''' '''Abbrechen und normal einrichten''' löscht das bisher Empfangene und führt zur normalen Ersteinrichtung.
+
+=== Nur nachsehen, ohne neue Installation ===
+Willst Du nur etwas nachschlagen, während das richtige Portal nicht läuft, startest Du auf dem Speichergerät ein Portal auf einer '''Kopie''' der Sicherung. Arbeite nie auf dem Ordner selbst: Syncthing hält ihn auf dem Stand des Servers, und ein Portal darauf würde ihn verändern.
+ cp -a ~/cantorhub-sicherung/cantorhub ~/cantorhub-wiederhergestellt
+Bei einer verschlüsselten Ablage entschlüsselst Du stattdessen:
+ podman run --rm -e PUID=0 -e PGID=0 \
+     -v ~/cantorhub-sicherung/cantorhub:/verschluesselt:ro,Z -v ~/cantorhub-wiederhergestellt:/klar:Z \
+     docker.io/syncthing/syncthing:2 decrypt /verschluesselt --to=/klar --password=PASSWORT
+Dann das Portal auf dieser Kopie starten:
+ podman run -d --name cantorhub-ansicht -p 8000:8000 -v ~/cantorhub-wiederhergestellt:/data:Z \
+     -e DATABASE_URL=sqlite:////data/sicherung/cantorhub.sqlite3 -e VEREINS_URL=http://localhost:8000 \
+     ghcr.io/hgruber/cantorhub:latest
+Ein solches Portal sichert sich nicht selbst. Für einen dauerhaften Betrieb, etwa wieder auf MariaDB, nimm den Weg über die Ersteinrichtung oben.
+
+==== Ein älterer Stand ====
+Brauchst Du nicht den letzten, sondern einen früheren Stand — etwa vor einem versehentlichen Löschen —, liegt er auf dem Speichergerät im Ordner ''.stversions'' der Sicherung: frühere Datenbank-Kopien mit Datum und Uhrzeit im Namen (etwa ''sicherung/cantorhub~20261018-031500.sqlite3''), ebenso ersetzte und gelöschte Dateien, bis zu einem Jahr zurück. Kopiere die gewünschte Datenbank-Kopie in der Kopie von oben als ''sicherung/cantorhub.sqlite3'' an ihren Platz und starte das Portal darauf.
+
+=== Regelmäßig prüfen ===
+* '''Einmal im Monat''' die Seite '''Sicherung''' öffnen: Ist die letzte Datenbank-Kopie frisch, und steht mindestens ein Speichergerät auf ''auf dem Stand''?
+* '''Vor jedem Update''' eine Kopie sofort anstoßen (Befehl oben) und warten, bis die Speichergeräte auf dem Stand sind.
+* '''Einmal im Jahr''' das Nachsehen auf dem Speichergerät ausprobieren. Eine Sicherung, die nie zurückgeholt wurde, ist nur eine Hoffnung.
+* Das '''Passwort''' einer verschlüsselten Ablage liegt außerhalb des Portals, und mindestens zwei Personen wissen, wo.
+* Mindestens ein Speichergerät steht '''an einem anderen Ort''' als der Server.

@@ -7,6 +7,16 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Neuer Hilfe-Artikel „Hilfe:Sicherung“: was gesichert wird, Speichergeräte einrichten und
+  annehmen, die Seite „Sicherung“ lesen, direkte Verbindung statt Relay und die
+  Wiederherstellung in der Ersteinrichtung. Die Seite „Sicherung“ verweist mit einem Hilfe-Icon
+  oben rechts darauf; bestehende Installationen holen den Artikel mit `manage.py hilfe_anlegen`
+  nach.
+
 ## v1.0.11 — 2026-10-18
 
 ### Hinzugefügt
