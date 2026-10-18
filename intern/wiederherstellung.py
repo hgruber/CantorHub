@@ -21,6 +21,13 @@ Superuser gibt). Der Ablauf:
 Scheitert ein Schritt vor den Dateien, rollt die Datenbank zurück, der Zustand
 wird **fehler** mit der Ursache, und der Start läuft normal weiter — die Seite
 zeigt den Fehler, das Empfangene bleibt für einen zweiten Versuch.
+
+Ein **Klon** (Zustand ``klon``) läuft denselben Weg, ersetzt aber nichts: er
+soll neben dem Original laufen, ohne ihm in die Quere zu kommen. Statt den
+Ordner zum Sendeordner umzustellen, verliert er Syncthing ganz — ``start.sh``
+erzeugt eine neue Identität ohne Freigaben —, und ``klon_konfiguration()``
+nimmt ihm Mailversand und XMPP-Brücke, gibt ihm die Adresse, unter der er
+eingerichtet wurde, und setzt „Klon“ vor den Vereinsnamen.
 """
 
 import json
@@ -50,6 +57,43 @@ _NICHT_UEBERNEHMEN = frozenset({
     ".stfolder", ".stversions", ".stignore", "syncthing", "tiles",
     ORDNER, ZUSTANDSDATEI, ARBEITSKOPIE,
 })
+
+
+# Was einen Klon mit Diensten verbindet, an denen auch das Original hängt: der
+# SMTP-Zugang (Erinnerungen, Bestätigungen, Passwort-Mails gingen doppelt
+# hinaus) und der Bot samt Admin-API (``ejabberd_admin sync`` beim Start würde
+# Räume und Konten des Originals umbauen). Leer schaltet beides ab, siehe
+# ``is_email_configured()``/``is_ejabberd_configured()``.
+KLON_LEEREN = (
+    "EMAIL_HOST", "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD",
+    "EJABBERD_HOST", "EJABBERD_BOT_JID", "EJABBERD_BOT_PASSWORD",
+)
+KLON_PRAEFIX = "Klon "
+
+
+def klon_konfiguration(werte, url):
+    """Die ``Konfiguration``-Werte, die aus der eingespielten Sicherung einen Klon machen.
+
+    ``werte`` ist der eingespielte Stand (Schlüssel → Wert), ``url`` die Adresse,
+    unter der der Klon eingerichtet wurde. Sie ersetzt ``VEREINS_URL``: davon
+    hängen die zugelassenen Hostnamen ab, und Links zeigen nicht mehr aufs
+    Original.
+    """
+    neu = dict.fromkeys(KLON_LEEREN, "")
+    neu["VEREINS_URL"] = url
+    name = werte.get("VEREINSNAME_KURZ") or ""
+    if not name.startswith(KLON_PRAEFIX):
+        neu["VEREINSNAME_KURZ"] = f"{KLON_PRAEFIX}{name}".strip()
+    return neu
+
+
+def klon_umgebung(umgebung):
+    """Die Schlüssel aus ``klon_konfiguration``, die eine Umgebungsvariable überstimmt.
+
+    ``get_config()`` liest zuerst die Umgebung — ein ``-e EMAIL_HOST=…`` im
+    ``podman run`` des Klons schaltete den Versand also wieder ein.
+    """
+    return sorted(k for k in (*KLON_LEEREN, "VEREINS_URL") if umgebung.get(k))
 
 
 def datenverzeichnis():
@@ -214,13 +258,44 @@ def einspielen():
     # Ab hier steht die Datenbank; die Dateien folgen, dann Syncthing.
     _dateien_uebernehmen(ordner, daten)
     (daten / ".stfolder").mkdir(exist_ok=True)
-    if not syncthing.ordner_umstellen(daten):
+    if zustand.get("klon"):
+        _klon_einrichten(daten, zustand.get("klon_url") or "")
+    elif not syncthing.ordner_umstellen(daten):
         logger.warning("Wiederherstellung: kein Syncthing-Ordner zum Umstellen gefunden")
     shutil.rmtree(ordner, ignore_errors=True)
     zustand_loeschen()
-    logger.info(
-        "Wiederherstellung abgeschlossen: %d Zeilen aus %d Tabellen; das Gerät %s "
-        "sichert ab jetzt weiter", sum(zeilen.values()), len(zeilen),
-        (zustand.get("geraet") or "").split("-", 1)[0],
-    )
+    if zustand.get("klon"):
+        logger.info(
+            "Klon eingerichtet: %d Zeilen aus %d Tabellen, erreichbar unter %s; ohne "
+            "Sicherungsziel, Mailversand und XMPP-Brücke",
+            sum(zeilen.values()), len(zeilen), zustand.get("klon_url") or "localhost",
+        )
+    else:
+        logger.info(
+            "Wiederherstellung abgeschlossen: %d Zeilen aus %d Tabellen; das Gerät %s "
+            "sichert ab jetzt weiter", sum(zeilen.values()), len(zeilen),
+            (zustand.get("geraet") or "").split("-", 1)[0],
+        )
     return True
+
+
+def _klon_einrichten(daten, url):
+    """DB-Teil zu ``klon_konfiguration``, dazu Syncthing ohne Identität und Freigaben.
+
+    Syncthing läuft hier noch nicht; ``start.sh`` legt danach eine neue
+    ``config.xml`` mit einem Ordner an, den es mit niemandem teilt. Das
+    Speichergerät kennt die alte ID weiter, erreicht sie aber nie wieder.
+    """
+    from .models import Konfiguration
+
+    werte = dict(Konfiguration.objects.values_list("key", "value"))
+    for key, wert in klon_konfiguration(werte, url).items():
+        Konfiguration.objects.update_or_create(key=key, defaults={"value": wert})
+    shutil.rmtree(daten / "syncthing", ignore_errors=True)
+    ueberstimmt = klon_umgebung(os.environ)
+    if ueberstimmt:
+        logger.warning(
+            "Klon: Umgebungsvariablen überstimmen die Klon-Einstellungen (%s) — den "
+            "Container ohne sie neu anlegen, sonst spricht er mit den Diensten des Originals",
+            ", ".join(ueberstimmt),
+        )

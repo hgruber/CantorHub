@@ -7768,3 +7768,90 @@ class WiederherstellungTest(SimpleTestCase):
         # Unter DEBUG (Entwicklung, Tests) wäre PID 1 das init des Rechners.
         from intern.views.einrichtung import _neu_starten
         self.assertFalse(_neu_starten())
+
+    def test_klon_konfiguration(self):
+        from intern.wiederherstellung import klon_konfiguration
+        neu = klon_konfiguration(
+            {"VEREINSNAME_KURZ": "Chor", "EMAIL_HOST": "smtp.example.org"}, "http://localhost:8001",
+        )
+        for key in ("EMAIL_HOST", "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD",
+                    "EJABBERD_HOST", "EJABBERD_BOT_JID", "EJABBERD_BOT_PASSWORD"):
+            self.assertEqual(neu[key], "", key)
+        self.assertEqual(neu["VEREINS_URL"], "http://localhost:8001")
+        self.assertEqual(neu["VEREINSNAME_KURZ"], "Klon Chor")
+        # Ein Klon vom Klon bekommt das Präfix nicht zweimal.
+        self.assertNotIn("VEREINSNAME_KURZ", klon_konfiguration({"VEREINSNAME_KURZ": "Klon Chor"}, ""))
+        self.assertEqual(klon_konfiguration({}, "")["VEREINSNAME_KURZ"], "Klon")
+
+    def test_klon_umgebung(self):
+        from intern.wiederherstellung import klon_umgebung
+        self.assertEqual(klon_umgebung({"EMAIL_HOST": "smtp", "VEREINS_URL": "https://x",
+                                        "EJABBERD_HOST": "", "PATH": "/bin"}),
+                         ["EMAIL_HOST", "VEREINS_URL"])
+
+    def test_klon_einrichten(self):
+        import tempfile
+        from unittest import mock
+
+        from intern import wiederherstellung
+        with tempfile.TemporaryDirectory() as tmp:
+            daten = Path(tmp)
+            (daten / "syncthing").mkdir()
+            (daten / "syncthing" / "config.xml").write_text("<configuration/>")
+            with mock.patch("intern.models.Konfiguration.objects") as objekte, \
+                    mock.patch.dict("os.environ", {"EMAIL_HOST": "smtp"}), \
+                    self.assertLogs("intern.wiederherstellung", "WARNING") as protokoll:
+                objekte.values_list.return_value = [("VEREINSNAME_KURZ", "Chor")]
+                wiederherstellung._klon_einrichten(daten, "http://localhost:8001")
+            gesetzt = {c.kwargs["key"]: c.kwargs["defaults"]["value"]
+                       for c in objekte.update_or_create.call_args_list}
+            self.assertEqual(gesetzt["VEREINS_URL"], "http://localhost:8001")
+            self.assertEqual(gesetzt["EMAIL_HOST"], "")
+            self.assertEqual(gesetzt["VEREINSNAME_KURZ"], "Klon Chor")
+            self.assertFalse((daten / "syncthing").exists(), msg="neue Identität ohne Freigaben")
+            self.assertIn("EMAIL_HOST", protokoll.output[0])
+
+    def _seite(self, anfrage, zustand):
+        """Die Seite mit gemocktem Syncthing; zurück kommen Kontext und geschriebene Zustände."""
+        import importlib
+        from unittest import mock
+
+        # Das Modul, nicht die gleichnamige View, die views/__init__.py exportiert.
+        einrichtung = importlib.import_module("intern.views.einrichtung")
+        geschrieben = []
+        with mock.patch.object(einrichtung, "ist_eingerichtet", return_value=False), \
+                mock.patch.object(einrichtung.wh, "lese_zustand", return_value=zustand), \
+                mock.patch.object(einrichtung.wh, "schreibe_zustand",
+                                  side_effect=lambda **w: geschrieben.append(w)), \
+                mock.patch.object(einrichtung.wh, "pruefen", return_value=None), \
+                mock.patch.object(einrichtung.wh, "zusammenfassung", return_value={}), \
+                mock.patch.object(einrichtung, "syncthing") as st, \
+                mock.patch.object(einrichtung, "_neu_starten", return_value=False), \
+                mock.patch.object(einrichtung, "render") as render:
+            st.SyncthingFehler = Exception
+            st.eigene_id.return_value = "NEUE-ID"
+            st.status.return_value = {"wartend": []}
+            st.empfang_stand.return_value = {"fertig": True}
+            einrichtung.wiederherstellen(anfrage)
+        return render.call_args.args[2], geschrieben
+
+    def test_seite_klon_aus_der_adresse(self):
+        from django.test import RequestFactory
+        kontext, _ = self._seite(RequestFactory().get("/einrichtung/wiederherstellen/?klon=1"), None)
+        self.assertTrue(kontext["klon"])
+        kontext, _ = self._seite(RequestFactory().get("/einrichtung/wiederherstellen/"), None)
+        self.assertFalse(kontext["klon"])
+
+    def test_klon_merkt_sich_seine_adresse(self):
+        from django.test import RequestFactory
+        anfrage = RequestFactory().post("/einrichtung/wiederherstellen/", {"aktion": "einspielen"},
+                                        HTTP_HOST="localhost:8001")
+        zustand = {"phase": "empfangen", "geraet": "ALT", "klon": True}
+        kontext, geschrieben = self._seite(anfrage, zustand)
+        self.assertEqual(geschrieben[-1]["phase"], "bereit")
+        self.assertEqual(geschrieben[-1]["klon_url"], "http://localhost:8001")
+        self.assertTrue(kontext["klon"])
+        self.assertEqual(kontext["eigene_id"], "NEUE-ID")
+        # Ohne Klon bleibt die Adresse leer — VEREINS_URL kommt dann aus der Sicherung.
+        _, geschrieben = self._seite(anfrage, {**zustand, "klon": False})
+        self.assertEqual(geschrieben[-1]["klon_url"], "")

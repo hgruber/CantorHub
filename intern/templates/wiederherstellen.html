@@ -1,5 +1,5 @@
 {% extends 'mitglied_public_base.html' %}
-{% block title %}Wiederherstellen – CantorHub{% endblock %}
+{% block title %}{% if klon %}Klon erstellen{% else %}Wiederherstellen{% endif %} – CantorHub{% endblock %}
 {% block wrap_modifier %} join-wide{% endblock %}
 {% block head_extra %}{% comment %}
    Selbst aktualisieren, solange gewartet oder empfangen wird — nicht, sobald
@@ -8,12 +8,22 @@
 {% endcomment %}{% if phase == "start" and not wartend or phase == "empfangen" and not empfang.fertig %}<meta http-equiv="refresh" content="10">{% endif %}{% endblock %}
 
 {% block header %}
+    {% if klon %}
+    <h1>Einen Klon aus der Sicherung erstellen</h1>
+    <p class="join-intro">
+        Holt das Datenverzeichnis eines Portals von einem Speichergerät wie beim
+        Wiederherstellen — aber als Kopie, die neben dem Original läuft: zum Ausprobieren,
+        Nachsehen oder Testen eines Updates. Der Klon sichert nirgendwohin, verschickt keine
+        E-Mails und spricht nicht mit dem Chat-Server.
+    </p>
+    {% else %}
     <h1>Aus einer Sicherung wiederherstellen</h1>
     <p class="join-intro">
         Holt das Datenverzeichnis eines früheren Portals von einem Speichergerät — Datenbank,
         Dateien, Startseite und Schlüssel. Danach startet das Portal neu und ist das alte; Du
         meldest Dich mit Deinem bisherigen Konto an.
     </p>
+    {% endif %}
 {% endblock %}
 
 {% block body %}
@@ -48,6 +58,7 @@
                 {% csrf_token %}
                 <input type="hidden" name="geraet" value="{{ w.id }}">
                 <input type="hidden" name="name" value="{{ w.name }}">
+                {% if klon %}<input type="hidden" name="klon" value="1">{% endif %}
                 <fieldset class="sicherung-modus">
                     <legend>Wie liegt die Sicherung dort?</legend>
                     <label class="radio-label"><input type="radio" name="modus" value="klartext" checked> Lesbar (Klartext)</label>
@@ -102,10 +113,22 @@
         <div class="detail-card-row"><span class="label">Gesichert</span><span class="value">{{ inhalt.zeitpunkt|default:"—" }}{% if inhalt.version %} · Version {{ inhalt.version }}{% endif %}</span></div>
         <div class="detail-card-row"><span class="label">Datenbank</span><span class="value">{{ inhalt.zeilen }} Zeilen</span></div>
         <div class="detail-card-row"><span class="label">Dateien</span><span class="value">{{ inhalt.dateien }} Datei{{ inhalt.dateien|pluralize:"en" }}, {{ inhalt.dateien_mb }} MB</span></div>
+        {% if klon %}
+        <p class="sicherung-text">Das Portal startet dafür einmal neu und spielt alles ein, bevor es wieder erreichbar ist. Damit der Klon dem Original nicht in die Quere kommt, stellt es dabei um:</p>
+        <ul class="sicherung-text">
+            <li><strong>Keine Sicherung:</strong> Syncthing bekommt eine neue Geräte-ID und teilt mit niemandem — das Speichergerät bleibt allein beim Original.</li>
+            <li><strong>Keine E-Mails:</strong> der SMTP-Zugang wird geleert; Erinnerungen und Bestätigungen landen nur im Log.</li>
+            <li><strong>Kein Chat:</strong> der XMPP-Bot und der Abgleich mit dem Chat-Server werden abgeschaltet.</li>
+            <li><strong>Eigene Adresse:</strong> der Klon gilt als <code>{{ request.scheme }}://{{ request.get_host }}</code> (und localhost); Links zeigen nicht mehr aufs Original.</li>
+            <li><strong>Erkennbar:</strong> vor dem Vereinsnamen steht „Klon“.</li>
+        </ul>
+        <p class="sicherung-text">Umgebungsvariablen wie <code>-e EMAIL_HOST=…</code>, <code>-e EJABBERD_HOST=…</code> oder <code>-e VEREINS_URL=…</code> im <code>podman run</code> würden das wieder überstimmen — starte den Klon ohne sie.</p>
+        {% else %}
         <p class="sicherung-text">Das Portal startet dafür einmal neu und spielt alles ein, bevor es wieder erreichbar ist. Das Speichergerät sichert danach ohne weiteres Zutun von diesem Server.</p>
+        {% endif %}
         <form method="post" class="sicherung-knoepfe">
             {% csrf_token %}
-            <button type="submit" class="btn btn-primary" name="aktion" value="einspielen">Wiederherstellen und neu starten</button>
+            <button type="submit" class="btn btn-primary" name="aktion" value="einspielen">{% if klon %}Klon erstellen und neu starten{% else %}Wiederherstellen und neu starten{% endif %}</button>
         </form>
         {% endif %}
     </div>
@@ -121,6 +144,11 @@
         {% endif %}
         <pre class="sicherung-befehl">podman restart cantorhub</pre>
         <p class="sicherung-text">{% if neustart %}Kommt es nach einer Minute nicht zurück, läuft der Container ohne Neustart-Regel — dann diesen Befehl. {% endif %}Danach mit dem bisherigen Konto anmelden.</p>
+        {% if klon %}
+        <p class="sicherung-text">Auf dem Speichergerät steht dieser Server noch als Gerät. Er meldet sich dort nie wieder; aufräumen lässt sich der Eintrag dort{% if eigene_id %} mit{% else %} in der Syncthing-App{% endif %}:</p>
+        {% if eigene_id %}<pre class="sicherung-befehl">podman exec cantorhub-sicherung env -u STGUIADDRESS syncthing cli config folders cantorhub devices {{ eigene_id }} delete
+podman exec cantorhub-sicherung env -u STGUIADDRESS syncthing cli config devices {{ eigene_id }} delete</pre>{% endif %}
+        {% endif %}
     </div>
     <script>
     (function () {
@@ -154,7 +182,7 @@
     <form method="post" class="wiederherstellung-abbrechen">
         {% csrf_token %}
         <button type="submit" class="btn btn-sm btn-secondary" name="aktion" value="abbrechen"
-                onclick="return confirm('Wiederherstellung abbrechen? Das bisher Empfangene wird gelöscht.')">Abbrechen und normal einrichten</button>
+                onclick="return confirm('{% if klon %}Klon{% else %}Wiederherstellung{% endif %} abbrechen? Das bisher Empfangene wird gelöscht.')">Abbrechen und normal einrichten</button>
     </form>
     {% elif phase != "bereit" %}
     <p class="sicherung-text"><a href="{% url 'einrichtung' %}">Zurück zur Einrichtung ohne Sicherung</a></p>

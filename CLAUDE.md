@@ -107,7 +107,9 @@ in `INSTALL.md`), `syncthing.py` (that Syncthing through its local REST API, add
 from `DATEN/syncthing/config.xml` — behind `/intern/sicherung/`), `wiederherstellung.py` (the
 way back: a new installation receives a backup in its first-run setup at
 `/einrichtung/wiederherstellen/`, and `start.sh` applies it before `migrate` through the DB alias
-`wiederherstellung` and the same row copy as the backup — see „Restoring" in `INSTALL.md`),
+`wiederherstellung` and the same row copy as the backup; as a clone next to the original it
+gets a new Syncthing identity and loses mail, XMPP and the original's address instead — see
+„Restoring" in `INSTALL.md`),
 `terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
 events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
 `docs/forum.md`), `aufstellung.py` (the stage picture of the answers

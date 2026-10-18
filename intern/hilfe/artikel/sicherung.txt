@@ -171,6 +171,24 @@ Kommt das Portal nach einer Minute nicht zurück, fehlt die Neustart-Regel. Dann
 * '''Die Sicherung stammt von einer neueren Version''' als das neue Portal: Sie wird abgelehnt. Aktualisiere erst das Abbild des Containers und versuche es dann erneut.
 * '''Doch lieber neu anfangen:''' '''Abbrechen und normal einrichten''' löscht das bisher Empfangene und führt zur normalen Ersteinrichtung.
 
+=== Einen Klon erstellen ===
+Ein '''Klon''' ist eine vollständige Kopie des Portals, die '''neben''' dem Original läuft — etwa, um ein Update auszuprobieren oder etwas nachzusehen, ohne das echte Portal anzufassen. Die Ersteinrichtung bietet dafür neben dem Wiederherstellen den Knopf '''Einen Klon aus der Sicherung erstellen'''. Die Schritte sind dieselben wie oben; am Ende heißt der Knopf '''Klon erstellen und neu starten'''.
+
+Beim Neustart stellt das Portal den Klon so um, dass er dem Original nicht in die Quere kommt:
+* '''Keine Sicherung:''' Syncthing bekommt eine neue Geräte-ID und teilt mit niemandem. Das Speichergerät sichert weiter allein das Original.
+* '''Keine E-Mails:''' Der Zugang zum Mailserver wird gelöscht. Erinnerungen, Bestätigungen und Passwort-Mails gehen nicht hinaus.
+* '''Kein Chat:''' Der Chat-Bot und der Abgleich mit dem Chat-Server werden abgeschaltet.
+* '''Eigene Adresse:''' Der Klon gilt unter der Adresse, unter der Du ihn eingerichtet hast, etwa ''localhost:8000''. Links zeigen nicht mehr aufs Original.
+* '''Erkennbar:''' Vor dem Vereinsnamen steht '''Klon''', in der Seitenleiste und im Titel des Browserfensters.
+
+Darauf achtest Du:
+* Starte den Container mit eigenem Datenverzeichnis und Neustart-Regel, aber '''ohne''' die Angaben ''-e VEREINS_URL'', ''-e EMAIL_…'', ''-e EJABBERD_…'' und ''-e DATABASE_URL'' des Originals. Solche Angaben gewinnen bei jedem Start und würden Mail und Chat wieder einschalten. Ein Beispiel auf einem freien Port:
+ podman run -d --name cantorhub-klon --restart unless-stopped -p 8001:8000 \
+     -v ~/cantorhub-klon:/data:Z ghcr.io/hgruber/cantorhub:latest
+* Öffne den Klon im Browser unter ''localhost:8001''. Über eine andere Adresse ohne HTTPS nimmt der Browser die Anmeldung nicht an. Läuft der Klon auf einem entfernten Rechner, gehst Du über einen SSH-Tunnel:
+ ssh -L 8001:localhost:8001 SERVERNAME
+* Nach dem Neustart zeigt die Seite zwei Befehle, mit denen Du den Klon auf dem Speichergerät wieder austrägst. Das ist nur Aufräumen: Der Klon meldet sich dort ohnehin nie wieder.
+
 === Nur nachsehen, ohne neue Installation ===
 Willst Du nur etwas nachschlagen, während das richtige Portal nicht läuft, startest Du auf dem Speichergerät ein Portal auf einer '''Kopie''' der Sicherung. Arbeite nie auf dem Ordner selbst: Syncthing hält ihn auf dem Stand des Servers, und ein Portal darauf würde ihn verändern.
  cp -a ~/cantorhub-sicherung/cantorhub ~/cantorhub-wiederhergestellt

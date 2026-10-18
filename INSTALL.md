@@ -568,6 +568,27 @@ for the old server can be removed.
   do not leave a fresh instance reachable from the internet.
 - „Abbrechen und normal einrichten“ drops what was received and returns to the normal setup.
 
+**A clone next to the original.** The setup page's second button, „Einen Klon aus der Sicherung
+erstellen“, runs the same four steps but leaves the original in charge — for trying an update,
+looking something up or testing. On the restart it applies the backup like a restore and then
+cuts every line the original also uses: Syncthing loses its identity (a new device ID that shares
+with nobody, so the storage device keeps backing up the original alone), `EMAIL_HOST` and its
+credentials and `EJABBERD_HOST`, `EJABBERD_BOT_JID` and the bot password are cleared (no reminder,
+confirmation or reset mail goes out, no bot and no `ejabberd_admin sync` touch the chat server),
+`VEREINS_URL` becomes the address the clone was set up under, and „Klon“ is put in front of
+`VEREINSNAME_KURZ`. The storage device still lists the clone's old ID, which never comes back; the
+restart page shows the two commands that remove it.
+
+- **Start the clone without** `-e VEREINS_URL`, `-e EMAIL_*` or `-e EJABBERD_*`: environment
+  variables win over the database on every start and would switch it all back on (the log warns).
+  Leave out `DATABASE_URL` too — SQLite in the volume is all a clone needs.
+- **Give it a volume and a restart policy** from the start (`-v …:/data --restart
+  unless-stopped`), not `--rm`: the restart that applies the backup has to come back with the
+  same `/data`.
+- **Open it as `http://localhost:PORT`.** The session cookie is `Secure`; browsers accept that
+  over plain HTTP only for localhost. A clone on a remote host is reached through a tunnel:
+  `ssh -L 8000:localhost:8000 host`.
+
 **By hand, without a new installation.** Work on a **copy** of the mirrored folder — the
 receive-only folder itself must stay untouched, and a portal started on it would change it:
 

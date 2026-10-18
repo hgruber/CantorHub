@@ -15,6 +15,7 @@ from django.conf import settings
 from django.contrib.auth import login
 from django.http import Http404
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from intern import syncthing
@@ -120,7 +121,7 @@ def _neu_starten():
     return True
 
 
-def _annehmen(request):
+def _annehmen(request, klon):
     """Formular „Von diesem Gerät wiederherstellen“; Fehlertext oder ``None``."""
     gid = syncthing.geraete_id(request.POST.get("geraet"))
     if not gid:
@@ -132,7 +133,9 @@ def _annehmen(request):
             return "Für eine verschlüsselte Ablage braucht es ihr Passwort."
     name = request.POST.get("name", "").strip()[:60]
     syncthing.empfang_beginnen(gid, name, passwort, wh.empfangsordner())
-    wh.schreibe_zustand(phase=wh.EMPFANGEN, geraet=gid, name=name, verschluesselt=bool(passwort))
+    wh.schreibe_zustand(
+        phase=wh.EMPFANGEN, geraet=gid, name=name, verschluesselt=bool(passwort), klon=klon,
+    )
     logger.info("Wiederherstellung: Empfang von %s begonnen", gid.split("-", 1)[0])
     return None
 
@@ -143,18 +146,25 @@ def wiederherstellen(request):
     Offen wie die Ersteinrichtung selbst: solange es keinen Superuser gibt, für
     wen auch immer zuerst kommt. Eine eingespielte Sicherung bringt ihren
     Superuser mit und schließt die Seite damit.
+
+    Mit ``?klon=1`` (bzw. dem Feld ``klon``) wird daraus ein Klon neben dem
+    Original; ab dem Annehmen trägt der Zustand das Merkmal.
     """
     if ist_eingerichtet():
         raise Http404
 
     zustand = wh.lese_zustand()
     phase = (zustand or {}).get("phase")
+    if zustand:
+        klon = bool(zustand.get("klon"))
+    else:
+        klon = "1" in (request.GET.get("klon"), request.POST.get("klon"))
     fehler = None
     if request.method == "POST":
         aktion = request.POST.get("aktion")
         try:
             if aktion == "annehmen" and not zustand:
-                fehler = _annehmen(request)
+                fehler = _annehmen(request, klon)
             elif aktion == "ablehnen" and not zustand:
                 gid = syncthing.geraete_id(request.POST.get("geraet"))
                 if gid:
@@ -173,19 +183,28 @@ def wiederherstellen(request):
                 else:
                     fehler = wh.pruefen(wh.empfangsordner(), wh.bekannte_migrationen())
                 if not fehler:
-                    wh.schreibe_zustand(**{**zustand, "phase": wh.BEREIT})
+                    # Ein Klon behält die Adresse, unter der er gerade bedient wird.
+                    url = f"{request.scheme}://{request.get_host()}" if klon else ""
+                    wh.schreibe_zustand(**{**zustand, "phase": wh.BEREIT, "klon_url": url})
                     logger.info("Wiederherstellung: bereit, Neustart angefordert")
-                    return render(request, "wiederherstellen.html", {
-                        "phase": wh.BEREIT, "neustart": _neu_starten(),
-                    })
+                    kontext = {"phase": wh.BEREIT, "klon": klon}
+                    if klon:
+                        # Für den Hinweis, die ID auf dem Speichergerät zu löschen.
+                        try:
+                            kontext["eigene_id"] = syncthing.eigene_id()
+                        except syncthing.SyncthingFehler:
+                            pass
+                    kontext["neustart"] = _neu_starten()
+                    return render(request, "wiederherstellen.html", kontext)
         except syncthing.SyncthingFehler as ausnahme:
             fehler = str(ausnahme)
         if not fehler:
-            return redirect("einrichtung_wiederherstellen")
+            ziel = reverse("einrichtung_wiederherstellen")
+            return redirect(f"{ziel}?klon=1" if klon and not wh.lese_zustand() else ziel)
         zustand = wh.lese_zustand()
         phase = (zustand or {}).get("phase")
 
-    kontext = {"phase": phase or "start", "zustand": zustand, "fehler": fehler}
+    kontext = {"phase": phase or "start", "zustand": zustand, "fehler": fehler, "klon": klon}
     try:
         kontext["eigene_id"] = syncthing.eigene_id()
         if not zustand:

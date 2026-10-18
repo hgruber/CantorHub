@@ -22,9 +22,12 @@
         <h3>Umzug oder Neuaufbau?</h3>
         <p class="join-hint">
             Gibt es schon eine Sicherung eines früheren Portals auf einem Speichergerät, lässt
-            sie sich hier holen — statt ein neues Portal anzulegen.
+            sie sich hier holen — statt ein neues Portal anzulegen. Ein <strong>Klon</strong>
+            ist eine Kopie, die neben dem laufenden Portal läuft: ohne Sicherung, ohne
+            E-Mail-Versand und ohne Chat-Anbindung.
         </p>
         <a class="btn btn-secondary" href="{% url 'einrichtung_wiederherstellen' %}">Aus einer Sicherung wiederherstellen</a>
+        <a class="btn btn-secondary" href="{% url 'einrichtung_wiederherstellen' %}?klon=1">Einen Klon aus der Sicherung erstellen</a>
     </div>
 
     {# ── Erstes Konto ────────────────────────────────────────── #}

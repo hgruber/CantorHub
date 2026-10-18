@@ -16,6 +16,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
   Wiederherstellung in der Ersteinrichtung. Die Seite „Sicherung“ verweist mit einem Hilfe-Icon
   oben rechts darauf; bestehende Installationen holen den Artikel mit `manage.py hilfe_anlegen`
   nach.
+- Die Ersteinrichtung kann aus einer Sicherung auch einen Klon erstellen, der neben dem
+  Original läuft. Er bekommt eine neue Syncthing-Identität ohne Freigaben, keinen Mailversand,
+  keine XMPP-Brücke, die Adresse, unter der er eingerichtet wurde, und „Klon“ vor dem
+  Vereinsnamen.
 
 ## v1.0.11 — 2026-10-18
 
