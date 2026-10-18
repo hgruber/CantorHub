@@ -9,6 +9,14 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Das Datenverzeichnis ist jetzt allein das ganze Backup: einmal am Tag (Einstellung
+  `SICHERUNG_STUNDEN`) legt das Portal die Datenbank als startbare SQLite-Kopie unter
+  `sicherung/` ab. Ein mitlaufendes Syncthing spiegelt das Verzeichnis auf angenommene
+  Speichergeräte, wahlweise verschlüsselt; `sicherung-speicherseite.sh` richtet ein solches
+  Gerät mit einem Befehl ein.
+
 ### Geändert
 
 - Die Betriebsanleitung heißt jetzt `INSTALL.md`; `README.md` stellt CantorHub mit Screenshots

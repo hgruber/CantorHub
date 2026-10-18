@@ -100,7 +100,10 @@ version chain and its merging, one name per folder — see `docs/files.md`),
 `folder_access.py` / `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
 shared by the folder browser and the wiki media bar), `verwendung.py` (what a delete would break),
 `blob_aufraeumen.py` (which files under `MEDIA_ROOT` no row references any more — the rule
-behind `cleanup_verwaiste_blobs`, see `docs/files.md`),
+behind `cleanup_verwaiste_blobs`, see `docs/files.md`), `sicherung.py` (the database as a
+startable SQLite copy under `DATEN/sicherung/`, written by `sicherung --loop` through the
+second DB alias `sicherung`; the built-in Syncthing mirrors the data directory — see „Backup"
+in `INSTALL.md`),
 `terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
 events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
 `docs/forum.md`), `aufstellung.py` (the stage picture of the answers

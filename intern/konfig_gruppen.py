@@ -57,6 +57,7 @@ FELDTYPEN: dict[str, str] = {
     "DATEIVERSION_AUFBEWAHRUNG_TAGE": "int",
     "DATEIVERSION_AUFBEWAHRUNG_ANZAHL": "int",
     "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE": "int",
+    "SICHERUNG_STUNDEN": "int",
     "ICAL_TAGE_RUECKWIRKEND": "int",
     "CALDAV_STANDARDDAUER_STUNDEN": "int",
     "EJABBERD_API_TIMEOUT": "int",
@@ -232,7 +233,7 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     # Aufbewahrung & Bereinigung — Löschfristen der Cleanup-Jobs
     "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE", "DATEIVERSION_AUFBEWAHRUNG_TAGE",
     "DATEIVERSION_AUFBEWAHRUNG_ANZAHL", "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE",
-    "FORUM_ANZEIGE_AB",
+    "FORUM_ANZEIGE_AB", "SICHERUNG_STUNDEN",
 )
 _REIHENFOLGE_INDEX: dict[str, int] = {k: i for i, k in enumerate(SCHLUESSEL_REIHENFOLGE)}
 _REIHENFOLGE_ENDE = len(SCHLUESSEL_REIHENFOLGE)
@@ -467,13 +468,14 @@ GRUPPEN: tuple[Gruppe, ...] = (
         id="aufbewahrung",
         titel="Aufbewahrung & Bereinigung",
         hinweis="Löschfristen der Cleanup-Jobs (Änderungsprotokoll, Dateiversionen, "
-        "Versand-Marker) und Stichtag der Forenanzeige",
+        "Versand-Marker), Stichtag der Forenanzeige und Abstand der Datenbank-Sicherung",
         keys=(
             "AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE",
             "DATEIVERSION_AUFBEWAHRUNG_TAGE",
             "DATEIVERSION_AUFBEWAHRUNG_ANZAHL",
             "ERINNERUNG_VERSAND_AUFBEWAHRUNG_TAGE",
             "FORUM_ANZEIGE_AB",
+            "SICHERUNG_STUNDEN",
         ),
         praefixe=(),
     ),

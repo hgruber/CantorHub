@@ -15,6 +15,17 @@ this file tracks only what is still open.
 
 ## Open / to record
 
+- **„Speicherdauer": a backup mirror keeps deleted data for a year** — `sicherung --loop`
+  copies the whole database to `/data/sicherung/`, and the built-in Syncthing mirrors `/data`
+  to the storage devices the operator accepts (see „Backup" in `INSTALL.md`). The storage side
+  runs staggered versioning for 365 days, so a member's data deleted in the portal (leaving,
+  an expired audit-log entry, a removed upload) survives in older copies there for up to a
+  year — on a device outside the server, possibly run by someone else. The policy says nothing
+  about backups. **Action item:** add a sentence on backups and their retention to
+  „Speicherdauer" (and, for a third-party device, to „Hosting und technischer Betrieb");
+  recommend the encrypted mode for any device the association does not control itself. The
+  wording is the operator's decision, not the code's.
+
 - **„Erhobene Daten"/„Speicherdauer": the 90-day promise is an operator duty, not a code
   guarantee** — the *access* path is IP-free (`log_format simple` in `nginx.conf` omits
   `$remote_addr`, gunicorn runs without an access log, Django's `LOGGING` has no request

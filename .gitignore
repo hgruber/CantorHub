@@ -58,3 +58,8 @@ icons.html
 
 # Eigene Startseite in der Entwicklung (DATEN = Projektordner), siehe docs/startseite.md
 /startseite/
+
+# Datenbank-Sicherung und Syncthing (CANTORHUB_DATA ist in der Entwicklung der Checkout)
+/sicherung/
+/syncthing/
+/.stignore

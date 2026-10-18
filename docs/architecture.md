@@ -207,7 +207,7 @@ page — nine of them from the context processor alone — and each call used to
 `request_started` now opens a per-request cache in `app_settings` that loads all rows in a single
 query, `request_finished` drops it again (both wired in `intern/signals.py`, along with a
 `post_save`/`post_delete` invalidation so a writer sees its own change). Outside a request the
-cache deliberately does not engage: `ejabberd_bot` and `send_auftritt_erinnerungen` run as endless
+cache deliberately does not engage: `ejabberd_bot`, `send_auftritt_erinnerungen` and `sicherung` run as endless
 loops and would otherwise serve the configuration of their start-up moment forever. There, every
 key stays one query, as before.
 

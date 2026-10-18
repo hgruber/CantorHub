@@ -196,7 +196,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 # in config/datenbank.py.
 try:
     DATABASES = {
-        "default": datenbank_aus_url(os.environ.get("DATABASE_URL", ""), DATEN)
+        "default": datenbank_aus_url(os.environ.get("DATABASE_URL", ""), DATEN),
+        # Ziel von "manage.py sicherung" (intern/sicherung.py): die entstehende
+        # Kopie, die erst fertig an ihren Platz neben stand.json rückt. Nur ein
+        # Eintrag — eine Verbindung öffnet allein das Kommando.
+        "sicherung": datenbank_aus_url(
+            f"sqlite:///{DATEN.resolve()}/sicherung/cantorhub.sqlite3.tmp", DATEN
+        ),
     }
 except KonfigurationsFehler as fehler:
     from django.core.exceptions import ImproperlyConfigured

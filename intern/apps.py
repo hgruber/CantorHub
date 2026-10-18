@@ -434,6 +434,12 @@ _CONFIG_DEFAULTS = [
         "Aufbewahrungsfrist der Versand-Marker (ErinnerungVersand) in Tagen",
     ),
     (
+        "SICHERUNG_STUNDEN",
+        "24",
+        "Abstand der Datenbank-Sicherung nach sicherung/ im Datenverzeichnis in "
+        "Stunden (0 = aus)",
+    ),
+    (
         "FORUM_ANZEIGE_AB",
         FORUM_ANZEIGE_AB_STANDARD,
         "Stichtag der Foren (JJJJ-MM-TT): ältere Beiträge zeigt das Portal nicht an, "
@@ -680,7 +686,15 @@ def _seed_config(sender, **kwargs):
     import os
     import secrets as _secrets
 
+    from django.db import DEFAULT_DB_ALIAS
+
     from intern.models import Konfiguration
+
+    # Nur die Portal-Datenbank: "migrate --database=sicherung" (intern/sicherung.py)
+    # baut das Schema der Sicherungskopie, und die Objekte unten liefen ohne
+    # using() gegen die Portal-Datenbank, nicht gegen die migrierte.
+    if kwargs.get("using", DEFAULT_DB_ALIAS) != DEFAULT_DB_ALIAS:
+        return
 
     # post_migrate: _end_migration (siehe unten) ist vor _seed_config verbunden und
     # setzt _migrating.active bereits auf False, bevor dieser Handler läuft. Ohne

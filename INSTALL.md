@@ -86,6 +86,9 @@ Everything that changes lives under `/data`; nothing of it belongs in the image:
 /data/tiles/              nginx cache for the OSM map tiles
 /data/secret_key          generated on first start, mode 0600
 /data/db.sqlite3          only without DATABASE_URL
+/data/sicherung/          the database as a startable SQLite copy (see „Backup")
+/data/syncthing/          key and settings of the built-in Syncthing — never synced
+/data/.stignore           what Syncthing leaves out; written once, yours to extend
 ```
 
 The secret key is **not** an environment variable: it is generated on the first start and kept
@@ -338,8 +341,8 @@ choir-specific values are `Konfiguration` keys — the list is in `docs/branding
 
 ## Background jobs
 
-`start.sh` launches these; there is no scheduler, they are plain loops or one-shot jobs. The two long-running ones (`ejabberd_bot`,
-`send_auftritt_erinnerungen --loop`) are restarted 30 s after a crash (non-zero exit); a clean
+`start.sh` launches these; there is no scheduler, they are plain loops or one-shot jobs. The three long-running ones (`ejabberd_bot`,
+`send_auftritt_erinnerungen --loop`, `sicherung --loop`) are restarted 30 s after a crash (non-zero exit); a clean
 exit — the bot giving up after repeated authentication failures — is final until the next
 container start:
 
@@ -347,6 +350,8 @@ container start:
 |---|---|
 | `ejabberd_bot` | Relays messages between forums and XMPP rooms (only when XMPP is configured) |
 | `send_auftritt_erinnerungen --loop` | Sends the gig reminders when they fall due (event time minus N weeks, with a 24 h grace window) |
+| `sicherung --loop` | Writes the database to `/data/sicherung/` once `SICHERUNG_STUNDEN` have passed since the last copy (default 24, `0` = off) |
+| `syncthing serve` | Mirrors `/data` to the storage devices you accepted — container only, not with `DEBUG=1` (see „Backup") |
 | `cleanup_changelog` | Deletes audit-log entries older than 3 years — this is what backs the retention promise in the privacy policy |
 | `cleanup_dateiversionen --days 36500 --keep 25` | Prunes superseded file revisions and their blobs |
 
@@ -380,6 +385,7 @@ Run with `podman exec cantorhub python manage.py <command>`.
 | `ejabberd_admin sync` | Full XMPP startup sync — bot account, room JIDs, room configuration |
 | `ejabberd_admin <group> <verb>` | XMPP admin operations: `bot ensure`; `room {list,assign-jids,configure,delete,avatar,members,occupants,options}`; `user {list,delete,vcard,password}`; `invite {add,remove,clear}`; `server users` |
 | `ejabberd_bot` | Run the XMPP relay bot in the foreground |
+| `sicherung` | Write the database to `/data/sicherung/` now, regardless of `SICHERUNG_STUNDEN` |
 | `index_files`, `thumbnail_files` | Rebuild the file search index / pre-generate thumbnails |
 | `seitenmessung [--nutzer NAME] [--laeufe N] [--seite TEXT]` | Measure the response time and query count of the main pages. It copies the SQLite file first and throws the copy away afterwards, so the running database is never written to; the last column names a query that occurs more than three times, which is how a per-row query gives itself away |
 | `hilfe_anlegen [--autor BENUTZERNAME] [--force]` | Add the shipped help pages („Hilfe“, `Hilfe:…`) and their images to an existing installation. Pages and images that already exist under the same name are left alone; `--force` brings them to the shipped state as well — a new article version where the text differs, a new image revision — and keeps the old ones in the history. A new installation gets them from the first-run setup |
@@ -421,15 +427,89 @@ host-side setting.
 
 ## Backup
 
-Two things have to be backed up together:
+**`/data` is the whole backup.** Once a day (`SICHERUNG_STUNDEN`, default 24, `0` = off)
+`sicherung --loop` writes the database as a SQLite file to `/data/sicherung/cantorhub.sqlite3`,
+next to `stand.json` (time, version, rows per table). With it, `/data` holds everything: the
+database, every upload with its superseded revisions (`media/`), the homepage and the secret
+key. Any tool that copies a directory backs up the portal — the built-in Syncthing below,
+rsync, restic, a USB disk.
 
-1. the **database** (all content, members, configuration), and
-2. the **`media/` directory** (every uploaded file, every profile picture, and every superseded
-   revision of both).
+- **Consistent without a lock.** From MariaDB the copy is read in one `REPEATABLE READ`
+  transaction, from SQLite through its backup API. It is written as `.tmp` and only then moved
+  into place, so no mirror ever sees half a file. Run `podman exec cantorhub python manage.py
+  sicherung` for a copy right now, e.g. before an update.
+- **`media/` may be a little newer than the copy**, never older in a harmful way: a file lands
+  there before its row exists, and a stored file is never overwritten. At worst a restore has a
+  few files no row points at — `cleanup_verwaiste_blobs` lists them.
+- Sessions and the cache stay out; members log in again after a restore.
 
-Restoring only one of them leaves dangling references. Note that a deleted file frees its stored
-data only when the last folder entry pointing at it is gone — the same file can legitimately
-appear in several folders.
+### Mirroring with the built-in Syncthing
+
+The container runs [Syncthing](https://syncthing.net/) and offers `/data` as a **send-only**
+folder: nothing that happens on a storage device — deleting, editing, a broken disk — reaches the
+server. Until you accept a device, nothing is shared. No port has to be opened: the devices find
+each other through Syncthing's discovery and relays (end-to-end encrypted). For faster direct
+transfers publish `-p 22000:22000/tcp -p 22000:22000/udp`. Its log lines start with the
+short device ID in brackets.
+
+**1. On the storage device** (any machine with podman or docker — a NAS, a home server, a
+laptop), get the script from the running container and start it with the server's device ID:
+
+```bash
+podman exec cantorhub /app/sicherung-geraet.sh            # prints the server's device ID
+podman exec cantorhub cat /app/sicherung-speicherseite.sh > sicherung-speicherseite.sh
+# copy it to the storage device, then there:
+bash sicherung-speicherseite.sh SERVER-ID [TARGET-DIR] [--verschluesselt]
+```
+
+It starts a container `cantorhub-sicherung` (`syncthing/syncthing:2`) with a **receive-only**
+folder in `TARGET-DIR/cantorhub` (default `~/cantorhub-sicherung`) and **staggered versioning
+for one year**: every replaced or deleted file — including each earlier database copy — is kept
+in `.stversions/`. That is what makes the mirror a backup; without versioning a deletion on the
+server would simply be mirrored. The script ends by printing the command for step 2.
+
+**2. On the server**, accept the device; it shows up under „Wartende Geraete" a minute or two
+after step 1:
+
+```bash
+podman exec cantorhub /app/sicherung-geraet.sh                    # status, waiting devices
+podman exec cantorhub /app/sicherung-geraet.sh DEVICE-ID           # accept, plain files
+podman exec cantorhub /app/sicherung-geraet.sh DEVICE-ID PASSWORD  # accept, encrypted
+podman exec cantorhub /app/sicherung-geraet.sh --entfernen DEVICE-ID
+```
+
+**Plain or encrypted?** The backup holds every member's personal data and the secret key. On a
+device you control, plain is simplest — the copy can be started as it is. On a device someone
+else runs (a friend's NAS), use `--verschluesselt` in step 1 and a password in step 2: the
+device then only ever stores encrypted files. **Keep the password somewhere safe** — without it
+the backup is worthless.
+
+An existing Syncthing installation (desktop app, NAS package) works too: add the server's
+device ID as a remote device, accept it on the server, accept the folder „CantorHub" offered
+to you as **Receive Only** (or *Receive Encrypted*), and turn on **staggered file versioning**
+for it.
+
+### Restoring
+
+Work on a **copy** of the mirrored folder — the receive-only folder itself must stay untouched,
+and a portal started on it would change it:
+
+```bash
+cp -a ~/cantorhub-sicherung/cantorhub ~/cantorhub-wiederhergestellt
+# encrypted? decrypt instead of copying:
+podman run --rm -e PUID=0 -e PGID=0 \
+    -v ~/cantorhub-sicherung/cantorhub:/verschluesselt:ro,Z -v ~/cantorhub-wiederhergestellt:/klar:Z \
+    docker.io/syncthing/syncthing:2 decrypt /verschluesselt --to=/klar --password=PASSWORD
+
+podman run -d --name cantorhub -p 8000:8000 -v ~/cantorhub-wiederhergestellt:/data:Z \
+    -e DATABASE_URL=sqlite:////data/sicherung/cantorhub.sqlite3 -e VEREINS_URL=… \
+    ghcr.io/hgruber/cantorhub:latest
+```
+
+That is a running portal with the state of the last copy. An older state lies in `.stversions/`
+of the storage device. A portal running on its own copy does not back itself up
+(`sicherung` refuses and says so). The way back to MariaDB is Django's own
+`dumpdata`/`loaddata`; there is no dedicated tool for it.
 
 ## License
 

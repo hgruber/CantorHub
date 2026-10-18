@@ -53,8 +53,11 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 # dass intern/replacements.py:format_datetime auf englische Monatsnamen zurueck-
 # fiel. Deshalb erst die Zeile schreiben, dann generieren. MonatsnamenTest in
 # intern/tests.py haelt das fest.
+#
+# syncthing spiegelt das Datenverzeichnis samt Datenbank-Sicherung auf ein
+# anderes Geraet (start.sh, "Backup" in INSTALL.md).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx locales tzdata libmariadb3 && \
+    nginx locales tzdata libmariadb3 syncthing && \
     echo 'de_DE.UTF-8 UTF-8' > /etc/locale.gen && \
     locale-gen && \
     echo 'LANG=de_DE.UTF-8' > /etc/default/locale && \

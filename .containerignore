@@ -9,6 +9,9 @@
 /media/
 /static/
 /tiles/
+/sicherung/
+/syncthing/
+/.stignore
 /db.sqlite3
 *.sqlite3
 *.sqlite3-journal

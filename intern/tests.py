@@ -7521,3 +7521,64 @@ class SmtpZugangTest(SimpleTestCase):
         from intern.smtp_zugang import anmeldung_pruefen, zusammengefuehrt
         werte = zusammengefuehrt(self.ALT, {"EMAIL_HOST": "127.0.0.1", "EMAIL_PORT": "1"})
         self.assertIn("nicht erreichbar", anmeldung_pruefen(werte))
+
+
+class SicherungTest(SimpleTestCase):
+    """Die Datenbank-Sicherung nach sicherung/ (intern/sicherung.py)."""
+
+    def test_faellig(self):
+        from datetime import datetime, timedelta
+
+        from intern.sicherung import faellig
+        jetzt = datetime(2026, 10, 18, 12, 0)
+        self.assertTrue(faellig(None, jetzt, 24))
+        self.assertFalse(faellig(jetzt - timedelta(hours=23), jetzt, 24))
+        self.assertTrue(faellig(jetzt - timedelta(hours=24), jetzt, 24))
+        self.assertFalse(faellig(None, jetzt, 0), msg="0 schaltet ab")
+
+    def test_stand_lesen(self):
+        from datetime import datetime
+
+        from intern.sicherung import lese_stand
+        self.assertEqual(lese_stand('{"zeitpunkt": "2026-10-18T03:00:00"}'),
+                         datetime(2026, 10, 18, 3, 0))
+        self.assertIsNone(lese_stand("kaputt"))
+        self.assertIsNone(lese_stand("{}"))
+
+    def test_modellauswahl(self):
+        # Jede Tabelle genau einmal, M2M- und filer-Erbtabellen dabei,
+        # Sitzungen nicht.
+        from django.apps import apps
+
+        from intern.sicherung import zu_sichernde_modelle
+        tabellen = [m._meta.db_table
+                    for m in zu_sichernde_modelle(apps.get_models(include_auto_created=True))]
+        self.assertEqual(len(tabellen), len(set(tabellen)))
+        self.assertNotIn("django_session", tabellen)
+        for tabelle in ("intern_user", "intern_user_groups", "filer_file", "filer_image",
+                        "intern_konfiguration", "django_content_type"):
+            self.assertIn(tabelle, tabellen)
+
+    def test_ziel_alias_im_datenverzeichnis(self):
+        from django.conf import settings
+
+        from intern.sicherung import ALIAS, verzeichnis
+        ziel = settings.DATABASES[ALIAS]
+        self.assertEqual(ziel["ENGINE"], "django.db.backends.sqlite3")
+        self.assertEqual(str(ziel["NAME"]), str(verzeichnis() / "cantorhub.sqlite3.tmp"))
+
+    def test_seed_nur_in_der_portal_datenbank(self):
+        # SimpleTestCase verbietet DB-Zugriff: liefe _seed_config für den
+        # Sicherungs-Alias weiter, schlüge der Test fehl.
+        from intern.apps import _seed_config
+        _seed_config(sender=None, using="sicherung")
+
+    def test_stignore_laesst_schluessel_und_live_db_aus(self):
+        # Der Geräteschlüssel des Servers gehört nicht auf ein Speichergerät,
+        # eine laufende SQLite-Datei nicht in eine Spiegelung.
+        from django.conf import settings
+        start = (Path(settings.BASE_DIR) / "start.sh").read_text()
+        block = start.split("/.stignore\" <<'EOF'", 1)[1].split("\nEOF", 1)[0]
+        zeilen = block.splitlines()
+        for muster in ("/syncthing", "/db.sqlite3", "/db.sqlite3-*", "/sicherung/*.tmp*"):
+            self.assertIn(muster, zeilen)

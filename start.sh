@@ -81,6 +81,55 @@ sys.exit(0 if is_ejabberd_configured() else 1)
 # der ejabberd_bot, weil das Projekt keinen Scheduler hat.
 neustart_bei_absturz python manage.py send_auftritt_erinnerungen --loop &
 
+# Backup: der Datenbankstand als SQLite-Datei nach sicherung/ im
+# Datenverzeichnis, alle SICHERUNG_STUNDEN (Konfiguration, 0 = aus). Danach ist
+# das Datenverzeichnis allein das ganze Backup ("Backup" in INSTALL.md).
+neustart_bei_absturz python manage.py sicherung --loop &
+
+# Syncthing spiegelt das Datenverzeichnis auf die Geraete, die der Betreiber
+# mit sicherung-geraet.sh annimmt; solange keines angenommen ist, teilt es
+# nichts. Nur im Container: in der Entwicklung ist das Datenverzeichnis der
+# Checkout selbst.
+if [ "${DEBUG}" != "1" ] && command -v syncthing >/dev/null; then
+    ST_HOME="${CANTORHUB_DATA}/syncthing"
+    # Was nicht mitgeht. Nur angelegt, wenn sie fehlt — eigene Zeilen bleiben.
+    if [ ! -e "${CANTORHUB_DATA}/.stignore" ]; then
+        cat > "${CANTORHUB_DATA}/.stignore" <<'EOF'
+// Angelegt von start.sh; eigene Zeilen duerfen dazu.
+// Schluessel und Zertifikat dieses Servers:
+/syncthing
+// Kachelcache, jederzeit neu ladbar:
+/tiles
+// Eine laufende SQLite-Datenbank; ihre konsistente Kopie liegt in sicherung/:
+/db.sqlite3
+/db.sqlite3-*
+// Halbfertige Sicherungen:
+/sicherung/*.tmp*
+// Quellen des einmaligen Altdaten-Imports:
+/migration
+EOF
+    fi
+    if [ ! -f "${ST_HOME}/config.xml" ]; then
+        syncthing generate --home="${ST_HOME}" --no-default-folder \
+            --skip-port-probing >/dev/null
+    fi
+    # Ohne neustart_bei_absturz: syncthing hat einen eigenen Waechter, der es
+    # nach einem Absturz und nach Konfigurationsaenderungen neu startet.
+    syncthing serve --home="${ST_HOME}" --no-browser --no-upgrade &
+    (
+        st() { syncthing cli --home="${ST_HOME}" "$@"; }
+        for _ in $(seq 60); do st show system >/dev/null 2>&1 && break; sleep 2; done
+        # sendonly: nichts, was auf einem Speichergeraet geschieht, wirkt zurueck.
+        # Den Typ nimmt syncthing nur beim Anlegen zuverlaessig an.
+        if ! st config folders list | grep -qx cantorhub; then
+            st config folders add --id cantorhub --label CantorHub \
+                --path "${CANTORHUB_DATA}" --type sendonly
+        fi
+        echo "Syncthing: Geraete-ID $(st show system \
+            | python -c 'import json, sys; print(json.load(sys.stdin)["myID"])')"
+    ) &
+fi
+
 if [ "${DEBUG}" = "1" ]; then
     python manage.py runserver 0.0.0.0:8001
 else
