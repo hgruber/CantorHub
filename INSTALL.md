@@ -8,8 +8,10 @@ PHP portal is described in `migration.md` (history only — it has run).
 
 The container image is self-contained: application code, collected static files, nginx and its
 configuration all live inside it, and it carries its version number. Nothing is bind-mounted
-except **one volume for the changing data** (`/data`). Inside the container, `start.sh` applies
-pending migrations, starts the background jobs and then runs nginx (port 8000) in front of
+except **one volume for the changing data** (`/data`) — which, together with the daily database
+copy, is also the whole backup (see „Backup“). Inside the container, `start.sh` applies
+pending migrations, starts the background jobs (among them that copy and the built-in
+Syncthing) and then runs nginx (port 8000) in front of
 gunicorn (three worker processes with four threads each — the threads matter because every file
 under `/media/` is checked by a Django subrequest, and short requests would otherwise wait
 behind a page being rendered).
@@ -34,6 +36,11 @@ podman run -d --name cantorhub -p 8000:8000 \
 call and stores it (see below). If set, it is written into the database on every start and wins
 over the stored value. Without `DATABASE_URL` the portal falls back to SQLite in `/data` — fine
 for a test instance, not for production.
+
+Port 8000 is the only one the portal needs. The built-in Syncthing reaches the backup devices
+without a published port; for faster direct transfers add `-p 22000:22000/tcp -p
+22000:22000/udp`, or `-p 127.0.0.1:22001:22000/tcp` when the backup device is a Syncthing on
+the same host (see „Backup“).
 
 A throwaway demo needs neither: `podman run --rm -p 8000:8000 cantorhub` starts on an empty
 SQLite inside the container, `http://localhost:8000/` leads straight into the first-run setup,
@@ -115,6 +122,7 @@ no `git pull` on the server, and `nginx.conf` is no longer a special case. The v
 untouched by an update. Updating is a deliberate step, because the start applies migrations:
 
 ```bash
+podman exec cantorhub python manage.py sicherung  # a fresh copy before the migrations run
 podman pull ghcr.io/hgruber/cantorhub:latest
 systemctl restart container-cantorhub.service     # or: podman rm -f cantorhub && podman run …
 podman exec cantorhub nginx -T | grep real_ip     # verify what is actually loaded
@@ -453,7 +461,9 @@ transfers publish `-p 22000:22000/tcp -p 22000:22000/udp`. Its log lines start w
 short device ID in brackets.
 
 **1. On the storage device** (any machine with podman or docker — a NAS, a home server, a
-laptop), get the script from the running container and start it with the server's device ID:
+laptop), get the script from the running container and start it with the server's device ID.
+The page `/intern/sicherung/` shows both lines with the ID already filled in; on the command
+line:
 
 ```bash
 podman exec cantorhub /app/sicherung-geraet.sh            # prints the server's device ID

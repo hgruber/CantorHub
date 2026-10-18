@@ -68,6 +68,10 @@ And besides:
   for your audience. Replace the shipped page with your own whenever you like.
 - **Phone sync** — the member list as an address book (CardDAV) and the events as a calendar
   (CalDAV), both switched off until you turn them on.
+- **Backup built in** — once a day the portal copies its database into the data volume, so
+  that one folder is the whole backup and starts as a portal again. A built-in
+  [Syncthing](https://syncthing.net/) mirrors it to a NAS, a home server or a laptop —
+  encrypted, if the device is not yours. You accept the device with a click; no port to open.
 - **Your look** — name, logo and accent colour are settings, not code.
 - Light and dark theme, made for phones as much as for the desktop.
 
@@ -96,8 +100,9 @@ and then. They will need:
   certificate. Without it, passwords travel in plain text.
 - **A mail account** the portal may send from — for invitations, password resets and gig
   reminders.
-- **Backups** of the data volume (and of the database, if you use MariaDB instead of the
-  built-in SQLite).
+- **A second device for the backup**, ideally outside the server's building — a NAS or a PC
+  with Podman, Docker or the Syncthing app. The portal does the copying; one script sets the
+  device up, and you accept it on the page „Sicherung“.
 - **Updates** — pull the new image and restart; the database is migrated on start.
 
 All of this is described step by step in [INSTALL.md](INSTALL.md). Once it runs, the daily work
