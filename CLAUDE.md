@@ -2,8 +2,9 @@
 
 Guidance for Claude Code (claude.ai/code) when working in this repository. It is the
 **developer** entry point: a map of the code, the rules that are not visible from any single
-file, and pointers to the topic documents. Running and configuring a deployment is `README.md`;
-the one-time migration off the legacy PHP portal, which has run, is recorded in `migration.md`.
+file, and pointers to the topic documents. `README.md` is the public front page for choirs
+considering CantorHub (screenshots in `docs/screenshots/`); running and configuring a
+deployment is `INSTALL.md`; the one-time migration off the legacy PHP portal, which has run, is recorded in `migration.md`.
 
 **Language:** this file must be written strictly in English. Do not add German prose; code
 identifiers and string literals may remain in their original form. Note that the domain
@@ -48,7 +49,7 @@ podman run -p 8000:8000 -v cantorhub-data:/data \
 ```
 
 The management commands an operator runs (reminders, re-confirmation mails, cleanup jobs,
-ejabberd admin) are listed in `README.md`.
+ejabberd admin) are listed in `INSTALL.md`.
 
 ## Where things are documented
 
@@ -128,7 +129,7 @@ counterpart for the SMTP access: log in with the new values before saving — se
 installation: groups, standard folders, first administrator, first settings, the start page
 „Aktuell“, the help articles from `intern/hilfe/`, the fallback avatars from
 `intern/avatare_ersatz/` and optional sample data, behind
-`/einrichtung/`, open to whoever comes first — see `README.md`),
+`/einrichtung/`, open to whoever comes first — see `INSTALL.md`),
 `middleware.py` (the throttled session refresh, see
 `docs/architecture.md`, the privacy gate for access without membership, see `docs/members.md`,
 and the redirect to `/einrichtung/` while no superuser exists, after which it fixes the accepted
@@ -226,7 +227,7 @@ reasoning where it matters.
   the commit message. Three hashes for a group, never two: `## Added` is a release heading and
   would reach the portal as a card without a date. `ChangelogTest` guards the format the check
   parses, `AuslieferungenDateiTest` the group structure and the sentence rule, the release
-  steps and the escape hatch are in `README.md`.
+  steps and the escape hatch are in `INSTALL.md`.
 - **All tests are `SimpleTestCase`.** A `TestCase` used to build a test database through the data
   migration `0003_import`, which needed the legacy MySQL server; that file is empty now, but the
   rule stands until it is lifted deliberately (`docs/technical-debt.md`). Keep logic free of DB

@@ -3,7 +3,7 @@
 # Die Pins in requirements.txt bleiben exakt, damit jedes Abbild reproduzierbar
 # ist; dieser Lauf sorgt dafuer, dass ein Sicherheits-Patch trotzdem auffaellt.
 # Uebernommen wird ein Update erst mit dem Merge, ausgeliefert erst mit dem
-# naechsten Versions-Tag (siehe README.md, „Updating“).
+# naechsten Versions-Tag (siehe INSTALL.md, „Updating“).
 
 version: 2
 updates:

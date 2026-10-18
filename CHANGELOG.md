@@ -5,12 +5,16 @@ Alle nennenswerten Änderungen an diesem Projekt stehen in dieser Datei, die jü
 Das Format folgt [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), die Auslieferungen
 folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sagt in höchstens
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
-freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `README.md`.
+freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
 ## Unveröffentlicht
 
 ### Geändert
 
+- Die Betriebsanleitung heißt jetzt `INSTALL.md`; `README.md` stellt CantorHub mit Screenshots
+  und dem Ein-Befehl-Start vor. Neu dokumentiert ist, dass die Ersteinrichtung über `https://`
+  oder `localhost` laufen muss, weil der Browser über `http://` mit bloßer IP-Adresse das
+  Anmelde-Cookie verwirft.
 - Zu jedem Versions-Tag legt der Workflow nach dem Abbild auch das GitHub-Release an, mit dem
   Changelog-Abschnitt als Text; Vorabversionen sind als solche markiert.
 

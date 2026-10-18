@@ -10,7 +10,7 @@
 # GitHub-Release des Tags an, mit dem Changelog-Abschnitt als Text.
 #
 # Der Server zieht neue Fassungen von Hand (podman pull + Neustart), siehe
-# README.md, „Updating“.
+# INSTALL.md, „Updating“.
 
 name: Abbild
 

@@ -2,7 +2,7 @@
 
 How a request reaches Django, what Django assumes about the machinery in front of it, and
 where the runtime knobs live. The operator-facing side of the same subject — what to put
-into haproxy and nginx, and how to verify it — is in `README.md`.
+into haproxy and nginx, and how to verify it — is in `INSTALL.md`.
 
 ## Request flow
 
@@ -103,7 +103,7 @@ queued behind each other on three worker processes. Measured on the media check:
 
 `intern.middleware.Ersteinrichtung` (listed right after `SecurityMiddleware`) redirects every
 request except `/einrichtung/` and `/static/` to the first-run setup while the database has no
-superuser — a new installation, see `README.md`, „First start on an empty database". Until then
+superuser — a new installation, see `INSTALL.md`, „First start on an empty database". Until then
 `ALLOWED_HOSTS` is `["*"]` (set by `InternConfig.ready()` when no address is configured); on the
 first request after the setup each worker replaces it with the hosts of the stored address
 (`einrichtung.hosts_festlegen`). That is why it sits before `CommonMiddleware`, which checks the

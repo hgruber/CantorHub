@@ -2,7 +2,7 @@
 
 Everything in this file exists for the single changeover from the old PHP portal to CantorHub.
 **Once the final migration has run, this file and the machinery it describes can be deleted** —
-see the checklist at the end. Nothing here is relevant to running CantorHub, which is `README.md`,
+see the checklist at the end. Nothing here is relevant to running CantorHub, which is `INSTALL.md`,
 or to developing it, which is `CLAUDE.md`.
 
 ## Status
@@ -123,7 +123,7 @@ one piece:
   in October 2026; the file stays as a placeholder because the chain hangs off it;
 - ~~the `pymysql` line in `requirements.txt`~~ — removed in October 2026;
 - `/data/migration/` in the volume (data only, no code);
-- this file, and the references to it in `README.md` and `CLAUDE.md`.
+- this file, and the references to it in `INSTALL.md` and `CLAUDE.md`.
 
 Then also:
 
@@ -135,4 +135,4 @@ Then also:
 
 ~~**One thing has to be built before `0003_import` can go**~~ — built in October 2026: the
 permission groups, the standard folders and the first administrator of a new installation come
-from the first-run setup (`intern/einrichtung.py`, `/einrichtung/`; see `README.md`).
+from the first-run setup (`intern/einrichtung.py`, `/einrichtung/`; see `INSTALL.md`).
