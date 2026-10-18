@@ -489,6 +489,25 @@ device ID as a remote device, accept it on the server, accept the folder „Cant
 to you as **Receive Only** (or *Receive Encrypted*), and turn on **staggered file versioning**
 for it.
 
+### Syncthing on the container host itself
+
+If the storage side is a Syncthing on the same machine as the container, the two do **not**
+find each other directly: local discovery does not cross into the container network, and the
+address announced globally (public IP, port 22000) leads nowhere — or to the host's own
+Syncthing, which listens on 22000 itself. The connection then runs through a public relay,
+out to the internet and back: encrypted, but throttled, so the first sync of `media/` can take
+hours. Give the host the short way instead:
+
+1. Publish the container's sync port on loopback only, under a free port:
+   `-p 127.0.0.1:22001:22000/tcp` in the `podman run` of `cantorhub`.
+2. In the host's Syncthing, edit the device „CantorHub" → *Advanced* → *Addresses*:
+   `tcp://127.0.0.1:22001, dynamic` (`dynamic` stays as the fallback).
+
+One side dialling the other is enough. The device should then show `127.0.0.1:22001` as its
+connection, not a relay. Keep in mind that a copy on the same machine guards against mistakes
+and deletions, not against losing the machine: let the host's Syncthing pass the folder on to a
+device elsewhere, so only that one link crosses the internet.
+
 ### Restoring
 
 Work on a **copy** of the mirrored folder — the receive-only folder itself must stay untouched,
