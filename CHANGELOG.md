@@ -36,6 +36,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 - Die Seite „Sicherung“ nennt die Einstellung jetzt wie Syncthing selbst „Stufenweise
   Dateiversionierung“ statt „Gestaffelte“.
+- XMPP-Brücke: Nach einem Neustart der Datenbank (oder wenn sie eine ruhende Verbindung trennt)
+  blieb der Bot bei „Server has gone away“ hängen; Forenbeiträge und Reaktionen erreichten die
+  Chat-Räume erst nach einem Neustart des Containers wieder. Er baut die Verbindung jetzt selbst
+  neu auf.
 
 ## v1.0.11 — 2026-10-18
 

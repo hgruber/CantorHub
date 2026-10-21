@@ -166,6 +166,10 @@ The bot never exits on its own except to pick up new credentials:
   failure it logs one line and **waits** for different credentials in `Konfiguration` instead of
   giving up (it used to exit with 0, and `start.sh` then left it down until the next container start)
 - **Unhandled exceptions**: caught in the `run()` event loop, bot reconnects with a fresh event loop
+- **Database restart / `wait_timeout`**: every `_db_*` function (and `_configure_room`) is wrapped in
+  `_frische_verbindung`, which calls `close_old_connections()` first. `asyncio.to_thread()` workers
+  each hold their own Django connection; without this a connection dropped by MariaDB stayed dead
+  and every relay cycle failed with "Server has gone away" until the container restarted
 - **Schedule cleanup**: `_cancel_all_schedules()` clears all slixmpp scheduled events before reconnecting to avoid `ValueError: There is already a scheduled event of name: Whitespace Keepalive`
 
 ### Credentials and restarts

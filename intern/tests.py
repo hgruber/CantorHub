@@ -6912,6 +6912,39 @@ class RelayCursorTest(SimpleTestCase):
             self.assertIsNone(lese_relay_cursor(pfad))
 
 
+class BotDbVerbindungTest(SimpleTestCase):
+    """Jeder DB-Zugriff des Bots verwirft vorher eine tote Verbindung seines
+    Threads; sonst bleibt die Brücke nach einem Datenbank-Neustart dauerhaft
+    bei „Server has gone away“ hängen."""
+
+    def test_alle_db_funktionen_umhuellt(self):
+        from intern.management.commands import ejabberd_bot
+
+        db_funktionen = [
+            wert for name, wert in vars(ejabberd_bot).items() if name.startswith("_db_")
+        ]
+        db_funktionen.append(ejabberd_bot.CantorBot._configure_room)
+        self.assertGreater(len(db_funktionen), 5)
+        for funktion in db_funktionen:
+            with self.subTest(funktion.__name__):
+                self.assertTrue(hasattr(funktion, "__wrapped__"))
+
+    def test_schliesst_vor_der_abfrage(self):
+        from unittest.mock import patch
+        from intern.management.commands.ejabberd_bot import _frische_verbindung
+
+        reihenfolge = []
+
+        def abfrage(x):
+            reihenfolge.append("abfrage")
+            return x
+
+        with patch("django.db.close_old_connections",
+                   side_effect=lambda: reihenfolge.append("schliessen")):
+            self.assertEqual(_frische_verbindung(abfrage)(7), 7)
+        self.assertEqual(reihenfolge, ["schliessen", "abfrage"])
+
+
 class XmppReaktionEingangTest(SimpleTestCase):
     """Reaktionen (XEP-0444) tragen kein <body>; slixmpp meldet sie nur über das
     ``reactions``-Event von xep_0444, nie über groupchat_message. Der Bot muss sie

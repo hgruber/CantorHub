@@ -23,6 +23,7 @@ SynchronousOnlyOperation errors.
 """
 
 import asyncio
+import functools
 import logging
 import os
 import time
@@ -71,6 +72,24 @@ def _warte_bis(bedingung):
         time.sleep(ZUGANG_PRUEFEN_SEKUNDEN)
 
 
+def _frische_verbindung(func):
+    """Verwirft vor dem DB-Zugriff eine tote Verbindung des aufrufenden Threads.
+
+    asyncio.to_thread() nutzt Worker-Threads, und Django haelt je Thread eine
+    eigene Verbindung. Trennt MariaDB sie (Neustart, wait_timeout), scheitert
+    ohne close_old_connections() jeder weitere Lauf mit "Server has gone away".
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        from django.db import close_old_connections
+
+        close_old_connections()
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@_frische_verbindung
 def _db_ensure_rooms(joined_rooms):
     """Synchronous DB query: return the forums whose MUC room still needs to be
     joined, and the set of room JIDs of all active forums."""
@@ -93,6 +112,7 @@ def _db_ensure_rooms(joined_rooms):
     return to_join, aktive
 
 
+@_frische_verbindung
 def _db_init_relay_cursor():
     """Highest Mitteilung id at startup — forum messages above this get relayed
     to MUC; older ones are treated as already delivered."""
@@ -124,6 +144,7 @@ def _relay_cursor_pfad():
     return settings.DATEN / "xmpp_relay_cursor"
 
 
+@_frische_verbindung
 def _db_pending_forum_messages(after_id):
     """Forum-originated messages (a local sender, no XMPP stanza id) newer than
     after_id that belong to an active forum with a MUC room. Returns a list of
@@ -152,6 +173,7 @@ def _db_pending_forum_messages(after_id):
     return result
 
 
+@_frische_verbindung
 def _db_store_message(room_jid, body, sender_jid, stanza_id):
     """Synchronous DB write: store an inbound MUC message as a Mitteilung."""
     from intern.models import Forum, Mitteilung, User
@@ -214,6 +236,7 @@ def _db_store_message(room_jid, body, sender_jid, stanza_id):
 
 
 
+@_frische_verbindung
 def _db_invite_missing_users(room_jid):
     """Synchronous: invite active XMPP users who aren't in this room yet.
 
@@ -259,6 +282,7 @@ def _db_invite_missing_users(room_jid):
         )
 
 
+@_frische_verbindung
 def _db_capture_stanza_id(mitteilung_id, stanza_id):
     """Backfill the MUC-assigned stanza-id on a forum-originated Mitteilung once
     its CantorBot echo arrives, so reactions can target it. Only sets it when
@@ -273,6 +297,7 @@ def _db_capture_stanza_id(mitteilung_id, stanza_id):
         logger.exception("ejabberd_bot: failed to capture stanza_id for #%s", mitteilung_id)
 
 
+@_frische_verbindung
 def _db_store_xmpp_reaction(to_id, reactor_jid, emojis):
     """Apply an inbound XMPP reaction set to the Mitteilung whose stanza-id is
     ``to_id``. XEP-0444 replace semantics: the reactor's previous XMPP set for
@@ -309,6 +334,7 @@ def _db_store_xmpp_reaction(to_id, reactor_jid, emojis):
     )
 
 
+@_frische_verbindung
 def _db_dirty_reaction_candidates():
     """Forum messages whose web-reaction set changed and that have a known MUC
     stanza-id and room. Returns (mitteilung_id, muc_jid, to_id) tuples."""
@@ -324,6 +350,7 @@ def _db_dirty_reaction_candidates():
     )
 
 
+@_frische_verbindung
 def _db_clear_and_get_ranked(mitteilung_id):
     """Clear the dirty flag and return the union of web-origin reaction emojis for
     a message, ranked by frequency (most-reacted first, ties broken by earliest
@@ -633,6 +660,7 @@ class CantorBot:
             self._stdout.write(f"ejabberd_bot: joined {new_count} room(s).")
 
     @staticmethod
+    @_frische_verbindung
     def _configure_room(muc_jid, title, forum_pk):
         """Apply the standard CantorHub room options (enforced on every join)."""
         from intern.ejabberd import configure_room, set_room_vcard
