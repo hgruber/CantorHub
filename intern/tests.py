@@ -6512,6 +6512,454 @@ class RepertoireUploadTest(SimpleTestCase):
         self.assertIn("Kein Titel", antwort.content.decode())
 
 
+class WarteschlangenTest(SimpleTestCase):
+    """Charakterisierung der Wiedergabelisten, bevor der Umbau sie auf
+    Rollenzeilen umstellt: welche Titel in welcher Liste landen, wie der Typ
+    heißt und woher die URL kommt."""
+
+    class _QS:
+        def __init__(self, rows):
+            self._rows = rows
+
+        def values_list(self, *felder):
+            return iter(self._rows)
+
+    def _bauen(self, rows, bezeichnung="Chor Aufnahme"):
+        from intern.views.titel import _warteschlangen
+
+        with mock.patch(
+            "intern.views.titel.get_aufnahme_bezeichnung", return_value=bezeichnung
+        ):
+            return _warteschlangen(self._QS(rows))
+
+    def test_original_und_aufnahme(self):
+        listen = self._bauen(
+            [("Lied A", "Komponist", "filer_public/a.mp3", "filer_public/b.mp3")]
+        )
+        self.assertEqual([e["title"] for e in listen["originals"]], ["Lied A"])
+        self.assertEqual([e["title"] for e in listen["aufnahmen"]], ["Lied A"])
+        self.assertEqual(len(listen["all"]), 1)
+        self.assertEqual(listen["originals"][0]["type"], "Original")
+        self.assertEqual(listen["aufnahmen"][0]["type"], "Chor Aufnahme")
+        self.assertEqual(listen["all"][0]["type"], "Original")
+
+    def test_all_nimmt_original_vor_aufnahme(self):
+        listen = self._bauen([("Lied A", "", "filer_public/a.mp3", "filer_public/b.mp3")])
+        self.assertTrue(listen["all"][0]["url"].endswith("a.mp3"))
+
+    def test_nur_aufnahme(self):
+        listen = self._bauen([("Lied B", "", None, "filer_public/b.mp3")])
+        self.assertEqual(listen["originals"], [])
+        self.assertEqual(len(listen["aufnahmen"]), 1)
+        self.assertEqual(listen["all"][0]["type"], "Chor Aufnahme")
+
+    def test_ohne_datei_kein_eintrag(self):
+        listen = self._bauen([("Lied C", "", None, None)])
+        self.assertEqual(listen, {"originals": [], "aufnahmen": [], "all": []})
+
+    def test_komponist_fehlt_wird_leer(self):
+        listen = self._bauen([("Lied D", None, "filer_public/d.mp3", None)])
+        self.assertEqual(listen["originals"][0]["composer"], "")
+
+    def test_url_kommt_aus_dem_speicherpfad(self):
+        listen = self._bauen([("Lied E", "", "filer_public/e.mp3", None)])
+        self.assertTrue(listen["originals"][0]["url"].endswith("filer_public/e.mp3"))
+
+    def test_zaehlen(self):
+        from intern.views.titel import _warteschlangen_zaehlen
+
+        zaehler = _warteschlangen_zaehlen(
+            self._QS(
+                [
+                    ("filer_public/a.mp3", "filer_public/b.mp3"),
+                    (None, "filer_public/c.mp3"),
+                    (None, None),
+                ]
+            )
+        )
+        self.assertEqual(zaehler, {"originals": 1, "aufnahmen": 2, "all": 2})
+
+
+class RepertoireTabelleRollenTest(SimpleTestCase):
+    """Charakterisierung der drei Datei-Renderer der Liederliste."""
+
+    def _tabelle(self):
+        from intern.tables import RepertoireTabelle
+
+        return RepertoireTabelle([])
+
+    def test_pdf_ohne_pfad_leer(self):
+        record = SimpleNamespace(pdf_pfad=None, titel="A")
+        self.assertEqual(self._tabelle().render_pdf(record), "")
+
+    def test_pdf_verlinkt(self):
+        record = SimpleNamespace(pdf_pfad="filer_public/n.pdf", titel="A")
+        html = str(self._tabelle().render_pdf(record))
+        self.assertIn("file-icon-btn--pdf", html)
+        self.assertIn("filer_public/n.pdf", html)
+        self.assertIn("Notenblatt: A", html)
+
+    def test_noten_verlinkt(self):
+        record = SimpleNamespace(noten_pfad="filer_public/n.mscz", titel="A")
+        html = str(self._tabelle().render_noten(record))
+        self.assertIn("file-icon-btn--notes", html)
+        self.assertIn("filer_public/n.mscz", html)
+        self.assertIn("Notensatz: A", html)
+
+    def test_original_und_aufnahme(self):
+        record = SimpleNamespace(
+            id=7,
+            titel="A",
+            komponist="K",
+            original_pfad="filer_public/a.mp3",
+            aufnahme_pfad="filer_public/b.mp3",
+        )
+        with mock.patch("intern.tables.get_vereinsname_kurz", return_value="Chor"), \
+                mock.patch("intern.tables.startseite_datei", return_value="/logo.svg"):
+            html = str(self._tabelle().render_original(record))
+        self.assertIn("audio-btn--original", html)
+        self.assertIn("audio-btn--jg", html)
+        self.assertIn('data-song-id="7"', html)
+        self.assertIn('data-song-id="r7"', html)
+        self.assertIn("filer_public/a.mp3", html)
+        self.assertIn("filer_public/b.mp3", html)
+
+    def test_original_ohne_pfade_leer(self):
+        record = SimpleNamespace(id=7, titel="A", komponist="", original_pfad=None, aufnahme_pfad=None)
+        self.assertEqual(self._tabelle().render_original(record), "")
+
+    def test_row_attrs_liefern_die_vier_urls(self):
+        from intern.tables import RepertoireTabelle
+
+        record = SimpleNamespace(
+            id=7, titel="A", komponist="",
+            original_pfad="filer_public/a.mp3",
+            aufnahme_pfad=None,
+            pdf_pfad="filer_public/n.pdf",
+            noten_pfad=None,
+        )
+        attrs = RepertoireTabelle.Meta.row_attrs
+        self.assertTrue(attrs["data-original-url"](record).endswith("filer_public/a.mp3"))
+        self.assertEqual(attrs["data-aufnahme-url"](record), "")
+        self.assertTrue(attrs["data-pdf-url"](record).endswith("filer_public/n.pdf"))
+        self.assertEqual(attrs["data-noten-url"](record), "")
+
+
+class UploadZuordnungTest(SimpleTestCase):
+    """Charakterisierung der heutigen Zuordnung einer hochgeladenen Datei zu
+    einem Lied: Endung entscheidet die Rolle, das Aufnahme-Präfix trennt
+    Original und eigene Aufnahme."""
+
+    def _lied(self):
+        lied = mock.Mock()
+        lied.titel = "Titel"
+        return lied
+
+    def _route(self, source_name, **ordner):
+        from intern.views import files
+
+        lied = self._lied()
+        datei = mock.Mock()
+        with mock.patch.object(
+            files, "_aufnahme_prefixes", return_value=("Chor - ", "Chor-")
+        ), mock.patch.object(
+            files, "_aufnahme_prefix_with_space", return_value="Chor - "
+        ), mock.patch.object(
+            files.folders, "repertoire", return_value=ordner.get("repertoire", 10)
+        ), mock.patch.object(
+            files.folders, "notensatz", return_value=ordner.get("notensatz", 12)
+        ), mock.patch.object(
+            files.folders, "pdf", return_value=ordner.get("pdf", 11)
+        ), mock.patch.object(
+            files.dateiablage, "systemablage", return_value="neu"
+        ) as ablage:
+            feld = files._route_and_rename_for_lied(lied, datei, source_name)
+        return feld, lied, ablage
+
+    def test_pdf_wird_notenblatt(self):
+        feld, lied, ablage = self._route("Irgendwas.pdf")
+        self.assertEqual(feld, "pdf")
+        ablage.assert_called_once()
+        self.assertEqual(ablage.call_args.args[1:], (11, "Titel.pdf"))
+        lied.save.assert_called_once_with(update_fields=["pdf"])
+
+    def test_notensatz(self):
+        feld, lied, ablage = self._route("Irgendwas.mscz")
+        self.assertEqual(feld, "noten")
+        self.assertEqual(ablage.call_args.args[1:], (12, "Titel.mscz"))
+
+    def test_audio_ohne_praefix_wird_original(self):
+        feld, lied, ablage = self._route("Irgendwas.mp3")
+        self.assertEqual(feld, "original")
+        self.assertEqual(ablage.call_args.args[1:], (10, "Titel.mp3"))
+
+    def test_audio_mit_praefix_wird_aufnahme(self):
+        feld, lied, ablage = self._route("Chor - Titel.mp3")
+        self.assertEqual(feld, "aufnahme")
+        self.assertEqual(ablage.call_args.args[1:], (10, "Chor - Titel.mp3"))
+
+    def test_unbekannte_endung(self):
+        feld, lied, ablage = self._route("Notizen.docx")
+        self.assertIsNone(feld)
+        self.assertFalse(ablage.called)
+
+    def test_assign_by_filename(self):
+        from intern.views import files
+
+        lied = self._lied()
+        with mock.patch.object(files, "_get_lied_by_filename", return_value=lied), \
+                mock.patch.object(files, "_aufnahme_prefixes", return_value=("Chor - ", "Chor-")):
+            files._assign_file_to_song("Titel.pdf", "f")
+        self.assertEqual(lied.pdf, "f")
+        lied.save.assert_called_once()
+
+    def test_assign_aufnahme(self):
+        from intern.views import files
+
+        lied = self._lied()
+        with mock.patch.object(files, "_get_lied_by_filename", return_value=lied), \
+                mock.patch.object(files, "_aufnahme_prefixes", return_value=("Chor - ", "Chor-")):
+            files._assign_file_to_song("Chor - Titel.mp3", "f")
+        self.assertEqual(lied.aufnahme, "f")
+
+    def test_assign_unbekannte_endung(self):
+        from intern.views import files
+
+        lied = self._lied()
+        with mock.patch.object(files, "_get_lied_by_filename", return_value=lied):
+            files._assign_file_to_song("Notizen.docx", "f")
+        lied.save.assert_not_called()
+
+
+class KonzertExportTest(SimpleTestCase):
+    """Charakterisierung der ZIP-Namen der beiden Konzert-Downloads."""
+
+    class _Konzerte:
+        def __init__(self, rows):
+            self._rows = rows
+
+        def filter(self, **kwargs):
+            return self
+
+        def select_related(self, *args):
+            return self
+
+        def order_by(self, *args):
+            return self
+
+        def __iter__(self):
+            return iter(self._rows)
+
+    def _request(self):
+        from django.test import RequestFactory
+
+        request = RequestFactory().get("/x")
+        request.user = mock.Mock(is_authenticated=True)
+        return request
+
+    def _antwort_lesen(self, antwort):
+        import io
+        import zipfile
+
+        inhalt = b"".join(antwort.streaming_content)
+        return zipfile.ZipFile(io.BytesIO(inhalt))
+
+    def test_pdf_zip_namen(self):
+        import tempfile
+
+        from intern.views import termine
+
+        with tempfile.TemporaryDirectory() as d:
+            pfad = os.path.join(d, "x.pdf")
+            with open(pfad, "wb") as f:
+                f.write(b"%PDF")
+            k = SimpleNamespace(
+                position=1,
+                lied=SimpleNamespace(
+                    titel="Titel",
+                    pdf=SimpleNamespace(file=SimpleNamespace(path=pfad)),
+                    noten=None,
+                ),
+            )
+            with mock.patch(
+                "intern.views.termine.get_object_or_404",
+                return_value=SimpleNamespace(kurz="Konzert"),
+            ), mock.patch("intern.views.termine.Konzert.objects", self._Konzerte([k])):
+                antwort = termine.konzert_pdf_zip(self._request(), 1)
+            with self._antwort_lesen(antwort) as zf:
+                self.assertEqual(zf.namelist(), ["01 Titel.pdf"])
+
+    def test_noten_zip_namen(self):
+        import tempfile
+
+        from intern.views import termine
+
+        with tempfile.TemporaryDirectory() as d:
+            pfad = os.path.join(d, "x.mscz")
+            with open(pfad, "wb") as f:
+                f.write(b"x")
+            k = SimpleNamespace(
+                position=2,
+                lied=SimpleNamespace(
+                    titel="Zweites",
+                    pdf=None,
+                    noten=SimpleNamespace(file=SimpleNamespace(path=pfad)),
+                ),
+            )
+            with mock.patch(
+                "intern.views.termine.get_object_or_404",
+                return_value=SimpleNamespace(kurz="Konzert"),
+            ), mock.patch("intern.views.termine.Konzert.objects", self._Konzerte([k])):
+                antwort = termine.konzert_noten_zip(self._request(), 1)
+            with self._antwort_lesen(antwort) as zf:
+                self.assertEqual(zf.namelist(), ["02 Zweites.mscz"])
+
+    def test_ohne_datei_leeres_zip(self):
+        import tempfile
+
+        from intern.views import termine
+
+        with tempfile.TemporaryDirectory():
+            k = SimpleNamespace(
+                position=1,
+                lied=SimpleNamespace(titel="Titel", pdf=None, noten=None),
+            )
+            with mock.patch(
+                "intern.views.termine.get_object_or_404",
+                return_value=SimpleNamespace(kurz="Konzert"),
+            ), mock.patch("intern.views.termine.Konzert.objects", self._Konzerte([k])):
+                antwort = termine.konzert_pdf_zip(self._request(), 1)
+            with self._antwort_lesen(antwort) as zf:
+                self.assertEqual(zf.namelist(), [])
+
+
+class TitelSchreibpfadTest(SimpleTestCase):
+    """Charakterisierung der drei Titel-Schreibpfade: welche Datei in welchen
+    Ordner wandert und wann das Lied gespeichert bzw. gelöscht wird."""
+
+    def test_feld_ordner(self):
+        from intern.views import titel
+
+        with mock.patch.object(titel.folders, "repertoire", return_value=10), \
+                mock.patch.object(titel.folders, "pdf", return_value=11), \
+                mock.patch.object(titel.folders, "notensatz", return_value=12):
+            self.assertEqual(
+                titel._feld_ordner(),
+                {"original": 10, "aufnahme": 10, "pdf": 11, "noten": 12},
+            )
+
+    def test_titeldatei_ablegen(self):
+        from intern.views import titel
+
+        f = SimpleNamespace(original_filename="x.pdf", name="x.pdf", folder_id=None)
+        with mock.patch.object(titel.dateiablage, "systemablage", return_value="neu") as ablage:
+            ergebnis = titel._titeldatei_ablegen(f, "pdf", lambda: 11, "Titel")
+        self.assertEqual(ergebnis, "neu")
+        self.assertEqual(ablage.call_args.args[1:], (11, "Titel.pdf"))
+
+    def test_titeldatei_ablegen_aufnahme_mit_praefix(self):
+        from intern.views import titel
+
+        f = SimpleNamespace(original_filename="x.mp3", name="x.mp3", folder_id=None)
+        with mock.patch.object(titel, "_aufnahme_prefix_with_space", return_value="Chor - "), \
+                mock.patch.object(titel.dateiablage, "systemablage", return_value="neu") as ablage:
+            titel._titeldatei_ablegen(f, "aufnahme", lambda: 10, "Titel")
+        self.assertEqual(ablage.call_args.args[1:], (10, "Chor - Titel.mp3"))
+
+    class _Lied:
+        id = 1
+        titel = "Titel"
+        original_id = None
+        aufnahme_id = None
+        pdf_id = 7
+        noten_id = None
+
+        def __init__(self):
+            self.gespeichert = False
+
+        def save(self):
+            self.gespeichert = True
+
+    def _post(self, view, daten):
+        from django.test import RequestFactory
+
+        request = RequestFactory().post("/intern/titel/", daten)
+        request.user = mock.Mock(is_authenticated=True)
+        return request
+
+    def test_titel_edit_setzt_abgelegte_datei(self):
+        from intern.views import titel
+
+        lied = self._Lied()
+        instanz = mock.Mock()
+        form = mock.Mock()
+        form.is_valid.return_value = True
+        form.save.return_value = instanz
+        with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
+                mock.patch.object(titel, "LiedEditForm", return_value=form), \
+                mock.patch.object(titel, "File") as datei_klasse, \
+                mock.patch.object(titel, "_titeldatei_ablegen", return_value="neu"), \
+                mock.patch.object(titel, "redirect"):
+            titel.titel_edit(self._post(titel.titel_edit, {"pdf": "8"}), 1)
+        datei_klasse.objects.get.assert_called_once_with(pk=8)
+        self.assertEqual(instanz.pdf, "neu")
+        instanz.save.assert_called_once()
+
+    def test_titel_edit_laesst_unveraenderte_datei(self):
+        from intern.views import titel
+
+        lied = self._Lied()
+        form = mock.Mock()
+        form.is_valid.return_value = True
+        form.save.return_value = mock.Mock()
+        with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
+                mock.patch.object(titel, "LiedEditForm", return_value=form), \
+                mock.patch.object(titel, "_titeldatei_ablegen") as ablegen, \
+                mock.patch.object(titel, "redirect"):
+            titel.titel_edit(self._post(titel.titel_edit, {"pdf": "7"}), 1)
+        self.assertFalse(ablegen.called)
+
+    def test_titel_add_setzt_abgelegte_datei(self):
+        from intern.views import titel
+
+        lied = self._Lied()
+        form = mock.Mock()
+        form.is_valid.return_value = True
+        form.save.return_value = lied
+        with mock.patch.object(titel, "LiedEditForm", return_value=form), \
+                mock.patch.object(titel, "File") as datei_klasse, \
+                mock.patch.object(titel, "_titeldatei_ablegen", return_value="neu"), \
+                mock.patch.object(titel, "redirect"):
+            titel.titel_add(self._post(titel.titel_add, {"pdf_filer_id": "9"}))
+        datei_klasse.objects.get.assert_called_once_with(pk=9)
+        self.assertEqual(lied.pdf, "neu")
+        self.assertTrue(lied.gespeichert)
+
+    def test_titel_delete_loescht_wenn_frei(self):
+        from intern.views import titel
+
+        lied = mock.Mock()
+        lied.konzert_set.exists.return_value = False
+        lied.solist.exists.return_value = False
+        lied.dirigent.exists.return_value = False
+        with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
+                mock.patch.object(titel, "redirect") as weiter:
+            titel.titel_delete(self._post(titel.titel_delete, {}), 1)
+        lied.delete.assert_called_once()
+        self.assertEqual(weiter.call_args.args[0], "titel_list")
+
+    def test_titel_delete_verweigert_bei_verwendung(self):
+        from intern.views import titel
+
+        lied = mock.Mock()
+        lied.konzert_set.exists.return_value = True
+        with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
+                mock.patch.object(titel, "redirect") as weiter:
+            titel.titel_delete(self._post(titel.titel_delete, {}), 1)
+        lied.delete.assert_not_called()
+        self.assertEqual(weiter.call_args.args[0], "titel_edit")
+
+
 class WurzelUploadTest(SimpleTestCase):
     """Ohne Zielordner läge ein Upload auf oberster Ebene — das darf nur, wer
     Backstage sieht (Webmaster); alle anderen werden abgelehnt, bevor etwas
