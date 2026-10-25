@@ -692,6 +692,12 @@ class Lied(models.Model):
     noten = FilerFileField(
         null=True, blank=True, on_delete=models.SET_NULL, related_name="noten"
     )
+    # Der Ordner des Liedes unter Backstage/Repertoire. Der FK ist die Wahrheit,
+    # nicht der Ordnername: Lied.titel ist nicht eindeutig, und eine Umbenennung
+    # des Titels zieht den Ordner nach.
+    ordner = models.ForeignKey(
+        "filer.Folder", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     solist = models.ManyToManyField("User", related_name="solist")
     dirigent = models.ManyToManyField("User", related_name="dirigent")
     CHOICES = [("l", "l"), ("m", "m"), ("s", "s")]
@@ -753,6 +759,28 @@ class Konzert(models.Model):
 
     def __str__(self):
         return f"{self.position} - {self.termin.kurz} - {self.lied}"
+
+
+class LiedDatei(models.Model):
+    """Eine Datei eines Liedes mit ihrer Rolle.
+
+    Die Rolle ist ein Datum, kein Spaltenname: der Schlüssel stammt aus
+    ``intern/liedrollen.py``. ``unique_together`` hält je Lied eine Datei pro
+    Rolle; dieselbe ``filer.File`` darf an mehreren Liedern hängen.
+    """
+
+    lied = models.ForeignKey("Lied", on_delete=models.CASCADE, related_name="dateien")
+    datei = FilerFileField(on_delete=models.CASCADE, related_name="+")
+    rolle = models.CharField(max_length=20)
+
+    class Meta:
+        verbose_name_plural = "Lieddateien"
+        unique_together = (("lied", "rolle"),)
+
+    def __str__(self):
+        from .liedrollen import label
+
+        return f"{self.lied.titel} – {label(self.rolle)}"
 
 
 class Zusage(models.Model):

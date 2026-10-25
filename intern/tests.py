@@ -6344,6 +6344,83 @@ class DateiVerweiseTest(SimpleTestCase):
         self.assertFalse(feld.auto_now_add)
         self.assertFalse(feld.auto_now)
 
+    def test_lied_ordner_zeigt_auf_filer_ordner(self):
+        """Die Ordner-Achse: `Lied.ordner` hängt an filer.Folder und wird von
+        der Prüfung gegen filer.File nicht erfasst."""
+        from django.db.models import SET_NULL
+        from filer.models import Folder
+
+        from intern.models import Lied
+
+        feld = Lied._meta.get_field("ordner")
+        self.assertIs(feld.related_model, Folder)
+        self.assertTrue(feld.null)
+        self.assertEqual(feld.remote_field.on_delete, SET_NULL)
+
+    def test_lieddatei_ist_eine_datei_je_rolle(self):
+        from intern.models import LiedDatei
+
+        self.assertEqual(LiedDatei._meta.unique_together, (("lied", "rolle"),))
+
+
+class LiedrollenTest(SimpleTestCase):
+    """Das Register der Lied-Rollen ist vollständig und eindeutig — die eine
+    Quelle, aus der Modell, Tabelle, Filter und Audit-Labels lesen."""
+
+    def test_schluessel_sind_eindeutig(self):
+        from intern import liedrollen
+
+        self.assertEqual(len(liedrollen.SCHLUESSEL), len(set(liedrollen.SCHLUESSEL)))
+
+    def test_jede_rolle_hat_label_und_endungen(self):
+        from intern import liedrollen
+
+        for rolle in liedrollen.ROLLEN:
+            self.assertTrue(rolle.key)
+            self.assertTrue(rolle.label)
+            self.assertTrue(rolle.endungen)
+            self.assertTrue(all(e.startswith(".") and e == e.lower() for e in rolle.endungen))
+
+    def test_labels_decken_das_register(self):
+        from intern import liedrollen
+
+        self.assertEqual(set(liedrollen.LABELS), set(liedrollen.SCHLUESSEL))
+
+    def test_rolle_fuer_endung(self):
+        from intern import liedrollen
+
+        self.assertEqual(liedrollen.rolle_fuer_endung(".pdf"), "notenblatt")
+        self.assertEqual(liedrollen.rolle_fuer_endung("PDF"), "notenblatt")
+        self.assertEqual(liedrollen.rolle_fuer_endung(".mscz"), "notensatz")
+        self.assertEqual(liedrollen.rolle_fuer_endung(".mp3"), "original")
+        self.assertEqual(liedrollen.rolle_fuer_endung(".odt"), "text")
+        self.assertIsNone(liedrollen.rolle_fuer_endung(".docx"))
+        self.assertIsNone(liedrollen.rolle_fuer_endung(""))
+
+    def test_label_kennt_die_beschriftungen(self):
+        from intern import liedrollen
+
+        self.assertEqual(liedrollen.label("notenblatt"), "Notenblatt")
+        self.assertEqual(liedrollen.label("text"), "Liedtext")
+        self.assertEqual(liedrollen.label("unbekannt"), "unbekannt")
+
+
+class RollenzeileVerschmelzenTest(SimpleTestCase):
+    """Das Verschmelzen zweier Dateien hängt die Rollenzeile um; ohne den
+    Eintrag in DATEI_PK_VERWEISE nähme das Queryset-Delete die Zeile per
+    CASCADE mit. Ohne Datenbank bleibt das ein Pin am Mechanismus."""
+
+    def test_verweise_umhaengen_liest_das_register(self):
+        import inspect
+
+        from intern import dateiablage
+        from intern.models import LiedDatei
+        from intern.verwendung import DATEI_PK_VERWEISE, verweise_umhaengen
+
+        self.assertIn((LiedDatei, "datei"), DATEI_PK_VERWEISE)
+        self.assertIn("verweise_umhaengen", inspect.getsource(dateiablage.zusammenfuehren))
+        self.assertIn("DATEI_PK_VERWEISE", inspect.getsource(verweise_umhaengen))
+
 
 class OrdnerZyklusTest(SimpleTestCase):
     """Ein Ordner darf nicht in sich selbst oder einen eigenen Unterordner —

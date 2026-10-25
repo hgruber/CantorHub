@@ -15,7 +15,8 @@ Verweis bricht. Zwei Arten von Verweisen mit unterschiedlichem Verhalten:
 from django.db.models import Q
 from django.urls import reverse
 
-from .models import Artikel, Forum, Konfiguration, Lied, Termin, User
+from . import liedrollen
+from .models import Artikel, Forum, Konfiguration, Lied, LiedDatei, Termin, User
 
 # Konfigurationsschlüssel mit einer Filer-ID als Wert folgen dieser Konvention;
 # so werden künftige Dokumente automatisch mit erfasst (SATZUNG_FILE_ID, …).
@@ -32,10 +33,21 @@ _LIED_FELDER = {
 # Warnung (pk_verwendungen) und dem Umhängen beim Verschmelzen
 # (verweise_umhaengen). DateiVerweiseTest vergleicht sie mit allen FKs auf
 # filer.File; die Konfiguration hält ihre IDs als Text und kommt eigens dazu.
-DATEI_PK_VERWEISE = [(Lied, feld) for feld in _LIED_FELDER] + [
+DATEI_PK_VERWEISE = [(LiedDatei, "datei")] + [
+    (Lied, feld) for feld in _LIED_FELDER
+] + [
     (Forum, "bild"),
     (User, "avatar"),
 ]
+
+# Bis die vier Lied-Felder in Migration 0006 fallen: alter Feldname → Rollenschlüssel,
+# damit ein Lied nicht doppelt gemeldet wird, wenn beide Formen dieselbe Datei zeigen.
+_LIED_FELD_ROLLE = {
+    "original": "original",
+    "aufnahme": "aufnahme",
+    "pdf": "notenblatt",
+    "noten": "notensatz",
+}
 
 # Dasselbe für die Mehrfachverweise (M2M): sie lassen sich nicht per update()
 # umhängen, verweise_umhaengen() geht über die Zwischentabelle.
@@ -87,6 +99,18 @@ def pk_verwendungen(datei):
     """Verweise, die an der Datei-PK hängen (brechen beim Löschen dieser Zeile)."""
     eintraege = []
 
+    # Die Rollenzeile ist die neue Quelle. Der alte Lied-FK bleibt bis
+    # Migration 0006 als Rückfall und wird nur für Rollen gemeldet, die noch
+    # keine Zeile haben — sonst stünde dasselbe Lied zweimal in der Warnung.
+    rollen_zeilen = list(LiedDatei.objects.filter(datei=datei).select_related("lied"))
+    vorhanden = {(zeile.lied_id, zeile.rolle) for zeile in rollen_zeilen}
+    for zeile in rollen_zeilen:
+        eintraege.append({
+            "art": "lied",
+            "label": f"Lied „{zeile.lied.titel}“ ({liedrollen.label(zeile.rolle)})",
+            "url": reverse("titel_view", args=[zeile.lied.pk]),
+        })
+
     lied_filter = Q()
     for modell, feld in DATEI_PK_VERWEISE:
         if modell is Lied:
@@ -96,12 +120,14 @@ def pk_verwendungen(datei):
             bezeichnung
             for feld, bezeichnung in _LIED_FELDER.items()
             if getattr(lied, f"{feld}_id", None) == datei.pk
+            and (lied.pk, _LIED_FELD_ROLLE[feld]) not in vorhanden
         ]
-        eintraege.append({
-            "art": "lied",
-            "label": f"Lied „{lied.titel}“ ({', '.join(rollen)})",
-            "url": reverse("titel_view", args=[lied.pk]),
-        })
+        if rollen:
+            eintraege.append({
+                "art": "lied",
+                "label": f"Lied „{lied.titel}“ ({', '.join(rollen)})",
+                "url": reverse("titel_view", args=[lied.pk]),
+            })
 
     for forum in Forum.objects.filter(bild=datei):
         eintraege.append({
