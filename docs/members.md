@@ -284,3 +284,28 @@ stored `True` survive the service being switched off and on again. It is deliber
 `UserEditForm.Meta.fields` — a checkbox that was never rendered is absent from the POST, and
 `BooleanField` would turn that into a `False` that silently overwrites the member's wish.
 `mitglied_delete` leaves the flag alone when anonymising, for the same reason.
+
+## How phone numbers are stored
+
+The five number fields on `User` — `telefon`, `telefon_mobil`, `telefon_job`,
+`telefon_job_mobil`, `fax` — hold one shape only: the international one, with the country code
+in front (`+49 69 1234567`). Every member form rewrites what was typed on submit;
+`TelefonNormalisierungMixin` in `forms.py` sits on `MitgliedBeitrittForm` (and through it on
+`MitgliedAntragBestandForm`) and on `UserEditForm`, and the rules themselves live DB-free in
+`intern/telefon.py`. A number starting with `0` is completed with `TELEFON_LANDESVORWAHL`
+(default `+49`); an entry that cannot be read as a single number — a word, two numbers in one
+field, a local number without its area code — is a **form error** rather than a silently stored
+oddity. The model field carries no validator: the check needs the configured country code, and
+the catch-up command has to be able to write past it.
+
+Grouping is a reading aid, and only `+49` has rules in the code; every other country code is
+stored compact (`+41441234567`). Two imprecisions are deliberate and documented in the module:
+the handful of five-digit German area codes (`33xxx`, `35xxx`, `36xxx`, `38xxx`, `39xxx`) are
+split as four (`+49 3587 312345`), and an extension loses its hyphen (`069 1234567-21` becomes
+`+49 69 123456721`). **Only separators are ever set — never a digit changed.**
+
+Two ways in bypass the forms: `/admin/intern/user/<id>/change/` renders every editable field,
+because `UserAdmin` has no `fields`/`fieldsets`; and a restore (`wiederherstellung.py`) copies
+the rows of an older backup back unchanged. Both are reachable by maintainers only, and
+`manage.py telefonnummern_normalisieren` (see `INSTALL.md`) cleans up after either — with
+`--dry-run` first, because it writes past the signals and therefore leaves no audit-log trail.

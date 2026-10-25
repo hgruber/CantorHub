@@ -127,6 +127,9 @@ filter builder" in `docs/frontend.md`), `mitgliedschaft.py` (the two axes of bel
 access, the group „Mitglied" = club membership, plus the admission itself — guarded by
 `MitgliedschaftTest`, see `docs/members.md`), `avatare.py` (fallback avatar files and thumbnails, so lists do not
 load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TRIGGER_FIELDS`),
+`telefon.py` (the international shape every stored phone number is written in — the rules alone,
+without Django, used by `TelefonNormalisierungMixin` in `forms.py` and by
+`telefonnummern_normalisieren`; see „How phone numbers are stored" in `docs/members.md`),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup),
 `wiki_platzhalter.py` (the `{VEREINS_URL}`-style placeholders of articles — a whitelist, see
 `docs/articles.md`), `pdf.py`,

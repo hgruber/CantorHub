@@ -4877,6 +4877,110 @@ class LoginSperrhinweisTest(SimpleTestCase):
         self.assertFalse(self._formular(None).zugang_gesperrt)
 
 
+# ---------------------------------------------------------------------------
+# Telefonnummern
+# ---------------------------------------------------------------------------
+
+
+class TelefonnummerTest(SimpleTestCase):
+    """Normalisierung der Telefonfelder (intern/telefon.py) — DB-frei."""
+
+    def test_gruppierung_deutschland(self):
+        from intern.telefon import normalisiere
+        self.assertEqual(normalisiere("069 1234567"), "+49 69 1234567")
+        self.assertEqual(normalisiere("030 123456"), "+49 30 123456")
+        self.assertEqual(normalisiere("0170-1234567"), "+49 170 1234567")
+        self.assertEqual(normalisiere("01573 1234567"), "+49 1573 1234567")
+        self.assertEqual(normalisiere("0211 123456"), "+49 211 123456")
+        self.assertEqual(normalisiere("0202 123456"), "+49 202 123456")
+        self.assertEqual(normalisiere("06151 123456"), "+49 6151 123456")
+        self.assertEqual(normalisiere("0800 1234567"), "+49 800 1234567")
+
+    def test_eingabeformen_ergeben_dasselbe(self):
+        from intern.telefon import normalisiere
+        for roh in (
+            "0170 1234567", "0170-1234567", "0170/12 34 567", "(0170) 1234567",
+            "0049 170 1234567", "+49 170 1234567", "+49 (0)170 1234567",
+            "170 1234567",      # vergessene Verkehrsausscheidungsziffer
+        ):
+            self.assertEqual(normalisiere(roh), "+49 170 1234567", msg=roh)
+
+    def test_idempotent(self):
+        from intern.telefon import normalisiere
+        for roh in ("069 1234567", "01573 1234567", "06151 123456", "+41 44 123 45 67"):
+            einmal = normalisiere(roh)
+            self.assertEqual(normalisiere(einmal), einmal, msg=roh)
+
+    def test_fremdes_land_ohne_gruppierung(self):
+        # Ohne Nummernplan wird nicht geraten: Ziffern kompakt, nur die Trenner fallen.
+        from intern.telefon import normalisiere
+        self.assertEqual(normalisiere("+41 44 123 45 67"), "+41441234567")
+        self.assertEqual(normalisiere("+43 1 234567"), "+431234567")
+        self.assertEqual(normalisiere("+1 212 555 0123"), "+12125550123")
+
+    def test_konfigurierte_landesvorwahl(self):
+        from intern.telefon import normalisiere
+        self.assertEqual(normalisiere("0170 1234567", "+43"), "+431701234567")
+        self.assertEqual(normalisiere("044 1234567", "+41"), "+41441234567")
+        # Ein geleerter oder unsinniger Schlüssel darf kein Formular lahmlegen.
+        self.assertEqual(normalisiere("0221 1234567", ""), "+49 221 1234567")
+        self.assertEqual(normalisiere("0221 1234567", "unsinn"), "+49 221 1234567")
+
+    def test_leer_bleibt_leer(self):
+        from intern.telefon import normalisiere
+        self.assertEqual(normalisiere(""), "")
+        self.assertEqual(normalisiere("   "), "")
+        self.assertEqual(normalisiere(None), "")
+
+    def test_unlesbares_ist_none(self):
+        from intern.telefon import normalisiere
+        for roh in (
+            "keine", "Büro, Frau Schulz", "0170-1234567 (nur abends)",
+            "069 123, 0170 456",        # zwei Nummern in einem Feld
+            "12", "1234567",            # ohne Vorwahl nicht herstellbar
+            "++49170", "0170 123 456 789 012",
+        ):
+            self.assertIsNone(normalisiere(roh), msg=roh)
+
+    def test_laenge_passt_zum_modellfeld(self):
+        from intern.models import User
+        from intern.telefon import MAX_LAENGE, normalisiere
+        self.assertEqual(MAX_LAENGE, User._meta.get_field("telefon").max_length)
+        self.assertLessEqual(len(normalisiere("+49 170 123456789")), MAX_LAENGE)
+
+    def test_feldliste(self):
+        from intern.mitglied_felder import PRIVACY_FIELDS
+        from intern.telefon import FELDER
+        self.assertEqual(
+            set(FELDER),
+            {"telefon", "telefon_mobil", "telefon_job", "telefon_job_mobil", "fax"},
+        )
+        self.assertTrue(set(FELDER) <= set(PRIVACY_FIELDS))
+
+    def test_vorwahllaenge(self):
+        from intern.telefon import _de_vorwahllaenge
+        self.assertEqual(_de_vorwahllaenge("301234567"), 2)
+        self.assertEqual(_de_vorwahllaenge("2111234567"), 3)
+        self.assertEqual(_de_vorwahllaenge("1711234567"), 3)
+        self.assertEqual(_de_vorwahllaenge("15731234567"), 4)
+        self.assertEqual(_de_vorwahllaenge("6151123456"), 4)
+
+    def test_formular_meldet_unlesbare_nummer(self):
+        from intern.forms import TelefonNormalisierungMixin
+
+        class Probeformular(TelefonNormalisierungMixin, forms.Form):
+            telefon = forms.CharField(required=False)
+
+        with mock.patch("intern.app_settings.get_config", return_value="+49"):
+            form = Probeformular(data={"telefon": "0170/1234567"})
+            self.assertTrue(form.is_valid())
+            self.assertEqual(form.cleaned_data["telefon"], "+49 170 1234567")
+
+            form = Probeformular(data={"telefon": "nur abends"})
+            self.assertFalse(form.is_valid())
+            self.assertIn("telefon", form.errors)
+
+
 class MitgliederSpaltenTest(SimpleTestCase):
     """Die Mitgliederliste übergibt der Tabelle eine Seite als Liste, kein Queryset.
 

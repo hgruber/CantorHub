@@ -293,7 +293,36 @@ EINWILLIGUNG_FOTOS_LABEL = (
 )
 
 
-class MitgliedBeitrittForm(forms.ModelForm):
+class TelefonNormalisierungMixin:
+    """Telefonfelder international speichern (siehe ``intern/telefon.py``).
+
+    Die Schleife im ``clean()`` statt fünf ``clean_telefon*``-Methoden je Formular:
+    dieselbe Schleife deckt beide Formularfamilien ab, und eine Eingabe, aus der sich
+    keine Nummer lesen lässt, wird zum Feldfehler statt still gespeichert zu werden.
+    """
+
+    TELEFON_FEHLER = (
+        "Diese Nummer lässt sich nicht lesen. Bitte mit Vorwahl angeben, "
+        "zum Beispiel 0221 1234567 oder +49 221 1234567."
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        from intern import telefon
+        from intern.app_settings import get_config
+        vorwahl = get_config("TELEFON_LANDESVORWAHL") or telefon.LANDESVORWAHL_STANDARD
+        for name in telefon.FELDER:
+            if name not in self.fields or self.has_error(name):
+                continue
+            nummer = telefon.normalisiere(cleaned.get(name), vorwahl)
+            if nummer is None:
+                self.add_error(name, self.TELEFON_FEHLER)
+            else:
+                cleaned[name] = nummer
+        return cleaned
+
+
+class MitgliedBeitrittForm(TelefonNormalisierungMixin, forms.ModelForm):
     """Öffentliches Beitritts-Formular. Die E-Mail kommt aus dem Einladungs-Token
     und ist daher kein Formularfeld."""
 
@@ -751,7 +780,7 @@ class ForumEditForm(forms.ModelForm):
         }
 
 
-class UserEditForm(forms.ModelForm):
+class UserEditForm(TelefonNormalisierungMixin, forms.ModelForm):
     avatar = FilerFileField(
         null=True,
         blank=True,

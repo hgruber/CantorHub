@@ -11,6 +11,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Hinzugefügt
 
+- Die Einstellung `TELEFON_LANDESVORWAHL` (Standard `+49`) bestimmt, mit welcher Landesvorwahl
+  Nummern gespeichert werden, die mit 0 beginnen. Das Kommando
+  `manage.py telefonnummern_normalisieren` zieht die bereits gespeicherten Nummern nach und
+  zeigt mit `--dry-run` vorab, was es ändern würde.
 - Zwei neue Hilfe-Artikel zur Sicherung: „Hilfe:Sicherung“ führt mit Bildschirmfotos Schritt
   für Schritt durch Einrichten und Wiederherstellen, ganz im Browser und ohne Kommandozeile;
   „Hilfe:Sicherung im Detail“ sammelt für Server-Betreuer, was gesichert wird, die Befehle,
@@ -28,6 +32,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Geändert
 
+- Telefon- und Faxnummern werden beim Speichern in die internationale Schreibweise gebracht,
+  also mit Landesvorwahl und einheitlich getrennt („+49 69 1234567“). Eine Eingabe, aus der sich
+  keine Nummer lesen lässt, meldet das Formular jetzt am Feld, statt sie stillschweigend
+  abzulegen.
 - Die Seiten „Sicherung“ und „Wiederherstellen“ nennen zuerst den Weg über die Syncthing-App;
   die Befehle für podman und das Speicherseiten-Skript stehen zugeklappt darunter.
 - Die Admin-Seiten zeigen weder Hochladen-Symbol noch Ablagefläche für Dateien.

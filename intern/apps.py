@@ -33,6 +33,10 @@ _CONFIG_DEFAULTS = [
     ("ZEITZONE", "Europe/Berlin",
      "Zeitzone des Portals (IANA-Name); steuert iCal/CalDAV-Uhrzeitumrechnung "
      "und Django-Zeitformatierung"),
+    ("TELEFON_LANDESVORWAHL", "+49",
+     "Landesvorwahl für die Speicherung der Telefonnummern (z. B. +49). Nummern, "
+     "die mit 0 beginnen, werden damit ergänzt; lesbar gruppiert wird nur +49, "
+     "jede andere Vorwahl wird kompakt gespeichert"),
     ("SPRACHE", "de-de",
      "Sprache des Portals; steuert Datums- und Zahlenformate sowie Djangos "
      "eigene Texte (Verwaltung, Formularfehler). Die Portaltexte selbst sind "

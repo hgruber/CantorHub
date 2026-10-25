@@ -74,7 +74,9 @@ have to stay:
   field value changed. A changed *composition* of a collection is the CTag's job and needs no
   bump: it hashes the `(pk, etag)` pairs, so entries coming and going move it by themselves. A
   bump there would invalidate every ETag on every device and force a full re-download of all
-  cards including photos, for nothing.
+  cards including photos, for nothing. The same reasoning covers `telefonnummern_normalisieren`
+  (`INSTALL.md`): it changes the *values* of many cards, so their ETags move on their own and
+  the devices reload exactly those cards once — `_SERIALISIERUNG` stays where it is.
 
 ## CardDAV address book (`intern/carddav/`)
 

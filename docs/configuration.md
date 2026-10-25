@@ -143,6 +143,12 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   formats. **The portal's own texts are German and are not translated**, so this is not a
   language switch for the site. Applied in `InternConfig.ready()` via `translation.activate()`,
   because the project runs without `LocaleMiddleware`; takes effect on the next restart)
+- `TELEFON_LANDESVORWAHL` (country code the stored phone and fax numbers are written with,
+  default `+49`. Every number entered in a member form is rewritten into international shape by
+  `intern/telefon.py`; a number starting with `0` is completed with this code. Readable grouping
+  (`+49 69 1234567`) exists for `+49` only — any other code is stored compact (`+41441234567`),
+  because the rules for a national numbering plan are not in the code. An unreadable entry is a
+  form error, and `manage.py telefonnummern_normalisieren` brings an existing database along)
 
 ### Datenschutz-Texte
 

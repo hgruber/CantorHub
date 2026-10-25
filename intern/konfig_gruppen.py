@@ -93,6 +93,7 @@ FELDTYPEN: dict[str, str] = {
     "MAP_CENTER_LNG": "string",
     "FILE_PREFIX": "string",
     "DSB_URL": "string",
+    "TELEFON_LANDESVORWAHL": "string",
     # color (Hex-Farbwert; Textfeld + nativer Color-Picker, siehe _color_picker.html)
     "BRAND_FARBE": "color",
     # text (mehrzeilig: Mail-Body, Homepage-Prosa, Adresse, Einwilligung)
@@ -226,7 +227,7 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     "EJABBERD_BOT_JID", "EJABBERD_BOT_PASSWORD", "EJABBERD_BOT_PORT",
     "EJABBERD_BOT_RESCAN_SECONDS", "EJABBERD_BOT_RELAY_SECONDS",
     # Portal, Karte & Benachrichtigungen — Sprache, Zeitzone, Limits, Karte, OSM-Server, Benachrichtigungen
-    "SPRACHE", "ZEITZONE",
+    "SPRACHE", "ZEITZONE", "TELEFON_LANDESVORWAHL",
     "UPLOAD_MAX_MB", "PWRESET_MAX_PER_HOUR", "MAP_CENTER_ID", "MAP_DEFAULT_ZOOM",
     "MAP_CENTER_LAT", "MAP_CENTER_LNG", "OSM_TILE_URL", "OSM_NOMINATIM_URL",
     "NOTIFY_POLL_MS", "NOTIFY_DISMISS_MS", "TERMIN_BANNER_AKTIV", "FILE_PREFIX",
@@ -450,11 +451,12 @@ GRUPPEN: tuple[Gruppe, ...] = (
     Gruppe(
         id="portal",
         titel="Portal, Karte & Benachrichtigungen",
-        hinweis="Sprache und Zeitzone, Upload-Grenze, Karten-Mittelpunkt, OSM-Server, "
+        hinweis="Sprache, Zeitzone und Landesvorwahl, Upload-Grenze, Karten-Mittelpunkt, OSM-Server, "
         "Benachrichtigungs-Intervalle und Terminerinnerung",
         keys=(
             "SPRACHE",
             "ZEITZONE",
+            "TELEFON_LANDESVORWAHL",
             "UPLOAD_MAX_MB",
             "PWRESET_MAX_PER_HOUR",
             "OSM_TILE_URL",
