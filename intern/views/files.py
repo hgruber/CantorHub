@@ -24,7 +24,7 @@ from intern.dateiablage import ordner_pfad, verknuepfte_dateien
 from intern.folder_access import folder_access, visible_folder_ids
 
 from ..app_settings import get_config
-from ..models import DateiVersion, Lied, TabellenPreferenzen, Termin, User
+from ..models import DateiVersion, Lied, TabellenPreferenzen, Termin
 
 
 def _aufnahme_prefixes():
@@ -289,8 +289,6 @@ def upload(request):
                 status=413,
             )
         preferred_folder_id = request.POST.get("folder_id")
-        rename_to = request.POST.get("rename_to")
-        avatar_user_id = request.POST.get("avatar_user_id")
         route_by_type = request.POST.get("route_by_type")
 
         # Extract extension
@@ -384,33 +382,9 @@ def upload(request):
                 status=403,
             )
 
-        # Fremde Mitglieds-IDs nur mit Verwaltungsrecht — vor dem Anlegen der
-        # Datei geprüft, damit eine Ablehnung keine Leiche im Ordner hinterlässt.
-        # Sonst könnte man eine zweite "<id>.jpg" in den Ordner Profilbilder schieben
-        # oder das Avatar-FK eines beliebigen Mitglieds umbiegen.
-        fremd_erlaubt = request.user.is_superuser or request.user.has_perm("intern.change_user")
-
-        def _fremde_mitglieds_id(wert):
-            return (
-                str(wert).isdigit()
-                and int(wert) != request.user.pk
-                and User.objects.filter(pk=int(wert)).exists()
-            )
-
-        avatare_id = folders.avatare()
-        ins_avatar_verzeichnis = avatare_id is not None and str(folder_id) == str(avatare_id)
-        if not fremd_erlaubt and (
-            (ins_avatar_verzeichnis and rename_to and _fremde_mitglieds_id(rename_to))
-            or (avatar_user_id and _fremde_mitglieds_id(avatar_user_id))
-        ):
-            return JsonResponse(
-                {"status": "error", "message": "Das ist das Profilbild eines anderen Mitglieds."},
-                status=403,
-            )
-
-        # Der endgültige Name steht vor der Ablage fest (Avatar → <id>.<ext>),
-        # damit die Namensregel den Namen prüft, unter dem die Datei liegen wird.
-        name = f"{rename_to}{_get_file_extension(file.name)}" if rename_to else file.name
+        # Der endgültige Name steht vor der Ablage fest, damit die Namensregel
+        # den Namen prüft, unter dem die Datei liegen wird.
+        name = file.name
         # Termin-Anhänge ist ein Ordner für alle Termine: das Datum vorn hält die
         # „Ablauf.pdf“ zweier Termine auseinander. Derselbe Name am selben Termin
         # wird eine neue Fassung.
@@ -443,13 +417,6 @@ def upload(request):
                 else f"Bereits vorhanden als Fassung vom {gleiche.datum:%-d.%-m.%Y} — nicht abgelegt"
             )
 
-        # Update user avatar if requested
-        if avatar_user_id:
-            try:
-                User.objects.filter(pk=int(avatar_user_id)).update(avatar=filer_file)
-            except (ValueError, TypeError):
-                pass
-
         # Assign to a song: explicitly by id when dropped on a Titel detail
         # page, otherwise by filename match.
         lied_id = request.POST.get("lied_id")
@@ -473,8 +440,8 @@ def upload(request):
             ).url
         except Exception:
             pass
-        # `name` ist der Name nach einem rename_to — über ihn löst ein
-        # [[Datei:…]] auf, den die Artikelseiten daraus bauen.
+        # Über `original_filename` löst ein [[Datei:…]] auf, den die
+        # Artikelseiten daraus bauen.
         return JsonResponse({"status": "success", "id": filer_file.id, "name": filer_file.original_filename, "url": url, "thumbnail_url": thumb, "overwritten": overwritten, "identisch": status == "identisch", "meldung": meldung, "wurzel": folder_id is None})
 
 

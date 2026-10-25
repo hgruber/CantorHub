@@ -284,14 +284,10 @@ document.addEventListener("DOMContentLoaded", function () {
       init: function () {
         this.on("sending", function (file, xhr, formData) {
           const folderId = appMain.dataset.uploadFolderId;
-          const renameTo = appMain.dataset.uploadRenameTo;
-          const avatarUserId = appMain.dataset.uploadAvatarUserId;
           const routeByType = appMain.dataset.uploadRouteByType;
           const liedId = appMain.dataset.uploadLiedId;
           const terminId = appMain.dataset.uploadTerminId;
           if (folderId) formData.append("folder_id", folderId);
-          if (renameTo) formData.append("rename_to", renameTo);
-          if (avatarUserId) formData.append("avatar_user_id", avatarUserId);
           if (routeByType) formData.append("route_by_type", "1");
           if (liedId) formData.append("lied_id", liedId);
           if (terminId) formData.append("termin_id", terminId);
