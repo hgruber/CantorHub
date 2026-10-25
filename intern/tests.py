@@ -6405,6 +6405,49 @@ class LiedrollenTest(SimpleTestCase):
         self.assertEqual(liedrollen.label("unbekannt"), "unbekannt")
 
 
+class LiedablageTest(SimpleTestCase):
+    """Die reine Namenslogik des Lied-Ordners — ohne Datenbank prüfbar."""
+
+    def test_ordnername_entschaerft(self):
+        from intern import liedablage
+
+        self.assertEqual(liedablage.ordnername("A/B"), "A-B")
+        self.assertEqual(liedablage.ordnername("A\\B"), "A-B")
+        self.assertEqual(liedablage.ordnername("  Titel  "), "Titel")
+        self.assertEqual(liedablage.ordnername(""), "Ohne Titel")
+        self.assertEqual(liedablage.ordnername("."), "Ohne Titel")
+        self.assertEqual(liedablage.ordnername(".."), "Ohne Titel")
+
+    def test_freier_name_in(self):
+        from intern import liedablage
+
+        self.assertEqual(liedablage.freier_name_in(set(), "Titel"), "Titel")
+        self.assertEqual(liedablage.freier_name_in({"Titel"}, "Titel"), "Titel-1")
+        self.assertEqual(
+            liedablage.freier_name_in({"Titel", "Titel-1"}, "Titel"), "Titel-2"
+        )
+
+    def test_dateiname(self):
+        from intern import liedablage
+
+        self.assertEqual(
+            liedablage.dateiname("Titel", "notenblatt", ".pdf"), "Titel – Notenblatt.pdf"
+        )
+        self.assertEqual(
+            liedablage.dateiname("Titel", "text", ".odt"), "Titel – Liedtext.odt"
+        )
+
+    def test_endung_von(self):
+        from intern import liedablage
+
+        f = SimpleNamespace(original_filename="A.PDF", name="x")
+        self.assertEqual(liedablage.endung_von(f), ".pdf")
+        self.assertEqual(
+            liedablage.endung_von(SimpleNamespace(original_filename="", name="x.m4a")),
+            ".m4a",
+        )
+
+
 class RollenzeileVerschmelzenTest(SimpleTestCase):
     """Das Verschmelzen zweier Dateien hängt die Rollenzeile um; ohne den
     Eintrag in DATEI_PK_VERWEISE nähme das Queryset-Delete die Zeile per
