@@ -8,6 +8,7 @@ Tippe in der Seitenleiste auf '''Repertoire'''. Jede Zeile ist ein Lied:
 * '''Eigenschaften''' — kleine Zeichen, die das Lied beschreiben (siehe unten).
 * '''PDF''' — das Notenblatt. Tippe auf das Symbol, um es zu öffnen oder auszudrucken.
 * '''Noten''' — die Datei aus dem Notenprogramm, falls es eine gibt.
+* '''Text''' — der Liedtext als OpenDocument-Datei, falls es eine gibt.
 
 === Was die kleinen Zeichen bedeuten ===
 * '''grüner Punkt''' — das Lied singen wir gerade. Ein grauer Punkt heißt: zurzeit nicht.

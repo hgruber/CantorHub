@@ -6002,7 +6002,7 @@ class FilterbauSchalterTest(SimpleTestCase):
 
         fest, schalter = self._arten(FELDER)
         self.assertEqual(fest, {"aktiv", "hymne", "acapella", "weihnacht",
-                                "original", "aufnahme", "pdf", "noten"})
+                                "original", "aufnahme", "pdf", "noten", "text"})
         self.assertEqual(schalter, {"tempo", "tonart"})
 
     def test_feste_felder_fehlen_im_dropdown(self):
@@ -6138,8 +6138,14 @@ class FilterbauTitelTest(SimpleTestCase):
         self.assertEqual(self._q("hymne", "nein"), Q(hymne=False))
 
     def test_datei_vorhanden_oder_nicht(self):
-        self.assertEqual(self._q("aufnahme", "ja"), Q(aufnahme__isnull=False))
-        self.assertEqual(self._q("pdf", "nein"), Q(pdf__isnull=True))
+        # Rollenzeile per EXISTS; bis Migration 0006 zaehlt der alte FK mit.
+        sql_ja = self._sql("aufnahme", "ja")
+        self.assertIn("EXISTS", sql_ja)
+        self.assertIn("intern_lieddatei", sql_ja)
+        self.assertIn("aufnahme_id", sql_ja)
+        sql_nein = self._sql("pdf", "nein")
+        self.assertIn("NOT (EXISTS", sql_nein)
+        self.assertIn("pdf_id", sql_nein)
 
     def test_tempo(self):
         self.assertEqual(self._q("tempo", "ist", "s"), Q(tempo__in=("s",)))
@@ -6157,14 +6163,17 @@ class FilterbauTitelTest(SimpleTestCase):
         from intern.filterbau_titel import TITEL
         from intern.filterbau import Bedingung
 
+        from intern.models import Lied
+
         q = TITEL.baue_q([
             Bedingung("und", "hymne", "ja", ()),
             Bedingung("und", "acapella", "ja", ()),
             Bedingung("und", "aufnahme", "nein", ()),
         ])
-        self.assertEqual(
-            q, Q(hymne=True) & Q(acapella=True) & Q(aufnahme__isnull=True)
-        )
+        sql = str(Lied.objects.all().filter(q).query)
+        self.assertIn("hymne", sql)
+        self.assertIn("acapella", sql)
+        self.assertIn("NOT (EXISTS", sql)
 
     def test_kein_feld_traegt_ein_recht(self):
         from intern.filterbau_titel import FELDER, TITEL

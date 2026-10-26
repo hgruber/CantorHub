@@ -7,6 +7,17 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Jedes Lied hat einen eigenen Ordner unter „Repertoire“; seine Dateien heißen dort
+  `<Titel> – <Rolle>.<ext>`. Neu ist die Rolle „Liedtext“ für ein OpenDocument-Dokument (.odt),
+  die auf der Liedseite und als Spalte erscheint.
+- Ein Upload auf der Liedseite legt die Datei direkt in den Lied-Ordner und erkennt die Rolle an
+  der Endung. Der Lied-Ordner lässt sich im Dateibrowser nicht umbenennen, verschieben oder
+  löschen; er folgt dem Liedtitel.
+
 ## v1.0.12 — 2026-10-25
 
 ### Hinzugefügt

@@ -80,12 +80,32 @@ from a bare path would write a second copy next to the source.
 
 `datei_url()` is the one to reach for in a list: a table needs the URL, not the object, and
 each `File` filer instantiates brings a `MultiStorageFieldFile` and an easy-thumbnails object
-with it. The repertoire list therefore annotates the four song files as paths
-(`original_pfad` … in `views/titel.py`) instead of `select_related`, and builds its playlists
-from `values_list`. Measured over 206 songs: 72.7 ms with objects, 2.9 ms with paths, the same
-URLs; the page went from 228 ms to 110 ms. It applies to public files — which in this portal
-is all of them, access is `media_auth`'s job — while a row with `is_public=False` would still
-need `File.url`.
+with it. The repertoire list gets the files of its page from `liedablage.rollen_fuer()` in one
+pass (the `LiedDatei` rows, plus a fallback that reads the four legacy columns as IDs and
+loads only the rows still missing) and builds the playlists from those objects' storage paths.
+The earlier path annotations (`original_pfad` …) measured 72.7 ms against 2.9 ms over 206
+songs and remain the reason the URLs come from `datei_url()`, never from a `File` per cell. It
+applies to public files — which in this portal is all of them, access is `media_auth`'s job —
+while a row with `is_public=False` would still need `File.url`.
+
+## The song files
+
+A song keeps its files in its own folder, `Backstage/Repertoire/<Titel>/` (`Lied.ordner`; the FK,
+not the folder name, is the truth). Each file's role is a row in `LiedDatei` — `original`,
+`aufnahme`, `notenblatt`, `notensatz`, `text` — and the register in `intern/liedrollen.py` is
+the one place that names them. Files are named `<Titel> – <Rolle>.<ext>`; the name is display
+only. Everything else in the folder belongs to the song too and appears on its page without a
+role.
+
+`intern/liedablage.py` is the one way in: `ordner_fuer()` creates the folder on first need,
+`ablegen()` puts a file there and writes the role row, `titel_geaendert()` renames folder and
+files with the title. The folder cannot be renamed, moved or deleted in the file browser
+(`_enthaelt_liedordner`), and it is left out of the article file menu's target list.
+
+`manage.py repertoire_umziehen` moved the production files once (`--dry-run` first); files
+linked from a wiki article kept their name so `[[Datei:…]]` keeps resolving. The four legacy
+`Lied` columns still exist until migration `0006` and serve as a read fallback
+(`liedablage.ALT_ROLLEN`) — after that, the rows are the only source.
 
 ## File versions
 
@@ -166,10 +186,12 @@ Backstage/
   Forenbilder          forum pictures
   Profilbilder         member avatars, see below
   Repertoire/          upload target of the Repertoire page
-    Hörbeispiele       Lied.original, Lied.aufnahme
-    Notenblätter       Lied.pdf
-    Notensatz-Dateien  Lied.noten (capella, MuseScore)
-    Probenmitschnitte  imported recordings not tied to a song
+    <Titel>/           one folder per song (`Lied.ordner`), named after the title and
+                       renamed with it; files „<Titel> – <Rolle>.<ext>“ (see „The song files“)
+    Hörbeispiele       legacy: Lied.original/aufnahme, emptied by repertoire_umziehen
+    Notenblätter       legacy: Lied.pdf
+    Notensatz-Dateien  legacy: Lied.noten (capella, MuseScore)
+    Probenmitschnitte  legacy: imported recordings not tied to a song
   Termin-Anhänge       upload target of the event list and of the card „Dateien“
                        (Termin.dateien), named „<YYYY-MM-DD> <name>“
   Wiki-Anhänge         files and pictures used in articles
@@ -204,9 +226,9 @@ menu) leave out Backstage and everything below it, and `folder_move` / `_copy_ac
 a target with a 403 — the portal files into these folders on its own, members don't. Who sees
 Backstage at the root may also move, link and copy into it (`_sieht_backstage`), e.g. to put a
 stray profile picture back. Uploads are
-not affected; the Repertoire page uploads there, but only files it can assign to a song: an
-upload with `route_by_type` is refused when its extension maps to no song-file type, or when
-neither `lied_id` (the Titel page) nor the file name names a song.
+not affected. An upload from the Titel page (`route_by_type`) goes into the song's own folder;
+the extension suggests the role, and an unknown extension is allowed — the file lands there
+without a role. Without `lied_id` and without a song title in the file name it is refused.
 
 **Backstage has no `FolderPermission` rows, deliberately.** A folder is only visible when every
 ancestor is readable, so restricting Backstage would hide the song files from members.
@@ -284,10 +306,11 @@ Two kinds of references point at a file, and they break differently:
   *last* row goes — while another folder still links the file, the name resolves. Note
   `internal_links` must use `filter().first()`, not `get()`: a file linked into several
   folders has several rows, and `get()` would report a live file as broken.
-- **Everything else** — `Lied` (original/aufnahme/pdf/noten), `Forum.bild`, `User.avatar` and
-  `Konfiguration` keys ending in `_FILE_ID` (Satzung, Beitragsordnung — linked from the public
-  join form) — hangs off the **PK**. Those break when that row is deleted, even if the file
-  survives elsewhere, and are unaffected by a rename.
+- **Everything else** — `LiedDatei` (the role row), the four legacy `Lied` columns until
+  migration `0006`, `Forum.bild`, `User.avatar` and `Konfiguration` keys ending in `_FILE_ID`
+  (Satzung, Beitragsordnung — linked from the public join form) — hangs off the **PK**. Those
+  break when that row is deleted, even if the file survives elsewhere, and are unaffected by a
+  rename.
 
 `intern/verwendung.py` (`datei_verwendungen(dateien, user, beim_loeschen=True)`) collects
 both, honouring that distinction; `Artikel.aktuelle_datei_verweise()` maps file name →

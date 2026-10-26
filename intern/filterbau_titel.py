@@ -21,7 +21,7 @@ from .filterbau import (
     text_wert,
     wahl_q,
 )
-from .models import Lied, User
+from .models import Lied, LiedDatei, User
 
 def _paar(kurz_ja, kurz_nein, satz_ja, satz_nein):
     """Ein Ja/Nein-Paar: je Stellung eine kurze Beschriftung (die zugleich der
@@ -65,11 +65,22 @@ def _bool_q(feldname):
     return q
 
 
-def _datei_q(feldname):
-    """Datei vorhanden oder nicht -- die Existenz des Verweises, nicht sein Wert.
-    ``isnull=False`` entspricht genau dem alten ``exclude(feld__isnull=True)``."""
+def _rolle_q(rolle):
+    """Hat das Lied eine Datei dieser Rolle? EXISTS auf die Rollenzeile.
+
+    Ohne Join, damit die Verneinung das Lied prueft und nicht eine einzelne
+    Verknuepfungszeile. Bis Migration 0006 zaehlt auch der alte FK mit — eine
+    Datei aus dem Fenster zwischen Bestandsumzug und Umschaltung soll nicht als
+    „fehlt“ gelten."""
+    from . import liedablage
+
+    feld = liedablage.ROLLEN_JE_FELD.get(rolle)
+
     def q(operator, werte):
-        return Q(**{feldname + "__isnull": operator == "nein"})
+        treffer = Q(Exists(LiedDatei.objects.filter(lied=OuterRef("pk"), rolle=rolle)))
+        if feld:
+            treffer |= Q(**{feld + "__isnull": False})
+        return ~treffer if operator == "nein" else treffer
 
     return q
 
@@ -133,22 +144,27 @@ FELDER = {
     "original": Feld(
         key="original", label="Original", art="ohne",
         operatoren=_paar("Original", "kein Original", "hat ein Original", "hat kein Original"),
-        q=_datei_q("original"), werte_text=lambda werte, namen: "", ohne_wert=True,
+        q=_rolle_q("original"), werte_text=lambda werte, namen: "", ohne_wert=True,
     ),
     "aufnahme": Feld(
         key="aufnahme", label="Aufnahme", art="ohne",
         operatoren=_paar("Aufnahme", "keine Aufnahme", "hat eine Aufnahme", "hat keine Aufnahme"),
-        q=_datei_q("aufnahme"), werte_text=lambda werte, namen: "", ohne_wert=True,
+        q=_rolle_q("aufnahme"), werte_text=lambda werte, namen: "", ohne_wert=True,
     ),
     "pdf": Feld(
         key="pdf", label="Notenblatt", art="ohne",
         operatoren=_paar("Notenblatt", "kein Notenblatt", "hat ein Notenblatt", "hat kein Notenblatt"),
-        q=_datei_q("pdf"), werte_text=lambda werte, namen: "", ohne_wert=True,
+        q=_rolle_q("notenblatt"), werte_text=lambda werte, namen: "", ohne_wert=True,
     ),
     "noten": Feld(
         key="noten", label="Notensatz", art="ohne",
         operatoren=_paar("Notensatz", "kein Notensatz", "hat einen Notensatz", "hat keinen Notensatz"),
-        q=_datei_q("noten"), werte_text=lambda werte, namen: "", ohne_wert=True,
+        q=_rolle_q("notensatz"), werte_text=lambda werte, namen: "", ohne_wert=True,
+    ),
+    "text": Feld(
+        key="text", label="Liedtext", art="ohne",
+        operatoren=_paar("Liedtext", "kein Liedtext", "hat einen Liedtext", "hat keinen Liedtext"),
+        q=_rolle_q("text"), werte_text=lambda werte, namen: "", ohne_wert=True,
     ),
     "solist": Feld(
         key="solist", label="Solist", art="mehrfach", operatoren=_SOLIST,
@@ -167,7 +183,7 @@ FELDER = {
 # Reihenfolge im Feld-Dropdown -- die Reihenfolge der Tabellenspalten.
 FELD_REIHENFOLGE = (
     "suche", "tempo", "tonart", "aktiv", "hymne", "acapella", "weihnacht",
-    "original", "aufnahme", "pdf", "noten", "solist", "dirigent",
+    "original", "aufnahme", "pdf", "noten", "text", "solist", "dirigent",
 )
 
 

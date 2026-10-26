@@ -589,7 +589,8 @@ The field dropzones (`initFilerDropzones()`, which replace filer's widget for th
 forum picture and the song files) upload straight into their field's folder: the view passes
 `feld_ordner = {field name: folder id}`, `base.html` prints it as `json_script` `#feld-ordner`.
 They send `feld=1`, so the upload takes a free name („x (2).pdf“) instead of becoming a revision
-of a file already there; „Speichern“ then renames it and merges via `systemablage()`. A field
+of a file already there; „Speichern“ then moves it into the song's own folder and writes the
+role row via `liedablage.ablegen()`. A field
 dropzone is tappable and says so („Antippen oder Datei hierher ziehen“) — on a phone it is the
 only way in; the picture fields (`avatar`, `bild`) accept `image/*`, which opens the gallery or
 camera. Each upload is removed from Dropzone's count afterwards, so a second file replaces the
@@ -685,7 +686,11 @@ values and used to appear only once.
   the old third state `zugang=unknown` („Egal") suppresses the manager default just like the new
   `zugang=egal`. Repertoire: the names of the old **`FilterSet` attributes**, not the model
   fields — `titel` is the search, `sheet` is `pdf`, `notensatz` is `noten`, plus `tempo`,
-  `tonart`, the eight `true`/`false`/`unknown` switches, `solist` and `dirigent`.
+  `tonart`, the eight `true`/`false`/`unknown` switches, `solist` and `dirigent`. The field
+  keys `pdf` and `noten` stay even though the roles are now `notenblatt` and `notensatz`: a
+  saved filter keeps addressing the same thing. The „has a file“ fields ask an `EXISTS` on the
+  `LiedDatei` row (with the legacy column as a fallback until migration `0006`); `text` is the
+  fifth such field.
 - **A registry is a `FELDER` dict**; a field is one entry — label, operators, `Q` builder, and
   `recht`. The member registry covers every column of the list (name, voice, e-mail, XMPP,
   birthday, last login, entry date, address and phone fields, fax, access) plus `gruppen` and

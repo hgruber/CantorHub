@@ -164,6 +164,7 @@ missing from the page. The Django default rights that are not listed (e.g. `add_
 | `is_staff` | `/admin/` only | access to the Django admin at `/admin/` |
 | `FolderPermission` (per folder and group) | `/intern/ordner/<pk>/berechtigungen/` | read, write and delete in that folder and, per axis without an own rule, in its subfolders; with no rule at all read and write are open, delete closed — see `docs/files.md` |
 | Standard folders (`folders.PFADE`) | code only | nobody renames, moves or deletes them in the portal, superusers included — nor a folder holding one (`views/folders.py` · `_enthaelt_standardordner`); `/admin/` still can — see `docs/files.md` |
+| Song folders (`Lied.ordner`) | code only (`intern/liedablage.py`) | nobody renames, moves or deletes them in the portal either (`_enthaelt_liedordner`); they follow the song title and go with the song — see `docs/files.md`, „The song files“ |
 | `ForumPermission` (per forum and group) | `/intern/forum/<id>/zugriff/` | who may read a forum and its MUC room; no rows means open — see `docs/forum.md` |
 | `ArtikelPermission` (per article and group) | `/intern/artikel/<name>/berechtigungen/` | who may read and edit an article — see `docs/articles.md` |
 | Tags „Mitglied" and „DSGVO" | admission, `/intern/aufgaben/` | the privacy gate for access without membership (`middleware.py`) — see `docs/members.md` |

@@ -190,11 +190,8 @@ Deliberately **not** done, so the next audit does not raise it again:
   including the basis for `paginate_ordered`. `.order_by()` already stands where it matters.
 - **No `updated`/`geaendert` field** on the models. `ChangeLog` already answers "who changed
   what when", and `cleanup_changelog` hangs its retention off that.
-- `Lied`'s four `FilerFileField`s → a role table would be real normalisation, but four fixed
-  roles do not justify the blast radius (forms, templates, `verwendung.py`,
-  `aenderungen.py`, `signals.py`). Likewise `ArtikelPermission.artikel_name` as a string
-  instead of an FK: the clean fix needs an `Artikel` parent row, and articles are versioned
-  by `(name, version)`.
+- `ArtikelPermission.artikel_name` as a string instead of an FK: the clean fix needs an
+  `Artikel` parent row, and articles are versioned by `(name, version)`.
 
 Until October 2026 model changes reached a database only through the `MIGRATE=1` rebuild,
 which is why everything above that touches the schema was done before the cutover. Since
