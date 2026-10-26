@@ -22,8 +22,8 @@ class Command(BaseCommand):
         "<Titel> – <Rolle>.<ext> hinein und schreibt die Rollenzeile. Die alten "
         "Lied-Felder bleiben unangetastet. Erst mit --dry-run ansehen; ein "
         "zweiter Lauf tut nichts doppelt. Dateien, die an mehreren Liedern "
-        "hängen, werden kopiert; Dateien mit Wiki-Link bleiben liegen und "
-        "werden gemeldet."
+        "hängen, werden kopiert; Dateien mit Wiki-Link ziehen mit, behalten "
+        "aber ihren Namen, damit der Link weiter auflöst."
     )
 
     def add_arguments(self, parser):
@@ -54,12 +54,12 @@ class Command(BaseCommand):
 
         dateien = File.objects.in_bulk(referenzen)
         # Wiki-Links adressieren die Datei über ihren Namen; ein Umbenennen
-        # bräche sie. Solche Dateien bleiben liegen, bis der Betreiber entscheidet.
+        # bräche sie. Solche Dateien ziehen mit, behalten aber ihren Namen.
         wiki = wiki_verwendungen(
             {f.original_filename or f.name for f in dateien.values()}
         )
 
-        lieder = zeilen = schon = offen_gesamt = 0
+        lieder = zeilen = schon = behalten = offen_gesamt = 0
         offen = []
         belegte = {}
 
@@ -100,19 +100,22 @@ class Command(BaseCommand):
                     offen.append(f"{lied.titel}: Datei {fk} fehlt")
                     offen_gesamt += 1
                     continue
-                name = liedablage.dateiname(lied.titel, rolle, liedablage.endung_von(f))
-                if (f.original_filename or f.name) in wiki:
-                    offen.append(
-                        f"{lied.titel} ({rolle}): „{f.original_filename or f.name}“ "
-                        "ist in einem Wiki-Artikel verlinkt — nicht umbenannt"
-                    )
-                    offen_gesamt += 1
-                    continue
+                # Der Link nennt den Dateinamen: Die Datei zieht um, der Name
+                # bleibt, und [[Datei:…]] löst weiter auf.
+                name_behalten = (f.original_filename or f.name) in wiki
+                name = (
+                    f.original_filename or f.name
+                    if name_behalten
+                    else liedablage.dateiname(lied.titel, rolle, liedablage.endung_von(f))
+                )
+                if name_behalten:
+                    behalten += 1
                 geteilt = len(referenzen[fk]) > 1
 
                 if trocken:
                     self.stdout.write(
                         f"{praefix}{lied.titel}: {rolle} → {name}"
+                        + (" (Name behalten, Wiki-Link)" if name_behalten else "")
                         + (" (Kopie, an mehreren Liedern)" if geteilt else "")
                     )
                     zeilen += 1
@@ -141,8 +144,8 @@ class Command(BaseCommand):
 
         self.stdout.write(
             f"{praefix}{lieder} Lieder mit Dateien, {zeilen} Rollen "
-            f"eingetragen{'' if trocken else ' oder kopiert'}, {schon} schon vorhanden, "
-            f"{offen_gesamt} offen."
+            f"eingetragen{'' if trocken else ' oder kopiert'}, {behalten} Namen "
+            f"behalten (Wiki-Link), {schon} schon vorhanden, {offen_gesamt} offen."
         )
         for eintrag in offen:
             self.stderr.write(f"offen: {eintrag}")
