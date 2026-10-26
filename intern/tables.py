@@ -69,6 +69,15 @@ def _datei_url(pfad):
     return datei_url(pfad)
 
 
+def _rollen_url(record, rolle):
+    """URL der Datei einer Rolle; leer, wenn das Lied sie nicht hat.
+
+    Die Rollen hängen als ``record.rollen`` an der Zeile (``views/titel.py``);
+    ein Zugriff auf ``record.pdf`` lüde sonst je Zeile ein filer-Objekt."""
+    datei = getattr(record, "rollen", {}).get(rolle)
+    return _datei_url(datei.file.name) if datei else ""
+
+
 # Spalten der Forenliste, die erst per Spaltenwahl erscheinen.
 FORUM_SPALTEN_AUS = {"bild"}
 
@@ -559,7 +568,7 @@ class RepertoireTabelle(tables.Table):
     )
     original = tables.Column(
         verbose_name="Audio",
-        accessor="original_pfad",
+        accessor="id",
         empty_values=(),
         orderable=False,
         attrs={
@@ -583,7 +592,7 @@ class RepertoireTabelle(tables.Table):
 
     pdf = tables.Column(
         verbose_name="PDF",
-        accessor="pdf_pfad",
+        accessor="id",
         empty_values=(),
         orderable=False,
         attrs={
@@ -593,12 +602,22 @@ class RepertoireTabelle(tables.Table):
     )
     noten = tables.Column(
         verbose_name="Noten",
-        accessor="noten_pfad",
+        accessor="id",
         empty_values=(),
         orderable=False,
         attrs={
             "td": {"class": "file-icon-cell"},
             "th": {"class": "file-icon-cell-head", "title": "Notensatz"},
+        },
+    )
+    text = tables.Column(
+        verbose_name="Text",
+        accessor="id",
+        empty_values=(),
+        orderable=False,
+        attrs={
+            "td": {"class": "file-icon-cell"},
+            "th": {"class": "file-icon-cell-head", "title": "Liedtext (OpenDocument)"},
         },
     )
 
@@ -624,13 +643,14 @@ class RepertoireTabelle(tables.Table):
             "data-lied-id":      lambda record: record.id,
             "data-titel":        lambda record: record.titel,
             "data-komponist":    lambda record: record.komponist or "",
-            # Die vier URLs kommen aus den annotierten Speicherpfaden (siehe
+            # Die vier URLs kommen aus den Rollen der Zeile (siehe
             # views/titel.py): ein Zugriff auf record.original laedt sonst je
-            # Zeile vier filer-File-Zeilen samt Thumbnail-Objekt.
-            "data-original-url": lambda record: _datei_url(getattr(record, "original_pfad", None)),
-            "data-aufnahme-url": lambda record: _datei_url(getattr(record, "aufnahme_pfad", None)),
-            "data-pdf-url":      lambda record: _datei_url(getattr(record, "pdf_pfad", None)),
-            "data-noten-url":    lambda record: _datei_url(getattr(record, "noten_pfad", None)),
+            # Zeile vier filer-File-Zeilen samt Thumbnail-Objekt. Die
+            # Attributnamen bleiben der Vertrag mit intern.js.
+            "data-original-url": lambda record: _rollen_url(record, "original"),
+            "data-aufnahme-url": lambda record: _rollen_url(record, "aufnahme"),
+            "data-pdf-url":      lambda record: _rollen_url(record, "notenblatt"),
+            "data-noten-url":    lambda record: _rollen_url(record, "notensatz"),
         }
 
     def __init__(self, *args, visible_fields=None, counter_offset=0, **kwargs):
@@ -649,42 +669,56 @@ class RepertoireTabelle(tables.Table):
     def render_original(self, record):
         parts = []
         composer = getattr(record, "komponist", "") or ""
-        if getattr(record, "original_pfad", None):
+        rollen = getattr(record, "rollen", {})
+        if rollen.get("original"):
             parts.append(_audio_button_html(
-                _datei_url(record.original_pfad), record.id, record.titel, "original", composer
+                _rollen_url(record, "original"), record.id, record.titel, "original", composer
             ))
-        if getattr(record, "aufnahme_pfad", None):
+        if rollen.get("aufnahme"):
             parts.append(_audio_button_html(
-                _datei_url(record.aufnahme_pfad), f"r{record.id}", record.titel, "jg", composer
+                _rollen_url(record, "aufnahme"), f"r{record.id}", record.titel, "jg", composer
             ))
         if not parts:
             return ""
         return mark_safe("".join(parts))
 
     def render_pdf(self, record):
-        if not getattr(record, "pdf_pfad", None):
+        if not _rollen_url(record, "notenblatt"):
             return ""
         return format_html(
             '<a href="{url}" target="_blank" rel="noopener" '
             'class="file-icon-btn file-icon-btn--pdf" '
             'title="Notenblatt: {title}" aria-label="Notenblatt {title} öffnen">'
             "{icon}</a>",
-            url=_datei_url(record.pdf_pfad),
+            url=_rollen_url(record, "notenblatt"),
             title=record.titel,
             icon=mark_safe(_PDF_ICON_SVG),
         )
 
     def render_noten(self, record):
-        if not getattr(record, "noten_pfad", None):
+        if not _rollen_url(record, "notensatz"):
             return ""
         return format_html(
             '<a href="{url}" target="_blank" rel="noopener" '
             'class="file-icon-btn file-icon-btn--notes" '
             'title="Notensatz: {title}" aria-label="Notensatz {title} öffnen">'
             "{icon}</a>",
-            url=_datei_url(record.noten_pfad),
+            url=_rollen_url(record, "notensatz"),
             title=record.titel,
             icon=mark_safe(_NOTES_ICON_SVG),
+        )
+
+    def render_text(self, record):
+        if not _rollen_url(record, "text"):
+            return ""
+        return format_html(
+            '<a href="{url}" target="_blank" rel="noopener" '
+            'class="file-icon-btn" '
+            'title="Liedtext: {title}" aria-label="Liedtext {title} öffnen">'
+            "{icon}</a>",
+            url=_rollen_url(record, "text"),
+            title=record.titel,
+            icon=mark_safe(_PDF_ICON_SVG),
         )
 
     def render_eigenschaften(self, record):

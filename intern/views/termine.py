@@ -22,7 +22,7 @@ from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from icalendar import Calendar, Event
 
-from intern import folders
+from intern import folders, liedablage
 from intern.app_settings import get_config, get_config_int
 from intern.folder_access import visible_folder_ids
 
@@ -295,8 +295,9 @@ def konzert_pdf(request, id):
 
     combined = pdfium.PdfDocument.new()
     for k in lieder:
-        if k.lied and k.lied.pdf:
-            quelle = pdfium.PdfDocument(k.lied.pdf.file.path)
+        datei = liedablage.datei_fuer(k.lied, "notenblatt") if k.lied else None
+        if datei:
+            quelle = pdfium.PdfDocument(datei.file.path)
             try:
                 combined.import_pages(quelle)
             finally:
@@ -319,9 +320,10 @@ def konzert_pdf_zip(request, id):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for k in lieder:
-            if k.lied and k.lied.pdf:
+            datei = liedablage.datei_fuer(k.lied, "notenblatt") if k.lied else None
+            if datei:
                 arcname = f"{k.position:02d} {k.lied.titel}.pdf"
-                zf.write(k.lied.pdf.file.path, arcname)
+                zf.write(datei.file.path, arcname)
     buf.seek(0)
 
     safe_name = termin.kurz.replace('"', "")
@@ -336,10 +338,11 @@ def konzert_noten_zip(request, id):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for k in lieder:
-            if k.lied and k.lied.noten:
-                ext = os.path.splitext(k.lied.noten.file.path)[1]
+            datei = liedablage.datei_fuer(k.lied, "notensatz") if k.lied else None
+            if datei:
+                ext = os.path.splitext(datei.file.path)[1]
                 arcname = f"{k.position:02d} {k.lied.titel}{ext}"
-                zf.write(k.lied.noten.file.path, arcname)
+                zf.write(datei.file.path, arcname)
     buf.seek(0)
 
     safe_name = termin.kurz.replace('"', "")

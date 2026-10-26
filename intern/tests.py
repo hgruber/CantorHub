@@ -6633,28 +6633,33 @@ class RepertoireUploadTest(SimpleTestCase):
 
 
 class WarteschlangenTest(SimpleTestCase):
-    """Charakterisierung der Wiedergabelisten, bevor der Umbau sie auf
-    Rollenzeilen umstellt: welche Titel in welcher Liste landen, wie der Typ
-    heißt und woher die URL kommt."""
+    """Die Wiedergabelisten lesen die Rollenzeilen: welche Titel in welcher
+    Liste landen, wie der Typ heißt und woher die URL kommt."""
 
-    class _QS:
-        def __init__(self, rows):
-            self._rows = rows
+    @staticmethod
+    def _lied(pk, titel="Lied A", komponist="Komponist"):
+        return SimpleNamespace(pk=pk, titel=titel, komponist=komponist)
 
-        def values_list(self, *felder):
-            return iter(self._rows)
+    @staticmethod
+    def _datei(pfad):
+        return SimpleNamespace(file=SimpleNamespace(name=pfad))
 
-    def _bauen(self, rows, bezeichnung="Chor Aufnahme"):
+    def _bauen(self, lieder, rollen, bezeichnung="Chor Aufnahme"):
         from intern.views.titel import _warteschlangen
 
         with mock.patch(
+            "intern.views.titel.liedablage.rollen_fuer", return_value=rollen
+        ), mock.patch(
             "intern.views.titel.get_aufnahme_bezeichnung", return_value=bezeichnung
         ):
-            return _warteschlangen(self._QS(rows))
+            return _warteschlangen(lieder)
 
     def test_original_und_aufnahme(self):
+        lied = self._lied(1)
         listen = self._bauen(
-            [("Lied A", "Komponist", "filer_public/a.mp3", "filer_public/b.mp3")]
+            [lied],
+            {1: {"original": self._datei("filer_public/a.mp3"),
+                 "aufnahme": self._datei("filer_public/b.mp3")}},
         )
         self.assertEqual([e["title"] for e in listen["originals"]], ["Lied A"])
         self.assertEqual([e["title"] for e in listen["aufnahmen"]], ["Lied A"])
@@ -6664,75 +6669,97 @@ class WarteschlangenTest(SimpleTestCase):
         self.assertEqual(listen["all"][0]["type"], "Original")
 
     def test_all_nimmt_original_vor_aufnahme(self):
-        listen = self._bauen([("Lied A", "", "filer_public/a.mp3", "filer_public/b.mp3")])
+        listen = self._bauen(
+            [self._lied(1, komponist="")],
+            {1: {"original": self._datei("filer_public/a.mp3"),
+                 "aufnahme": self._datei("filer_public/b.mp3")}},
+        )
         self.assertTrue(listen["all"][0]["url"].endswith("a.mp3"))
 
     def test_nur_aufnahme(self):
-        listen = self._bauen([("Lied B", "", None, "filer_public/b.mp3")])
+        listen = self._bauen(
+            [self._lied(2, "Lied B", "")],
+            {2: {"aufnahme": self._datei("filer_public/b.mp3")}},
+        )
         self.assertEqual(listen["originals"], [])
         self.assertEqual(len(listen["aufnahmen"]), 1)
         self.assertEqual(listen["all"][0]["type"], "Chor Aufnahme")
 
     def test_ohne_datei_kein_eintrag(self):
-        listen = self._bauen([("Lied C", "", None, None)])
+        listen = self._bauen([self._lied(3, "Lied C", "")], {3: {}})
         self.assertEqual(listen, {"originals": [], "aufnahmen": [], "all": []})
 
     def test_komponist_fehlt_wird_leer(self):
-        listen = self._bauen([("Lied D", None, "filer_public/d.mp3", None)])
+        listen = self._bauen(
+            [self._lied(4, "Lied D", None)], {4: {"original": self._datei("filer_public/d.mp3")}}
+        )
         self.assertEqual(listen["originals"][0]["composer"], "")
 
     def test_url_kommt_aus_dem_speicherpfad(self):
-        listen = self._bauen([("Lied E", "", "filer_public/e.mp3", None)])
+        listen = self._bauen(
+            [self._lied(5, "Lied E", "")], {5: {"original": self._datei("filer_public/e.mp3")}}
+        )
         self.assertTrue(listen["originals"][0]["url"].endswith("filer_public/e.mp3"))
 
     def test_zaehlen(self):
         from intern.views.titel import _warteschlangen_zaehlen
 
-        zaehler = _warteschlangen_zaehlen(
-            self._QS(
-                [
-                    ("filer_public/a.mp3", "filer_public/b.mp3"),
-                    (None, "filer_public/c.mp3"),
-                    (None, None),
-                ]
-            )
-        )
+        lieder = [self._lied(1), self._lied(2), self._lied(3)]
+        rollen = {
+            1: {"original": self._datei("a"), "aufnahme": self._datei("b")},
+            2: {"aufnahme": self._datei("c")},
+            3: {},
+        }
+        with mock.patch("intern.views.titel.liedablage.rollen_fuer", return_value=rollen):
+            zaehler = _warteschlangen_zaehlen(lieder)
         self.assertEqual(zaehler, {"originals": 1, "aufnahmen": 2, "all": 2})
 
 
 class RepertoireTabelleRollenTest(SimpleTestCase):
-    """Charakterisierung der drei Datei-Renderer der Liederliste."""
+    """Die drei Datei-Renderer der Liederliste lesen die Rollen der Zeile."""
+
+    @staticmethod
+    def _datei(pfad):
+        return SimpleNamespace(file=SimpleNamespace(name=pfad))
 
     def _tabelle(self):
         from intern.tables import RepertoireTabelle
 
         return RepertoireTabelle([])
 
-    def test_pdf_ohne_pfad_leer(self):
-        record = SimpleNamespace(pdf_pfad=None, titel="A")
+    def test_pdf_ohne_rolle_leer(self):
+        record = SimpleNamespace(rollen={}, titel="A")
         self.assertEqual(self._tabelle().render_pdf(record), "")
 
     def test_pdf_verlinkt(self):
-        record = SimpleNamespace(pdf_pfad="filer_public/n.pdf", titel="A")
+        record = SimpleNamespace(rollen={"notenblatt": self._datei("filer_public/n.pdf")}, titel="A")
         html = str(self._tabelle().render_pdf(record))
         self.assertIn("file-icon-btn--pdf", html)
         self.assertIn("filer_public/n.pdf", html)
         self.assertIn("Notenblatt: A", html)
 
     def test_noten_verlinkt(self):
-        record = SimpleNamespace(noten_pfad="filer_public/n.mscz", titel="A")
+        record = SimpleNamespace(rollen={"notensatz": self._datei("filer_public/n.mscz")}, titel="A")
         html = str(self._tabelle().render_noten(record))
         self.assertIn("file-icon-btn--notes", html)
         self.assertIn("filer_public/n.mscz", html)
         self.assertIn("Notensatz: A", html)
+
+    def test_text_verlinkt(self):
+        record = SimpleNamespace(rollen={"text": self._datei("filer_public/t.odt")}, titel="A")
+        html = str(self._tabelle().render_text(record))
+        self.assertIn("filer_public/t.odt", html)
+        self.assertIn("Liedtext: A", html)
 
     def test_original_und_aufnahme(self):
         record = SimpleNamespace(
             id=7,
             titel="A",
             komponist="K",
-            original_pfad="filer_public/a.mp3",
-            aufnahme_pfad="filer_public/b.mp3",
+            rollen={
+                "original": self._datei("filer_public/a.mp3"),
+                "aufnahme": self._datei("filer_public/b.mp3"),
+            },
         )
         with mock.patch("intern.tables.get_vereinsname_kurz", return_value="Chor"), \
                 mock.patch("intern.tables.startseite_datei", return_value="/logo.svg"):
@@ -6744,8 +6771,8 @@ class RepertoireTabelleRollenTest(SimpleTestCase):
         self.assertIn("filer_public/a.mp3", html)
         self.assertIn("filer_public/b.mp3", html)
 
-    def test_original_ohne_pfade_leer(self):
-        record = SimpleNamespace(id=7, titel="A", komponist="", original_pfad=None, aufnahme_pfad=None)
+    def test_original_ohne_rollen_leer(self):
+        record = SimpleNamespace(id=7, titel="A", komponist="", rollen={})
         self.assertEqual(self._tabelle().render_original(record), "")
 
     def test_row_attrs_liefern_die_vier_urls(self):
@@ -6753,10 +6780,10 @@ class RepertoireTabelleRollenTest(SimpleTestCase):
 
         record = SimpleNamespace(
             id=7, titel="A", komponist="",
-            original_pfad="filer_public/a.mp3",
-            aufnahme_pfad=None,
-            pdf_pfad="filer_public/n.pdf",
-            noten_pfad=None,
+            rollen={
+                "original": self._datei("filer_public/a.mp3"),
+                "notenblatt": self._datei("filer_public/n.pdf"),
+            },
         )
         attrs = RepertoireTabelle.Meta.row_attrs
         self.assertTrue(attrs["data-original-url"](record).endswith("filer_public/a.mp3"))
@@ -6893,18 +6920,15 @@ class KonzertExportTest(SimpleTestCase):
             pfad = os.path.join(d, "x.pdf")
             with open(pfad, "wb") as f:
                 f.write(b"%PDF")
-            k = SimpleNamespace(
-                position=1,
-                lied=SimpleNamespace(
-                    titel="Titel",
-                    pdf=SimpleNamespace(file=SimpleNamespace(path=pfad)),
-                    noten=None,
-                ),
-            )
+            k = SimpleNamespace(position=1, lied=SimpleNamespace(titel="Titel"))
             with mock.patch(
                 "intern.views.termine.get_object_or_404",
                 return_value=SimpleNamespace(kurz="Konzert"),
-            ), mock.patch("intern.views.termine.Konzert.objects", self._Konzerte([k])):
+            ), mock.patch("intern.views.termine.Konzert.objects", self._Konzerte([k])), \
+                    mock.patch(
+                        "intern.views.termine.liedablage.datei_fuer",
+                        return_value=SimpleNamespace(file=SimpleNamespace(path=pfad)),
+                    ):
                 antwort = termine.konzert_pdf_zip(self._request(), 1)
             with self._antwort_lesen(antwort) as zf:
                 self.assertEqual(zf.namelist(), ["01 Titel.pdf"])
@@ -6918,39 +6942,33 @@ class KonzertExportTest(SimpleTestCase):
             pfad = os.path.join(d, "x.mscz")
             with open(pfad, "wb") as f:
                 f.write(b"x")
-            k = SimpleNamespace(
-                position=2,
-                lied=SimpleNamespace(
-                    titel="Zweites",
-                    pdf=None,
-                    noten=SimpleNamespace(file=SimpleNamespace(path=pfad)),
-                ),
-            )
+            k = SimpleNamespace(position=2, lied=SimpleNamespace(titel="Zweites"))
             with mock.patch(
                 "intern.views.termine.get_object_or_404",
                 return_value=SimpleNamespace(kurz="Konzert"),
-            ), mock.patch("intern.views.termine.Konzert.objects", self._Konzerte([k])):
+            ), mock.patch("intern.views.termine.Konzert.objects", self._Konzerte([k])), \
+                    mock.patch(
+                        "intern.views.termine.liedablage.datei_fuer",
+                        return_value=SimpleNamespace(file=SimpleNamespace(path=pfad)),
+                    ):
                 antwort = termine.konzert_noten_zip(self._request(), 1)
             with self._antwort_lesen(antwort) as zf:
                 self.assertEqual(zf.namelist(), ["02 Zweites.mscz"])
 
     def test_ohne_datei_leeres_zip(self):
-        import tempfile
-
         from intern.views import termine
 
-        with tempfile.TemporaryDirectory():
-            k = SimpleNamespace(
-                position=1,
-                lied=SimpleNamespace(titel="Titel", pdf=None, noten=None),
-            )
-            with mock.patch(
-                "intern.views.termine.get_object_or_404",
-                return_value=SimpleNamespace(kurz="Konzert"),
-            ), mock.patch("intern.views.termine.Konzert.objects", self._Konzerte([k])):
-                antwort = termine.konzert_pdf_zip(self._request(), 1)
-            with self._antwort_lesen(antwort) as zf:
-                self.assertEqual(zf.namelist(), [])
+        k = SimpleNamespace(position=1, lied=SimpleNamespace(titel="Titel"))
+        with mock.patch(
+            "intern.views.termine.get_object_or_404",
+            return_value=SimpleNamespace(kurz="Konzert"),
+        ), mock.patch("intern.views.termine.Konzert.objects", self._Konzerte([k])), \
+                mock.patch(
+                    "intern.views.termine.liedablage.datei_fuer", return_value=None
+                ):
+            antwort = termine.konzert_pdf_zip(self._request(), 1)
+        with self._antwort_lesen(antwort) as zf:
+            self.assertEqual(zf.namelist(), [])
 
 
 class TitelSchreibpfadTest(SimpleTestCase):

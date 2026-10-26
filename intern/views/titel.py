@@ -13,7 +13,7 @@ from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, pars
 
 from filer.models import File
 
-from intern import dateiablage, folders
+from intern import dateiablage, folders, liedablage, liedrollen
 
 from ..app_settings import get_aufnahme_bezeichnung
 from ..filterbau_titel import TITEL
@@ -111,7 +111,9 @@ def titel_playlist(request):
 def _warteschlangen_zaehlen(qs):
     """Wie viele Titel je Warteschlange — fuers Menue, ohne die Listen zu bauen."""
     originals = aufnahmen = alle = 0
-    for original, aufnahme in qs.values_list("original__file", "aufnahme__file"):
+    for rollen in liedablage.rollen_fuer(qs).values():
+        original = "original" in rollen
+        aufnahme = "aufnahme" in rollen
         if original:
             originals += 1
         if aufnahme:
@@ -124,47 +126,37 @@ def _warteschlangen_zaehlen(qs):
 def _warteschlangen(qs):
     """Die drei Wiedergabelisten des Repertoires: Originale, eigene Aufnahmen, beides.
 
-    Nur die Speicherpfade, nicht die ``File``-Zeilen: fuer die URL braucht es die
-    Objekte nicht, und filer legt pro Zeile ein MultiStorageFieldFile samt
-    easy-thumbnails-Objekt an. Ueber 206 Titel gemessen: 72,7 ms mit Objekten,
-    2,9 ms so — bei gleichen URLs.
+    Nur der Speicherpfad, nicht die ``File``-Zeile: fuer die URL braucht es das
+    Objekt nicht, und filer legt pro Zeile ein MultiStorageFieldFile samt
+    easy-thumbnails-Objekt an.
     """
     originals, aufnahmen, alle = [], [], []
     aufnahme_typ = get_aufnahme_bezeichnung()
-    for titel, komponist, original, aufnahme in qs.values_list(
-        "titel", "komponist", "original__file", "aufnahme__file"
-    ):
-        composer = komponist or ""
+    lieder = list(qs)
+    nach_rolle = liedablage.rollen_fuer(lieder)
+    for lied in lieder:
+        rollen = nach_rolle[lied.pk]
+        original = rollen.get("original")
+        aufnahme = rollen.get("aufnahme")
+        composer = lied.komponist or ""
         if original:
-            originals.append({"url": datei_url(original), "title": titel, "type": "Original", "composer": composer})
+            originals.append({"url": datei_url(original.file.name), "title": lied.titel, "type": "Original", "composer": composer})
         if aufnahme:
-            aufnahmen.append({"url": datei_url(aufnahme), "title": titel, "type": aufnahme_typ, "composer": composer})
+            aufnahmen.append({"url": datei_url(aufnahme.file.name), "title": lied.titel, "type": aufnahme_typ, "composer": composer})
         audio = original or aufnahme
         if audio:
-            alle.append({"url": datei_url(audio), "title": titel, "type": "Original" if original else aufnahme_typ, "composer": composer})
+            alle.append({"url": datei_url(audio.file.name), "title": lied.titel, "type": "Original" if original else aufnahme_typ, "composer": composer})
     return {"originals": originals, "aufnahmen": aufnahmen, "all": alle}
 
 
 def _repertoire_queryset():
-    """Das Repertoire, wie Liste und Warteschlangen es brauchen."""
+    """Das Repertoire, wie Liste und Warteschlangen es brauchen.
+
+    Die Dateien kommen nicht aus dem Queryset: ``titel_list`` verteilt die
+    Rollenzeilen der Seite in einem Zugriff (``liedablage.rollen_fuer``)."""
     return (
         Lied.objects.annotate(
             zuletzt=Max("konzert__termin__datum", filter=Q(konzert__termin__datum__lte=timezone.now().date()))
-        )
-        # Alle vier Dateifelder, nicht nur die eingeblendeten Spalten: RepertoireTabelle
-        # schreibt die vier data-*-url-Attribute in jede Zeile (Meta.row_attrs in
-        # tables.py), unabhaengig davon, welche Spalten sichtbar sind. solist/dirigent
-        # sind ManyToManyColumn und kosten sonst je eine weitere Abfrage pro Zeile.
-        #
-        # Von den Dateien nur der Speicherpfad (derselbe JOIN wie select_related,
-        # aber ohne Objekte): daraus baut die Tabelle die URLs. Ein ``File`` je
-        # Feld und Zeile hiesse 200 filer-Objekte pro Seite, jedes mit einem
-        # easy-thumbnails-Feldobjekt.
-        .annotate(
-            original_pfad=F("original__file"),
-            aufnahme_pfad=F("aufnahme__file"),
-            pdf_pfad=F("pdf__file"),
-            noten_pfad=F("noten__file"),
         )
         .prefetch_related("solist", "dirigent")
         .order_by("titel")
@@ -259,6 +251,11 @@ def titel_list(request):
 
     probe = RepertoireTabelle(qs, visible_fields=fields)
     page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
+    # Die Dateien der Seite in einem Zugriff — Rollenzeile zuerst, alter FK als
+    # Rückfall bis Migration 0006.
+    nach_rolle = liedablage.rollen_fuer(page)
+    for lied in page:
+        lied.rollen = nach_rolle[lied.pk]
     table = RepertoireTabelle(page, visible_fields=fields, counter_offset=offset)
     RequestConfig(request, paginate=False).configure(table)
 
@@ -348,12 +345,57 @@ def _titeldatei_ablegen(f, feld, ordner_fn, titel):
     return dateiablage.systemablage(f, ordner_fn() or f.folder_id, f"{praefix}{titel}{ext}")
 
 
+_ROLLEN_CSS = {"notenblatt": " file-icon-btn--pdf", "notensatz": " file-icon-btn--notes"}
+
+
+def _medien(lied):
+    """Die Dateien des Liedes in Anzeigereihenfolge — eine Schleife im Template
+    statt eines Blocks je Rolle."""
+    rollen = liedablage.rollen_von(lied)
+    aufnahme_typ = get_aufnahme_bezeichnung()
+    medien = []
+    for definition in liedrollen.ROLLEN:
+        datei = rollen.get(definition.key)
+        if not datei:
+            continue
+        if definition.key == "original":
+            medien.append({
+                "rolle": definition.key,
+                "label": definition.label,
+                "url": datei.url,
+                "audio": True,
+                "song_id": str(lied.id),
+                "typ": definition.label,
+                "logo": False,
+            })
+        elif definition.key == "aufnahme":
+            medien.append({
+                "rolle": definition.key,
+                "label": aufnahme_typ,
+                "url": datei.url,
+                "audio": True,
+                "song_id": f"r{lied.id}",
+                "typ": aufnahme_typ,
+                "logo": True,
+            })
+        else:
+            medien.append({
+                "rolle": definition.key,
+                "label": definition.label,
+                "url": datei.url,
+                "audio": False,
+                "css": _ROLLEN_CSS.get(definition.key, ""),
+            })
+    return medien
+
+
 @login_required
 def titel_view(request, titel):
     lied = get_object_or_404(Lied.objects.prefetch_related("solist", "dirigent"), id=titel)
     context = {
         "seitentitel": lied.titel,
         "lied": lied,
+        "medien": _medien(lied),
         "up": "titel_list",
         "edit": "titel_edit" if request.user.has_perm("intern.change_lied") else None,
         "history": "titel_aenderungen" if request.user.has_perm("intern.change_lied") else None,

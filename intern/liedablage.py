@@ -8,10 +8,20 @@ steht in ``intern/liedrollen.py``.
 
 import os
 
-from filer.models import Folder
+from filer.models import File, Folder
 
 from . import dateiablage, folders, liedrollen
 from .models import Lied, LiedDatei
+
+# Bis Migration 0006 die vier Spalten entfernt: Rolle → altes Lied-Feld. Der
+# Rückfall liest Dateien, die im Fenster zwischen Bestandsumzug und
+# Umschaltung noch über den alten Upload-Wege dazukamen.
+ALT_ROLLEN = (
+    ("original", "original"),
+    ("aufnahme", "aufnahme"),
+    ("notenblatt", "pdf"),
+    ("notensatz", "noten"),
+)
 
 
 def ordnername(titel):
@@ -61,6 +71,48 @@ def ordner_fuer(lied):
     Lied.objects.filter(pk=lied.pk).update(ordner=ordner)
     lied.ordner_id = ordner.pk
     return ordner.pk
+
+
+def rollen_fuer(lieder):
+    """{lied_id: {rolle: filer.File}} für eine Liste, ein Queryset oder eine Seite.
+
+    Die Rollenzeile gilt. Fehlt sie, liest der alte FK (``ALT_ROLLEN``) —
+    damit bleibt sichtbar, was im Fenster zwischen Bestandsumzug und
+    Umschaltung noch über den alten Weg dazukam. Die FKs werden als IDs
+    gelesen und nur die tatsächlich fehlenden Zeilen nachgeladen; das kostet
+    keine ``File``-Objekte für die ganze Seite.
+    """
+    lieder = list(lieder)
+    ids = [lied.pk for lied in lieder]
+    ergebnis = {pk: {} for pk in ids}
+    if not ids:
+        return ergebnis
+    for zeile in LiedDatei.objects.filter(lied_id__in=ids).select_related("datei"):
+        ergebnis[zeile.lied_id][zeile.rolle] = zeile.datei
+
+    nachzulesen = []
+    for lied_id, original, aufnahme, pdf, noten in Lied.objects.filter(
+        pk__in=ids
+    ).values_list("pk", "original_id", "aufnahme_id", "pdf_id", "noten_id"):
+        for (rolle, _), fk in zip(ALT_ROLLEN, (original, aufnahme, pdf, noten)):
+            if fk and rolle not in ergebnis[lied_id]:
+                nachzulesen.append((lied_id, rolle, fk))
+    if nachzulesen:
+        dateien = File.objects.in_bulk({fk for _, _, fk in nachzulesen})
+        for lied_id, rolle, fk in nachzulesen:
+            datei = dateien.get(fk)
+            if datei is not None:
+                ergebnis[lied_id][rolle] = datei
+    return ergebnis
+
+
+def rollen_von(lied):
+    return rollen_fuer([lied])[lied.pk]
+
+
+def datei_fuer(lied, rolle):
+    """Die Datei einer Rolle, oder ``None``."""
+    return rollen_von(lied).get(rolle)
 
 
 def ablegen(lied, rolle, datei, name=None):
