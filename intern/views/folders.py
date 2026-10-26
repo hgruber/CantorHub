@@ -65,13 +65,15 @@ def _sort_key(text):
     return "".join(c for c in text if not unicodedata.combining(c))
 
 
-def _build_folder_flat(exclude_pk=None, user=None, ohne_backstage=False):
+def _build_folder_flat(exclude_pk=None, user=None, ohne_backstage=False, ohne_liedordner=False):
     """Return all folders as a flat list with full path strings, for the folder picker.
 
     The list is sorted by path segment, so parents precede their children and
     siblings appear alphabetically. When `user` is given, restrict the list to
     folders the user can read; `ohne_backstage` drops the Backstage branch,
-    which only webmasters may target with a move, link or copy."""
+    which only webmasters may target with a move, link or copy;
+    `ohne_liedordner` drops the folders of Lieder, which belong to their song
+    and are not a place for the article file menu."""
     all_fldrs = list(Folder.objects.order_by("name").values("id", "name", "parent_id"))
     folder_map = {f["id"]: f for f in all_fldrs}
 
@@ -94,6 +96,13 @@ def _build_folder_flat(exclude_pk=None, user=None, ohne_backstage=False):
     if ohne_backstage:
         gesperrt = _backstage_zweig()
         all_fldrs = [f for f in all_fldrs if f["id"] not in gesperrt]
+    if ohne_liedordner:
+        from ..models import Lied
+
+        lied_ordner = set(
+            Lied.objects.exclude(ordner_id=None).values_list("ordner_id", flat=True)
+        )
+        all_fldrs = [f for f in all_fldrs if f["id"] not in lied_ordner]
 
     eintraege = [
         {"id": f["id"], "path": path_of(f)} for f in all_fldrs if f["id"] != exclude_pk
@@ -299,6 +308,16 @@ def _enthaelt_standardordner(pk):
     """The folder is, or holds, one of `folders.PFADE` — renaming, moving or
     deleting it would break the lookup, for everyone, superusers included."""
     return bool(_descendant_folder_ids(pk) & folders.standard_ids())
+
+
+def _enthaelt_liedordner(pk):
+    """The folder is, or holds, a Lied's own folder.
+
+    Sein Name folgt dem Liedtitel, und die Zuordnung hängt an `Lied.ordner` —
+    umbenannt, verschoben oder gelöscht wird er nur über das Lied."""
+    from ..models import Lied
+
+    return Lied.objects.filter(ordner_id__in=_descendant_folder_ids(pk)).exists()
 
 
 def _folder_path_map(user=None):
@@ -834,7 +853,7 @@ def folder_delete(request):
             _, _, can_del = folder_access(request.user, folder)
             if not (global_delete or can_del):
                 continue
-            if _enthaelt_standardordner(folder.pk):
+            if _enthaelt_standardordner(folder.pk) or _enthaelt_liedordner(folder.pk):
                 continue
             _delete_folder_deep(folder)
         else:
@@ -872,8 +891,9 @@ def folder_move(request):
             # danach an sich selbst und wäre von der Wurzel aus unerreichbar.
             if _is_descendant_or_self(target_id, folder.pk):
                 continue
-            # Standardordner bleiben, wo das Portal sie sucht.
-            if _enthaelt_standardordner(folder.pk):
+            # Standardordner bleiben, wo das Portal sie sucht; Lied-Ordner
+            # bleiben beim Lied.
+            if _enthaelt_standardordner(folder.pk) or _enthaelt_liedordner(folder.pk):
                 continue
             # Ein Name, ein Ordner: was dort schon so heißt, bleibt, wo es ist.
             if not dateiablage.ordnername_frei(target_id, folder.name, folder.pk):
@@ -1058,6 +1078,12 @@ def folder_rename(request):
         if folder.pk in folders.standard_ids():
             return JsonResponse(
                 {"status": "error", "message": "Standardordner lassen sich nicht umbenennen."},
+                status=400,
+            )
+        if _enthaelt_liedordner(folder.pk):
+            return JsonResponse(
+                {"status": "error",
+                 "message": "Der Ordner gehört zu einem Lied und folgt dessen Titel."},
                 status=400,
             )
         if not dateiablage.ordnername_frei(folder.parent_id, new_name, folder.pk):

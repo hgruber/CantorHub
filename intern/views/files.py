@@ -18,13 +18,13 @@ from django.views.decorators.http import require_POST
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
-from intern import dateiablage, folders
+from intern import dateiablage, folders, liedablage, liedrollen
 from intern.avatar_access import darf_avatar_aendern
 from intern.dateiablage import ordner_pfad, verknuepfte_dateien
 from intern.folder_access import folder_access, visible_folder_ids
 
 from ..app_settings import get_config
-from ..models import DateiVersion, Lied, TabellenPreferenzen, Termin
+from ..models import DateiVersion, Lied, LiedDatei, TabellenPreferenzen, Termin
 
 
 def _aufnahme_prefixes():
@@ -205,6 +205,20 @@ def _get_lied_by_filename(filename):
         return None
 
 
+def _rolle_fuer_upload(filename):
+    """Die Rolle, die eine hochgeladene Datei vorschlägt — Aufnahme am Präfix.
+
+    Die Endung entscheidet; ``.mp3`` schlägt ``original`` vor, und nur der
+    Aufnahme-Präfix macht daraus ``aufnahme``. Unbekannte Endungen ergeben
+    ``None``: Die Datei landet ohne Rolle im Lied-Ordner."""
+    rolle = liedrollen.rolle_fuer_endung(_get_file_extension(filename))
+    if rolle in ("original", "aufnahme"):
+        stem = os.path.splitext(os.path.basename(filename))[0]
+        if stem.startswith(_aufnahme_prefixes()):
+            return "aufnahme"
+    return rolle
+
+
 def _assign_file_to_song(filename, filer_file):
     """If filename matches a song title, assign filer_file to the appropriate Lied field."""
     song = _get_lied_by_filename(filename)
@@ -290,41 +304,27 @@ def upload(request):
             )
         preferred_folder_id = request.POST.get("folder_id")
         route_by_type = request.POST.get("route_by_type")
-
-        # Extract extension
         extension = _get_file_extension(file.name)
 
-        # Get file type config if extension is special
-        file_type, file_type_config = _get_file_type_config(extension)
-
-        # Look up song if filename matches
-        song = _get_lied_by_filename(file.name)
-
-        # Im Repertoire wird nur abgelegt, was einem Titel gehört: ein
-        # bekannter Dateityp, und der Titel kommt von der Detailseite oder
-        # aus dem Dateinamen. Alles andere wird abgelehnt, bevor es abgelegt ist.
+        # Repertoire-Upload: Der Titel kommt von der Detailseite (lied_id) oder
+        # aus dem Dateinamen. Die Datei gehört dann in den Lied-Ordner; die
+        # Endung schlägt die Rolle vor. Unbekannte Endungen bleiben erlaubt —
+        # sie landen ohne Rolle im Ordner.
+        lied = None
         if route_by_type:
-            if not file_type:
-                endungen = ", ".join(
-                    e for c in settings.FILE_TYPE_CONFIG.values() for e in c["extensions"]
-                )
-                return JsonResponse(
-                    {"status": "error",
-                     "message": f"Dateityp passt nicht ins Repertoire (erlaubt: {endungen})"},
-                    status=400,
-                )
             lied_id = request.POST.get("lied_id", "")
-            lied_vorgegeben = (
-                lied_id.isdigit()
-                and request.user.has_perm("intern.change_lied")
-                and Lied.objects.filter(pk=int(lied_id)).exists()
-            )
-            if not song and not lied_vorgegeben:
+            if lied_id.isdigit() and request.user.has_perm("intern.change_lied"):
+                lied = Lied.objects.filter(pk=int(lied_id)).first()
+            lied = lied or _get_lied_by_filename(file.name)
+            if lied is None:
                 return JsonResponse(
                     {"status": "error",
                      "message": "Kein Titel dieses Namens — Datei wie den Titel benennen"},
                     status=400,
                 )
+        else:
+            lied = _get_lied_by_filename(file.name)
+        rolle = _rolle_fuer_upload(file.name) if lied is not None else None
 
         # Terminseite: die Datei gehört dem Termin. Ordner und Name stehen
         # damit fest, und das Recht wird vor der Ablage geprüft — eine Ablehnung
@@ -340,26 +340,18 @@ def upload(request):
                     status=403,
                 )
 
-        # Determine folder_id:
-        # Use type-specific subfolder when we know the file type AND either a
-        # matching song was found or the upload context explicitly requests it
-        # (e.g. dropped on the Repertoire/Titel page).
-        _type_folder = {"audio": folders.repertoire, "music": folders.notensatz, "pdf": folders.pdf}
-        # Without a folder the file lands at the root (None), which the
-        # answer reports so the upload card can ask to keep the root clear.
+        # Zielordner: Termin → Termin-Anhänge, Lied → eigener Lied-Ordner,
+        # sonst der vom Absender genannte Ordner. Ohne Ordner läge die Datei
+        # an der Wurzel (None); die Antwort meldet das, damit die Upload-Karte
+        # die Wurzel freihalten kann.
         if termin is not None:
             folder_id = folders.termine()
             if not folder_id:
                 return JsonResponse(
                     {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
                 )
-        elif file_type and file_type_config and (song or route_by_type):
-            zielordner = _type_folder.get(file_type)
-            folder_id = zielordner() if zielordner else None
-            if not folder_id:
-                return JsonResponse(
-                    {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
-                )
+        elif lied is not None:
+            folder_id = liedablage.ordner_fuer(lied)
         else:
             folder_id = preferred_folder_id if preferred_folder_id not in (None, "", "0") else None
 
@@ -390,6 +382,8 @@ def upload(request):
         # wird eine neue Fassung.
         if termin is not None:
             name = f"{termin.datum:%Y-%m-%d} {file.name}"
+        elif lied is not None and rolle:
+            name = liedablage.dateiname(lied.titel, rolle, extension)
         # Feld-Dropzone (Profilbild, Forenbild, Titel-Datei): die Datei wartet im
         # Zielordner auf „Speichern“ und darf bis dahin keine fremde gleichnamige
         # zu ihrer Fassung machen — ersetzt wird erst über systemablage().
@@ -417,19 +411,16 @@ def upload(request):
                 else f"Bereits vorhanden als Fassung vom {gleiche.datum:%-d.%-m.%Y} — nicht abgelegt"
             )
 
-        # Assign to a song: explicitly by id when dropped on a Titel detail
-        # page, otherwise by filename match.
-        lied_id = request.POST.get("lied_id")
         if termin is not None:
             termin.dateien.add(filer_file)
-        elif lied_id and request.user.has_perm("intern.change_lied"):
-            try:
-                lied = Lied.objects.get(pk=int(lied_id))
-                _route_and_rename_for_lied(lied, filer_file, file.name)
-            except (Lied.DoesNotExist, ValueError):
-                pass
-        else:
-            _assign_file_to_song(file.name, filer_file)
+        elif lied is not None and rolle:
+            LiedDatei.objects.update_or_create(
+                lied=lied, rolle=rolle, defaults={"datei": filer_file}
+            )
+            feld = liedablage.ROLLEN_JE_FELD.get(rolle)
+            if feld:
+                # Bis Migration 0006 hält der alte FK mit (Rückweg).
+                Lied.objects.filter(pk=lied.pk).update(**{feld: filer_file})
 
         # Return response
         url = (request.META.get("HTTP_ORIGIN") or "") + filer_file.url
@@ -596,7 +587,9 @@ def datei_aktionen(request, pk):
     ordner = {o.pk: o for o in Folder.objects.all()}
     ziele = [
         e for e in _build_folder_flat(
-            user=request.user, ohne_backstage=not _sieht_backstage(request.user)
+            user=request.user,
+            ohne_backstage=not _sieht_backstage(request.user),
+            ohne_liedordner=True,
         )
         if e["id"] not in belegt and folder_access(request.user, ordner.get(e["id"]))[1]
     ]

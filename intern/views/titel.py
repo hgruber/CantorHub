@@ -11,16 +11,16 @@ from django_tables2 import RequestConfig
 from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
-from filer.models import File
+from filer.models import File, Folder
 
-from intern import dateiablage, folders, liedablage, liedrollen
+from intern import folders, liedablage, liedrollen
 
 from ..app_settings import get_aufnahme_bezeichnung
 from ..filterbau_titel import TITEL
 from ..forms import LiedEditForm
 from ..models import Konzert, Lied, Termin, User
 from ..tables import RepertoireTabelle
-from .files import _get_file_extension, _aufnahme_prefix_with_space, datei_url, visible_fields
+from .files import datei_url, visible_fields
 
 _PAGE_SIZE = 50
 
@@ -334,17 +334,6 @@ def _feld_ordner():
     }
 
 
-def _titeldatei_ablegen(f, feld, ordner_fn, titel):
-    """Eine hochgeladene Titel-Datei in ihren Ordner, benannt nach dem Titel.
-
-    Liegt dort schon eine Datei dieses Namens (die bisherige des Titels), wird
-    die neue ihre vordere Fassung; zurück kommt die Zeile, auf die der Titel
-    zeigen soll."""
-    ext = _get_file_extension(f.original_filename or f.name or "")
-    praefix = _aufnahme_prefix_with_space() if feld == "aufnahme" else ""
-    return dateiablage.systemablage(f, ordner_fn() or f.folder_id, f"{praefix}{titel}{ext}")
-
-
 _ROLLEN_CSS = {"notenblatt": " file-icon-btn--pdf", "notensatz": " file-icon-btn--notes"}
 
 
@@ -415,24 +404,18 @@ def titel_edit(request, titel):
     if request.method == "POST":
         form = LiedEditForm(request.POST, request.FILES, instance=lied)
         if form.is_valid():
-            # Move dropzone-uploaded files to their correct folders
-            _FILER_EDIT_MAP = {
-                "original": folders.repertoire,
-                "aufnahme": folders.repertoire,
-                "pdf": folders.pdf,
-                "noten": folders.notensatz,
-            }
+            instance = form.save(commit=False)
+            # Dropzone-Dateien landen im Lied-Ordner; die Rolle entscheidet.
             abgelegt = {}
-            for field_name, folder_fn in _FILER_EDIT_MAP.items():
+            for field_name, rolle in liedablage.FELD_ROLLE.items():
                 new_id = request.POST.get(field_name)
                 old_id = str(getattr(lied, field_name + "_id") or "") if hasattr(lied, field_name + "_id") else ""
                 if new_id and new_id != old_id:
                     try:
                         f = File.objects.get(pk=int(new_id))
-                        abgelegt[field_name] = _titeldatei_ablegen(f, field_name, folder_fn, lied.titel)
+                        abgelegt[field_name] = liedablage.ablegen(instance, rolle, f)
                     except (File.DoesNotExist, ValueError):
                         pass
-            instance = form.save(commit=False)
             # Hat die Ablage die neue Datei mit der bisherigen verschmolzen,
             # gilt deren Zeile — nicht die aus dem Formular.
             for field_name, zeile in abgelegt.items():
@@ -440,6 +423,8 @@ def titel_edit(request, titel):
             instance._audit_user = request.user
             instance.save()
             form.save_m2m()
+            if instance.titel != lied.titel:
+                liedablage.titel_geaendert(instance, instance.titel)
             return redirect("titel_view", titel=titel)
     else:
         form = LiedEditForm(instance=lied)
@@ -475,6 +460,13 @@ def titel_delete(request, titel):
     lied = get_object_or_404(Lied, id=titel)
     if lied.konzert_set.exists() or lied.solist.exists() or lied.dirigent.exists():
         return redirect("titel_edit", titel=titel)
+    if lied.ordner_id:
+        # Der Ordner gehört zum Lied: Er geht mit, samt rollenloser Dateien.
+        from .folders import _delete_folder_deep
+
+        ordner = Folder.objects.filter(pk=lied.ordner_id).first()
+        if ordner is not None:
+            _delete_folder_deep(ordner)
     lied._audit_user = request.user
     lied.delete()
     return redirect("titel_list")
@@ -534,25 +526,27 @@ def titel_add(request):
         form = LiedEditForm(request.POST, request.FILES)
         if form.is_valid():
             lied = form.save(commit=False)
-            # Handle dropzone-uploaded files: filer IDs come as <field>_filer_id
-            _FILER_FIELD_MAP = {
-                "original_filer_id": ("original", folders.repertoire),
-                "aufnahme_filer_id": ("aufnahme", folders.repertoire),
-                "pdf_filer_id": ("pdf", folders.pdf),
-                "noten_filer_id": ("noten", folders.notensatz),
-            }
-            for post_key, (model_field, folder_fn) in _FILER_FIELD_MAP.items():
-                filer_id = request.POST.get(post_key)
-                if filer_id:
-                    try:
-                        f = File.objects.get(pk=int(filer_id))
-                        setattr(lied, model_field,
-                                _titeldatei_ablegen(f, model_field, folder_fn, lied.titel))
-                    except (File.DoesNotExist, ValueError):
-                        pass
             lied._audit_user = request.user
             lied.save()
             form.save_m2m()
+            # Dropzone-Dateien: erst jetzt gibt es eine Lied-PK und damit einen
+            # Lied-Ordner. Der alte FK hält bis Migration 0006 mit (Rückweg).
+            _FILER_FIELD_MAP = {
+                "original_filer_id": "original",
+                "aufnahme_filer_id": "aufnahme",
+                "pdf_filer_id": "pdf",
+                "noten_filer_id": "noten",
+            }
+            for post_key, model_field in _FILER_FIELD_MAP.items():
+                filer_id = request.POST.get(post_key)
+                if not filer_id:
+                    continue
+                try:
+                    f = File.objects.get(pk=int(filer_id))
+                except (File.DoesNotExist, ValueError):
+                    continue
+                zeile = liedablage.ablegen(lied, liedablage.FELD_ROLLE[model_field], f)
+                Lied.objects.filter(pk=lied.pk).update(**{model_field: zeile})
             return redirect("titel_view", titel=lied.id)
     else:
         form = LiedEditForm()

@@ -23,6 +23,10 @@ ALT_ROLLEN = (
     ("notensatz", "noten"),
 )
 
+# Rolle → altes Feld, für den Dual-Write bis Migration 0006. `text` hat keins.
+ROLLEN_JE_FELD = {rolle: feld for rolle, feld in ALT_ROLLEN}
+FELD_ROLLE = {feld: rolle for rolle, feld in ALT_ROLLEN}
+
 
 def ordnername(titel):
     """Der Titel als Ordnername — entschärft, was ein Ordner nicht tragen kann."""
@@ -127,3 +131,27 @@ def ablegen(lied, rolle, datei, name=None):
         lied=lied, rolle=rolle, defaults={"datei": zeile}
     )
     return zeile
+
+
+def titel_geaendert(lied, neuer_titel):
+    """Ordner und Dateinamen dem neuen Titel nachziehen.
+
+    Der Ordnername ist nur Anzeige; die Zuordnung trägt der FK. Ein geteilter
+    Blob folgt dabei dem letzten Titel — dieselbe Grenze wie bei jeder
+    Umbenennung über ``dateiablage.datei_umbenennen``."""
+    if not lied.ordner_id:
+        return
+    ordner = Folder.objects.filter(pk=lied.ordner_id).first()
+    if ordner is not None:
+        vorhandene = set(
+            Folder.objects.filter(parent_id=ordner.parent_id)
+            .exclude(pk=ordner.pk)
+            .values_list("name", flat=True)
+        )
+        name = freier_name_in(vorhandene, ordnername(neuer_titel))
+        if ordner.name != name:
+            Folder.objects.filter(pk=ordner.pk).update(name=name)
+    for zeile in LiedDatei.objects.filter(lied=lied).select_related("datei"):
+        neu = dateiname(neuer_titel, zeile.rolle, endung_von(zeile.datei))
+        if (zeile.datei.original_filename or zeile.datei.name) != neu:
+            dateiablage.datei_umbenennen(zeile.datei, neu)

@@ -6448,6 +6448,33 @@ class LiedablageTest(SimpleTestCase):
         )
 
 
+class LiedordnerSchutzTest(SimpleTestCase):
+    """Der Ordner eines Liedes wird nur über das Lied umbenannt, verschoben
+    oder gelöscht — die Guards stehen in allen drei Wegen."""
+
+    def test_guards_stehen_in_den_drei_views(self):
+        import inspect
+
+        from intern.views import folders
+
+        for name in ("folder_move", "folder_delete", "folder_rename"):
+            self.assertIn(
+                "_enthaelt_liedordner(folder.pk)",
+                inspect.getsource(getattr(folders, name)),
+                name,
+            )
+
+    def test_auswahllisten_koennen_liedordner_auslassen(self):
+        import inspect
+
+        from intern.views import folders
+
+        self.assertIn("ohne_liedordner", inspect.signature(folders._build_folder_flat).parameters)
+        self.assertIn("ohne_liedordner=True", inspect.getsource(__import__(
+            "intern.views.files", fromlist=["datei_aktionen"]
+        ).datei_aktionen))
+
+
 class RollenzeileVerschmelzenTest(SimpleTestCase):
     """Das Verschmelzen zweier Dateien hängt die Rollenzeile um; ohne den
     Eintrag in DATEI_PK_VERWEISE nähme das Queryset-Delete die Zeile per
@@ -6601,8 +6628,9 @@ class StandardordnerSchutzTest(SimpleTestCase):
 
 
 class RepertoireUploadTest(SimpleTestCase):
-    """Ein Upload im Repertoire ohne passenden Dateityp oder ohne Titel wird
-    abgelehnt, bevor irgendetwas abgelegt ist."""
+    """Ein Repertoire-Upload ohne Titel wird abgelehnt, bevor etwas abgelegt
+    ist. Eine unbekannte Endung ist erlaubt: Die Datei landet ohne Rolle im
+    Lied-Ordner."""
 
     def _hochladen(self, name, lied=None, **post):
         from django.core.files.uploadedfile import SimpleUploadedFile
@@ -6620,11 +6648,6 @@ class RepertoireUploadTest(SimpleTestCase):
             antwort = files.upload(request)
         self.assertFalse(hochladen.called)
         return antwort
-
-    def test_unbekannter_dateityp(self):
-        antwort = self._hochladen("Notizen.docx", lied=mock.Mock())
-        self.assertEqual(antwort.status_code, 400)
-        self.assertIn("Dateityp", antwort.content.decode())
 
     def test_kein_titel_dieses_namens(self):
         antwort = self._hochladen("Unbekannt.pdf")
@@ -6986,26 +7009,9 @@ class TitelSchreibpfadTest(SimpleTestCase):
                 {"original": 10, "aufnahme": 10, "pdf": 11, "noten": 12},
             )
 
-    def test_titeldatei_ablegen(self):
-        from intern.views import titel
-
-        f = SimpleNamespace(original_filename="x.pdf", name="x.pdf", folder_id=None)
-        with mock.patch.object(titel.dateiablage, "systemablage", return_value="neu") as ablage:
-            ergebnis = titel._titeldatei_ablegen(f, "pdf", lambda: 11, "Titel")
-        self.assertEqual(ergebnis, "neu")
-        self.assertEqual(ablage.call_args.args[1:], (11, "Titel.pdf"))
-
-    def test_titeldatei_ablegen_aufnahme_mit_praefix(self):
-        from intern.views import titel
-
-        f = SimpleNamespace(original_filename="x.mp3", name="x.mp3", folder_id=None)
-        with mock.patch.object(titel, "_aufnahme_prefix_with_space", return_value="Chor - "), \
-                mock.patch.object(titel.dateiablage, "systemablage", return_value="neu") as ablage:
-            titel._titeldatei_ablegen(f, "aufnahme", lambda: 10, "Titel")
-        self.assertEqual(ablage.call_args.args[1:], (10, "Chor - Titel.mp3"))
-
     class _Lied:
         id = 1
+        pk = 1
         titel = "Titel"
         original_id = None
         aufnahme_id = None
@@ -7029,14 +7035,14 @@ class TitelSchreibpfadTest(SimpleTestCase):
         from intern.views import titel
 
         lied = self._Lied()
-        instanz = mock.Mock()
+        instanz = mock.Mock(titel="Titel")
         form = mock.Mock()
         form.is_valid.return_value = True
         form.save.return_value = instanz
         with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
                 mock.patch.object(titel, "LiedEditForm", return_value=form), \
                 mock.patch.object(titel, "File") as datei_klasse, \
-                mock.patch.object(titel, "_titeldatei_ablegen", return_value="neu"), \
+                mock.patch.object(titel.liedablage, "ablegen", return_value="neu"), \
                 mock.patch.object(titel, "redirect"):
             titel.titel_edit(self._post(titel.titel_edit, {"pdf": "8"}), 1)
         datei_klasse.objects.get.assert_called_once_with(pk=8)
@@ -7049,10 +7055,10 @@ class TitelSchreibpfadTest(SimpleTestCase):
         lied = self._Lied()
         form = mock.Mock()
         form.is_valid.return_value = True
-        form.save.return_value = mock.Mock()
+        form.save.return_value = mock.Mock(titel="Titel")
         with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
                 mock.patch.object(titel, "LiedEditForm", return_value=form), \
-                mock.patch.object(titel, "_titeldatei_ablegen") as ablegen, \
+                mock.patch.object(titel.liedablage, "ablegen") as ablegen, \
                 mock.patch.object(titel, "redirect"):
             titel.titel_edit(self._post(titel.titel_edit, {"pdf": "7"}), 1)
         self.assertFalse(ablegen.called)
@@ -7066,17 +7072,18 @@ class TitelSchreibpfadTest(SimpleTestCase):
         form.save.return_value = lied
         with mock.patch.object(titel, "LiedEditForm", return_value=form), \
                 mock.patch.object(titel, "File") as datei_klasse, \
-                mock.patch.object(titel, "_titeldatei_ablegen", return_value="neu"), \
+                mock.patch.object(titel.Lied, "objects") as objekte, \
+                mock.patch.object(titel.liedablage, "ablegen", return_value="neu"), \
                 mock.patch.object(titel, "redirect"):
             titel.titel_add(self._post(titel.titel_add, {"pdf_filer_id": "9"}))
         datei_klasse.objects.get.assert_called_once_with(pk=9)
-        self.assertEqual(lied.pdf, "neu")
+        objekte.filter.return_value.update.assert_called_once_with(pdf="neu")
         self.assertTrue(lied.gespeichert)
 
     def test_titel_delete_loescht_wenn_frei(self):
         from intern.views import titel
 
-        lied = mock.Mock()
+        lied = mock.Mock(ordner_id=None)
         lied.konzert_set.exists.return_value = False
         lied.solist.exists.return_value = False
         lied.dirigent.exists.return_value = False
