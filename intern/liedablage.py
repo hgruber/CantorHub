@@ -66,11 +66,17 @@ def ordner_fuer(lied):
     eltern = folders.musik()
     if eltern is None:
         raise ValueError("Backstage/Repertoire fehlt — zuerst die Einrichtung laufen lassen")
+    # Der Besitzer ist keine Rechtsfrage (das entscheidet `FolderPermission`),
+    # aber er steht im Dateibrowser und wird beim Austritt gelesen — der
+    # Lied-Ordner erbt ihn deshalb vom Repertoire-Ordner.
+    eltern_owner = Folder.objects.filter(pk=eltern).values_list("owner_id", flat=True).first()
     vorhandene = set(
         Folder.objects.filter(parent_id=eltern).values_list("name", flat=True)
     )
     ordner = Folder.objects.create(
-        name=freier_name_in(vorhandene, ordnername(lied.titel)), parent_id=eltern
+        name=freier_name_in(vorhandene, ordnername(lied.titel)),
+        parent_id=eltern,
+        owner_id=eltern_owner,
     )
     Lied.objects.filter(pk=lied.pk).update(ordner=ordner)
     lied.ordner_id = ordner.pk

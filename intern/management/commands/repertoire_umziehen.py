@@ -1,6 +1,6 @@
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
-from filer.models import File
+from filer.models import File, Folder
 
 from intern import dateiablage, folders, liedablage
 from intern.models import Lied, LiedDatei, User
@@ -142,10 +142,30 @@ class Command(BaseCommand):
                 zeilen += 1
                 self.stdout.write(f"{lied.titel}: {rolle} → {name}")
 
+        # Lied-Ordner erben den Besitzer des Repertoire-Ordners; der erste Lauf
+        # legte sie ohne an. Idempotent, im Trockenlauf nur gezählt.
+        eltern = folders.musik()
+        eltern_owner = (
+            Folder.objects.filter(pk=eltern).values_list("owner_id", flat=True).first()
+            if eltern is not None else None
+        )
+        ohne_owner = Folder.objects.filter(
+            pk__in=Lied.objects.exclude(ordner_id=None).values_list("ordner_id", flat=True),
+            owner_id=None,
+        )
+        if trocken:
+            besitzer = ohne_owner.count()
+        else:
+            besitzer = (
+                ohne_owner.update(owner_id=eltern_owner)
+                if eltern_owner is not None else 0
+            )
+
         self.stdout.write(
             f"{praefix}{lieder} Lieder mit Dateien, {zeilen} Rollen "
             f"eingetragen{'' if trocken else ' oder kopiert'}, {behalten} Namen "
-            f"behalten (Wiki-Link), {schon} schon vorhanden, {offen_gesamt} offen."
+            f"behalten (Wiki-Link), {schon} schon vorhanden, {offen_gesamt} offen, "
+            f"{besitzer} Ordner-Besitzer nachgezogen."
         )
         for eintrag in offen:
             self.stderr.write(f"offen: {eintrag}")
