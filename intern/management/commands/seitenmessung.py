@@ -47,6 +47,48 @@ SEITEN = [
 ]
 
 
+def mitglied(name=None):
+    """Das Mitglied, unter dem gemessen oder geprüft wird.
+
+    Ohne Namen ein gewöhnliches Mitglied: Verwalter sehen mehr Spalten und
+    damit eine andere Seite als der Regelfall.
+    """
+    from intern.models import User
+
+    if name:
+        nutzer = User.objects.filter(username=name).first()
+        if nutzer is None:
+            raise CommandError(f"Kein Mitglied mit dem Namen „{name}“.")
+        return nutzer
+    nutzer = (
+        User.objects.filter(is_active=True, is_superuser=False, is_staff=False)
+        .order_by("id").first()
+        or User.objects.filter(is_active=True).order_by("id").first()
+    )
+    if nutzer is None:
+        raise CommandError("Keine Mitglieder in der Datenbank.")
+    return nutzer
+
+
+def ziele():
+    """Ids für die Platzhalter in `SEITEN`, aus den vorhandenen Daten."""
+    from filer.models import File, Folder
+    from intern.models import Forum, Lied, Termin
+
+    bildordner = (
+        File.objects.filter(mime_type__startswith="image/")
+        .values_list("folder_id", flat=True).first()
+    )
+    return {
+        "termin": Termin.objects.order_by("-datum").values_list("id", flat=True).first(),
+        "mitglied": None,   # setzt der Aufrufer auf das angemeldete Mitglied
+        "lied": Lied.objects.values_list("id", flat=True).first(),
+        "forum": Forum.objects.values_list("id", flat=True).first(),
+        "ordner": Folder.objects.values_list("id", flat=True).first(),
+        "bildordner": bildordner,
+    }
+
+
 class Command(BaseCommand):
     help = (
         "Misst die Antwortzeit und die Zahl der Datenbankabfragen der wichtigsten "
@@ -109,47 +151,10 @@ class Command(BaseCommand):
 
     # --- Messung ------------------------------------------------------------------
 
-    def _nutzer(self, name):
-        from intern.models import User
-
-        if name:
-            nutzer = User.objects.filter(username=name).first()
-            if nutzer is None:
-                raise CommandError(f"Kein Mitglied mit dem Namen „{name}“.")
-            return nutzer
-        # Ein gewöhnliches Mitglied ist der Regelfall; Verwalter sehen mehr Spalten
-        # und messen deshalb etwas anderes.
-        nutzer = (
-            User.objects.filter(is_active=True, is_superuser=False, is_staff=False)
-            .order_by("id").first()
-            or User.objects.filter(is_active=True).order_by("id").first()
-        )
-        if nutzer is None:
-            raise CommandError("Keine Mitglieder in der Datenbank.")
-        return nutzer
-
-    def _ziele(self):
-        """Ids für die Platzhalter in `SEITEN`, aus den vorhandenen Daten."""
-        from filer.models import File, Folder
-        from intern.models import Forum, Lied, Termin
-
-        bildordner = (
-            File.objects.filter(mime_type__startswith="image/")
-            .values_list("folder_id", flat=True).first()
-        )
-        return {
-            "termin": Termin.objects.order_by("-datum").values_list("id", flat=True).first(),
-            "mitglied": None,   # wird in handle() auf den messenden Nutzer gesetzt
-            "lied": Lied.objects.values_list("id", flat=True).first(),
-            "forum": Forum.objects.values_list("id", flat=True).first(),
-            "ordner": Folder.objects.values_list("id", flat=True).first(),
-            "bildordner": bildordner,
-        }
-
     def _messen(self, kopie, optionen):
-        nutzer = self._nutzer(optionen.get("nutzer"))
-        ziele = self._ziele()
-        ziele["mitglied"] = nutzer.pk
+        person = mitglied(optionen.get("nutzer"))
+        platzhalter = ziele()
+        platzhalter["mitglied"] = person.pk
         laeufe = max(1, optionen["laeufe"])
         filter_text = (optionen.get("seite") or "").lower()
 
@@ -159,10 +164,10 @@ class Command(BaseCommand):
         # DisallowedHost. `localhost` steht immer in ALLOWED_HOSTS (siehe
         # `config/datenbank.hosts_aus_url`), auch in der fertigen Instanz.
         client = Client(SERVER_NAME="localhost")
-        client.force_login(nutzer)
+        client.force_login(person)
         self.stdout.write(
-            f"Mitglied: {nutzer.username} "
-            f"({'Verwaltung' if nutzer.is_superuser or nutzer.is_staff else 'ohne Sonderrechte'}), "
+            f"Mitglied: {person.username} "
+            f"({'Verwaltung' if person.is_superuser or person.is_staff else 'ohne Sonderrechte'}), "
             f"{laeufe} Läufe je Seite\n"
         )
         self.stdout.write(f"{'Seite':22}{'Status':>7}{'Median':>9}{'Min':>8}{'Abfragen':>10}   Auffällig")
@@ -172,7 +177,7 @@ class Command(BaseCommand):
             if filter_text and filter_text not in name.lower():
                 continue
             try:
-                pfad = muster.format(**ziele)
+                pfad = muster.format(**platzhalter)
             except KeyError:
                 continue
             if "None" in pfad:

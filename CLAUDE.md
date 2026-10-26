@@ -43,6 +43,7 @@ DEBUG=1 ./start.sh                          # dev, incl. background jobs
 DEBUG=1 python manage.py test intern        # needs no database — see invariants
 python manage.py makemigrations intern --name <name> && python manage.py migrate
 python manage.py seitenmessung             # Seitenzeiten + Abfragezahl, gegen eine DB-Kopie
+python manage.py rauchtest                  # smoke test of the same pages against a production copy
 ./build.sh                                  # image, tagged from `git describe --tags`
 podman run -p 8000:8000 -v cantorhub-data:/data \
     -e DATABASE_URL=… -e VEREINS_URL=… cantorhub:latest
