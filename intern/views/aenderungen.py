@@ -357,6 +357,5 @@ def aenderungsprotokoll_list(request):
         "next_offset": offset + PAGE_SIZE,
         "seitentitel": "Änderungsprotokoll",
         "hilfe_seite": "Hilfe:Änderungsprotokoll",
-        "upload_aus": True,
         "topbar_icon": _TOPBAR_ICON,
     })

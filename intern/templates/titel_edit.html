@@ -37,6 +37,80 @@
                 </div>
             </div>
 
+            {% if id %}
+            {% comment %}
+               Die Medien-Karte vergibt die Rollen des Liedes von Hand: oben die Ablage
+               (lädt ohne Rolle in den Lied-Ordner, ohne Neuladen — das Formular daneben
+               bleibt erhalten), dann je Datei ein Rollen-Slot (höchstens eine Rolle je
+               Datei) mit Öffnen, Umbenennen und Löschen, zuletzt die noch freien Rollen. Die Bedienung steckt in medien.js; ohne JavaScript bleibt die
+               Liste lesbar, nur zuweisen lässt sich nichts.
+            {% endcomment %}
+            <div class="detail-card medien-karte medien-karte--rollen" id="medien-karte"
+                 data-rolle-url="{% url 'titel_rolle' lied.id %}"
+                 data-datei-url="{% url 'titel_datei' lied.id %}"
+                 data-upload-url="{% url 'upload' %}"
+                 data-lied-id="{{ lied.id }}">
+                <h3>Medien</h3>
+
+                <div class="medien-ablage medien-ablage--karte" data-medien-ablage="karte"
+                     role="button" tabindex="0"
+                     aria-label="Dateien ohne Rolle in den Lied-Ordner laden">
+                    <svg class="medien-ablage-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                    <span class="medien-ablage-text" aria-hidden="true"><span class="medien-ablage-maus">Dateien hierher ziehen</span><span class="medien-ablage-touch">Datei wählen</span></span>
+                </div>
+                <p class="medien-status" role="status"></p>
+
+                <h4 class="medien-gruppe">Dateien</h4>
+                <div class="medien-dateien" data-medien-dateien>
+                    {% for m in medien_dateien %}
+                    <div class="medien-datei" data-datei-id="{{ m.datei_id }}">
+                        <span class="medien-datei-name" title="{{ m.dateiname }}">{{ m.dateiname }}</span>
+                        <span class="medien-datei-slot" data-slot>
+                            {% for r in m.rollen %}
+                            <span class="medien-chip-wrap" data-rolle="{{ r.key }}">
+                                <button type="button" class="medien-chip" draggable="true" data-rolle="{{ r.key }}"
+                                        title="Rolle „{{ r.label }}“ — antippen oder auf eine Datei ziehen">{{ r.label }}</button>
+                                <button type="button" class="medien-chip-x"
+                                        aria-label="Rolle {{ r.label }} von {{ m.dateiname }} lösen">×</button>
+                            </span>
+                            {% empty %}
+                            <button type="button" class="medien-slot-leer">Rolle zuweisen</button>
+                            {% endfor %}
+                        </span>
+                        <span class="medien-datei-aktionen">
+                            <a href="{{ m.url }}" target="_blank" rel="noopener" class="file-icon-btn"
+                               title="{{ m.dateiname }} öffnen" aria-label="{{ m.dateiname }} öffnen">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                            </a>
+                            <button type="button" class="file-icon-btn medien-datei-umbenennen"
+                                    title="Umbenennen" aria-label="{{ m.dateiname }} umbenennen">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                            </button>
+                            <button type="button" class="file-icon-btn medien-datei-loeschen"
+                                    title="Löschen" aria-label="{{ m.dateiname }} löschen">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                            </button>
+                        </span>
+                    </div>
+                    {% empty %}
+                    <p class="medien-leer" data-medien-leer>Noch keine Dateien im Lied-Ordner.</p>
+                    {% endfor %}
+                </div>
+
+                <h4 class="medien-gruppe">Freie Rollen</h4>
+                <p class="medien-hinweis">Rolle antippen und dann eine Datei antippen — oder die Rolle auf eine Datei ziehen. Jede Datei trägt höchstens eine Rolle; eine neue ersetzt die bisherige.</p>
+                <div class="medien-freie-rollen" data-freie-rollen>
+                    {% for r in freie_rollen %}
+                    <span class="medien-chip-wrap" data-rolle="{{ r.key }}">
+                        <button type="button" class="medien-chip" draggable="true" data-rolle="{{ r.key }}"
+                                title="Rolle „{{ r.label }}“ — antippen oder auf eine Datei ziehen">{{ r.label }}</button>
+                    </span>
+                    {% endfor %}
+                    <p class="medien-freie-leer"{% if freie_rollen %} hidden{% endif %}>Alle Rollen sind vergeben.</p>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="detail-card">
                 <h3>Urheber</h3>
                 <div class="form-grid">
@@ -76,6 +150,49 @@
     {% if id and can_delete %}
     {% url 'titel_delete' titel=id as loeschen_url %}
     {% include "_confirm_delete_dialog.html" with titel="Lied löschen" objekt=lied.titel action=loeschen_url %}
+    {% endif %}
+
+    {% if id %}
+    {{ rollen|json_script:"medien-rollen" }}
+    {% comment %}
+       Zeilenvorlage für eine gerade hochgeladene Datei: dieselbe Zeile, die der
+       Server oben ausgibt, nur ohne Rolle. medien.js klont sie und hängt sie an.
+    {% endcomment %}
+    <template id="medien-datei-vorlage">
+        <div class="medien-datei" data-datei-id="">
+            <span class="medien-datei-name"></span>
+            <span class="medien-datei-slot" data-slot>
+                <button type="button" class="medien-slot-leer">Rolle zuweisen</button>
+            </span>
+            <span class="medien-datei-aktionen">
+                <a href="#" target="_blank" rel="noopener" class="file-icon-btn" title="Datei öffnen">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                </a>
+                <button type="button" class="file-icon-btn medien-datei-umbenennen" title="Umbenennen" aria-label="Datei umbenennen">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                </button>
+                <button type="button" class="file-icon-btn medien-datei-loeschen" title="Löschen" aria-label="Datei löschen">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                </button>
+            </span>
+        </div>
+    </template>
+
+    {% comment %}
+       Rückfrage vor dem Löschen einer Datei der Medien-Karte. Sie steht außerhalb
+       des Liedformulars (kein verschachteltes <form>); medien.js füllt Name und
+       Rollenhinweis und schickt das Löschen selbst ab — method="dialog" schließt
+       nur und liefert den gedrückten Knopf als returnValue.
+    {% endcomment %}
+    <dialog id="medien-loeschen-dialog" class="app-dialog medien-loeschen-dialog" aria-labelledby="medien-loeschen-titel">
+        <h3 id="medien-loeschen-titel">Datei löschen</h3>
+        <p data-frage></p>
+        <p class="warn" data-warnung hidden></p>
+        <form method="dialog" class="dialog-actions">
+            <button type="submit" value="loeschen" class="btn btn-danger">Ja, löschen</button>
+            <button type="submit" value="" class="btn btn-secondary" autofocus>Abbrechen</button>
+        </form>
+    </dialog>
     {% endif %}
 </div>
 {% endblock %}

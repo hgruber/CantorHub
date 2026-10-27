@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required, permission_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count, F, Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,9 +12,10 @@ from django_tables2 import RequestConfig
 from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
-from filer.models import Folder
+from filer.models import File, Folder
 
-from intern import folders, liedablage, liedrollen
+from intern import dateiablage, folders, liedablage, liedrollen
+from intern.avatar_access import darf_avatar_aendern
 
 from ..app_settings import get_aufnahme_bezeichnung
 from ..filterbau_titel import TITEL
@@ -29,6 +31,8 @@ __all__ = [
     "titel_playlist",
     "titel_view",
     "titel_edit",
+    "titel_rolle",
+    "titel_datei",
     "titel_delete",
     "titel_add",
     "update_order",
@@ -297,8 +301,6 @@ def titel_list(request):
         "konzert_auswahl": _konzert_auswahl(konzert_id),
         "seitentitel": seitentitel,
         "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
-        "upload_folder_id": folders.musik(),
-        "upload_folder_name": folders.REPERTOIRE,
         "showfilter": True,
         "add": add,
         "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
@@ -315,8 +317,12 @@ def titel_list(request):
         "has_more": has_more,
         "next_offset": offset + _PAGE_SIZE,
     }
-    if konzert_id and request.user.has_perm("intern.change_lied"):
-        context["konzert_order_url"] = f"/intern/titel/?konzert={konzert_id}&edit"
+    if request.user.has_perm("intern.change_lied"):
+        # Jede Zeile nimmt Dateien für ihr Lied an (intern.js) — nur mit dem Recht,
+        # das upload() für eine lied_id verlangt.
+        context["upload_lied_zeilen"] = True
+        if konzert_id:
+            context["konzert_order_url"] = f"/intern/titel/?konzert={konzert_id}&edit"
     return render(request, "table.html", context)
 
 
@@ -324,15 +330,19 @@ _ROLLEN_CSS = {"notenblatt": " file-icon-btn--pdf", "notensatz": " file-icon-btn
 
 
 def _medien(lied):
-    """Die Dateien des Liedes in Anzeigereihenfolge — eine Schleife im Template
-    statt eines Blocks je Rolle."""
+    """Alle Dateien des Liedes: die mit Rolle zuerst, dann die rollenlosen.
+
+    Die Rollenzeile gibt die Reihenfolge vor; was im Lied-Ordner liegt, ohne
+    eine Rolle zu tragen, folgt dahinter mit seinem Dateinamen."""
     rollen = liedablage.rollen_von(lied)
     aufnahme_typ = get_aufnahme_bezeichnung()
     medien = []
+    mit_rolle = set()
     for definition in liedrollen.ROLLEN:
         datei = rollen.get(definition.key)
         if not datei:
             continue
+        mit_rolle.add(datei.pk)
         if definition.key == "original":
             medien.append({
                 "rolle": definition.key,
@@ -361,24 +371,68 @@ def _medien(lied):
                 "audio": False,
                 "css": _ROLLEN_CSS.get(definition.key, ""),
             })
+    for datei in liedablage.dateien_im_ordner(lied):
+        if datei.pk in mit_rolle:
+            continue
+        medien.append({
+            "rolle": "",
+            "label": datei.original_filename or datei.name,
+            "url": datei.url,
+            "audio": False,
+            "css": "",
+            "ohne_rolle": True,
+        })
     return medien
+
+
+def _medien_dateien(lied):
+    """Die Dateien der Medien-Karte auf der Bearbeiten-Seite: je Datei eine
+    Zeile mit ihrem Dateinamen und allen ihren Rollen.
+
+    Eine Datei trägt höchstens eine Rolle (``liedablage.rolle_setzen``); hat sie
+    aus Altbestand mehrere, bleibt sie trotzdem eine Zeile. Dateien mit Rolle
+    stehen vorn, in Rollenreihenfolge, dann der Rest des Lied-Ordners."""
+    zeilen = {}
+
+    def zeile(datei):
+        return zeilen.setdefault(datei.pk, {
+            "datei_id": datei.pk,
+            "dateiname": datei.original_filename or datei.name,
+            "url": datei.url,
+            "rollen": [],
+        })
+
+    rollen = liedablage.rollen_von(lied)
+    for definition in liedrollen.ROLLEN:
+        datei = rollen.get(definition.key)
+        if datei:
+            zeile(datei)["rollen"].append({"key": definition.key, "label": definition.label})
+    for datei in liedablage.dateien_im_ordner(lied):
+        zeile(datei)
+    return list(zeilen.values())
 
 
 @login_required
 def titel_view(request, titel):
     lied = get_object_or_404(Lied.objects.prefetch_related("solist", "dirigent"), id=titel)
+    darf_aendern = request.user.has_perm("intern.change_lied")
     context = {
         "seitentitel": lied.titel,
         "lied": lied,
         "medien": _medien(lied),
         "up": "titel_list",
-        "edit": "titel_edit" if request.user.has_perm("intern.change_lied") else None,
-        "history": "titel_aenderungen" if request.user.has_perm("intern.change_lied") else None,
+        "edit": "titel_edit" if darf_aendern else None,
+        "history": "titel_aenderungen" if darf_aendern else None,
         "id": titel,
-        "upload_folder_id": folders.musik(),
-        "upload_folder_name": folders.REPERTOIRE,
-        "upload_lied_id": titel,
     }
+    # Ablegen nur, wer das Lied ändern darf — dieselbe Frage wie die
+    # Ablagefläche der Medien-Karte in titel.html.
+    if darf_aendern:
+        context.update({
+            "upload_content": True,
+            "upload_folder_name": lied.titel,
+            "upload_lied_id": titel,
+        })
     return render(request, "titel.html", context)
 
 
@@ -410,6 +464,8 @@ def titel_edit(request, titel):
     if dirigent_count:
         blocking.append(f"{dirigent_count} Dirigent{'en' if dirigent_count != 1 else ''}")
 
+    medien_dateien = _medien_dateien(lied)
+    vergeben = {r["key"] for z in medien_dateien for r in z["rollen"]}
     context = {
         "form": form,
         "lied": lied,
@@ -419,8 +475,95 @@ def titel_edit(request, titel):
         "konzerte_count": konzerte_count,
         "can_delete": not blocking,
         "delete_tooltip": ("Kann nicht gelöscht werden: " + ", ".join(blocking)) if blocking else "",
+        # Die Medien-Karte dieser Seite vergibt die Rollen von Hand; ihre
+        # Ablagefläche lädt ohne Rolle hoch (siehe medien.js).
+        "medien_dateien": medien_dateien,
+        "rollen": [{"key": r.key, "label": r.label} for r in liedrollen.ROLLEN],
+        "freie_rollen": [
+            {"key": r.key, "label": r.label}
+            for r in liedrollen.ROLLEN
+            if r.key not in vergeben
+        ],
     }
     return render(request, "titel_edit.html", context)
+
+
+@permission_required("intern.change_lied", raise_exception=True)
+@require_POST
+def titel_rolle(request, titel):
+    """Die Rolle einer Datei des Lied-Ordners setzen, verschieben oder lösen.
+
+    Die Rolle ist je Lied einmal vergeben: setzt man sie auf eine andere Datei,
+    verliert die bisherige sie. Ohne `rolle` wird sie von dieser Datei gelöst."""
+    lied = get_object_or_404(Lied, id=titel)
+    rolle = (request.POST.get("rolle") or "").strip()
+    if rolle and rolle not in liedrollen.LABELS:
+        return JsonResponse({"status": "error", "message": "Unbekannte Rolle"}, status=400)
+    datei = _datei_des_lieds(lied, request.POST.get("datei"))
+    if datei is None:
+        return _fremde_datei()
+    if rolle:
+        liedablage.rolle_setzen(lied, rolle, datei, request.user)
+    else:
+        liedablage.rolle_entfernen(lied, datei, request.user)
+    return JsonResponse({"status": "success", "rolle": rolle, "datei": datei.pk})
+
+
+def _datei_des_lieds(lied, datei_id):
+    """Die Datei, sofern sie im Ordner dieses Liedes liegt — sonst ``None``."""
+    datei_id = datei_id or ""
+    datei = File.objects.filter(pk=int(datei_id)).first() if datei_id.isdigit() else None
+    if datei is None or lied.ordner_id is None or datei.folder_id != lied.ordner_id:
+        return None
+    return datei
+
+
+def _fremde_datei():
+    return JsonResponse(
+        {"status": "error", "message": "Die Datei gehört nicht zu diesem Lied"}, status=400
+    )
+
+
+@permission_required("intern.change_lied", raise_exception=True)
+@require_POST
+def titel_datei(request, titel):
+    """Eine Datei des Lied-Ordners umbenennen oder löschen (Medien-Karte der
+    Bearbeiten-Seite).
+
+    Das Lied besitzt seinen Ordner: wer das Lied ändern darf, darf dessen
+    Dateien umbenennen und löschen, ohne Ordnerrecht — wie beim Hochladen.
+    Außerhalb des Lied-Ordners gilt das nicht."""
+    from .folders import _validate_rename
+
+    lied = get_object_or_404(Lied, id=titel)
+    datei = _datei_des_lieds(lied, request.POST.get("datei"))
+    if datei is None:
+        return _fremde_datei()
+    # Ein Umbenennen erreicht jede verknüpfte Kopie — auch ein Profilbild.
+    if not darf_avatar_aendern(request.user, datei):
+        raise PermissionDenied
+    aktion = request.POST.get("aktion")
+    if aktion == "loeschen":
+        # Erst die Rolle lösen: das Löschen der Datei nähme die Rollenzeile
+        # sonst ohne Eintrag im Änderungsprotokoll mit.
+        datei_pk = datei.pk
+        liedablage.rolle_entfernen(lied, datei, request.user)
+        dateiablage.datei_loeschen(datei)
+        folders.invalidate()
+        return JsonResponse({"status": "success", "datei": datei_pk})
+    if aktion == "umbenennen":
+        name = _validate_rename(request.POST.get("name"))
+        if not name:
+            return JsonResponse({"status": "error", "message": "Ungültiger Name."}, status=400)
+        # Ein Name je Ordner: ist er schon vergeben, wird hier nicht verschmolzen
+        # — das bleibt dem Dateibrowser mit seinem Dialog.
+        status, _ = dateiablage.umbenennen(datei, name, request.user, {})
+        if status != "ok":
+            return JsonResponse(
+                {"status": "error", "message": f"„{name}“ ist schon vergeben."}, status=409
+            )
+        return JsonResponse({"status": "success", "datei": datei.pk, "name": name})
+    return JsonResponse({"status": "error", "message": "Unbekannte Aktion"}, status=400)
 
 
 @permission_required("intern.delete_lied", raise_exception=True)

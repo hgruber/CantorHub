@@ -565,25 +565,42 @@ and spares the view a second pass over the wikitext.
 
 ## Uploads
 
-Every page uploads through one Dropzone, `appMainDz` on `#app-main` (`intern.js`), fed two ways:
-a file dropped anywhere on the page (the „Dateien ablegen" overlay) and the topbar icon
-`#uploadBtn`, which opens a hidden `<input type="file" multiple>` and hands each chosen file to
-`appMainDz.addFile()`. Phones have no drag and drop, so the icon is the only way there. Both paths
-share the `sending` parameters, the progress card (`upload-progress.js`) and the reload on
-`queuecomplete`.
+There is no upload without a target. A page takes a drop over its whole content area only where
+the view sets `upload_content`: the folder browser with write access (the root only for
+`intern.manage_folder_permissions` — the one zone that may file at the top level, and the upload
+card then asks to move the file), an article with write access, a forum, a song for holders of
+`intern.change_lied` and one's own profile. `base.html` renders the topbar icon `#uploadBtn` (and
+its hidden file input) only under that flag, and `intern.js` builds the page Dropzone `appMainDz`
+on `#app-main` only then: overlay, icon and dropzone come and go together, there is no second
+condition. Every other page has neither. `upload` in `views/files.py` still enforces folder write
+access and the root rule on its own, and refuses a `lied_id` without `intern.change_lied` with a
+403 rather than filing the file elsewhere.
 
-The view decides target and visibility through its context: `upload_folder_id`,
-`upload_folder_name` and the other `upload_*` keys read by `base.html`. **No dropzone may end up
-filing at the root:** a page without a target (`upload_folder_id` empty) gets no page
-dropzone at all — no overlay, no icon — unless the viewer holds
-`intern.manage_folder_permissions` (`data-upload-wurzel`); then a drop lands at the root and the
-upload card asks to move it. The folder browser follows `can_write_here`, at the root only with
-that right. `upload_aus` switches the page dropzone off for everyone (the profile page, where
-the avatar field is enough, and the five pages of the admin menu, which hold no files). `upload` in `views/files.py` enforces write access and the root
-rule either way. **Icon and dropzone go together:** `base.html` renders `#uploadBtn` `hidden`
-wherever an upload could happen, and the same `uploadGesperrt` rule in `intern.js` that
-disables the dropzone decides whether it is shown — there is no second condition to keep in
-step.
+The same view context names the target: `upload_folder_id` (empty means the root, which only the
+root page may send), `upload_folder_name` for the icon's tooltip and the upload card, `upload_lied_id`
+for a song, `upload_artikel` for the article version bump, and `upload_avatar` on one's own
+profile, where a dropped image is uploaded only after the dialog „Als Profilbild setzen?“ and then
+becomes the member's avatar. Uploads on a song's page and on an article's page reload the page
+when the queue is done; the folder browser refreshes its table instead, and a forum upload leaves
+the message box in place, its link appended to the text.
+
+The smaller zones each name their own target and share one helper, `kleineAblage()` in
+`intern.js`: `[data-termin-dateien]` on the event page (sends `termin_id`, reloads), the drop area
+of the article editor `[data-artikel-ablage]` (uploads into Wiki-Anhänge with `feld=1` and puts
+`[[Datei:…]]` at the cursor through `window.wikiEinfuegen`, nothing saved until „Speichern“), and
+on the repertoire list every row `tr[data-lied-id]` (sends `lied_id`, reloads). The rows are armed
+only where `titel_list` sets `upload_lied_zeilen` (holders of `intern.change_lied`, printed as
+`data-upload-lied-zeilen`) and never on coarse pointers, where dragging does not exist. A zone
+reloads only when every file arrived, so an error stays visible on the card. The Medien card of a
+song's edit page has its own zone in `medien.js` (see below). All zones register in
+`window.internUploadZonen`, which `upload-progress.js` hooks so the progress card covers them too
+— one card, one count for the page; zones made later (rows loaded by the infinite scroll) hook
+themselves through `window.uploadKarteHaengen`.
+
+Where a page zone and small zones meet — only the folder browser, whose subfolder rows take a
+dropped file for that subfolder — the overlay steps back while the pointer is over a small zone
+(`#app-main.drag-active:has(.dnd-file-over, .dz-drag-hover)`), so it never claims a drop that goes
+elsewhere. Dropzone and the row handler both stop the event, so nothing is uploaded twice.
 
 The field dropzones (`initFilerDropzones()`, which replace filer's widget for the avatar and the
 forum picture) upload straight into their field's folder: the view passes
@@ -594,6 +611,25 @@ dropzone is tappable and says so („Antippen oder Datei hierher ziehen“) — 
 only way in; the picture fields (`avatar`, `bild`) accept `image/*`, which opens the gallery or
 camera. Each upload is removed from Dropzone's count afterwards, so a second file replaces the
 first instead of hitting `maxFiles: 1`.
+
+### The Medien cards
+
+A song's files hang on role rows (`LiedDatei`), not on columns, so the detail page shows them as
+one list: roles first in register order, then whatever else lies in the song folder under its file
+name (`_medien()`). Its card is no zone of its own; its drop area opens the page's file picker and
+a drop anywhere on the song uploads into its folder, the extension suggesting the role.
+
+The edit page lists one row per file with its real file name (`_medien_dateien()`), and its card is
+the page's only zone: it uploads with `ohne_rolle=1`, so a new file starts without a role and the
+card is where roles are wired by hand. A role is held once per song and **a file carries at most
+one role** — `liedablage.rolle_setzen()` frees the file's other role. A chip is dragged from its
+file onto another (or tapped, then the target file tapped); the role the target held returns to
+the tray of free roles, and dropping a chip there or pressing its × releases it. Each row can also
+be renamed in place and deleted after a confirmation; the song owns its folder, so
+`intern.change_lied` is enough for both, inside that folder only. Every action is one POST
+(`titel_rolle`, `titel_datei`) whose answer updates the card in place — the form next to it is
+never reloaded. A rename onto a name already taken is refused (409); merging into the other file
+stays with the folder browser and its dialog.
 
 ## The list pages' script
 

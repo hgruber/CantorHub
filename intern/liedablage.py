@@ -8,7 +8,7 @@ steht in ``intern/liedrollen.py``.
 
 import os
 
-from filer.models import Folder
+from filer.models import File, Folder
 
 from . import dateiablage, folders, liedrollen
 from .models import Lied, LiedDatei
@@ -93,9 +93,24 @@ def datei_fuer(lied, rolle):
     return rollen_von(lied).get(rolle)
 
 
+def dateien_im_ordner(lied):
+    """Alle Dateien des Lied-Ordners, ohne Unterordner — auch die ohne Rolle."""
+    if not lied.ordner_id:
+        return []
+    return list(
+        File.objects.filter(folder_id=lied.ordner_id).order_by("original_filename", "name")
+    )
+
+
 def rolle_setzen(lied, rolle, datei, nutzer=None):
     """Die Rollenzeile auf `datei` setzen — für Dateien, die schon im
-    Lied-Ordner liegen. `nutzer` landet im Änderungsprotokoll."""
+    Lied-Ordner liegen. `nutzer` landet im Änderungsprotokoll.
+
+    Je Lied hängt eine Rolle an einer Datei, und eine Datei trägt höchstens
+    eine Rolle: eine andere Rolle derselben Datei wird dabei frei."""
+    _zeilen_loeschen(
+        LiedDatei.objects.filter(lied=lied, datei=datei).exclude(rolle=rolle), nutzer
+    )
     zeile = LiedDatei.objects.filter(lied=lied, rolle=rolle).first()
     if zeile is None:
         zeile = LiedDatei(lied=lied, rolle=rolle)
@@ -104,6 +119,22 @@ def rolle_setzen(lied, rolle, datei, nutzer=None):
     zeile.datei = datei
     zeile._audit_user = nutzer
     zeile.save()
+
+
+def rolle_entfernen(lied, datei, nutzer=None):
+    """Die Rolle dieser Datei lösen."""
+    _zeilen_loeschen(LiedDatei.objects.filter(lied=lied, datei=datei), nutzer)
+
+
+def _zeilen_loeschen(zeilen, nutzer):
+    """Rollenzeilen einzeln löschen — protokolliert, weil ein Löschen über das
+    Queryset am Änderungsprotokoll vorbeiginge."""
+    from .signals import _log_change
+
+    for zeile in zeilen:
+        zeile._audit_user = nutzer
+        _log_change(zeile, nutzer, "delete")
+        zeile.delete()
 
 
 def ablegen(lied, rolle, datei, name=None, nutzer=None):

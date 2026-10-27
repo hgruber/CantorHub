@@ -311,8 +311,18 @@ reasoning where it matters.
   there, after a dialog where the table in „One name per folder" (`docs/files.md`) asks for
   one, and a conflict without a choice is skipped. Never `File.objects.create()` into a folder
   or set `folder_id` by hand.
+- **No upload without a target.** A page takes a drop over its whole content area only when its
+  view sets `upload_content`, and `base.html` renders the topbar icon under the same flag — the
+  folder browser with write access (the root only for `intern.manage_folder_permissions`, the one
+  zone that files at the top level), an article with write access, a forum, a song with
+  `intern.change_lied`, one's own profile. Every other zone names its own target (the event card,
+  the article editor, the Medien card of a song's edit page, a repertoire row — the rows only with
+  `intern.change_lied`). Where a page zone and a small zone meet, the overlay steps back over the
+  small one. See „Uploads" in `docs/frontend.md`.
 - **A song owns its folder.** `Lied.ordner` is the truth, not the folder name; `LiedDatei` gives
-  each file its role, and `intern/liedablage.py` is the only way in. The folder is protected in
+  each file its role — one role per file, one file per role — and `intern/liedablage.py` is the
+  only way in. Uploading for a song needs `intern.change_lied` (plus the folder's write right);
+  renaming and deleting in its Medien card need `intern.change_lied` alone. The folder is protected in
   the browser (`_enthaelt_liedordner`) and follows the title (`titel_geaendert`). Migration `0006`
   dropped the four legacy `Lied` file columns; the rows are the only source of a role now, and
   the old upload paths are gone with them.

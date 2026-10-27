@@ -93,8 +93,9 @@ A song keeps its files in its own folder, `Backstage/Repertoire/<Titel>/` (`Lied
 not the folder name, is the truth). Each file's role is a row in `LiedDatei` — `original`,
 `aufnahme`, `notenblatt`, `notensatz`, `text` — and the register in `intern/liedrollen.py` is
 the one place that names them. Files are named `<Titel> – <Rolle>.<ext>`; the name is display
-only. Everything else in the folder belongs to the song too and appears on its page without a
-role.
+only. A file carries at most one role, and a role sits on one file per song; `rolle_setzen()` frees
+the file's other role. Everything else in the folder belongs to the song too and appears on its
+page without a role.
 
 `intern/liedablage.py` is the one way in: `ordner_fuer()` creates the folder on first need,
 `ablegen()` puts a file there and writes the role row, `titel_geaendert()` renames folder and
@@ -175,10 +176,10 @@ archive sees their own folders rather than a dozen system ones. The folder brows
 Backstage at the root only for holders of `intern.manage_folder_permissions` (the Webmaster
 group) — hidden, not locked: it has no `FolderPermission` rows, the pages that use its files, the
 search and direct links keep working. Only holders of
-`intern.manage_folder_permissions` can upload to the **root** (a drop on the browser's root
-included); everyone else has no dropzone there and `upload` refuses with a 403. A root upload's
-answer carries `"wurzel": true` and the upload card asks to move the file into a folder, so the
-top level stays tidy.
+`intern.manage_folder_permissions` can upload to the **root**, and only on its own page
+`/intern/ordner/0/`; every other page has no dropzone at all, and `upload` refuses a root upload
+from anyone else with a 403. A root upload's answer carries `"wurzel": true` and the upload card
+asks to move the file into a folder, so the top level stays tidy.
 
 ```
 /                      fallback target of every upload without a better folder
@@ -226,10 +227,15 @@ menu) leave out Backstage and everything below it, and `folder_move` / `_copy_ac
 a target with a 403 — the portal files into these folders on its own, members don't. Who sees
 Backstage at the root may also move, link and copy into it (`_sieht_backstage`), e.g. to put a
 stray profile picture back. Uploads are
-not affected. An upload on a song's page (`lied_id`) goes into that song's own folder; the
-extension suggests the role, and an unknown extension is allowed — the file lands there
-without a role. Every other upload goes to the page's own target folder or, without one, to
-the root for webmasters.
+not affected. Every upload names its target (see „Uploads" in `docs/frontend.md`): an upload
+for a song (`lied_id` — its page, a repertoire row, the Medien card) goes into that song's own
+folder and needs `intern.change_lied` (besides write access there); the extension suggests the role and an unknown extension is
+allowed — the file lands there without a role (always so from the edit page's Medien card). Every
+other upload goes to the target its page or card names: the open folder, the wiki attachments
+(article view and editor), the forum pictures, the event attachments, or the profile pictures
+when a member drops an image on their own profile. Inside a song's folder a holder of
+`intern.change_lied` may also rename and delete files from the edit page, without a folder right:
+the song owns its folder.
 
 **Backstage has no `FolderPermission` rows, deliberately.** A folder is only visible when every
 ancestor is readable, so restricting Backstage would hide the song files from members.

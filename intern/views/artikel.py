@@ -107,8 +107,6 @@ def article_list(request):
         "add": "article_list",
         "add_panel_include": "artikel_add_panel.html",
         "table": table,
-        "upload_folder_id": folders.artikel(),
-        "upload_folder_name": folders.WIKI_ANHAENGE,
     }
     return render(request, "table.html", context)
 
@@ -173,6 +171,8 @@ def article_edit(request, name):
         "history": "article_history",
         "id": name,
         "back": "",
+        # Keine Seiten-Dropzone: die kleine Ablage im Editor lädt in die
+        # Wiki-Anhänge und bettet die Datei an der Schreibmarke ein.
         "upload_folder_id": folders.artikel(),
         "upload_folder_name": folders.WIKI_ANHAENGE,
     }
@@ -241,6 +241,7 @@ def article_view(request, name):
         "latest_version": latest.version,
         "prev_version": prev_version,
         "next_version": next_version,
+        "upload_content": schreiben,
         "upload_folder_id": folders.artikel() if schreiben else None,
         "upload_folder_name": folders.WIKI_ANHAENGE if schreiben else "",
         "upload_artikel": artikel.name if schreiben else "",

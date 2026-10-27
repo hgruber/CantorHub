@@ -301,8 +301,6 @@ def forum_list(request):
             "column_choices": column_choices,
             "seitentitel": "Foren",
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-            "upload_folder_id": folders.forum(),
-            "upload_folder_name": folders.FORENBILDER,
             "add": add,
             "add_form": ForumEditForm() if request.user.has_perm("intern.add_forum") else None,
             "feld_ordner": {"bild": folders.forum()},
@@ -366,6 +364,7 @@ def forum_view(request, forum):
             "trenner_nach": trenner_nach,
             # Für die Sentinel-Kette von forum_more: ohne Lesestand wird 0 gereicht.
             "alt_bis_id": alt_bis_id or 0,
+            "upload_content": True,
             "upload_folder_id": folders.forum(),
             "upload_folder_name": folders.FORENBILDER,
             "up": "forum_list",

@@ -69,7 +69,7 @@ they survive edits. Module paths are relative to `intern/`.
 | `delete_folder` | `views/files.py` · `datei_aktionen`; `views/artikel.py` · `article_datei_loeschen` | `/intern/datei/<pk>/aktionen/`, `/intern/artikel/<name>/datei-loeschen/` | „Datei löschen" in an article's thumbnail menu regardless of `FolderPermission`; the article's edit right is still required |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view` | `/intern/ordner/<pk>/` | the „Berechtigungen" link |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view` | `/intern/ordner/0/` | lists „Backstage" at the root (hidden, not locked, for everyone else) |
-| `manage_folder_permissions` | `views/files.py` · `upload`; `base.html` (`data-upload-wurzel`) | `/intern/upload/`, every page | upload to the root: the page dropzone on pages without an upload target and on the browser's root (everyone else gets none, and a 403) |
+| `manage_folder_permissions` | `views/files.py` · `upload`; `views/folders.py` · `folder_view` | `/intern/upload/`, `/intern/ordner/0/` | upload to the root: only the root page of the folder browser offers a dropzone for it (everyone else has none, and `upload` answers 403) |
 | `manage_folder_permissions` | `views/folders.py` · `folder_view`, `folder_move`, `_copy_action`; `views/files.py` · `datei_aktionen` | `/intern/ordner/<pk>/`, `/intern/ordner/verschieben/` …, `/intern/datei/<pk>/aktionen/` | offers and accepts Backstage and its subfolders as a move, link or copy target (`_sieht_backstage`) |
 | `manage_folder_permissions` | `views/aufgaben.py` · `folder_permissions` | `/intern/ordner/<pk>/berechtigungen/` | edit the folder's `FolderPermission` rows |
 | `manage_folder_permissions` | `views/auslieferungen.py` · `auslieferungen`; `templates/sidebar.html` | `/intern/changelog/` | release notes; turns the version under the sidebar into a link to them (also under `manage_user_permissions`; everyone else sees it as plain text) |
@@ -82,7 +82,7 @@ they survive edits. Module paths are relative to `intern/`.
 | `add_termin` | `views/termine.py` · `termin_add` | `/intern/termin/add/` | create an event |
 | `change_termin` | `views/termine.py` · `termin_view` | `/intern/termin/<id>/` | edit and history links |
 | `change_termin` | `views/termine.py` · `termin_edit` | `/intern/termin/<id>/edit/` | edit an event |
-| `change_termin` | `views/termine.py` · `termin_view` | `/intern/termin/<id>/` | card „Dateien“: drop area and unlink buttons; without the right the page has no upload at all |
+| `change_termin` | `templates/_termin_dateien_karte.html`, `intern.js` | `/intern/termin/<id>/` | card „Dateien“: its own drop area with `termin_id`, and the unlink buttons; without the right the card has neither |
 | `change_termin` | `views/files.py` · `upload` | `/intern/upload/` | `termin_id`: link the upload to the event, checked before the file is stored |
 | `change_termin` | `views/termine.py` · `termin_datei_entfernen` | `/intern/termin/<id>/dateien/<file>/entfernen/` | unlink a file from the event (the file stays) |
 | `change_termin` | `views/aenderungen.py` · `termin_aenderungen` | `/intern/termin/<id>/aenderungen/` | an event's change history |
@@ -98,10 +98,13 @@ they survive edits. Module paths are relative to `intern/`.
 | `add_lied` | `views/titel.py` · `titel_add` | `/intern/titel/add/` | add a song |
 | `change_lied` | `views/titel.py` · `titel_list` | `/intern/titel/?konzert=<id>` | the link to edit an event's running order |
 | `change_lied` | `views/titel.py` · `update_order` | `/intern/update-order/` | save the running order |
-| `change_lied` | `views/titel.py` · `titel_view` | `/intern/titel/<id>/` | edit and history links |
+| `change_lied` | `views/titel.py` · `titel_view` | `/intern/titel/<id>/` | edit and history links; the page drop area and the Medien card's drop area (`upload_content`, `upload_lied_id`) |
+| `change_lied` | `views/titel.py` · `titel_list` | `/intern/titel/` | every repertoire row as a drop target (`upload_lied_zeilen`) |
 | `change_lied` | `views/titel.py` · `titel_edit` | `/intern/titel/<id>/edit/` | edit a song |
 | `change_lied` | `views/aenderungen.py` · `titel_aenderungen` | `/intern/titel/<id>/aenderungen/` | a song's change history |
-| `change_lied` | `views/files.py` · `upload` | `/intern/upload/` | file an upload to a song (`lied_id`, e.g. a drop on the song page) |
+| `change_lied` | `views/files.py` · `upload` | `/intern/upload/` | file an upload to a song (`lied_id`: a drop on the song page or on a repertoire row) |
+| `change_lied` | `views/titel.py` · `titel_rolle` | `/intern/titel/<id>/rolle/` | assign, move or release a role in the Medien card of the edit page |
+| `change_lied` | `views/titel.py` · `titel_datei` | `/intern/titel/<id>/datei/` | rename or delete a file of the song's own folder in the Medien card — no folder right needed (see below) |
 | `delete_lied` | `views/titel.py` · `titel_delete` | `/intern/titel/<id>/delete/` | delete a song |
 
 The repertoire's filter builder has no gate: the right sits on the field (`Feld.recht`), and no
@@ -164,7 +167,7 @@ missing from the page. The Django default rights that are not listed (e.g. `add_
 | `is_staff` | `/admin/` only | access to the Django admin at `/admin/` |
 | `FolderPermission` (per folder and group) | `/intern/ordner/<pk>/berechtigungen/` | read, write and delete in that folder and, per axis without an own rule, in its subfolders; with no rule at all read and write are open, delete closed — see `docs/files.md` |
 | Standard folders (`folders.PFADE`) | code only | nobody renames, moves or deletes them in the portal, superusers included — nor a folder holding one (`views/folders.py` · `_enthaelt_standardordner`); `/admin/` still can — see `docs/files.md` |
-| Song folders (`Lied.ordner`) | code only (`intern/liedablage.py`) | nobody renames, moves or deletes them in the portal either (`_enthaelt_liedordner`); they follow the song title and go with the song — see `docs/files.md`, „The song files“ |
+| Song folders (`Lied.ordner`) | code only (`intern/liedablage.py`) | nobody renames, moves or deletes them in the portal either (`_enthaelt_liedordner`); they follow the song title and go with the song — see `docs/files.md`, „The song files“. For the files *inside*, renaming and deleting in the song's Medien card (`views/titel.py` · `titel_datei`) need `intern.change_lied` and no folder right; uploading for a song needs `intern.change_lied` plus the folder's write right |
 | `ForumPermission` (per forum and group) | `/intern/forum/<id>/zugriff/` | who may read a forum and its MUC room; no rows means open — see `docs/forum.md` |
 | `ArtikelPermission` (per article and group) | `/intern/artikel/<name>/berechtigungen/` | who may read and edit an article — see `docs/articles.md` |
 | Tags „Mitglied" and „DSGVO" | admission, `/intern/aufgaben/` | the privacy gate for access without membership (`middleware.py`) — see `docs/members.md` |

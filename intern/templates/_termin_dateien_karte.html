@@ -1,8 +1,8 @@
 {% comment %}
 Karte „Dateien“ der Terminseite. Wer den Termin ändern darf, sieht sie immer —
 mit Ablagefläche für die erste Datei; alle anderen nur, wenn Dateien da sind.
-Die Fläche ist keine eigene Dropzone: ein Drop landet in der seitenweiten von
-#app-main (die termin_id mitschickt), ein Tippen öffnet deren Dateiauswahl.
+Die Fläche ist eine eigene kleine Dropzone: sie schickt die termin_id mit und
+lädt nach dem Ablegen die Seite neu. Ein Tippen öffnet dieselbe Auswahl.
 {% endcomment %}
 {% if dateien or perms.intern.change_termin %}
 <div class="detail-card">
@@ -23,7 +23,8 @@ Die Fläche ist keine eigene Dropzone: ein Drop landet in der seitenweiten von
     </ul>
     {% endif %}
     {% if perms.intern.change_termin %}
-    <div class="dropzone-field termin-dateien-ablage" role="button" tabindex="0">
+    <div class="dropzone-field termin-dateien-ablage" role="button" tabindex="0"
+         data-termin-dateien="{{ termin.id }}">
         <span class="dropzone-field-placeholder">Dateien hierher ziehen oder antippen</span>
     </div>
     {% endif %}

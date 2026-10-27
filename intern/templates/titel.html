@@ -55,12 +55,20 @@
         </div>
         {% endif %}
 
-        {% if medien %}
-        <div class="detail-card">
-            <h3>Medien</h3>
+        {% comment %}
+           Alle Dateien des Lied-Ordners: die mit Rolle zuerst (in Rollenreihenfolge),
+           danach die rollenlosen mit ihrem Dateinamen. Wer das Lied ändern darf, sieht
+           darunter die Ablagefläche; ein Drop landet in der seitenweiten Dropzone von
+           #app-main (sie schickt die lied_id mit), ein Tippen öffnet deren Dateiauswahl.
+        {% endcomment %}
+        {% if medien or perms.intern.change_lied %}
+        <div class="detail-card medien-karte">
+            <h3>Medien{% if medien %} <span class="badge">{{ medien|length }}</span>{% endif %}</h3>
+            {% if medien %}
+            <div class="medien-liste">
             {% for m in medien %}
-            <div class="media-row">
-                <span class="media-label">{{ m.label }}</span>
+            <div class="media-row{% if m.ohne_rolle %} media-row--ohne-rolle{% endif %}">
+                <span class="media-label">{{ m.label }}{% if m.ohne_rolle %}<span class="medien-ohne-rolle">ohne Rolle</span>{% endif %}</span>
                 <div class="media-actions">
                     {% if m.audio %}
                     <button type="button" class="audio-btn audio-btn--{% if m.rolle == 'aufnahme' %}jg{% else %}original{% endif %}"
@@ -93,6 +101,17 @@
                 </div>
             </div>
             {% endfor %}
+            </div>
+            {% else %}
+            <p class="medien-leer">Noch keine Dateien.</p>
+            {% endif %}
+            {% if perms.intern.change_lied %}
+            <div class="medien-ablage" data-medien-ablage="seite" role="button" tabindex="0"
+                 aria-label="Dateien zum Lied hinzufügen">
+                <svg class="medien-ablage-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                <span class="medien-ablage-text" aria-hidden="true"><span class="medien-ablage-maus">Dateien hierher ziehen</span><span class="medien-ablage-touch">Dateien hinzufügen</span></span>
+            </div>
+            {% endif %}
         </div>
         {% endif %}
 

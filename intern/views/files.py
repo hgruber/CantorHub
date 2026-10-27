@@ -188,133 +188,160 @@ def upload(request):
         return JsonResponse(
             {"status": "error", "message": "Keine Datei übermittelt"}, status=400
         )
-    if request.FILES:
-        from intern.app_settings import get_config_int
-        from intern.folder_access import folder_access
+    from intern.app_settings import get_config_int
+    from intern.folder_access import folder_access
 
-        file = request.FILES["file"]
+    file = request.FILES["file"]
 
-        max_mb = get_config_int("UPLOAD_MAX_MB", 50)
-        if file.size > max_mb * 1024 * 1024:
-            return JsonResponse(
-                {"status": "error", "message": f"Datei zu groß (max. {max_mb} MB)"},
-                status=413,
-            )
-        preferred_folder_id = request.POST.get("folder_id")
-        extension = _get_file_extension(file.name)
+    max_mb = get_config_int("UPLOAD_MAX_MB", 50)
+    if file.size > max_mb * 1024 * 1024:
+        return JsonResponse(
+            {"status": "error", "message": f"Datei zu groß (max. {max_mb} MB)"},
+            status=413,
+        )
+    preferred_folder_id = request.POST.get("folder_id")
+    extension = _get_file_extension(file.name)
 
-        # Repertoire-Upload: Der Titel kommt von der Detailseite (lied_id). Die
-        # Datei gehört dann in den Lied-Ordner; die Endung schlägt die Rolle
-        # vor. Unbekannte Endungen bleiben erlaubt — sie landen ohne Rolle im
-        # Ordner.
-        lied = None
-        lied_id = request.POST.get("lied_id", "")
-        if lied_id.isdigit() and request.user.has_perm("intern.change_lied"):
+    # Repertoire-Upload: Der Titel kommt von der Liedseite, einer Zeile der
+    # Liederliste oder der Medien-Karte (lied_id). Die Datei gehört dann in den
+    # Lied-Ordner; die Endung schlägt die Rolle vor. Unbekannte Endungen
+    # bleiben erlaubt — sie landen ohne Rolle im Ordner. Ohne das Recht wird
+    # abgelehnt, statt die Datei woanders abzulegen.
+    lied = None
+    lied_id = request.POST.get("lied_id", "")
+    if lied_id:
+        if lied_id.isdigit():
             lied = Lied.objects.filter(pk=int(lied_id)).first()
-        rolle = _rolle_fuer_upload(file.name) if lied is not None else None
-
-        # Terminseite: die Datei gehört dem Termin. Ordner und Name stehen
-        # damit fest, und das Recht wird vor der Ablage geprüft — eine Ablehnung
-        # hinterlässt keine Leiche in Termin-Anhänge.
-        termin = None
-        termin_id = request.POST.get("termin_id", "")
-        if termin_id:
-            if termin_id.isdigit():
-                termin = Termin.objects.filter(pk=int(termin_id)).first()
-            if termin is None or not request.user.has_perm("intern.change_termin"):
-                return JsonResponse(
-                    {"status": "error", "message": "Keine Berechtigung für diesen Termin"},
-                    status=403,
-                )
-
-        # Zielordner: Termin → Termin-Anhänge, Lied → eigener Lied-Ordner,
-        # sonst der vom Absender genannte Ordner. Ohne Ordner läge die Datei
-        # an der Wurzel (None); die Antwort meldet das, damit die Upload-Karte
-        # die Wurzel freihalten kann.
-        if termin is not None:
-            folder_id = folders.termine()
-            if not folder_id:
-                return JsonResponse(
-                    {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
-                )
-        elif lied is not None:
-            folder_id = liedablage.ordner_fuer(lied)
-        else:
-            folder_id = preferred_folder_id if preferred_folder_id not in (None, "", "0") else None
-
-        target_folder = Folder.objects.filter(pk=folder_id).first() if folder_id else None
-        if folder_id and target_folder is None:
+        if lied is None or not request.user.has_perm("intern.change_lied"):
             return JsonResponse(
-                {"status": "error", "message": "Zielordner nicht gefunden"}, status=400
-            )
-        _, can_write, _ = folder_access(request.user, target_folder)
-        if not can_write:
-            return JsonResponse(
-                {"status": "error", "message": "Keine Schreibrechte für diesen Ordner"},
+                {"status": "error", "message": "Keine Berechtigung für dieses Lied"},
                 status=403,
             )
-        # Ohne Zielordner läge die Datei auf oberster Ebene — das darf nur, wer
-        # Backstage sieht (Webmaster); alle anderen haben dort keine Dropzone.
-        if folder_id is None and not request.user.has_perm("intern.manage_folder_permissions"):
+    rolle = _rolle_fuer_upload(file.name) if lied is not None else None
+    # Die Medien-Karte der Bearbeiten-Seite vergibt die Rolle von Hand.
+    if request.POST.get("ohne_rolle"):
+        rolle = None
+
+    # Eigenes Profilbild: die Datei landet in Profilbilder und wird sofort
+    # das Profilbild des angemeldeten Mitglieds.
+    avatar = request.POST.get("avatar") == "1"
+    if avatar and not (file.content_type or "").startswith("image/"):
+        return JsonResponse(
+            {"status": "error", "message": "Nur ein Bild kann das Profilbild werden"},
+            status=400,
+        )
+
+    # Terminseite: die Datei gehört dem Termin. Ordner und Name stehen
+    # damit fest, und das Recht wird vor der Ablage geprüft — eine Ablehnung
+    # hinterlässt keine Leiche in Termin-Anhänge.
+    termin = None
+    termin_id = request.POST.get("termin_id", "")
+    if termin_id:
+        if termin_id.isdigit():
+            termin = Termin.objects.filter(pk=int(termin_id)).first()
+        if termin is None or not request.user.has_perm("intern.change_termin"):
             return JsonResponse(
-                {"status": "error", "message": "Hier lässt sich nichts hochladen — kein Zielordner"},
+                {"status": "error", "message": "Keine Berechtigung für diesen Termin"},
                 status=403,
             )
 
-        # Der endgültige Name steht vor der Ablage fest, damit die Namensregel
-        # den Namen prüft, unter dem die Datei liegen wird.
-        name = file.name
-        # Termin-Anhänge ist ein Ordner für alle Termine: das Datum vorn hält die
-        # „Ablauf.pdf“ zweier Termine auseinander. Derselbe Name am selben Termin
-        # wird eine neue Fassung.
-        if termin is not None:
-            name = f"{termin.datum:%Y-%m-%d} {file.name}"
-        elif lied is not None and rolle:
-            name = liedablage.dateiname(lied.titel, rolle, extension)
-        # Feld-Dropzone (Profilbild, Forenbild, Titel-Datei): die Datei wartet im
-        # Zielordner auf „Speichern“ und darf bis dahin keine fremde gleichnamige
-        # zu ihrer Fassung machen — ersetzt wird erst über systemablage().
-        if request.POST.get("feld"):
-            name = dateiablage.freier_name(
-                File.objects.filter(folder_id=folder_id).values_list("original_filename", flat=True),
-                name,
-            )
-        vorhanden = dateiablage.gleichnamige(folder_id, name)
-        if vorhanden is not None and not darf_avatar_aendern(request.user, vorhanden):
-            # Vor der Ablage prüfen — sonst wäre das fremde Profilbild schon ersetzt.
+    # Zielordner: Termin → Termin-Anhänge, Lied → eigener Lied-Ordner,
+    # sonst der vom Absender genannte Ordner. Ohne Ordner läge die Datei
+    # an der Wurzel (None); die Antwort meldet das, damit die Upload-Karte
+    # die Wurzel freihalten kann.
+    if avatar:
+        folder_id = folders.avatare()
+        if not folder_id:
             return JsonResponse(
-                {"status": "error", "message": "Das ist das Profilbild eines anderen Mitglieds."},
-                status=403,
+                {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
             )
-        # Gleicher Name: neue vordere Fassung der Datei dort (die PK bleibt, alle
-        # Verweise und Referenzen folgen). Gleicher Inhalt: nichts wird abgelegt.
-        filer_file, status, gleiche = dateiablage.hochladen(file, folder_id, name, request.user)
-        overwritten = status == "fassung"
-        meldung = ""
-        if status == "identisch":
-            meldung = (
-                "Bereits vorhanden — nicht abgelegt"
-                if gleiche.pfad == filer_file.file.name
-                else f"Bereits vorhanden als Fassung vom {gleiche.datum:%-d.%-m.%Y} — nicht abgelegt"
+    elif termin is not None:
+        folder_id = folders.termine()
+        if not folder_id:
+            return JsonResponse(
+                {"status": "error", "message": "Kein Zielordner verfügbar"}, status=400
             )
+    elif lied is not None:
+        folder_id = liedablage.ordner_fuer(lied)
+    else:
+        folder_id = preferred_folder_id if preferred_folder_id not in (None, "", "0") else None
 
-        if termin is not None:
-            termin.dateien.add(filer_file)
-        elif lied is not None and rolle:
-            liedablage.rolle_setzen(lied, rolle, filer_file, request.user)
+    target_folder = Folder.objects.filter(pk=folder_id).first() if folder_id else None
+    if folder_id and target_folder is None:
+        return JsonResponse(
+            {"status": "error", "message": "Zielordner nicht gefunden"}, status=400
+        )
+    _, can_write, _ = folder_access(request.user, target_folder)
+    if not can_write:
+        return JsonResponse(
+            {"status": "error", "message": "Keine Schreibrechte für diesen Ordner"},
+            status=403,
+        )
+    # Ohne Zielordner läge die Datei auf oberster Ebene — das darf nur, wer
+    # Backstage sieht (Webmaster); alle anderen haben dort keine Dropzone.
+    if folder_id is None and not request.user.has_perm("intern.manage_folder_permissions"):
+        return JsonResponse(
+            {"status": "error", "message": "Hier lässt sich nichts hochladen — kein Zielordner"},
+            status=403,
+        )
 
-        # Return response
-        url = (request.META.get("HTTP_ORIGIN") or "") + filer_file.url
-        thumb = ""
-        try:
-            thumb = get_thumbnailer(filer_file.file).get_thumbnail(
-                {"size": (120, 120), "crop": True, "quality": 85}
-            ).url
-        except Exception:
-            pass
-        # Über `original_filename` löst ein [[Datei:…]] auf, den die
-        # Artikelseiten daraus bauen.
-        return JsonResponse({"status": "success", "id": filer_file.id, "name": filer_file.original_filename, "url": url, "thumbnail_url": thumb, "overwritten": overwritten, "identisch": status == "identisch", "meldung": meldung, "wurzel": folder_id is None})
+    # Der endgültige Name steht vor der Ablage fest, damit die Namensregel
+    # den Namen prüft, unter dem die Datei liegen wird.
+    name = file.name
+    # Termin-Anhänge ist ein Ordner für alle Termine: das Datum vorn hält die
+    # „Ablauf.pdf“ zweier Termine auseinander. Derselbe Name am selben Termin
+    # wird eine neue Fassung.
+    if termin is not None:
+        name = f"{termin.datum:%Y-%m-%d} {file.name}"
+    elif lied is not None and rolle:
+        name = liedablage.dateiname(lied.titel, rolle, extension)
+    # Feld-Dropzone und Profilbild: die Datei darf keine fremde gleichnamige
+    # zu ihrer Fassung machen — sie nimmt den ersten freien Namen.
+    if request.POST.get("feld") or avatar:
+        name = dateiablage.freier_name(
+            File.objects.filter(folder_id=folder_id).values_list("original_filename", flat=True),
+            name,
+        )
+    vorhanden = dateiablage.gleichnamige(folder_id, name)
+    if vorhanden is not None and not darf_avatar_aendern(request.user, vorhanden):
+        # Vor der Ablage prüfen — sonst wäre das fremde Profilbild schon ersetzt.
+        return JsonResponse(
+            {"status": "error", "message": "Das ist das Profilbild eines anderen Mitglieds."},
+            status=403,
+        )
+    # Gleicher Name: neue vordere Fassung der Datei dort (die PK bleibt, alle
+    # Verweise und Referenzen folgen). Gleicher Inhalt: nichts wird abgelegt.
+    filer_file, status, gleiche = dateiablage.hochladen(file, folder_id, name, request.user)
+    overwritten = status == "fassung"
+    meldung = ""
+    if status == "identisch":
+        meldung = (
+            "Bereits vorhanden — nicht abgelegt"
+            if gleiche.pfad == filer_file.file.name
+            else f"Bereits vorhanden als Fassung vom {gleiche.datum:%-d.%-m.%Y} — nicht abgelegt"
+        )
+
+    if avatar:
+        request.user.avatar = filer_file
+        request.user._audit_user = request.user
+        request.user.save(update_fields=["avatar"])
+    elif termin is not None:
+        termin.dateien.add(filer_file)
+    elif lied is not None and rolle:
+        liedablage.rolle_setzen(lied, rolle, filer_file, request.user)
+
+    # Return response
+    url = (request.META.get("HTTP_ORIGIN") or "") + filer_file.url
+    thumb = ""
+    try:
+        thumb = get_thumbnailer(filer_file.file).get_thumbnail(
+            {"size": (120, 120), "crop": True, "quality": 85}
+        ).url
+    except Exception:
+        pass
+    # Über `original_filename` löst ein [[Datei:…]] auf, den die
+    # Artikelseiten daraus bauen.
+    return JsonResponse({"status": "success", "id": filer_file.id, "name": filer_file.original_filename, "url": url, "thumbnail_url": thumb, "overwritten": overwritten, "identisch": status == "identisch", "meldung": meldung, "wurzel": folder_id is None})
 
 
 def _datei_orte(f, user):

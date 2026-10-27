@@ -177,6 +177,14 @@ def mitglied_view(request, id):
     # sonst nur auf der Gruppen-Seite.
     if request.user.id == id:
         context["perm_hilfe"] = eigene_rechte(request.user)
+        # Die eigene Profilseite nimmt ein Bild als Profilbild an — ohne
+        # Bestätigung passiert nichts (siehe intern.js).
+        context.update({
+            "upload_content": True,
+            "upload_folder_id": folders.avatare(),
+            "upload_folder_name": folders.PROFILBILDER,
+            "upload_avatar": True,
+        })
     return render(request, "mitglied.html", context)
 
 
@@ -286,8 +294,6 @@ def mitglied_edit(request, id):
         "user": user,
         "seitentitel": f"bearbeiten: {user.first_name} {user.last_name}",
         "view": "mitglied_view",
-        # Keine Seiten-Dropzone: auf dem Profil genügt die des Profilbilds.
-        "upload_aus": True,
         "feld_ordner": {"avatar": folders.avatare()},
         "id": id,
         "can_manage": request.user.has_perm("intern.change_user"),

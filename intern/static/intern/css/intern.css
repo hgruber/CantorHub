@@ -571,6 +571,12 @@ a.version-string:focus-visible {
     border-radius: var(--r);
 }
 
+/* Liegt der Zeiger über einer kleinen Zone (Unterordner-Zeile, Lied-Zeile,
+   Ablagefläche), geht die Datei dorthin, nicht an die Seite — das Overlay
+   würde das falsche Ziel versprechen. #app-main trägt als Seiten-Dropzone
+   selbst dz-drag-hover; :has() sieht nur Nachfahren, das zählt also nicht. */
+#app-main.drag-active:has(.dnd-file-over, .dz-drag-hover) .upload-overlay { display: none; }
+
 .upload-overlay-inner {
     display: flex;
     flex-direction: column;
@@ -2989,6 +2995,300 @@ table.mitglied-table tr.stimme-group-start td {
     color: var(--t3);
 }
 
+/* =================================================== */
+/* Medien-Karte (Lied)                                 */
+/* Detailseite: Liste aller Dateien + Ablagefläche,    */
+/* Bearbeiten-Seite: Rollen-Slots + freie Rollen       */
+/* =================================================== */
+
+/* Rollenlose Dateien tragen nur ihren Dateinamen — der darf umbrechen. */
+.media-row--ohne-rolle .media-label { min-width: 0; overflow-wrap: anywhere; }
+.medien-ohne-rolle {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    font-size: calc(11rem / 14);
+    font-weight: 600;
+    color: var(--t4);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    vertical-align: 1px;
+    white-space: nowrap;
+}
+
+.medien-leer {
+    margin: 0;
+    font-size: calc(13rem / 14);
+    color: var(--t4);
+}
+
+/* Die Ablagefläche. Auf der Detailseite ist sie ein Knopf (öffnet die
+   Dateiauswahl der Seite), auf der Bearbeiten-Seite die eigene Dropzone.
+   Der Drag-Hinweis erscheint nur, wo es einen Zeiger gibt. */
+.medien-ablage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 9px 12px;
+    border: 1.5px dashed var(--border-dark);
+    border-radius: var(--r-sm);
+    color: var(--t4);
+    font-size: calc(12.5rem / 14);
+    text-align: center;
+    transition: border-color var(--ease), background var(--ease), color var(--ease);
+}
+.medien-ablage--karte { margin: 0 0 4px; }
+/* Im Artikel-Editor zwischen Textfeld und Fußleiste, bündig mit .ae-body. */
+.medien-ablage--editor { flex-shrink: 0; margin: 0 20px 14px; }
+@media (max-width: 768px) {
+    .medien-ablage--editor { margin: 0 14px 10px; }
+}
+.medien-ablage[role="button"] { cursor: pointer; }
+.medien-ablage:hover,
+.medien-ablage:focus-visible,
+.medien-ablage.dz-drag-hover {
+    border-color: var(--brand);
+    background: var(--brand-light);
+    color: var(--brand-text);
+    outline: none;
+}
+.medien-ablage:focus-visible { box-shadow: 0 0 0 3px var(--brand-ring); }
+/* Seiten-Drag: dieselbe Hervorhebung, ohne dass die Fläche selbst das Ziel ist. */
+#app-main.drag-active .medien-ablage {
+    border-color: var(--brand);
+    background: var(--brand-light);
+    color: var(--brand-text);
+}
+.medien-ablage-icon { flex: 0 0 auto; width: 18px; height: 18px; }
+.medien-ablage-text { min-width: 0; }
+.medien-ablage-maus { display: none; }
+@media (hover: hover) {
+    .medien-ablage-maus { display: inline; }
+    .medien-ablage-touch { display: none; }
+}
+
+.medien-status {
+    margin: 6px 0 0;
+    font-size: calc(12rem / 14);
+    color: var(--t3);
+}
+.medien-status:empty { display: none; }
+.medien-status.is-fehler { color: var(--error-text); }
+
+/* Gruppenüberschriften der Bearbeiten-Karte */
+.medien-gruppe {
+    margin: 14px 0 6px;
+    font-size: calc(11rem / 14);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--t4);
+}
+.medien-hinweis {
+    margin: 0 0 8px;
+    font-size: calc(11.5rem / 14);
+    line-height: 1.45;
+    color: var(--t4);
+}
+
+/* Eine Dateizeile: Name, Rollen-Slot, Öffnen/Umbenennen/Löschen. Wird es eng,
+   rutschen Slot und Knöpfe rechtsbündig in eine zweite Zeile. */
+.medien-datei {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    padding: 5px 8px;
+    margin: 0 -8px;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    transition: background var(--ease), border-color var(--ease);
+}
+.medien-datei + .medien-datei { margin-top: 2px; }
+.medien-datei-name {
+    flex: 1 1 10em;
+    min-width: 0;
+    font-size: calc(13rem / 14);
+    color: var(--t2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.medien-datei-slot {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    max-width: 100%;
+}
+
+/* Öffnen, Umbenennen, Löschen: leise, bis man sie meint. */
+.medien-datei-aktionen {
+    flex: 0 0 auto;
+    display: flex;
+    margin-left: auto;
+    align-items: center;
+}
+.medien-datei-aktionen .file-icon-btn {
+    border: 0;
+    padding: 0;
+    background: none;
+    color: var(--t4);
+    cursor: pointer;
+}
+.medien-datei-aktionen .file-icon-btn:hover {
+    background: var(--brand-light);
+    color: var(--brand-text);
+}
+.medien-datei-aktionen .medien-datei-loeschen:hover {
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+.medien-datei[aria-busy="true"] { opacity: 0.6; }
+/* Schmal: der Name bekommt immer eine eigene Zeile, darunter Rolle und Knöpfe
+   — so sehen alle Zeilen gleich aus, egal wie lang der Name ist. */
+@media (max-width: 480px) {
+    .medien-datei-name,
+    .medien-datei .medien-datei-eingabe { flex-basis: 100%; }
+}
+
+/* Umbenennen: das Textfeld nimmt den Platz des Namens ein, in Zeilenhöhe.
+   Doppelte Klasse, sonst gewinnt die globale input[type="text"]-Regel. */
+.medien-datei .medien-datei-eingabe {
+    width: auto;
+    flex: 1 1 10em;
+    min-width: 0;
+    height: 26px;
+    margin: 0;
+    padding: 0 6px;
+    border: 1px solid var(--brand);
+    border-radius: var(--r-sm);
+    background: var(--bg-card);
+    font: inherit;
+    font-size: calc(13rem / 14);
+    color: var(--t1);
+    box-shadow: 0 0 0 3px var(--brand-ring);
+    outline: none;
+}
+.medien-datei .medien-datei-eingabe:read-only { color: var(--t3); }
+
+.medien-loeschen-dialog .warn { color: var(--warn-text); }
+
+/* Ablageziele: die Zeile einer Datei und die freie Rollenablage */
+.medien-datei.is-ueber,
+.medien-freie-rollen.is-ueber {
+    border-color: var(--brand);
+    background: var(--brand-light);
+}
+/* Chip gewählt (Touch/Klick): die Dateien werden zu Zielen. */
+.medien-dateien.is-waehlend .medien-datei {
+    border-color: var(--border);
+    border-style: dashed;
+    cursor: pointer;
+}
+.medien-dateien.is-waehlend .medien-datei:hover,
+.medien-dateien.is-waehlend .medien-datei:focus-within {
+    border-color: var(--brand);
+    background: var(--brand-light);
+}
+
+/* „Rolle zuweisen“ an einer Datei ohne Rolle — unauffällig, aber ein Knopf. */
+.medien-slot-leer {
+    padding: 2px 9px;
+    border: 1px dashed var(--border-dark);
+    border-radius: 999px;
+    background: transparent;
+    font: inherit;
+    font-size: calc(11.5rem / 14);
+    color: var(--t4);
+    cursor: pointer;
+    transition: border-color var(--ease), color var(--ease), background var(--ease);
+}
+.medien-slot-leer:hover,
+.medien-slot-leer:focus-visible {
+    border-color: var(--brand);
+    background: var(--brand-light);
+    color: var(--brand-text);
+    outline: none;
+}
+
+/* Rollen-Chip mit Löse-Knopf. Der Fokusring liegt auf der Umhüllung, damit
+   Chip und × gemeinsam einen Rahmen tragen. */
+.medien-chip-wrap {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--border-dark);
+    border-radius: 999px;
+    background: var(--bg-card);
+    transition: border-color var(--ease), box-shadow var(--ease), opacity var(--ease);
+}
+.medien-chip-wrap:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+.medien-chip-wrap.is-zieht { opacity: 0.45; }
+.medien-chip {
+    border: 0;
+    border-radius: 999px 0 0 999px;
+    background: none;
+    padding: 2px 9px;
+    font: inherit;
+    font-size: calc(11.5rem / 14);
+    font-weight: 600;
+    color: var(--t2);
+    cursor: grab;
+    white-space: nowrap;
+}
+.medien-chip-wrap > .medien-chip:only-child { border-radius: 999px; padding-right: 10px; }
+.medien-chip:focus-visible,
+.medien-chip-x:focus-visible { outline: none; }
+.medien-chip.is-gewaehlt {
+    background: var(--brand-light);
+    color: var(--brand-text);
+}
+.medien-chip-x {
+    border: 0;
+    border-left: 1px solid var(--border);
+    border-radius: 0 999px 999px 0;
+    background: none;
+    padding: 0 7px;
+    font: inherit;
+    font-size: calc(13rem / 14);
+    line-height: 1.4;
+    color: var(--t4);
+    cursor: pointer;
+}
+.medien-chip-x:hover { background: var(--error-bg); color: var(--error-text); }
+
+/* Freie Rollen: zugleich Ablageziel für das Zurückziehen eines Chips. */
+.medien-freie-rollen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 42px;
+    padding: 8px;
+    border: 1.5px dashed var(--border-dark);
+    border-radius: var(--r-sm);
+    transition: border-color var(--ease), background var(--ease);
+}
+.medien-freie-leer {
+    margin: 0;
+    font-size: calc(12rem / 14);
+    color: var(--t4);
+}
+
+/* Eine gerade hochgeladene Zeile zeigt sich kurz. */
+@keyframes medienNeu {
+    from { background: var(--brand-light); }
+    to   { background: transparent; }
+}
+.medien-datei.is-neu { animation: medienNeu 1.6s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+    .medien-datei.is-neu { animation: none; }
+}
+
 /* Ordered list (song list) */
 .detail-list {
     margin: 0;
@@ -5047,6 +5347,26 @@ span.not_found {
     background: rgba(34, 197, 94, 0.10) !important;
     outline: 2px solid #22c55e;
     outline-offset: -2px;
+}
+
+/* Repertoire: jede Zeile nimmt Dateien für ihr Lied an (intern.js setzt
+   drop-row, Dropzone dz-drag-hover, der Upload drop-row-active). Ruhiger als
+   die Ordnerzeile: Tönung und eine Leiste links, kein Rahmen — nichts springt.
+   Zwei Klassen plus tbody, damit auch [data-theme="dark"] tbody tr:hover td
+   nicht gewinnt. */
+tbody tr.drop-row.dz-drag-hover td,
+tbody tr.drop-row.drop-row-active td { background: var(--brand-light); }
+tbody tr.drop-row.dz-drag-hover td:first-child,
+tbody tr.drop-row.drop-row-active td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
+/* Während des Uploads: gedämpft, ohne Bewegungswunsch ein langsames Atmen. */
+tbody tr.drop-row.drop-row-active { cursor: progress; }
+tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
+@keyframes drop-row-puls {
+    from { opacity: 0.85; }
+    to   { opacity: 0.5; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    tbody tr.drop-row.drop-row-active td { animation: drop-row-puls 1.2s ease-in-out infinite alternate; }
 }
 
 /* ── Outdated version banner + version navigator ──────── */

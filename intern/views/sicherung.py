@@ -112,7 +112,6 @@ def sicherung(request):
     return render(request, "sicherung.html", {
         "seitentitel": "Sicherung",
         "hilfe_seite": "Hilfe:Sicherung",
-        "upload_aus": True,
         "stand": _stand(),
         "ablage": verzeichnis() / DATEINAME,
         "stunden": get_config_int("SICHERUNG_STUNDEN", 24),

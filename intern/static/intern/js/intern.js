@@ -269,38 +269,54 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // App-main overlay dropzone
+  // ── Dateien ablegen: nur Seiten mit eigenem Ziel ──────────
+  // Die Inhaltsfläche nimmt ein Drop nur dort an, wo der View
+  // `upload_content` setzt: Ordner mit Schreibrecht, Artikel mit Schreibrecht,
+  // Forum, Lied, eigenes Profil. Alle anderen Seiten haben weder Fläche noch
+  // Symbol — einen Upload ohne Ziel gibt es nicht mehr.
   const appMain = document.getElementById("app-main");
   const uploadMaxMb = appMain ? (parseInt(appMain.dataset.uploadMaxMb, 10) || 50) : 50;
   const artikelDateien = [];  // Namen der Uploads in der Artikelansicht
-  if (appMain) {
+  window.internUploadZonen = window.internUploadZonen || [];
+  if (appMain && appMain.dataset.uploadContent === "1") {
+    const ds = appMain.dataset;
+    const alsProfilbild = ds.uploadAvatar === "1";
     appMainDz = new Dropzone(appMain, {
       url: "/intern/upload/",
       paramName: "file",
       maxFilesize: uploadMaxMb,
       clickable: false,
       previewsContainer: false,
+      // Das Profilbild lädt erst nach der Rückfrage hoch.
+      autoProcessQueue: !alsProfilbild,
       headers: { "X-CSRFToken": getCsrfToken() },
       init: function () {
+        const dz = this;
+        if (alsProfilbild) {
+          dz.on("addedfile", async function (file) {
+            // Immer nur ein Bild; die alte Wahl fällt weg.
+            Array.from(dz.files).forEach((f) => { if (f !== file) dz.removeFile(f); });
+            const wahl = await verwendungsDialog({
+              titel: "Als Profilbild setzen?",
+              hinweis: file.name,
+              buttons: [
+                { text: "Als Profilbild setzen", wert: "setzen", klasse: "btn-primary" },
+                { text: "Abbrechen", wert: "abbrechen" },
+              ],
+            });
+            if (wahl === "setzen") dz.processQueue();
+            else dz.removeFile(file);
+          });
+        }
         this.on("sending", function (file, xhr, formData) {
-          const folderId = appMain.dataset.uploadFolderId;
-          const liedId = appMain.dataset.uploadLiedId;
-          const terminId = appMain.dataset.uploadTerminId;
-          if (folderId) formData.append("folder_id", folderId);
-          if (liedId) formData.append("lied_id", liedId);
-          if (terminId) formData.append("termin_id", terminId);
+          if (ds.uploadFolderId) formData.append("folder_id", ds.uploadFolderId);
+          if (ds.uploadLiedId) formData.append("lied_id", ds.uploadLiedId);
+          if (alsProfilbild) formData.append("avatar", "1");
         });
         this.on("success", function (file, response) {
           const textarea = document.getElementById("mitteilung-textarea");
           if (textarea) textarea.value += response.url;
-          // Artikel-Editor: der Verweis kommt vorn ins Textfeld, gespeichert
-          // wird erst mit „Speichern".
-          const editor = document.querySelector('.article-editor textarea[name="text"]');
-          if (editor && response.name) {
-            editor.value = "[[Datei:" + response.name + "]]\n" + editor.value;
-            editor.dispatchEvent(new Event("input", { bubbles: true }));
-          }
-          if (appMain.dataset.uploadArtikel && response.name) {
+          if (ds.uploadArtikel && response.name) {
             artikelDateien.push(response.name);
           }
         });
@@ -308,7 +324,7 @@ document.addEventListener("DOMContentLoaded", function () {
           // Artikelansicht: alle Dateien dieses Uploads in einer neuen Version
           // vorn einfügen — ein Request, sonst stritten parallele Uploads um
           // dieselbe Versionsnummer.
-          const artikel = appMain.dataset.uploadArtikel;
+          const artikel = ds.uploadArtikel;
           if (artikel) {
             if (!artikelDateien.length) return;
             const body = new FormData();
@@ -322,40 +338,20 @@ document.addEventListener("DOMContentLoaded", function () {
           }
           if (window.location.pathname.startsWith("/intern/ordner/")) {
             refreshFolderTable();
-          } else if (appMain.dataset.uploadLiedId || appMain.dataset.uploadTerminId) {
+          } else if (ds.uploadLiedId || alsProfilbild) {
             window.location.reload();
           }
         });
       },
     });
 
-    // Keine Dropzone, die nur auf oberster Ebene ablegt: ohne Zielordner lädt
-    // nur hoch, wer dort ablegen darf (Webmaster) — außer in der Artikelansicht,
-    // deren Uploads ein Ziel brauchen. Eine Seite kann die Dropzone ganz
-    // abschalten (Profil: dort genügt das Avatar-Feld).
-    const ds = appMain.dataset;
-    const ohneZiel = !ds.uploadFolderId;
-    const uploadGesperrt =
-      !!ds.uploadAus ||
-      (ohneZiel && (!ds.uploadWurzel || !!document.querySelector(".wiki[data-artikel]")));
-    if (uploadGesperrt) appMainDz.disable();
-
-    // Topbar-Button: für Geräte ohne Drag & Drop. Die gewählten Dateien laufen
-    // durch dieselbe Dropzone wie ein Drop — Zielordner, Fortschrittskarte und
-    // Neuladen gelten damit unverändert.
+    // Symbol und Dropzone gehen zusammen: Die Seite hat ein Ziel, also auch
+    // den Knopf für Geräte ohne Drag & Drop.
     const uploadBtn = document.getElementById("uploadBtn");
     const uploadInput = document.getElementById("uploadInput");
-    // Symbol und Dropzone gehen zusammen: wo abgelegt werden kann, ist es da.
-    if (uploadBtn && !uploadGesperrt) uploadBtn.hidden = false;
     if (uploadBtn && uploadInput) {
+      uploadBtn.hidden = false;
       uploadBtn.addEventListener("click", () => uploadInput.click());
-      // Die Ablagefläche der Karte „Dateien“ (Terminseite) öffnet dieselbe Auswahl.
-      document.querySelectorAll(".termin-dateien-ablage").forEach((feld) => {
-        feld.addEventListener("click", () => uploadInput.click());
-        feld.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); uploadInput.click(); }
-        });
-      });
       uploadInput.addEventListener("change", () => {
         Array.from(uploadInput.files).forEach((f) => appMainDz.addFile(f));
         uploadInput.value = "";  // dieselbe Datei lässt sich erneut wählen
@@ -364,9 +360,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let dragCounter = 0;
     appMain.addEventListener("dragenter", (e) => {
-      if (uploadGesperrt || !e.dataTransfer || !e.dataTransfer.types.includes("Files")) return;
+      if (!e.dataTransfer || !e.dataTransfer.types.includes("Files")) return;
       // Don't show overlay when a panel dropzone is active
-      if (document.querySelector('.add-panel.open') || document.querySelector('.dropzone-field.dz-dragover')) return;
+      if (document.querySelector('.add-panel.open') || document.querySelector('.dropzone-field.dz-drag-hover')) return;
       dragCounter++;
       appMain.classList.add("drag-active");
     });
@@ -388,6 +384,104 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+  // ── Kleine Ablageflächen: ein Element, ein festes Ziel ────
+  // Repertoire-Zeile, Terminkarte, Artikel-Editor. `felder` benennen das Ziel
+  // für upload(); `klickbar` öffnet per Klick und Enter/Leertaste die Auswahl;
+  // `erfolg` läuft je Datei, `fertig` erst, wenn alle Dateien angekommen sind —
+  // nach einem Fehler bleibt die Seite stehen, damit die Karte ihn zeigt.
+  function kleineAblage(flaeche, felder, { klickbar = true, erfolg, fertig } = {}) {
+    const dz = new Dropzone(flaeche, {
+      url: "/intern/upload/",
+      paramName: "file",
+      maxFilesize: uploadMaxMb,
+      clickable: klickbar,
+      previewsContainer: false,
+      headers: { "X-CSRFToken": getCsrfToken() },
+      init: function () {
+        this.on("sending", (file, xhr, formData) => {
+          Object.entries(felder).forEach(([k, v]) => formData.append(k, v));
+        });
+        if (erfolg) this.on("success", erfolg);
+        this.on("queuecomplete", () => {
+          const alleDa = this.files.every((f) => f.status === Dropzone.SUCCESS);
+          this.files.slice().forEach((f) => this.removeFile(f));
+          if (fertig) fertig(alleDa);
+        });
+      },
+    });
+    if (klickbar) {
+      flaeche.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        if (dz.hiddenFileInput) dz.hiddenFileInput.click();
+      });
+    }
+    // Die Fortschrittskarte hängt sich an jede Zone; wer nach ihrem Start
+    // entsteht (nachgeladene Zeilen), meldet sich direkt an.
+    window.internUploadZonen.push(dz);
+    if (window.uploadKarteHaengen) window.uploadKarteHaengen(dz);
+    return dz;
+  }
+
+  // ── Repertoire: jede Zeile nimmt Dateien für ihren Titel an ──
+  // Nur mit dem Recht, ein Lied zu ändern (data-upload-lied-zeilen), und nicht
+  // auf Touch-Geräten: dort gibt es kein Ziehen, der Tipp öffnet das Lied. Die
+  // Liste lädt Zeilen nach, deshalb werden neue Zeilen nachgerüstet.
+  (function initLiedZeilenAblage() {
+    if (!appMain || appMain.dataset.uploadLiedZeilen !== "1") return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+    function ruesten() {
+      document.querySelectorAll("tr[data-lied-id]:not(.drop-row)").forEach((tr) => {
+        tr.classList.add("drop-row");
+        const dz = kleineAblage(tr, { lied_id: tr.dataset.liedId }, {
+          klickbar: false,      // der Klick öffnet weiterhin das Lied
+          fertig: (alleDa) => {
+            if (alleDa) window.location.reload();
+            else tr.classList.remove("drop-row-active");
+          },
+        });
+        dz.on("addedfile", () => tr.classList.add("drop-row-active"));
+      });
+    }
+    ruesten();
+    const tabelle = document.querySelector("table tbody") || document.body;
+    let geplant = false;
+    new MutationObserver(() => {
+      if (geplant) return;
+      geplant = true;
+      requestAnimationFrame(() => { geplant = false; ruesten(); });
+    }).observe(tabelle, { childList: true, subtree: true });
+  })();
+
+  // ── Terminkarte „Dateien“ ─────────────────────────────────
+  document.querySelectorAll("[data-termin-dateien]").forEach((flaeche) => {
+    kleineAblage(flaeche, { termin_id: flaeche.dataset.terminDateien }, {
+      fertig: (alleDa) => { if (alleDa) window.location.reload(); },
+    });
+  });
+
+  // ── Artikel-Editor: Anhänge in die Wiki-Anhänge ───────────
+  // Jede Datei kommt als [[Datei:…]] an die Schreibmarke; gespeichert wird
+  // erst mit „Speichern“. `feld` gibt einer gleichnamigen Datei einen freien
+  // Namen, statt sie zur Fassung einer fremden zu machen.
+  document.querySelectorAll("[data-artikel-ablage]").forEach((flaeche) => {
+    const editor = document.querySelector('.article-editor textarea[name="text"]');
+    if (!editor) return;
+    kleineAblage(flaeche, { folder_id: flaeche.dataset.artikelAblage, feld: "1" }, {
+      erfolg: (file, antwort) => {
+        if (!antwort || !antwort.name) return;
+        const verweis = "[[Datei:" + antwort.name + "]]";
+        const neu = window.wikiEinfuegen
+          ? window.wikiEinfuegen(editor.value, editor.selectionStart, editor.selectionEnd, verweis, { block: true })
+          : { text: editor.value + "\n" + verweis };
+        if (neu.ende === undefined) neu.ende = neu.text.length;
+        editor.value = neu.text;
+        editor.setSelectionRange(neu.ende, neu.ende);
+        editor.dispatchEvent(new Event("input", { bubbles: true }));
+      },
+    });
+  });
 
   // ── Dropzone for filer widgets (AddPanel + edit pages) ──────
   (function initFilerDropzones() {

@@ -7,13 +7,18 @@
 
   var card, body, doneEl, totalEl;
   var collapseTimer = null, hideTimer = null;
+  var total = 0, done = 0;  // über alle Ablageflächen der Seite gemeinsam
   var errorCount = 0;
   var wurzelCount = 0;  // uploads that landed at the root: the card stays open
   var gleichCount = 0;  // identical content, nothing stored: the card stays open
 
   function buildCard() {
     var appMain = document.getElementById("app-main");
+    // Der Name kommt aus Ordner- oder Liedtitel und geht unten in innerHTML.
     var folderName = appMain ? (appMain.dataset.uploadFolderName || "") : "";
+    folderName = folderName.replace(/[&<>"]/g, function (z) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[z];
+    });
 
     card = document.createElement("div");
     card.className = "upload-card";
@@ -49,9 +54,9 @@
     if (hideTimer)     { clearTimeout(hideTimer);     hideTimer = null; }
   }
 
+  // Mehrere Flächen dürfen auf dieselbe Karte zählen: der Zähler gilt für die
+  // Seite, nicht je Zone.
   function hookDropzone(dz) {
-    var total = 0, done = 0;
-
     dz.on("addedfile", function (file) {
       resetTimers();
       // Reopen if card was closed after a previous completed queue
@@ -124,6 +129,7 @@
         status.textContent = overwritten ? "✓ Als neue Fassung abgelegt" : "✓ Hochgeladen";
       }
       done++;
+      file._ucFertig = true;
       doneEl.textContent = done;
     });
 
@@ -137,7 +143,19 @@
       status.textContent = "✕ " + msg;
       errorCount++;
       done++;
+      file._ucFertig = true;
       doneEl.textContent = done;
+    });
+
+    // Abgebrochen (etwa das Profilbild vor der Rückfrage): die Zeile verschwindet
+    // wieder. Erfolgreiche Uploads werden von manchen Flächen danach ebenfalls
+    // aus der Dropzone entfernt — ihre Zeile bleibt stehen.
+    dz.on("removedfile", function (file) {
+      if (!file._ucId || file._ucFertig) return;
+      var row = document.getElementById("uc-row-" + file._ucId);
+      if (row) row.remove();
+      total = Math.max(0, total - 1);
+      totalEl.textContent = total;
     });
 
     dz.on("queuecomplete", function () {
@@ -154,16 +172,24 @@
   document.addEventListener("DOMContentLoaded", function () {
     buildCard();
 
-    // appMainDz is set during DOMContentLoaded in intern.js; since both scripts
-    // are defer-loaded in document order, intern.js runs first.
-    if (window.appMainDz) {
-      hookDropzone(window.appMainDz);
+    // appMainDz and the smaller zones (song rows, event card, media card) are
+    // created during DOMContentLoaded in intern.js; both scripts are
+    // defer-loaded in document order, intern.js runs first.
+    var haengen = function () {
+      var zonen = (window.internUploadZonen || []).slice();
+      if (window.appMainDz && zonen.indexOf(window.appMainDz) === -1) {
+        zonen.push(window.appMainDz);
+      }
+      zonen.forEach(hookDropzone);
+      // Später entstehende Zonen (nachgeladene Repertoire-Zeilen) melden sich hier.
+      window.uploadKarteHaengen = hookDropzone;
+    };
+    if (window.appMainDz || (window.internUploadZonen || []).length) {
+      haengen();
       return;
     }
 
     // Fallback: wait one tick in case script ordering changes
-    setTimeout(function () {
-      if (window.appMainDz) hookDropzone(window.appMainDz);
-    }, 0);
+    setTimeout(haengen, 0);
   });
 })();

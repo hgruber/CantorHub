@@ -6928,6 +6928,295 @@ class TitelSchreibpfadTest(SimpleTestCase):
         self.assertEqual(weiter.call_args.args[0], "titel_edit")
 
 
+class MedienTest(SimpleTestCase):
+    """Die Medien-Karte zeigt die Rollen zuerst, dann die rollenlosen Dateien."""
+
+    def test_rollen_zuerst_ohne_doppelte(self):
+        from intern.views import titel as titel_mod
+
+        lied = SimpleNamespace(pk=1, id=1, ordner_id=5)
+        rollen = {
+            "original": SimpleNamespace(pk=10, url="/media/a.mp3"),
+            "text": SimpleNamespace(pk=11, url="/media/t.odt"),
+        }
+        dateien = [
+            SimpleNamespace(pk=12, url="/media/x.pdf", original_filename="x.pdf", name="x.pdf"),
+            SimpleNamespace(pk=10, url="/media/a.mp3", original_filename="a.mp3", name="a.mp3"),
+        ]
+        with mock.patch.object(titel_mod.liedablage, "rollen_von", return_value=rollen), \
+                mock.patch.object(titel_mod.liedablage, "dateien_im_ordner", return_value=dateien), \
+                mock.patch.object(titel_mod, "get_aufnahme_bezeichnung", return_value="Chor-Aufnahme"):
+            medien = titel_mod._medien(lied)
+        self.assertEqual([m["rolle"] for m in medien], ["original", "text", ""])
+        self.assertEqual(medien[-1]["label"], "x.pdf")
+        self.assertTrue(medien[-1]["ohne_rolle"])
+
+
+class TitelRolleTest(SimpleTestCase):
+    """Die Medien-Karte der Bearbeiten-Seite vergibt die Rolle je Lied einmal."""
+
+    def _post(self, daten):
+        from django.test import RequestFactory
+
+        request = RequestFactory().post("/intern/titel/1/rolle/", daten)
+        request.user = mock.Mock(is_authenticated=True)
+        return request
+
+    def _aufruf(self, daten, datei=None):
+        from intern.views import titel
+
+        lied = SimpleNamespace(pk=1, ordner_id=5)
+        datei = datei if datei is not None else SimpleNamespace(pk=3, folder_id=5)
+        with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
+                mock.patch.object(titel.File, "objects") as objekte, \
+                mock.patch.object(titel.liedablage, "rolle_setzen") as setzen, \
+                mock.patch.object(titel.liedablage, "rolle_entfernen") as entfernen:
+            objekte.filter.return_value.first.return_value = datei
+            antwort = titel.titel_rolle(self._post(daten), 1)
+        return antwort, setzen, entfernen
+
+    def test_rolle_setzen(self):
+        antwort, setzen, entfernen = self._aufruf({"datei": "3", "rolle": "notenblatt"})
+        self.assertEqual(antwort.status_code, 200)
+        self.assertEqual(setzen.call_args.args[1], "notenblatt")
+        self.assertFalse(entfernen.called)
+
+    def test_rolle_loesen(self):
+        antwort, setzen, entfernen = self._aufruf({"datei": "3", "rolle": ""})
+        self.assertEqual(antwort.status_code, 200)
+        self.assertTrue(entfernen.called)
+
+    def test_unbekannte_rolle_abgelehnt(self):
+        antwort, setzen, _ = self._aufruf({"datei": "3", "rolle": "quatsch"})
+        self.assertEqual(antwort.status_code, 400)
+        self.assertFalse(setzen.called)
+
+    def test_datei_aus_fremdem_ordner_abgelehnt(self):
+        antwort, setzen, _ = self._aufruf(
+            {"datei": "3", "rolle": "text"},
+            datei=SimpleNamespace(pk=3, folder_id=99),
+        )
+        self.assertEqual(antwort.status_code, 400)
+        self.assertFalse(setzen.called)
+
+
+class MedienDateienTest(SimpleTestCase):
+    """Die Bearbeiten-Karte zeigt je Datei eine Zeile mit ihrem Dateinamen."""
+
+    def test_je_datei_eine_zeile_mit_dateiname(self):
+        from intern.views import titel as titel_mod
+
+        a = SimpleNamespace(pk=10, url="/a", original_filename="Lied – Original.mp3", name="")
+        x = SimpleNamespace(pk=12, url="/x", original_filename="x.pdf", name="")
+        # Altbestand: eine Datei mit zwei Rollen bleibt eine Zeile.
+        rollen = {"original": a, "aufnahme": a}
+        with mock.patch.object(titel_mod.liedablage, "rollen_von", return_value=rollen), \
+                mock.patch.object(titel_mod.liedablage, "dateien_im_ordner", return_value=[x, a]):
+            zeilen = titel_mod._medien_dateien(SimpleNamespace(pk=1))
+        self.assertEqual([z["datei_id"] for z in zeilen], [10, 12])
+        self.assertEqual(zeilen[0]["dateiname"], "Lied – Original.mp3")
+        self.assertEqual([r["key"] for r in zeilen[0]["rollen"]], ["original", "aufnahme"])
+        self.assertEqual(zeilen[1]["rollen"], [])
+
+
+class EineRolleJeDateiTest(SimpleTestCase):
+    """Eine Datei trägt höchstens eine Rolle: setzen löst ihre andere."""
+
+    def test_andere_rolle_der_datei_wird_frei(self):
+        from intern import liedablage
+
+        alte = mock.Mock()
+        with mock.patch.object(liedablage, "LiedDatei") as modell, \
+                mock.patch("intern.signals._log_change") as protokoll:
+            modell.objects.filter.return_value.exclude.return_value = [alte]
+            modell.objects.filter.return_value.first.return_value = None
+            liedablage.rolle_setzen("lied", "text", SimpleNamespace(pk=3), nutzer="u")
+        alte.delete.assert_called_once_with()
+        protokoll.assert_called_once_with(alte, "u", "delete")
+        modell.return_value.save.assert_called_once_with()
+
+
+class TitelDateiTest(SimpleTestCase):
+    """Umbenennen und Löschen in der Medien-Karte — nur im Lied-Ordner."""
+
+    def _aufruf(self, daten, datei=None, umbenennen=("ok", []), avatar_ok=True):
+        from django.test import RequestFactory
+
+        from intern.views import titel
+
+        request = RequestFactory().post("/intern/titel/1/datei/", daten)
+        request.user = mock.Mock(is_authenticated=True)
+        lied = SimpleNamespace(pk=1, ordner_id=5)
+        datei = datei if datei is not None else SimpleNamespace(pk=3, folder_id=5)
+        with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
+                mock.patch.object(titel.File, "objects") as objekte, \
+                mock.patch.object(titel.liedablage, "rolle_entfernen") as entfernen, \
+                mock.patch.object(titel.dateiablage, "datei_loeschen") as loeschen, \
+                mock.patch.object(titel.dateiablage, "umbenennen", return_value=umbenennen) as umb, \
+                mock.patch.object(titel.folders, "invalidate"), \
+                mock.patch.object(titel, "darf_avatar_aendern", return_value=avatar_ok):
+            objekte.filter.return_value.first.return_value = datei
+            antwort = titel.titel_datei(request, 1)
+        return antwort, entfernen, loeschen, umb
+
+    def test_loeschen_loest_erst_die_rolle(self):
+        antwort, entfernen, loeschen, _ = self._aufruf({"datei": "3", "aktion": "loeschen"})
+        self.assertEqual(antwort.status_code, 200)
+        self.assertTrue(entfernen.called)
+        self.assertTrue(loeschen.called)
+
+    def test_fremde_datei_abgelehnt(self):
+        antwort, _, loeschen, _ = self._aufruf(
+            {"datei": "3", "aktion": "loeschen"}, datei=SimpleNamespace(pk=3, folder_id=99)
+        )
+        self.assertEqual(antwort.status_code, 400)
+        self.assertFalse(loeschen.called)
+
+    def test_umbenennen(self):
+        antwort, _, _, umb = self._aufruf({"datei": "3", "aktion": "umbenennen", "name": "neu.pdf"})
+        self.assertEqual(antwort.status_code, 200)
+        self.assertEqual(umb.call_args.args[1], "neu.pdf")
+
+    def test_vergebener_name_wird_nicht_verschmolzen(self):
+        antwort, _, _, umb = self._aufruf(
+            {"datei": "3", "aktion": "umbenennen", "name": "x.pdf"}, umbenennen=("offen", ["k"])
+        )
+        self.assertEqual(antwort.status_code, 409)
+        self.assertEqual(umb.call_args.args[3], {})
+
+    def test_fremdes_profilbild_bleibt(self):
+        from django.core.exceptions import PermissionDenied
+
+        with self.assertRaises(PermissionDenied):
+            self._aufruf({"datei": "3", "aktion": "loeschen"}, avatar_ok=False)
+
+    def test_ungueltiger_name(self):
+        antwort, _, _, umb = self._aufruf({"datei": "3", "aktion": "umbenennen", "name": "a/b"})
+        self.assertEqual(antwort.status_code, 400)
+        self.assertFalse(umb.called)
+
+
+class LiedUploadRechtTest(SimpleTestCase):
+    """Ablegen auf einem Lied nur mit `change_lied` — Seite wie Server."""
+
+    def test_liedseite_ohne_recht_ohne_ablage(self):
+        from django.test import RequestFactory
+
+        from intern.views import titel
+
+        request = RequestFactory().get("/intern/titel/1/")
+        request.user = mock.Mock(is_authenticated=True)
+        request.user.has_perm.return_value = False
+        with mock.patch.object(titel, "get_object_or_404", return_value=SimpleNamespace(titel="L")), \
+                mock.patch.object(titel, "_medien", return_value=[]), \
+                mock.patch.object(titel, "render") as render:
+            titel.titel_view(request, 1)
+        kontext = render.call_args.args[2]
+        self.assertNotIn("upload_content", kontext)
+        self.assertNotIn("upload_lied_id", kontext)
+
+    def test_liedseite_mit_recht_mit_ablage(self):
+        from django.test import RequestFactory
+
+        from intern.views import titel
+
+        request = RequestFactory().get("/intern/titel/1/")
+        request.user = mock.Mock(is_authenticated=True)
+        request.user.has_perm.return_value = True
+        with mock.patch.object(titel, "get_object_or_404", return_value=SimpleNamespace(titel="L")), \
+                mock.patch.object(titel, "_medien", return_value=[]), \
+                mock.patch.object(titel, "render") as render:
+            titel.titel_view(request, 1)
+        kontext = render.call_args.args[2]
+        self.assertTrue(kontext["upload_content"])
+        self.assertEqual(kontext["upload_lied_id"], 1)
+
+    def test_upload_mit_lied_ohne_recht_abgelehnt(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import RequestFactory
+
+        from intern.views import files
+
+        request = RequestFactory().post("/intern/upload/", {
+            "file": SimpleUploadedFile("a.pdf", b"x", content_type="application/pdf"),
+            "lied_id": "5",
+        })
+        request.user = mock.Mock(is_authenticated=True)
+        request.user.has_perm.return_value = False
+        with mock.patch("intern.app_settings.get_config_int", return_value=50), \
+                mock.patch.object(files, "Lied") as lied_modell, \
+                mock.patch.object(files.dateiablage, "hochladen") as hochladen:
+            lied_modell.objects.filter.return_value.first.return_value = SimpleNamespace(pk=5)
+            antwort = files.upload(request)
+        self.assertEqual(antwort.status_code, 403)
+        self.assertFalse(hochladen.called)
+
+
+class ArtikelEditorAblageTest(SimpleTestCase):
+    """Der Artikel-Editor hat eine kleine Ablage, aber keine Seiten-Dropzone."""
+
+    def test_ziel_ohne_seitenzone(self):
+        from django.test import RequestFactory
+
+        from intern.views import artikel
+
+        request = RequestFactory().get("/intern/artikel/X/edit/")
+        request.user = mock.Mock(is_authenticated=True)
+        with mock.patch.object(artikel, "Artikel") as modell, \
+                mock.patch.object(artikel.folders, "artikel", return_value=7), \
+                mock.patch.object(artikel, "render") as render:
+            modell.objects.filter.return_value.order_by.return_value.first.return_value = None
+            artikel.article_edit(request, "X")
+        kontext = render.call_args.args[2]
+        self.assertEqual(kontext["upload_folder_id"], 7)
+        self.assertNotIn("upload_content", kontext)
+
+
+class ProfilbildUploadTest(SimpleTestCase):
+    """Ein Bild auf der eigenen Profilseite wird das Profilbild — nur ein Bild."""
+
+    def _hochladen(self, content_type="image/png"):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import RequestFactory
+
+        from intern.views import files
+
+        datei = mock.Mock(id=42, url="/media/a.png", original_filename="ich.png", file=mock.Mock())
+        request = RequestFactory().post("/intern/upload/", {
+            "file": SimpleUploadedFile("ich.png", b"x", content_type=content_type),
+            "avatar": "1",
+        })
+        request.user = mock.Mock(is_authenticated=True, pk=7, avatar=None)
+        with mock.patch("intern.app_settings.get_config_int", return_value=50), \
+                mock.patch.object(files.folders, "avatare", return_value=9), \
+                mock.patch.object(files, "Folder") as ordner, \
+                mock.patch.object(files, "File") as datei_klasse, \
+                mock.patch("intern.folder_access.folder_access", return_value=(True, True, False)), \
+                mock.patch.object(files.dateiablage, "gleichnamige", return_value=None), \
+                mock.patch.object(files.dateiablage, "freier_name", return_value="ich.png"), \
+                mock.patch.object(files, "get_thumbnailer", side_effect=Exception), \
+                mock.patch.object(
+                    files.dateiablage, "hochladen", return_value=(datei, "neu", None)
+                ) as hochladen:
+            ordner.objects.filter.return_value.first.return_value = mock.Mock()
+            datei_klasse.objects.filter.return_value.values_list.return_value = []
+            antwort = files.upload(request)
+        return antwort, request.user, hochladen
+
+    def test_bild_wird_profilbild(self):
+        antwort, nutzer, hochladen = self._hochladen()
+        self.assertEqual(antwort.status_code, 200)
+        self.assertTrue(hochladen.called)
+        self.assertIs(nutzer.avatar, hochladen.return_value[0])
+        nutzer.save.assert_called_once_with(update_fields=["avatar"])
+
+    def test_kein_bild_abgelehnt(self):
+        antwort, nutzer, hochladen = self._hochladen(content_type="application/pdf")
+        self.assertEqual(antwort.status_code, 400)
+        self.assertFalse(hochladen.called)
+        nutzer.save.assert_not_called()
+
+
 class WurzelUploadTest(SimpleTestCase):
     """Ohne Zielordner läge ein Upload auf oberster Ebene — das darf nur, wer
     Backstage sieht (Webmaster); alle anderen werden abgelehnt, bevor etwas
@@ -6961,6 +7250,36 @@ class WurzelUploadTest(SimpleTestCase):
     def test_webmaster_darf(self):
         _, abgelegt = self._hochladen(webmaster=True)
         self.assertTrue(abgelegt)
+
+
+class UploadZielTest(SimpleTestCase):
+    """Eine Seiten-Dropzone gibt es nur auf den fünf Seiten, die ein Ziel nennen.
+
+    Das ist die Invariante hinter „kein Upload ohne Ziel": Wer `upload_content`
+    setzt, bekommt Fläche und Symbol; alle anderen Seiten keins. Ein neuer
+    View, der es nebenbei setzt, fiele sonst niemandem auf."""
+
+    ERLAUBT = {
+        "intern.views.artikel.article_view",
+        "intern.views.folders.folder_view",
+        "intern.views.forums.forum_view",
+        "intern.views.mitglieder.mitglied_view",
+        "intern.views.titel.titel_view",
+    }
+
+    def test_nur_die_erlaubten_seiten_setzen_upload_content(self):
+        import inspect
+
+        from intern.views import artikel, folders, forums, mitglieder, termine, titel
+
+        treffer = set()
+        for modul in (artikel, folders, forums, mitglieder, termine, titel):
+            for name, objekt in inspect.getmembers(modul, inspect.isfunction):
+                if objekt.__module__ != modul.__name__:
+                    continue
+                if "upload_content" in inspect.getsource(objekt):
+                    treffer.add(f"{modul.__name__}.{name}")
+        self.assertEqual(treffer, self.ERLAUBT)
 
 
 class FreierNameTest(SimpleTestCase):

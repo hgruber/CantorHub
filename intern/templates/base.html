@@ -37,6 +37,7 @@
         <script src="{% static 'intern/js/color-picker.js' %}" defer></script>
         <script src="{% static 'intern/js/tooltip.js' %}" defer></script>
         <script src="{% static 'intern/js/upload-progress.js' %}" defer></script>
+        <script src="{% static 'intern/js/medien.js' %}" defer></script>
     </head>
     <body data-vereinsname-lang="{{ vereinsname_lang }}"{% if request.user.is_authenticated %} data-latest-changelog-id="{{ latest_changelog_id|default:0 }}" data-current-forum="{{ forum|default:'' }}" data-notify-poll-ms="{{ notify_poll_ms|default:10000 }}" data-notify-dismiss-ms="{{ notify_dismiss_ms|default:6000 }}"{% endif %}>
         <!-- Sidebar -->
@@ -48,13 +49,13 @@
         <div class="app-main"
              id="app-main"
              data-aufnahme-bezeichnung="{{ aufnahme_bezeichnung }}"
+             data-upload-content="{% if upload_content %}1{% endif %}"
              data-upload-folder-id="{{ upload_folder_id|default:'' }}"
              data-upload-folder-name="{{ upload_folder_name|default:'' }}"
              data-upload-lied-id="{{ upload_lied_id|default:'' }}"
-             data-upload-termin-id="{{ upload_termin_id|default:'' }}"
              data-upload-artikel="{{ upload_artikel|default:'' }}"
-             data-upload-wurzel="{% if perms.intern.manage_folder_permissions %}1{% endif %}"
-             data-upload-aus="{% if upload_aus %}1{% endif %}"
+             data-upload-avatar="{% if upload_avatar %}1{% endif %}"
+             data-upload-lied-zeilen="{% if upload_lied_zeilen %}1{% endif %}"
              data-upload-max-mb="{{ upload_max_mb }}">
             {% if feld_ordner %}{{ feld_ordner|json_script:"feld-ordner" }}{% endif %}
             <!-- Upload overlay -->
@@ -358,11 +359,12 @@
                     </a>
                 {% endif %}
                 {% comment %}
-                Gerendert, wo hochgeladen werden könnte; ob es gilt, entscheidet
-                dieselbe Regel wie für die Dropzone (uploadGesperrt in intern.js),
-                die das Symbol dann einblendet.
+                Symbol und Seiten-Dropzone gehören zusammen: `upload_content`
+                setzt nur, wer hier ablegen darf. Ist es gesetzt, blendet
+                intern.js den Knopf ein — sonst gibt es oben weder Knopf noch
+                Ablegefläche.
                 {% endcomment %}
-                {% if show_file_actions and can_write_here or not show_file_actions and not upload_aus %}
+                {% if upload_content %}
                     <button type="button" id="uploadBtn" hidden
                             title="Hochladen{% if upload_folder_name %} nach {{ upload_folder_name }}{% endif %}"
                             aria-label="Dateien hochladen">

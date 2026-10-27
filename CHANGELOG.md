@@ -14,6 +14,28 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 - Die Rolle einer Lied-Datei steht nur noch in der Rollenzeile; die vier bisherigen Dateifelder
   am Lied sind entfallen. Dateien, die nur dort hinterlegt waren, trägt die Migration als
   Rollenzeile nach, sodass sie auf der Liedseite sichtbar bleiben.
+- Dateien lassen sich nur noch auf Seiten ablegen, die ein Ziel nennen: ein Ordner mit
+  Schreibrecht, ein Artikel mit Schreibrecht, ein Forum, ein Lied (mit dem Recht, es zu ändern)
+  und das eigene Profil. Alle anderen Seiten haben weder Ablegefläche noch Upload-Symbol; an die
+  oberste Ebene kommt nur noch ein Webmaster auf der Wurzelseite des Dateibrowsers.
+- In der Liederliste ist für alle, die Lieder ändern dürfen, jede Zeile eine Ablagefläche für ihren
+  Titel (nicht auf Touch-Geräten). Die Liedseite zeigt in der Karte „Medien“ alle Dateien des
+  Lied-Ordners, die mit Rolle zuerst, und ein Bild auf der eigenen Profilseite wird nach einer
+  Rückfrage das Profilbild.
+- Eine Lied-Datei trägt höchstens eine Rolle; wer ihr eine andere gibt, macht die bisherige frei.
+
+### Hinzugefügt
+
+- Die Bearbeiten-Seite eines Liedes hat eine eigene Karte „Medien“: Neue Dateien landen dort ohne
+  Rolle, die Rollen werden als Chips von Datei zu Datei gezogen oder angetippt, und Dateien lassen
+  sich dort umbenennen und löschen.
+- Der Artikel-Editor hat eine kleine Ablagefläche: Hochgeladene Dateien landen in den
+  Wiki-Anhängen und erscheinen als Verweis an der Schreibmarke.
+
+### Behoben
+
+- Beim Ziehen einer Datei über einen Unterordner im Dateibrowser verdeckt der Hinweis „Dateien
+  ablegen“ nicht mehr, wohin die Datei geht.
 
 ### Entfernt
 

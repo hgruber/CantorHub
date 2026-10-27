@@ -119,7 +119,6 @@ def konfiguration(request):
     return render(request, "konfiguration.html", {
         "seitentitel": "Konfiguration",
         "hilfe_seite": "Hilfe:Konfiguration",
-        "upload_aus": True,
         "gruppen": gruppiere(rows),
         "mangel_leer": leer,
         "mangel_fehlend": fehlend,

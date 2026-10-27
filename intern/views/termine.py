@@ -22,7 +22,7 @@ from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from icalendar import Calendar, Event
 
-from intern import folders, liedablage
+from intern import liedablage
 from intern.app_settings import get_config, get_config_int
 from intern.folder_access import visible_folder_ids
 
@@ -171,8 +171,6 @@ def termin_list(request):
             "table": table,
             "seitentitel": "Vergangene Termine" if past else "Termine",
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-            "upload_folder_id": folders.termine(),
-            "upload_folder_name": folders.TERMIN_ANHAENGE,
             "add": add,
             "add_form": TerminForm() if request.user.has_perm("intern.add_termin") else None,
             "add_label": "Neuer Termin",
@@ -190,7 +188,6 @@ def termin_view(request, id):
     my_zusage = Zusage.objects.filter(termin=termin, person=request.user).order_by("-id").first()
     my_option = my_zusage.option if my_zusage else ""
     _aufstellungen_anhaengen([termin], request.user)
-    darf_aendern = request.user.has_perm("intern.change_termin")
     dateien = termin.dateien.filter(
         folder_id__in=visible_folder_ids(request.user)
     ).order_by("original_filename")
@@ -206,17 +203,6 @@ def termin_view(request, id):
         "id": id,
         "dateien": dateien,
     }
-    # Hochladen nur, wer den Termin ändern darf — dann gehört jede Datei dem
-    # Termin (termin_id). Ohne das Recht keine Ablage: sie läge unverknüpft
-    # in Termin-Anhänge.
-    if darf_aendern:
-        context.update({
-            "upload_folder_id": folders.termine(),
-            "upload_folder_name": folders.TERMIN_ANHAENGE,
-            "upload_termin_id": id,
-        })
-    else:
-        context["upload_aus"] = True
     return render(request, "termin.html", context)
 
 
