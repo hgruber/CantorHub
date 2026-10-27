@@ -132,8 +132,8 @@ mechanism:
   so it could not have been imported anyway.
 - **The hand-maintained field maps are now checked against `_meta`**
   (`RegisterKonsistenzTest`). That is the real repair of this area: field names in
-  `_AUDIT_FIELDS`, `FIELD_LABELS`, `_CHANGELOG_FIELD_LABELS`, `_LIED_FELDER`,
-  `_FILE_ID_FIELDS` are **strings**, so renaming a field without touching the map makes the
+  `_AUDIT_FIELDS`, `FIELD_LABELS`, `_CHANGELOG_FIELD_LABELS`, `_FILE_ID_FIELDS` are
+  **strings**, so renaming a field without touching the map makes the
   audit log go quiet with nothing turning red. The test also reads the **source** with
   `ast` to find duplicate dict keys — a repeated key in a literal silently drops the
   earlier one, which is how `FIELD_LABELS["gruppe"]` lost the notification page's
@@ -193,9 +193,9 @@ Deliberately **not** done, so the next audit does not raise it again:
 - `ArtikelPermission.artikel_name` as a string instead of an FK: the clean fix needs an
   `Artikel` parent row, and articles are versioned by `(name, version)`.
 - **The four legacy Repertoire subfolders** (`Hörbeispiele`, `Notenblätter`, `Notensatz-Dateien`,
-  `Probenmitschnitte`) sit next to the per-song folders after `repertoire_umziehen`; they are
-  empty except for files kept for wiki links. Deleting them is an operator decision, not a
-  migration.
+  `Probenmitschnitte`) sit next to the per-song folders; they are empty except for files kept for
+  wiki links. Migration `0006` took them out of `PFADE`, so they are ordinary, unprotected
+  folders now. Deleting them is an operator decision, not a migration.
 
 Until October 2026 model changes reached a database only through the `MIGRATE=1` rebuild,
 which is why everything above that touches the schema was done before the cutover. Since

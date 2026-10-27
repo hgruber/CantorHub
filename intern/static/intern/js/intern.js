@@ -284,11 +284,9 @@ document.addEventListener("DOMContentLoaded", function () {
       init: function () {
         this.on("sending", function (file, xhr, formData) {
           const folderId = appMain.dataset.uploadFolderId;
-          const routeByType = appMain.dataset.uploadRouteByType;
           const liedId = appMain.dataset.uploadLiedId;
           const terminId = appMain.dataset.uploadTerminId;
           if (folderId) formData.append("folder_id", folderId);
-          if (routeByType) formData.append("route_by_type", "1");
           if (liedId) formData.append("lied_id", liedId);
           if (terminId) formData.append("termin_id", terminId);
         });
@@ -331,12 +329,12 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     });
 
-    // Keine Dropzone, die nur auf oberster Ebene ablegt: ohne Zielordner (und
-    // ohne Repertoire-Routing) lädt nur hoch, wer dort ablegen darf (Webmaster) —
-    // außer in der Artikelansicht, deren Uploads ein Ziel brauchen. Eine Seite
-    // kann die Dropzone ganz abschalten (Profil: dort genügt das Avatar-Feld).
+    // Keine Dropzone, die nur auf oberster Ebene ablegt: ohne Zielordner lädt
+    // nur hoch, wer dort ablegen darf (Webmaster) — außer in der Artikelansicht,
+    // deren Uploads ein Ziel brauchen. Eine Seite kann die Dropzone ganz
+    // abschalten (Profil: dort genügt das Avatar-Feld).
     const ds = appMain.dataset;
-    const ohneZiel = !ds.uploadFolderId && !ds.uploadRouteByType;
+    const ohneZiel = !ds.uploadFolderId;
     const uploadGesperrt =
       !!ds.uploadAus ||
       (ohneZiel && (!ds.uploadWurzel || !!document.querySelector(".wiki[data-artikel]")));

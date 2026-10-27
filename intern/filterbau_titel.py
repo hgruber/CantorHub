@@ -69,17 +69,9 @@ def _rolle_q(rolle):
     """Hat das Lied eine Datei dieser Rolle? EXISTS auf die Rollenzeile.
 
     Ohne Join, damit die Verneinung das Lied prueft und nicht eine einzelne
-    Verknuepfungszeile. Bis Migration 0006 zaehlt auch der alte FK mit — eine
-    Datei aus dem Fenster zwischen Bestandsumzug und Umschaltung soll nicht als
-    „fehlt“ gelten."""
-    from . import liedablage
-
-    feld = liedablage.ROLLEN_JE_FELD.get(rolle)
-
+    Verknuepfungszeile."""
     def q(operator, werte):
         treffer = Q(Exists(LiedDatei.objects.filter(lied=OuterRef("pk"), rolle=rolle)))
-        if feld:
-            treffer |= Q(**{feld + "__isnull": False})
         return ~treffer if operator == "nein" else treffer
 
     return q

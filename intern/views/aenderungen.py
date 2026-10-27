@@ -73,10 +73,13 @@ FIELD_LABELS = {
     "acapella": "A cappella",
     "weihnacht": "Weihnachten",
     "komponist": "Komponist",
+    # Nur noch historisch: Alteinträge nennen die vier Liedfelder, die
+    # Migration 0006 entfernt hat. Die Labels bleiben für sie stehen.
     "original_id": "Original",
     "aufnahme_id": "Aufnahme",
     "pdf_id": "PDF",
     "noten_id": "Noten",
+    "datei_id": "Datei",
     # Zusage
     "option": "Antwort",
     # Forum
@@ -102,7 +105,12 @@ FIELD_LABELS = {
 }
 
 # Fields whose values are filer File PKs — resolved to filenames at display time
-_FILE_ID_FIELDS = {"avatar_id", "original_id", "aufnahme_id", "pdf_id", "noten_id", "bild_id"}
+_FILE_ID_FIELDS = {"avatar_id", "datei_id", "bild_id"}
+
+# Alteinträge nennen die vier Lied-Felder, die Migration 0006 entfernt hat. Ihre
+# Datei-IDs bleiben lesbar, auch wenn es die Felder nicht mehr gibt.
+_HISTORISCHE_FILE_ID_FELDER = {"original_id", "aufnahme_id", "pdf_id", "noten_id"}
+_ALLE_FILE_ID_FELDER = _FILE_ID_FIELDS | _HISTORISCHE_FILE_ID_FELDER
 
 # FK fields that should be resolved to a human-readable name: field -> (Model, label_attr)
 _FK_RESOLVE = {
@@ -138,6 +146,7 @@ MODEL_LABELS = {
     "Zusage": "Anwesenheit",
     "Konzert": "Ablauf",
     "Lied": "Lied",
+    "LiedDatei": "Lied",
     "User": "Mitglied",
     "Forum": "Forum",
     "Ort": "Ort",
@@ -183,7 +192,7 @@ def _annotate_entries(entries):
     file_ids = set()
     for entry in entries:
         for field, values in entry.changes.items():
-            if field in _FILE_ID_FIELDS:
+            if field in _ALLE_FILE_ID_FELDER:
                 for v in values:
                     if v and v != "None":
                         try:
@@ -217,7 +226,7 @@ def _annotate_entries(entries):
                 return fk_maps.get(field, {}).get(int(value), value)
             except (ValueError, TypeError):
                 return value
-        if field not in _FILE_ID_FIELDS:
+        if field not in _ALLE_FILE_ID_FELDER:
             return value
         if not value or value == "None":
             return None

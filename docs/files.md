@@ -81,8 +81,7 @@ from a bare path would write a second copy next to the source.
 `datei_url()` is the one to reach for in a list: a table needs the URL, not the object, and
 each `File` filer instantiates brings a `MultiStorageFieldFile` and an easy-thumbnails object
 with it. The repertoire list gets the files of its page from `liedablage.rollen_fuer()` in one
-pass (the `LiedDatei` rows, plus a fallback that reads the four legacy columns as IDs and
-loads only the rows still missing) and builds the playlists from those objects' storage paths.
+pass (the `LiedDatei` rows) and builds the playlists from those objects' storage paths.
 The earlier path annotations (`original_pfad` …) measured 72.7 ms against 2.9 ms over 206
 songs and remain the reason the URLs come from `datei_url()`, never from a `File` per cell. It
 applies to public files — which in this portal is all of them, access is `media_auth`'s job —
@@ -102,10 +101,11 @@ role.
 files with the title. The folder cannot be renamed, moved or deleted in the file browser
 (`_enthaelt_liedordner`), and it is left out of the article file menu's target list.
 
-`manage.py repertoire_umziehen` moved the production files once (`--dry-run` first); files
-linked from a wiki article kept their name so `[[Datei:…]]` keeps resolving. The four legacy
-`Lied` columns still exist until migration `0006` and serve as a read fallback
-(`liedablage.ALT_ROLLEN`) — after that, the rows are the only source.
+The production files were moved once by `manage.py repertoire_umziehen` (`--dry-run` first,
+the command has since gone with the columns it read); files linked from a wiki article kept
+their name so `[[Datei:…]]` keeps resolving. Migration `0006` dropped the four legacy `Lied`
+columns after writing a role row for every file that only they still pointed at, so the rows
+are the sole source of a role.
 
 ## File versions
 
@@ -188,10 +188,10 @@ Backstage/
   Repertoire/          upload target of the Repertoire page
     <Titel>/           one folder per song (`Lied.ordner`), named after the title and
                        renamed with it; files „<Titel> – <Rolle>.<ext>“ (see „The song files“)
-    Hörbeispiele       legacy: Lied.original/aufnahme, emptied by repertoire_umziehen
-    Notenblätter       legacy: Lied.pdf
-    Notensatz-Dateien  legacy: Lied.noten (capella, MuseScore)
-    Probenmitschnitte  legacy: imported recordings not tied to a song
+    Hörbeispiele       the four old type folders, emptied by the move and now left out
+    Notenblätter       of `PFADE`: ordinary folders without protection, kept until the
+    Notensatz-Dateien  operator deletes them (docs/technical-debt.md)
+    Probenmitschnitte
   Termin-Anhänge       upload target of the event list and of the card „Dateien“
                        (Termin.dateien), named „<YYYY-MM-DD> <name>“
   Wiki-Anhänge         files and pictures used in articles
@@ -208,7 +208,7 @@ must not contain `/` — `StandardOrdnerTest` checks both lists. The Rundmail pi
 folders the sender can see, and the send path drops attachments from any other folder.
 
 `intern/folders.py` is the registry: the names are constants there, `PFADE` maps each logical
-name to its path from the root, and one accessor per folder (`folders.pdf()` …) resolves that
+name to its path from the root, and one accessor per folder (`folders.musik()` …) resolves that
 path level by level and caches the id. The first-run setup creates the tree from `PFADE`
 (`folders.anlegen_alle()`), in its
 order (parents first). Renaming or moving one of these folders would break the lookup, so
@@ -226,9 +226,10 @@ menu) leave out Backstage and everything below it, and `folder_move` / `_copy_ac
 a target with a 403 — the portal files into these folders on its own, members don't. Who sees
 Backstage at the root may also move, link and copy into it (`_sieht_backstage`), e.g. to put a
 stray profile picture back. Uploads are
-not affected. An upload from the Titel page (`route_by_type`) goes into the song's own folder;
-the extension suggests the role, and an unknown extension is allowed — the file lands there
-without a role. Without `lied_id` and without a song title in the file name it is refused.
+not affected. An upload on a song's page (`lied_id`) goes into that song's own folder; the
+extension suggests the role, and an unknown extension is allowed — the file lands there
+without a role. Every other upload goes to the page's own target folder or, without one, to
+the root for webmasters.
 
 **Backstage has no `FolderPermission` rows, deliberately.** A folder is only visible when every
 ancestor is readable, so restricting Backstage would hide the song files from members.
@@ -306,8 +307,8 @@ Two kinds of references point at a file, and they break differently:
   *last* row goes — while another folder still links the file, the name resolves. Note
   `internal_links` must use `filter().first()`, not `get()`: a file linked into several
   folders has several rows, and `get()` would report a live file as broken.
-- **Everything else** — `LiedDatei` (the role row), the four legacy `Lied` columns until
-  migration `0006`, `Forum.bild`, `User.avatar` and `Konfiguration` keys ending in `_FILE_ID`
+- **Everything else** — `LiedDatei` (the role row), `Forum.bild`, `User.avatar` and
+  `Konfiguration` keys ending in `_FILE_ID`
   (Satzung, Beitragsordnung — linked from the public join form) — hangs off the **PK**. Those
   break when that row is deleted, even if the file survives elsewhere, and are unaffected by a
   rename.

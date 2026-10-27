@@ -745,8 +745,7 @@ class LiedEditForm(forms.ModelForm):
         model = Lied
         fields = [
             "titel", "aktiv", "tempo", "tonart", "beats", "hymne", "acapella", "weihnacht",
-            "original", "aufnahme", "pdf", "noten", "komponist", "bearbeiter",
-            "solist", "dirigent",
+            "komponist", "bearbeiter", "solist", "dirigent",
         ]
         widgets = {
             "titel": forms.TextInput(attrs={"class": "form-control"}),
@@ -757,10 +756,6 @@ class LiedEditForm(forms.ModelForm):
             "hymne": forms.CheckboxInput(),
             "acapella": forms.CheckboxInput(),
             "weihnacht": forms.CheckboxInput(),
-            "original": AdminImageWidget,
-            "aufnahme": AdminImageWidget,
-            "pdf": AdminImageWidget,
-            "noten": AdminImageWidget,
             "komponist": forms.TextInput(attrs={"class": "form-control"}),
             "bearbeiter": forms.TextInput(attrs={"class": "form-control"}),
         }

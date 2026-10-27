@@ -237,8 +237,8 @@ _AUDIT_FIELDS = {
         "geburtstag", "avatar_id", "private_fields", "adressbuch_verborgen",
     ],
     "Termin": ["kurz", "datum", "datum_bis", "lang", "extern", "ort_id", "anwesenheit", "repertoire"],
-    "Lied": ["titel", "aktiv", "tempo", "tonart", "beats", "hymne", "acapella", "weihnacht", "komponist",
-             "original_id", "aufnahme_id", "pdf_id", "noten_id"],
+    "Lied": ["titel", "aktiv", "tempo", "tonart", "beats", "hymne", "acapella", "weihnacht", "komponist"],
+    "LiedDatei": ["rolle", "datei_id"],
     "Zusage": ["option"],
     "Forum": ["thema", "kategorie", "aktiv", "bild_id", "xmpp_muc_jid"],
     "Ort": ["name", "beschreibung", "strasse", "plz", "ort", "breite", "laenge"],
@@ -432,6 +432,25 @@ def _audit_lied_delete(sender, instance, **kwargs):
     if getattr(_migrating, "active", False):
         return
     _log_change(instance, getattr(instance, "_audit_user", None), "delete")
+
+
+# --- LiedDatei ---
+# Die Rolle hängt an einer eigenen Zeile, nicht mehr am Lied; ohne dieses Paar
+# verschwände jede Dateiänderung aus dem Änderungsprotokoll. Löschungen bleiben
+# unprotokolliert — sie kommen hier nur als Folge eines Lied- oder Dateilöschens
+# vor, und das protokolliert bereits der Auslöser.
+@receiver(pre_save, sender="intern.LiedDatei")
+def _audit_lieddatei_pre(sender, instance, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _capture_audit_old(sender, instance, "LiedDatei")
+
+
+@receiver(post_save, sender="intern.LiedDatei")
+def _audit_lieddatei_post(sender, instance, created, **kwargs):
+    if getattr(_migrating, "active", False):
+        return
+    _write_audit_log(instance, created, "LiedDatei")
 
 
 # Zusage: no signal handlers — user is injected directly from the view via _log_change()

@@ -26,10 +26,6 @@ MITGLIEDSANTRAEGE = "Mitgliedsanträge"
 FORENBILDER = "Forenbilder"
 PROFILBILDER = "Profilbilder"
 REPERTOIRE = "Repertoire"
-HOERBEISPIELE = "Hörbeispiele"
-NOTENBLAETTER = "Notenblätter"
-NOTENSATZ = "Notensatz-Dateien"
-PROBENMITSCHNITTE = "Probenmitschnitte"
 TERMIN_ANHAENGE = "Termin-Anhänge"
 WIKI_ANHAENGE = "Wiki-Anhänge"
 
@@ -42,10 +38,6 @@ PFADE: dict[str, tuple[str, ...]] = {
     "artikel":               (BACKSTAGE, WIKI_ANHAENGE),
     "termine":               (BACKSTAGE, TERMIN_ANHAENGE),
     "musik":                 (BACKSTAGE, REPERTOIRE),
-    "repertoire":            (BACKSTAGE, REPERTOIRE, HOERBEISPIELE),
-    "pdf":                   (BACKSTAGE, REPERTOIRE, NOTENBLAETTER),
-    "notensatz":             (BACKSTAGE, REPERTOIRE, NOTENSATZ),
-    "andere":                (BACKSTAGE, REPERTOIRE, PROBENMITSCHNITTE),
     "verein":                (VEREIN,),
     "vorstand":              (VEREIN, VORSTAND),
     "mitgliedsantraege":     (VEREIN, VORSTAND, MITGLIEDSANTRAEGE),
@@ -103,10 +95,6 @@ def forum()                 -> int | None: return _get(*PFADE["forum"])
 def artikel()               -> int | None: return _get(*PFADE["artikel"])
 def musik()                 -> int | None: return _get(*PFADE["musik"])
 def termine()               -> int | None: return _get(*PFADE["termine"])
-def repertoire()            -> int | None: return _get(*PFADE["repertoire"])
-def pdf()                   -> int | None: return _get(*PFADE["pdf"])
-def notensatz()             -> int | None: return _get(*PFADE["notensatz"])
-def andere()                -> int | None: return _get(*PFADE["andere"])
 def verein()                -> int | None: return _get(*PFADE["verein"])
 def vorstand()              -> int | None: return _get(*PFADE["vorstand"])
 def mitgliedsantraege()     -> int | None: return _get(*PFADE["mitgliedsantraege"])

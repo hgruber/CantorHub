@@ -5,7 +5,6 @@ import zipfile
 from collections import defaultdict
 from pathlib import PurePosixPath
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
@@ -24,21 +23,7 @@ from intern.dateiablage import ordner_pfad, verknuepfte_dateien
 from intern.folder_access import folder_access, visible_folder_ids
 
 from ..app_settings import get_config
-from ..models import DateiVersion, Lied, LiedDatei, TabellenPreferenzen, Termin
-
-
-def _aufnahme_prefixes():
-    """Die beiden Schreibweisen des Aufnahme-Präfixes, aus FILE_PREFIX abgeleitet.
-
-    ``Chor-Titel`` und ``Chor - Titel`` sind historisch gleichwertig; das Präfix
-    selbst ist konfigurierbar (FILE_PREFIX), die beiden Trenner bleiben.
-    """
-    p = get_config("FILE_PREFIX", "Chor")
-    return (f"{p} - ", f"{p}-")
-
-
-def _aufnahme_prefix_with_space():
-    return f"{get_config('FILE_PREFIX', 'Chor')} - "
+from ..models import DateiVersion, Lied, TabellenPreferenzen, Termin
 from ..verwendung import datei_verwendungen
 
 __all__ = [
@@ -52,10 +37,6 @@ __all__ = [
     "datei_aktionen",
     "besitz_uebertragen",
     "_get_file_extension",
-    "_get_file_type_config",
-    "_get_lied_by_filename",
-    "_assign_file_to_song",
-    "_route_and_rename_for_lied",
 ]
 
 logger = logging.getLogger(__name__)
@@ -183,28 +164,6 @@ def _get_file_extension(filename):
     return os.path.splitext(filename)[1].lower()
 
 
-def _get_file_type_config(extension):
-    """Get file type config for given extension"""
-    for file_type, config in settings.FILE_TYPE_CONFIG.items():
-        if extension in config["extensions"]:
-            return file_type, config
-    return None, None
-
-
-def _get_lied_by_filename(filename):
-    """Look up Lied object by filename (with Aufnahme-Präfix support)."""
-    name, _ = os.path.splitext(filename)
-    mit_abstand, ohne_abstand = _aufnahme_prefixes()
-    try:
-        if name.startswith(mit_abstand):
-            return Lied.objects.get(titel=name[len(mit_abstand):])
-        if name.startswith(ohne_abstand):
-            return Lied.objects.get(titel=name[len(ohne_abstand):])
-        return Lied.objects.get(titel=name)
-    except Lied.DoesNotExist:
-        return None
-
-
 def _rolle_fuer_upload(filename):
     """Die Rolle, die eine hochgeladene Datei vorschlägt — Aufnahme am Präfix.
 
@@ -214,73 +173,12 @@ def _rolle_fuer_upload(filename):
     rolle = liedrollen.rolle_fuer_endung(_get_file_extension(filename))
     if rolle in ("original", "aufnahme"):
         stem = os.path.splitext(os.path.basename(filename))[0]
-        if stem.startswith(_aufnahme_prefixes()):
+        # `Chor - Titel` und `Chor-Titel` sind historisch gleichwertig; das
+        # Präfix selbst ist konfigurierbar (FILE_PREFIX).
+        p = get_config("FILE_PREFIX", "Chor")
+        if stem.startswith(f"{p} - ") or stem.startswith(f"{p}-"):
             return "aufnahme"
     return rolle
-
-
-def _assign_file_to_song(filename, filer_file):
-    """If filename matches a song title, assign filer_file to the appropriate Lied field."""
-    song = _get_lied_by_filename(filename)
-    if not song:
-        return
-    extension = _get_file_extension(filename)
-    file_type, _ = _get_file_type_config(extension)
-    if not file_type:
-        return
-    name_stem = os.path.splitext(filename)[0]
-    if file_type == "audio" and name_stem.startswith(_aufnahme_prefixes()):
-        field_name = "aufnahme"
-    else:
-        field_name = settings.FILE_TYPE_LIED_MAP.get(file_type)
-    if field_name:
-        setattr(song, field_name, filer_file)
-        song.save()
-
-
-def _route_and_rename_for_lied(lied, filer_file, source_name):
-    """Route a dropzone-uploaded file by its extension, rename it after the song
-    title, and assign it to the matching FilerFileField on `lied`.
-
-    The extension decides the kind: PDF → Notenblatt (`pdf`), notation files →
-    Notensatz (`noten`), audio → Original/Aufnahme. An audio file uploaded with
-    a "<FILE_PREFIX> - " prefix counts as our own recording (`aufnahme`), otherwise as the
-    reference original (`original`). Returns the assigned field name, or None
-    for extensions that don't map to a known song-file type.
-    """
-    extension = _get_file_extension(source_name)
-    file_type, _ = _get_file_type_config(extension)
-    if not file_type:
-        return None
-
-    name_stem = os.path.splitext(source_name)[0]
-    if file_type == "audio" and name_stem.startswith(_aufnahme_prefixes()):
-        field_name = "aufnahme"
-    else:
-        field_name = settings.FILE_TYPE_LIED_MAP.get(file_type)
-    if not field_name:
-        return None
-
-    _type_folder = {
-        "audio": folders.repertoire,
-        "music": folders.notensatz,
-        "pdf": folders.pdf,
-    }
-    zielordner = _type_folder.get(file_type)
-    folder_id = (zielordner() if zielordner else None) or filer_file.folder_id
-
-    new_name = (
-        f"{_aufnahme_prefix_with_space()}{lied.titel}{extension}"
-        if field_name == "aufnahme"
-        else f"{lied.titel}{extension}"
-    )
-    # Liegt dort schon eine Datei dieses Namens (die bisherige des Titels),
-    # wird die neue ihre vordere Fassung — und der Titel zeigt auf sie.
-    filer_file = dateiablage.systemablage(filer_file, folder_id, new_name)
-
-    setattr(lied, field_name, filer_file)
-    lied.save(update_fields=[field_name])
-    return field_name
 
 
 @login_required
@@ -303,27 +201,16 @@ def upload(request):
                 status=413,
             )
         preferred_folder_id = request.POST.get("folder_id")
-        route_by_type = request.POST.get("route_by_type")
         extension = _get_file_extension(file.name)
 
-        # Repertoire-Upload: Der Titel kommt von der Detailseite (lied_id) oder
-        # aus dem Dateinamen. Die Datei gehört dann in den Lied-Ordner; die
-        # Endung schlägt die Rolle vor. Unbekannte Endungen bleiben erlaubt —
-        # sie landen ohne Rolle im Ordner.
+        # Repertoire-Upload: Der Titel kommt von der Detailseite (lied_id). Die
+        # Datei gehört dann in den Lied-Ordner; die Endung schlägt die Rolle
+        # vor. Unbekannte Endungen bleiben erlaubt — sie landen ohne Rolle im
+        # Ordner.
         lied = None
-        if route_by_type:
-            lied_id = request.POST.get("lied_id", "")
-            if lied_id.isdigit() and request.user.has_perm("intern.change_lied"):
-                lied = Lied.objects.filter(pk=int(lied_id)).first()
-            lied = lied or _get_lied_by_filename(file.name)
-            if lied is None:
-                return JsonResponse(
-                    {"status": "error",
-                     "message": "Kein Titel dieses Namens — Datei wie den Titel benennen"},
-                    status=400,
-                )
-        else:
-            lied = _get_lied_by_filename(file.name)
+        lied_id = request.POST.get("lied_id", "")
+        if lied_id.isdigit() and request.user.has_perm("intern.change_lied"):
+            lied = Lied.objects.filter(pk=int(lied_id)).first()
         rolle = _rolle_fuer_upload(file.name) if lied is not None else None
 
         # Terminseite: die Datei gehört dem Termin. Ordner und Name stehen
@@ -414,13 +301,7 @@ def upload(request):
         if termin is not None:
             termin.dateien.add(filer_file)
         elif lied is not None and rolle:
-            LiedDatei.objects.update_or_create(
-                lied=lied, rolle=rolle, defaults={"datei": filer_file}
-            )
-            feld = liedablage.ROLLEN_JE_FELD.get(rolle)
-            if feld:
-                # Bis Migration 0006 hält der alte FK mit (Rückweg).
-                Lied.objects.filter(pk=lied.pk).update(**{feld: filer_file})
+            liedablage.rolle_setzen(lied, rolle, filer_file, request.user)
 
         # Return response
         url = (request.META.get("HTTP_ORIGIN") or "") + filer_file.url
@@ -777,10 +658,9 @@ def file_unzip(request, pk):
         mime = mimetypes.guess_type(fname)[0] or "application/octet-stream"
         # Ein Archiv kann einen Namen doppelt tragen (etwa in anderer
         # Schreibweise) — dann wird der zweite Eintrag Fassung des ersten.
-        filer_file = dateiablage.systemablage_inhalt(
+        dateiablage.systemablage_inhalt(
             ContentFile(data, name=fname), target_folder.pk, fname, request.user, mime,
         )
-        _assign_file_to_song(fname, filer_file)
 
     fh.close()
     folders.invalidate()

@@ -8,24 +8,10 @@ steht in ``intern/liedrollen.py``.
 
 import os
 
-from filer.models import File, Folder
+from filer.models import Folder
 
 from . import dateiablage, folders, liedrollen
 from .models import Lied, LiedDatei
-
-# Bis Migration 0006 die vier Spalten entfernt: Rolle → altes Lied-Feld. Der
-# Rückfall liest Dateien, die im Fenster zwischen Bestandsumzug und
-# Umschaltung noch über den alten Upload-Wege dazukamen.
-ALT_ROLLEN = (
-    ("original", "original"),
-    ("aufnahme", "aufnahme"),
-    ("notenblatt", "pdf"),
-    ("notensatz", "noten"),
-)
-
-# Rolle → altes Feld, für den Dual-Write bis Migration 0006. `text` hat keins.
-ROLLEN_JE_FELD = {rolle: feld for rolle, feld in ALT_ROLLEN}
-FELD_ROLLE = {feld: rolle for rolle, feld in ALT_ROLLEN}
 
 
 def ordnername(titel):
@@ -86,12 +72,8 @@ def ordner_fuer(lied):
 def rollen_fuer(lieder):
     """{lied_id: {rolle: filer.File}} für eine Liste, ein Queryset oder eine Seite.
 
-    Die Rollenzeile gilt. Fehlt sie, liest der alte FK (``ALT_ROLLEN``) —
-    damit bleibt sichtbar, was im Fenster zwischen Bestandsumzug und
-    Umschaltung noch über den alten Weg dazukam. Die FKs werden als IDs
-    gelesen und nur die tatsächlich fehlenden Zeilen nachgeladen; das kostet
-    keine ``File``-Objekte für die ganze Seite.
-    """
+    Eine Abfrage für die ganze Seite, samt Dateien: eine Liste braucht die
+    Rollen aller ihrer Zeilen, nicht eine Abfrage je Zeile."""
     lieder = list(lieder)
     ids = [lied.pk for lied in lieder]
     ergebnis = {pk: {} for pk in ids}
@@ -99,20 +81,6 @@ def rollen_fuer(lieder):
         return ergebnis
     for zeile in LiedDatei.objects.filter(lied_id__in=ids).select_related("datei"):
         ergebnis[zeile.lied_id][zeile.rolle] = zeile.datei
-
-    nachzulesen = []
-    for lied_id, original, aufnahme, pdf, noten in Lied.objects.filter(
-        pk__in=ids
-    ).values_list("pk", "original_id", "aufnahme_id", "pdf_id", "noten_id"):
-        for (rolle, _), fk in zip(ALT_ROLLEN, (original, aufnahme, pdf, noten)):
-            if fk and rolle not in ergebnis[lied_id]:
-                nachzulesen.append((lied_id, rolle, fk))
-    if nachzulesen:
-        dateien = File.objects.in_bulk({fk for _, _, fk in nachzulesen})
-        for lied_id, rolle, fk in nachzulesen:
-            datei = dateien.get(fk)
-            if datei is not None:
-                ergebnis[lied_id][rolle] = datei
     return ergebnis
 
 
@@ -125,7 +93,20 @@ def datei_fuer(lied, rolle):
     return rollen_von(lied).get(rolle)
 
 
-def ablegen(lied, rolle, datei, name=None):
+def rolle_setzen(lied, rolle, datei, nutzer=None):
+    """Die Rollenzeile auf `datei` setzen — für Dateien, die schon im
+    Lied-Ordner liegen. `nutzer` landet im Änderungsprotokoll."""
+    zeile = LiedDatei.objects.filter(lied=lied, rolle=rolle).first()
+    if zeile is None:
+        zeile = LiedDatei(lied=lied, rolle=rolle)
+    elif zeile.datei_id == datei.pk:
+        return  # schon eingetragen — kein Schreibvorgang, kein Protokolleintrag
+    zeile.datei = datei
+    zeile._audit_user = nutzer
+    zeile.save()
+
+
+def ablegen(lied, rolle, datei, name=None, nutzer=None):
     """`datei` in den Lied-Ordner legen und als `rolle` eintragen.
 
     Der Name ist reine Kosmetik; liegt dort schon eine Datei dieses Namens,
@@ -133,9 +114,7 @@ def ablegen(lied, rolle, datei, name=None):
     ordner_id = ordner_fuer(lied)
     name = name or dateiname(lied.titel, rolle, endung_von(datei))
     zeile = dateiablage.systemablage(datei, ordner_id, name)
-    LiedDatei.objects.update_or_create(
-        lied=lied, rolle=rolle, defaults={"datei": zeile}
-    )
+    rolle_setzen(lied, rolle, zeile, nutzer)
     return zeile
 
 

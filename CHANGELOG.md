@@ -7,6 +7,20 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Die Rolle einer Lied-Datei steht nur noch in der Rollenzeile; die vier bisherigen Dateifelder
+  am Lied sind entfallen. Dateien, die nur dort hinterlegt waren, trägt die Migration als
+  Rollenzeile nach, sodass sie auf der Liedseite sichtbar bleiben.
+
+### Entfernt
+
+- Das Bearbeiten-Formular eines Liedes hat keine eigenen Datei-Felder mehr: Hochgeladen wird auf
+  der Liedseite, wo die Datei gleich im Lied-Ordner landet. Ein entpacktes Archiv ordnet seine
+  Dateien keinem Lied mehr zu.
+
 ## v1.1.0 — 2026-10-26
 
 ### Geändert

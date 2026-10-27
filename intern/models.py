@@ -680,18 +680,6 @@ class ErinnerungVersand(models.Model):
 class Lied(models.Model):
     titel = models.CharField(max_length=48)
     aktiv = models.BooleanField(default=False)
-    original = FilerFileField(
-        null=True, blank=True, on_delete=models.SET_NULL, related_name="original"
-    )
-    aufnahme = FilerFileField(
-        null=True, blank=True, on_delete=models.SET_NULL, related_name="aufnahme"
-    )
-    pdf = FilerFileField(
-        null=True, blank=True, on_delete=models.SET_NULL, related_name="pdf"
-    )
-    noten = FilerFileField(
-        null=True, blank=True, on_delete=models.SET_NULL, related_name="noten"
-    )
     # Der Ordner des Liedes unter Backstage/Repertoire. Der FK ist die Wahrheit,
     # nicht der Ordnername: Lied.titel ist nicht eindeutig, und eine Umbenennung
     # des Titels zieht den Ordner nach.

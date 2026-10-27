@@ -98,8 +98,8 @@ Cross-cutting modules: `models.py`, `forms.py`, `signals.py` (audit log, activat
 indexing, MUC room assignment), `app_settings.py` (runtime config), `folders.py` (the standard
 folders under Backstage), `dateiablage.py` (the only way into a folder: file identity, the
 version chain and its merging, one name per folder — see `docs/files.md`), `liedablage.py` (the
-only way into a song's own folder: `ordner_fuer`, `ablegen`, `titel_geaendert`, and the read
-fallback to the legacy columns), `liedrollen.py` (the one source of the song-file roles,
+only way into a song's own folder: `ordner_fuer`, `ablegen`, `rolle_setzen`, `titel_geaendert`),
+`liedrollen.py` (the one source of the song-file roles,
 like `zusage.py`),
 `folder_access.py` / `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
 shared by the folder browser and the wiki media bar), `verwendung.py` (what a delete would break),
@@ -313,9 +313,9 @@ reasoning where it matters.
   or set `folder_id` by hand.
 - **A song owns its folder.** `Lied.ordner` is the truth, not the folder name; `LiedDatei` gives
   each file its role, and `intern/liedablage.py` is the only way in. The folder is protected in
-  the browser (`_enthaelt_liedordner`) and follows the title (`titel_geaendert`). The four legacy
-  `Lied` columns remain a **read fallback** until migration `0006` — `repertoire_umziehen` moved
-  the production files once; do not revive the old upload paths.
+  the browser (`_enthaelt_liedordner`) and follows the title (`titel_geaendert`). Migration `0006`
+  dropped the four legacy `Lied` file columns; the rows are the only source of a role now, and
+  the old upload paths are gone with them.
 - **Every write path on a file must call `darf_avatar_aendern()`**, or one member can overwrite
   another's profile picture.
 - **Folder rights inherit per axis.** A folder without a rule on read, write or delete takes the

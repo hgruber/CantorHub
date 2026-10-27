@@ -256,7 +256,7 @@ PERMISSION_DETAILS = {
         ("Lied",
          "Bearbeiten-Knopf und Änderungsverlauf eines Liedes."),
         ("Lied bearbeiten",
-         "Titel, Angaben und zugeordnete Dateien eines Liedes ändern."),
+         "Titel und Angaben eines Liedes ändern."),
         ("Ablauf eines Termins",
          "Im Repertoire, gefiltert auf einen Termin: die Reihenfolge der Lieder "
          "festlegen."),

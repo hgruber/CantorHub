@@ -318,27 +318,6 @@ THUMBNAIL_SOURCE_GENERATORS = (
     "intern.thumbnails.docx_source",
 )
 
-# File type detection for uploads. The target folder per type is chosen in
-# intern/views/files.py (`upload`) through intern.folders.
-FILE_TYPE_CONFIG = {
-    "audio": {
-        "extensions": [".mp3", ".m4a"],
-    },
-    "music": {
-        "extensions": [".cap", ".msc", ".mscz"],
-    },
-    "pdf": {
-        "extensions": [".pdf"],
-    },
-}
-
-# File type to Lied model field mapping
-FILE_TYPE_LIED_MAP = {
-    "audio": "original",
-    "music": "noten",
-    "pdf": "pdf",
-}
-
 # XMPP and iCal settings are stored in the database (intern.Konfiguration).
 # Use intern.app_settings.get_config() to read them at runtime.
 

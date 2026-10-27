@@ -11,7 +11,7 @@ from django_tables2 import RequestConfig
 from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
-from filer.models import File, Folder
+from filer.models import Folder
 
 from intern import folders, liedablage, liedrollen
 
@@ -238,7 +238,6 @@ def titel_list(request):
                 "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
                 "add_form_multipart": True,
                 "add_label": "Neuer Titel",
-                "feld_ordner": _feld_ordner(),
             },
         )
 
@@ -300,13 +299,11 @@ def titel_list(request):
         "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
         "upload_folder_id": folders.musik(),
         "upload_folder_name": folders.REPERTOIRE,
-        "upload_route_by_type": True,
         "showfilter": True,
         "add": add,
         "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
         "add_form_multipart": True,
         "add_label": "Neuer Titel",
-        "feld_ordner": _feld_ordner(),
         "play_menu": bool(anzahlen["originals"] or anzahlen["aufnahmen"]),
         # Nicht die Listen, nur ihre Adresse — mit den Filtern der Seite, damit die
         # Warteschlange dasselbe Repertoire abdeckt wie die Liste davor.
@@ -321,17 +318,6 @@ def titel_list(request):
     if konzert_id and request.user.has_perm("intern.change_lied"):
         context["konzert_order_url"] = f"/intern/titel/?konzert={konzert_id}&edit"
     return render(request, "table.html", context)
-
-
-def _feld_ordner():
-    """Die Zielordner der Datei-Felder eines Titels — die Feld-Dropzone lädt
-    gleich dorthin, nicht erst beim Speichern (siehe `_titeldatei_ablegen`)."""
-    return {
-        "original": folders.repertoire(),
-        "aufnahme": folders.repertoire(),
-        "pdf": folders.pdf(),
-        "noten": folders.notensatz(),
-    }
 
 
 _ROLLEN_CSS = {"notenblatt": " file-icon-btn--pdf", "notensatz": " file-icon-btn--notes"}
@@ -391,7 +377,6 @@ def titel_view(request, titel):
         "id": titel,
         "upload_folder_id": folders.musik(),
         "upload_folder_name": folders.REPERTOIRE,
-        "upload_route_by_type": True,
         "upload_lied_id": titel,
     }
     return render(request, "titel.html", context)
@@ -405,21 +390,6 @@ def titel_edit(request, titel):
         form = LiedEditForm(request.POST, request.FILES, instance=lied)
         if form.is_valid():
             instance = form.save(commit=False)
-            # Dropzone-Dateien landen im Lied-Ordner; die Rolle entscheidet.
-            abgelegt = {}
-            for field_name, rolle in liedablage.FELD_ROLLE.items():
-                new_id = request.POST.get(field_name)
-                old_id = str(getattr(lied, field_name + "_id") or "") if hasattr(lied, field_name + "_id") else ""
-                if new_id and new_id != old_id:
-                    try:
-                        f = File.objects.get(pk=int(new_id))
-                        abgelegt[field_name] = liedablage.ablegen(instance, rolle, f)
-                    except (File.DoesNotExist, ValueError):
-                        pass
-            # Hat die Ablage die neue Datei mit der bisherigen verschmolzen,
-            # gilt deren Zeile — nicht die aus dem Formular.
-            for field_name, zeile in abgelegt.items():
-                setattr(instance, field_name, zeile)
             instance._audit_user = request.user
             instance.save()
             form.save_m2m()
@@ -449,7 +419,6 @@ def titel_edit(request, titel):
         "konzerte_count": konzerte_count,
         "can_delete": not blocking,
         "delete_tooltip": ("Kann nicht gelöscht werden: " + ", ".join(blocking)) if blocking else "",
-        "feld_ordner": _feld_ordner(),
     }
     return render(request, "titel_edit.html", context)
 
@@ -529,30 +498,11 @@ def titel_add(request):
             lied._audit_user = request.user
             lied.save()
             form.save_m2m()
-            # Dropzone-Dateien: erst jetzt gibt es eine Lied-PK und damit einen
-            # Lied-Ordner. Der alte FK hält bis Migration 0006 mit (Rückweg).
-            _FILER_FIELD_MAP = {
-                "original_filer_id": "original",
-                "aufnahme_filer_id": "aufnahme",
-                "pdf_filer_id": "pdf",
-                "noten_filer_id": "noten",
-            }
-            for post_key, model_field in _FILER_FIELD_MAP.items():
-                filer_id = request.POST.get(post_key)
-                if not filer_id:
-                    continue
-                try:
-                    f = File.objects.get(pk=int(filer_id))
-                except (File.DoesNotExist, ValueError):
-                    continue
-                zeile = liedablage.ablegen(lied, liedablage.FELD_ROLLE[model_field], f)
-                Lied.objects.filter(pk=lied.pk).update(**{model_field: zeile})
             return redirect("titel_view", titel=lied.id)
     else:
         form = LiedEditForm()
     context = {
         "form": form,
         "seitentitel": "Neuer Titel",
-        "feld_ordner": _feld_ordner(),
     }
     return render(request, "titel_edit.html", context)

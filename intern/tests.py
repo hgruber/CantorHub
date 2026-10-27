@@ -2828,9 +2828,9 @@ class StandardOrdnerTest(SimpleTestCase):
     def test_sucht_jede_ebene_mit_ihrem_elternordner(self):
         from intern import folders
         ids = {
-            (folders.BACKSTAGE, None): 1,
-            (folders.REPERTOIRE, 1): 2,
-            (folders.NOTENBLAETTER, 2): 3,
+            (folders.VEREIN, None): 1,
+            (folders.VORSTAND, 1): 2,
+            (folders.MITGLIEDSANTRAEGE, 2): 3,
         }
 
         def filter_(name, parent_id):
@@ -2839,10 +2839,10 @@ class StandardOrdnerTest(SimpleTestCase):
 
         with mock.patch("filer.models.Folder.objects") as objects:
             objects.filter.side_effect = filter_
-            self.assertEqual(folders.pdf(), 3)
+            self.assertEqual(folders.mitgliedsantraege(), 3)
             self.assertEqual(objects.filter.call_count, 3)
             # Zweiter Aufruf kommt aus dem Cache.
-            self.assertEqual(folders.pdf(), 3)
+            self.assertEqual(folders.mitgliedsantraege(), 3)
             self.assertEqual(objects.filter.call_count, 3)
 
     def test_gleichnamiger_ordner_an_anderer_stelle_zaehlt_nicht(self):
@@ -3265,7 +3265,7 @@ class RegisterKonsistenzTest(SimpleTestCase):
 
     Pro Modell und Feld werden mehrere Karten von Hand nachgeführt
     (``_AUDIT_FIELDS``, ``FIELD_LABELS``, ``_CHANGELOG_FIELD_LABELS``,
-    ``_LIED_FELDER``, ``_FILE_ID_FIELDS``). Ein Feldname darin ist eine
+    ``_FILE_ID_FIELDS``). Ein Feldname darin ist eine
     **Zeichenkette**: wird ein Feld umbenannt und die Karte nicht, verstummt das
     Änderungsprotokoll für dieses Feld still, ohne dass etwas rot wird. Dieser Test
     kreuzt darum jede Karte gegen die Modelle — und sucht doppelte Dict-Schlüssel,
@@ -3314,12 +3314,15 @@ class RegisterKonsistenzTest(SimpleTestCase):
             with self.subTest(karte=karte):
                 self.assertEqual([n for n in namen if n not in vorhanden], [])
 
-    def test_lied_felder_gibt_es_am_modell(self):
+    def test_lied_hat_keine_dateifelder_mehr(self):
+        """Migration 0006 ist der Punkt ohne Rückweg: Die vier Spalten sind
+        fort, und die Rollenzeile trägt die Rolle."""
         from intern.models import Lied
-        from intern.verwendung import _LIED_FELDER
 
         vorhanden = self._feldnamen(Lied)
-        self.assertEqual([f for f in _LIED_FELDER if f not in vorhanden], [])
+        self.assertEqual(
+            [f for f in ("original", "aufnahme", "pdf", "noten") if f in vorhanden], []
+        )
 
     def test_wert_uebersetzungen_zielen_auf_auditierte_felder(self):
         from django.apps import apps
@@ -3364,7 +3367,7 @@ class RegisterKonsistenzTest(SimpleTestCase):
 
     def test_keine_doppelten_schluessel_in_den_karten(self):
         import intern.signals as signals
-        from intern import tables, verwendung
+        from intern import tables
         from intern.views import aenderungen
 
         karten = [
@@ -3373,7 +3376,6 @@ class RegisterKonsistenzTest(SimpleTestCase):
             (aenderungen, "_MODELL_FELD_LABELS"),
             (tables, "_CHANGELOG_FIELD_LABELS"),
             (tables, "_CHANGELOG_MODEL_LABELS"),
-            (verwendung, "_LIED_FELDER"),
             (signals, "_AUDIT_FIELDS"),
         ]
         for module, name in karten:
@@ -6138,14 +6140,14 @@ class FilterbauTitelTest(SimpleTestCase):
         self.assertEqual(self._q("hymne", "nein"), Q(hymne=False))
 
     def test_datei_vorhanden_oder_nicht(self):
-        # Rollenzeile per EXISTS; bis Migration 0006 zaehlt der alte FK mit.
+        # Rollenzeile per EXISTS, ohne Join und ohne die alten Lied-Felder.
         sql_ja = self._sql("aufnahme", "ja")
         self.assertIn("EXISTS", sql_ja)
         self.assertIn("intern_lieddatei", sql_ja)
-        self.assertIn("aufnahme_id", sql_ja)
+        self.assertIn("aufnahme", sql_ja)
         sql_nein = self._sql("pdf", "nein")
         self.assertIn("NOT (EXISTS", sql_nein)
-        self.assertIn("pdf_id", sql_nein)
+        self.assertNotIn('"intern_lied"."pdf', sql_nein)
 
     def test_tempo(self):
         self.assertEqual(self._q("tempo", "ist", "s"), Q(tempo__in=("s",)))
@@ -6636,34 +6638,6 @@ class StandardordnerSchutzTest(SimpleTestCase):
             objects.create.assert_not_called()
 
 
-class RepertoireUploadTest(SimpleTestCase):
-    """Ein Repertoire-Upload ohne Titel wird abgelehnt, bevor etwas abgelegt
-    ist. Eine unbekannte Endung ist erlaubt: Die Datei landet ohne Rolle im
-    Lied-Ordner."""
-
-    def _hochladen(self, name, lied=None, **post):
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        from django.test import RequestFactory
-
-        from intern.views import files
-
-        request = RequestFactory().post("/intern/upload/", {
-            "file": SimpleUploadedFile(name, b"x"), "route_by_type": "1", **post,
-        })
-        request.user = mock.Mock(is_authenticated=True)
-        with mock.patch("intern.app_settings.get_config_int", return_value=50), \
-                mock.patch.object(files, "_get_lied_by_filename", return_value=lied), \
-                mock.patch.object(files.dateiablage, "hochladen") as hochladen:
-            antwort = files.upload(request)
-        self.assertFalse(hochladen.called)
-        return antwort
-
-    def test_kein_titel_dieses_namens(self):
-        antwort = self._hochladen("Unbekannt.pdf")
-        self.assertEqual(antwort.status_code, 400)
-        self.assertIn("Kein Titel", antwort.content.decode())
-
-
 class WarteschlangenTest(SimpleTestCase):
     """Die Wiedergabelisten lesen die Rollenzeilen: welche Titel in welcher
     Liste landen, wie der Typ heißt und woher die URL kommt."""
@@ -6824,92 +6798,6 @@ class RepertoireTabelleRollenTest(SimpleTestCase):
         self.assertEqual(attrs["data-noten-url"](record), "")
 
 
-class UploadZuordnungTest(SimpleTestCase):
-    """Charakterisierung der heutigen Zuordnung einer hochgeladenen Datei zu
-    einem Lied: Endung entscheidet die Rolle, das Aufnahme-Präfix trennt
-    Original und eigene Aufnahme."""
-
-    def _lied(self):
-        lied = mock.Mock()
-        lied.titel = "Titel"
-        return lied
-
-    def _route(self, source_name, **ordner):
-        from intern.views import files
-
-        lied = self._lied()
-        datei = mock.Mock()
-        with mock.patch.object(
-            files, "_aufnahme_prefixes", return_value=("Chor - ", "Chor-")
-        ), mock.patch.object(
-            files, "_aufnahme_prefix_with_space", return_value="Chor - "
-        ), mock.patch.object(
-            files.folders, "repertoire", return_value=ordner.get("repertoire", 10)
-        ), mock.patch.object(
-            files.folders, "notensatz", return_value=ordner.get("notensatz", 12)
-        ), mock.patch.object(
-            files.folders, "pdf", return_value=ordner.get("pdf", 11)
-        ), mock.patch.object(
-            files.dateiablage, "systemablage", return_value="neu"
-        ) as ablage:
-            feld = files._route_and_rename_for_lied(lied, datei, source_name)
-        return feld, lied, ablage
-
-    def test_pdf_wird_notenblatt(self):
-        feld, lied, ablage = self._route("Irgendwas.pdf")
-        self.assertEqual(feld, "pdf")
-        ablage.assert_called_once()
-        self.assertEqual(ablage.call_args.args[1:], (11, "Titel.pdf"))
-        lied.save.assert_called_once_with(update_fields=["pdf"])
-
-    def test_notensatz(self):
-        feld, lied, ablage = self._route("Irgendwas.mscz")
-        self.assertEqual(feld, "noten")
-        self.assertEqual(ablage.call_args.args[1:], (12, "Titel.mscz"))
-
-    def test_audio_ohne_praefix_wird_original(self):
-        feld, lied, ablage = self._route("Irgendwas.mp3")
-        self.assertEqual(feld, "original")
-        self.assertEqual(ablage.call_args.args[1:], (10, "Titel.mp3"))
-
-    def test_audio_mit_praefix_wird_aufnahme(self):
-        feld, lied, ablage = self._route("Chor - Titel.mp3")
-        self.assertEqual(feld, "aufnahme")
-        self.assertEqual(ablage.call_args.args[1:], (10, "Chor - Titel.mp3"))
-
-    def test_unbekannte_endung(self):
-        feld, lied, ablage = self._route("Notizen.docx")
-        self.assertIsNone(feld)
-        self.assertFalse(ablage.called)
-
-    def test_assign_by_filename(self):
-        from intern.views import files
-
-        lied = self._lied()
-        with mock.patch.object(files, "_get_lied_by_filename", return_value=lied), \
-                mock.patch.object(files, "_aufnahme_prefixes", return_value=("Chor - ", "Chor-")):
-            files._assign_file_to_song("Titel.pdf", "f")
-        self.assertEqual(lied.pdf, "f")
-        lied.save.assert_called_once()
-
-    def test_assign_aufnahme(self):
-        from intern.views import files
-
-        lied = self._lied()
-        with mock.patch.object(files, "_get_lied_by_filename", return_value=lied), \
-                mock.patch.object(files, "_aufnahme_prefixes", return_value=("Chor - ", "Chor-")):
-            files._assign_file_to_song("Chor - Titel.mp3", "f")
-        self.assertEqual(lied.aufnahme, "f")
-
-    def test_assign_unbekannte_endung(self):
-        from intern.views import files
-
-        lied = self._lied()
-        with mock.patch.object(files, "_get_lied_by_filename", return_value=lied):
-            files._assign_file_to_song("Notizen.docx", "f")
-        lied.save.assert_not_called()
-
-
 class KonzertExportTest(SimpleTestCase):
     """Charakterisierung der ZIP-Namen der beiden Konzert-Downloads."""
 
@@ -7004,34 +6892,9 @@ class KonzertExportTest(SimpleTestCase):
 
 
 class TitelSchreibpfadTest(SimpleTestCase):
-    """Charakterisierung der drei Titel-Schreibpfade: welche Datei in welchen
-    Ordner wandert und wann das Lied gespeichert bzw. gelöscht wird."""
-
-    def test_feld_ordner(self):
-        from intern.views import titel
-
-        with mock.patch.object(titel.folders, "repertoire", return_value=10), \
-                mock.patch.object(titel.folders, "pdf", return_value=11), \
-                mock.patch.object(titel.folders, "notensatz", return_value=12):
-            self.assertEqual(
-                titel._feld_ordner(),
-                {"original": 10, "aufnahme": 10, "pdf": 11, "noten": 12},
-            )
-
-    class _Lied:
-        id = 1
-        pk = 1
-        titel = "Titel"
-        original_id = None
-        aufnahme_id = None
-        pdf_id = 7
-        noten_id = None
-
-        def __init__(self):
-            self.gespeichert = False
-
-        def save(self):
-            self.gespeichert = True
+    """Charakterisierung der Titel-Schreibpfade: wann das Lied gespeichert bzw.
+    gelöscht wird. Die Dateien hängen an der Rollenzeile, nicht mehr am Lied —
+    abgelegt wird über ``liedablage`` (siehe dort)."""
 
     def _post(self, view, daten):
         from django.test import RequestFactory
@@ -7039,55 +6902,6 @@ class TitelSchreibpfadTest(SimpleTestCase):
         request = RequestFactory().post("/intern/titel/", daten)
         request.user = mock.Mock(is_authenticated=True)
         return request
-
-    def test_titel_edit_setzt_abgelegte_datei(self):
-        from intern.views import titel
-
-        lied = self._Lied()
-        instanz = mock.Mock(titel="Titel")
-        form = mock.Mock()
-        form.is_valid.return_value = True
-        form.save.return_value = instanz
-        with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
-                mock.patch.object(titel, "LiedEditForm", return_value=form), \
-                mock.patch.object(titel, "File") as datei_klasse, \
-                mock.patch.object(titel.liedablage, "ablegen", return_value="neu"), \
-                mock.patch.object(titel, "redirect"):
-            titel.titel_edit(self._post(titel.titel_edit, {"pdf": "8"}), 1)
-        datei_klasse.objects.get.assert_called_once_with(pk=8)
-        self.assertEqual(instanz.pdf, "neu")
-        instanz.save.assert_called_once()
-
-    def test_titel_edit_laesst_unveraenderte_datei(self):
-        from intern.views import titel
-
-        lied = self._Lied()
-        form = mock.Mock()
-        form.is_valid.return_value = True
-        form.save.return_value = mock.Mock(titel="Titel")
-        with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
-                mock.patch.object(titel, "LiedEditForm", return_value=form), \
-                mock.patch.object(titel.liedablage, "ablegen") as ablegen, \
-                mock.patch.object(titel, "redirect"):
-            titel.titel_edit(self._post(titel.titel_edit, {"pdf": "7"}), 1)
-        self.assertFalse(ablegen.called)
-
-    def test_titel_add_setzt_abgelegte_datei(self):
-        from intern.views import titel
-
-        lied = self._Lied()
-        form = mock.Mock()
-        form.is_valid.return_value = True
-        form.save.return_value = lied
-        with mock.patch.object(titel, "LiedEditForm", return_value=form), \
-                mock.patch.object(titel, "File") as datei_klasse, \
-                mock.patch.object(titel.Lied, "objects") as objekte, \
-                mock.patch.object(titel.liedablage, "ablegen", return_value="neu"), \
-                mock.patch.object(titel, "redirect"):
-            titel.titel_add(self._post(titel.titel_add, {"pdf_filer_id": "9"}))
-        datei_klasse.objects.get.assert_called_once_with(pk=9)
-        objekte.filter.return_value.update.assert_called_once_with(pdf="neu")
-        self.assertTrue(lied.gespeichert)
 
     def test_titel_delete_loescht_wenn_frei(self):
         from intern.views import titel
@@ -7129,7 +6943,6 @@ class WurzelUploadTest(SimpleTestCase):
         request.user = mock.Mock(is_authenticated=True, is_superuser=False, pk=1)
         request.user.has_perm.side_effect = lambda p: webmaster and p == "intern.manage_folder_permissions"
         with mock.patch("intern.app_settings.get_config_int", return_value=50), \
-                mock.patch.object(files, "_get_lied_by_filename", return_value=None), \
                 mock.patch("intern.folder_access.folder_access", return_value=(True, True, False)), \
                 mock.patch.object(files.folders, "avatare", return_value=None), \
                 mock.patch.object(files.dateiablage, "gleichnamige", return_value=None), \

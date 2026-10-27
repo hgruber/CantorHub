@@ -134,7 +134,7 @@ class TerminAdmin(admin.ModelAdmin):
 
 @admin.register(Lied)
 class LiedAdmin(admin.ModelAdmin):
-    list_display = ("titel", "original", "aktiv", "tempo", "beats", "hymne", "acapella")
+    list_display = ("titel", "aktiv", "tempo", "beats", "hymne", "acapella")
     list_filter = ("aktiv", "tempo", "hymne", "acapella")
     filter_horizontal = (
         "solist",
