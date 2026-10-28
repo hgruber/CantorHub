@@ -51,14 +51,14 @@ PERMISSION_DESCRIPTIONS = {
         "Versionen gleichzeitig und kann nicht rückgängig gemacht werden.",
     "intern.manage_artikel_permissions":
         "Darf festlegen, welche Gruppen bestimmte Artikel lesen oder "
-        "bearbeiten dürfen. Ohne diese Berechtigung sind Artikel für alle "
+        "bearbeiten dürfen. Ohne Einschränkung ist ein Artikel für alle "
         "angemeldeten Mitglieder sichtbar.",
     "intern.add_forum":
         "Darf neue Diskussionsthemen (Foren) anlegen.",
     "intern.change_forum":
         "Darf bestehende Foren bearbeiten – z. B. Titel ändern, das "
-        "Titelbild anpassen oder (sofern XMPP konfiguriert ist) den "
-        "verknüpften Chat-Raum verwalten.",
+        "Titelbild anpassen, das Forum archivieren oder (sofern XMPP "
+        "konfiguriert ist) den verknüpften Chat-Raum verwalten.",
     "intern.delete_forum":
         "Darf Foren dauerhaft löschen. Achtung: Dabei werden auch alle "
         "darin enthaltenen Nachrichten unwiederbringlich entfernt.",
@@ -66,7 +66,8 @@ PERMISSION_DESCRIPTIONS = {
         "Darf festlegen, welche Gruppen ein Forum lesen dürfen. Ohne "
         "Einschränkung ist jedes Forum für alle angemeldeten Mitglieder "
         "sichtbar. Bei eingeschränkten Foren wird auch der verknüpfte "
-        "Chat-Raum entsprechend synchronisiert.",
+        "Chat-Raum entsprechend synchronisiert. Wer dieses Recht hat, liest "
+        "auch eingeschränkte Foren, ohne in der Gruppe zu sein.",
     "intern.view_forum_archiv":
         "Darf deaktivierte (archivierte) Foren sehen, lesen und wieder "
         "aktivieren. Ohne dieses Recht ist ein archiviertes Forum für "
@@ -86,19 +87,22 @@ PERMISSION_DESCRIPTIONS = {
     "intern.add_lied":
         "Darf neue Lieder ins Repertoire aufnehmen.",
     "intern.change_lied":
-        "Darf bestehende Lieder im Repertoire bearbeiten.",
+        "Darf bestehende Lieder im Repertoire bearbeiten, ihre Dateien "
+        "verwalten und den Ablauf eines Termins festlegen.",
     "intern.delete_lied":
         "Darf Lieder dauerhaft aus dem Repertoire entfernen.",
     "intern.add_user":
-        "Darf neue Mitglieder anlegen.",
+        "Darf neue Personen per E-Mail zum Mitgliedsantrag einladen.",
     "intern.change_user":
         "Darf Mitgliedsdaten bearbeiten – z. B. Name, E-Mail-Adresse, "
-        "Stimmgruppe oder Anschrift ändern.",
+        "Stimmgruppe oder Anschrift ändern – und Mitgliedsanträge "
+        "genehmigen. Sieht im Portal auch verborgene Angaben.",
     "intern.delete_user":
         "Darf Mitgliedskonten dauerhaft löschen.",
     "intern.manage_user_permissions":
-        "Darf Gruppenberechtigungen verwalten – also diese Seite aufrufen "
-        "und Berechtigungen vergeben oder entziehen. "
+        "Darf Gruppenberechtigungen verwalten – also auf der Seite „Gruppen“ "
+        "Berechtigungen vergeben oder entziehen und auf der Seite „Aufgaben“ "
+        "Personen den Gruppen zuordnen. "
         "Achtung: Diese Berechtigung sollte nur an sehr vertrauenswürdige "
         "Personen vergeben werden, da sie alle weiteren Berechtigungen "
         "einschließt.",
@@ -112,7 +116,8 @@ PERMISSION_DESCRIPTIONS = {
     "intern.delete_ort":
         "Darf Orte dauerhaft löschen.",
     "intern.delete_folder":
-        "Darf Dateiordner dauerhaft löschen.",
+        "Darf Dateien und Ordner dauerhaft löschen – auch dort, wo die "
+        "Ordnerrechte das sonst nicht erlauben.",
     "intern.manage_folder_permissions":
         "Darf festlegen, welche Gruppen auf bestimmte Dateiordner zugreifen "
         "dürfen, Dateien nach „Backstage“ verschieben oder kopieren und auf "
@@ -166,7 +171,7 @@ PERMISSION_DETAILS = {
     ],
     "intern.manage_user_permissions": [
         ("Gruppen",
-         "Diese Seite: Rechte an Gruppen vergeben und entziehen, Gruppen anlegen und "
+         "Rechte an Gruppen vergeben und entziehen, Gruppen anlegen und "
          "löschen. Wer das darf, kann sich jedes andere Recht selbst geben."),
         ("Aufgaben",
          "Personen den Gruppen zuordnen — darüber erhalten sie deren Rechte."),
@@ -216,9 +221,8 @@ PERMISSION_DETAILS = {
          "Für alle anderen ist er nur ausgeblendet; die Dateien bleiben überall "
          "erreichbar, wo sie verwendet werden."),
         ("Hochladen auf oberster Ebene",
-         "Auf Seiten ohne eigenen Zielordner und auf der obersten Ordnerebene lassen "
-         "sich Dateien ablegen; sie landen auf oberster Ebene. Alle anderen haben "
-         "dort keine Ablagefläche."),
+         "Auf der obersten Ordnerebene lassen sich Dateien ablegen. Alle anderen "
+         "haben dort keine Ablagefläche."),
         ("Verschieben, Kopieren, Verknüpfen",
          "Bietet „Backstage“ und seine Unterordner als Ziel an — im Ordner und im "
          "Dateimenü eines Artikels. Für alle anderen sind sie kein Ziel."),
@@ -256,13 +260,16 @@ PERMISSION_DETAILS = {
         ("Lied",
          "Bearbeiten-Knopf und Änderungsverlauf eines Liedes."),
         ("Lied bearbeiten",
-         "Titel und Angaben eines Liedes ändern."),
+         "Titel und Angaben eines Liedes ändern; in der Karte „Medien“ die Rollen der "
+         "Dateien vergeben und Dateien des Liedordners umbenennen oder löschen — "
+         "ohne eigenes Ordnerrecht."),
         ("Ablauf eines Termins",
          "Im Repertoire, gefiltert auf einen Termin: die Reihenfolge der Lieder "
          "festlegen."),
         ("Hochladen",
-         "Eine hochgeladene Datei direkt einem Lied zuordnen, etwa beim Ablegen auf der "
-         "Seite des Liedes."),
+         "Dateien für ein Lied hochladen — auf der Seite des Liedes oder auf seiner "
+         "Zeile im Repertoire. Das Schreibrecht für den Liedordner braucht es "
+         "trotzdem."),
     ],
     "intern.delete_lied": [
         ("Lied bearbeiten",

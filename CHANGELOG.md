@@ -23,6 +23,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
   Lied-Ordners, die mit Rolle zuerst, und ein Bild auf der eigenen Profilseite wird nach einer
   Rückfrage das Profilbild.
 - Eine Lied-Datei trägt höchstens eine Rolle; wer ihr eine andere gibt, macht die bisherige frei.
+- Die Erklärungen zu den Rechten sprechen nicht mehr von „dieser Seite“, weil sie auch in der Karte
+  „Meine Rechte“ des Profils erscheinen, und beschreiben wieder den aktuellen Stand, etwa beim
+  Hochladen auf oberster Ebene, bei Lied-Dateien und bei Artikel-Einschränkungen.
 
 ### Hinzugefügt
 
