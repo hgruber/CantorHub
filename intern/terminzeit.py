@@ -36,6 +36,30 @@ def ist_ganztaegig(datum, datum_bis=None):
     return (datum_bis.hour, datum_bis.minute) == _OHNE_UHRZEIT
 
 
+def zeitraum_aus_eingabe(datum, uhrzeit, bis_datum, bis_uhrzeit):
+    """Beginn und Ende eines Termins aus den vier Eingabefeldern.
+
+    Datum und Uhrzeit sind an beiden Enden getrennt, und die Uhrzeit darf an
+    beiden fehlen: ein Ende ohne Uhrzeit steht auf 00:00 und meint den ganzen
+    letzten Tag (siehe ``ist_ganztaegig``). Eine Endzeit ohne Enddatum liegt am
+    Tag des Beginns. Liefert ``(beginn, ende)``, ``ende`` ist ``None`` ohne
+    Ende; ein Widerspruch wirft ``ValueError`` mit dem Text für das Formular.
+    """
+    beginn = datetime.combine(datum, uhrzeit or time())
+    if bis_datum is None and bis_uhrzeit is None:
+        return beginn, None
+    ende = datetime.combine(bis_datum or datum, bis_uhrzeit or time())
+    # Ganztägig heißt: beide Enden ohne Uhrzeit. Hat nur eines eine, wäre der
+    # Termin zeitgebunden und endete um Mitternacht vor seinem letzten Tag.
+    if ist_ganztaegig(beginn) != ((ende.hour, ende.minute) == _OHNE_UHRZEIT):
+        raise ValueError(
+            "Beginn und Ende brauchen beide eine Uhrzeit — oder beide keine."
+        )
+    if ende < beginn:
+        raise ValueError("Das Ende liegt vor dem Beginn.")
+    return beginn, ende
+
+
 def countdown_text(datum, datum_bis, jetzt):
     """Der Vorlauf-Text des Banners.
 

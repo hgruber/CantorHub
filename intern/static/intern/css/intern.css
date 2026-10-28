@@ -1862,6 +1862,9 @@ time {
     color: var(--t1);
 }
 
+/* Folgen einer Löschung (Löschdialoge) */
+.app-dialog .warn { color: var(--warn-text); }
+
 .dialog-close {
     position: absolute;
     top: 12px;
@@ -3045,6 +3048,8 @@ table.mitglied-table tr.stimme-group-start td {
 @media (max-width: 768px) {
     .medien-ablage--editor { margin: 0 14px 10px; }
 }
+/* In der Vorschau gibt es keine Schreibmarke, an die eine Datei käme. */
+.article-editor:has(.ae-vorschau:not([hidden])) .medien-ablage--editor { display: none; }
 .medien-ablage[role="button"] { cursor: pointer; }
 .medien-ablage:hover,
 .medien-ablage:focus-visible,
@@ -3175,8 +3180,6 @@ table.mitglied-table tr.stimme-group-start td {
     outline: none;
 }
 .medien-datei .medien-datei-eingabe:read-only { color: var(--t3); }
-
-.medien-loeschen-dialog .warn { color: var(--warn-text); }
 
 /* Ablageziele: die Zeile einer Datei und die freie Rollenablage */
 .medien-datei.is-ueber,
@@ -5343,11 +5346,12 @@ span.not_found {
     outline-offset: -2px;
 }
 
+/* Eine Datei von außen über einem Unterordner: dieselbe Sprache wie die
+   übrigen Ablageziele (Markenfarbe), damit klar ist, dass hier abgelegt wird. */
 .dnd-file-over td {
-    background: rgba(34, 197, 94, 0.10) !important;
-    outline: 2px solid #22c55e;
-    outline-offset: -2px;
+    background: var(--brand-light) !important;
 }
+.dnd-file-over td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
 
 /* Repertoire: jede Zeile nimmt Dateien für ihr Lied an (intern.js setzt
    drop-row, Dropzone dz-drag-hover, der Upload drop-row-active). Ruhiger als

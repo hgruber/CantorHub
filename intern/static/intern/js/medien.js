@@ -250,6 +250,12 @@
       return daten;
     }
 
+    // Nur eine Anfrage zugleich. Wer danach kommt (Umbenennen beim Verlassen
+    // des Felds, Löschen nach der Rückfrage), wartet, statt verloren zu gehen.
+    async function frei() {
+      while (busy) await new Promise((weiter) => setTimeout(weiter, 50));
+    }
+
     // „A“ / „A“ und „B“ — für die Meldung, welche Rollen frei wurden.
     function aufzaehlen(keys) {
       const namen = keys.map((k) => "„" + label(k) + "“");
@@ -382,14 +388,15 @@
       async function uebernehmen(fokusZurueck) {
         if (fertig) return;
         const neu = feld.value.trim();
-        if (!neu || neu === alt || busy) {
+        if (!neu || neu === alt) {
           beenden(fokusZurueck);
           return;
         }
         fertig = true;
-        busy = true;
         feld.readOnly = true;
         zeile.setAttribute("aria-busy", "true");
+        await frei();
+        busy = true;
         try {
           const daten = await senden(
             dateiUrl,
@@ -448,7 +455,8 @@
         zeile.querySelectorAll(".medien-chip"),
         (c) => c.dataset.rolle
       );
-      if (!(await bestaetigen(name, rollenKeys)) || busy) return;
+      if (!(await bestaetigen(name, rollenKeys))) return;
+      await frei();
       busy = true;
       zeile.setAttribute("aria-busy", "true");
       try {

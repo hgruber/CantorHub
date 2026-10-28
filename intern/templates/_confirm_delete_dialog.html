@@ -2,6 +2,8 @@
 Bestätigungsdialog vor dem Löschen eines Datensatzes. Geöffnet wird er vom
 Löschen-Knopf in `.form-actions`, der dort stehen bleibt, weil er je nach
 Seite unterschiedlich abgesichert ist (z. B. deaktiviert mit Begründung).
+`app-dialog` gibt ihm Fläche und Schrift des Themas — ohne bliebe er im
+dunklen Thema weiß.
 
 Parameter:
   titel       Überschrift und Bezeichnung der Aktion, z. B. "Ort löschen"
@@ -10,13 +12,13 @@ Parameter:
   warnungen   Optionale Liste zusätzlicher Warnzeilen (Folgelöschungen)
   dialog_id   DOM-id (Vorgabe "delete-dialog")
 {% endcomment %}
-<dialog id="{{ dialog_id|default:'delete-dialog' }}">
+<dialog id="{{ dialog_id|default:'delete-dialog' }}" class="app-dialog">
     <h3>{{ titel }}</h3>
     <p>Möchtest du &bdquo;{{ objekt }}&ldquo; wirklich löschen?</p>
     {% for warnung in warnungen %}
     <p class="warn">{{ warnung }}</p>
     {% endfor %}
-    <form method="post" action="{{ action }}">
+    <form method="post" action="{{ action }}" class="dialog-actions">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger">Ja, löschen</button>
         <button type="button" class="btn btn-secondary" onclick="this.closest('dialog').close()">Abbrechen</button>

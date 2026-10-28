@@ -114,8 +114,9 @@ way back: a new installation receives a backup in its first-run setup at
 `wiederherstellung` and the same row copy as the backup; as a clone next to the original it
 gets a new Syncthing identity and loses mail, XMPP and the original's address instead — see
 „Restoring" in `INSTALL.md`),
-`terminzeit.py` (what counts as an upcoming event and how the banner names the wait — all-day
-events are `00:00`, see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
+`terminzeit.py` (what counts as an upcoming event, how the banner names the wait and how the
+event form's date and optional time fields become start and end — all-day events are `00:00`,
+see `docs/frontend.md`), `forum_gelesen.py` (the forum unread markers, see
 `docs/forum.md`), `aufstellung.py` (the stage picture of the answers
 in the event list), `auslieferungen.py` (the release notes from `CHANGELOG.md` — decomposition
 into release sections and change groups, plus inline markup, without a Markdown dependency,

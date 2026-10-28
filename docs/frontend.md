@@ -204,11 +204,17 @@ countdown, location and — when `anwesenheit=True` — the same quick Zusage bu
 widget (htmx swaps `#termin-banner`).
 
 **All-day events are counted in calendar days, not hours.** An event entered without a time
-sits at `00:00` (see `intern/forms.py`), so Django's `timeuntil` would both measure against
+sits at `00:00`, so Django's `timeuntil` would both measure against
 midnight — „3 Tage, 14 Stunden" where „4 Tage" is meant — and treat the event as past from
 00:01 of its own day. The rules live in `intern/terminzeit.py`, pure and clock-free so they are
 testable as `SimpleTestCase`:
 
+- `zeitraum_aus_eingabe()` turns the event form's four fields into `datum` / `datum_bis`. Date
+  and time are separate at both ends and the time is optional at both: an end without a time
+  sits at `00:00` and means its whole last day, an end time without an end date falls on the
+  start's day. A time at one end only is refused — the event would be timed and end at the
+  midnight before its last day — and so is an end before the start. The forms leave a time
+  field empty for `00:00` rather than offering it.
 - `countdown_text()` yields „heute" / „morgen" / „N Tage" for all-day events and falls back to
   `timeuntil` for events that carry a time, where hours are the useful answer. It keeps the
   non-breaking space `timeuntil` uses between number and unit.

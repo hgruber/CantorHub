@@ -10,7 +10,14 @@
         </div>
         <div class="detail-info">
             <h1>{{ termin.kurz }}</h1>
-            <p class="detail-subtitle">{{ termin.datum|date:"D, d.m.Y" }}{% if termin.datum.hour or termin.datum.minute %} · {{ termin.datum|date:"H:i" }}{% endif %}{% if termin.datum_bis %} – {{ termin.datum_bis|date:"H:i" }}{% endif %}</p>
+            {% comment %}
+               Ein Ende am selben Tag zeigt nur seine Uhrzeit, ein Ende an einem anderen
+               Tag sein Datum (und die Uhrzeit, falls es eine hat). 00:00 heißt „ohne
+               Uhrzeit“ (intern/terminzeit.py).
+            {% endcomment %}
+            {% with bis=termin.datum_bis %}
+            <p class="detail-subtitle">{{ termin.datum|date:"D, d.m.Y" }}{% if termin.datum.hour or termin.datum.minute %} · {{ termin.datum|date:"H:i" }}{% endif %}{% if bis %}{% if bis|date:"Ymd" != termin.datum|date:"Ymd" %} – {{ bis|date:"D, d.m.Y" }}{% if bis.hour or bis.minute %} · {{ bis|date:"H:i" }}{% endif %}{% elif bis.hour or bis.minute %} – {{ bis|date:"H:i" }}{% endif %}{% endif %}</p>
+            {% endwith %}
         </div>
     </div>
 
@@ -18,9 +25,9 @@
         <div class="detail-card">
             <div class="detail-card-row">
                 <span class="label">Datum</span>
-                <span class="value">{{ termin.datum|date:"d.m.Y" }}</span>
+                <span class="value">{{ termin.datum|date:"d.m.Y" }}{% if termin.datum_bis and termin.datum_bis|date:"Ymd" != termin.datum|date:"Ymd" %} – {{ termin.datum_bis|date:"d.m.Y" }}{% endif %}</span>
             </div>
-            {% if termin.datum.hour or termin.datum.minute or termin.datum_bis %}
+            {% if termin.datum.hour or termin.datum.minute %}
             <div class="detail-card-row">
                 <span class="label">Uhrzeit</span>
                 <span class="value">{{ termin.datum|date:"H:i" }}{% if termin.datum_bis %} – {{ termin.datum_bis|date:"H:i" }}{% endif %}</span>

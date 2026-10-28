@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
@@ -672,20 +671,35 @@ class MitgliedBestaetigungForm(forms.Form):
         )
 
 
-class TerminForm(forms.ModelForm):
-    uhrzeit = forms.TimeField(
+def _uhrzeit_feld(label):
+    return forms.TimeField(
         required=False,
-        label="Uhrzeit",
+        label=label,
         widget=forms.TimeInput(
             format="%H:%M",
             attrs={"class": "form-control", "type": "time"},
         ),
     )
 
+
+class TerminForm(forms.ModelForm):
+    # Datum und Uhrzeit getrennt, an beiden Enden — die Uhrzeit ist optional;
+    # die Regel steht in terminzeit.zeitraum_aus_eingabe.
+    uhrzeit = _uhrzeit_feld("Uhrzeit")
+    datum_bis = forms.DateField(
+        required=False,
+        label="Bis",
+        widget=forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={"class": "form-control", "type": "date"},
+        ),
+    )
+    uhrzeit_bis = _uhrzeit_feld("Uhrzeit bis")
+
     class Meta:
         model = Termin
         fields = [
-            "kurz", "datum", "uhrzeit", "datum_bis", "lang", "extern", "ort",
+            "kurz", "datum", "uhrzeit", "datum_bis", "uhrzeit_bis", "lang", "extern", "ort",
             "anwesenheit", "repertoire",
         ]
         widgets = {
@@ -694,10 +708,6 @@ class TerminForm(forms.ModelForm):
                 format="%Y-%m-%d",
                 attrs={"class": "form-control", "type": "date"},
             ),
-            "datum_bis": forms.DateTimeInput(
-                format="%Y-%m-%dT%H:%M",
-                attrs={"class": "form-control", "type": "datetime-local"},
-            ),
             "lang": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "extern": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
             "ort": forms.Select(attrs={"class": "form-control"}),
@@ -705,17 +715,27 @@ class TerminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk and self.instance.datum:
-            self.initial["uhrzeit"] = self.instance.datum.strftime("%H:%M")
+        # 00:00 heißt „ohne Uhrzeit“: das Feld bleibt dann leer, statt 00:00
+        # anzubieten.
+        for feld, wert in (("uhrzeit", self.instance.datum), ("uhrzeit_bis", self.instance.datum_bis)):
+            if self.instance.pk and wert and (wert.hour or wert.minute):
+                self.initial[feld] = wert.strftime("%H:%M")
+        if self.instance.pk and self.instance.datum_bis:
+            self.initial["datum_bis"] = self.instance.datum_bis.date()
 
     def clean(self):
+        from .terminzeit import zeitraum_aus_eingabe
+
         cleaned = super().clean()
         datum = cleaned.get("datum")
-        uhrzeit = cleaned.get("uhrzeit")
-        if datum and uhrzeit:
-            cleaned["datum"] = datetime.combine(datum, uhrzeit)
-        elif datum:
-            cleaned["datum"] = datetime.combine(datum, datetime.min.time())
+        if not datum:
+            return cleaned
+        try:
+            cleaned["datum"], cleaned["datum_bis"] = zeitraum_aus_eingabe(
+                datum, cleaned.get("uhrzeit"), cleaned.get("datum_bis"), cleaned.get("uhrzeit_bis"),
+            )
+        except ValueError as fehler:
+            self.add_error("datum_bis", str(fehler))
         return cleaned
 
 

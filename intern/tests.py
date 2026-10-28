@@ -62,7 +62,7 @@ from intern.tables2_beschleunigung import (
 )
 from intern.mailingliste import faelligkeit, faellige_erinnerungen, parse_wochen
 from intern.templatetags.termin_tags import zeitraum_bis
-from intern.terminzeit import countdown_text, ist_ganztaegig, kommende_q
+from intern.terminzeit import countdown_text, ist_ganztaegig, kommende_q, zeitraum_aus_eingabe
 from intern.views.files import _ziel_owner
 
 
@@ -2039,6 +2039,44 @@ MONTAG = datetime(2026, 9, 14, 10, 0)
 # der Countdown macht das mit. Hier benannt, damit im Testcode kein
 # unsichtbares Zeichen steht.
 NBSP = "\u00a0"
+
+
+class TerminZeitraumEingabeTest(SimpleTestCase):
+    """Datum und Uhrzeit getrennt an beiden Enden; die Uhrzeit ist optional."""
+
+    def test_ohne_ende(self):
+        self.assertEqual(
+            zeitraum_aus_eingabe(date(2026, 11, 6), time(19, 0), None, None),
+            (datetime(2026, 11, 6, 19, 0), None),
+        )
+
+    def test_mehrtaegig_ohne_uhrzeit(self):
+        # Die Chorfreizeit: das Ende auf 00:00 meint den ganzen letzten Tag.
+        beginn, ende = zeitraum_aus_eingabe(date(2026, 11, 6), None, date(2026, 11, 8), None)
+        self.assertEqual(ende, datetime(2026, 11, 8, 0, 0))
+        self.assertTrue(ist_ganztaegig(beginn, ende))
+
+    def test_endzeit_ohne_datum_liegt_am_selben_tag(self):
+        self.assertEqual(
+            zeitraum_aus_eingabe(date(2026, 11, 6), time(19, 0), None, time(21, 30))[1],
+            datetime(2026, 11, 6, 21, 30),
+        )
+
+    def test_mehrtaegig_mit_uhrzeiten(self):
+        self.assertEqual(
+            zeitraum_aus_eingabe(date(2026, 11, 6), time(18, 0), date(2026, 11, 8), time(14, 0))[1],
+            datetime(2026, 11, 8, 14, 0),
+        )
+
+    def test_uhrzeit_nur_an_einem_ende_abgelehnt(self):
+        with self.assertRaises(ValueError):
+            zeitraum_aus_eingabe(date(2026, 11, 6), time(18, 0), date(2026, 11, 8), None)
+        with self.assertRaises(ValueError):
+            zeitraum_aus_eingabe(date(2026, 11, 6), None, date(2026, 11, 8), time(14, 0))
+
+    def test_ende_vor_beginn_abgelehnt(self):
+        with self.assertRaises(ValueError):
+            zeitraum_aus_eingabe(date(2026, 11, 6), time(19, 0), None, time(18, 0))
 
 
 def _bannertermin(datum, datum_bis=None):

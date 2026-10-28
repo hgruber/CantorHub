@@ -38,7 +38,10 @@
           {% form_field add_form.datum "Datum" %}
           {% form_field add_form.uhrzeit "Uhrzeit" %}
         </div>
-        {% form_field add_form.datum_bis "Bis" %}
+        <div class="cal-add-row">
+          {% form_field add_form.datum_bis "Bis" %}
+          {% form_field add_form.uhrzeit_bis "Uhrzeit bis" %}
+        </div>
         {% form_field add_form.ort "Ort" %}
         {% form_field add_form.lang "Beschreibung" %}
         <div class="cal-add-checks">

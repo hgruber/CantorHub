@@ -29,6 +29,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 - Die Bearbeiten-Seite eines Liedes hat eine eigene Karte „Medien“: Neue Dateien landen dort ohne
   Rolle, die Rollen werden als Chips von Datei zu Datei gezogen oder angetippt, und Dateien lassen
   sich dort umbenennen und löschen.
+- Das Ende eines Termins hat wie der Beginn ein Datum und eine optionale Uhrzeit: Ein Termin über
+  mehrere Tage braucht keine Uhrzeit, und eine Endzeit ohne Datum gilt für den Tag des Beginns.
+  Die Terminseite zeigt bei mehrtägigen Terminen das Enddatum.
 - Der Artikel-Editor hat eine kleine Ablagefläche: Hochgeladene Dateien landen in den
   Wiki-Anhängen und erscheinen als Verweis an der Schreibmarke.
 
@@ -36,6 +39,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 - Beim Ziehen einer Datei über einen Unterordner im Dateibrowser verdeckt der Hinweis „Dateien
   ablegen“ nicht mehr, wohin die Datei geht.
+- Die Löschrückfragen (Termin, Ort, Lied, Sicherung) sind im dunklen Thema nicht mehr weiß.
 
 ### Entfernt
 
