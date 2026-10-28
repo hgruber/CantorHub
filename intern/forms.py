@@ -733,6 +733,7 @@ class TerminForm(forms.ModelForm):
         try:
             cleaned["datum"], cleaned["datum_bis"] = zeitraum_aus_eingabe(
                 datum, cleaned.get("uhrzeit"), cleaned.get("datum_bis"), cleaned.get("uhrzeit_bis"),
+                bisher=(self.instance.datum, self.instance.datum_bis) if self.instance.pk else None,
             )
         except ValueError as fehler:
             self.add_error("datum_bis", str(fehler))

@@ -491,10 +491,12 @@
     }
 
     // ── Klick und Tastatur ──
-    karte.addEventListener("click", (e) => {
-      if (busy) return;
+    karte.addEventListener("click", async (e) => {
       if (e.target.closest("a")) return; // „Öffnen“ bleibt ein Link
       if (e.target.closest(".medien-datei-eingabe")) return; // Klick ins Textfeld
+      // Ein Klick direkt nach dem Umbenennen-Feld trifft auf dessen laufende
+      // Anfrage (Blur): er wartet, statt verloren zu gehen.
+      await frei();
       const umbenennen = e.target.closest(".medien-datei-umbenennen");
       if (umbenennen) {
         umbenennenStarten(umbenennen.closest(".medien-datei"));
@@ -611,7 +613,11 @@
         vorhanden.classList.remove("is-neu");
         void vorhanden.offsetWidth; // Neustart der Animation
         vorhanden.classList.add("is-neu");
-        meldung(antwort.meldung || "Die Datei liegt bereits im Lied-Ordner.");
+        meldung(
+          antwort.overwritten
+            ? "„" + antwort.name + "“ als neue Fassung abgelegt."
+            : antwort.meldung || "Die Datei liegt bereits im Lied-Ordner."
+        );
         return;
       }
 

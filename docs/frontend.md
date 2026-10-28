@@ -597,7 +597,11 @@ of the article editor `[data-artikel-ablage]` (uploads into Wiki-Anhänge with `
 on the repertoire list every row `tr[data-lied-id]` (sends `lied_id`, reloads). The rows are armed
 only where `titel_list` sets `upload_lied_zeilen` (holders of `intern.change_lied`, printed as
 `data-upload-lied-zeilen`) and never on coarse pointers, where dragging does not exist. A zone
-reloads only when every file arrived, so an error stays visible on the card. The Medien card of a
+— the page zone included — reloads only when every file arrived and no other zone of the page is
+still uploading (`alleZonenFertig()`), so an error stays visible on the card and one row's reload
+does not cut off another row's upload. A file dropped where no zone takes it is swallowed by a
+document-level guard rather than opened by the browser, which would discard unsaved input; the
+guard steps aside for any handler that has already accepted the drop (`defaultPrevented`). The Medien card of a
 song's edit page has its own zone in `medien.js` (see below). All zones register in
 `window.internUploadZonen`, which `upload-progress.js` hooks so the progress card covers them too
 — one card, one count for the page; zones made later (rows loaded by the infinite scroll) hook
@@ -631,7 +635,8 @@ card is where roles are wired by hand. A role is held once per song and **a file
 one role** — `liedablage.rolle_setzen()` frees the file's other role. A chip is dragged from its
 file onto another (or tapped, then the target file tapped); the role the target held returns to
 the tray of free roles, and dropping a chip there or pressing its × releases it. Each row can also
-be renamed in place and deleted after a confirmation; the song owns its folder, so
+be renamed in place and deleted after a confirmation — rows whose file lies outside the song folder
+(older data, or moved in the browser) say „liegt woanders“ and only let their role go; the song owns its folder, so
 `intern.change_lied` is enough for both, inside that folder only. Every action is one POST
 (`titel_rolle`, `titel_datei`) whose answer updates the card in place — the form next to it is
 never reloaded. A rename onto a name already taken is refused (409); merging into the other file

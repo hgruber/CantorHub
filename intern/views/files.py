@@ -322,6 +322,11 @@ def upload(request):
         )
 
     if avatar:
+        # Wie mitglied_edit: unter <id><ext> wird das Bild die neue Fassung des
+        # bisherigen Profilbilds, statt es verwaist liegen zu lassen.
+        filer_file = dateiablage.systemablage(
+            filer_file, folder_id, f"{request.user.pk}{extension}"
+        )
         request.user.avatar = filer_file
         request.user._audit_user = request.user
         request.user.save(update_fields=["avatar"])

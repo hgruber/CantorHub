@@ -40,6 +40,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 - Beim Ziehen einer Datei über einen Unterordner im Dateibrowser verdeckt der Hinweis „Dateien
   ablegen“ nicht mehr, wohin die Datei geht.
 - Die Löschrückfragen (Termin, Ort, Lied, Sicherung) sind im dunklen Thema nicht mehr weiß.
+- Der iCal-Feed gibt ganztägige Termine als ganze Tage aus; ein mehrtägiger Termin verlor dort
+  bisher seinen letzten Tag.
 
 ### Entfernt
 

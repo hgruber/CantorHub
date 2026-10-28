@@ -16,11 +16,12 @@ from filer.models import File, Folder
 
 from intern import dateiablage, folders, liedablage, liedrollen
 from intern.avatar_access import darf_avatar_aendern
+from intern.folder_access import visible_folder_ids
 
 from ..app_settings import get_aufnahme_bezeichnung
 from ..filterbau_titel import TITEL
 from ..forms import LiedEditForm
-from ..models import Konzert, Lied, Termin, User
+from ..models import Konzert, Lied, LiedDatei, Termin, User
 from ..tables import RepertoireTabelle
 from .files import datei_url, visible_fields
 
@@ -329,11 +330,12 @@ def titel_list(request):
 _ROLLEN_CSS = {"notenblatt": " file-icon-btn--pdf", "notensatz": " file-icon-btn--notes"}
 
 
-def _medien(lied):
+def _medien(lied, ordner_sichtbar=True):
     """Alle Dateien des Liedes: die mit Rolle zuerst, dann die rollenlosen.
 
     Die Rollenzeile gibt die Reihenfolge vor; was im Lied-Ordner liegt, ohne
-    eine Rolle zu tragen, folgt dahinter mit seinem Dateinamen."""
+    eine Rolle zu tragen, folgt dahinter mit seinem Dateinamen — nur, wenn der
+    Betrachter den Ordner sehen darf (`ordner_sichtbar`)."""
     rollen = liedablage.rollen_von(lied)
     aufnahme_typ = get_aufnahme_bezeichnung()
     medien = []
@@ -371,7 +373,7 @@ def _medien(lied):
                 "audio": False,
                 "css": _ROLLEN_CSS.get(definition.key, ""),
             })
-    for datei in liedablage.dateien_im_ordner(lied):
+    for datei in liedablage.dateien_im_ordner(lied) if ordner_sichtbar else ():
         if datei.pk in mit_rolle:
             continue
         medien.append({
@@ -400,6 +402,9 @@ def _medien_dateien(lied):
             "dateiname": datei.original_filename or datei.name,
             "url": datei.url,
             "rollen": [],
+            # Altbestand oder im Dateibrowser verschoben: die Rolle lässt sich
+            # lösen, umbenannt und gelöscht wird nur im eigenen Ordner.
+            "im_ordner": datei.folder_id == lied.ordner_id,
         })
 
     rollen = liedablage.rollen_von(lied)
@@ -419,7 +424,7 @@ def titel_view(request, titel):
     context = {
         "seitentitel": lied.titel,
         "lied": lied,
-        "medien": _medien(lied),
+        "medien": _medien(lied, lied.ordner_id in visible_folder_ids(request.user)),
         "up": "titel_list",
         "edit": "titel_edit" if darf_aendern else None,
         "history": "titel_aenderungen" if darf_aendern else None,
@@ -500,6 +505,13 @@ def titel_rolle(request, titel):
     if rolle and rolle not in liedrollen.LABELS:
         return JsonResponse({"status": "error", "message": "Unbekannte Rolle"}, status=400)
     datei = _datei_des_lieds(lied, request.POST.get("datei"))
+    if datei is None and not rolle:
+        # Lösen geht auch dort, wo die Datei nicht (mehr) im Lied-Ordner liegt —
+        # sonst klebte eine solche Rolle für immer an ihr.
+        zeile = LiedDatei.objects.filter(
+            lied=lied, datei_id=_als_zahl(request.POST.get("datei"))
+        ).select_related("datei").first()
+        datei = zeile.datei if zeile else None
     if datei is None:
         return _fremde_datei()
     if rolle:
@@ -509,10 +521,15 @@ def titel_rolle(request, titel):
     return JsonResponse({"status": "success", "rolle": rolle, "datei": datei.pk})
 
 
+def _als_zahl(wert):
+    wert = wert or ""
+    return int(wert) if wert.isdigit() else None
+
+
 def _datei_des_lieds(lied, datei_id):
     """Die Datei, sofern sie im Ordner dieses Liedes liegt — sonst ``None``."""
-    datei_id = datei_id or ""
-    datei = File.objects.filter(pk=int(datei_id)).first() if datei_id.isdigit() else None
+    datei_id = _als_zahl(datei_id)
+    datei = File.objects.filter(pk=datei_id).first() if datei_id is not None else None
     if datei is None or lied.ordner_id is None or datei.folder_id != lied.ordner_id:
         return None
     return datei

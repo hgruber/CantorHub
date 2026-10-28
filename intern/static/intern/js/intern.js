@@ -269,6 +269,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // ── Kein Datei-Drop ins Leere ─────────────────────────────
+  // Nimmt keine Zone den Drop an, öffnete der Browser die Datei im Tab und
+  // verwürfe ungespeicherte Eingaben (Artikel-Editor, Formulare). Wer einen
+  // Drop annimmt, hat preventDefault() schon gerufen — der bleibt unberührt.
+  ["dragover", "drop"].forEach((typ) => {
+    document.addEventListener(typ, (e) => {
+      if (e.defaultPrevented || !e.dataTransfer) return;
+      if (!Array.from(e.dataTransfer.types).includes("Files")) return;
+      e.preventDefault();
+      if (typ === "dragover") e.dataTransfer.dropEffect = "none";
+    });
+  });
+
+  // Neu laden erst, wenn keine Ablage der Seite mehr hochlädt — sonst bräche
+  // das Neuladen nach Zone A den laufenden Upload von Zone B ab.
+  function alleZonenFertig() {
+    return (window.internUploadZonen || []).every(
+      (dz) => !dz.getUploadingFiles().length && !dz.getQueuedFiles().length
+    );
+  }
+
   // ── Dateien ablegen: nur Seiten mit eigenem Ziel ──────────
   // Die Inhaltsfläche nimmt ein Drop nur dort an, wo der View
   // `upload_content` setzt: Ordner mit Schreibrecht, Artikel mit Schreibrecht,
@@ -321,6 +342,10 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         });
         this.on("queuecomplete", function () {
+          // Nach einem Fehler nicht neu laden: die Karte soll ihn zeigen.
+          const alleDa = this.files.every((f) => f.status === Dropzone.SUCCESS);
+          this.files.slice().forEach((f) => this.removeFile(f));
+          const neuLaden = () => { if (alleDa && alleZonenFertig()) window.location.reload(); };
           // Artikelansicht: alle Dateien dieses Uploads in einer neuen Version
           // vorn einfügen — ein Request, sonst stritten parallele Uploads um
           // dieselbe Versionsnummer.
@@ -333,13 +358,13 @@ document.addEventListener("DOMContentLoaded", function () {
               method: "POST",
               headers: { "X-CSRFToken": getCsrfToken() },
               body: body,
-            }).then(() => window.location.reload());
+            }).then(neuLaden);
             return;
           }
           if (window.location.pathname.startsWith("/intern/ordner/")) {
             refreshFolderTable();
           } else if (ds.uploadLiedId || alsProfilbild) {
-            window.location.reload();
+            neuLaden();
           }
         });
       },
@@ -437,8 +462,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const dz = kleineAblage(tr, { lied_id: tr.dataset.liedId }, {
           klickbar: false,      // der Klick öffnet weiterhin das Lied
           fertig: (alleDa) => {
-            if (alleDa) window.location.reload();
-            else tr.classList.remove("drop-row-active");
+            if (!alleDa) tr.classList.remove("drop-row-active");
+            else if (alleZonenFertig()) window.location.reload();
           },
         });
         dz.on("addedfile", () => tr.classList.add("drop-row-active"));
@@ -457,7 +482,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ── Terminkarte „Dateien“ ─────────────────────────────────
   document.querySelectorAll("[data-termin-dateien]").forEach((flaeche) => {
     kleineAblage(flaeche, { termin_id: flaeche.dataset.terminDateien }, {
-      fertig: (alleDa) => { if (alleDa) window.location.reload(); },
+      fertig: (alleDa) => { if (alleDa && alleZonenFertig()) window.location.reload(); },
     });
   });
 

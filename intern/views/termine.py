@@ -25,6 +25,7 @@ from icalendar import Calendar, Event
 from intern import liedablage
 from intern.app_settings import get_config, get_config_int
 from intern.folder_access import visible_folder_ids
+from intern.terminzeit import ist_ganztaegig
 
 from ..aufstellung import aufstellung
 from ..forms import TerminForm
@@ -90,8 +91,15 @@ def calendar_ics(request, secret):
         ev = Event()
         ev.add("uid", f"termin-{t.pk}@cantorhub")
         ev.add("summary", t.kurz)
-        ev.add("dtstart", t.datum)
-        ev.add("dtend", t.datum_bis or t.datum + std_dauer)
+        if ist_ganztaegig(t.datum, t.datum_bis):
+            # Wie CalDAV (caldav/ical.py): ganztägig als Datum, das Ende
+            # exklusiv — der letzte Tag (datum_bis einschließlich) plus eins.
+            letzter = max(t.datum_bis.date() if t.datum_bis else t.datum.date(), t.datum.date())
+            ev.add("dtstart", t.datum.date())
+            ev.add("dtend", letzter + timedelta(days=1))
+        else:
+            ev.add("dtstart", t.datum)
+            ev.add("dtend", t.datum_bis if t.datum_bis and t.datum_bis > t.datum else t.datum + std_dauer)
         if t.lang:
             ev.add("description", t.lang)
         if t.ort:

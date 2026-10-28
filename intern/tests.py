@@ -2078,6 +2078,52 @@ class TerminZeitraumEingabeTest(SimpleTestCase):
         with self.assertRaises(ValueError):
             zeitraum_aus_eingabe(date(2026, 11, 6), time(19, 0), None, time(18, 0))
 
+    def test_unveraenderter_altbestand_bleibt_speicherbar(self):
+        # Silvester 20:00 bis Neujahr 00:00, angelegt mit dem alten Feld: wer nur
+        # die Beschreibung ändert, soll nicht an der Uhrzeitregel scheitern.
+        bisher = (datetime(2026, 12, 31, 20, 0, 13), datetime(2027, 1, 1, 0, 0))
+        self.assertEqual(
+            zeitraum_aus_eingabe(
+                date(2026, 12, 31), time(20, 0), date(2027, 1, 1), None, bisher=bisher
+            ),
+            (datetime(2026, 12, 31, 20, 0), datetime(2027, 1, 1, 0, 0)),
+        )
+
+    def test_geaenderter_altbestand_folgt_der_regel(self):
+        bisher = (datetime(2026, 12, 31, 20, 0), datetime(2027, 1, 1, 0, 0))
+        with self.assertRaises(ValueError):
+            zeitraum_aus_eingabe(
+                date(2026, 12, 31), time(19, 0), date(2027, 1, 1), None, bisher=bisher
+            )
+
+
+class IcalFeedGanztaegigTest(SimpleTestCase):
+    """Der iCal-Feed liest ganztägige Termine wie CalDAV: als Datum, Ende exklusiv."""
+
+    def _feed(self, *termine):
+        from icalendar import Calendar
+
+        from intern.views import termine as termine_mod
+
+        with mock.patch.object(termine_mod, "get_config", return_value="geheim"), \
+                mock.patch.object(termine_mod, "get_config_int", side_effect=[180, 2]), \
+                mock.patch.object(termine_mod, "Termin") as modell:
+            modell.objects.filter.return_value.select_related.return_value.order_by.return_value = list(termine)
+            antwort = termine_mod.calendar_ics(None, "geheim")
+        return [e for e in Calendar.from_ical(antwort.content).walk("VEVENT")]
+
+    def _termin(self, datum, datum_bis=None):
+        return SimpleNamespace(pk=1, kurz="T", datum=datum, datum_bis=datum_bis, lang="", ort=None)
+
+    def test_mehrtaegig_ganztaegig_bis_einschliesslich_letztem_tag(self):
+        (ev,) = self._feed(self._termin(datetime(2026, 5, 1), datetime(2026, 5, 3)))
+        self.assertEqual(ev.decoded("dtstart"), date(2026, 5, 1))
+        self.assertEqual(ev.decoded("dtend"), date(2026, 5, 4))
+
+    def test_mit_uhrzeit_bleibt_zeitgebunden(self):
+        (ev,) = self._feed(self._termin(datetime(2026, 5, 1, 19, 0), datetime(2026, 5, 1, 21, 30)))
+        self.assertEqual(ev.decoded("dtend"), datetime(2026, 5, 1, 21, 30))
+
 
 def _bannertermin(datum, datum_bis=None):
     """Stellvertreter fuer den Banner-Termin: gelesen werden nur die zwei Felder."""
@@ -7029,6 +7075,18 @@ class TitelRolleTest(SimpleTestCase):
         self.assertEqual(antwort.status_code, 400)
         self.assertFalse(setzen.called)
 
+    def test_rolle_einer_datei_ausserhalb_des_ordners_loesbar(self):
+        from intern.views import titel
+
+        fremd = SimpleNamespace(pk=3, folder_id=99)
+        with mock.patch.object(titel, "LiedDatei") as modell:
+            modell.objects.filter.return_value.select_related.return_value.first.return_value = (
+                SimpleNamespace(datei=fremd)
+            )
+            antwort, setzen, entfernen = self._aufruf({"datei": "3", "rolle": ""}, datei=fremd)
+        self.assertEqual(antwort.status_code, 200)
+        self.assertIs(entfernen.call_args.args[1], fremd)
+
     def test_datei_aus_fremdem_ordner_abgelehnt(self):
         antwort, setzen, _ = self._aufruf(
             {"datei": "3", "rolle": "text"},
@@ -7044,17 +7102,18 @@ class MedienDateienTest(SimpleTestCase):
     def test_je_datei_eine_zeile_mit_dateiname(self):
         from intern.views import titel as titel_mod
 
-        a = SimpleNamespace(pk=10, url="/a", original_filename="Lied – Original.mp3", name="")
-        x = SimpleNamespace(pk=12, url="/x", original_filename="x.pdf", name="")
+        a = SimpleNamespace(pk=10, url="/a", original_filename="Lied – Original.mp3", name="", folder_id=99)
+        x = SimpleNamespace(pk=12, url="/x", original_filename="x.pdf", name="", folder_id=5)
         # Altbestand: eine Datei mit zwei Rollen bleibt eine Zeile.
         rollen = {"original": a, "aufnahme": a}
         with mock.patch.object(titel_mod.liedablage, "rollen_von", return_value=rollen), \
                 mock.patch.object(titel_mod.liedablage, "dateien_im_ordner", return_value=[x, a]):
-            zeilen = titel_mod._medien_dateien(SimpleNamespace(pk=1))
+            zeilen = titel_mod._medien_dateien(SimpleNamespace(pk=1, ordner_id=5))
         self.assertEqual([z["datei_id"] for z in zeilen], [10, 12])
         self.assertEqual(zeilen[0]["dateiname"], "Lied – Original.mp3")
         self.assertEqual([r["key"] for r in zeilen[0]["rollen"]], ["original", "aufnahme"])
         self.assertEqual(zeilen[1]["rollen"], [])
+        self.assertEqual([z["im_ordner"] for z in zeilen], [False, True])
 
 
 class EineRolleJeDateiTest(SimpleTestCase):
@@ -7145,8 +7204,9 @@ class LiedUploadRechtTest(SimpleTestCase):
         request = RequestFactory().get("/intern/titel/1/")
         request.user = mock.Mock(is_authenticated=True)
         request.user.has_perm.return_value = False
-        with mock.patch.object(titel, "get_object_or_404", return_value=SimpleNamespace(titel="L")), \
+        with mock.patch.object(titel, "get_object_or_404", return_value=SimpleNamespace(titel="L", ordner_id=5)), \
                 mock.patch.object(titel, "_medien", return_value=[]), \
+                mock.patch.object(titel, "visible_folder_ids", return_value=set()), \
                 mock.patch.object(titel, "render") as render:
             titel.titel_view(request, 1)
         kontext = render.call_args.args[2]
@@ -7161,8 +7221,9 @@ class LiedUploadRechtTest(SimpleTestCase):
         request = RequestFactory().get("/intern/titel/1/")
         request.user = mock.Mock(is_authenticated=True)
         request.user.has_perm.return_value = True
-        with mock.patch.object(titel, "get_object_or_404", return_value=SimpleNamespace(titel="L")), \
+        with mock.patch.object(titel, "get_object_or_404", return_value=SimpleNamespace(titel="L", ordner_id=5)), \
                 mock.patch.object(titel, "_medien", return_value=[]), \
+                mock.patch.object(titel, "visible_folder_ids", return_value=set()), \
                 mock.patch.object(titel, "render") as render:
             titel.titel_view(request, 1)
         kontext = render.call_args.args[2]
@@ -7235,18 +7296,26 @@ class ProfilbildUploadTest(SimpleTestCase):
                 mock.patch.object(files, "get_thumbnailer", side_effect=Exception), \
                 mock.patch.object(
                     files.dateiablage, "hochladen", return_value=(datei, "neu", None)
-                ) as hochladen:
+                ) as hochladen, \
+                mock.patch.object(files.dateiablage, "systemablage") as systemablage:
+            systemablage.return_value = datei
             ordner.objects.filter.return_value.first.return_value = mock.Mock()
             datei_klasse.objects.filter.return_value.values_list.return_value = []
             antwort = files.upload(request)
+        self.systemablage = systemablage
         return antwort, request.user, hochladen
 
     def test_bild_wird_profilbild(self):
         antwort, nutzer, hochladen = self._hochladen()
         self.assertEqual(antwort.status_code, 200)
         self.assertTrue(hochladen.called)
-        self.assertIs(nutzer.avatar, hochladen.return_value[0])
+        self.assertIs(nutzer.avatar, self.systemablage.return_value)
         nutzer.save.assert_called_once_with(update_fields=["avatar"])
+
+    def test_wird_fassung_des_bisherigen_bilds(self):
+        # Unter <id><ext> wie in mitglied_edit — sonst bliebe das alte Bild verwaist.
+        self._hochladen()
+        self.assertEqual(self.systemablage.call_args.args[1:], (9, "7.png"))
 
     def test_kein_bild_abgelehnt(self):
         antwort, nutzer, hochladen = self._hochladen(content_type="application/pdf")
