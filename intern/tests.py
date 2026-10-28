@@ -8252,6 +8252,24 @@ class WikiMarkupTest(SimpleTestCase):
         out = self._rendern("[webcal://portal.example.org/k.ics Abonnieren]")
         self.assertIn('<a href="webcal://portal.example.org/k.ics">Abonnieren</a>', out)
 
+    def test_ordner_link_mit_namen(self):
+        for request in (True, False):  # Artikel und Forum
+            out = self._rendern("Siehe [[Ordner:18|Noten]].", request=request)
+            self.assertIn('<a href="/intern/ordner/18/">Noten</a>', out)
+
+    def test_ordner_link_ohne_namen_zeigt_ordnernamen(self):
+        from filer.models import Folder
+        with mock.patch.object(Folder.objects, "filter") as filt:
+            filt.return_value.first.return_value = SimpleNamespace(name="Noten & Texte")
+            out = self._rendern("[[Ordner:18]]")
+        filt.assert_called_once_with(pk=18)
+        self.assertIn('<a href="/intern/ordner/18/">Noten &amp; Texte</a>', out)
+
+    def test_ordner_link_ungueltig(self):
+        out = self._rendern("[[Ordner:abc|Noten]]")
+        self.assertIn('class="not_found"', out)
+        self.assertNotIn("<a ", out)
+
 
 class HilfeArtikelTest(SimpleTestCase):
     """Die mitgelieferten Hilfe-Artikel sind in sich stimmig."""

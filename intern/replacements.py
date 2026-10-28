@@ -583,6 +583,22 @@ def internal_links(match, request):
                 f'<span title="{html.escape(str(e))}" class="not_found">⚠️ Datei: {html.escape(name)}</span>'
             )
 
+    elif match.group(2) == "Ordner:":
+        # Nur der Link: ob der Ordner lesbar ist, entscheidet `folder_view`.
+        # Ohne `|Name` zeigt der Link den Ordnernamen, das kostet eine Abfrage.
+        pk = match.group(4).strip()
+        anzeige = match.group(6)
+        if pk.isdigit() and not anzeige:
+            from filer.models import Folder
+
+            ordner = Folder.objects.filter(pk=int(pk)).first()
+            anzeige = html.escape(ordner.name) if ordner else None
+        if not pk.isdigit() or not anzeige:
+            return (
+                f'<span title="Ordner nicht gefunden" class="not_found">'
+                f'⚠️ Ordner: {pk}</span>'
+            )
+        return f'<a href="/intern/ordner/{pk}/">{anzeige}</a>'
     elif match.group(2) == "Aktion:":
         return f"<div>Aktion: {match.group(4)}</div>"
     elif match.group(2) == "Geo:":

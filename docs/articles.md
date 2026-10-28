@@ -88,7 +88,9 @@ only**, same rights as `folder_delete`, and removes the reference in a new versi
 `intern/replacements.py` renders the article body: headings, `'''bold'''` / `''italic''`, lists,
 code blocks, indentation, notes, external links, and `[[Datei:name.pdf]]` file links resolved
 against filer by **name**. `internal_links` must use `filter().first()`, not `get()` — a file
-linked into several folders has several rows (see `files.md`).
+linked into several folders has several rows (see `files.md`). `[[Ordner:<id>|Name]]` links a
+folder by its id; without `|Name` it shows the folder's name (one query). It only builds the link —
+read access is decided by `folder_view`. Forum messages use the same markup, so both work there too.
 
 Every line is HTML-escaped **before** any rule runs (the XSS fix of June 2026), and three rules
 depend on that:

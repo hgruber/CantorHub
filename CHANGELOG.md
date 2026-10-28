@@ -7,6 +7,13 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- In Artikeln und Forumsnachrichten verlinkt `[[Ordner:18|Name]]` auf einen Ordner im
+  Dateibrowser; ohne `|Name` zeigt der Link den Ordnernamen.
+
 ## v1.2.0 — 2026-10-28
 
 ### Geändert

@@ -51,6 +51,10 @@ Jede Anweisung gilt für eine ganze Zeile oder steht innerhalb einer Zeile. Link
  [https://www.example.org Eine andere Internetseite]
 [[Hilfe:Termine]], [[Hilfe:Termine|Hilfe zu den Terminen]] und [https://www.example.org Eine andere Internetseite]
 
+Auf einen Ordner verlinkst Du mit seiner Nummer aus der Adresse (…/intern/ordner/18/). Ohne Text dahinter zeigt der Link den Namen des Ordners. Das geht auch im Forum.
+ [[Ordner:18]]
+ [[Ordner:18|Noten fürs Sommerkonzert]]
+
 === Tabellen ===
  ! Stimme ! Probe
  | Sopran | Raum 1
