@@ -7014,16 +7014,18 @@ class MedienTest(SimpleTestCase):
         rollen = {"original": a_mp3, "text": datei(11, "t.odt")}
         # Die rollenlose MP3 kommt ohne MIME-Typ an — die Endung entscheidet.
         dateien = [datei(12, "x.pdf", "application/pdf"), a_mp3,
-                   datei(13, "probe.mp3", "application/octet-stream")]
+                   datei(13, "probe.mp3", "application/octet-stream"),
+                   datei(14, "probe.mp4", "video/mp4")]
         with mock.patch.object(titel_mod.liedablage, "rollen_von", return_value=rollen), \
                 mock.patch.object(titel_mod.liedablage, "dateien_im_ordner", return_value=dateien), \
                 mock.patch.object(titel_mod, "_vorschau_von", return_value="/v.png"), \
                 mock.patch.object(titel_mod, "get_aufnahme_bezeichnung", return_value="Chor-Aufnahme"):
             medien = titel_mod._medien(lied)
-        self.assertEqual([m["rolle"] for m in medien], ["original", "text", "", ""])
+        self.assertEqual([m["rolle"] for m in medien], ["original", "text", "", "", ""])
         self.assertEqual(medien[2]["label"], "x.pdf")
         self.assertTrue(medien[2]["ohne_rolle"])
-        self.assertEqual([m["audio"] for m in medien], [True, False, False, True])
+        self.assertEqual([m["audio"] for m in medien], [True, False, False, True, False])
+        self.assertEqual([m["video"] for m in medien], [False, False, False, False, True])
         self.assertEqual([m["song_id"] for m in medien if m["audio"]], ["1", "d13"])
         self.assertTrue(all(m["vorschau"] == "/v.png" for m in medien))
 

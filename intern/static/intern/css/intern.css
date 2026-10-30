@@ -3025,6 +3025,14 @@ table.mitglied-table tr.stimme-group-start td {
     border-top: 1px solid var(--border);
 }
 .media-row:has(+ .medien-gruppe--ohne-rolle) { border-bottom: none; }
+.medien-video-dialog { width: min(880px, 94vw); }
+.medien-video-dialog h3 { overflow-wrap: anywhere; }
+.medien-video-dialog video {
+    display: block;
+    width: 100%;
+    max-height: 70vh;
+    border-radius: var(--r-sm);
+}
 .media-row--ohne-rolle .media-label { font-weight: 400; color: var(--t4); }
 .media-row--ohne-rolle .media-vorschau { opacity: 0.8; }
 .medien-ohne-rolle {

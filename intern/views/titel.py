@@ -365,7 +365,8 @@ def _medien(lied, ordner_sichtbar=True):
     Die Rollenzeile gibt die Reihenfolge vor; was im Lied-Ordner liegt, ohne
     eine Rolle zu tragen, folgt dahinter mit seinem Dateinamen — nur, wenn der
     Betrachter den Ordner sehen darf (`ordner_sichtbar`). Jede Datei hat eine
-    Vorschau; was der Player abspielen kann, bekommt einen Play-Knopf."""
+    Vorschau; Audio und Video bekommen einen Play-Knopf — Audio spielt im
+    Mini-Player, ein Video im Dialog der Seite (medien.js)."""
     rollen = liedablage.rollen_von(lied)
     aufnahme_typ = get_aufnahme_bezeichnung()
     medien = []
@@ -373,12 +374,14 @@ def _medien(lied, ordner_sichtbar=True):
 
     def eintrag(datei, label, **extra):
         name = datei.original_filename or datei.name or ""
+        typ = medientyp(_mime(datei), name)
         return {
             "rolle": "",
             "label": label,
             "url": datei.url,
             "vorschau": _vorschau_von(datei),
-            "audio": medientyp(_mime(datei), name) == "audio",
+            "audio": typ == "audio",
+            "video": typ == "video",
             "song_id": f"d{datei.pk}",
             "typ": label,
             "logo": False,

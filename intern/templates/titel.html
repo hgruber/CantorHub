@@ -87,6 +87,16 @@
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
                         {% if m.logo %}<img src="{% startseite_datei 'logo.svg' %}" class="audio-btn-logo" alt="{{ m.typ }}" />{% endif %}
                     </button>
+                    {% elif m.video %}
+                    {% comment %}
+                       Gleicher Knopf, eigenes Ziel: `data-video-url` hält ihn aus dem
+                       Audio-Player heraus (intern.js); medien.js öffnet den Videodialog.
+                    {% endcomment %}
+                    <button type="button" class="audio-btn audio-btn--original"
+                            data-video-url="{{ m.url }}" data-title="{{ m.label }}"
+                            aria-label="{{ m.label }} – {{ lied.titel }} abspielen">
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" class="audio-btn-icon" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
                     {% endif %}
                     <a href="{{ m.url }}" download class="file-icon-btn{{ m.css }}"
                        title="{{ m.label }} herunterladen"
@@ -132,5 +142,12 @@
         </div>
         {% endif %}
     </div>
+    <dialog id="medien-video-dialog" class="app-dialog medien-video-dialog" aria-labelledby="medien-video-titel">
+        <h3 id="medien-video-titel"></h3>
+        <video controls playsinline preload="none"></video>
+        <form method="dialog" class="dialog-actions">
+            <button type="submit" class="btn btn-secondary" autofocus>Schließen</button>
+        </form>
+    </dialog>
 </div>
 {% endblock %}

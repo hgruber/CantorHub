@@ -658,6 +658,26 @@
     if (flaeche) ablage(flaeche, liedId, { erfolg: (datei, antwort) => zeileAnhaengen(antwort) });
   }
 
+  // ── Detailseite: ein Video spielt im Dialog, mit Bild ──
+  // Der Audio-Player spielte nur den Ton; beim Schließen hält das Video an.
+  const videoDialog = document.getElementById("medien-video-dialog");
+  if (videoDialog && typeof videoDialog.showModal === "function") {
+    const video = videoDialog.querySelector("video");
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest && e.target.closest("[data-video-url]");
+      if (!btn) return;
+      videoDialog.querySelector("h3").textContent = btn.dataset.title || "";
+      video.src = btn.dataset.videoUrl;
+      videoDialog.showModal();
+      video.play().catch(() => {});
+    });
+    videoDialog.addEventListener("close", () => {
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    });
+  }
+
   const ablageSeite = document.querySelector("[data-medien-ablage='seite']");
   if (ablageSeite) {
     ablage(ablageSeite, ablageSeite.dataset.liedId, {

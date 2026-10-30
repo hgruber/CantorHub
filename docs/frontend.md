@@ -628,9 +628,12 @@ one list: roles first in register order, then — under their own heading „Wei
 Lied-Ordner“, set off by a line and muted — whatever else lies in the song folder under its file
 name (`_medien()`). Every row starts with a 32 px preview that opens the file: a thumbnail for
 images, PDFs and DOCX (the same set as the folder browser), else the type icon from
-`tables.datei_symbol()`, which the browser's type column uses too. Every audio file
-(`medientypen.medientyp()`, MIME type with the extension as fallback) gets the player's play
-button — role-less ones with the song id `d<file pk>`. The edit page shows neither. Both Medien cards carry the page's only zone, one `ablage()` in `medien.js`
+`tables.datei_symbol()`, which the browser's type column uses too. Every audio or video file
+(`medientypen.medientyp()`, MIME type with the extension as fallback) gets a play button, with or
+without a role: audio plays in the mini player (role-less files with the song id `d<file pk>`), a
+video in the page's dialog `#medien-video-dialog` (`medien.js`), so it plays with its picture —
+its button carries `data-video-url`, which keeps the player's `.audio-btn` handler away. Closing
+the dialog stops the video. The edit page shows neither. Both Medien cards carry the page's only zone, one `ablage()` in `medien.js`
 that sends `lied_id`: every file lands under its own name in the song folder, without a role —
 nothing is guessed from name or extension. The detail page reloads when all files arrived; it has
 no page-wide zone and no topbar upload icon.

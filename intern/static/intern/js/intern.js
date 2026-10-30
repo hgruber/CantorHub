@@ -1097,7 +1097,8 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     document.addEventListener("click", function (e) {
-      const btn = e.target.closest && e.target.closest(".audio-btn");
+      // Video-Knöpfe der Liedseite öffnen ihren Dialog (medien.js).
+      const btn = e.target.closest && e.target.closest(".audio-btn:not([data-video-url])");
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
