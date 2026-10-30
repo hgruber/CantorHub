@@ -24,6 +24,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 - Eine zweite PDF- oder MP3-Datei für ein Lied wurde zur neuen Fassung der vorhandenen, statt als
   eigene Datei im Lied-Ordner zu liegen.
+- Wird ein Lied umbenannt, folgen der Ordner unter Backstage/Repertoire und die Dateinamen mit
+  Rolle wieder dem neuen Titel.
 
 ## v1.2.1 — 2026-10-28
 

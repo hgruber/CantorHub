@@ -465,13 +465,15 @@ def titel_edit(request, titel):
     lied = get_object_or_404(Lied, id=titel)
 
     if request.method == "POST":
+        # Vorher merken: is_valid() schreibt die Eingaben in `lied` selbst.
+        alter_titel = lied.titel
         form = LiedEditForm(request.POST, request.FILES, instance=lied)
         if form.is_valid():
             instance = form.save(commit=False)
             instance._audit_user = request.user
             instance.save()
             form.save_m2m()
-            if instance.titel != lied.titel:
+            if instance.titel != alter_titel:
                 liedablage.titel_geaendert(instance, instance.titel)
             return redirect("titel_view", titel=titel)
     else:

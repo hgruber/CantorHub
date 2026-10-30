@@ -6987,6 +6987,29 @@ class TitelSchreibpfadTest(SimpleTestCase):
         lied.delete.assert_called_once()
         self.assertEqual(weiter.call_args.args[0], "titel_list")
 
+    def test_titel_edit_zieht_den_ordner_dem_neuen_titel_nach(self):
+        """Das Formular schreibt in dieselbe Instanz — der alte Titel muss
+        vorher gemerkt sein, sonst sieht der Vergleich nie eine Änderung."""
+        from intern.views import titel
+
+        for alt, neu, erwartet in (("Alt", "Neu", True), ("Gleich", "Gleich", False)):
+            lied = mock.Mock(titel=alt)
+
+            def is_valid(lied=lied, neu=neu):
+                lied.titel = neu  # wie construct_instance() in ModelForm._post_clean
+                return True
+
+            form = mock.Mock(is_valid=is_valid)
+            form.save.return_value = lied
+            with mock.patch.object(titel, "get_object_or_404", return_value=lied), \
+                    mock.patch.object(titel, "LiedEditForm", return_value=form), \
+                    mock.patch.object(titel.liedablage, "titel_geaendert") as geaendert, \
+                    mock.patch.object(titel, "redirect"):
+                titel.titel_edit(self._post(titel.titel_edit, {}), 1)
+            self.assertEqual(geaendert.called, erwartet, alt)
+            if erwartet:
+                self.assertEqual(geaendert.call_args.args, (lied, neu))
+
     def test_titel_delete_verweigert_bei_verwendung(self):
         from intern.views import titel
 
