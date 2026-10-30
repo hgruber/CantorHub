@@ -175,7 +175,7 @@
                 <div class="tag-list">
                     {% for lied in user.dirigent.all %}
                     {% if request.user.id == id %}
-                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><form method="post" action="{% url 'mitglied_liedrolle_entfernen' lied.id 'dirigent' %}">{% csrf_token %}<button type="submit" class="tag-entfernen" title="Als Dirigent austragen" aria-label="Bei {{ lied.titel }} als Dirigent austragen">×</button></form></span>
+                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><button type="button" class="tag-entfernen" data-austragen="{% url 'mitglied_liedrolle_entfernen' lied.id 'dirigent' %}" data-frage="Möchtest du dich bei &bdquo;{{ lied.titel }}&ldquo; als Dirigent austragen?" title="Als Dirigent austragen" aria-label="Bei {{ lied.titel }} als Dirigent austragen">×</button></span>
                     {% else %}
                     <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
                     {% endif %}
@@ -189,7 +189,7 @@
                 <div class="tag-list">
                     {% for lied in user.solist.all %}
                     {% if request.user.id == id %}
-                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><form method="post" action="{% url 'mitglied_liedrolle_entfernen' lied.id 'solist' %}">{% csrf_token %}<button type="submit" class="tag-entfernen" title="Als Solist austragen" aria-label="Bei {{ lied.titel }} als Solist austragen">×</button></form></span>
+                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><button type="button" class="tag-entfernen" data-austragen="{% url 'mitglied_liedrolle_entfernen' lied.id 'solist' %}" data-frage="Möchtest du dich bei &bdquo;{{ lied.titel }}&ldquo; als Solist austragen?" title="Als Solist austragen" aria-label="Bei {{ lied.titel }} als Solist austragen">×</button></span>
                     {% else %}
                     <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
                     {% endif %}
@@ -218,4 +218,31 @@
         </div>
     </div>
     {% if perm_hilfe %}{% include "_rechte_hilfe_dialog.html" %}{% endif %}
+    {% if request.user.id == id %}
+    {% comment %}
+       Ein Dialog fuer alle × der beiden Liedkarten: das × traegt Ziel und
+       Frage, das Skript setzt beides ein. Wieder eintragen kann nur, wer das
+       Repertoire bearbeiten darf — deshalb die Rueckfrage.
+    {% endcomment %}
+    <dialog id="austragen-dialog" class="app-dialog" aria-labelledby="austragen-titel">
+        <h3 id="austragen-titel">Austragen</h3>
+        <p data-frage></p>
+        <p class="warn">Wieder eintragen kann dich nur, wer das Repertoire bearbeiten darf.</p>
+        <form method="post" class="dialog-actions">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Ja, austragen</button>
+            <button type="button" class="btn btn-secondary" onclick="this.closest('dialog').close()">Abbrechen</button>
+        </form>
+    </dialog>
+    <script>
+        document.addEventListener("click", (e) => {
+            const knopf = e.target.closest("[data-austragen]");
+            if (!knopf) return;
+            const dialog = document.getElementById("austragen-dialog");
+            dialog.querySelector("form").action = knopf.dataset.austragen;
+            dialog.querySelector("[data-frage]").textContent = knopf.dataset.frage;
+            dialog.showModal();
+        });
+    </script>
+    {% endif %}
 {% endblock %}
