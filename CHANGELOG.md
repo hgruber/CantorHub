@@ -25,6 +25,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 - Karte „Medien“ der Liedseite: jede Datei hat eine kleine Vorschau, jede Audio- und Videodatei
   einen Play-Knopf — auch ohne Rolle; ein Video spielt mit Bild in einem Dialog. Die Dateien ohne Rolle stehen abgesetzt unter „Weitere Dateien im
   Lied-Ordner“.
+- Die Karte „Adresse“ der Mitgliedsseite zeigt keine Koordinaten mehr.
 
 ### Behoben
 

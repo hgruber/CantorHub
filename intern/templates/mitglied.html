@@ -103,12 +103,6 @@
                     <span class="value">{% if visible.plz %}{{ user.plz|default_if_none:"" }}{% endif %} {% if visible.ort %}{{ user.ort|default_if_none:"" }}{% endif %}</span>
                 </div>
                 {% endif %}
-                {% if visible.strasse and visible.plz and visible.ort and user.breite and user.laenge %}
-                <div class="detail-card-row">
-                    <span class="label">Koordinaten</span>
-                    <span class="value">Breite: {{ user.breite }}, Länge: {{ user.laenge }}</span>
-                </div>
-                {% endif %}
             </div>
             {% endif %}
             <div class="detail-card">
