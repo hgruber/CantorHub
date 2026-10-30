@@ -430,14 +430,8 @@ def titel_view(request, titel):
         "history": "titel_aenderungen" if darf_aendern else None,
         "id": titel,
     }
-    # Ablegen nur, wer das Lied ändern darf — dieselbe Frage wie die
-    # Ablagefläche der Medien-Karte in titel.html.
-    if darf_aendern:
-        context.update({
-            "upload_content": True,
-            "upload_folder_name": lied.titel,
-            "upload_lied_id": titel,
-        })
+    # Keine Seiten-Dropzone: abgelegt wird nur über die Ablagefläche der
+    # Medien-Karte (titel.html, nur mit `change_lied`).
     return render(request, "titel.html", context)
 
 
@@ -480,8 +474,7 @@ def titel_edit(request, titel):
         "konzerte_count": konzerte_count,
         "can_delete": not blocking,
         "delete_tooltip": ("Kann nicht gelöscht werden: " + ", ".join(blocking)) if blocking else "",
-        # Die Medien-Karte dieser Seite vergibt die Rollen von Hand; ihre
-        # Ablagefläche lädt ohne Rolle hoch (siehe medien.js).
+        # Die Medien-Karte dieser Seite vergibt die Rollen von Hand.
         "medien_dateien": medien_dateien,
         "rollen": [{"key": r.key, "label": r.label} for r in liedrollen.ROLLEN],
         "freie_rollen": [

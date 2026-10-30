@@ -98,7 +98,7 @@ they survive edits. Module paths are relative to `intern/`.
 | `add_lied` | `views/titel.py` · `titel_add` | `/intern/titel/add/` | add a song |
 | `change_lied` | `views/titel.py` · `titel_list` | `/intern/titel/?konzert=<id>` | the link to edit an event's running order |
 | `change_lied` | `views/titel.py` · `update_order` | `/intern/update-order/` | save the running order |
-| `change_lied` | `views/titel.py` · `titel_view` | `/intern/titel/<id>/` | edit and history links; the page drop area and the Medien card's drop area (`upload_content`, `upload_lied_id`) |
+| `change_lied` | `views/titel.py` · `titel_view` | `/intern/titel/<id>/` | edit and history links; the Medien card's drop area (`perms.intern.change_lied` in `titel.html`) |
 | `change_lied` | `views/titel.py` · `titel_list` | `/intern/titel/` | every repertoire row as a drop target (`upload_lied_zeilen`) |
 | `change_lied` | `views/titel.py` · `titel_edit` | `/intern/titel/<id>/edit/` | edit a song |
 | `change_lied` | `views/aenderungen.py` · `titel_aenderungen` | `/intern/titel/<id>/aenderungen/` | a song's change history |

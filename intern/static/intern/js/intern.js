@@ -293,7 +293,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ── Dateien ablegen: nur Seiten mit eigenem Ziel ──────────
   // Die Inhaltsfläche nimmt ein Drop nur dort an, wo der View
   // `upload_content` setzt: Ordner mit Schreibrecht, Artikel mit Schreibrecht,
-  // Forum, Lied, eigenes Profil. Alle anderen Seiten haben weder Fläche noch
+  // Forum, eigenes Profil. Alle anderen Seiten haben weder Fläche noch
   // Symbol — einen Upload ohne Ziel gibt es nicht mehr.
   const appMain = document.getElementById("app-main");
   const uploadMaxMb = appMain ? (parseInt(appMain.dataset.uploadMaxMb, 10) || 50) : 50;
@@ -331,7 +331,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         this.on("sending", function (file, xhr, formData) {
           if (ds.uploadFolderId) formData.append("folder_id", ds.uploadFolderId);
-          if (ds.uploadLiedId) formData.append("lied_id", ds.uploadLiedId);
           if (alsProfilbild) formData.append("avatar", "1");
         });
         this.on("success", function (file, response) {
@@ -363,7 +362,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }
           if (window.location.pathname.startsWith("/intern/ordner/")) {
             refreshFolderTable();
-          } else if (ds.uploadLiedId || alsProfilbild) {
+          } else if (alsProfilbild) {
             neuLaden();
           }
         });
@@ -411,7 +410,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ── Kleine Ablageflächen: ein Element, ein festes Ziel ────
-  // Repertoire-Zeile, Terminkarte, Artikel-Editor. `felder` benennen das Ziel
+  // Repertoire-Zeile, Terminkarte, Artikel-Editor (die Medien-Karten der
+  // Lieder richtet medien.js ein). `felder` benennen das Ziel
   // für upload(); `klickbar` öffnet per Klick und Enter/Leertaste die Auswahl;
   // `erfolg` läuft je Datei, `fertig` erst, wenn alle Dateien angekommen sind —
   // nach einem Fehler bleibt die Seite stehen, damit die Karte ihn zeigt.

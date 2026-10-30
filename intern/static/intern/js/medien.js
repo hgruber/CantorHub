@@ -1,21 +1,19 @@
 /* Medien-Karten der Lieder (titel.html, titel_edit.html).
 
-   Zwei Flächen, ein Skript:
+   Beide Karten haben eine Ablagefläche, die einzige ihrer Seite: jede Datei
+   landet unter ihrem Namen im Lied-Ordner, ohne Rolle (`lied_id`, siehe
+   upload()). Die Detailseite lädt danach neu, die Bearbeiten-Seite hängt die
+   Datei an die Karte an — das Formular daneben bleibt stehen.
 
-   - Detailseite: die Ablagefläche öffnet die Dateiauswahl der Seite. Der Drop
-     selbst läuft über die seitenweite Dropzone von #app-main, die die lied_id
-     mitschickt — hier ist nur der Klick für Geräte ohne Zeiger zu verdrahten.
-
-   - Bearbeiten-Seite: eine eigene Dropzone (lädt ohne Rolle in den Lied-Ordner,
-     kein Neuladen — das Formular daneben bleibt stehen) und die Rollenvergabe:
-     Chip auf eine Datei ziehen, Chip antippen und dann die Datei antippen (für
-     Touch), Datei antippen und dann eine freie Rolle antippen, × löst, Zurück-
-     ziehen in die freie Ablage löst ebenfalls. Eine Rolle hängt je Lied an
-     genau einer Datei, und eine Datei trägt höchstens eine Rolle — eine neue
-     macht ihre bisherige frei. Das entscheidet der Server, das DOM zieht nach.
-     Dazu je Datei Umbenennen (inline, Enter/Verlassen speichert, Esc bricht
-     ab) und Löschen (nach Rückfrage im <dialog> außerhalb des Formulars).
-     Nichts davon schickt das Liedformular ab, in dem die Karte steckt.
+   Die Bearbeiten-Seite vergibt dazu die Rollen: Chip auf eine Datei ziehen,
+   Chip antippen und dann die Datei antippen (für Touch), Datei antippen und
+   dann eine freie Rolle antippen, × löst, Zurückziehen in die freie Ablage
+   löst ebenfalls. Eine Rolle hängt je Lied an genau einer Datei, und eine
+   Datei trägt höchstens eine Rolle — eine neue macht ihre bisherige frei. Das
+   entscheidet der Server, das DOM zieht nach. Dazu je Datei Umbenennen
+   (inline, Enter/Verlassen speichert, Esc bricht ab) und Löschen (nach
+   Rückfrage im <dialog> außerhalb des Formulars). Nichts davon schickt das
+   Liedformular ab, in dem die Karte steckt.
 
    Das Skript arbeitet beim Laden und nicht erst in DOMContentLoaded:
    upload-progress.js hängt sich in seinem eigenen DOMContentLoaded an
@@ -35,20 +33,37 @@
     return parseInt(main && main.dataset.uploadMaxMb, 10) || 50;
   }
 
-  // ── Detailseite: Ablagefläche öffnet die Dateiauswahl der Seite ──
-  function initAblageSeite(flaeche) {
-    const eingabe = document.getElementById("uploadInput");
-    if (!eingabe) {
-      // Ohne die seitenweite Dateiauswahl gäbe es hier nichts zu öffnen.
-      flaeche.remove();
-      return;
-    }
-    const oeffnen = () => eingabe.click();
-    flaeche.addEventListener("click", oeffnen);
+  // ── Ablagefläche: ein Lied, ein Ziel ──
+  // `erfolg` läuft je Datei, `fertig(alleDa)` erst, wenn alle angekommen sind.
+  function ablage(flaeche, liedId, { erfolg, fertig } = {}) {
+    if (typeof Dropzone === "undefined") return;
+    const dz = new Dropzone(flaeche, {
+      url: "/intern/upload/",
+      paramName: "file",
+      maxFilesize: maxMb(),
+      clickable: true,
+      previewsContainer: false,
+      headers: { "X-CSRFToken": csrf() },
+      init: function () {
+        this.on("sending", (datei, xhr, formData) => formData.append("lied_id", liedId));
+        if (erfolg) this.on("success", erfolg);
+        this.on("queuecomplete", () => {
+          const alleDa = this.files.every((f) => f.status === Dropzone.SUCCESS);
+          this.files.slice().forEach((f) => this.removeFile(f));
+          if (fertig) fertig(alleDa);
+        });
+      },
+    });
+    // Die Fortschrittskarte (upload-progress.js) hängt sich an jede Zone hier.
+    window.internUploadZonen = window.internUploadZonen || [];
+    window.internUploadZonen.push(dz);
+
+    // Enter/Leertaste öffnen dieselbe Auswahl wie der Klick; Dropzone legt
+    // dafür ein verstecktes Dateifeld an.
     flaeche.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       e.preventDefault();
-      oeffnen();
+      if (dz.hiddenFileInput) dz.hiddenFileInput.click();
     });
   }
 
@@ -602,7 +617,7 @@
       speichern(ziel.dataset.dateiId, rolle, null, false);
     });
 
-    // ── Ablage: lädt ohne Rolle in den Lied-Ordner, ohne Neuladen ──
+    // ── Neue Datei aus der Ablage: an die Karte hängen, ohne Neuladen ──
     function zeileAnhaengen(antwort) {
       if (!antwort || antwort.status !== "success") return;
       const hinweis = dateien.querySelector("[data-medien-leer]");
@@ -637,57 +652,19 @@
       }
     }
 
-    function initUpload() {
-      const flaeche = karte.querySelector("[data-medien-ablage='karte']");
-      if (!flaeche || typeof Dropzone === "undefined") return;
-
-      const dz = new Dropzone(flaeche, {
-        url: karte.dataset.uploadUrl || "/intern/upload/",
-        paramName: "file",
-        maxFilesize: maxMb(),
-        clickable: true,
-        previewsContainer: false,
-        headers: { "X-CSRFToken": csrf() },
-        init: function () {
-          this.on("sending", function (datei, xhr, formData) {
-            formData.append("lied_id", liedId);
-            formData.append("ohne_rolle", "1");
-          });
-          this.on("success", function (datei, antwort) {
-            zeileAnhaengen(antwort);
-          });
-        },
-      });
-      // Die Fortschrittskarte (upload-progress.js) hängt sich an jede Zone hier.
-      window.internUploadZonen = window.internUploadZonen || [];
-      window.internUploadZonen.push(dz);
-
-      // Eigene Zone: ohne diese Bremse nähme die seitenweite Dropzone von
-      // #app-main denselben Drop noch einmal an.
-      ["dragenter", "dragover", "dragleave", "drop"].forEach((typ) => {
-        flaeche.addEventListener(typ, (e) => e.stopPropagation());
-      });
-      flaeche.addEventListener("drop", () => {
-        const main = document.getElementById("app-main");
-        if (main) main.classList.remove("drag-active");
-      });
-
-      // Enter/Leertaste öffnen dieselbe Auswahl wie der Klick; Dropzone legt
-      // dafür ein verstecktes Dateifeld an.
-      flaeche.addEventListener("keydown", (e) => {
-        if (e.key !== "Enter" && e.key !== " ") return;
-        e.preventDefault();
-        if (dz.hiddenFileInput) dz.hiddenFileInput.click();
-      });
-    }
-
     platzhalterNeu();
     freieNeu();
-    initUpload();
+    const flaeche = karte.querySelector("[data-medien-ablage='karte']");
+    if (flaeche) ablage(flaeche, liedId, { erfolg: (datei, antwort) => zeileAnhaengen(antwort) });
   }
 
   const ablageSeite = document.querySelector("[data-medien-ablage='seite']");
-  if (ablageSeite) initAblageSeite(ablageSeite);
+  if (ablageSeite) {
+    ablage(ablageSeite, ablageSeite.dataset.liedId, {
+      // Nach einem Fehler bleibt die Seite stehen, damit die Karte ihn zeigt.
+      fertig: (alleDa) => { if (alleDa) window.location.reload(); },
+    });
+  }
 
   const karte = document.getElementById("medien-karte");
   if (karte) initRollenKarte(karte);

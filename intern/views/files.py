@@ -17,12 +17,11 @@ from django.views.decorators.http import require_POST
 from easy_thumbnails.files import get_thumbnailer
 from filer.models import File, Folder
 
-from intern import dateiablage, folders, liedablage, liedrollen
+from intern import dateiablage, folders, liedablage
 from intern.avatar_access import darf_avatar_aendern
 from intern.dateiablage import ordner_pfad, verknuepfte_dateien
 from intern.folder_access import folder_access, visible_folder_ids
 
-from ..app_settings import get_config
 from ..models import DateiVersion, Lied, TabellenPreferenzen, Termin
 from ..verwendung import datei_verwendungen
 
@@ -164,23 +163,6 @@ def _get_file_extension(filename):
     return os.path.splitext(filename)[1].lower()
 
 
-def _rolle_fuer_upload(filename):
-    """Die Rolle, die eine hochgeladene Datei vorschlägt — Aufnahme am Präfix.
-
-    Die Endung entscheidet; ``.mp3`` schlägt ``original`` vor, und nur der
-    Aufnahme-Präfix macht daraus ``aufnahme``. Unbekannte Endungen ergeben
-    ``None``: Die Datei landet ohne Rolle im Lied-Ordner."""
-    rolle = liedrollen.rolle_fuer_endung(_get_file_extension(filename))
-    if rolle in ("original", "aufnahme"):
-        stem = os.path.splitext(os.path.basename(filename))[0]
-        # `Chor - Titel` und `Chor-Titel` sind historisch gleichwertig; das
-        # Präfix selbst ist konfigurierbar (FILE_PREFIX).
-        p = get_config("FILE_PREFIX", "Chor")
-        if stem.startswith(f"{p} - ") or stem.startswith(f"{p}-"):
-            return "aufnahme"
-    return rolle
-
-
 @login_required
 @require_POST
 def upload(request):
@@ -202,11 +184,11 @@ def upload(request):
     preferred_folder_id = request.POST.get("folder_id")
     extension = _get_file_extension(file.name)
 
-    # Repertoire-Upload: Der Titel kommt von der Liedseite, einer Zeile der
-    # Liederliste oder der Medien-Karte (lied_id). Die Datei gehört dann in den
-    # Lied-Ordner; die Endung schlägt die Rolle vor. Unbekannte Endungen
-    # bleiben erlaubt — sie landen ohne Rolle im Ordner. Ohne das Recht wird
-    # abgelehnt, statt die Datei woanders abzulegen.
+    # Repertoire-Upload: Der Titel kommt von einer Zeile der Liederliste oder
+    # der Medien-Karte (lied_id). Jede Datei landet unter ihrem Namen im
+    # Lied-Ordner, ohne Rolle — die vergibt die Medien-Karte der
+    # Bearbeiten-Seite von Hand. Ohne das Recht wird abgelehnt, statt die
+    # Datei woanders abzulegen.
     lied = None
     lied_id = request.POST.get("lied_id", "")
     if lied_id:
@@ -217,10 +199,6 @@ def upload(request):
                 {"status": "error", "message": "Keine Berechtigung für dieses Lied"},
                 status=403,
             )
-    rolle = _rolle_fuer_upload(file.name) if lied is not None else None
-    # Die Medien-Karte der Bearbeiten-Seite vergibt die Rolle von Hand.
-    if request.POST.get("ohne_rolle"):
-        rolle = None
 
     # Eigenes Profilbild: die Datei landet in Profilbilder und wird sofort
     # das Profilbild des angemeldeten Mitglieds.
@@ -293,8 +271,6 @@ def upload(request):
     # wird eine neue Fassung.
     if termin is not None:
         name = f"{termin.datum:%Y-%m-%d} {file.name}"
-    elif lied is not None and rolle:
-        name = liedablage.dateiname(lied.titel, rolle, extension)
     # Feld-Dropzone und Profilbild: die Datei darf keine fremde gleichnamige
     # zu ihrer Fassung machen — sie nimmt den ersten freien Namen.
     if request.POST.get("feld") or avatar:
@@ -332,8 +308,6 @@ def upload(request):
         request.user.save(update_fields=["avatar"])
     elif termin is not None:
         termin.dateien.add(filer_file)
-    elif lied is not None and rolle:
-        liedablage.rolle_setzen(lied, rolle, filer_file, request.user)
 
     # Return response
     url = (request.META.get("HTTP_ORIGIN") or "") + filer_file.url

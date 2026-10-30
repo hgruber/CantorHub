@@ -3025,8 +3025,7 @@ table.mitglied-table tr.stimme-group-start td {
     color: var(--t4);
 }
 
-/* Die Ablagefläche. Auf der Detailseite ist sie ein Knopf (öffnet die
-   Dateiauswahl der Seite), auf der Bearbeiten-Seite die eigene Dropzone.
+/* Die Ablagefläche: eine eigene Dropzone, per Klick auch die Dateiauswahl.
    Der Drag-Hinweis erscheint nur, wo es einen Zeiger gibt. */
 .medien-ablage {
     display: flex;
@@ -3060,12 +3059,6 @@ table.mitglied-table tr.stimme-group-start td {
     outline: none;
 }
 .medien-ablage:focus-visible { box-shadow: 0 0 0 3px var(--brand-ring); }
-/* Seiten-Drag: dieselbe Hervorhebung, ohne dass die Fläche selbst das Ziel ist. */
-#app-main.drag-active .medien-ablage {
-    border-color: var(--brand);
-    background: var(--brand-light);
-    color: var(--brand-text);
-}
 .medien-ablage-icon { flex: 0 0 auto; width: 18px; height: 18px; }
 .medien-ablage-text { min-width: 0; }
 .medien-ablage-maus { display: none; }

@@ -6467,30 +6467,17 @@ class LiedrollenTest(SimpleTestCase):
 
         self.assertEqual(len(liedrollen.SCHLUESSEL), len(set(liedrollen.SCHLUESSEL)))
 
-    def test_jede_rolle_hat_label_und_endungen(self):
+    def test_jede_rolle_hat_label(self):
         from intern import liedrollen
 
         for rolle in liedrollen.ROLLEN:
             self.assertTrue(rolle.key)
             self.assertTrue(rolle.label)
-            self.assertTrue(rolle.endungen)
-            self.assertTrue(all(e.startswith(".") and e == e.lower() for e in rolle.endungen))
 
     def test_labels_decken_das_register(self):
         from intern import liedrollen
 
         self.assertEqual(set(liedrollen.LABELS), set(liedrollen.SCHLUESSEL))
-
-    def test_rolle_fuer_endung(self):
-        from intern import liedrollen
-
-        self.assertEqual(liedrollen.rolle_fuer_endung(".pdf"), "notenblatt")
-        self.assertEqual(liedrollen.rolle_fuer_endung("PDF"), "notenblatt")
-        self.assertEqual(liedrollen.rolle_fuer_endung(".mscz"), "notensatz")
-        self.assertEqual(liedrollen.rolle_fuer_endung(".mp3"), "original")
-        self.assertEqual(liedrollen.rolle_fuer_endung(".odt"), "text")
-        self.assertIsNone(liedrollen.rolle_fuer_endung(".docx"))
-        self.assertIsNone(liedrollen.rolle_fuer_endung(""))
 
     def test_label_kennt_die_beschriftungen(self):
         from intern import liedrollen
@@ -7196,39 +7183,53 @@ class TitelDateiTest(SimpleTestCase):
 class LiedUploadRechtTest(SimpleTestCase):
     """Ablegen auf einem Lied nur mit `change_lied` — Seite wie Server."""
 
-    def test_liedseite_ohne_recht_ohne_ablage(self):
+    def test_liedseite_ohne_seitenzone(self):
+        """Die Liedseite hat eine Ablage: die der Medien-Karte, nicht die ganze Seite."""
         from django.test import RequestFactory
 
         from intern.views import titel
 
-        request = RequestFactory().get("/intern/titel/1/")
-        request.user = mock.Mock(is_authenticated=True)
-        request.user.has_perm.return_value = False
-        with mock.patch.object(titel, "get_object_or_404", return_value=SimpleNamespace(titel="L", ordner_id=5)), \
-                mock.patch.object(titel, "_medien", return_value=[]), \
-                mock.patch.object(titel, "visible_folder_ids", return_value=set()), \
-                mock.patch.object(titel, "render") as render:
-            titel.titel_view(request, 1)
-        kontext = render.call_args.args[2]
-        self.assertNotIn("upload_content", kontext)
-        self.assertNotIn("upload_lied_id", kontext)
+        for recht in (False, True):
+            request = RequestFactory().get("/intern/titel/1/")
+            request.user = mock.Mock(is_authenticated=True)
+            request.user.has_perm.return_value = recht
+            with mock.patch.object(titel, "get_object_or_404", return_value=SimpleNamespace(titel="L", ordner_id=5)), \
+                    mock.patch.object(titel, "_medien", return_value=[]), \
+                    mock.patch.object(titel, "visible_folder_ids", return_value=set()), \
+                    mock.patch.object(titel, "render") as render:
+                titel.titel_view(request, 1)
+            self.assertNotIn("upload_content", render.call_args.args[2])
 
-    def test_liedseite_mit_recht_mit_ablage(self):
+    def test_upload_mit_lied_legt_jede_datei_unter_ihrem_namen_ab(self):
+        """Keine Rolle aus der Endung, kein Umbenennen: die Datei landet, wie
+        sie heißt, im Lied-Ordner."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
         from django.test import RequestFactory
 
-        from intern.views import titel
+        from intern.views import files
 
-        request = RequestFactory().get("/intern/titel/1/")
-        request.user = mock.Mock(is_authenticated=True)
-        request.user.has_perm.return_value = True
-        with mock.patch.object(titel, "get_object_or_404", return_value=SimpleNamespace(titel="L", ordner_id=5)), \
-                mock.patch.object(titel, "_medien", return_value=[]), \
-                mock.patch.object(titel, "visible_folder_ids", return_value=set()), \
-                mock.patch.object(titel, "render") as render:
-            titel.titel_view(request, 1)
-        kontext = render.call_args.args[2]
-        self.assertTrue(kontext["upload_content"])
-        self.assertEqual(kontext["upload_lied_id"], 1)
+        for dateiname in ("Noten.pdf", "Chor - Lied.mp3", "Probe.docx", "Alles.zip"):
+            request = RequestFactory().post("/intern/upload/", {
+                "file": SimpleUploadedFile(dateiname, b"x"),
+                "lied_id": "5",
+            })
+            request.user = mock.Mock(is_authenticated=True)
+            request.user.has_perm.return_value = True
+            ablage = SimpleNamespace(id=1, original_filename=dateiname, url="/m/x", file=SimpleNamespace(name="x"))
+            with mock.patch("intern.app_settings.get_config_int", return_value=50), \
+                    mock.patch.object(files, "Lied") as lied_modell, \
+                    mock.patch.object(files.liedablage, "ordner_fuer", return_value=9), \
+                    mock.patch.object(files.liedablage, "rolle_setzen") as rolle_setzen, \
+                    mock.patch.object(files, "Folder"), \
+                    mock.patch("intern.folder_access.folder_access", return_value=(True, True, True)), \
+                    mock.patch.object(files.dateiablage, "gleichnamige", return_value=None), \
+                    mock.patch.object(files.dateiablage, "hochladen", return_value=(ablage, "neu", None)) as hochladen, \
+                    mock.patch.object(files, "get_thumbnailer", side_effect=Exception):
+                lied_modell.objects.filter.return_value.first.return_value = SimpleNamespace(pk=5, titel="Lied")
+                antwort = files.upload(request)
+            self.assertEqual(antwort.status_code, 200, dateiname)
+            self.assertEqual(hochladen.call_args.args[1:3], (9, dateiname))
+            self.assertFalse(rolle_setzen.called)
 
     def test_upload_mit_lied_ohne_recht_abgelehnt(self):
         from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7360,7 +7361,7 @@ class WurzelUploadTest(SimpleTestCase):
 
 
 class UploadZielTest(SimpleTestCase):
-    """Eine Seiten-Dropzone gibt es nur auf den fünf Seiten, die ein Ziel nennen.
+    """Eine Seiten-Dropzone gibt es nur auf den vier Seiten, die ein Ziel nennen.
 
     Das ist die Invariante hinter „kein Upload ohne Ziel": Wer `upload_content`
     setzt, bekommt Fläche und Symbol; alle anderen Seiten keins. Ein neuer
@@ -7371,7 +7372,6 @@ class UploadZielTest(SimpleTestCase):
         "intern.views.folders.folder_view",
         "intern.views.forums.forum_view",
         "intern.views.mitglieder.mitglied_view",
-        "intern.views.titel.titel_view",
     }
 
     def test_nur_die_erlaubten_seiten_setzen_upload_content(self):

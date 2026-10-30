@@ -583,10 +583,9 @@ access and the root rule on its own, and refuses a `lied_id` without `intern.cha
 403 rather than filing the file elsewhere.
 
 The same view context names the target: `upload_folder_id` (empty means the root, which only the
-root page may send), `upload_folder_name` for the icon's tooltip and the upload card, `upload_lied_id`
-for a song, `upload_artikel` for the article version bump, and `upload_avatar` on one's own
+root page may send), `upload_folder_name` for the icon's tooltip and the upload card, `upload_artikel` for the article version bump, and `upload_avatar` on one's own
 profile, where a dropped image is uploaded only after the dialog „Als Profilbild setzen?“ and then
-becomes the member's avatar. Uploads on a song's page and on an article's page reload the page
+becomes the member's avatar. Uploads on an article's page and one's own profile reload the page
 when the queue is done; the folder browser refreshes its table instead, and a forum upload leaves
 the message box in place, its link appended to the text.
 
@@ -601,8 +600,8 @@ only where `titel_list` sets `upload_lied_zeilen` (holders of `intern.change_lie
 still uploading (`alleZonenFertig()`), so an error stays visible on the card and one row's reload
 does not cut off another row's upload. A file dropped where no zone takes it is swallowed by a
 document-level guard rather than opened by the browser, which would discard unsaved input; the
-guard steps aside for any handler that has already accepted the drop (`defaultPrevented`). The Medien card of a
-song's edit page has its own zone in `medien.js` (see below). All zones register in
+guard steps aside for any handler that has already accepted the drop (`defaultPrevented`). The Medien cards of a
+song's page and edit page have their own zone in `medien.js` (see below). All zones register in
 `window.internUploadZonen`, which `upload-progress.js` hooks so the progress card covers them too
 — one card, one count for the page; zones made later (rows loaded by the infinite scroll) hook
 themselves through `window.uploadKarteHaengen`.
@@ -626,12 +625,13 @@ first instead of hitting `maxFiles: 1`.
 
 A song's files hang on role rows (`LiedDatei`), not on columns, so the detail page shows them as
 one list: roles first in register order, then whatever else lies in the song folder under its file
-name (`_medien()`). Its card is no zone of its own; its drop area opens the page's file picker and
-a drop anywhere on the song uploads into its folder, the extension suggesting the role.
+name (`_medien()`). Both Medien cards carry the page's only zone, one `ablage()` in `medien.js`
+that sends `lied_id`: every file lands under its own name in the song folder, without a role —
+nothing is guessed from name or extension. The detail page reloads when all files arrived; it has
+no page-wide zone and no topbar upload icon.
 
-The edit page lists one row per file with its real file name (`_medien_dateien()`), and its card is
-the page's only zone: it uploads with `ohne_rolle=1`, so a new file starts without a role and the
-card is where roles are wired by hand. A role is held once per song and **a file carries at most
+The edit page lists one row per file with its real file name (`_medien_dateien()`); its zone
+appends a new file as a row without reloading, and the card is where roles are wired by hand. A role is held once per song and **a file carries at most
 one role** — `liedablage.rolle_setzen()` frees the file's other role. A chip is dragged from its
 file onto another (or tapped, then the target file tapped); the role the target held returns to
 the tray of free roles, and dropping a chip there or pressing its × releases it. Each row can also

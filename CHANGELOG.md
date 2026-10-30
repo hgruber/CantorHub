@@ -7,6 +7,21 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Geändert
+
+- Eine Datei, die für ein Lied abgelegt wird, landet unter ihrem eigenen Namen und ohne Rolle im
+  Lied-Ordner — das Portal erkennt keine Rolle mehr an Endung oder Namenspräfix und benennt nichts
+  um. Die Rollen vergibt die Karte „Medien“ der Bearbeiten-Seite.
+- Die Liedseite hat nur noch eine Ablagefläche, die in der Karte „Medien“; die ganze Seite und das
+  Upload-Symbol nehmen dort keine Dateien mehr an.
+
+### Behoben
+
+- Eine zweite PDF- oder MP3-Datei für ein Lied wurde zur neuen Fassung der vorhandenen, statt als
+  eigene Datei im Lied-Ordner zu liegen.
+
 ## v1.2.1 — 2026-10-28
 
 ### Hinzugefügt

@@ -1,9 +1,10 @@
-"""Der einzige Weg in einen Lied-Ordner.
+"""Der Lied-Ordner und die Rollen seiner Dateien.
 
 Ein Lied hält seine Dateien in einem eigenen filer-Ordner unter
-``Backstage/Repertoire/<Titel>/``. Wie ``dateiablage.py`` für Ordner ist
-dieses Modul die einzige Stelle, die dort ablegt; welche Rolle eine Datei hat,
-steht in ``intern/liedrollen.py``.
+``Backstage/Repertoire/<Titel>/``. Dieses Modul legt ihn an (``ordner_fuer``),
+vergibt die Rollen und zieht Namen dem Titel nach; abgelegt wird wie in jeden
+Ordner über ``dateiablage.py``. Welche Rollen es gibt, steht in
+``intern/liedrollen.py``.
 """
 
 import os
@@ -135,18 +136,6 @@ def _zeilen_loeschen(zeilen, nutzer):
         zeile._audit_user = nutzer
         _log_change(zeile, nutzer, "delete")
         zeile.delete()
-
-
-def ablegen(lied, rolle, datei, name=None, nutzer=None):
-    """`datei` in den Lied-Ordner legen und als `rolle` eintragen.
-
-    Der Name ist reine Kosmetik; liegt dort schon eine Datei dieses Namens,
-    wird die neue ihre vordere Fassung (siehe ``dateiablage.systemablage``)."""
-    ordner_id = ordner_fuer(lied)
-    name = name or dateiname(lied.titel, rolle, endung_von(datei))
-    zeile = dateiablage.systemablage(datei, ordner_id, name)
-    rolle_setzen(lied, rolle, zeile, nutzer)
-    return zeile
 
 
 def titel_geaendert(lied, neuer_titel):

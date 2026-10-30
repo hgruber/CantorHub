@@ -97,8 +97,8 @@ Three underscore-prefixed modules hold what the view modules share:
 Cross-cutting modules: `models.py`, `forms.py`, `signals.py` (audit log, activation mails, filer
 indexing, MUC room assignment), `app_settings.py` (runtime config), `folders.py` (the standard
 folders under Backstage), `dateiablage.py` (the only way into a folder: file identity, the
-version chain and its merging, one name per folder — see `docs/files.md`), `liedablage.py` (the
-only way into a song's own folder: `ordner_fuer`, `ablegen`, `rolle_setzen`, `titel_geaendert`),
+version chain and its merging, one name per folder — see `docs/files.md`), `liedablage.py` (a
+song's own folder and its roles: `ordner_fuer`, `rolle_setzen`, `titel_geaendert`),
 `liedrollen.py` (the one source of the song-file roles,
 like `zusage.py`),
 `folder_access.py` / `avatar_access.py` (the two file access axes), `medientypen.py` (which files a browser can play,
@@ -315,14 +315,15 @@ reasoning where it matters.
 - **No upload without a target.** A page takes a drop over its whole content area only when its
   view sets `upload_content`, and `base.html` renders the topbar icon under the same flag — the
   folder browser with write access (the root only for `intern.manage_folder_permissions`, the one
-  zone that files at the top level), an article with write access, a forum, a song with
-  `intern.change_lied`, one's own profile. Every other zone names its own target (the event card,
-  the article editor, the Medien card of a song's edit page, a repertoire row — the rows only with
-  `intern.change_lied`). Where a page zone and a small zone meet, the overlay steps back over the
+  zone that files at the top level), an article with write access, a forum, one's own profile. Every other zone names its own target
+  (the event card, the article editor, the Medien card of a song's page and edit page, a
+  repertoire row — the song zones only with `intern.change_lied`). A zone files every type under
+  its own name: nothing is sorted by name or extension, and a ZIP is unpacked only through the
+  folder browser's context menu. Where a page zone and a small zone meet, the overlay steps back over the
   small one. See „Uploads" in `docs/frontend.md`.
 - **A song owns its folder.** `Lied.ordner` is the truth, not the folder name; `LiedDatei` gives
-  each file its role — one role per file, one file per role — and `intern/liedablage.py` is the
-  only way in. Uploading for a song needs `intern.change_lied` (plus the folder's write right);
+  each file its role — one role per file, one file per role, always set by hand — and
+  `intern/liedablage.py` owns folder and roles. Uploading for a song needs `intern.change_lied` (plus the folder's write right);
   renaming and deleting in its Medien card need `intern.change_lied` alone. The folder is protected in
   the browser (`_enthaelt_liedordner`) and follows the title (`titel_geaendert`). Migration `0006`
   dropped the four legacy `Lied` file columns; the rows are the only source of a role now, and
