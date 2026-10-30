@@ -164,13 +164,21 @@
                sie zieht im Raster auch die Karte daneben — Personalien stand
                dann mit vier Zeilen in einem 825 px hohen Kasten. Voll breit
                fuellt die Liste die Zeile und niemand wird gestreckt.
+
+               Im eigenen Profil traegt jedes Lied ein ×: austragen darf sich jeder
+               selbst, eintragen nur, wer das Repertoire bearbeiten darf (auf der
+               Bearbeiten-Seite des Lieds).
             {% endcomment %}
             {% if user.dirigent.exists %}
             <div class="detail-card detail-card-wide">
                 <h3>Dirigent bei <span class="badge">{{ user.dirigent.count }}</span></h3>
                 <div class="tag-list">
                     {% for lied in user.dirigent.all %}
+                    {% if request.user.id == id %}
+                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><form method="post" action="{% url 'mitglied_liedrolle_entfernen' lied.id 'dirigent' %}">{% csrf_token %}<button type="submit" class="tag-entfernen" title="Als Dirigent austragen" aria-label="Bei {{ lied.titel }} als Dirigent austragen">×</button></form></span>
+                    {% else %}
                     <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -180,7 +188,11 @@
                 <h3>Solist bei <span class="badge">{{ user.solist.count }}</span></h3>
                 <div class="tag-list">
                     {% for lied in user.solist.all %}
+                    {% if request.user.id == id %}
+                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><form method="post" action="{% url 'mitglied_liedrolle_entfernen' lied.id 'solist' %}">{% csrf_token %}<button type="submit" class="tag-entfernen" title="Als Solist austragen" aria-label="Bei {{ lied.titel }} als Solist austragen">×</button></form></span>
+                    {% else %}
                     <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>

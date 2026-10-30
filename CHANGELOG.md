@@ -9,6 +9,11 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Im eigenen Profil kann sich jedes Mitglied über das × an einem Lied selbst als Solist oder
+  Dirigent austragen. Eintragen bleibt der Bearbeiten-Seite des Lieds vorbehalten.
+
 ### Geändert
 
 - Eine Datei, die für ein Lied abgelegt wird, landet unter ihrem eigenen Namen und ohne Rolle im

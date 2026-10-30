@@ -8,7 +8,7 @@ from django.contrib.auth.models import Group
 from django.core.mail import get_connection
 from django.db import connections
 from django.db.models import Count, F, OuterRef
-from django.http import HttpResponseForbidden, JsonResponse, QueryDict
+from django.http import Http404, HttpResponseForbidden, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -32,7 +32,7 @@ from intern.mail import neu_verbinden, send_config_mail, versende_serie
 from ..forms import MitgliedAddForm, MitgliedInviteForm, UserEditForm
 from ..mitglied_felder import PRIVACY_FIELDS
 from ..mitgliedschaft import beende, ist_mitglied, mitgliedschafts_aktion, nimm_auf
-from ..models import NAMENSVERWEIS, Abstimmung, Artikel, Mitteilung, Termin, User, Zusage
+from ..models import NAMENSVERWEIS, Abstimmung, Artikel, Lied, Mitteilung, Termin, User, Zusage
 from ..tables import MitgliederTabelle
 from .auth import make_invite_token
 from .files import _get_file_extension, besitz_uebertragen
@@ -58,6 +58,7 @@ __all__ = [
     "mitglied_emails",
     "mitglied_view",
     "mitglied_edit",
+    "mitglied_liedrolle_entfernen",
     "mitglied_add",
     "mitglied_invite",
     "mitglied_delete",
@@ -186,6 +187,21 @@ def mitglied_view(request, id):
             "upload_avatar": True,
         })
     return render(request, "mitglied.html", context)
+
+
+@login_required
+@require_POST
+def mitglied_liedrolle_entfernen(request, lied_id, rolle):
+    """Nimmt die eigene Person als Solist oder Dirigent von einem Lied.
+
+    Austragen darf sich jeder selbst; eintragen geht nur über die
+    Bearbeiten-Seite des Lieds und braucht ``intern.change_lied``.
+    """
+    if rolle not in ("solist", "dirigent"):
+        raise Http404
+    lied = get_object_or_404(Lied, id=lied_id)
+    getattr(lied, rolle).remove(request.user)
+    return redirect("mitglied_view", id=request.user.id)
 
 
 @login_required

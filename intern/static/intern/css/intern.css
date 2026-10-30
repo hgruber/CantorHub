@@ -2977,6 +2977,20 @@ table.mitglied-table tr.stimme-group-start td {
     background: var(--brand-light);
     color: var(--brand);
 }
+/* Tag mit ×, z. B. „Solist bei“ im eigenen Profil */
+.tag-loesbar { display: inline-flex; align-items: center; gap: 4px; padding-right: 6px; }
+.tag-loesbar a { color: inherit; }
+.tag-loesbar form { margin: 0; display: inline-flex; }
+.tag-entfernen {
+    background: none;
+    border: 0;
+    padding: 0 2px;
+    font-size: 1em;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.tag-entfernen:hover { color: var(--t2); }
 
 /* Media rows */
 .media-row {
