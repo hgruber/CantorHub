@@ -230,24 +230,44 @@
         </form>
     </dialog>
     {% comment %}
-       Einmal bestaetigt, fragt die Seite im selben Tab nicht wieder: jedes ×
-       laedt die Seite neu, bei vielen Liedern waere die Rueckfrage sonst bei
-       jedem einzelnen faellig. Der Schluessel gilt je Mitgliedsseite.
+       Die Rueckfrage kommt einmal je Seitenaufruf. Damit das bei vielen Liedern
+       traegt, laedt ein × die Seite nicht neu: es schickt den POST im
+       Hintergrund und nimmt das Lied aus der Karte. Landet die Antwort nicht
+       wieder auf dieser Seite (abgelaufene Anmeldung, Fehler), laedt die
+       Seite neu und zeigt den echten Stand.
     {% endcomment %}
     <script>
         (() => {
             const dialog = document.getElementById("austragen-dialog");
             const form = dialog.querySelector("form");
-            const schluessel = "austragen-bestaetigt-{{ id }}";
-            form.addEventListener("submit", () => sessionStorage.setItem(schluessel, "1"));
+            let bestaetigt = false;
+            let offen = null;
+            async function austragen(knopf) {
+                const antwort = await fetch(knopf.dataset.austragen, { method: "POST", body: new FormData(form) });
+                if (!antwort.ok || new URL(antwort.url).pathname !== location.pathname) {
+                    location.reload();
+                    return;
+                }
+                const karte = knopf.closest(".detail-card");
+                knopf.closest(".tag").remove();
+                const rest = karte.querySelectorAll(".tag").length;
+                if (rest) karte.querySelector(".badge").textContent = rest;
+                else karte.remove();
+            }
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+                bestaetigt = true;
+                dialog.close();
+                austragen(offen);
+            });
             document.addEventListener("click", (e) => {
                 const knopf = e.target.closest("[data-austragen]");
                 if (!knopf) return;
-                form.action = knopf.dataset.austragen;
-                if (sessionStorage.getItem(schluessel)) {
-                    form.submit();
+                if (bestaetigt) {
+                    austragen(knopf);
                     return;
                 }
+                offen = knopf;
                 dialog.querySelector("[data-frage]").textContent = knopf.dataset.frage;
                 dialog.showModal();
             });
