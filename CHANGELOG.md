@@ -11,9 +11,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Hinzugefügt
 
-- Im eigenen Profil kann sich jedes Mitglied über das × an einem Lied nach einer Rückfrage selbst
-  als Solist oder Dirigent austragen; wer das Repertoire bearbeiten darf, kann das auch bei anderen
-  Mitgliedern. Eintragen bleibt der Bearbeiten-Seite des Lieds vorbehalten.
+- Im eigenen Profil kann sich jedes Mitglied über das × an einem Lied selbst als Solist oder
+  Dirigent austragen, wer das Repertoire bearbeiten darf auch andere Mitglieder. Die Rückfrage kommt
+  einmal je Mitgliedsseite und Tab. Eintragen bleibt der Bearbeiten-Seite des Lieds vorbehalten.
 
 ### Geändert
 
