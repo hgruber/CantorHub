@@ -105,6 +105,7 @@ they survive edits. Module paths are relative to `intern/`.
 | `change_lied` | `views/files.py` · `upload` | `/intern/upload/` | file an upload to a song (`lied_id`: a drop on the song page or on a repertoire row) |
 | `change_lied` | `views/titel.py` · `titel_rolle` | `/intern/titel/<id>/rolle/` | assign, move or release a role in the Medien card of the edit page |
 | `change_lied` | `views/titel.py` · `titel_datei` | `/intern/titel/<id>/datei/` | rename or delete a file of the song's own folder in the Medien card — no folder right needed (see below) |
+| `change_lied` | `views/mitglieder.py` · `mitglied_view`, `mitglied_liedrolle_entfernen` | `/intern/mitglied/<id>/lied/<lied_id>/<rolle>/entfernen/` | remove another member's soloist or conductor entry (the × in „Dirigent bei“ / „Solist bei“); one's own needs no right |
 | `delete_lied` | `views/titel.py` · `titel_delete` | `/intern/titel/<id>/delete/` | delete a song |
 
 The repertoire's filter builder has no gate: the right sits on the field (`Feld.recht`), and no
@@ -168,7 +169,7 @@ missing from the page. The Django default rights that are not listed (e.g. `add_
 | `FolderPermission` (per folder and group) | `/intern/ordner/<pk>/berechtigungen/` | read, write and delete in that folder and, per axis without an own rule, in its subfolders; with no rule at all read and write are open, delete closed — see `docs/files.md` |
 | Standard folders (`folders.PFADE`) | code only | nobody renames, moves or deletes them in the portal, superusers included — nor a folder holding one (`views/folders.py` · `_enthaelt_standardordner`); `/admin/` still can — see `docs/files.md` |
 | Song folders (`Lied.ordner`) | code only (`intern/liedablage.py`) | nobody renames, moves or deletes them in the portal either (`_enthaelt_liedordner`); they follow the song title and go with the song — see `docs/files.md`, „The song files“. For the files *inside*, renaming and deleting in the song's Medien card (`views/titel.py` · `titel_datei`) need `intern.change_lied` and no folder right; uploading for a song needs `intern.change_lied` plus the folder's write right |
-| Soloist and conductor entries (`Lied.solist`, `Lied.dirigent`) | code only (`views/mitglieder.py` · `mitglied_liedrolle_entfernen`) | everyone may remove their own entry on their own profile (the × in „Dirigent bei“ / „Solist bei“), no right needed; adding one is part of editing the song and needs `intern.change_lied` (`titel_edit`) |
+| Soloist and conductor entries (`Lied.solist`, `Lied.dirigent`) | code only (`views/mitglieder.py` · `mitglied_liedrolle_entfernen`) | everyone may remove their own entry on their own profile (the × in „Dirigent bei“ / „Solist bei“), no right needed; removing another member's entry and adding one (`titel_edit`) need `intern.change_lied` |
 | `ForumPermission` (per forum and group) | `/intern/forum/<id>/zugriff/` | who may read a forum and its MUC room; no rows means open — see `docs/forum.md` |
 | `ArtikelPermission` (per article and group) | `/intern/artikel/<name>/berechtigungen/` | who may read and edit an article — see `docs/articles.md` |
 | Tags „Mitglied" and „DSGVO" | admission, `/intern/aufgaben/` | the privacy gate for access without membership (`middleware.py`) — see `docs/members.md` |

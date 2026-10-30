@@ -165,17 +165,17 @@
                dann mit vier Zeilen in einem 825 px hohen Kasten. Voll breit
                fuellt die Liste die Zeile und niemand wird gestreckt.
 
-               Im eigenen Profil traegt jedes Lied ein ×: austragen darf sich jeder
-               selbst, eintragen nur, wer das Repertoire bearbeiten darf (auf der
-               Bearbeiten-Seite des Lieds).
+               Mit darf_austragen traegt jedes Lied ein ×: austragen darf sich jeder
+               selbst, andere austragen und eintragen (auf der Bearbeiten-Seite des
+               Lieds) nur, wer das Repertoire bearbeiten darf.
             {% endcomment %}
             {% if user.dirigent.exists %}
             <div class="detail-card detail-card-wide">
                 <h3>Dirigent bei <span class="badge">{{ user.dirigent.count }}</span></h3>
                 <div class="tag-list">
                     {% for lied in user.dirigent.all %}
-                    {% if request.user.id == id %}
-                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><button type="button" class="tag-entfernen" data-austragen="{% url 'mitglied_liedrolle_entfernen' lied.id 'dirigent' %}" data-frage="Möchtest du dich bei &bdquo;{{ lied.titel }}&ldquo; als Dirigent austragen?" title="Als Dirigent austragen" aria-label="Bei {{ lied.titel }} als Dirigent austragen">×</button></span>
+                    {% if darf_austragen %}
+                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><button type="button" class="tag-entfernen" data-austragen="{% url 'mitglied_liedrolle_entfernen' id lied.id 'dirigent' %}" data-frage="Möchtest du {{ austragen_wen }} bei &bdquo;{{ lied.titel }}&ldquo; als Dirigent austragen?" title="Als Dirigent austragen" aria-label="Bei {{ lied.titel }} als Dirigent austragen">×</button></span>
                     {% else %}
                     <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
                     {% endif %}
@@ -188,8 +188,8 @@
                 <h3>Solist bei <span class="badge">{{ user.solist.count }}</span></h3>
                 <div class="tag-list">
                     {% for lied in user.solist.all %}
-                    {% if request.user.id == id %}
-                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><button type="button" class="tag-entfernen" data-austragen="{% url 'mitglied_liedrolle_entfernen' lied.id 'solist' %}" data-frage="Möchtest du dich bei &bdquo;{{ lied.titel }}&ldquo; als Solist austragen?" title="Als Solist austragen" aria-label="Bei {{ lied.titel }} als Solist austragen">×</button></span>
+                    {% if darf_austragen %}
+                    <span class="tag tag-loesbar"><a href="{% url 'titel_view' titel=lied.id %}">{{ lied.titel }}</a><button type="button" class="tag-entfernen" data-austragen="{% url 'mitglied_liedrolle_entfernen' id lied.id 'solist' %}" data-frage="Möchtest du {{ austragen_wen }} bei &bdquo;{{ lied.titel }}&ldquo; als Solist austragen?" title="Als Solist austragen" aria-label="Bei {{ lied.titel }} als Solist austragen">×</button></span>
                     {% else %}
                     <a href="{% url 'titel_view' titel=lied.id %}" class="tag">{{ lied.titel }}</a>
                     {% endif %}
@@ -218,16 +218,17 @@
         </div>
     </div>
     {% if perm_hilfe %}{% include "_rechte_hilfe_dialog.html" %}{% endif %}
-    {% if request.user.id == id %}
+    {% if darf_austragen %}
     {% comment %}
        Ein Dialog fuer alle × der beiden Liedkarten: das × traegt Ziel und
        Frage, das Skript setzt beides ein. Wieder eintragen kann nur, wer das
-       Repertoire bearbeiten darf — deshalb die Rueckfrage.
+       Repertoire bearbeiten darf — deshalb die Rueckfrage und, im eigenen
+       Profil, der Hinweis.
     {% endcomment %}
     <dialog id="austragen-dialog" class="app-dialog" aria-labelledby="austragen-titel">
         <h3 id="austragen-titel">Austragen</h3>
         <p data-frage></p>
-        <p class="warn">Wieder eintragen kann dich nur, wer das Repertoire bearbeiten darf.</p>
+        {% if request.user.id == id %}<p class="warn">Wieder eintragen kann dich nur, wer das Repertoire bearbeiten darf.</p>{% endif %}
         <form method="post" class="dialog-actions">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger">Ja, austragen</button>

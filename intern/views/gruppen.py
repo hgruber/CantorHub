@@ -266,6 +266,10 @@ PERMISSION_DETAILS = {
         ("Ablauf eines Termins",
          "Im Repertoire, gefiltert auf einen Termin: die Reihenfolge der Lieder "
          "festlegen."),
+        ("Mitglied",
+         "In den Karten „Dirigent bei“ und „Solist bei“ eines anderen Mitglieds "
+         "dessen Eintrag bei einem Lied entfernen. Sich selbst austragen darf "
+         "jedes Mitglied."),
         ("Hochladen",
          "Dateien für ein Lied hochladen — auf der Seite des Liedes oder auf seiner "
          "Zeile im Repertoire. Das Schreibrecht für den Liedordner braucht es "

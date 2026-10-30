@@ -173,6 +173,8 @@ def mitglied_view(request, id):
         "map_center_lat": str(map_center[0]),
         "map_center_lng": str(map_center[1]),
         "member_groups": list(user.groups.order_by("name")),
+        "darf_austragen": _darf_liedrolle_entfernen(request.user, id),
+        "austragen_wen": "dich" if request.user.id == id else f"{user.first_name} {user.last_name}",
     }
     # Karte „Meine Rechte“ nur im eigenen Profil — wer welche Rechte hat, steht
     # sonst nur auf der Gruppen-Seite.
@@ -189,19 +191,26 @@ def mitglied_view(request, id):
     return render(request, "mitglied.html", context)
 
 
+def _darf_liedrolle_entfernen(akteur, mitglied_id):
+    """Austragen darf sich jeder selbst, andere nur mit ``intern.change_lied``."""
+    return akteur.id == mitglied_id or akteur.has_perm("intern.change_lied")
+
+
 @login_required
 @require_POST
-def mitglied_liedrolle_entfernen(request, lied_id, rolle):
-    """Nimmt die eigene Person als Solist oder Dirigent von einem Lied.
+def mitglied_liedrolle_entfernen(request, id, lied_id, rolle):
+    """Nimmt ein Mitglied als Solist oder Dirigent von einem Lied.
 
-    Austragen darf sich jeder selbst; eintragen geht nur über die
-    Bearbeiten-Seite des Lieds und braucht ``intern.change_lied``.
+    Eintragen geht nur über die Bearbeiten-Seite des Lieds und braucht
+    ebenfalls ``intern.change_lied``.
     """
+    if not _darf_liedrolle_entfernen(request.user, id):
+        return HttpResponseForbidden()
     if rolle not in ("solist", "dirigent"):
         raise Http404
     lied = get_object_or_404(Lied, id=lied_id)
-    getattr(lied, rolle).remove(request.user)
-    return redirect("mitglied_view", id=request.user.id)
+    getattr(lied, rolle).remove(id)
+    return redirect("mitglied_view", id=id)
 
 
 @login_required
