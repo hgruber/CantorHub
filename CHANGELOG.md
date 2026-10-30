@@ -16,6 +16,9 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
   um. Die Rollen vergibt die Karte „Medien“ der Bearbeiten-Seite.
 - Die Liedseite hat nur noch eine Ablagefläche, die in der Karte „Medien“; die ganze Seite und das
   Upload-Symbol nehmen dort keine Dateien mehr an.
+- Karte „Medien“ der Liedseite: jede Datei hat eine kleine Vorschau, jede Audiodatei einen
+  Play-Knopf — auch ohne Rolle. Die Dateien ohne Rolle stehen abgesetzt unter „Weitere Dateien im
+  Lied-Ordner“.
 
 ### Behoben
 

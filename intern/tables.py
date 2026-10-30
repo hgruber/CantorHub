@@ -19,6 +19,44 @@ from .models import Artikel, ChangeLog, Lied, Ort, Termin, User
 from .replacements import format_bytes, format_datetime
 
 
+def datei_symbol(name, mime):
+    """Das Symbol einer Datei nach Endung und MIME-Typ — für Dateien ohne
+    Vorschaubild (Dateibrowser, Medien-Karte des Liedes)."""
+    ext = name.rsplit(".", 1)[-1].lower() if "." in (name or "") else ""
+    mime = mime or ""
+    if ext in ("msc", "mscz", "cap"):
+        return static("intern/images/file-music.svg")
+    if mime.endswith("pdf"):
+        return static("filer/icons/file-pdf.svg")
+    if mime in (
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ):
+        return static("intern/images/file-word.svg")
+    if mime in (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.oasis.opendocument.spreadsheet",
+        "application/vnd.ms-excel",
+    ):
+        return static("intern/images/file-table.svg")
+    if mime.startswith("audio/"):
+        return static("filer/icons/file-audio.svg")
+    if mime.startswith("video/"):
+        return static("filer/icons/file-video.svg")
+    if mime.startswith("image/"):
+        return static("filer/icons/file-picture.svg")
+    if mime in (
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/x-rar-compressed",
+        "application/x-7z-compressed",
+        "application/x-tar",
+        "application/gzip",
+    ):
+        return static("filer/icons/file-zip.svg")
+    return static("filer/icons/file-unknown.svg")
+
+
 class _Datumsspalte(tables.Column):
     """Wie ``DateTimeColumn``/``DateColumn``, aber ohne Vorlage je Zelle.
 
@@ -239,7 +277,6 @@ class OrdnerTabelle(tables.Table):
         return format_html('<a href="{}">{}</a>', url, name)
 
     def render_type(self, record):
-        media = static("filer/icons/file-unknown.svg")
         if record["type"] == "Folder":
             if record["name"] == "..":
                 media = static("intern/images/folder-up.svg")
@@ -250,42 +287,7 @@ class OrdnerTabelle(tables.Table):
             return format_html('<a href="{}"><img src="{}" /></a>', url, media)
 
         name = record.get("original_filename") or record.get("name", "")
-        ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
-        mime = record.get("mime") or ""
-
-        if record.get("thumb_url"):
-            media = record["thumb_url"]
-        elif ext in ("msc", "mscz", "cap"):
-            media = static("intern/images/file-music.svg")
-        elif mime.endswith("pdf"):
-            media = static("filer/icons/file-pdf.svg")
-        elif mime in (
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ):
-            media = static("intern/images/file-word.svg")
-        elif mime in (
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.oasis.opendocument.spreadsheet",
-            "application/vnd.ms-excel",
-        ):
-            media = static("intern/images/file-table.svg")
-        elif mime.startswith("audio/"):
-            media = static("filer/icons/file-audio.svg")
-        elif mime.startswith("video/"):
-            media = static("filer/icons/file-video.svg")
-        elif mime.startswith("image/"):
-            media = static("filer/icons/file-picture.svg")
-        elif mime in (
-            "application/zip",
-            "application/x-zip-compressed",
-            "application/x-rar-compressed",
-            "application/x-7z-compressed",
-            "application/x-tar",
-            "application/gzip",
-        ):
-            media = static("filer/icons/file-zip.svg")
-
+        media = record.get("thumb_url") or datei_symbol(name, record.get("mime"))
         url = f"/media/{record['link']}"
         return format_html('<a href="{}" target="_blank" rel="noopener"><img src="{}" /></a>', url, media)
 

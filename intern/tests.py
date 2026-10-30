@@ -7005,22 +7005,37 @@ class MedienTest(SimpleTestCase):
     def test_rollen_zuerst_ohne_doppelte(self):
         from intern.views import titel as titel_mod
 
+        def datei(pk, name, mime=""):
+            return SimpleNamespace(pk=pk, url=f"/media/{name}", original_filename=name,
+                                   name=name, mime_type=mime)
+
         lied = SimpleNamespace(pk=1, id=1, ordner_id=5)
-        rollen = {
-            "original": SimpleNamespace(pk=10, url="/media/a.mp3"),
-            "text": SimpleNamespace(pk=11, url="/media/t.odt"),
-        }
-        dateien = [
-            SimpleNamespace(pk=12, url="/media/x.pdf", original_filename="x.pdf", name="x.pdf"),
-            SimpleNamespace(pk=10, url="/media/a.mp3", original_filename="a.mp3", name="a.mp3"),
-        ]
+        a_mp3 = datei(10, "a.mp3", "audio/mpeg")
+        rollen = {"original": a_mp3, "text": datei(11, "t.odt")}
+        # Die rollenlose MP3 kommt ohne MIME-Typ an — die Endung entscheidet.
+        dateien = [datei(12, "x.pdf", "application/pdf"), a_mp3,
+                   datei(13, "probe.mp3", "application/octet-stream")]
         with mock.patch.object(titel_mod.liedablage, "rollen_von", return_value=rollen), \
                 mock.patch.object(titel_mod.liedablage, "dateien_im_ordner", return_value=dateien), \
+                mock.patch.object(titel_mod, "_vorschau_von", return_value="/v.png"), \
                 mock.patch.object(titel_mod, "get_aufnahme_bezeichnung", return_value="Chor-Aufnahme"):
             medien = titel_mod._medien(lied)
-        self.assertEqual([m["rolle"] for m in medien], ["original", "text", ""])
-        self.assertEqual(medien[-1]["label"], "x.pdf")
-        self.assertTrue(medien[-1]["ohne_rolle"])
+        self.assertEqual([m["rolle"] for m in medien], ["original", "text", "", ""])
+        self.assertEqual(medien[2]["label"], "x.pdf")
+        self.assertTrue(medien[2]["ohne_rolle"])
+        self.assertEqual([m["audio"] for m in medien], [True, False, False, True])
+        self.assertEqual([m["song_id"] for m in medien if m["audio"]], ["1", "d13"])
+        self.assertTrue(all(m["vorschau"] == "/v.png" for m in medien))
+
+    def test_vorschau_faellt_auf_das_symbol_zurueck(self):
+        from intern.views import titel as titel_mod
+
+        mp3 = SimpleNamespace(original_filename="a.mp3", name="a.mp3", mime_type="", file=None)
+        with mock.patch.object(titel_mod, "datei_symbol", return_value="/s.svg") as symbol, \
+                mock.patch.object(titel_mod, "get_thumbnailer") as thumbnailer:
+            self.assertEqual(titel_mod._vorschau_von(mp3), "/s.svg")
+        self.assertEqual(symbol.call_args.args, ("a.mp3", "audio/mpeg"))
+        self.assertFalse(thumbnailer.called)
 
 
 class TitelRolleTest(SimpleTestCase):

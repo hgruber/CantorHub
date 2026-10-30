@@ -1,4 +1,5 @@
 import json
+import mimetypes
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied
@@ -9,6 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
+from easy_thumbnails.files import get_thumbnailer
 from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
@@ -21,8 +23,9 @@ from intern.folder_access import visible_folder_ids
 from ..app_settings import get_aufnahme_bezeichnung
 from ..filterbau_titel import TITEL
 from ..forms import LiedEditForm
+from ..medientypen import medientyp
 from ..models import Konzert, Lied, LiedDatei, Termin, User
-from ..tables import RepertoireTabelle
+from ..tables import RepertoireTabelle, datei_symbol
 from .files import datei_url, visible_fields
 
 _PAGE_SIZE = 50
@@ -329,61 +332,80 @@ def titel_list(request):
 
 _ROLLEN_CSS = {"notenblatt": " file-icon-btn--pdf", "notensatz": " file-icon-btn--notes"}
 
+# Wovon easy_thumbnails ein Bild rechnet — dieselbe Menge wie im Dateibrowser
+# (`folders._attach_thumbnails`).
+_DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+def _mime(datei):
+    """filer setzt `mime_type` nicht zuverlässig; die Endung ist der Rückfall."""
+    mime = datei.mime_type or ""
+    if not mime or mime == "application/octet-stream":
+        mime = mimetypes.guess_type(datei.original_filename or datei.name or "")[0] or ""
+    return mime
+
+
+def _vorschau_von(datei):
+    """Ein kleines Vorschaubild, sonst das Symbol des Dateityps."""
+    name = datei.original_filename or datei.name or ""
+    mime = _mime(datei)
+    if mime.startswith("image/") or mime.endswith("pdf") or mime == _DOCX_MIME:
+        try:
+            return get_thumbnailer(datei.file).get_thumbnail(
+                {"size": (64, 64), "crop": True, "quality": 85}
+            ).url
+        except Exception:
+            pass
+    return datei_symbol(name, mime)
+
 
 def _medien(lied, ordner_sichtbar=True):
     """Alle Dateien des Liedes: die mit Rolle zuerst, dann die rollenlosen.
 
     Die Rollenzeile gibt die Reihenfolge vor; was im Lied-Ordner liegt, ohne
     eine Rolle zu tragen, folgt dahinter mit seinem Dateinamen — nur, wenn der
-    Betrachter den Ordner sehen darf (`ordner_sichtbar`)."""
+    Betrachter den Ordner sehen darf (`ordner_sichtbar`). Jede Datei hat eine
+    Vorschau; was der Player abspielen kann, bekommt einen Play-Knopf."""
     rollen = liedablage.rollen_von(lied)
     aufnahme_typ = get_aufnahme_bezeichnung()
     medien = []
     mit_rolle = set()
+
+    def eintrag(datei, label, **extra):
+        name = datei.original_filename or datei.name or ""
+        return {
+            "rolle": "",
+            "label": label,
+            "url": datei.url,
+            "vorschau": _vorschau_von(datei),
+            "audio": medientyp(_mime(datei), name) == "audio",
+            "song_id": f"d{datei.pk}",
+            "typ": label,
+            "logo": False,
+            "css": "",
+            **extra,
+        }
+
     for definition in liedrollen.ROLLEN:
         datei = rollen.get(definition.key)
         if not datei:
             continue
         mit_rolle.add(datei.pk)
         if definition.key == "original":
-            medien.append({
-                "rolle": definition.key,
-                "label": definition.label,
-                "url": datei.url,
-                "audio": True,
-                "song_id": str(lied.id),
-                "typ": definition.label,
-                "logo": False,
-            })
+            medien.append(eintrag(datei, definition.label, rolle="original", song_id=str(lied.id)))
         elif definition.key == "aufnahme":
-            medien.append({
-                "rolle": definition.key,
-                "label": aufnahme_typ,
-                "url": datei.url,
-                "audio": True,
-                "song_id": f"r{lied.id}",
-                "typ": aufnahme_typ,
-                "logo": True,
-            })
+            medien.append(eintrag(
+                datei, aufnahme_typ, rolle="aufnahme", song_id=f"r{lied.id}", logo=True,
+            ))
         else:
-            medien.append({
-                "rolle": definition.key,
-                "label": definition.label,
-                "url": datei.url,
-                "audio": False,
-                "css": _ROLLEN_CSS.get(definition.key, ""),
-            })
+            medien.append(eintrag(
+                datei, definition.label, rolle=definition.key,
+                css=_ROLLEN_CSS.get(definition.key, ""),
+            ))
     for datei in liedablage.dateien_im_ordner(lied) if ordner_sichtbar else ():
         if datei.pk in mit_rolle:
             continue
-        medien.append({
-            "rolle": "",
-            "label": datei.original_filename or datei.name,
-            "url": datei.url,
-            "audio": False,
-            "css": "",
-            "ohne_rolle": True,
-        })
+        medien.append(eintrag(datei, datei.original_filename or datei.name, ohne_rolle=True))
     return medien
 
 

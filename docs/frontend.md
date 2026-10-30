@@ -624,8 +624,13 @@ first instead of hitting `maxFiles: 1`.
 ### The Medien cards
 
 A song's files hang on role rows (`LiedDatei`), not on columns, so the detail page shows them as
-one list: roles first in register order, then whatever else lies in the song folder under its file
-name (`_medien()`). Both Medien cards carry the page's only zone, one `ablage()` in `medien.js`
+one list: roles first in register order, then — under their own heading „Weitere Dateien im
+Lied-Ordner“, set off by a line and muted — whatever else lies in the song folder under its file
+name (`_medien()`). Every row starts with a 32 px preview that opens the file: a thumbnail for
+images, PDFs and DOCX (the same set as the folder browser), else the type icon from
+`tables.datei_symbol()`, which the browser's type column uses too. Every audio file
+(`medientypen.medientyp()`, MIME type with the extension as fallback) gets the player's play
+button — role-less ones with the song id `d<file pk>`. The edit page shows neither. Both Medien cards carry the page's only zone, one `ablage()` in `medien.js`
 that sends `lied_id`: every file lands under its own name in the song folder, without a role —
 nothing is guessed from name or extension. The detail page reloads when all files arrived; it has
 no page-wide zone and no topbar upload icon.

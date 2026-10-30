@@ -3004,8 +3004,29 @@ table.mitglied-table tr.stimme-group-start td {
 /* Bearbeiten-Seite: Rollen-Slots + freie Rollen       */
 /* =================================================== */
 
-/* Rollenlose Dateien tragen nur ihren Dateinamen — der darf umbrechen. */
-.media-row--ohne-rolle .media-label { min-width: 0; overflow-wrap: anywhere; }
+/* Detailseite: Vorschau | Beschriftung | Knöpfe. */
+.medien-karte .media-row { justify-content: flex-start; gap: 10px; }
+.medien-karte .media-label { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.media-vorschau {
+    flex: 0 0 auto;
+    display: block;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    background: var(--bg-row-hover);
+}
+.media-vorschau img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.media-vorschau:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand-ring); }
+/* Rollenlose Dateien: unter eigener Überschrift, abgesetzt und gedämpft. */
+.medien-gruppe--ohne-rolle {
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+.media-row:has(+ .medien-gruppe--ohne-rolle) { border-bottom: none; }
+.media-row--ohne-rolle .media-label { font-weight: 400; color: var(--t4); }
+.media-row--ohne-rolle .media-vorschau { opacity: 0.8; }
 .medien-ohne-rolle {
     display: inline-block;
     margin-left: 8px;
