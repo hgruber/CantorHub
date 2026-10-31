@@ -4089,6 +4089,12 @@ table.mitglied-table tr.stimme-group-start td {
     display: flow-root;
 }
 
+/* Ein Kapitel beginnt unter dem letzten Bild des vorigen, damit kein Bild in
+   ein späteres Kapitel rutscht. */
+.wiki-page .wiki :is(h2, h3) {
+    clear: right;
+}
+
 .wiki-page .wiki .wiki-figure a {
     border-bottom: none;
 }
@@ -5296,7 +5302,7 @@ span.not_found {
    .mini-player-Vorfahren definiert, nur die Positionierung steckt dort. Diese
    Leiste ist die zweite Anzeige derselben Wiedergabe-Engine (intern.js).
    Sie ist ausdrücklich keine .wiki-figure und erbt daher weder float: right
-   noch max-width: 220px. */
+   noch die feste Breite. */
 .wiki-player {
     display: flex;
     flex-direction: column;

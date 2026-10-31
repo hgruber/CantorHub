@@ -12,6 +12,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 ### Geändert
 
 - Artikel: Eingebettete Bilder sind als Voransicht immer gleich breit; sehr hohe Bilder werden ab 320 px Höhe unten abgeschnitten. Der Text umfließt sie bis hinunter zu 480 px Bildschirmbreite, erst darunter stehen sie für sich.
+- Artikel: Eine Überschrift der zweiten und dritten Ebene beginnt unter dem letzten Bild davor, sodass jedes Bild in seinem Kapitel bleibt.
 
 ### Behoben
 
