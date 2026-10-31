@@ -12,7 +12,6 @@ from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 from easy_thumbnails.files import get_thumbnailer
 from ._decorators import tabellenzustand
-from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
 
 from filer.models import File, Folder
 
@@ -26,9 +25,8 @@ from ..forms import LiedEditForm
 from ..medientypen import medientyp
 from ..models import Konzert, Lied, LiedDatei, Termin, User
 from ..tables import RepertoireTabelle, datei_symbol
-from .files import datei_url, visible_fields
-
-_PAGE_SIZE = 50
+from ._tabelle import tabellenseite
+from .files import datei_url
 
 __all__ = [
     "titel_list",
@@ -174,19 +172,7 @@ def _repertoire_queryset():
 @login_required
 @tabellenzustand
 def titel_list(request):
-    queryset = _repertoire_queryset()
     konzert_id = request.GET.get("konzert")
-    queryset, bedingungen = TITEL.aus_daten(queryset, request.GET)
-    queryset = _mit_konzert(queryset, konzert_id)
-    # Kennung -> Name fuer die Chips: Solisten und Dirigenten zeigen sonst Zahlen.
-    kette = TITEL.kette(bedingungen, request, _chip_namen(bedingungen))
-    fields = visible_fields(request, "RepertoireTabelle")
-    # Legacy single-property columns now live in one Eigenschaften column
-    _LEGACY_EIG = {"aktiv", "tempo", "beats", "hymne", "acapella", "weihnacht"}
-    if _LEGACY_EIG.intersection(fields):
-        fields = [f for f in fields if f not in _LEGACY_EIG]
-        if "eigenschaften" not in fields:
-            fields.append("eigenschaften")
 
     # Konzert reorder mode: split-screen layout
     if konzert_id and "edit" in request.GET:
@@ -195,7 +181,7 @@ def titel_list(request):
             .annotate(position=F("konzert__position"))
             .order_by("position")
         )
-        fields = ["titel", "eigenschaften", "position"]
+        fields = ["titel", "eigenschaften"]
         # Nur fuer render_eigenschaften -- die beiden Listen entstehen daneben aus
         # eigenen QuerySets, der Filter wirkt hier nicht.
         table = RepertoireTabelle(Lied.objects.none(), visible_fields=fields)
@@ -250,25 +236,28 @@ def titel_list(request):
         )
 
     # Normal repertoire table mode
-    qs = queryset
-    if konzert_id:
-        qs = qs.annotate(position=F("konzert__position")).order_by("position")
+    def mit_konzert(qs):
+        qs = _mit_konzert(qs, konzert_id)
+        if konzert_id:
+            qs = qs.annotate(position=F("konzert__position")).order_by("position")
+        return qs
 
-    offset = parse_offset(request)
+    def rollen_anhaengen(zeilen):
+        # Die Dateien der Seite in einem Zugriff.
+        nach_rolle = liedablage.rollen_fuer(zeilen)
+        for lied in zeilen:
+            lied.rollen = nach_rolle[lied.pk]
 
-    probe = RepertoireTabelle(qs, visible_fields=fields)
-    page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
-    # Die Dateien der Seite in einem Zugriff — Rollenzeile zuerst, alter FK als
-    # Rückfall bis Migration 0006.
-    nach_rolle = liedablage.rollen_fuer(page)
-    for lied in page:
-        lied.rollen = nach_rolle[lied.pk]
-    table = RepertoireTabelle(page, visible_fields=fields, counter_offset=offset)
-    RequestConfig(request, paginate=False).configure(table)
-
-    if ist_nachladen(request):
-        return nachlade_antwort("table_rows.html", {"table": table},
-                                has_more, offset + _PAGE_SIZE)
+    seite = tabellenseite(
+        request, RepertoireTabelle, _repertoire_queryset(),
+        baukasten=TITEL,
+        # Kennung -> Name fuer die Chips: Solisten und Dirigenten zeigen sonst Zahlen.
+        namen=_chip_namen,
+        nach_filter=mit_konzert,
+        seite=rollen_anhaengen,
+    )
+    if seite.antwort:
+        return seite.antwort
 
     # Die Wiedergabelisten deckt das **gefilterte** Repertoire ab, nicht die geladene
     # Seite — eingebettet waren das 72,7 KB in jedem Seitenaufruf, fuer eine Angabe,
@@ -276,16 +265,7 @@ def titel_list(request):
     # Adresse (titel_playlist) und die Anzahlen fuers Menue; die Liste selbst holt
     # intern.js beim ersten Klick. Anders als die Ordneransicht, die ihre eine
     # Warteschlange bewusst einbettet (docs/files.md).
-    anzahlen = _warteschlangen_zaehlen(qs)
-    column_choices = [
-        {
-            "name": name,
-            "label": table.columns[name].header,
-            "checked": name in fields,
-        }
-        for name in table.base_columns
-        if name != "position"
-    ]
+    anzahlen = _warteschlangen_zaehlen(seite.queryset)
 
     add = "titel_add" if request.user.has_perm("intern.add_lied") else None
     seitentitel = "Repertoire"
@@ -295,17 +275,11 @@ def titel_list(request):
         except Termin.DoesNotExist:
             pass
     context = {
-        "table": table,
-        "column_choices": column_choices,
-        "visible_fields": fields,
-        "baukasten": TITEL,
-        "bedingungen": bedingungen,
-        "kette": kette,
+        **seite.kontext,
         "filter_zusatz": "_filter_konzert.html",
         "konzert_auswahl": _konzert_auswahl(konzert_id),
         "seitentitel": seitentitel,
         "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
-        "showfilter": True,
         "add": add,
         "add_form": LiedEditForm() if request.user.has_perm("intern.add_lied") else None,
         "add_form_multipart": True,
@@ -318,8 +292,6 @@ def titel_list(request):
         "playlist_aufnahmen_count": anzahlen["aufnahmen"],
         "playlist_all_count": anzahlen["all"],
         "konzert_id": konzert_id,
-        "has_more": has_more,
-        "next_offset": offset + _PAGE_SIZE,
     }
     if request.user.has_perm("intern.change_lied"):
         # Jede Zeile nimmt Dateien für ihr Lied an (intern.js) — nur mit dem Recht,

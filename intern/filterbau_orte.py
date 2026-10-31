@@ -7,22 +7,7 @@ fester Schalter, ob der Ort auf der Karte liegt.
 
 from django.db.models import Q
 
-from .filterbau import Baukasten, Feld, text_q, text_wert
-
-_TEXT = (
-    ("enthaelt", "enthält", False, "{feld} enthält {w}"),
-    ("enthaelt-nicht", "enthält nicht", True, "{feld} enthält nicht {w}"),
-    ("beginnt", "beginnt mit", False, "{feld} beginnt mit {w}"),
-    ("endet", "endet mit", False, "{feld} endet mit {w}"),
-    ("ist", "ist", False, "{feld} ist {w}"),
-)
-
-
-def _text_feld(key, label, *feldnamen):
-    return Feld(
-        key=key, label=label, art="text", operatoren=_TEXT,
-        q=text_q(*(feldnamen or (key,))), werte_text=text_wert,
-    )
+from .filterbau import Baukasten, paar, schalter_feld, text_feld
 
 
 def _koordinaten_q(operator, werte):
@@ -31,19 +16,16 @@ def _koordinaten_q(operator, werte):
 
 
 FELDER = {
-    "suche": _text_feld("suche", "Suche", "name", "strasse", "ort", "beschreibung"),
-    "name": _text_feld("name", "Name"),
-    "strasse": _text_feld("strasse", "Straße"),
-    "plz": _text_feld("plz", "PLZ"),
-    "ort": _text_feld("ort", "Ort"),
-    "beschreibung": _text_feld("beschreibung", "Beschreibung"),
-    "karte": Feld(
-        key="karte", label="Karte", art="ohne",
-        operatoren=(
-            ("ja", "auf der Karte", False, "liegt auf der Karte"),
-            ("nein", "nicht auf der Karte", True, "hat keine Koordinaten"),
-        ),
-        q=_koordinaten_q, werte_text=lambda werte, namen: "", ohne_wert=True,
+    "suche": text_feld("suche", "Suche", "name", "strasse", "ort", "beschreibung"),
+    "name": text_feld("name", "Name"),
+    "strasse": text_feld("strasse", "Straße"),
+    "plz": text_feld("plz", "PLZ"),
+    "ort": text_feld("ort", "Ort"),
+    "beschreibung": text_feld("beschreibung", "Beschreibung"),
+    "karte": schalter_feld(
+        "karte", "Karte",
+        paar("auf der Karte", "nicht auf der Karte", "liegt auf der Karte", "hat keine Koordinaten"),
+        _koordinaten_q,
     ),
 }
 

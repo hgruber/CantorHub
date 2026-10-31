@@ -723,19 +723,37 @@ duplicate patterns nor the writing rule can drift apart silently.
 
 ## The filter builder
 
-The member list, the repertoire and the locations do not use a fixed field per criterion. Their filter is a
+The lists on `table.html` do not use a fixed field per criterion. Their filter is a
 **chain of conditions**: any number of them, each with its own connector (`und`/`oder`) and its
 own negation. That is what makes „in Gruppe A und in Gruppe B und nicht in Gruppe C" or „Hymne
 und A cappella und nicht Aufnahme" expressible — a `ModelMultipleChoiceFilter` always ORs its
 values and used to appear only once.
 
+- **The standard set: every list on `table.html` has a registry and a column choice**, and
+  gets both from one call. The table derives from `tables.Spaltenwahl` — `spalten_vorgabe`
+  (the columns without a stored choice, `None` = all), `spalten_verwalter` (columns only
+  `intern.change_user` may choose and see), `spalten_umdeuten()` (map an old stored choice to
+  today's names), `counter_offset` and the choice panel's entries (`spalten_auswahl()`). The view
+  builds its queryset and calls `views/_tabelle.tabellenseite(request, Tabelle, qs,
+  baukasten=…)`, which filters, picks the columns (own row → global row in
+  `TabellenPreferenzen` → `spalten_vorgabe` → all), sorts, slices and answers an
+  infinite-scroll fetch; the view returns `seite.antwort` if there is one and adds only its own
+  keys to `seite.kontext`. Its hooks: `namen` (labels for the chips, a dict or a function of the
+  conditions), `nach_filter` (what is applied after the chain — the repertoire's `konzert`),
+  `seite` (attach per-page data in one query — roles, line-ups), `probe_kwargs` /
+  `tabelle_kwargs`, and `seitengroesse=None` for a list without paging. The folder browser is the
+  one table outside this set: a file manager with a selection column and its own data source.
 - **Machine and registries.** `intern/filterbau.py` is the machine and knows no field: the
   class `Baukasten` parses (`lese_bedingungen()`), builds the `Q` (`baue_q()`), applies both
   (`aus_daten()`) and prepares the topbar display (`kette()`), all without database access so a
-  `SimpleTestCase` can pin them (like `verwendung.py` or `mitgliedschaft.py`). The fields live
-  in three registries next to it, each a `Baukasten` instance: `MITGLIEDER` in
-  `filterbau_mitglieder.py`, `TITEL` in `filterbau_titel.py` and `ORTE` in `filterbau_orte.py`
-  (text fields plus the fixed switch „Karte“ — has coordinates or not; no hooks). The hooks where the pages
+  `SimpleTestCase` can pin them (like `verwendung.py` or `mitgliedschaft.py`). It also holds the
+  building blocks every registry uses: the operator sets `TEXT`, `DATUM`, `AUSWAHL`, the
+  yes/no pair `paar()`, `mehrfach_texte()` and the factories `text_feld()`, `datum_feld()`,
+  `auswahl_feld()`, `schalter_feld()` (a fixed switch) with `bool_q()`; a field only one list
+  needs is still written as a `Feld`. The fields live in one registry per list,
+  `filterbau_<liste>.py`, each a `Baukasten` instance: `MITGLIEDER` (`filterbau_mitglieder.py`),
+  `TITEL` (`filterbau_titel.py`) and `ORTE` (`filterbau_orte.py`, text fields plus the fixed
+  switch „Karte“ — has coordinates or not). The hooks where the pages
   differ are optional: `vorgabe` (the manager's access default), `alt_parameter` (the
   pre-builder parameters), `marker` (extra parameters when a condition goes away) and `traeger`
   (extra hidden form fields). Only names for foreign keys need the database; the view passes
@@ -868,7 +886,7 @@ A list remembers its last sort and filters per device. `@tabellenzustand`
   `SECURE_REFERRER_POLICY = "same-origin"` guarantees that header.
 - Infinite-scroll fetches and `POST` (column selection) pass through untouched.
 
-Every new view that renders `table.html` needs the decorator.
+Every new view that renders `table.html` needs the decorator, and goes through `tabellenseite()`.
 
 ## Public homepage
 

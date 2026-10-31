@@ -81,7 +81,7 @@ Views are split into domain modules under `intern/views/` (`auth.py`, `files.py`
 `gallerie.py`, `auftritte.py`, `auslieferungen.py`, `konfiguration.py`, `sicherung.py`, `notify.py`). The package's `__init__.py`
 re-exports all public views, so `urls.py` uses `views.forum_list` etc. unchanged.
 
-Three underscore-prefixed modules hold what the view modules share:
+Four underscore-prefixed modules hold what the view modules share:
 
 - **`views/_pagination.py`** — the infinite-scroll contract: `parse_offset`, `ist_nachladen`,
   `nachlade_antwort`, `paginate_ordered`. Details in `docs/frontend.md`.
@@ -93,6 +93,11 @@ Three underscore-prefixed modules hold what the view modules share:
   it (below `login_required`). Details in `docs/frontend.md`.
 - **`views/_auswahl.py`** — `chip_eintraege()` builds the entry list `_chip_multiselect.html`
   expects, for the pages that have no Django form.
+- **`views/_tabelle.py`** — the standard set of every list on `table.html`: `tabellenseite()`
+  applies the list's filter registry, its column choice, sorting and infinite scroll in one call
+  and returns the base context; `sichtbare_spalten()` reads the stored column choice. The table
+  derives from `tables.Spaltenwahl` (column default, manager-only columns). Details in „The
+  filter builder" in `docs/frontend.md`.
 
 Cross-cutting modules: `models.py`, `forms.py`, `signals.py` (audit log, activation mails, filer
 indexing, MUC room assignment), `app_settings.py` (runtime config), `folders.py` (the standard
@@ -126,9 +131,9 @@ stage picture, the table column, the filter and the audit labels all read; guard
 `ZusageOptionenTest`), `filterbau.py` (the filter as a chain of conditions — connector,
 negation and the `und`-binds-tighter evaluation, the per-field right, the three-state switch
 rule and the escaping that lets a typed name carry a comma; the machine, without a single
-field and without DB access), `filterbau_mitglieder.py` / `filterbau_titel.py` / `filterbau_orte.py` (its three field
-registries, for the member list, the repertoire and the locations; no `FilterSet` left on either, see „The
-filter builder" in `docs/frontend.md`), `mitgliedschaft.py` (the two axes of belonging: `is_active` = portal
+field and without DB access), `filterbau_<liste>.py` (its field
+registries, one per list on `table.html` — `filterbau_mitglieder.py`, `filterbau_titel.py`,
+`filterbau_orte.py` …; see „The filter builder" in `docs/frontend.md`), `mitgliedschaft.py` (the two axes of belonging: `is_active` = portal
 access, the group „Mitglied" = club membership, plus the admission itself — guarded by
 `MitgliedschaftTest`, see `docs/members.md`), `avatare.py` (fallback avatar files and thumbnails, so lists do not
 load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TRIGGER_FIELDS`),

@@ -3307,16 +3307,62 @@ class TabellenPreferenzenTest(SimpleTestCase):
         )
 
     def test_lesepfad_haelt_dubletten_aus(self):
-        """``visible_fields`` darf kein ``get()`` auf die Vorgabezeile machen —
+        """``gespeicherte_spalten`` darf kein ``get()`` auf die Vorgabezeile machen —
         eine zweite Vorgabezeile würde sonst jede Tabelle mit
         ``MultipleObjectsReturned`` zerlegen."""
         import inspect
 
-        from intern.views import files
+        from intern.views import _tabelle
 
-        quelle = inspect.getsource(files.visible_fields)
+        quelle = inspect.getsource(_tabelle.gespeicherte_spalten)
         self.assertNotIn("objects.get(", quelle)
         self.assertIn(".first()", quelle)
+
+
+class SpaltenwahlTest(SimpleTestCase):
+    """Welche Spalten eine Liste zeigt: ``views._tabelle.spalten_waehlen``."""
+
+    def test_ohne_wahl_gilt_die_vorgabe_der_tabelle(self):
+        from intern.tables import OrtTabelle
+        from intern.views._tabelle import spalten_waehlen
+
+        self.assertEqual(spalten_waehlen([], OrtTabelle), ["name", "strasse", "plz", "ort"])
+
+    def test_ohne_vorgabe_alle_spalten(self):
+        from intern.tables import TerminTabelle
+        from intern.views._tabelle import spalten_waehlen
+
+        self.assertEqual(spalten_waehlen([], TerminTabelle), list(TerminTabelle.base_columns))
+
+    def test_verwalterspalten_nur_mit_recht(self):
+        from intern.tables import MitgliederTabelle
+        from intern.views._tabelle import spalten_waehlen
+
+        wahl = ["last_name", "aktiv", "gruppen"]
+        self.assertEqual(spalten_waehlen(wahl, MitgliederTabelle), ["last_name"])
+        self.assertEqual(spalten_waehlen(wahl, MitgliederTabelle, True), wahl)
+
+    def test_unbekannte_spalten_fallen_heraus(self):
+        from intern.tables import OrtTabelle
+        from intern.views._tabelle import spalten_waehlen
+
+        self.assertEqual(spalten_waehlen(["name", "weg"], OrtTabelle), ["name"])
+
+    def test_alte_eigenschaftsspalten_des_repertoires(self):
+        from intern.tables import RepertoireTabelle
+        from intern.views._tabelle import spalten_waehlen
+
+        self.assertEqual(
+            spalten_waehlen(["titel", "hymne", "tempo"], RepertoireTabelle),
+            ["titel", "eigenschaften"],
+        )
+
+    def test_markerspalte_heisst_nach_ihrem_aria_label(self):
+        from intern.tables import TerminTabelle
+
+        auswahl = {e["name"]: e["label"] for e in TerminTabelle([]).spalten_auswahl([])}
+        self.assertEqual(auswahl["auftritt"], "Auftritt")
+        self.assertEqual(auswahl["lieder"], "Lieder im Ablauf")
 
 
 class KonzertOnDeleteTest(SimpleTestCase):
@@ -3545,11 +3591,11 @@ class ForumTabelleTest(SimpleTestCase):
         self.assertEqual(ForumTabelle([]).render_bild(record=SimpleNamespace(bild_pfad=None)), "")
 
     def test_bildspalte_vor_dem_thema_und_standardmaessig_aus(self):
-        from intern.tables import FORUM_SPALTEN_AUS, ForumTabelle
+        from intern.tables import ForumTabelle
 
         spalten = list(ForumTabelle.base_columns)
         self.assertEqual(spalten.index("bild") + 1, spalten.index("thema"))
-        self.assertEqual(FORUM_SPALTEN_AUS, {"bild"})
+        self.assertEqual(set(spalten) - set(ForumTabelle.spalten_vorgabe), {"bild"})
 
 
 class DatenschutzPruefungTest(SimpleTestCase):

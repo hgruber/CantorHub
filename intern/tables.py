@@ -93,6 +93,59 @@ class DatumSpalte(_Datumsspalte):
     langes_format = "DATE_FORMAT"
 
 
+class Spaltenwahl(tables.Table):
+    """Die Grundlage jeder Liste auf ``table.html``: Spalten aus- und einblenden.
+
+    ``visible_fields`` sind die gewaehlten Spalten (``views/_tabelle.py`` liest sie
+    aus ``TabellenPreferenzen``), ``None`` zeigt alle. ``counter_offset`` setzt die
+    laufende Nummer einer ``counter``-Spalte beim Nachladen fort.
+
+    - ``spalten_vorgabe``: was ohne gespeicherte Wahl sichtbar ist; ``None`` = alle.
+    - ``spalten_verwalter``: nur mit ``intern.change_user`` waehl- und sichtbar.
+    """
+
+    spalten_vorgabe = None
+    spalten_verwalter = ()
+
+    def __init__(self, *args, visible_fields=None, counter_offset=0, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._row_counter = counter_offset
+        self.visible_fields = visible_fields
+        if visible_fields is not None:
+            for name in list(self.columns.names()):
+                if name not in visible_fields:
+                    self.columns.hide(name)
+
+    def render_counter(self, record):
+        self._row_counter += 1
+        return self._row_counter
+
+    @classmethod
+    def spalten_umdeuten(cls, fields):
+        """Eine gespeicherte Wahl auf die heutigen Spaltennamen bringen."""
+        return fields
+
+    @classmethod
+    def waehlbare_spalten(cls, kann_verwalten=False):
+        return [
+            name for name in cls.base_columns
+            if kann_verwalten or name not in cls.spalten_verwalter
+        ]
+
+    def spalten_auswahl(self, fields, kann_verwalten=False):
+        """Die Eintraege des Spaltenwahl-Panels (``column_choices`` in ``table.html``).
+
+        Eine Markerspalte ohne Ueberschrift heisst nach ihrem ``aria-label``."""
+        auswahl = []
+        for name in self.waehlbare_spalten(kann_verwalten):
+            spalte = self.columns[name]
+            label = str(spalte.header or "") or (
+                spalte.column.attrs.get("th", {}).get("aria-label") or name
+            )
+            auswahl.append({"name": name, "label": label, "checked": name in fields})
+        return auswahl
+
+
 def _datei_url(pfad):
     """URL zu einem Speicherpfad, leer ohne Pfad.
 
@@ -116,11 +169,7 @@ def _rollen_url(record, rolle):
     return _datei_url(datei.file.name) if datei else ""
 
 
-# Spalten der Forenliste, die erst per Spaltenwahl erscheinen.
-FORUM_SPALTEN_AUS = {"bild"}
-
-
-class ForumTabelle(tables.Table):
+class ForumTabelle(Spaltenwahl):
     # So schmal wie ihr Inhalt; ``forum_list`` blendet sie aus, solange keines der
     # angezeigten Foren eine Kategorie hat.
     kategorie = tables.Column(
@@ -128,7 +177,7 @@ class ForumTabelle(tables.Table):
     )
     # Das Raumbild des Forums. Accessor auf den annotierten Pfad (siehe
     # forum_list), nicht auf ``bild``: das laedt filer je Zeile polymorph nach.
-    # Ohne gespeicherte Spaltenwahl ausgeblendet (``FORUM_SPALTEN_AUS``).
+    # Ohne gespeicherte Spaltenwahl ausgeblendet (``spalten_vorgabe``).
     bild = tables.Column(accessor="bild_pfad", orderable=False, empty_values=())
     thema = tables.Column()
     zugriff = tables.Column(verbose_name="Letzter Beitrag")
@@ -136,6 +185,8 @@ class ForumTabelle(tables.Table):
         verbose_name="Anzahl",
         attrs={"th": {"class": "zahl"}, "td": {"class": "zahl"}},
     )
+
+    spalten_vorgabe = ("kategorie", "thema", "zugriff", "anzahl_mitteilungen")
 
     class Meta:
         row_attrs = {
@@ -337,7 +388,7 @@ class OrdnerTabelle(tables.Table):
         }
 
 
-class TerminTabelle(tables.Table):
+class TerminTabelle(Spaltenwahl):
     datum = DatumZeitSpalte()
     # Zwei ganz schmale Markerspalten zwischen Datum und Terminnamen — getrennt,
     # damit Mikrofon und Pille über die Zeilen hinweg in derselben Flucht stehen.
@@ -561,7 +612,7 @@ def _audio_button_html(url, song_id, title, kind, composer=""):
     )
 
 
-class RepertoireTabelle(tables.Table):
+class RepertoireTabelle(Spaltenwahl):
     counter = tables.Column(
         verbose_name="#",
         empty_values=(),
@@ -655,18 +706,19 @@ class RepertoireTabelle(tables.Table):
             "data-noten-url":    lambda record: _rollen_url(record, "notensatz"),
         }
 
-    def __init__(self, *args, visible_fields=None, counter_offset=0, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._row_counter = counter_offset
-        self.visible_fields = visible_fields
-        if visible_fields is not None:
-            for name in list(self.columns.names()):
-                if name not in visible_fields:
-                    self.columns.hide(name)
+    spalten_vorgabe = ("titel", "eigenschaften", "pdf", "noten")
 
-    def render_counter(self, record):
-        self._row_counter += 1
-        return self._row_counter
+    # Die alten Einzelspalten stehen heute in der einen Spalte „Eigenschaften".
+    _ALTE_EIGENSCHAFTEN = {"aktiv", "tempo", "beats", "hymne", "acapella", "weihnacht"}
+
+    @classmethod
+    def spalten_umdeuten(cls, fields):
+        if not cls._ALTE_EIGENSCHAFTEN.intersection(fields):
+            return fields
+        fields = [f for f in fields if f not in cls._ALTE_EIGENSCHAFTEN]
+        if "eigenschaften" not in fields:
+            fields.append("eigenschaften")
+        return fields
 
     def render_original(self, record):
         parts = []
@@ -741,7 +793,7 @@ class RepertoireTabelle(tables.Table):
         return mark_safe("".join(parts))
 
 
-class MitgliederTabelle(tables.Table):
+class MitgliederTabelle(Spaltenwahl):
     counter = tables.Column(
         verbose_name="#",
         empty_values=(),
@@ -800,15 +852,12 @@ class MitgliederTabelle(tables.Table):
             cls=cls, label=label,
         )
 
-    def __init__(self, *args, visible_fields=None, viewer=None, counter_offset=0, **kwargs):
+    spalten_vorgabe = ("first_name", "last_name", "stimme")
+    spalten_verwalter = ("aktiv", "gruppen")
+
+    def __init__(self, *args, viewer=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._row_counter = counter_offset
-        self.visible_fields = visible_fields
         self._viewer = viewer
-        if visible_fields is not None:
-            for name in list(self.columns.names()):
-                if name not in visible_fields:
-                    self.columns.hide(name)
 
         # Per-field privacy: blank fields this viewer may not see by mutating
         # each record. Done at record level (not via render_<field>) because a
@@ -820,10 +869,6 @@ class MitgliederTabelle(tables.Table):
                 for f in PRIVACY_FIELDS:
                     if not record.field_visible_to(viewer, f):
                         setattr(record, f, None if f == "geburtstag" else "")
-
-    def render_counter(self, record):
-        self._row_counter += 1
-        return self._row_counter
 
     def render_avatar(self, record):
         # Aus dem annotierten Speicherpfad (siehe views/mitglieder.py), nicht aus
@@ -843,7 +888,7 @@ class MitgliederTabelle(tables.Table):
             static("filer/icons/file-unknown.svg"),
         )
 
-class ArtikelTabelle(tables.Table):
+class ArtikelTabelle(Spaltenwahl):
     name = tables.Column(verbose_name="Artikel")
     autor = tables.Column(
         verbose_name="Letzter Autor",
@@ -871,7 +916,7 @@ class ArtikelTabelle(tables.Table):
         return format_bytes(value)
 
 
-class OrtTabelle(tables.Table):
+class OrtTabelle(Spaltenwahl):
     name = tables.Column(verbose_name="Name")
     strasse = tables.Column(verbose_name="Straße")
     plz = tables.Column(verbose_name="PLZ")
@@ -882,12 +927,7 @@ class OrtTabelle(tables.Table):
         attrs = {"class": "table table-hover"}
         row_attrs = {"data-href": lambda record: reverse("ort_view", args=[record.id])}
 
-    def __init__(self, *args, visible_fields=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if visible_fields is not None:
-            for name in list(self.columns.names()):
-                if name not in visible_fields:
-                    self.columns.hide(name)
+    spalten_vorgabe = ("name", "strasse", "plz", "ort")
 
 
 # ---------------------------------------------------------------------------
@@ -1020,7 +1060,7 @@ class ChangeLogFilter(filters.FilterSet):
         fields = ["model_name", "action", "user", "gruppe", "datum_von", "datum_bis"]
 
 
-class ChangeLogTabelle(tables.Table):
+class ChangeLogTabelle(Spaltenwahl):
     timestamp = DatumZeitSpalte(
         verbose_name="Datum",
         format="d.m.Y H:i",

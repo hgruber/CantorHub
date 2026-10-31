@@ -16,28 +16,16 @@ from .filterbau import (
     Baukasten,
     Bedingung,
     Feld,
+    auswahl_feld,
+    bool_q,
+    mehrfach_texte,
     namens_wert,
-    text_q,
-    text_wert,
-    wahl_q,
+    paar,
+    schalter_feld,
+    text_feld,
 )
 from .models import Lied, LiedDatei, User
 
-def _paar(kurz_ja, kurz_nein, satz_ja, satz_nein):
-    """Ein Ja/Nein-Paar: je Stellung eine kurze Beschriftung (die zugleich der
-    Tooltip des Drei-Zustand-Schalters ist) und der Satz des Chips. Beide sind
-    noetig, weil „hat ein Original" und „kein Original" sich nicht aus einer
-    gemeinsamen Vorlage ergeben."""
-    return (
-        ("ja", kurz_ja, False, satz_ja),
-        ("nein", kurz_nein, True, satz_nein),
-    )
-
-
-_AUSWAHL = (
-    ("ist", "ist", False, "{feld} ist {w}"),
-    ("ist-nicht", "ist nicht", True, "{feld} ist nicht {w}"),
-)
 _SOLIST = (
     ("in", "ist Solist", False, "hat {w} als Solist"),
     ("nicht-in", "ist nicht Solist", True, "hat {w} nicht als Solist"),
@@ -46,23 +34,9 @@ _DIRIGENT = (
     ("in", "ist Dirigent", False, "hat {w} als Dirigent"),
     ("nicht-in", "ist nicht Dirigent", True, "hat {w} nicht als Dirigent"),
 )
-_TEXT = (
-    ("enthaelt", "enthält", False, "{feld} enthält {w}"),
-    ("enthaelt-nicht", "enthält nicht", True, "{feld} enthält nicht {w}"),
-    ("beginnt", "beginnt mit", False, "{feld} beginnt mit {w}"),
-    ("endet", "endet mit", False, "{feld} endet mit {w}"),
-    ("ist", "ist", False, "{feld} ist {w}"),
-)
 
 
 # ------------------------------------------------------------------ Q-Bauer
-
-
-def _bool_q(feldname):
-    def q(operator, werte):
-        return Q(**{feldname: operator == "ja"})
-
-    return q
 
 
 def _rolle_q(rolle):
@@ -95,80 +69,39 @@ def _personen_q(feldname):
     return q
 
 
-def _wahl_feld(key, label, ausdruck):
-    """Ein Feld auf einer gewoehnlichen Spalte: erlaubte Werte, mit ODER verknuepft."""
-    return Feld(
-        key=key, label=label, art="auswahl", operatoren=_AUSWAHL,
-        q=wahl_q(ausdruck, "ist", "ist-nicht"), werte_text=wahl_wert,
-    )
+def _flag(key, label, *saetze):
+    return schalter_feld(key, label, paar(*saetze), bool_q(key))
 
 
-def wahl_wert(werte, namen):
-    return ", ".join((namen or {}).get(w, w) for w in werte)
+def _rolle(key, label, rolle, *saetze):
+    return schalter_feld(key, label, paar(*saetze), _rolle_q(rolle))
 
 
 # --------------------------------------------------------------- Die Felder
 
 
 FELDER = {
-    "suche": Feld(
-        key="suche", label="Suche", art="text", operatoren=_TEXT,
-        q=text_q("titel", "komponist", "bearbeiter"), werte_text=text_wert,
-    ),
-    "tempo": _wahl_feld("tempo", "Tempo", "tempo"),
-    "tonart": _wahl_feld("tonart", "Tonart", "tonart"),
-    "aktiv": Feld(
-        key="aktiv", label="Repertoire", art="ohne", operatoren=_paar("aktiv", "archiviert", "ist aktiv", "ist archiviert"),
-        q=_bool_q("aktiv"), werte_text=lambda werte, namen: "", ohne_wert=True,
-    ),
-    "hymne": Feld(
-        key="hymne", label="Hymne", art="ohne", operatoren=_paar("Hymne", "keine Hymne", "ist eine Hymne", "ist keine Hymne"),
-        q=_bool_q("hymne"), werte_text=lambda werte, namen: "", ohne_wert=True,
-    ),
-    "acapella": Feld(
-        key="acapella", label="A cappella", art="ohne", operatoren=_paar("a cappella", "nicht a cappella", "ist a cappella", "ist nicht a cappella"),
-        q=_bool_q("acapella"), werte_text=lambda werte, namen: "", ohne_wert=True,
-    ),
-    "weihnacht": Feld(
-        key="weihnacht", label="Weihnachten", art="ohne", operatoren=_paar("Weihnachtslied", "kein Weihnachtslied", "ist ein Weihnachtslied", "ist kein Weihnachtslied"),
-        q=_bool_q("weihnacht"), werte_text=lambda werte, namen: "", ohne_wert=True,
-    ),
-    "original": Feld(
-        key="original", label="Original", art="ohne",
-        operatoren=_paar("Original", "kein Original", "hat ein Original", "hat kein Original"),
-        q=_rolle_q("original"), werte_text=lambda werte, namen: "", ohne_wert=True,
-    ),
-    "aufnahme": Feld(
-        key="aufnahme", label="Aufnahme", art="ohne",
-        operatoren=_paar("Aufnahme", "keine Aufnahme", "hat eine Aufnahme", "hat keine Aufnahme"),
-        q=_rolle_q("aufnahme"), werte_text=lambda werte, namen: "", ohne_wert=True,
-    ),
-    "pdf": Feld(
-        key="pdf", label="Notenblatt", art="ohne",
-        operatoren=_paar("Notenblatt", "kein Notenblatt", "hat ein Notenblatt", "hat kein Notenblatt"),
-        q=_rolle_q("notenblatt"), werte_text=lambda werte, namen: "", ohne_wert=True,
-    ),
-    "noten": Feld(
-        key="noten", label="Notensatz", art="ohne",
-        operatoren=_paar("Notensatz", "kein Notensatz", "hat einen Notensatz", "hat keinen Notensatz"),
-        q=_rolle_q("notensatz"), werte_text=lambda werte, namen: "", ohne_wert=True,
-    ),
-    "text": Feld(
-        key="text", label="Liedtext", art="ohne",
-        operatoren=_paar("Liedtext", "kein Liedtext", "hat einen Liedtext", "hat keinen Liedtext"),
-        q=_rolle_q("text"), werte_text=lambda werte, namen: "", ohne_wert=True,
-    ),
+    "suche": text_feld("suche", "Suche", "titel", "komponist", "bearbeiter"),
+    "tempo": auswahl_feld("tempo", "Tempo"),
+    "tonart": auswahl_feld("tonart", "Tonart"),
+    "aktiv": _flag("aktiv", "Repertoire", "aktiv", "archiviert", "ist aktiv", "ist archiviert"),
+    "hymne": _flag("hymne", "Hymne", "Hymne", "keine Hymne", "ist eine Hymne", "ist keine Hymne"),
+    "acapella": _flag("acapella", "A cappella", "a cappella", "nicht a cappella", "ist a cappella", "ist nicht a cappella"),
+    "weihnacht": _flag("weihnacht", "Weihnachten", "Weihnachtslied", "kein Weihnachtslied", "ist ein Weihnachtslied", "ist kein Weihnachtslied"),
+    "original": _rolle("original", "Original", "original", "Original", "kein Original", "hat ein Original", "hat kein Original"),
+    "aufnahme": _rolle("aufnahme", "Aufnahme", "aufnahme", "Aufnahme", "keine Aufnahme", "hat eine Aufnahme", "hat keine Aufnahme"),
+    "pdf": _rolle("pdf", "Notenblatt", "notenblatt", "Notenblatt", "kein Notenblatt", "hat ein Notenblatt", "hat kein Notenblatt"),
+    "noten": _rolle("noten", "Notensatz", "notensatz", "Notensatz", "kein Notensatz", "hat einen Notensatz", "hat keinen Notensatz"),
+    "text": _rolle("text", "Liedtext", "text", "Liedtext", "kein Liedtext", "hat einen Liedtext", "hat keinen Liedtext"),
     "solist": Feld(
         key="solist", label="Solist", art="mehrfach", operatoren=_SOLIST,
         q=_personen_q("solist"), werte_text=namens_wert,
-        texte={"auswahl_label": "Gewählte Solisten", "vorrat_label": "Verfügbare Solisten",
-               "such_platzhalter": "Solist suchen …", "leer_text": "Alle Solisten"},
+        texte=mehrfach_texte("Solist", "Solisten"),
     ),
     "dirigent": Feld(
         key="dirigent", label="Dirigent", art="mehrfach", operatoren=_DIRIGENT,
         q=_personen_q("dirigent"), werte_text=namens_wert,
-        texte={"auswahl_label": "Gewählte Dirigenten", "vorrat_label": "Verfügbare Dirigenten",
-               "such_platzhalter": "Dirigent suchen …", "leer_text": "Alle Dirigenten"},
+        texte=mehrfach_texte("Dirigent", "Dirigenten"),
     ),
 }
 

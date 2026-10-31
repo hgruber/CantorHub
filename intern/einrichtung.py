@@ -75,14 +75,6 @@ GRUPPEN = {
 
 GRUPPE_VORSTAND = "Vorstand"
 
-# Die Spalten, die eine Tabelle zeigt, solange ein Mitglied keine eigene Auswahl
-# getroffen hat (``TabellenPreferenzen`` ohne Person). Ohne Vorgabe zeigten
-# Mitgliederliste und Repertoire keine einzige Spalte.
-TABELLEN_VORGABEN = {
-    "MitgliederTabelle": ["first_name", "last_name", "stimme"],
-    "RepertoireTabelle": ["titel", "eigenschaften", "pdf", "noten"],
-}
-
 # Was vor dem Abschluss erreichbar bleibt: die Seite selbst und ihr CSS.
 EINRICHTUNG_FREI = ("/einrichtung/", "/static/")
 
@@ -299,7 +291,7 @@ def einrichten(*, konto, passwort, konfiguration, jetzt, beispieldaten=False):
 
     from . import folders, hilfe
     from .mitgliedschaft import GRUPPE_MITGLIED
-    from .models import FolderPermission, Konfiguration, TabellenPreferenzen, User
+    from .models import FolderPermission, Konfiguration, User
 
     with transaction.atomic():
         if User.objects.select_for_update().filter(is_superuser=True).exists():
@@ -329,12 +321,6 @@ def einrichten(*, konto, passwort, konfiguration, jetzt, beispieldaten=False):
             group=gruppen[GRUPPE_VORSTAND],
             defaults={"can_read": True, "can_write": True, "can_delete": True},
         )
-
-        for tabelle, spalten in TABELLEN_VORGABEN.items():
-            if not TabellenPreferenzen.objects.filter(person=None, tabelle=tabelle).exists():
-                TabellenPreferenzen.objects.create(
-                    person=None, tabelle=tabelle, sichtbare_spalten=spalten
-                )
 
         nutzer = User(
             **konto,

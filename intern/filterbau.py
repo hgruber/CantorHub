@@ -11,11 +11,13 @@ jedem ``oder`` in Abschnitte zerlegt, jeder Abschnitt geundet und die Ergebnisse
 geodert: ``A oder B und C`` ist ``A oder (B und C)``. Die Titelleiste klammert das
 genau so, damit die Anzeige nicht luegt.
 
-**Zwei Register.** Dieses Modul ist die Maschine und kennt kein einziges Feld. Die
-Register liegen daneben: ``filterbau_mitglieder`` und ``filterbau_titel``. Jedes ist
-ein ``Baukasten`` -- Felder, Reihenfolge und ein paar Haken, die nur die eine Seite
-braucht (die Zugangs-Vorgabe der Mitgliederliste etwa). Damit teilen beide Seiten die
-Mechanik und keine Zeile Fachlichkeit.
+**Ein Register je Liste.** Dieses Modul ist die Maschine und kennt kein einziges
+Feld, nur die Bausteine, aus denen Register gebaut werden (Operatorensaetze,
+Feld-Fabriken). Die Register liegen daneben, ``filterbau_<liste>.py``. Jedes ist ein
+``Baukasten`` -- Felder, Reihenfolge und ein paar Haken, die nur die eine Seite
+braucht (die Zugangs-Vorgabe der Mitgliederliste etwa). Damit teilen alle Listen die
+Mechanik und keine Zeile Fachlichkeit; angewendet wird ein Register ueber
+``views/_tabelle.tabellenseite()``.
 
 Alles hier ist ohne Datenbankzugriff -- parsen, verknuepfen, beschriften sind reine
 Funktionen, damit ein ``SimpleTestCase`` sie pinnen kann (Vorbild: ``verwendung.py``,
@@ -202,6 +204,95 @@ def datum_wert(werte, namen):
         return date.fromisoformat(werte[0]).strftime("%d.%m.%Y")
     except ValueError:
         return werte[0]
+
+
+def ohne_werte(werte, namen):
+    """Die Werte eines Feldes ohne Werte: der Operator traegt die ganze Aussage."""
+    return ""
+
+
+def bool_q(feldname):
+    """Ein Ja/Nein-Feld auf einer Booleschen Spalte."""
+    def q(operator, werte):
+        return Q(**{feldname: operator == "ja"})
+
+    return q
+
+
+# Die Operatorensaetze, die mehr als ein Register braucht. Jeder Operator traegt
+# seinen Satzbaustein fertig ausformuliert -- siehe ``Feld``.
+TEXT = (
+    ("enthaelt", "enthält", False, "{feld} enthält {w}"),
+    ("enthaelt-nicht", "enthält nicht", True, "{feld} enthält nicht {w}"),
+    ("beginnt", "beginnt mit", False, "{feld} beginnt mit {w}"),
+    ("endet", "endet mit", False, "{feld} endet mit {w}"),
+    ("ist", "ist", False, "{feld} ist {w}"),
+)
+DATUM = (
+    ("vor", "vor", False, "{feld} vor dem {w}"),
+    ("nach", "nach", False, "{feld} nach dem {w}"),
+    ("ist", "am", False, "{feld} am {w}"),
+)
+AUSWAHL = (
+    ("ist", "ist", False, "{feld} ist {w}"),
+    ("ist-nicht", "ist nicht", True, "{feld} ist nicht {w}"),
+)
+
+
+def paar(kurz_ja, kurz_nein, satz_ja, satz_nein):
+    """Ein Ja/Nein-Paar: je Stellung eine kurze Beschriftung (die zugleich der
+    Tooltip des Drei-Zustand-Schalters ist) und der Satz des Chips. Beide sind
+    noetig, weil „hat ein Original" und „kein Original" sich nicht aus einer
+    gemeinsamen Vorlage ergeben."""
+    return (
+        ("ja", kurz_ja, False, satz_ja),
+        ("nein", kurz_nein, True, satz_nein),
+    )
+
+
+def mehrfach_texte(einzahl, mehrzahl):
+    """Die Beschriftungen der Chip-Mehrfachauswahl eines Feldes."""
+    return {
+        "auswahl_label": f"Gewählte {mehrzahl}",
+        "vorrat_label": f"Verfügbare {mehrzahl}",
+        "such_platzhalter": f"{einzahl} suchen …",
+        "leer_text": f"Alle {mehrzahl}",
+    }
+
+
+# Fabriken fuer die haeufigen Feldarten. Was nur ein Register braucht, baut es
+# weiter selbst als ``Feld``.
+
+
+def text_feld(key, label, *feldnamen, recht=None):
+    """Textsuche ueber eine oder mehrere Spalten; ohne Namen die Spalte ``key``."""
+    return Feld(
+        key=key, label=label, art="text", operatoren=TEXT,
+        q=text_q(*(feldnamen or (key,))), werte_text=text_wert, recht=recht,
+    )
+
+
+def datum_feld(key, label, feldname=None, mit_uhrzeit=False, recht=None):
+    return Feld(
+        key=key, label=label, art="datum", operatoren=DATUM,
+        q=datum_q(feldname or key, mit_uhrzeit), werte_text=datum_wert, recht=recht,
+    )
+
+
+def auswahl_feld(key, label, ausdruck=None):
+    """Ein Wert aus einer Liste (``<select>``) auf einer gewoehnlichen Spalte."""
+    return Feld(
+        key=key, label=label, art="auswahl", operatoren=AUSWAHL,
+        q=wahl_q(ausdruck or key, "ist", "ist-nicht"), werte_text=namens_wert,
+    )
+
+
+def schalter_feld(key, label, operatoren, q, recht=None):
+    """Ein fester Drei-Zustand-Schalter unter der Kette (``ist_fest``)."""
+    return Feld(
+        key=key, label=label, art="ohne", operatoren=operatoren,
+        q=q, werte_text=ohne_werte, ohne_wert=True, recht=recht,
+    )
 
 
 # ---------------------------------------------------------------- Das Register

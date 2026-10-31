@@ -13,10 +13,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django_tables2 import RequestConfig
 from ._decorators import tabellenzustand
 from .gruppen import eigene_rechte
-from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
+from ._tabelle import tabellenseite
 
 from filer.models import File, Folder
 
@@ -38,8 +37,6 @@ from .auth import make_invite_token
 from .files import _get_file_extension, besitz_uebertragen
 
 logger = logging.getLogger(__name__)
-
-_PAGE_SIZE = 50
 
 
 def _chip_namen():
@@ -90,50 +87,23 @@ def mitglied_list(request):
         .prefetch_related("groups")
         .order_by("last_name", "first_name")
     )
-    # Die Bedingungen des Baukastens. Sie laufen ueber Mehrfachrelationen (groups,
-    # zusage), ein ODER darueber liefert Koepfe sonst mehrfach.
-    queryset, bedingungen = MITGLIEDER.aus_daten(queryset, request.GET, can_manage)
-    from .files import visible_fields
-
-    fields = visible_fields(request, "MitgliederTabelle")
-    if not can_manage:
-        fields = [f for f in fields if f not in ("aktiv", "gruppen")]
-
-    offset = parse_offset(request)
-
-    # Kennung -> Name fuer die Chips: Gruppen und Termine zeigen sonst Zahlen.
-    kette = MITGLIEDER.kette(bedingungen, request, _chip_namen())
-
-    probe = MitgliederTabelle(queryset, visible_fields=fields, viewer=None)
-    page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
-    table = MitgliederTabelle(page, visible_fields=fields, viewer=request.user, counter_offset=offset)
-    RequestConfig(request, paginate=False).configure(table)
-
-    if ist_nachladen(request):
-        return nachlade_antwort("table_rows.html", {"table": table},
-                                has_more, offset + _PAGE_SIZE)
-
-    column_choices = [
-        {
-            "name": name,
-            "label": table.columns[name].header,
-            "checked": name in fields,
-        }
-        for name in table.base_columns
-        if can_manage or name not in ("aktiv", "gruppen")
-    ]
+    # Die Bedingungen des Baukastens laufen als EXISTS ueber groups und zusage.
+    # Geschwaerzt wird nur die Seite (viewer), die Probe sortiert ueber alle.
+    seite = tabellenseite(
+        request, MitgliederTabelle, queryset,
+        baukasten=MITGLIEDER, kann_verwalten=can_manage,
+        namen=lambda bedingungen: _chip_namen(),
+        probe_kwargs={"viewer": None},
+        tabelle_kwargs={"viewer": request.user},
+    )
+    if seite.antwort:
+        return seite.antwort
 
     return render(
         request,
         "table.html",
         {
-            "table": table,
-            "column_choices": column_choices,
-            "baukasten": MITGLIEDER,
-            "kann_verwalten": can_manage,
-            "bedingungen": bedingungen,
-            "kette": kette,
-            "showfilter": True,
+            **seite.kontext,
             "seitentitel": "Mitgliederliste",
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
             "add": "mitglied_add" if request.user.has_perm("intern.add_user") else None,
@@ -141,9 +111,7 @@ def mitglied_list(request):
             "invite_form": MitgliedInviteForm() if request.user.has_perm("intern.add_user") else None,
             "add_panel_include": "mitglied_add_panel.html" if request.user.has_perm("intern.add_user") else None,
             "add_label": "Neues Mitglied",
-            "has_more": has_more,
-            "next_offset": offset + _PAGE_SIZE,
-            "show_email_copy": "email" in fields,
+            "show_email_copy": "email" in seite.fields,
             "notify_url": reverse("mitglied_benachrichtigen") if request.user.has_perm("intern.notify_user") else None,
         },
     )

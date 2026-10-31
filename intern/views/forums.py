@@ -36,9 +36,10 @@ from ..models import (
     User,
     ab_stichtag,
 )
-from ..tables import FORUM_SPALTEN_AUS, ForumTabelle
+from ..tables import ForumTabelle
 from ._auswahl import chip_eintraege
 from ._decorators import tabellenzustand
+from ._tabelle import sichtbare_spalten
 
 __all__ = [
     "forum_list",
@@ -270,21 +271,9 @@ def forum_list(request):
         .annotate(bild_pfad=F("bild__file"), bild_oeffentlich=F("bild__is_public"))
         .order_by("-zugriff")
     )
-    from .files import visible_fields
-
-    # Ohne gespeicherte Auswahl (leere Liste) sind alle Spalten sichtbar, bis auf
-    # die standardmaessig abgeschalteten.
-    table = ForumTabelle(foren)
-    fields = visible_fields(request, "ForumTabelle") or [
-        name for name in table.base_columns if name not in FORUM_SPALTEN_AUS
-    ]
-    column_choices = [
-        {"name": name, "label": table.columns[name].header, "checked": not fields or name in fields}
-        for name in table.base_columns
-    ]
-    for name in list(table.columns.names()):
-        if fields and name not in fields:
-            table.columns.hide(name)
+    fields = sichtbare_spalten(request, ForumTabelle)
+    table = ForumTabelle(foren, visible_fields=fields)
+    column_choices = table.spalten_auswahl(fields)
     # Die Kategorie-Spalte erscheint nur, wenn ein angezeigtes Forum eine hat, und
     # heißt „Kat“, solange keine Kategorie länger als drei Zeichen ist.
     kategorien = set(foren.exclude(kategorie="").values_list("kategorie", flat=True))

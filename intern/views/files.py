@@ -22,13 +22,12 @@ from intern.avatar_access import darf_avatar_aendern
 from intern.dateiablage import ordner_pfad, verknuepfte_dateien
 from intern.folder_access import folder_access, visible_folder_ids
 
-from ..models import DateiVersion, Lied, TabellenPreferenzen, Termin
+from ..models import DateiVersion, Lied, Termin
 from ..verwendung import datei_verwendungen
 
 __all__ = [
     "upload",
     "file_search",
-    "visible_fields",
     "file_unzip",
     "datei_view",
     "datei_restore",
@@ -509,36 +508,6 @@ def file_search(request):
     )
     results = [{"id": f.id, "name": f.original_filename, "url": f.url} for f in files]
     return JsonResponse(results, safe=False)
-
-
-def visible_fields(request, tabelle):
-    visible_fields = request.POST.getlist("columns")
-    if len(visible_fields) == 0:
-        # Bewusst first() statt get(): der unique_together deckt die globale
-        # Vorgabezeile (person=None) nicht ab, weil NULLs im Unique-Index als
-        # verschieden gelten (siehe TabellenPreferenzen in models.py). Eine zweite
-        # Vorgabezeile darf die Tabelle nicht mit MultipleObjectsReturned zerlegen.
-        pref = (
-            TabellenPreferenzen.objects.filter(person=request.user, tabelle=tabelle)
-            .order_by("pk")
-            .first()
-        )
-        if pref is None:
-            pref = (
-                TabellenPreferenzen.objects.filter(person=None, tabelle=tabelle)
-                .order_by("pk")
-                .first()
-            )
-        return pref.sichtbare_spalten if pref else []
-    else:
-        TabellenPreferenzen.objects.update_or_create(
-            person=request.user,
-            tabelle=tabelle,
-            defaults={
-                "sichtbare_spalten": visible_fields,
-            },
-        )
-    return visible_fields
 
 
 def _decode_zip_name(info):

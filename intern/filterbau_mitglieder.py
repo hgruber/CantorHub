@@ -19,11 +19,11 @@ from .filterbau import (
     Baukasten,
     Bedingung,
     Feld,
-    datum_q,
-    datum_wert,
+    datum_feld,
+    mehrfach_texte,
     namens_wert,
-    text_q,
-    text_wert,
+    schalter_feld,
+    text_feld,
     wahl_q,
 )
 from .models import User, Zusage
@@ -48,13 +48,6 @@ _STIMME = (
     ("in", "ist in", False, "ist {w}"),
     ("nicht-in", "ist nicht in", True, "ist nicht {w}"),
 )
-_TEXT = (
-    ("enthaelt", "enthält", False, "{feld} enthält {w}"),
-    ("enthaelt-nicht", "enthält nicht", True, "{feld} enthält nicht {w}"),
-    ("beginnt", "beginnt mit", False, "{feld} beginnt mit {w}"),
-    ("endet", "endet mit", False, "{feld} endet mit {w}"),
-    ("ist", "ist", False, "{feld} ist {w}"),
-)
 _HAT = (
     ("hat", "hat", False, "{w}"),
     ("hat-nicht", "hat nicht", True, "nicht {w}"),
@@ -62,11 +55,6 @@ _HAT = (
 _ZUGANG = (
     ("hat", "hat Zugang", False, "hat Zugang"),
     ("hat-nicht", "hat keinen Zugang", True, "hat keinen Zugang"),
-)
-_DATUM = (
-    ("vor", "vor", False, "{feld} vor dem {w}"),
-    ("nach", "nach", False, "{feld} nach dem {w}"),
-    ("ist", "am", False, "{feld} am {w}"),
 )
 
 # Antwortmoeglichkeiten der Zusage-Zeile: ``(Wert, Beschriftung, Satz bejaht, Satz
@@ -127,51 +115,31 @@ def _satz_zusage(operator, werte, namen):
     return termin
 
 
-def _text_feld(key, label, feldnamen, recht=None):
-    return Feld(
-        key=key, label=label, art="text", operatoren=_TEXT,
-        q=text_q(*feldnamen), werte_text=text_wert, recht=recht,
-    )
-
-
-def _datum_feld(key, label, feldname, mit_uhrzeit, recht=None):
-    return Feld(
-        key=key, label=label, art="datum", operatoren=_DATUM,
-        q=datum_q(feldname, mit_uhrzeit), werte_text=datum_wert, recht=recht,
-    )
-
-
 FELDER = {
-    "name": _text_feld("name", "Name", ("first_name", "last_name")),
+    "name": text_feld("name", "Name", "first_name", "last_name"),
     "stimme": Feld(
         key="stimme", label="Stimme", art="mehrfach", operatoren=_STIMME,
         q=wahl_q("stimme"), werte_text=_stimmen,
-        texte={"auswahl_label": "Gewählte Stimmen", "vorrat_label": "Verfügbare Stimmen",
-               "such_platzhalter": "Stimme suchen …", "leer_text": "Alle Stimmen"},
+        texte=mehrfach_texte("Stimme", "Stimmen"),
     ),
-    "email": _text_feld("email", "E-Mail", ("email",), RECHT_VERWALTER),
-    "xmpp": _text_feld("xmpp", "XMPP", ("xmpp",), RECHT_VERWALTER),
-    "geburtstag": _datum_feld("geburtstag", "Geburtstag", "geburtstag", False, RECHT_VERWALTER),
-    "last_login": _datum_feld("last_login", "Letzte Anmeldung", "last_login", True),
-    "date_joined": _datum_feld("date_joined", "Eintritt", "date_joined", True),
-    "strasse": _text_feld("strasse", "Straße", ("strasse",), RECHT_VERWALTER),
-    "plz": _text_feld("plz", "PLZ", ("plz",), RECHT_VERWALTER),
-    "ort": _text_feld("ort", "Ort", ("ort",), RECHT_VERWALTER),
-    "telefon": _text_feld("telefon", "Telefon", ("telefon",), RECHT_VERWALTER),
-    "telefon_job": _text_feld("telefon_job", "Telefon (Beruf)", ("telefon_job",), RECHT_VERWALTER),
-    "telefon_mobil": _text_feld("telefon_mobil", "Mobil", ("telefon_mobil",), RECHT_VERWALTER),
-    "telefon_job_mobil": _text_feld("telefon_job_mobil", "Mobil (Beruf)", ("telefon_job_mobil",), RECHT_VERWALTER),
-    "fax": _text_feld("fax", "Fax", ("fax",), RECHT_VERWALTER),
-    "zugang": Feld(
-        key="zugang", label="Zugang", art="ohne", operatoren=_ZUGANG,
-        q=_zugang_q, werte_text=lambda werte, namen: "", ohne_wert=True,
-        recht=RECHT_VERWALTER,
-    ),
+    "email": text_feld("email", "E-Mail", recht=RECHT_VERWALTER),
+    "xmpp": text_feld("xmpp", "XMPP", recht=RECHT_VERWALTER),
+    "geburtstag": datum_feld("geburtstag", "Geburtstag", mit_uhrzeit=False, recht=RECHT_VERWALTER),
+    "last_login": datum_feld("last_login", "Letzte Anmeldung", mit_uhrzeit=True),
+    "date_joined": datum_feld("date_joined", "Eintritt", mit_uhrzeit=True),
+    "strasse": text_feld("strasse", "Straße", recht=RECHT_VERWALTER),
+    "plz": text_feld("plz", "PLZ", recht=RECHT_VERWALTER),
+    "ort": text_feld("ort", "Ort", recht=RECHT_VERWALTER),
+    "telefon": text_feld("telefon", "Telefon", recht=RECHT_VERWALTER),
+    "telefon_job": text_feld("telefon_job", "Telefon (Beruf)", recht=RECHT_VERWALTER),
+    "telefon_mobil": text_feld("telefon_mobil", "Mobil", recht=RECHT_VERWALTER),
+    "telefon_job_mobil": text_feld("telefon_job_mobil", "Mobil (Beruf)", recht=RECHT_VERWALTER),
+    "fax": text_feld("fax", "Fax", recht=RECHT_VERWALTER),
+    "zugang": schalter_feld("zugang", "Zugang", _ZUGANG, _zugang_q, recht=RECHT_VERWALTER),
     "gruppen": Feld(
         key="gruppen", label="Gruppen", art="mehrfach", operatoren=_GRUPPEN,
         q=_gruppen_q, werte_text=namens_wert,
-        texte={"auswahl_label": "Gewählte Gruppen", "vorrat_label": "Verfügbare Gruppen",
-               "such_platzhalter": "Gruppe suchen …", "leer_text": "Alle Gruppen"},
+        texte=mehrfach_texte("Gruppe", "Gruppen"),
     ),
     "zusage": Feld(
         key="zusage", label="Zusage", art="zusage", operatoren=_HAT,
