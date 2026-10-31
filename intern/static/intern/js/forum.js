@@ -13,6 +13,22 @@
     "use strict";
 
     var QUICK_EMOJIS = ["👍", "❤️", "😂", "🎉", "😮", "😢", "🙏", "👏"];
+    // Kuratierte Auswahl fuer PC-Benutzer, denen keine Handytastatur Emojis anbietet:
+    // Reaktions-Picker („Mehr“) und Knopf am Nachrichtenfeld teilen sie.
+    var EMOJI_GRUPPEN = [
+        { titel: "Gesichter", emojis: ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂",
+            "🙂", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😋", "😜", "🤪", "🤗",
+            "🤔", "🤫", "😐", "🙄", "😏", "😬", "😌", "😴", "🥳", "😎", "🤓", "😮",
+            "😲", "🥺", "😢", "😭", "😱", "😤", "😡", "🤯"] },
+        { titel: "Gesten & Herzen", emojis: ["👍", "👎", "👌", "✌️", "🤞", "👋", "👏",
+            "🙌", "🙏", "💪", "🤝", "✋", "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤",
+            "💖"] },
+        { titel: "Musik & Feiern", emojis: ["🎵", "🎶", "🎤", "🎹", "🎸", "🥁", "🎺",
+            "🎻", "🎼", "🎧", "🎉", "🎊", "🥂", "🍾", "🎂", "🎁", "⭐", "✨", "🔥",
+            "🏆"] },
+        { titel: "Sonstiges", emojis: ["☀️", "🌧️", "❄️", "🌈", "🌸", "☕", "🍰", "🍕",
+            "🚗", "🚆", "📅", "⏰", "📍", "📣", "✅", "❌", "❓", "❗", "💡", "👀"] },
+    ];
     var POLL_MS = 5000;
 
     function dedupe(container) {
@@ -97,46 +113,86 @@
         if (picker) { picker.remove(); picker = null; }
     }
 
+    function emojiKnopf(emoji, onPick) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "reaction-pick";
+        b.textContent = emoji;
+        b.addEventListener("click", function () { onPick(emoji); });
+        return b;
+    }
+
+    function emojiRaster(onPick) {
+        var raster = document.createDocumentFragment();
+        EMOJI_GRUPPEN.forEach(function (gruppe) {
+            var titel = document.createElement("div");
+            titel.className = "emoji-gruppe";
+            titel.textContent = gruppe.titel;
+            raster.appendChild(titel);
+            gruppe.emojis.forEach(function (emoji) {
+                raster.appendChild(emojiKnopf(emoji, onPick));
+            });
+        });
+        return raster;
+    }
+
+    function platziere(button) {
+        var rect = button.getBoundingClientRect();
+        picker.style.top = (window.scrollY + rect.bottom + 4) + "px";
+        picker.style.left =
+            (window.scrollX +
+                Math.max(8, Math.min(rect.left, window.innerWidth - picker.offsetWidth - 8))) + "px";
+    }
+
     function openPicker(button) {
         closePicker();
         var messageId = button.dataset.messageId;
         picker = document.createElement("div");
         picker.className = "reaction-picker";
+        var waehle = function (emoji) {
+            sendReaction(messageId, emoji);
+            closePicker();
+        };
 
         QUICK_EMOJIS.forEach(function (emoji) {
-            var b = document.createElement("button");
-            b.type = "button";
-            b.className = "reaction-pick";
-            b.textContent = emoji;
-            b.addEventListener("click", function () {
-                sendReaction(messageId, emoji);
-                closePicker();
-            });
-            picker.appendChild(b);
+            picker.appendChild(emojiKnopf(emoji, waehle));
         });
 
-        var input = document.createElement("input");
-        input.type = "text";
-        input.className = "reaction-input";
-        input.maxLength = 16;
-        input.placeholder = "🙂";
-        input.setAttribute("aria-label", "Eigenes Emoji");
-        input.addEventListener("keydown", function (e) {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                var v = input.value.trim();
-                if (v) { sendReaction(messageId, v); closePicker(); }
-            }
+        var mehr = document.createElement("button");
+        mehr.type = "button";
+        mehr.className = "reaction-pick";
+        mehr.textContent = "…";
+        mehr.title = "Mehr Emojis";
+        mehr.setAttribute("aria-label", "Mehr Emojis");
+        mehr.addEventListener("click", function (e) {
+            // Sonst haelt der Dokument-Handler den entfernten Knopf fuer „ausserhalb“.
+            e.stopPropagation();
+            mehr.remove();
+            picker.classList.add("voll");
+            picker.appendChild(emojiRaster(waehle));
+            platziere(button);
         });
-        picker.appendChild(input);
+        picker.appendChild(mehr);
 
         document.body.appendChild(picker);
-        var rect = button.getBoundingClientRect();
-        picker.style.top = (window.scrollY + rect.bottom + 4) + "px";
-        picker.style.left =
-            (window.scrollX +
-                Math.min(rect.left, window.innerWidth - picker.offsetWidth - 8)) + "px";
-        input.focus();
+        platziere(button);
+    }
+
+    // Knopf am Nachrichtenfeld: fuegt an der Cursorposition ein und bleibt offen,
+    // damit mehrere Emojis hintereinander gehen.
+    function openEinfuegePicker(button) {
+        closePicker();
+        var ta = document.getElementById("mitteilung-textarea");
+        if (!ta) return;
+        picker = document.createElement("div");
+        picker.className = "reaction-picker voll";
+        picker.appendChild(emojiRaster(function (emoji) {
+            ta.setRangeText(emoji, ta.selectionStart, ta.selectionEnd, "end");
+            ta.dispatchEvent(new Event("input", { bubbles: true }));
+            ta.focus();
+        }));
+        document.body.appendChild(picker);
+        platziere(button);
     }
 
     // ── Delegierte Klicks ─────────────────────────────────────
@@ -147,6 +203,14 @@
             if (picker && picker._owner === add) { closePicker(); return; }
             openPicker(add);
             if (picker) picker._owner = add;
+            return;
+        }
+        var einfuegen = e.target.closest(".emoji-knopf");
+        if (einfuegen) {
+            e.stopPropagation();
+            if (picker && picker._owner === einfuegen) { closePicker(); return; }
+            openEinfuegePicker(einfuegen);
+            if (picker) picker._owner = einfuegen;
             return;
         }
         var chip = e.target.closest(".reaction-chip");

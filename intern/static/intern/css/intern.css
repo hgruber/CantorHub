@@ -2311,6 +2311,22 @@ time {
     box-shadow: none;
 }
 
+.forum-entry .emoji-knopf {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: transparent;
+    flex-shrink: 0;
+    justify-content: center;
+    font-size: calc(18rem / 14);
+    line-height: 1;
+    box-shadow: none;
+}
+
+.forum-entry .emoji-knopf:hover { background: var(--msg-border); box-shadow: none; }
+
 .forum-entry button[type="submit"]:hover {
     background: var(--brand-dark);
     box-shadow: 0 2px 8px color-mix(in srgb, var(--brand) 28%, transparent);
@@ -2508,16 +2524,18 @@ div.avatar { cursor: pointer; }
     cursor: pointer;
 }
 .reaction-pick:hover { background: var(--msg-border); }
-.reaction-input {
-    width: 46px;
-    margin-left: 4px;
-    padding: 4px 6px;
-    font-size: calc(15rem / 14);
-    border-radius: 7px;
-    border: 1px solid var(--msg-border);
-    background: var(--bg-card);
-    color: var(--t2, var(--t3));
+.reaction-picker.voll {
+    max-width: min(320px, calc(100vw - 16px));
+    max-height: 300px;
+    overflow-y: auto;
 }
+.emoji-gruppe {
+    flex-basis: 100%;
+    padding: 6px 4px 2px;
+    font-size: calc(11rem / 14);
+    color: var(--t3);
+}
+.emoji-gruppe:first-child { padding-top: 0; }
 
 .message_me img,
 .message img,

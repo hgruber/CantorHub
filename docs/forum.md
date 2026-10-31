@@ -35,7 +35,8 @@ edits. The forum's audited fields are `thema`, `aktiv`, `bild_id`, `xmpp_muc_jid
 Members can react to individual forum messages with emoji (XEP-0444), synced both ways with the
 linked MUC room. A reaction bar renders under each message bubble (`_message.html` →
 `.reactions` container, populated by `forum.js`); a `+` opens a small picker (fixed quick set
-**plus** a free-emoji input). `forum.js` polls `forum_reactions` (JSON) every 5 s **while the tab is visible** and
+**plus** a `…` that unfolds a curated set, `EMOJI_GRUPPEN`). The same set backs the 🙂 button next
+to the message field, which inserts at the cursor — desktop keyboards offer no emoji of their own. `forum.js` polls `forum_reactions` (JSON) every 5 s **while the tab is visible** and
 re-renders all bars, so XMPP-originated reactions appear too; clicks POST to `forum_react` (`X-CSRFToken`
 via `getCsrfToken()`). Both views are gated by `_forum_access` — whoever may read a forum may
 react.

@@ -7,6 +7,14 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Forum: ein 🙂-Knopf neben dem Nachrichtenfeld öffnet eine Emoji-Auswahl und fügt an der
+  Cursorposition ein — auch am PC, dessen Tastatur keine Emojis anbietet. Der Reaktions-Picker
+  klappt über „…“ dieselbe Auswahl auf; das Freitextfeld darin entfällt.
+
 ## v1.2.2 — 2026-10-30
 
 ### Hinzugefügt
