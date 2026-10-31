@@ -9,6 +9,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ## Unveröffentlicht
 
+### Geändert
+
+- Artikel: Eingebettete Bilder sind als Voransicht immer gleich breit; sehr hohe Bilder werden ab 320 px Höhe unten abgeschnitten.
+
 ### Behoben
 
 - Artikel: Linien unter Überschriften und hervorgehobene Kästen enden vor einem Bild am rechten Rand, statt darunter durchzulaufen.

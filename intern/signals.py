@@ -255,7 +255,7 @@ _KONFIG_SECRET_MARKERS = ("PASSWORD", "SECRET", "TOKEN")
 _THUMBNAIL_SIZES = [
     {"size": (32, 32), "crop": True, "quality": 85},
     {"size": (120, 120), "crop": True, "quality": 85},
-    {"size": (200, 200), "quality": 85},
+    {"size": (200, 0), "quality": 85},
     {"size": (400, 400), "crop": True, "quality": 85},
 ]
 

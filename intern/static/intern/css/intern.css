@@ -4049,7 +4049,7 @@ table.mitglied-table tr.stimme-group-start td {
     float: right;
     clear: right;
     margin: 0.2em 0 0.8em 1.2em;
-    max-width: 220px;
+    width: 214px;  /* 200px Voransicht + Innenabstand + Rahmen */
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--r-sm);
@@ -4058,10 +4058,16 @@ table.mitglied-table tr.stimme-group-start td {
     text-align: center;
 }
 
+/* Die Voransicht ist 200px breit (replacements.py); ein hohes Bild wird ab
+   320px von unten angeschnitten, das Original liegt hinter dem Link. */
 .wiki-page .wiki .wiki-figure img {
     display: block;
+    width: 100%;
     max-width: 100%;
     height: auto;
+    max-height: 320px;
+    object-fit: cover;
+    object-position: top;
     border-radius: var(--r-sm);
     margin: 0;
     box-shadow: none;

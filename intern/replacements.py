@@ -327,7 +327,7 @@ def insert_file_object(f, label=None, spieler=False):
     if mime.startswith("image") or mime.endswith("pdf"):
         try:
             thumb = get_thumbnailer(f.file).get_thumbnail(
-                {"size": (200, 200), "quality": 85}
+                {"size": (200, 0), "quality": 85}
             )
             alt = html.escape(f.original_filename or "")
             # data-datei-* trägt das Kontextmenü der Artikelansicht
