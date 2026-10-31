@@ -876,10 +876,18 @@ class OrtTabelle(tables.Table):
     strasse = tables.Column(verbose_name="Straße")
     plz = tables.Column(verbose_name="PLZ")
     ort = tables.Column(verbose_name="Ort")
+    beschreibung = tables.Column(verbose_name="Beschreibung")
 
     class Meta:
         attrs = {"class": "table table-hover"}
         row_attrs = {"data-href": lambda record: reverse("ort_view", args=[record.id])}
+
+    def __init__(self, *args, visible_fields=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if visible_fields is not None:
+            for name in list(self.columns.names()):
+                if name not in visible_fields:
+                    self.columns.hide(name)
 
 
 # ---------------------------------------------------------------------------

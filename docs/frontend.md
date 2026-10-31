@@ -723,7 +723,7 @@ duplicate patterns nor the writing rule can drift apart silently.
 
 ## The filter builder
 
-The member list and the repertoire do not use a fixed field per criterion. Their filter is a
+The member list, the repertoire and the locations do not use a fixed field per criterion. Their filter is a
 **chain of conditions**: any number of them, each with its own connector (`und`/`oder`) and its
 own negation. That is what makes „in Gruppe A und in Gruppe B und nicht in Gruppe C" or „Hymne
 und A cappella und nicht Aufnahme" expressible — a `ModelMultipleChoiceFilter` always ORs its
@@ -733,8 +733,9 @@ values and used to appear only once.
   class `Baukasten` parses (`lese_bedingungen()`), builds the `Q` (`baue_q()`), applies both
   (`aus_daten()`) and prepares the topbar display (`kette()`), all without database access so a
   `SimpleTestCase` can pin them (like `verwendung.py` or `mitgliedschaft.py`). The fields live
-  in two registries next to it, each a `Baukasten` instance: `MITGLIEDER` in
-  `filterbau_mitglieder.py` and `TITEL` in `filterbau_titel.py`. The hooks where the pages
+  in three registries next to it, each a `Baukasten` instance: `MITGLIEDER` in
+  `filterbau_mitglieder.py`, `TITEL` in `filterbau_titel.py` and `ORTE` in `filterbau_orte.py`
+  (text fields plus the fixed switch „Karte“ — has coordinates or not; no hooks). The hooks where the pages
   differ are optional: `vorgabe` (the manager's access default), `alt_parameter` (the
   pre-builder parameters), `marker` (extra parameters when a condition goes away) and `traeger`
   (extra hidden form fields). Only names for foreign keys need the database; the view passes

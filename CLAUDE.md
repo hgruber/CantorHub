@@ -126,8 +126,8 @@ stage picture, the table column, the filter and the audit labels all read; guard
 `ZusageOptionenTest`), `filterbau.py` (the filter as a chain of conditions — connector,
 negation and the `und`-binds-tighter evaluation, the per-field right, the three-state switch
 rule and the escaping that lets a typed name carry a comma; the machine, without a single
-field and without DB access), `filterbau_mitglieder.py` / `filterbau_titel.py` (its two field
-registries, for the member list and the repertoire; no `FilterSet` left on either, see „The
+field and without DB access), `filterbau_mitglieder.py` / `filterbau_titel.py` / `filterbau_orte.py` (its three field
+registries, for the member list, the repertoire and the locations; no `FilterSet` left on either, see „The
 filter builder" in `docs/frontend.md`), `mitgliedschaft.py` (the two axes of belonging: `is_active` = portal
 access, the group „Mitglied" = club membership, plus the admission itself — guarded by
 `MitgliedschaftTest`, see `docs/members.md`), `avatare.py` (fallback avatar files and thumbnails, so lists do not

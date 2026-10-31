@@ -3,11 +3,13 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django_tables2 import RequestConfig
 
+from ..filterbau_orte import ORTE
 from ..forms import OrtForm
 from ..models import Ort
 from ..tables import OrtTabelle
 from ._decorators import tabellenzustand
 from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
+from .files import visible_fields
 
 __all__ = [
     "ort_list",
@@ -18,27 +20,41 @@ __all__ = [
 ]
 
 _PAGE_SIZE = 50
+_SPALTEN_VORGABE = ["name", "strasse", "plz", "ort"]
 
 
 @login_required
 @tabellenzustand
 def ort_list(request):
-    qs = Ort.objects.order_by("name")
+    qs, bedingungen = ORTE.aus_daten(Ort.objects.order_by("name"), request.GET)
+    kette = ORTE.kette(bedingungen, request)
+    # Ohne eigene Auswahl und ohne Vorgabezeile die Spalten von bisher.
+    fields = visible_fields(request, "OrtTabelle") or _SPALTEN_VORGABE
 
     offset = parse_offset(request)
 
-    probe = OrtTabelle(qs)
+    probe = OrtTabelle(qs, visible_fields=fields)
     page, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
-    table = OrtTabelle(page)
+    table = OrtTabelle(page, visible_fields=fields)
     RequestConfig(request, paginate=False).configure(table)
 
     if ist_nachladen(request):
         return nachlade_antwort("table_rows.html", {"table": table},
                                 has_more, offset + _PAGE_SIZE)
 
+    column_choices = [
+        {"name": name, "label": table.columns[name].header, "checked": name in fields}
+        for name in table.base_columns
+    ]
+
     add = "ort_add" if request.user.has_perm("intern.add_ort") else None
     return render(request, "table.html", {
         "table": table,
+        "column_choices": column_choices,
+        "baukasten": ORTE,
+        "bedingungen": bedingungen,
+        "kette": kette,
+        "showfilter": True,
         "seitentitel": "Orte",
         "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
         "add": add,
