@@ -18,6 +18,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Geändert
 
+- Termin-Banner: Der Hinweis auf den nächsten Termin ist jetzt eine ruhige Zeile mit neutraler Fläche statt einer akzentfarben getönten Leiste über jeder Seite. Der Terminname steht vorn, der Vorlauf am Ende der Datumszeile; auf schmalen Bildschirmen entfällt er.
 - Karten: Kartenüberschriften sind jetzt kleine graue Beschriftungen über einer feinen Trennlinie statt Versalien in Markenfarbe über einem 2-px-Balken; Panel-, Abstimmungs- und Artikeltitel führen ebenfalls keine Markenlinie mehr.
 - Farben: Die Zustandsfarben (Zusage, Absage, Fehler) sind fest und folgen nicht der Akzentfarbe; außerhalb des Akzents steht Rot nur noch für Löschen und Fehler. Wochenenden im Kalender sind neutral, die Symbole im Download-Menü tragen keine eigenen Farben mehr.
 - Termine: Die Aufstellung unterscheidet die vier Antworten jetzt auch in der Form — voll, halb, leer, durchgestrichen — und bleibt damit auch bei Rot-Grün-Schwäche lesbar.

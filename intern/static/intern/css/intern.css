@@ -3750,17 +3750,19 @@ table.mitglied-table tr.stimme-group-start td {
    damit der Rollbereich .content nicht um die Bannerhöhe überläuft. Als
    Flex-Element von .app-main darf es deshalb nicht schrumpfen. */
 .termin-banner[hidden] { display: none; }
+/* Der Banner ist eine Notiz, keine Ankuendigung: neutrale Flaeche, Haarlinie,
+   kein Schatten, und der Akzent kommt in ihm nicht mehr vor. Frueher trug er
+   Marken-Tint, 4-px-Markenkante und Schatten und war auf jeder Seite lauter
+   als der Seitentitel — bei einem roten Akzent las er sich wie eine
+   Alarmleiste. */
 .termin-banner {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 10px 14px;
-    background: var(--brand-light);
-    border: 1px solid var(--brand-ring);
-    border-left: 4px solid var(--brand);
-    border-radius: var(--r);
-    box-shadow: var(--shadow-sm);
+    gap: 12px;
+    padding: 7px 16px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
 }
 .termin-banner-main {
     display: flex;
@@ -3774,7 +3776,7 @@ table.mitglied-table tr.stimme-group-start td {
 .termin-banner-icon {
     display: inline-flex;
     flex: 0 0 auto;
-    color: var(--brand);
+    color: var(--t3);
 }
 .termin-banner-text {
     display: flex;
@@ -3792,9 +3794,8 @@ table.mitglied-table tr.stimme-group-start td {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: var(--fs-sm);
-    font-weight: 700;
-    color: var(--brand);
+    font-size: var(--fs-xs);
+    color: var(--t3);
     white-space: nowrap;
 }
 .termin-banner-titel {
@@ -3810,8 +3811,8 @@ table.mitglied-table tr.stimme-group-start td {
     font-weight: 600;
     padding: 1px 7px;
     border-radius: 999px;
-    background: var(--brand);
-    color: #fff;
+    background: var(--bg-row-hover);
+    color: var(--t2);
     white-space: nowrap;
 }
 .termin-banner-line2 {
@@ -3853,6 +3854,9 @@ table.mitglied-table tr.stimme-group-start td {
         right: 6px;
     }
     .termin-banner { gap: 10px; }
+    /* Der Vorlauf ist die entbehrlichste Angabe im Banner; ohne ihn passt
+       die Zeile mit Datum und Ort, statt auf „Probenraum…“ zu kürzen. */
+    .termin-banner-countdown { display: none; }
 }
 
 @media (max-width: 480px) {

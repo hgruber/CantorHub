@@ -202,7 +202,10 @@ keeps it clear of the full-bleed map (`.karte-wrap` is `position: absolute; inse
 `.content`), which used to cover it. It highlights the next upcoming event (`banner_termin` /
 `banner_my_option`, computed in `config/context_processors.py`'s `project_meta`) with a
 countdown, location and — when `anwesenheit=True` — the same quick Zusage buttons
-(governed by `ZUSAGE_TRANSITIONS`). The buttons POST to `termin_zusage` with a hidden
+(governed by `ZUSAGE_TRANSITIONS`). It is deliberately quiet: neutral surface with a hairline,
+**no accent tint and no accent bar** (a rose brand turned the full-width band into an alert
+strip on every page), the event name leads and the countdown trails the date line; below 640 px
+the countdown drops so date and place fit without an ellipsis. The buttons POST to `termin_zusage` with a hidden
 `source=banner` field, which makes that view render `_termin_banner.html` instead of the detail
 widget (htmx swaps `#termin-banner`).
 

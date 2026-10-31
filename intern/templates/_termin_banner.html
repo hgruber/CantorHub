@@ -7,14 +7,11 @@
     </span>
     <span class="termin-banner-text">
       <span class="termin-banner-line1">
-        <span class="termin-banner-countdown">
-          {% symbol "verlauf" width="13" height="13" stroke_width="2.2" %}
-          {{ banner_termin|countdown }}</span>
         <span class="termin-banner-titel">{{ banner_termin.kurz }}</span>
         {% if banner_termin.repertoire %}<span class="termin-banner-tag">Konzert</span>{% endif %}
       </span>
       <span class="termin-banner-line2">
-        {{ banner_termin.datum|date:"D, d.m." }}{% if banner_termin.datum|time:"H:i" != "00:00" %}, {{ banner_termin.datum|time:"H:i" }} Uhr{% else %}{% with bis=banner_termin|zeitraum_bis %}{% if bis %} – {{ bis|date:"D, d.m." }}{% endif %}{% endwith %}{% endif %}{% if banner_termin.ort %} · {{ banner_termin.ort.name }}{% endif %}
+        {{ banner_termin.datum|date:"D, d.m." }}{% if banner_termin.datum|time:"H:i" != "00:00" %}, {{ banner_termin.datum|time:"H:i" }} Uhr{% else %}{% with bis=banner_termin|zeitraum_bis %}{% if bis %} – {{ bis|date:"D, d.m." }}{% endif %}{% endwith %}{% endif %}{% if banner_termin.ort %} · {{ banner_termin.ort.name }}{% endif %}<span class="termin-banner-countdown"> · {{ banner_termin|countdown }}</span>
       </span>
     </span>
   </a>

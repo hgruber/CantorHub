@@ -92,7 +92,12 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   text-plus-native-picker component (`feldtyp` `"color"`, see `docs/frontend.md`). **It has to
   carry white text**: `--brand` is the background of primary buttons, and the homepage hero
   is a darkening of it, all of them white-on-brand. A very pale colour breaks those long before it
-  looks wrong anywhere else. The logo keeps its own colours either way: the shipped
+  looks wrong anywhere else. **A red accent costs the danger signal its edge**: the status tones
+  (`--status-danger-solid` `#dc2626`, the Zusage traffic light) are fixed and never derived from
+  `--brand`, so a rose or red brand puts two kinds of red on one screen. Nothing breaks — the
+  destructive action keeps its trash icon, its place and its confirmation dialog — but colour is
+  then the weakest of the three cues, which is why the next-event banner carries no accent tint at
+  all. The logo keeps its own colours either way: the shipped
   seal is blue, an installation brings its own `logo.svg` under `DATEN/startseite/statisch/`
   (see `docs/startseite.md`)
 - `VEREINSADRESSE` (ladungsfähige Kontaktanschrift of the Verein, shown in the privacy policy's „Verantwortliche" section; multi-line, empty → only board member names are listed, no addresses)

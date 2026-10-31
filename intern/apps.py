@@ -135,7 +135,9 @@ _CONFIG_DEFAULTS = [
         "BRAND_FARBE",
         "#2b6cb0",
         "Akzentfarbe des Portals (Hex; Buttons, Links, Sidebar-Hervorhebung, "
-        "Mail-Header, PDF-Briefkopf)",
+        "Mail-Header, PDF-Briefkopf). Ein Rot nahe dem Gefahrenrot (#dc2626) "
+        "schwächt die Signalwirkung von Löschen und Absage — dort tragen dann "
+        "Symbol und Rückfrage die Unterscheidung.",
     ),
     (
         "VEREINSADRESSE",
