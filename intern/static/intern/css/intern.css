@@ -1467,7 +1467,7 @@ time {
     justify-content: space-between;
     padding: 4px 16px;
     height: 36px;
-    border-bottom: 2px solid var(--brand);
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     background: var(--bg-card);
 }
@@ -1706,7 +1706,7 @@ time {
     align-items: center;
     margin-bottom: 16px;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--brand);
+    border-bottom: 1px solid var(--border);
 }
 .add-panel-header strong { font-size: var(--fs-md); color: var(--t1); }
 .add-panel-close {
@@ -2886,15 +2886,17 @@ table.mitglied-table tr.stimme-group-start td {
     flex-direction: column;
 }
 
+/* Kartenueberschrift: eine Beschriftung, keine Schlagzeile. Frueher stand sie
+   in Versalien, Markenfarbe und mit 2px-Markenbalken — lauter als der
+   Seitentitel und bei vier Karten uebereinander vier blaue Linien. Jetzt eine
+   Stufe kleiner als der Inhalt, neutral, mit einer Haarlinie als Trennung. */
 .detail-card h3 {
-    font-size: var(--fs-2xs);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--brand-text);
-    margin: 0 0 12px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--brand);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--t3);
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -2919,7 +2921,9 @@ table.mitglied-table tr.stimme-group-start td {
 .detail-card h3 a.h3-edit {
     display: inline-flex;
     align-items: center;
-    opacity: 0.4;
+    /* Die Ueberschrift ist jetzt --t3; bei 0,4 Deckkraft fiele das Stift-
+       Symbol unter die 3:1 fuer Bedienelemente (WCAG 1.4.11). */
+    opacity: 0.7;
     text-decoration: none;
 }
 
@@ -3603,7 +3607,7 @@ table.mitglied-table tr.stimme-group-start td {
 .detail-card h3 button.h3-edit {
     display: inline-flex;
     align-items: center;
-    opacity: 0.4;
+    opacity: 0.7;
     background: transparent;
     border: 0;
     padding: 0;
@@ -4050,7 +4054,7 @@ table.mitglied-table tr.stimme-group-start td {
 .wiki h1 {
     font-size: 1.45em;
     color: var(--brand-text);
-    border-bottom: 2px solid var(--brand);
+    border-bottom: 1px solid var(--border-dark);
     padding-bottom: 0.3em;
     margin-bottom: 0.9em;
 }
@@ -4650,7 +4654,7 @@ span.not_found {
 .wiki-page .wiki h2 {
     font-size: 1.2em;
     color: var(--brand-text);
-    border-bottom: 2px solid var(--brand);
+    border-bottom: 1px solid var(--border-dark);
     padding-bottom: 0.25em;
     margin: 2em 0 0.75em;
 }
@@ -6501,13 +6505,12 @@ tbody tr.zeile-markiert td:first-child {
     justify-content: space-between;
     align-items: baseline;
     gap: 8px;
-    font-size: var(--fs-2xs);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--brand-text);
-    border-bottom: 2px solid var(--brand);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--t3);
+    border-bottom: 1px solid var(--border);
     padding-bottom: 6px;
-    margin: 0 0 12px;
+    margin: 0 0 10px;
 }
 .abstimmung-countdown {
     text-transform: none;
