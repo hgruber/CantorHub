@@ -1,13 +1,10 @@
-import django_filters as filters
 import django_tables2 as tables
-from django import forms
-from django.contrib.auth.models import Group
 from django.db.models import Case, IntegerField, Value, When
 from django.template.defaultfilters import date as datumsfilter
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from django_tables2.data import TableListData
 
@@ -934,151 +931,19 @@ class OrtTabelle(Spaltenwahl):
 # Änderungsprotokoll
 # ---------------------------------------------------------------------------
 
-_CHANGELOG_MODEL_LABELS = {
-    "Termin": "Termin",
-    "Zusage": "Anwesenheit",
-    "Konzert": "Ablauf",
-    "Lied": "Lied",
-    "LiedDatei": "Lied",
-    "User": "Mitglied",
-    "Forum": "Forum",
-    "Ort": "Ort",
-    "Group": "Gruppe",
-    "Benachrichtigung": "E-Mail",
-    "Konfiguration": "Konfiguration",
-}
-
-_CHANGELOG_MODEL_CHOICES = [("", "Alle"), ("__gruppe__", "Gruppenzuordnung")] + [
-    (k, v) for k, v in _CHANGELOG_MODEL_LABELS.items()
-]
-
-def _changelog_user_choices():
-    """User choices for ChangeLogFilter: Alle + System + active users sorted by Stimme/Name."""
-    users = (
-        User.objects
-        .filter(is_active=True)
-        .annotate(_stimme_pos=User.stimme_order_case())
-        .order_by("_stimme_pos", "last_name", "first_name")
-    )
-    choices = [("", "Alle"), ("__system__", "System")]
-    for u in users:
-        name = f"{u.last_name}, {u.first_name}".strip(", ") or u.username
-        choices.append((str(u.pk), name))
-    return choices
-
-_CHANGELOG_FIELD_LABELS = {
-    "first_name": "Vorname", "last_name": "Nachname", "stimme": "Stimme",
-    "is_active": "Aktiv", "email": "E-Mail", "xmpp": "XMPP",
-    "strasse": "Straße", "plz": "PLZ", "ort": "Ort",
-    "telefon": "Telefon", "telefon_mobil": "Mobil", "geburtstag": "Geburtstag",
-    "avatar_id": "Avatar",
-    "kurz": "Kurzbezeichnung", "datum": "Datum", "datum_bis": "Datum bis",
-    "lang": "Beschreibung", "extern": "Extern", "ort_id": "Veranstaltungsort",
-    "anwesenheit": "Anwesenheit", "repertoire": "Repertoire",
-    "titel": "Titel", "aktiv": "Aktiv", "tempo": "Tempo", "beats": "Beats",
-    "hymne": "Hymne", "acapella": "A cappella", "weihnacht": "Weihnachten",
-    "komponist": "Komponist",
-    "original_id": "Original", "aufnahme_id": "Aufnahme",
-    "pdf_id": "PDF", "noten_id": "Noten", "datei_id": "Datei",
-    "option": "Antwort",
-    "thema": "Thema", "bild_id": "Bild",
-    "name": "Name", "beschreibung": "Beschreibung",
-    "breite": "Breitengrad", "laenge": "Längengrad",
-    "setlist": "Ablauf",
-    "is_superuser": "Admin-Status",
-    "gruppe": "Gruppe",
-    "berechtigung": "Berechtigung",
-    "berechtigungen": "Zugriff",
-    "private_fields": "Privatsphäre",
-    "adressbuch_verborgen": "Adressbuch",
-}
-
-
-class ChangeLogFilter(filters.FilterSet):
-    model_name = filters.ChoiceFilter(
-        choices=_CHANGELOG_MODEL_CHOICES,
-        label="Bereich",
-        empty_label=None,
-        method="filter_model_name",
-    )
-    action = filters.ChoiceFilter(
-        choices=[("", "Alle")] + ChangeLog.ACTION_CHOICES,
-        label="Aktion",
-        empty_label=None,
-    )
-    user = filters.ChoiceFilter(
-        choices=[("", "Alle")],  # populated per-request in __init__
-        label="Benutzer",
-        empty_label=None,
-        method="filter_user",
-    )
-    gruppe = filters.ModelChoiceFilter(
-        queryset=Group.objects.order_by("name"),
-        label="Gruppe",
-        empty_label="Alle",
-        method="filter_gruppe",
-    )
-    datum_von = filters.DateFilter(
-        field_name="timestamp", lookup_expr="date__gte", label="Datum von",
-        widget=forms.DateInput(attrs={"type": "date"}),
-    )
-    datum_bis = filters.DateFilter(
-        field_name="timestamp", lookup_expr="date__lte", label="Datum bis",
-        widget=forms.DateInput(attrs={"type": "date"}),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.filters["user"].field.choices = _changelog_user_choices()
-
-    def filter_model_name(self, qs, name, value):
-        if not value:
-            return qs
-        if value == "__gruppe__":
-            return qs.filter(model_name="User", changes__has_key="gruppe")
-        return qs.filter(model_name=value)
-
-    def filter_user(self, qs, name, value):
-        if not value:
-            return qs
-        if value == "__system__":
-            return qs.filter(user__isnull=True)
-        try:
-            return qs.filter(user_id=int(value))
-        except (ValueError, TypeError):
-            return qs
-
-    def filter_gruppe(self, qs, name, value):
-        """Show only entries created by members of this group."""
-        if not value:
-            return qs
-        user_ids = value.user_set.values_list("id", flat=True)
-        return qs.filter(user_id__in=user_ids)
-
-    class Meta:
-        model = ChangeLog
-        fields = ["model_name", "action", "user", "gruppe", "datum_von", "datum_bis"]
-
-
 class ChangeLogTabelle(Spaltenwahl):
-    timestamp = DatumZeitSpalte(
-        verbose_name="Datum",
-        format="d.m.Y H:i",
-        attrs={"td": {"class": "nowrap"}},
+    """Das Änderungsprotokoll. Die Zeilen tragen, was ``_annotate_entries`` in
+    ``views/aenderungen.py`` je Seite anhaengt: ``model_label``, ``object_url`` und
+    ``change_rows`` (Feld, alt, neu) -- die Tabelle liest nur noch."""
+
+    timestamp = DatumZeitSpalte(verbose_name="Datum", format="d.m.Y H:i")
+    user = tables.Column(verbose_name="Benutzer", order_by=("user__last_name", "user__first_name"),
+                         empty_values=())
+    was = tables.Column(verbose_name="Was", empty_values=(), orderable=False)
+    object_repr = tables.Column(
+        verbose_name="Betreff", orderable=False, attrs={"td": {"class": "muted"}},
     )
-    user = tables.Column(verbose_name="Benutzer", order_by="user__last_name")
-    was = tables.Column(
-        verbose_name="Was",
-        empty_values=(),
-        orderable=False,
-    )
-    object_repr = tables.Column(verbose_name="Betreff", orderable=False)
-    felder = tables.Column(
-        verbose_name="Felder",
-        empty_values=(),
-        orderable=False,
-        attrs={"td": {"class": "muted"}},
-    )
+    felder = tables.Column(verbose_name="Felder", empty_values=(), orderable=False)
 
     class Meta:
         model = ChangeLog
@@ -1086,44 +951,29 @@ class ChangeLogTabelle(Spaltenwahl):
         order_by = "-timestamp"
 
     def render_user(self, value):
-        if value is None:
-            return "System"
-        name = f"{value.first_name} {value.last_name}".strip()
-        return name or value.username
+        return "System" if value is None else str(value)
 
     def render_was(self, record):
-        model_label = _CHANGELOG_MODEL_LABELS.get(record.model_name, record.model_name)
-        action_label = dict(ChangeLog.ACTION_CHOICES).get(record.action, record.action)
         return format_html(
             '<span class="changelog-model">{}</span> {}',
-            model_label, action_label,
+            record.model_label, record.get_action_display(),
         )
 
+    def render_object_repr(self, record, value):
+        if record.object_url:
+            return format_html('<a href="{}">{}</a>', record.object_url, value)
+        return value
+
     def render_felder(self, record):
-        change_rows = getattr(record, "change_rows", None)
-        if change_rows is None:
-            # fallback: no annotation — show field names only
-            labels = [_CHANGELOG_FIELD_LABELS.get(k, k) for k in record.changes]
-            return ", ".join(labels) if labels else "–"
-        if not change_rows:
-            return "–"
-        parts = []
-        for label, old, new in change_rows:
-            if old:
-                parts.append(format_html(
-                    '<div class="change-row">'
-                    '<span class="change-field">{}</span>: '
-                    '<span class="change-old">{}</span> → '
-                    '<span class="change-new">{}</span>'
-                    '</div>',
-                    label, old, new or "–",
-                ))
-            else:
-                parts.append(format_html(
-                    '<div class="change-row">'
-                    '<span class="change-field">{}</span>: '
-                    '<span class="change-new">{}</span>'
-                    '</div>',
-                    label, new or "–",
-                ))
-        return mark_safe("".join(parts))
+        if not record.change_rows:
+            return mark_safe('<span class="muted">–</span>')
+        return format_html_join(
+            "",
+            '<div class="change-row"><span class="change-field">{}</span>: {}'
+            '<span class="change-new">{}</span></div>',
+            (
+                (label, format_html('<span class="change-old">{}</span> → ', alt) if alt else "",
+                 neu or "–")
+                for label, alt, neu in record.change_rows
+            ),
+        )

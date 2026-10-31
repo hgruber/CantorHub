@@ -728,13 +728,10 @@ class AdressbuchOptOutTest(SimpleTestCase):
 
     def test_steht_im_aenderungsprotokoll(self):
         from intern.signals import _AUDIT_FIELDS
-        from intern.tables import _CHANGELOG_FIELD_LABELS
         from intern.views.aenderungen import FIELD_LABELS
 
         self.assertIn("adressbuch_verborgen", _AUDIT_FIELDS["User"])
-        for karte in (FIELD_LABELS, _CHANGELOG_FIELD_LABELS):
-            with self.subTest(karte=karte):
-                self.assertIn("adressbuch_verborgen", karte)
+        self.assertIn("adressbuch_verborgen", FIELD_LABELS)
 
     def test_haekchen_nur_im_eigenen_profil_bei_aktivem_dienst(self):
         from intern.forms import UserEditForm
@@ -3394,8 +3391,7 @@ class RegisterKonsistenzTest(SimpleTestCase):
     """Die handgepflegten Feldkarten gegen ``_meta``.
 
     Pro Modell und Feld werden mehrere Karten von Hand nachgeführt
-    (``_AUDIT_FIELDS``, ``FIELD_LABELS``, ``_CHANGELOG_FIELD_LABELS``,
-    ``_FILE_ID_FIELDS``). Ein Feldname darin ist eine
+    (``_AUDIT_FIELDS``, ``FIELD_LABELS``, ``_FILE_ID_FIELDS``). Ein Feldname darin ist eine
     **Zeichenkette**: wird ein Feld umbenannt und die Karte nicht, verstummt das
     Änderungsprotokoll für dieses Feld still, ohne dass etwas rot wird. Dieser Test
     kreuzt darum jede Karte gegen die Modelle — und sucht doppelte Dict-Schlüssel,
@@ -3497,15 +3493,12 @@ class RegisterKonsistenzTest(SimpleTestCase):
 
     def test_keine_doppelten_schluessel_in_den_karten(self):
         import intern.signals as signals
-        from intern import tables
         from intern.views import aenderungen
 
         karten = [
             (aenderungen, "FIELD_LABELS"),
             (aenderungen, "MODEL_LABELS"),
             (aenderungen, "_MODELL_FELD_LABELS"),
-            (tables, "_CHANGELOG_FIELD_LABELS"),
-            (tables, "_CHANGELOG_MODEL_LABELS"),
             (signals, "_AUDIT_FIELDS"),
         ]
         for module, name in karten:
@@ -6182,6 +6175,7 @@ class FilterRegisterTest(SimpleTestCase):
     REGISTER = (
         "filterbau_mitglieder", "filterbau_titel", "filterbau_orte",
         "filterbau_termine", "filterbau_artikel", "filterbau_foren",
+        "filterbau_aenderungen",
     )
 
     def test_reihenfolge_nennt_jedes_feld_genau_einmal(self):
@@ -6220,6 +6214,113 @@ class FilterRegisterTest(SimpleTestCase):
                          {"angekuendigt", "repertoire", "ablauf", "anwesenheit"})
         self.assertEqual({k for k, f in FOREN.items() if ist_fest(f)}, {"ungelesen"})
         self.assertEqual({k for k, f in ORTE.items() if ist_fest(f)}, {"karte"})
+
+
+class TabellenStandardTest(SimpleTestCase):
+    """Jede Liste auf ``table.html`` hat den Standardsatz (``views/_tabelle.py``).
+
+    Nur der Ordner-Browser steht ausserhalb: ein Dateimanager mit Auswahlspalte und
+    eigener Datenquelle, siehe „The filter builder" in ``docs/frontend.md``."""
+
+    AUSNAHMEN = {"folders"}
+
+    def _listen(self):
+        import ast
+        import inspect
+
+        from intern import views
+
+        for name in sorted(n for n in dir(views) if not n.startswith("_")):
+            modul = getattr(views, name)
+            if not inspect.ismodule(modul) or not modul.__name__.startswith("intern.views."):
+                continue
+            kurz = modul.__name__.rsplit(".", 1)[-1]
+            if kurz in self.AUSNAHMEN:
+                continue
+            baum = ast.parse(inspect.getsource(modul))
+            for knoten in ast.walk(baum):
+                if isinstance(knoten, ast.FunctionDef) and any(
+                    isinstance(k, ast.Constant) and k.value == "table.html"
+                    for k in ast.walk(knoten)
+                ):
+                    yield kurz, knoten
+
+    def test_jede_liste_geht_ueber_tabellenseite(self):
+        import ast
+
+        listen = list(self._listen())
+        for modul, funktion in listen:
+            quelle = ast.unparse(funktion)
+            with self.subTest(liste=f"{modul}.{funktion.name}"):
+                self.assertIn("tabellenseite(", quelle)
+                self.assertIn("baukasten=", quelle)
+        self.assertGreaterEqual(len(listen), 7)
+
+    def test_jede_tabelle_erbt_die_spaltenwahl(self):
+        import django_tables2
+
+        from intern import tables
+
+        for name in dir(tables):
+            klasse = getattr(tables, name)
+            if (isinstance(klasse, type) and issubclass(klasse, django_tables2.Table)
+                    and klasse.__module__ == "intern.tables"
+                    and klasse not in (tables.Spaltenwahl, tables.OrdnerTabelle)):
+                with self.subTest(tabelle=name):
+                    self.assertTrue(issubclass(klasse, tables.Spaltenwahl))
+
+
+class AenderungsprotokollFilterTest(SimpleTestCase):
+    """Das Register des Protokolls: alte Parameter und die Sonderwerte."""
+
+    def _alt(self, query):
+        from django.http import QueryDict
+
+        from intern.filterbau_aenderungen import AENDERUNGEN
+
+        return [(b.feld, b.operator, b.werte) for b in AENDERUNGEN.lese_bedingungen(QueryDict(query))]
+
+    def test_alte_parameter(self):
+        self.assertEqual(
+            self._alt("model_name=Termin&action=update&user=__system__&gruppe=3"),
+            [("bereich", "ist", ("Termin",)), ("aktion", "ist", ("update",)),
+             ("benutzer", "in", ("__system__",)), ("gruppe", "in", ("3",))],
+        )
+
+    def test_datum_von_und_bis_schliessen_den_tag_ein(self):
+        self.assertEqual(
+            self._alt("datum_von=2026-10-01&datum_bis=2026-10-31"),
+            [("datum", "nach", ("2026-09-30",)), ("datum", "vor", ("2026-11-01",))],
+        )
+        self.assertEqual(self._alt("datum_von=kaputt"), [])
+
+    def test_sonderwerte(self):
+        from django.db.models import Q
+
+        from intern.filterbau_aenderungen import FELDER
+
+        self.assertEqual(FELDER["bereich"].q("ist", ("__gruppe__",)),
+                         Q(model_name="User", changes__has_key="gruppe"))
+        self.assertEqual(FELDER["benutzer"].q("in", ("__system__", "4")),
+                         Q(user_id__in=[4]) | Q(user__isnull=True))
+
+    def test_tabelle_gibt_die_zeilen_wieder(self):
+        from types import SimpleNamespace
+
+        from intern.tables import ChangeLogTabelle
+
+        tabelle = ChangeLogTabelle([])
+        zeile = SimpleNamespace(
+            change_rows=[("Titel", "Alt", "Neu"), ("Tempo", None, "")],
+            object_url="/intern/titel/1/",
+        )
+        html = str(tabelle.render_felder(zeile))
+        self.assertIn('<span class="change-old">Alt</span> → <span class="change-new">Neu</span>', html)
+        self.assertIn('<span class="change-field">Tempo</span>: <span class="change-new">–</span>', html)
+        self.assertEqual(str(tabelle.render_felder(SimpleNamespace(change_rows=[]))),
+                         '<span class="muted">–</span>')
+        self.assertEqual(tabelle.render_user(None), "System")
+        self.assertIn('href="/intern/titel/1/"', str(tabelle.render_object_repr(zeile, "Lied")))
 
 
 class FilterbauFestTest(SimpleTestCase):

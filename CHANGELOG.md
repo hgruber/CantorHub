@@ -11,6 +11,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Hinzugefügt
 
+- Änderungsprotokoll: Das Protokoll hat jetzt den Filter-Baukasten und die Spaltenauswahl wie die anderen Listen. Gefiltert wird nach Datum, Benutzer (auch „System“), Gruppe des Benutzers, Bereich und Aktion; gemerkte Filter von vorher gelten weiter.
 - Termine, Artikel und Foren: Die Listen haben jetzt den Filter-Baukasten und die Spaltenauswahl wie Mitgliederliste und Repertoire. Termine filtern nach Text, Datum und Ort sowie danach, ob ein Termin angekündigt ist, ein Konzert ist, einen Ablauf hat oder die Anwesenheit abfragt; Artikel nach Name, Text, Autor und Datum; Foren nach Kategorie, Thema, letztem Beitrag und Ungelesenem.
 - Orte: Die Liste unter Orte hat jetzt den Filter-Baukasten und die Spaltenauswahl wie Mitgliederliste und Repertoire. Gefiltert wird nach Name, Adresse, Beschreibung und danach, ob ein Ort auf der Karte liegt; die Beschreibung lässt sich als Spalte einblenden.
 - Artikel: `{symbol:trichter}` zeigt ein Symbol der Oberfläche mitten im Text, etwa Trichter, Spalten, Papierflieger oder Neuer Ordner. „Hilfe:Wiki“ listet alle Namen, der Spickzettel im Editor fügt die Markierung ein. Die mitgelieferten Hilfe-Artikel zeigen die Symbole, die sie beschreiben, jetzt selbst.
@@ -23,6 +24,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 ### Behoben
 
 - Artikel: Linien unter Überschriften und hervorgehobene Kästen enden vor einem Bild am rechten Rand, statt darunter durchzulaufen.
+
+### Entfernt
+
+- Die Abhängigkeit django-filter: Keine Liste filtert mehr über ein `FilterSet`.
 
 ## v1.2.3 — 2026-10-31
 

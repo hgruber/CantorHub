@@ -8,13 +8,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django_tables2 import RequestConfig
 
 from ..models import ChangeLog, Forum, Lied, Ort, Termin, Zusage
 from ..models import User as MitgliedUser
 from ..zusage import OPTION_LABELS
-from ._decorators import perm_or_home
-from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
+from ..filterbau_aenderungen import AENDERUNGEN, chip_namen
+from ..tables import ChangeLogTabelle
+from ._decorators import perm_or_home, tabellenzustand
+from ._tabelle import tabellenseite
 
 __all__ = [
     "aenderungsprotokoll_list",
@@ -330,31 +331,21 @@ _TOPBAR_ICON = (
 
 
 @perm_or_home("intern.manage_user_permissions")
+@tabellenzustand
 def aenderungsprotokoll_list(request):
-    from ..tables import ChangeLogFilter
+    seite = tabellenseite(
+        request, ChangeLogTabelle,
+        ChangeLog.objects.select_related("user").order_by("-timestamp"),
+        baukasten=AENDERUNGEN,
+        namen=chip_namen,
+        seite=_annotate_entries,
+        seitengroesse=PAGE_SIZE,
+    )
+    if seite.antwort:
+        return seite.antwort
 
-    qs = ChangeLog.objects.select_related("user").order_by("-timestamp")
-    f = ChangeLogFilter(request.GET, queryset=qs)
-
-    offset = parse_offset(request)
-
-    page_qs = f.qs.order_by("-timestamp")[offset : offset + PAGE_SIZE + 1]
-    entries = list(page_qs)
-    has_more = len(entries) > PAGE_SIZE
-    if has_more:
-        entries = entries[:PAGE_SIZE]
-    _annotate_entries(entries)
-
-    if ist_nachladen(request):
-        return nachlade_antwort("aenderungsprotokoll_rows.html", {"entries": entries},
-                                has_more, offset + PAGE_SIZE, request=request)
-
-    return render(request, "aenderungsprotokoll_list.html", {
-        "entries": entries,
-        "filter": f,
-        "showfilter": True,
-        "has_more": has_more,
-        "next_offset": offset + PAGE_SIZE,
+    return render(request, "table.html", {
+        **seite.kontext,
         "seitentitel": "Änderungsprotokoll",
         "hilfe_seite": "Hilfe:Änderungsprotokoll",
         "topbar_icon": _TOPBAR_ICON,

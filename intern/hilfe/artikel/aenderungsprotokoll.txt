@@ -13,12 +13,12 @@ Der neueste Eintrag steht oben; weiter unten lädt die Liste beim Scrollen von s
 
 === Etwas Bestimmtes finden ===
 Tippe oben rechts auf {symbol:trichter} (Filtern). Du kannst eingrenzen nach:
-* '''Bereich''' — Termine, Anwesenheit, Ablauf, Lieder, Mitglieder, Foren, Orte, Gruppen, Gruppenzuordnung, E-Mails oder Konfiguration;
-* '''Aktion''' — etwa nur Gelöschtes;
-* '''Benutzer''' — was eine bestimmte Person geändert hat;
+* '''Datum''' — vor, nach oder an einem Tag;
+* '''Benutzer''' — was eine bestimmte Person geändert hat, oder '''System''' für das, was das Portal selbst erledigt hat;
 * '''Gruppe''' — was die Personen einer Gruppe geändert haben;
-* '''Datum von''' und '''Datum bis'''.
-Klicke auf '''Filtern'''. Die gesetzten Filter stehen oben als kleine Kästchen; mit '''Zurücksetzen''' siehst Du wieder alles.
+* '''Bereich''' — etwa Termine, Anwesenheit, Lieder, Mitglieder, Foren, Orte oder Gruppenzuordnung;
+* '''Aktion''' — etwa nur Gelöschtes.
+Jede Bedingung lässt sich mit '''und''' oder '''oder''' verknüpfen und auch verneinen. Klicke auf '''Filtern'''. Die gesetzten Filter stehen oben als kleine Kästchen; mit '''Zurücksetzen''' siehst Du wieder alles. Mit {symbol:spalten} (Spalten) blendest Du Spalten aus und ein.
 
 === Die Geschichte eines einzelnen Eintrags ===
 Wer einen Termin, ein Mitglied, ein Lied, einen Ort oder ein Forum bearbeiten darf, findet dort oben rechts das Symbol {symbol:verlauf}. Es zeigt nur die Änderungen an genau diesem Eintrag — auch ohne Zugang zum ganzen Protokoll.

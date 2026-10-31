@@ -3,7 +3,7 @@
 {% block topbar_icon %}{{ topbar_icon|safe }}{% endblock %}
 {% block extra_js %}{% if baukasten %}<script src="{% static 'intern/js/filter-baukasten.js' %}" defer></script>{% endif %}{% endblock %}
 {% block topbar_after %}
-{% if filter or kette %}{% filter_chips filter request chips_skip kette %}{% endif %}
+{% if kette %}{% filter_chips kette %}{% endif %}
 {% endblock %}
 {% block topbar_actions_extra %}
 {% if gallery_url %}
@@ -149,7 +149,7 @@
             </form>
         </div>
     {% endif %}
-    {% if filter or baukasten %}
+    {% if baukasten %}
         <div class="filter offcanvas" id="Filter">
             <div class="offcanvas-header">
                 <strong>Filtern</strong>
@@ -161,9 +161,8 @@
             </div>
             <form method="get" class="filter-form" id="filter-form">
                 <div class="filter-body">
-                    {% if baukasten %}{% filter_baukasten bedingungen request baukasten kann_verwalten %}{% endif %}
+                    {% filter_baukasten bedingungen request baukasten kann_verwalten %}
                     {% if filter_zusatz %}{% include filter_zusatz %}{% endif %}
-                    {% if filter %}{{ filter.form.media }}{{ filter.form.as_div }}{% endif %}
                 </div>
             </form>
         </div>

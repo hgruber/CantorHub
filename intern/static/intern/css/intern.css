@@ -6872,7 +6872,6 @@ tbody tr.zeile-markiert td:first-child {
 .nowrap { white-space: nowrap; }
 .changelog-model { font-weight: 600; color: var(--primary); }
 
-#changelog-sentinel,
 .table-sentinel {
   height: 40px;
   display: flex;
@@ -6881,7 +6880,6 @@ tbody tr.zeile-markiert td:first-child {
   color: var(--text-muted);
   font-size: 0.875rem;
 }
-#changelog-sentinel.loading::after,
 .table-sentinel.loading::after {
   content: "Lade \2026";
 }

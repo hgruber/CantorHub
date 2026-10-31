@@ -16,6 +16,7 @@ was nur sie hat (Titel, Anlegen, Topbar-Symbol). Siehe „The filter builder" in
 
 from dataclasses import dataclass
 
+from django.db.models import F, Q
 from django_tables2 import RequestConfig
 
 from ..models import TabellenPreferenzen
@@ -35,21 +36,17 @@ def gespeicherte_spalten(request, tabelle):
             defaults={"sichtbare_spalten": gewaehlt},
         )
         return gewaehlt
-    # Bewusst first() statt get(): der unique_together deckt die globale
-    # Vorgabezeile (person=None) nicht ab, weil NULLs im Unique-Index als
-    # verschieden gelten (siehe TabellenPreferenzen in models.py). Eine zweite
-    # Vorgabezeile darf die Tabelle nicht mit MultipleObjectsReturned zerlegen.
+    # Eigene Zeile vor der globalen Vorgabezeile (person=None), in einer Abfrage.
+    # Bewusst first() statt get(): der unique_together deckt die Vorgabezeile nicht
+    # ab, weil NULLs im Unique-Index als verschieden gelten (siehe
+    # TabellenPreferenzen in models.py). Eine zweite Vorgabezeile darf die Tabelle
+    # nicht mit MultipleObjectsReturned zerlegen.
     pref = (
-        TabellenPreferenzen.objects.filter(person=request.user, tabelle=tabelle)
-        .order_by("pk")
+        TabellenPreferenzen.objects
+        .filter(Q(person=request.user) | Q(person=None), tabelle=tabelle)
+        .order_by(F("person").asc(nulls_last=True), "pk")
         .first()
     )
-    if pref is None:
-        pref = (
-            TabellenPreferenzen.objects.filter(person=None, tabelle=tabelle)
-            .order_by("pk")
-            .first()
-        )
     return pref.sichtbare_spalten if pref else []
 
 

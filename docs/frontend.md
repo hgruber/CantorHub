@@ -752,7 +752,9 @@ values and used to appear only once.
   `auswahl_feld()`, `schalter_feld()` (a fixed switch) with `bool_q()`; a field only one list
   needs is still written as a `Feld`. The fields live in one registry per list,
   `filterbau_<liste>.py`, each a `Baukasten` instance: `MITGLIEDER` (`filterbau_mitglieder.py`),
-  `TITEL` (`filterbau_titel.py`), `ORTE` (`filterbau_orte.py`, text fields plus the fixed
+  `TITEL` (`filterbau_titel.py`), `AENDERUNGEN` (`filterbau_aenderungen.py`: date, user —
+  including „System“ for entries without one —, the user's group, area — including
+  „Gruppenzuordnung“ — and action; it replaced the last `FilterSet`), `ORTE` (`filterbau_orte.py`, text fields plus the fixed
   switch „Karte“ — has coordinates or not), `TERMINE` (`filterbau_termine.py`: search, date,
   location; fixed switches for a public announcement — the same `OHNE_ANKUENDIGUNG` set the
   homepage lists —, „Konzert“, a running order and attendance; `past` stays a fixed parameter
@@ -786,7 +788,10 @@ values and used to appear only once.
   `tonart`, the eight `true`/`false`/`unknown` switches, `solist` and `dirigent`. The field
   keys `pdf` and `noten` stay even though the roles are now `notenblatt` and `notensatz`: a
   saved filter keeps addressing the same thing. The „has a file“ fields ask an `EXISTS` on the
-  `LiedDatei` row; `text` is the fifth such field.
+  `LiedDatei` row; `text` is the fifth such field. Audit log: the fields of the former
+  `ChangeLogFilter` — `model_name`, `action`, `user`, `gruppe`, `datum_von`, `datum_bis`; the
+  two dates included their day, the builder's „nach“/„vor“ exclude it, so the translation moves
+  them one day out.
 - **A registry is a `FELDER` dict**; a field is one entry — label, operators, `Q` builder, and
   `recht`. The member registry covers every column of the list (name, voice, e-mail, XMPP,
   birthday, last login, entry date, address and phone fields, fax, access) plus `gruppen` and
@@ -822,7 +827,8 @@ values and used to appear only once.
   repertoire field carries a right. The `namen` map handed to the topbar is
   `{field_key: {pk: name}}` — groups and termin labels, or soloists, conductors, keys and tempi.
 - **The editor** is `_filter_baukasten.html` + `_filter_zeile.html` + `_filter_wert.html`, in the
-  filter offcanvas, driven by `filter-baukasten.js`. Neither list has a `FilterSet` left.
+  filter offcanvas, driven by `filter-baukasten.js`. No list has a `FilterSet` left, and
+  django-filter is gone from the requirements.
   Its visible controls carry **no** `name`; the script writes one hidden `<input name="f">` per
   row and disables it while the row has no values (except for `ohne` fields, where no values are
   the point). New rows are cloned from `<template>` elements, **one per field**, not per `art`:
@@ -869,12 +875,11 @@ values and used to appear only once.
   where the wording depends on the values — the answer brings its own verb, so the negation
   lands in the right place („hat nicht zugesagt", but „hat eine Angabe gemacht"). The sentence
   contains the „nicht" itself, so nothing prefixes a second one; `ist_verneinend` only paints the
-  chip red. `filter_chips` also
-  tolerates `filter_obj=None`, which is what the member list passes. `MAX_CHIPS` caps the chain at
+  chip red. `filter_chips` takes nothing but the chain. `MAX_CHIPS` caps the chain at
   three conditions and collapses the rest into a „+n" that opens the filter. A capped chain drops
   its parentheses — half a bracket is noise — and carries the full sentence in its `title`.
 - **Guards in `table.html`**: the column selector hangs on `column_choices` (matching its button
-  in `base.html`), the filter panel on `filter or baukasten`, the chip line on `filter or kette`.
+  in `base.html`), the filter panel on `baukasten`, the chip line on `kette`.
 
 ## Remembered list state
 
