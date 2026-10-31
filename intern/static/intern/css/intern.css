@@ -20,7 +20,9 @@
     --brand-text:      var(--brand-dark);
     --cal-geb:         #157347;
     --cal-geb-bg:      rgba(21, 128, 61, 0.13);
-    --cal-weekend:     #dc2626;
+    /* Wochenende ist ein Kalenderzustand, kein Fehler: eigener Name,
+       neutrale Farbe. Rot bleibt fuer destruktiv und Fehler. */
+    --cal-weekend:     var(--t2);
 
     /* Kategoriale Palette — Berechtigungskategorien (Artikel/Forum/Dateien/
        Orte/Termine/Repertoire/Mitglieder). Kategorie „Termine" ist die
@@ -215,7 +217,7 @@
 
     --cal-geb:         #4ade80;
     --cal-geb-bg:      rgba(74, 222, 128, 0.16);
-    --cal-weekend:     #f87171;
+    --cal-weekend:     var(--t2);
 
     --kat-1:           #a78bfa;
     --kat-2:           #38bdf8;
@@ -737,8 +739,8 @@ a.version-string:focus-visible {
 }
 .filter-chip:hover { opacity: 0.8; }
 .filter-chip--default { background: var(--bg-row-hover); color: var(--t3); }
-.filter-chip--true  { background: #dcfce7; color: #166534; }
-.filter-chip--false { background: #fee2e2; color: #991b1b; }
+.filter-chip--true  { background: var(--status-success-bg); color: var(--status-success-text); }
+.filter-chip--false { background: var(--status-danger-bg);  color: var(--status-danger-text); }
 .filter-chip-x {
     font-size: var(--fs-2xs);
     font-weight: 700;
@@ -2220,7 +2222,7 @@ time {
     width: 14px;
     height: calc(100% - 2px);
     border-radius: 999px;
-    background: #ef4444;
+    background: var(--status-danger-solid);
     box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
     pointer-events: none;
     z-index: 0;
@@ -2229,13 +2231,9 @@ time {
 }
 
 /* Thumb color by state — transform is set via JS/inline style */
-.tri-toggle[data-value="false"]   .tri-toggle-thumb { background: #ef4444; }
-.tri-toggle[data-value="unknown"] .tri-toggle-thumb { background: #9ca3af; }
-.tri-toggle[data-value="true"]    .tri-toggle-thumb { background: #22c55e; }
-
-[data-theme="dark"] .tri-toggle[data-value="false"]   .tri-toggle-thumb { background: #dc2626; }
-[data-theme="dark"] .tri-toggle[data-value="unknown"] .tri-toggle-thumb { background: #4b5563; }
-[data-theme="dark"] .tri-toggle[data-value="true"]    .tri-toggle-thumb { background: #16a34a; }
+.tri-toggle[data-value="false"]   .tri-toggle-thumb { background: var(--status-danger-solid); }
+.tri-toggle[data-value="unknown"] .tri-toggle-thumb { background: var(--t4); }
+.tri-toggle[data-value="true"]    .tri-toggle-thumb { background: var(--status-success-solid); }
 
 /* Segments sit above the thumb (z-index 1) */
 .tri-toggle-seg {
@@ -2960,9 +2958,9 @@ table.mitglied-table tr.stimme-group-start td {
 }
 
 .detail-card-danger {
-    border-color: #fecaca;
+    border-color: var(--status-danger-border);
 }
-.detail-card-danger h3 { color: #b91c1c; border-bottom-color: #fecaca; }
+.detail-card-danger h3 { color: var(--status-danger-text); border-bottom-color: var(--status-danger-border); }
 .danger-desc { margin-bottom: 12px; }
 .detail-cards-spaced { margin-top: 24px; }
 
@@ -3498,10 +3496,25 @@ table.mitglied-table tr.stimme-group-start td {
     height: var(--aufst-p);
     border-radius: var(--aufst-radius);
 }
+/* Vier Zustaende, vier Formen: die Farbe ist redundant, nicht die einzige
+   Spur (WCAG 1.4.1). Voll = zugesagt, halb = eventuell, leer = offen,
+   durchgestrichen = abgesagt. Auf 8 px ist die Form grob, aber sie bleibt
+   auch dann lesbar, wenn die Farbe nicht ankommt (Rot-Gruen-Schwaeche,
+   Graustufendruck). */
 .aufst-yes   { background: var(--status-success-solid); }
-.aufst-maybe { background: var(--aufst-eventuell); }
-.aufst-no    { background: var(--status-danger-solid); }
-.aufst-na    { background: color-mix(in srgb, var(--t4) 45%, transparent); }
+.aufst-maybe {
+    background: linear-gradient(90deg, var(--aufst-eventuell) 50%, transparent 50%);
+    box-shadow: inset 0 0 0 1px var(--aufst-eventuell);
+}
+.aufst-no {
+    background:
+        linear-gradient(45deg, transparent 44%, var(--bg-card) 44%, var(--bg-card) 56%, transparent 56%),
+        var(--status-danger-solid);
+}
+.aufst-na {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--t4) 55%, transparent);
+}
 .aufst-ich   { outline: 1.5px solid var(--brand); outline-offset: 1px; }
 .aufst-gross .aufst-ich { outline-width: 2px; }
 /* „Meine Antwort fehlt" (offen oder „Eventuell"): das eigene Kästchen der Aufstellung
@@ -4014,8 +4027,6 @@ table.mitglied-table tr.stimme-group-start td {
 }
 
 [data-theme="dark"] .detail-icon { background: color-mix(in srgb, var(--brand) 15%, transparent); }
-[data-theme="dark"] .detail-card-danger { border-color: #7f1d1d; }
-[data-theme="dark"] .detail-card-danger h3 { color: #fca5a5; border-bottom-color: #7f1d1d; }
 [data-theme="dark"] .badge-primary { background: color-mix(in srgb, var(--brand) 20%, transparent); }
 [data-theme="dark"] .tag-active { background: color-mix(in srgb, var(--brand) 15%, transparent); }
 [data-theme="dark"] .detail-card-row { border-bottom-color: rgba(255,255,255,0.05); }
@@ -5144,10 +5155,8 @@ span.not_found {
     border: 1.5px solid var(--border-dark);
     vertical-align: middle;
 }
-.status-dot--on  { background: #22c55e; border-color: #16a34a; }
-.status-dot--off { background: #ef4444; border-color: #dc2626; }
-[data-theme="dark"] .status-dot--on  { background: #16a34a; border-color: #22c55e; }
-[data-theme="dark"] .status-dot--off { background: #dc2626; border-color: #ef4444; }
+.status-dot--on  { background: var(--status-success-solid); border-color: var(--status-success-text); }
+.status-dot--off { background: var(--status-danger-solid);  border-color: var(--status-danger-text); }
 
 /* =================================================== */
 /* Floating mini audio player                          */
@@ -5665,8 +5674,8 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
 .history-table .comment { color: var(--text-muted); font-style: italic; }
 
 .diff-size { white-space: nowrap; }
-.diff-size .added  { color: #16a34a; font-weight: 600; margin-right: 4px; }
-.diff-size .removed { color: #dc2626; font-weight: 600; }
+.diff-size .added  { color: var(--status-success-text); font-weight: 600; margin-right: 4px; }
+.diff-size .removed { color: var(--status-danger-text); font-weight: 600; }
 .diff-size .muted   { color: var(--text-muted); }
 
 /* ── Article diff ─────────────────────────────────────── */
@@ -5869,21 +5878,10 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
 .context-menu-item:hover svg { color: currentColor; }
 .context-menu-item.danger,
 .context-menu-item.danger svg {
-    color: #c53030;
+    color: var(--status-danger-text);
 }
 .context-menu-item.danger:hover {
-    background: rgba(197, 48, 48, 0.10);
-    color: #9b2c2c;
-}
-/* Als Textfarbe braucht Rot auf dunklem Grund mehr Helligkeit als der
-   Button-Ton #c53030 (gleiche Aufhellung wie bei .dl-icon-pdf). */
-[data-theme="dark"] .context-menu-item.danger,
-[data-theme="dark"] .context-menu-item.danger svg {
-    color: #f87171;
-}
-[data-theme="dark"] .context-menu-item.danger:hover {
-    background: rgba(248, 113, 113, 0.14);
-    color: #fca5a5;
+    background: color-mix(in srgb, var(--status-danger-solid) 10%, transparent);
 }
 .context-menu-sep {
     height: 1px;
@@ -6228,8 +6226,8 @@ tbody tr.zeile-markiert td:first-child {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
 }
-.karte-toast-ok    { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
-.karte-toast-error { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.karte-toast-ok    { background: var(--status-success-bg); color: var(--status-success-text); border-color: var(--status-success-border); }
+.karte-toast-error { background: var(--status-danger-bg);  color: var(--status-danger-text);  border-color: var(--status-danger-border); }
 .karte-toast-info  { background: var(--bg-card); color: var(--t1); border-color: var(--border); }
 
 /* ── Custom Leaflet markers ── */
@@ -6479,16 +6477,6 @@ tbody tr.zeile-markiert td:first-child {
 [data-theme="dark"] .karte-legend {
     box-shadow: 0 4px 20px rgba(0,0,0,.4);
 }
-[data-theme="dark"] .karte-toast-ok {
-    background: rgba(22,101,52,.25);
-    color: #86efac;
-    border-color: rgba(22,101,52,.4);
-}
-[data-theme="dark"] .karte-toast-error {
-    background: rgba(153,27,27,.25);
-    color: #fca5a5;
-    border-color: rgba(153,27,27,.4);
-}
 [data-theme="dark"] .karte-live-dot,
 [data-theme="dark"] .karte-live-dot-me {
     border-color: var(--bg-card);
@@ -6713,10 +6701,13 @@ tbody tr.zeile-markiert td:first-child {
     justify-content: center;
     flex-shrink: 0;
 }
-.dl-icon-word  { background: #eff6ff; color: #2563eb; }
-.dl-icon-pdf   { background: #fef2f2; color: #dc2626; }
-.dl-icon-noten { background: #f0fdf4; color: #16a34a; }
-.dl-icon-audio { background: var(--brand-light); color: var(--brand); }
+/* Eine Symbolsprache fuer alle Eintraege: die Gruppe im Menue (Word, PDF,
+   Noten) und der Untertitel benennen den Typ, das Symbol muss ihn nicht
+   ein zweites Mal in einer eigenen Farbe behaupten. */
+.dl-icon-word,
+.dl-icon-pdf,
+.dl-icon-noten,
+.dl-icon-audio { background: var(--bg-row-hover); color: var(--t3); }
 .dl-item-body {
     display: flex;
     flex-direction: column;
@@ -6732,9 +6723,6 @@ tbody tr.zeile-markiert td:first-child {
     font-size: var(--fs-xs);
     color: var(--t3);
 }
-[data-theme="dark"] .dl-icon-word  { background: rgba(37,99,235,0.15);  color: #60a5fa; }
-[data-theme="dark"] .dl-icon-pdf   { background: rgba(220,38,38,0.15);  color: #f87171; }
-[data-theme="dark"] .dl-icon-audio { background: color-mix(in srgb, var(--brand) 15%, transparent); color: var(--brand); }
 
 .dl-context-menu {
     position: fixed !important;
@@ -6896,7 +6884,6 @@ tbody tr.zeile-markiert td:first-child {
         font-size: 5rem;
     }
 }
-[data-theme="dark"] .dl-icon-noten { background: rgba(22,163,74,0.15);  color: #4ade80; }
 
 /* ChangeLog audit view */
 .change-row { margin-bottom: 0.2rem; font-size: var(--fs-sm); }

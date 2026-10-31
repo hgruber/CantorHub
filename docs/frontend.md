@@ -140,8 +140,11 @@ modelled on the legacy portal: one square per active member, back row Tenor | Ba
 Sopran | Alt, Chorleiter and Musiker set apart top right. Within a voice the Zusagen face the
 aisle — the left voice runs Absage → Offen → Eventuell → Zusage from the outside in, the right
 one mirrored — so a green block forms in the middle. The two-column grid is sized by the longer
-voice of each side, which keeps the aisle aligned in both rows. There are no count chips — the
-picture alone carries the numbers, and the totals only feed its `aria-label`, computed from the
+voice of each side, which keeps the aisle aligned in both rows. **Each state has its own shape,
+not only its own colour** (WCAG 1.4.1): filled = Zusage, half-filled = Eventuell, empty outline =
+offen, struck through = Absage. Colour is the second channel, so the picture survives
+red-green blindness and grey printing. There are no count chips — the picture alone carries the
+numbers, and the totals only feed its `aria-label`, computed from the
 very same placed members; members with Stimme `N` are neither drawn nor counted. The layout logic is
 the pure `intern/aufstellung.py`; `_aufstellungen_anhaengen()` in `views/termine.py` is the DB
 half and needs two queries per page, for the first load and the infinite-scroll reloads alike.
@@ -301,7 +304,8 @@ grid fills the viewport height — `.content:has(.cal-page)` becomes a flex colu
 (with `grid-auto-rows: 1fr`) shares the space with the next-event banner without a scrollbar.
 CSS lives under `/* === Kalender === */` in `intern.css`; birthdays use the `--cal-geb` /
 `--cal-geb-bg` tokens (green, distinct from the pink event colour) and weekend day
-numbers/headers use `--cal-weekend` (red) — all with dark-mode values.
+numbers/headers use `--cal-weekend`, which is deliberately the neutral `--t2`: red is reserved
+for destructive actions and errors. All with dark-mode values.
 
 ## Design tokens and colours
 

@@ -18,6 +18,8 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Geändert
 
+- Farben: Die Zustandsfarben (Zusage, Absage, Fehler) sind fest und folgen nicht der Akzentfarbe; außerhalb des Akzents steht Rot nur noch für Löschen und Fehler. Wochenenden im Kalender sind neutral, die Symbole im Download-Menü tragen keine eigenen Farben mehr.
+- Termine: Die Aufstellung unterscheidet die vier Antworten jetzt auch in der Form — voll, halb, leer, durchgestrichen — und bleibt damit auch bei Rot-Grün-Schwäche lesbar.
 - Oberfläche: Alle festen Schriftgrößen kommen jetzt aus fünf Stufen (11, 13, 15, 17, 20 px) statt aus über dreißig Einzelwerten; Fließtext, Tabellen, Formulare und Buttons stehen bei 15 px statt 13 px. Die Schrift-Einstellung der Sidebar skaliert sie unverändert mit.
 - Profilseite: Das Profilbild im Kopf ist jetzt 160 px groß statt 56 px; Name und Gruppen stehen an seiner Unterkante.
 - Artikel: Eingebettete Bilder sind als Voransicht immer gleich breit; sehr hohe Bilder werden ab 320 px Höhe unten abgeschnitten. Der Text umfließt sie bis hinunter zu 480 px Bildschirmbreite, erst darunter stehen sie für sich.
