@@ -47,7 +47,7 @@
 }
 .perm-cat-header {
     text-align: center;
-    font-size: calc(10rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -110,7 +110,7 @@ th.perm-col-head.perm-col-cat-first { border-left-color: var(--border-strong); }
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     white-space: nowrap;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 500;
     color: var(--t2);
     line-height: 1;
@@ -134,13 +134,13 @@ tr.perm-label-row th { border-bottom: 2px solid var(--t1); }
     gap: 8px;
 }
 .perm-group-name {
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--t1);
     flex: 1;
 }
 .perm-group-count {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     color: var(--t4);
     background: var(--bg-row-hover);
     border-radius: 10px;
@@ -212,7 +212,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     background: var(--bg-row-hover);
 }
 .perm-new-name-input {
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 600;
     padding: 4px 8px;
     border: 1px solid var(--brand);
@@ -245,7 +245,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
 }
 .perm-apply-bar.visible { transform: translateY(0); }
-.perm-change-summary { font-size: calc(13rem / 14); color: var(--t3); }
+.perm-change-summary { font-size: var(--fs-sm); color: var(--t3); }
 
 /* Dark mode */
 .perm-matrix-wrap             { --border-strong: rgba(0,0,0,0.55); }
@@ -286,7 +286,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     border: 1px solid var(--border-strong);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.5;
     color: var(--t2);
     pointer-events: none;
@@ -297,7 +297,7 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
 .perm-tooltip.visible { opacity: 1; }
 .perm-tooltip-mehr {
     margin-top: 6px;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
 }
 .perm-tooltip .member-chips {
@@ -311,11 +311,11 @@ td.perm-cell-td.perm-col-cat-first { border-left-color: var(--border-strong); }
     color: var(--t1);
     border-radius: 99px;
     padding: 1px 8px;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     white-space: nowrap;
 }
 .perm-tooltip-title {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -348,7 +348,7 @@ th.perm-col-head:focus-visible .perm-col-rotate span { color: var(--brand-text);
                 </tr>
                 <!-- Row 2: Rotated permission labels -->
                 <tr class="perm-label-row">
-                    <th class="perm-user-col perm-user-head" style="font-size:calc(11rem / 14);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--t3);padding:8px 16px;vertical-align:bottom;">Gruppe</th>
+                    <th class="perm-user-col perm-user-head" style="font-size:var(--fs-2xs);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--t3);padding:8px 16px;vertical-align:bottom;">Gruppe</th>
                     {% for cat in categories %}{% for perm in cat.perms %}
                     <th class="perm-col-head perm-col-cat-{{ cat.name }}{% if forloop.first %} perm-col-cat-first{% endif %}" data-perm="{{ perm.key }}" data-tooltip="{{ perm.description }}" data-rechte-hilfe="{{ perm.key }}" tabindex="0" aria-haspopup="dialog">
                         <div class="perm-col-rotate"><span>{{ perm.label }}</span></div>

@@ -20,7 +20,7 @@
 .join-card h1 {
     margin: 0 0 20px;
     text-align: center;
-    font-size: 1.35rem;
+    font-size: var(--fs-lg);
     font-weight: 700;
     letter-spacing: -0.01em;
     color: var(--t1);
@@ -30,7 +30,7 @@
     margin-bottom: 16px;
     text-align: center;
     color: var(--t3);
-    font-size: calc(13.5rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.5;
 }
 
@@ -43,7 +43,7 @@
 .join-card .helptext {
     display: block;
     margin: 2px 0 6px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.45;
     color: var(--t3);
 }
@@ -63,7 +63,7 @@
     margin-top: 4px;
     padding: 10px;
     border-radius: var(--r);
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 600;
 }
 
@@ -83,7 +83,7 @@
     margin-top: 16px;
     text-align: center;
     color: var(--t3);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 
 .register-link p {
@@ -96,5 +96,5 @@
 
 @media (max-width: 480px) {
     .join-card { padding: 24px 20px 20px; }
-    .join-card h1 { font-size: 1.2rem; }
+    .join-card h1 { font-size: var(--fs-md); }
 }

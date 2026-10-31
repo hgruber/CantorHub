@@ -360,9 +360,12 @@ reasoning where it matters.
   `--brand-text` for a brand-coloured *letter* on a surface, `--brand-dark` for a *fill* (white
   text on it) and for lines. `--brand-text` is the light theme's `--brand-dark` and a lightened
   mix in the dark one; `FarbTokenTest` covers the `--brand-*` family for exactly this reason.
-- **Font sizes in `rem`, never `px`** — write `calc(13rem / 14)` for 13px, also in template
-  `<style>` blocks (mail templates excepted). The sidebar font-size setting scales the root; a
-  `px` size silently ignores it. See „Theme boot" in `docs/frontend.md`.
+- **Font sizes come from the `--fs-*` ladder, never from a literal.** Five steps in `:root` —
+  `--fs-2xs` 11 (table head, badge), `--fs-xs` 13 (meta/chip), `--fs-sm` 15 (body, forms,
+  buttons), `--fs-md` 17 (page/card title), `--fs-lg` 20 (large title). The tokens hold
+  `calc(Nrem / 14)`, so the sidebar font-size setting still scales them; a `px` size silently
+  ignores it. Use them also in template `<style>` blocks (mail templates excepted). See
+  „Theme boot" in `docs/frontend.md`.
 - **No `sourceMappingURL` without the `.map` next to it.** `ManifestStaticFilesStorage`
   rewrites every reference inside a static file and raises on a missing target; with `set -e`
   in `start.sh` that kills the container before gunicorn starts. Vendor bundles either bring

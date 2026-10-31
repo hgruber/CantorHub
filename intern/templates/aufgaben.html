@@ -73,7 +73,7 @@
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     white-space: nowrap;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--t2);
     line-height: 1;
@@ -106,7 +106,7 @@
     flex-wrap: nowrap;
 }
 .perm-name {
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--t1);
     white-space: nowrap;
@@ -267,7 +267,7 @@ dunklen Tokens heller sind und sich sonst in der Karte verlieren.
     box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
 }
 .perm-apply-bar.visible { transform: translateY(0); }
-.perm-change-summary { font-size: calc(13rem / 14); color: var(--t3); }
+.perm-change-summary { font-size: var(--fs-sm); color: var(--t3); }
 [data-theme="dark"] .perm-apply-bar { box-shadow: 0 -2px 12px rgba(0,0,0,0.35); }
 
 .perm-matrix-wrap             { --border-strong: rgba(0,0,0,0.55); }
@@ -284,7 +284,7 @@ dunklen Tokens heller sind und sich sonst in der Karte verlieren.
    im dunklen Thema), die row-inactive aus der Mitgliederliste ueberschreiben
    wuerden. */
 .perm-row-ruhend .perm-name { color: var(--t3); }
-.perm-row-ruhend .perm-ruhend { font-size: calc(11rem / 14); }
+.perm-row-ruhend .perm-ruhend { font-size: var(--fs-2xs); }
 
 @media (max-width: 768px) {
     .perm-apply-bar { left: 0; }

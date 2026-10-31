@@ -18,12 +18,14 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Geändert
 
+- Oberfläche: Alle festen Schriftgrößen kommen jetzt aus fünf Stufen (11, 13, 15, 17, 20 px) statt aus über dreißig Einzelwerten; Fließtext, Tabellen, Formulare und Buttons stehen bei 15 px statt 13 px. Die Schrift-Einstellung der Sidebar skaliert sie unverändert mit.
 - Profilseite: Das Profilbild im Kopf ist jetzt 160 px groß statt 56 px; Name und Gruppen stehen an seiner Unterkante.
 - Artikel: Eingebettete Bilder sind als Voransicht immer gleich breit; sehr hohe Bilder werden ab 320 px Höhe unten abgeschnitten. Der Text umfließt sie bis hinunter zu 480 px Bildschirmbreite, erst darunter stehen sie für sich.
 - Artikel: Eine Überschrift der zweiten und dritten Ebene beginnt unter dem letzten Bild davor, sodass jedes Bild in seinem Kapitel bleibt.
 
 ### Behoben
 
+- Lesbarkeit: Zeitstempel, Datumszeilen und der Versionseintrag standen bei 2,5:1 und 1,9:1 Kontrast; sie liegen jetzt wie die Grautöne im Dunkelmodus und die Symbole der Kopfleiste über der AA-Grenze. Der Versionseintrag hebt sich beim Überfahren durch Unterstreichung statt durch Deckkraft ab.
 - Artikel: Linien unter Überschriften und hervorgehobene Kästen enden vor einem Bild am rechten Rand, statt darunter durchzulaufen.
 
 ### Entfernt

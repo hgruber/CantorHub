@@ -39,7 +39,8 @@ The accent is set per installation; never write its value into a stylesheet.
 
 ## Typography and shape
 
-- `--font` for text, `--mono` for code; sizes as `calc(13rem / 14)` — never `px`.
+- `--font` for text, `--mono` for code; sizes from the `--fs-*` ladder (`--fs-2xs` 11 to
+  `--fs-lg` 20) — never a literal, never `px`.
 - Radii `--r-sm` / `--r` / `--r-lg`, shadows `--shadow-xs` / `-sm` / `-md`.
 
 ## Components to reuse

@@ -406,7 +406,7 @@ bar: the topbar is `--bg-card` in both themes (`--tb-bg`), where a card-coloured
 invisible. Contrast is direction-independent, so the documented 4.5:1 pair holds either way
 (light 4.7–9.8:1, dark 7.4–10.2:1). The letter is template text rather than generated content,
 so a stray legacy code (`"X"`) still prints one and screen readers keep it. Roles take `--t3`
-where their text in the list takes `--t4` (2.2:1 on the tint of the merged strip): a line may be
+where their text in the list takes `--t4` (4.3:1 on the tint of the merged strip): a line may be
 quiet, a letter may not. `stimme = "N"` gets no pill at all — no tone, no marker — matching
 `tables.py`, which gives such rows no class and is why there is no `.stimme-n`.
 
@@ -486,9 +486,11 @@ Einstellungen → Schrift in the sidebar offers 90 · 100 · 115 · 130 · 150 %
 `localStorage["schriftgroesse"]` — the key is removed at 100 % — and set as `--schrift-faktor`
 on `<html>`, where `intern.css` computes `font-size: calc(14px * var(--schrift-faktor, 1))`.
 
-This only works because every font size hangs off that root: sizes are written as
-`calc(Nrem / 14)` (identical to `Npx` at 100 %), never in `px`, in the stylesheets and in
-template `<style>` blocks alike; mail templates are exempt. Only text scales — paddings and
+This only works because every font size hangs off that root: the five steps `--fs-2xs` (11),
+`--fs-xs` (13), `--fs-sm` (15), `--fs-md` (17) and `--fs-lg` (20) in `:root` hold
+`calc(Nrem / 14)` (identical to `Npx` at 100 %). Every rule — and every template `<style>`
+block — takes one of them, never a literal and never `px`; mail templates are exempt. The
+ladder is closed: a new size is a decision, not a local value. Only text scales — paddings and
 icons stay in `px`. `--sb-width` and the submenu height grow along
 (`min(calc(232rem / 14), 85vw)`). A fixed `px` width next to text that must fit, such as the
 rotated column heads of the permission matrices, needs `rem` as well. Check new layouts at

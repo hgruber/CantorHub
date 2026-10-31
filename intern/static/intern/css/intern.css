@@ -77,7 +77,9 @@
     --tb-bg:           #ffffff;
     --tb-border:       #e5e7eb;
     --tb-h:            52px;
-    --tb-icon:         #9ca3af;
+    /* 3,8:1 auf Weiss — Icons sind Bedienelemente, 3:1 ist die Untergrenze
+       (WCAG 1.4.11); #9ca3af lag bei 2,5:1. */
+    --tb-icon:         #7d838d;
 
     /* Surfaces */
     --bg-app:          #f1f3f5;
@@ -86,11 +88,27 @@
     --shadow-sm:       0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
     --shadow-md:       0 4px 16px rgba(0,0,0,0.10);
 
-    /* Text */
+    /* Text — vier Stufen, alle AA-fest. Der schlechteste Grund ist nicht die
+       weisse Karte, sondern --bg-app: t3 haelt dort 6,8:1, t4 4,9:1. Vorher
+       stand t4 auf #9ca3af (2,5:1) — fuer Zeitstempel, Meta-Zeilen und den
+       Versionseintrag zu wenig. */
     --t1: #111827;
     --t2: #374151;
-    --t3: #6b7280;
-    --t4: #9ca3af;
+    --t3: #4b5563;
+    --t4: #636a76;
+
+    /* Schriftleiter — fuenf Stufen, mehr gibt es nicht. Jede Regel nimmt
+       einen dieser Werte, keine Zwischengroessen:
+       2xs Tabellenkopf/Badge · xs Meta/Chip · sm Grundtext/Formular/Button
+       · md Seiten- und Kartentitel · lg Seitentitel gross.
+       Die Tokens halten calc(Nrem / 14), damit die Schriftgroessen-
+       Einstellung der Sidebar sie mitskaliert — wie bisher, nur an einer
+       Stelle statt in jeder Regel. */
+    --fs-2xs: calc(11rem / 14);
+    --fs-xs:  calc(13rem / 14);
+    --fs-sm:  calc(15rem / 14);
+    --fs-md:  calc(17rem / 14);
+    --fs-lg:  calc(20rem / 14);
 
     /* Border */
     --border:          #e5e7eb;
@@ -242,7 +260,8 @@
     --t1:              #e5e7eb;
     --t2:              #c9ccde;
     --t3:              #a0a3b8;
-    --t4:              #7c7f93;
+    /* 4,9:1 auf der hellsten dunklen Flaeche (--bg-thead), vorher 4,3:1. */
+    --t4:              #8b8fa3;
 
     --border:          rgba(255, 255, 255, 0.07);
     --border-dark:     rgba(255, 255, 255, 0.10);
@@ -343,6 +362,12 @@ html, body {
     overflow: hidden;
 }
 
+/* Grundtext der Leiter. Steht bewusst NICHT in der Regel oben: dort wuerde
+   sie html mit ueberschreiben, und calc(15rem / 14) auf html selbst rechnet
+   gegen die Initialgroesse 16px statt gegen --schrift-faktor — die
+   Schriftgroessen-Einstellung waere wirkungslos. */
+body { font-size: var(--fs-sm); }
+
 a {
     color: var(--brand);
     text-decoration: none;
@@ -410,7 +435,7 @@ body {
 }
 
 .sidebar-title {
-    font-size: calc(13.5rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 700;
     color: var(--t1);
     white-space: nowrap;
@@ -440,7 +465,7 @@ body {
     border-radius: var(--r-sm);
     color: var(--sb-text);
     text-decoration: none;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 500;
     transition: background var(--ease), color var(--ease);
     cursor: pointer;
@@ -523,9 +548,10 @@ body {
 }
 
 .version-string {
-    font-size: calc(10rem / 14);
-    color: var(--sb-text);
-    opacity: 0.35;
+    font-size: var(--fs-2xs);
+    /* Frueher --sb-text bei opacity 0.35 — das ergab rund 1,9:1. Die
+       Zurueckhaltung traegt jetzt allein die Farbe (--t4 haelt 5,4:1). */
+    color: var(--t4);
     padding: 2px 20px 6px;
     white-space: nowrap;
 }
@@ -546,9 +572,8 @@ a.version-string {
 
 a.version-string:hover,
 a.version-string:focus-visible {
-    color: var(--brand);
-    opacity: 0.85;
-    text-decoration: none;
+    color: var(--brand-text);
+    text-decoration: underline;
 }
 
 /* =================================================== */
@@ -583,7 +608,7 @@ a.version-string:focus-visible {
     align-items: center;
     gap: 12px;
     color: var(--brand);
-    font-size: calc(18rem / 14);
+    font-size: var(--fs-md);
     font-weight: 600;
     pointer-events: none;
     user-select: none;
@@ -611,7 +636,9 @@ a.version-string:focus-visible {
 
 .top-bar .title {
     flex: 0 1 auto;
-    font-size: calc(15rem / 14);
+    /* Eine Stufe ueber dem Grundtext: der Seitentitel ist die Ueberschrift
+       der Seite, nicht ihre erste Zeile. */
+    font-size: var(--fs-md);
     font-weight: 600;
     color: var(--t1);
     margin: 0;
@@ -639,10 +666,10 @@ a.version-string:focus-visible {
    auch bei einem unbekannten Code (stimme-x) da, und fuer Screenreader und
    Copy-Paste bleibt er erhalten.
 
-   Chorleiter und Musiker sind Rollen: neutraler Ton. Weil --t4 als Flaeche die
-   4,5:1 nicht haelt (hell 2,5:1 gegen Weiss), hier --t3 (hell 4,8:1, dunkel
-   6,8:1) — nur die Pille weicht ab, ein Strich und ein Rahmen duerfen leise
-   sein, ein Buchstabe nicht. „Keine Stimme" (N) bekommt gar keine Pille: kein
+   Chorleiter und Musiker sind Rollen: neutraler Ton. Die Pille folgt dem Muster
+   der Stimmen und traegt den dunkleren Ton (--t3, weisse Schrift darauf
+   7,6:1); --t4 bleibt den leisen Linien — ein Strich darf leise sein, ein
+   Buchstabe nicht. „Keine Stimme" (N) bekommt gar keine Pille: kein
    Ton heisst kein Marker, genau wie tables.py solche Zeilen ohne Klasse
    laesst. */
 .stimme-pille {
@@ -656,7 +683,7 @@ a.version-string:focus-visible {
     height: calc(17rem / 14);
     padding: 0 calc(2rem / 14);
     border-radius: 999px;
-    font-size: calc(10rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     line-height: 1;
     background: var(--stimme-farbe-text, var(--t3));
@@ -700,7 +727,7 @@ a.version-string:focus-visible {
     gap: 2px;
     padding: 0 5px;
     height: 16px;
-    font-size: calc(10rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
     border-radius: 3px;
     white-space: nowrap;
@@ -713,7 +740,7 @@ a.version-string:focus-visible {
 .filter-chip--true  { background: #dcfce7; color: #166534; }
 .filter-chip--false { background: #fee2e2; color: #991b1b; }
 .filter-chip-x {
-    font-size: calc(10rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     opacity: 0.55;
     line-height: 1;
@@ -735,7 +762,7 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
 .filter-verb,
 .filter-klammer {
     flex-shrink: 0;
-    font-size: calc(10rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
     color: var(--t3);
 }
@@ -753,7 +780,7 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
     overflow: hidden;
     padding: 0 6px;
     gap: 2px;
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
 }
 
 .breadcrumb-seg {
@@ -779,7 +806,7 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
     color: var(--t4);
     flex-shrink: 0;
     padding: 0 2px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 
 /* ─── Top Bar Icons ──────────────────────────────── */
@@ -881,7 +908,7 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
     width: 150px;
     height: 30px;
     font-family: var(--font);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t1);
     background: var(--bg-app);
     border: 1px solid transparent;
@@ -929,7 +956,7 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
     border-radius: var(--r-sm);
     color: var(--sb-text);
     text-decoration: none;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 500;
     cursor: pointer;
     border: none;
@@ -970,7 +997,7 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
     background: none;
     color: var(--sb-text);
     font-family: inherit;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1;
     font-weight: 600;
     cursor: pointer;
@@ -1024,7 +1051,7 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
 .schriftgroesse-wert {
     min-width: 3em;
     text-align: center;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     opacity: 0.7;
     font-variant-numeric: tabular-nums;
 }
@@ -1062,7 +1089,7 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
 .content h2 {
     margin: 0 0 8px;
     color: var(--t1);
-    font-size: 1.2rem;
+    font-size: var(--fs-lg);
 }
 
 /* =================================================== */
@@ -1079,7 +1106,7 @@ a.btn {
     color: #fff;
     border: none;
     border-radius: var(--r-sm);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 500;
     font-family: var(--font);
     cursor: pointer;
@@ -1128,7 +1155,7 @@ a.btn-secondary:hover {
     box-shadow: none;
 }
 
-.btn-sm { padding: 4px 10px; font-size: calc(12rem / 14); }
+.btn-sm { padding: 4px 10px; font-size: var(--fs-xs); }
 .btn-danger { background: var(--error-solid); }
 .btn-danger:hover { background: var(--error-solid-hover); box-shadow: 0 2px 10px rgba(197, 48, 48, 0.28); }
 .text-muted { color: var(--t4); }
@@ -1148,7 +1175,7 @@ input[type="url"],
 select,
 textarea {
     font-family: var(--font);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t1);
     background: var(--bg-card);
     border: 1px solid var(--border-dark);
@@ -1172,7 +1199,7 @@ textarea::placeholder {
 }
 
 label {
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--t2);
     display: block;
@@ -1196,7 +1223,7 @@ label {
 
 .inline-input {
     font-family: var(--font);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t1);
     background: transparent;
     border: 1px solid transparent;
@@ -1219,7 +1246,7 @@ label {
 }
 
 .invalid-feedback {
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--error-text);
     margin-top: 3px;
 }
@@ -1231,7 +1258,7 @@ label {
     gap: 4px;
     justify-self: end;
     margin: -4px 0 2px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t2);
     cursor: pointer;
     user-select: none;
@@ -1249,7 +1276,7 @@ ul.errorlist {
     padding: 10px 14px;
     margin: 8px 0;
     list-style: none;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 
 /* =================================================== */
@@ -1284,7 +1311,7 @@ table,
     width: 100%;
     border-collapse: collapse;
     font-family: var(--font);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     background: var(--bg-card);
     margin: 0;
 }
@@ -1300,7 +1327,7 @@ thead th {
 th {
     padding: 9px 12px;
     text-align: left;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     color: var(--t3);
     letter-spacing: 0.05em;
@@ -1365,11 +1392,11 @@ th.zahl a { justify-content: flex-end; }
 /* Kategorie der Forenliste: so schmal wie ihr Inhalt. */
 th.kategorie, td.kategorie { width: 1%; white-space: nowrap; }
 
-th.asc a::after  { content: " ↑"; color: var(--brand); font-size: calc(10rem / 14); font-weight: 700; }
-th.desc a::after { content: " ↓"; color: var(--brand); font-size: calc(10rem / 14); font-weight: 700; }
+th.asc a::after  { content: " ↑"; color: var(--brand); font-size: var(--fs-2xs); font-weight: 700; }
+th.desc a::after { content: " ↓"; color: var(--brand); font-size: var(--fs-2xs); font-weight: 700; }
 
 time {
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
 }
 
@@ -1444,7 +1471,7 @@ time {
 }
 
 .split-header strong {
-    font-size: 0.875rem;
+    font-size: var(--fs-sm);
     color: var(--t1);
     letter-spacing: 0.03em;
     text-transform: uppercase;
@@ -1469,7 +1496,7 @@ time {
     width: 120px;
     height: 28px;
     font-family: var(--font);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t1);
     background: var(--bg-app);
     border: 1px solid transparent;
@@ -1504,7 +1531,7 @@ time {
     padding: 8px 16px;
     border-bottom: 1px solid var(--bg-row-hover);
     transition: background var(--ease);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     user-select: none;
 }
 
@@ -1513,7 +1540,7 @@ time {
 .split-item-handle {
     flex-shrink: 0;
     color: var(--t4);
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     cursor: grab;
     opacity: 0.25;
     transition: opacity var(--ease);
@@ -1560,7 +1587,7 @@ time {
     padding: 32px 16px;
     text-align: center;
     color: var(--t4);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 
 /* Drag feedback */
@@ -1639,7 +1666,7 @@ time {
     padding: 16px;
     z-index: 500;
     border-left: 1px solid var(--border);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 
 .offcanvas.open { transform: translateX(0); }
@@ -1652,12 +1679,12 @@ time {
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
 }
-.offcanvas-header strong { font-size: 0.875rem; color: var(--t1); }
+.offcanvas-header strong { font-size: var(--fs-sm); color: var(--t1); }
 .offcanvas-close {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: var(--fs-md);
     color: var(--text-muted);
     padding: 0 4px;
     line-height: 1;
@@ -1670,7 +1697,7 @@ time {
     #Filter     { width: 100%; max-width: 360px; }
 }
 #Action         { width: min(300px, calc(100vw - 24px)); z-index: 502; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
-#AddPanel       { width: 420px; z-index: 504; font-size: 1rem; }
+#AddPanel       { width: 420px; z-index: 504; font-size: var(--fs-md); }
 .add-panel-header {
     display: flex;
     justify-content: space-between;
@@ -1679,14 +1706,14 @@ time {
     padding-bottom: 10px;
     border-bottom: 2px solid var(--brand);
 }
-.add-panel-header strong { font-size: 1rem; color: var(--t1); }
+.add-panel-header strong { font-size: var(--fs-md); color: var(--t1); }
 .add-panel-close {
     background: none; border: none; cursor: pointer;
-    font-size: 1.2rem; color: var(--text-muted); padding: 0 4px;
+    font-size: var(--fs-lg); color: var(--text-muted); padding: 0 4px;
 }
 .add-panel-close:hover { color: var(--brand); }
 .add-panel form .form-group { margin-bottom: 14px; }
-.add-panel form label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 4px; color: var(--t2); }
+.add-panel form label { display: block; font-size: var(--fs-sm); font-weight: 600; margin-bottom: 4px; color: var(--t2); }
 .add-panel form .checkbox-label { display: flex; align-items: center; gap: 8px; font-weight: normal; }
 .add-panel form input[type="text"],
 .add-panel form input[type="email"],
@@ -1697,15 +1724,15 @@ time {
 .add-panel form select,
 .add-panel form textarea { width: 100%; }
 .add-panel-checkboxes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
-.add-panel-checkboxes label { display: flex; align-items: center; gap: 6px; font-weight: normal; font-size: 0.875rem; }
+.add-panel-checkboxes label { display: flex; align-items: center; gap: 6px; font-weight: normal; font-size: var(--fs-sm); }
 .add-panel-actions { display: flex; gap: 10px; margin-top: 20px; }
 .add-panel-actions .btn { flex: 1; }
-.add-panel-hint { font-size: 0.8rem; color: var(--t3); margin: 8px 0 16px; line-height: 1.4; }
-.artikel-add-label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 6px; color: var(--t2); }
+.add-panel-hint { font-size: var(--fs-xs); color: var(--t3); margin: 8px 0 16px; line-height: 1.4; }
+.artikel-add-label { display: block; font-size: var(--fs-sm); font-weight: 600; margin-bottom: 6px; color: var(--t2); }
 .artikel-add-input {
     width: 100%;
     padding: 12px 14px;
-    font-size: 1.05rem;
+    font-size: var(--fs-md);
     font-family: var(--font);
     border: 1px solid var(--border-dark);
     border-radius: var(--r);
@@ -1717,7 +1744,7 @@ time {
 .artikel-add-input::placeholder { color: var(--t3); }
 .artikel-add-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
 .artikel-add-input.is-invalid { border-color: #c53030; box-shadow: 0 0 0 3px rgba(197, 48, 48, 0.18); }
-.artikel-add-error { display: none; margin-top: 6px; font-size: 0.8rem; color: #c53030; }
+.artikel-add-error { display: none; margin-top: 6px; font-size: var(--fs-xs); color: #c53030; }
 .artikel-add-input.is-invalid ~ .artikel-add-error { display: block; }
 
 /* Dropzone fields in AddPanel */
@@ -1737,15 +1764,15 @@ time {
     background: var(--brand-light);
 }
 .dropzone-field-placeholder {
-    font-size: 0.8125rem;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
 }
 .dropzone-field-uploading {
-    font-size: 0.8125rem;
+    font-size: var(--fs-sm);
     color: var(--t3);
 }
 .dropzone-field-done {
-    font-size: 0.8125rem;
+    font-size: var(--fs-sm);
     color: var(--brand);
     font-weight: 600;
 }
@@ -1759,7 +1786,7 @@ time {
 }
 
 .action-header {
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text-muted);
     padding-bottom: 4px;
@@ -1772,7 +1799,7 @@ time {
 }
 
 .action-label {
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -1811,7 +1838,7 @@ time {
     align-items: center;
     gap: 6px;
     padding: 5px 8px;
-    font-size: 0.8125rem;
+    font-size: var(--fs-sm);
     cursor: pointer;
     border-radius: 0;
     white-space: nowrap;
@@ -1843,7 +1870,7 @@ time {
     padding: 24px 28px;
     min-width: 300px;
     font-family: var(--font);
-    font-size: 0.9375rem;
+    font-size: var(--fs-sm);
     position: relative;
     /* Ohne beides bliebe der Dialog im dunklen Thema weiß, während Überschrift
        und Beschriftungen die helle Schrift des Themas erben. */
@@ -1857,7 +1884,7 @@ time {
 
 .app-dialog h3 {
     margin: 0 0 16px;
-    font-size: 1rem;
+    font-size: var(--fs-md);
     font-weight: 700;
     color: var(--t1);
 }
@@ -1872,7 +1899,7 @@ time {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: var(--fs-md);
     color: var(--text-muted);
     padding: 0 4px;
     line-height: 1;
@@ -1884,7 +1911,7 @@ time {
     padding: 8px 10px;
     border: 1px solid var(--border-dark);
     border-radius: var(--r-sm);
-    font-size: 0.9375rem;
+    font-size: var(--fs-sm);
     font-family: var(--font);
     margin-bottom: 16px;
     outline: none;
@@ -1903,7 +1930,7 @@ time {
 
 /* ─── File ID column in Ordner table ────────────────── */
 .file-id-cell {
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     white-space: nowrap;
     width: 1%;
@@ -1919,7 +1946,7 @@ time {
     padding: 4px 8px;
     border: 1px solid var(--border-dark);
     border-radius: var(--r-sm);
-    font-size: 0.875rem;
+    font-size: var(--fs-sm);
     font-family: var(--font);
     background: var(--bg-card);
     color: var(--t1);
@@ -1985,7 +2012,7 @@ time {
 
 /* Field labels become section headers */
 .filter-body label {
-    font-size: calc(10.5rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     color: var(--t3);
     margin-bottom: 6px;
@@ -2000,7 +2027,7 @@ time {
 .filter-body select {
     width: 100%;
     padding: 8px 10px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-family: inherit;
     color: var(--t1);
     background: var(--bg-card);
@@ -2032,7 +2059,7 @@ time {
 .filter-body > div:has(.tri-toggle-wrap) label,
 .filter-body > div:has(.filter-inline) label { margin-bottom: 0; }
 
-.filter-body .filter-inline { width: auto; padding: 4px 6px; font-size: calc(11rem / 14); border-radius: 999px; }
+.filter-body .filter-inline { width: auto; padding: 4px 6px; font-size: var(--fs-2xs); border-radius: 999px; }
 
 /* ── Filter-Baukasten (Zeilen-Editor) ──
    Steht als erstes Kind in .filter-body, ueber den festen Feldern. Das Panel ist nur
@@ -2060,7 +2087,7 @@ time {
     width: auto !important;
     max-width: 100%;
     padding: 4px 6px !important;
-    font-size: calc(12rem / 14) !important;
+    font-size: var(--fs-xs) !important;
 }
 .filter-zeile-auswahl[hidden] { display: none; }
 /* Der Konnektor beschriftet die Zeile, er ist kein Formularfeld wie die anderen --
@@ -2068,7 +2095,7 @@ time {
 .filter-zeile-verbindung {
     width: auto !important;
     padding: 2px 6px !important;
-    font-size: calc(10.5rem / 14) !important;
+    font-size: var(--fs-2xs) !important;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--brand-text) !important;
@@ -2078,7 +2105,7 @@ time {
     border: none;
     cursor: pointer;
     color: var(--t4);
-    font-size: 1rem;
+    font-size: var(--fs-md);
     line-height: 1;
     padding: 0 4px;
     margin-left: auto;
@@ -2093,7 +2120,7 @@ time {
 }
 .filter-zeile-feld > span,
 .filter-zeile-operator > span {
-    font-size: calc(10.5rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     color: var(--t3);
     text-transform: uppercase;
@@ -2124,13 +2151,13 @@ time {
 /* Felder ohne Wert (Zugang): der Operator sagt alles, hier steht nur der Hinweis. */
 .filter-ohne {
     margin: 0;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     color: var(--t3);
 }
-.filter-hinzufuegen { width: 100%; font-size: calc(12rem / 14); }
+.filter-hinzufuegen { width: 100%; font-size: var(--fs-xs); }
 .filter-baukasten-leer {
     margin: 8px 0 0;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 /* Die festen Ja/Nein-Schalter unter der Kette: ein kompaktes Zweierraster, je
@@ -2151,7 +2178,7 @@ time {
     min-width: 0;
 }
 .filter-fest-label {
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t2);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2168,7 +2195,7 @@ time {
 .split-hinweis {
     display: block;
     padding: 10px 16px 4px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 
@@ -2219,7 +2246,7 @@ time {
     border: none;
     background: transparent;
     color: var(--t4);
-    font-size: calc(9rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     cursor: pointer;
     display: flex;
@@ -2246,7 +2273,7 @@ time {
 
 .filter-header-actions .btn {
     padding: 4px 10px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
 }
 
 /* =================================================== */
@@ -2293,7 +2320,7 @@ time {
     flex: 1;
     min-height: 68px;
     resize: vertical;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     padding: 8px 10px;
     line-height: 1.5;
 }
@@ -2320,7 +2347,7 @@ time {
     background: transparent;
     flex-shrink: 0;
     justify-content: center;
-    font-size: calc(18rem / 14);
+    font-size: var(--fs-md);
     line-height: 1;
     box-shadow: none;
 }
@@ -2368,7 +2395,7 @@ td.zahl .gesamtzahl { color: var(--text-muted); font-weight: 400; }
     gap: 10px;
     margin: 8px 0;
     color: var(--brand);
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
 }
 .forum-neu-trenner::before,
@@ -2382,7 +2409,7 @@ td.zahl .gesamtzahl { color: var(--text-muted); font-weight: 400; }
 .message_me {
     display: flex;
     align-items: flex-start;
-    font-size: calc(13.5rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.55;
 }
 
@@ -2409,7 +2436,8 @@ td.zahl .gesamtzahl { color: var(--text-muted); font-weight: 400; }
 
 .message .avatar div {
     margin-top: 3px;
-    font-size: calc(10.5rem / 14);
+    /* Der Autorname ist Inhalt, nicht Beiwerk — deshalb xs, nicht 2xs. */
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 
@@ -2443,7 +2471,7 @@ div.avatar { cursor: pointer; }
 .message .content time,
 .message_me .content_me time {
     display: block;
-    font-size: calc(10.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
     margin-top: 3px;
     text-align: right;
@@ -2462,7 +2490,7 @@ div.avatar { cursor: pointer; }
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1;
     padding: 3px 7px;
     border-radius: 11px;
@@ -2489,7 +2517,7 @@ div.avatar { cursor: pointer; }
     border: 1px solid var(--msg-border);
     background: var(--bg-card);
     color: var(--t3);
-    font-size: calc(15rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1;
     cursor: pointer;
     opacity: 0;
@@ -2517,7 +2545,7 @@ div.avatar { cursor: pointer; }
 .reaction-pick {
     border: 0;
     background: transparent;
-    font-size: calc(19rem / 14);
+    font-size: var(--fs-lg);
     line-height: 1;
     padding: 4px;
     border-radius: 7px;
@@ -2532,7 +2560,7 @@ div.avatar { cursor: pointer; }
 .emoji-gruppe {
     flex-basis: 100%;
     padding: 6px 4px 2px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     color: var(--t3);
 }
 .emoji-gruppe:first-child { padding-top: 0; }
@@ -2556,7 +2584,7 @@ div.avatar { cursor: pointer; }
     padding: 1px 7px;
     border-radius: 10px;
     font-weight: 600;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--mention-color);
 }
 
@@ -2589,7 +2617,7 @@ div.avatar { cursor: pointer; }
     flex-shrink: 0;
     width: 170px;
     padding-top: 9px;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--brand);
     text-decoration: none;
@@ -2608,7 +2636,7 @@ div.avatar { cursor: pointer; }
 
 .forum-search-empty {
     color: var(--t3);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     padding: 24px 4px;
 }
 
@@ -2720,10 +2748,9 @@ div.avatar { cursor: pointer; }
    Zeilenklasse fuer „keine Stimme" leer laesst.
 
    Chorleiter und Musiker sind keine Stimmlage, sondern Rollen: neutraler Ton.
-   Sie tragen ihren Text in --t3 statt --t4, weil --t4 als Textfarbe die 4,5:1
-   nicht haelt (hell 2,2:1 auf der Tintflaeche, die .stimme-merged-inner
-   beschriftet). --stimme-farbe bleibt --t4: Balken und Ruecken duerfen leise
-   sein, ein Buchstabe nicht. */
+   Sie tragen ihren Text in --t3 statt --t4, weil --t4 auf der Tintflaeche
+   knapp unter 4,5:1 bleibt (hell 4,4:1, dunkel 4,2:1). --stimme-farbe bleibt
+   --t4: Balken und Ruecken duerfen leise sein, ein Buchstabe nicht. */
 .row-stimme-s, .stimme-s { --stimme-farbe: var(--stimme-s); --stimme-farbe-text: var(--stimme-s-text); }
 .row-stimme-a, .stimme-a { --stimme-farbe: var(--stimme-a); --stimme-farbe-text: var(--stimme-a-text); }
 .row-stimme-t, .stimme-t { --stimme-farbe: var(--stimme-t); --stimme-farbe-text: var(--stimme-t-text); }
@@ -2776,7 +2803,7 @@ table.mitglied-table tr.stimme-group-start td {
     writing-mode: vertical-rl;
     color: var(--stimme-farbe-text, var(--t2));
     font-weight: 700;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     white-space: nowrap;
@@ -2823,14 +2850,14 @@ table.mitglied-table tr.stimme-group-start td {
 
 .detail-info h1 {
     margin: 0;
-    font-size: 1.3rem;
+    font-size: var(--fs-lg);
     color: var(--t1);
     font-weight: 600;
 }
 
 .detail-subtitle {
     margin: 4px 0 0;
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     color: var(--t4);
     display: flex;
     flex-wrap: wrap;
@@ -2862,7 +2889,7 @@ table.mitglied-table tr.stimme-group-start td {
 }
 
 .detail-card h3 {
-    font-size: 0.7rem;
+    font-size: var(--fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -2903,7 +2930,7 @@ table.mitglied-table tr.stimme-group-start td {
 }
 
 .detail-card-content {
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.6;
     color: var(--t2);
 }
@@ -2942,7 +2969,7 @@ table.mitglied-table tr.stimme-group-start td {
 .detail-card-row {
     display: flex;
     gap: 8px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     padding: 6px 0;
     border-bottom: 1px solid var(--bg-row-hover);
 }
@@ -2972,7 +2999,7 @@ table.mitglied-table tr.stimme-group-start td {
     display: inline-flex;
     align-items: center;
     padding: 2px 8px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
     border-radius: 10px;
     background: var(--bg-row-hover);
@@ -2993,7 +3020,7 @@ table.mitglied-table tr.stimme-group-start td {
 .tag {
     display: inline-block;
     padding: 3px 10px;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     border-radius: 14px;
     background: var(--bg-row-hover);
     color: var(--t2);
@@ -3032,7 +3059,7 @@ table.mitglied-table tr.stimme-group-start td {
     gap: 4px;
 }
 .media-label {
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--t3);
 }
@@ -3078,7 +3105,7 @@ table.mitglied-table tr.stimme-group-start td {
     display: inline-block;
     margin-left: 8px;
     padding: 1px 7px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
     color: var(--t4);
     border: 1px solid var(--border);
@@ -3089,7 +3116,7 @@ table.mitglied-table tr.stimme-group-start td {
 
 .medien-leer {
     margin: 0;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t4);
 }
 
@@ -3105,7 +3132,7 @@ table.mitglied-table tr.stimme-group-start td {
     border: 1.5px dashed var(--border-dark);
     border-radius: var(--r-sm);
     color: var(--t4);
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     text-align: center;
     transition: border-color var(--ease), background var(--ease), color var(--ease);
 }
@@ -3137,7 +3164,7 @@ table.mitglied-table tr.stimme-group-start td {
 
 .medien-status {
     margin: 6px 0 0;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 .medien-status:empty { display: none; }
@@ -3146,7 +3173,7 @@ table.mitglied-table tr.stimme-group-start td {
 /* Gruppenüberschriften der Bearbeiten-Karte */
 .medien-gruppe {
     margin: 14px 0 6px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -3154,7 +3181,7 @@ table.mitglied-table tr.stimme-group-start td {
 }
 .medien-hinweis {
     margin: 0 0 8px;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.45;
     color: var(--t4);
 }
@@ -3176,7 +3203,7 @@ table.mitglied-table tr.stimme-group-start td {
 .medien-datei-name {
     flex: 1 1 10em;
     min-width: 0;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t2);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3235,7 +3262,7 @@ table.mitglied-table tr.stimme-group-start td {
     border-radius: var(--r-sm);
     background: var(--bg-card);
     font: inherit;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t1);
     box-shadow: 0 0 0 3px var(--brand-ring);
     outline: none;
@@ -3267,7 +3294,7 @@ table.mitglied-table tr.stimme-group-start td {
     border-radius: 999px;
     background: transparent;
     font: inherit;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
     cursor: pointer;
     transition: border-color var(--ease), color var(--ease), background var(--ease);
@@ -3298,7 +3325,7 @@ table.mitglied-table tr.stimme-group-start td {
     background: none;
     padding: 2px 9px;
     font: inherit;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--t2);
     cursor: grab;
@@ -3318,7 +3345,7 @@ table.mitglied-table tr.stimme-group-start td {
     background: none;
     padding: 0 7px;
     font: inherit;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.4;
     color: var(--t4);
     cursor: pointer;
@@ -3339,7 +3366,7 @@ table.mitglied-table tr.stimme-group-start td {
 }
 .medien-freie-leer {
     margin: 0;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
 }
 
@@ -3357,7 +3384,7 @@ table.mitglied-table tr.stimme-group-start td {
 .detail-list {
     margin: 0;
     padding: 0 0 0 20px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.8;
     color: var(--t2);
 }
@@ -3371,7 +3398,7 @@ table.mitglied-table tr.stimme-group-start td {
     background: none;
     border: 0;
     padding: 0 4px;
-    font-size: 1rem;
+    font-size: var(--fs-md);
     line-height: 1;
     color: var(--text-muted);
     cursor: pointer;
@@ -3383,10 +3410,10 @@ table.mitglied-table tr.stimme-group-start td {
 .attendance-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 .attendance-table th {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -3413,7 +3440,7 @@ table.mitglied-table tr.stimme-group-start td {
     text-align: center;
     padding: 0 5px;
     border-radius: 8px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     line-height: calc(18rem / 14);
     margin-right: 4px;
 }
@@ -3423,7 +3450,7 @@ table.mitglied-table tr.stimme-group-start td {
 .att-na .att-count { background: var(--bg-row-hover); color: var(--t4); }
 
 .att-names {
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
 }
 /* Vor- und Nachname bleiben zusammen, umbrochen wird nur nach dem Komma. */
@@ -3508,14 +3535,14 @@ table.mitglied-table tr.stimme-group-start td {
 .attendance-edit-mode .att-chips:empty::before {
     content: "–";
     color: var(--t4);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
 }
 .att-chip {
     padding: 2px 8px;
     border-radius: 999px;
     background: var(--bg-row-hover);
     color: var(--t2);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.4;
     white-space: nowrap;
     user-select: none;
@@ -3551,7 +3578,7 @@ table.mitglied-table tr.stimme-group-start td {
     border: 0;
     background: transparent;
     text-align: left;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     padding: 6px 8px;
     border-radius: 7px;
     cursor: pointer;
@@ -3577,7 +3604,7 @@ table.mitglied-table tr.stimme-group-start td {
 .anwesenheit-cancel-btn {
     display: inline-block;
     padding: 2px 10px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -3656,7 +3683,7 @@ table.mitglied-table tr.stimme-group-start td {
     gap: 5px;
     padding: 3px 10px;
     border-radius: 10px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.02em;
     line-height: 1.5;
@@ -3667,7 +3694,7 @@ table.mitglied-table tr.stimme-group-start td {
 .zusage-state-maybe { background: var(--status-warning-bg); color: var(--status-warning-text); border: 1.5px solid var(--status-warning-border); }
 .zusage-state-na    { background: var(--bg-row-hover); color: var(--t4); border: 1.5px solid var(--border); }
 
-.zusage-locked-note { font-size: calc(12rem / 14); color: var(--t4); font-style: italic; }
+.zusage-locked-note { font-size: var(--fs-xs); color: var(--t4); font-style: italic; }
 
 .zusage-actions      { display: flex; gap: 6px; flex-wrap: wrap; }
 .zusage-actions form { margin: 0; padding: 0; }
@@ -3678,7 +3705,7 @@ table.mitglied-table tr.stimme-group-start td {
     gap: 5px;
     padding: 3px 11px;
     border-radius: var(--r-sm);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 500;
     font-family: var(--font);
     cursor: pointer;
@@ -3748,13 +3775,13 @@ table.mitglied-table tr.stimme-group-start td {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 700;
     color: var(--brand);
     white-space: nowrap;
 }
 .termin-banner-titel {
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--t1);
     overflow: hidden;
@@ -3762,7 +3789,7 @@ table.mitglied-table tr.stimme-group-start td {
     white-space: nowrap;
 }
 .termin-banner-tag {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
     padding: 1px 7px;
     border-radius: 999px;
@@ -3771,7 +3798,7 @@ table.mitglied-table tr.stimme-group-start td {
     white-space: nowrap;
 }
 .termin-banner-line2 {
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3828,7 +3855,7 @@ table.mitglied-table tr.stimme-group-start td {
     align-items: center;
     justify-content: space-between;
     padding: 6px 0;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     border-bottom: 1px solid var(--bg-row-hover);
 }
 .invite-row:last-child { border-bottom: none; }
@@ -3852,7 +3879,7 @@ table.mitglied-table tr.stimme-group-start td {
 .form-field-with-action .btn-sm {
     flex-shrink: 0;
     padding: 6px 12px;
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
 }
 
 /* Search-select (pill-style input with hidden select) */
@@ -3876,7 +3903,7 @@ table.mitglied-table tr.stimme-group-start td {
     width: 100%;
     height: 34px;
     font-family: var(--font);
-    font-size: 0.95rem;
+    font-size: var(--fs-sm);
     color: var(--t1);
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -3909,7 +3936,7 @@ table.mitglied-table tr.stimme-group-start td {
     background: var(--bg-row-hover);
     color: var(--t2);
     text-decoration: none;
-    font-size: 1.1rem;
+    font-size: var(--fs-md);
     font-weight: 600;
     flex-shrink: 0;
     transition: background var(--ease), color var(--ease);
@@ -3946,7 +3973,7 @@ table.mitglied-table tr.stimme-group-start td {
     border: none;
     border-radius: var(--r-sm);
     text-align: left;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 400;
     cursor: pointer;
     white-space: nowrap;
@@ -3965,7 +3992,7 @@ table.mitglied-table tr.stimme-group-start td {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 400;
     color: var(--t2);
     margin-right: 16px;
@@ -4000,7 +4027,7 @@ table.mitglied-table tr.stimme-group-start td {
 /* =================================================== */
 .wiki {
     font-family: var(--font);
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.75;
     color: var(--t2);
     padding: 20px 24px;
@@ -4090,7 +4117,7 @@ table.mitglied-table tr.stimme-group-start td {
 }
 
 .wiki-page .wiki .wiki-figure figcaption {
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
     margin-top: 6px;
     line-height: 1.35;
@@ -4172,7 +4199,7 @@ table.mitglied-table tr.stimme-group-start td {
     border-radius: var(--r-sm);
     padding: 14px 16px;
     font-family: var(--mono);
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.6;
     margin: 1em 0;
     position: relative;
@@ -4207,7 +4234,7 @@ table.mitglied-table tr.stimme-group-start td {
     box-sizing: border-box;
     min-height: 100px;
     font-family: var(--mono);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     border: 1px solid var(--border-dark);
     border-radius: var(--r-sm);
     padding: 10px;
@@ -4271,7 +4298,7 @@ span.not_found {
 }
 .ae-ident-text { min-width: 0; }
 .ae-name {
-    font-size: calc(15rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--t1);
     line-height: 1.35;
@@ -4280,7 +4307,7 @@ span.not_found {
     text-overflow: ellipsis;
 }
 .ae-base {
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 .ae-base-new {
@@ -4298,7 +4325,7 @@ span.not_found {
     background: var(--warn-bg);
     border: 1px solid var(--warn-border);
     border-radius: var(--r-lg);
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--warn-text);
     flex-shrink: 0;
 }
@@ -4313,7 +4340,7 @@ span.not_found {
 }
 .ae-fehler code {
     font-family: var(--mono);
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     word-break: break-all;
 }
 .ae-fehler-zeilen {
@@ -4344,7 +4371,7 @@ span.not_found {
     align-items: center;
     gap: 6px;
     padding: 9px 20px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 500;
     color: var(--t3);
     cursor: pointer;
@@ -4376,7 +4403,7 @@ span.not_found {
     align-items: center;
     gap: 6px;
     font: inherit;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
     background: none;
     border: 0;
@@ -4393,7 +4420,7 @@ span.not_found {
 }
 .ae-cheat code {
     font-family: var(--mono);
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     background: var(--pre-bg);
     border: 1px solid var(--border);
     border-radius: var(--r-sm);
@@ -4452,7 +4479,7 @@ span.not_found {
     background: transparent;
     color: var(--t3);
     font: inherit;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     padding: 4px 12px;
     border-radius: 999px;
@@ -4593,7 +4620,7 @@ span.not_found {
 .wiki-page .wiki {
     height: auto;
     padding: 0 52px;
-    font-size: calc(15rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.85;
 }
 
@@ -4729,14 +4756,14 @@ span.not_found {
     background: var(--code-bar-bg);
     border-bottom: 1px solid var(--border);
     padding: 7px 14px;
-    font-size: calc(7rem / 14);
+    font-size: var(--fs-2xs);
     color: var(--code-bar-dots);
     letter-spacing: 4px;
 }
 .wiki-page .wiki pre code {
     display: block;
     padding: 16px 20px;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.7;
     font-family: var(--mono);
     white-space: pre-wrap;
@@ -4771,7 +4798,7 @@ span.not_found {
     padding-top: 1.2em;
     border-top: 1px solid var(--border);
     justify-content: center;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     gap: 5px;
     opacity: 0.5;
 }
@@ -4783,7 +4810,7 @@ span.not_found {
     }
     .wiki-page .wiki {
         padding: 0 18px;
-        font-size: calc(14.5rem / 14);
+        font-size: var(--fs-sm);
     }
     .wiki-page .version-banner {
         margin: 0 12px 18px;
@@ -4845,7 +4872,7 @@ span.not_found {
 }
 
 .pw-strength-label {
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
     white-space: nowrap;
 }
@@ -4863,7 +4890,7 @@ span.not_found {
 .pw-match {
     display: flex;
     align-items: center;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     margin-top: 5px;
 }
 
@@ -4883,7 +4910,7 @@ span.not_found {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     padding: 8px 12px;
     color: var(--t3);
@@ -4914,7 +4941,7 @@ span.not_found {
     background: transparent;
     color: var(--t3);
     font: inherit;
-    font-size: calc(10rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     line-height: 1;
     cursor: pointer;
@@ -5044,7 +5071,7 @@ span.not_found {
     padding: 0 4px;
     border-radius: 999px;
     color: var(--t2);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1;
     vertical-align: middle;
     transition: color var(--ease), background var(--ease);
@@ -5154,7 +5181,7 @@ span.not_found {
     gap: 8px;
     margin-bottom: 8px;
     color: var(--t2);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     min-width: 0;
 }
 .mp-info-icon {
@@ -5177,7 +5204,7 @@ span.not_found {
     white-space: nowrap;
 }
 .mp-composer {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     color: var(--t3);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -5187,7 +5214,7 @@ span.not_found {
 .mp-composer:not(:empty) { display: block; }
 .mp-type {
     flex: 0 0 auto;
-    font-size: calc(10.5rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -5254,7 +5281,7 @@ span.not_found {
 .wp-download {
     width: 28px;
     height: 28px;
-    font-size: calc(16rem / 14);
+    font-size: var(--fs-md);
     line-height: 1;
     color: var(--t3);
     flex: 0 0 auto;
@@ -5264,7 +5291,7 @@ span.not_found {
 
 .mp-time {
     font-variant-numeric: tabular-nums;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
     flex: 0 0 auto;
     min-width: 34px;
@@ -5490,14 +5517,14 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
 .version-banner-msg strong {
     display: block;
     color: var(--warn-strong);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
 .version-banner-msg span {
     color: var(--warn-text);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 
 /* Version stepper */
@@ -5512,7 +5539,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     align-items: center;
     gap: 4px;
     padding: 6px 10px;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--warn-strong);
     background: var(--bg-card);
@@ -5538,7 +5565,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
 }
 
 .version-current {
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 700;
     color: var(--warn-text);
     padding: 0 4px;
@@ -5551,7 +5578,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     gap: 5px;
     margin-left: 6px;
     padding: 6px 12px;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: #fff;
     background: var(--brand);
@@ -5601,7 +5628,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
 .history-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.875rem;
+    font-size: var(--fs-sm);
 }
 
 .history-table th,
@@ -5615,7 +5642,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
 .history-table thead th {
     background: var(--bg-thead);
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -5667,7 +5694,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    font-size: 0.875rem;
+    font-size: var(--fs-sm);
 }
 
 .diff-old  { color: #b91c1c; }
@@ -5697,7 +5724,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     width: 100%;
     border-collapse: collapse;
     font-family: ui-monospace, "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
-    font-size: 0.8125rem;
+    font-size: var(--fs-sm);
     tab-size: 4;
 }
 
@@ -5730,7 +5757,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     padding: 3px 10px;
     color: #1d4ed8;
     font-family: ui-monospace, Consolas, monospace;
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
     border-top: 1px solid #bfdbfe;
     border-bottom: 1px solid #bfdbfe;
 }
@@ -5747,7 +5774,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     width: 100%;
     border-collapse: collapse;
     font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-    font-size: 0.8125rem;
+    font-size: var(--fs-sm);
 }
 
 .diff-side-wrap table.diff td,
@@ -5761,7 +5788,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
 .diff-side-wrap table.diff th {
     background: var(--bg-thead);
     font-family: var(--font-sans);
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text-muted);
     border-bottom: 2px solid var(--border);
@@ -5796,7 +5823,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     border: 1px solid var(--border-dark);
     border-radius: var(--r);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -5806,7 +5833,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     padding: 2px 4px 6px;
     margin-bottom: 2px;
     border-bottom: 1px solid var(--border);
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text-muted);
     overflow: hidden;
@@ -5824,7 +5851,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     border: none;
     border-radius: var(--r-sm);
     text-align: left;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 400;
     cursor: pointer;
     box-shadow: none;
@@ -5906,7 +5933,7 @@ tbody tr.zeile-markiert td:first-child {
     border: 1px solid var(--border-dark);
     border-radius: var(--r-sm);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     display: none;
 }
 .wiki-autocomplete.active {
@@ -5921,7 +5948,7 @@ tbody tr.zeile-markiert td:first-child {
     border: none;
     border-radius: var(--r-sm);
     text-align: left;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 400;
     cursor: pointer;
     white-space: nowrap;
@@ -5944,7 +5971,7 @@ tbody tr.zeile-markiert td:first-child {
     border: 1px solid var(--border-dark);
     border-radius: var(--r-sm);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--t2);
     pointer-events: none;
@@ -5984,7 +6011,7 @@ tbody tr.zeile-markiert td:first-child {
     box-shadow: 0 4px 16px rgba(0,0,0,.14);
     padding: 12px 14px;
     min-width: 190px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t1);
     display: flex;
     flex-direction: column;
@@ -5996,7 +6023,7 @@ tbody tr.zeile-markiert td:first-child {
     align-items: center;
     gap: 6px;
     font-weight: 700;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--brand);
     letter-spacing: 0.02em;
 }
@@ -6074,7 +6101,7 @@ tbody tr.zeile-markiert td:first-child {
 }
 .karte-toggle-label {
     flex: 1;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     transition: color var(--ease);
 }
 
@@ -6156,7 +6183,7 @@ tbody tr.zeile-markiert td:first-child {
     padding: 6px 10px;
     border-radius: var(--r-sm);
     border: 1.5px solid transparent;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 500;
     font-family: var(--font);
     cursor: pointer;
@@ -6186,7 +6213,7 @@ tbody tr.zeile-markiert td:first-child {
     z-index: 600;
     padding: 8px 18px;
     border-radius: 20px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 500;
     background: var(--bg-card);
     color: var(--t1);
@@ -6254,7 +6281,7 @@ tbody tr.zeile-markiert td:first-child {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
     padding: 6px 10px;
     border-radius: var(--r-sm);
@@ -6299,7 +6326,7 @@ tbody tr.zeile-markiert td:first-child {
     padding: 7px 8px;
     border-radius: var(--r-sm);
     cursor: pointer;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t1);
     transition: background var(--ease);
 }
@@ -6314,12 +6341,12 @@ tbody tr.zeile-markiert td:first-child {
     flex: 1;
 }
 .karte-search-item-sub {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     color: var(--t4);
 }
 .karte-search-empty {
     padding: 8px;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
     text-align: center;
 }
@@ -6353,7 +6380,7 @@ tbody tr.zeile-markiert td:first-child {
 }
 .dialog-field label {
     display: block;
-    font-size: 0.8125rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--t3);
     margin-bottom: 3px;
@@ -6363,7 +6390,7 @@ tbody tr.zeile-markiert td:first-child {
     padding: 8px 10px;
     border: 1px solid var(--border-dark);
     border-radius: var(--r-sm);
-    font-size: 0.9375rem;
+    font-size: var(--fs-sm);
     font-family: var(--font);
     outline: none;
     box-sizing: border-box;
@@ -6401,7 +6428,7 @@ tbody tr.zeile-markiert td:first-child {
     border: 1.5px solid var(--border-dark);
     background: transparent;
     color: var(--t2);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 500;
     font-family: var(--font);
     cursor: pointer;
@@ -6415,7 +6442,7 @@ tbody tr.zeile-markiert td:first-child {
 
 /* ── Popup extras ── */
 .karte-popup-addr {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     color: #888;
 }
 .karte-popup-btn {
@@ -6428,7 +6455,7 @@ tbody tr.zeile-markiert td:first-child {
     border: 1.5px solid var(--border-dark, #ccc);
     background: transparent;
     color: var(--brand);
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
@@ -6442,7 +6469,7 @@ tbody tr.zeile-markiert td:first-child {
 .karte-popup-link {
     display: inline-block;
     margin-top: 5px;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     color: #4b80c0;
     text-decoration: none;
 }
@@ -6486,7 +6513,7 @@ tbody tr.zeile-markiert td:first-child {
     justify-content: space-between;
     align-items: baseline;
     gap: 8px;
-    font-size: 0.7rem;
+    font-size: var(--fs-2xs);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--brand-text);
@@ -6498,7 +6525,7 @@ tbody tr.zeile-markiert td:first-child {
     text-transform: none;
     letter-spacing: normal;
     font-weight: 600;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     color: var(--t3);
     white-space: nowrap;
 }
@@ -6543,7 +6570,7 @@ tbody tr.zeile-markiert td:first-child {
     text-align: center;
     padding: 0 5px;
     border-radius: 8px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     line-height: calc(18rem / 14);
     background: var(--brand-light);
     color: var(--brand);
@@ -6562,7 +6589,7 @@ tbody tr.zeile-markiert td:first-child {
     border-radius: 4px;
 }
 .abstimmung-voters {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     color: var(--t3);
     flex: 2;
 }
@@ -6573,7 +6600,7 @@ tbody tr.zeile-markiert td:first-child {
     margin-top: 12px;
 }
 .abstimmung-limit {
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 .abstimmung-counter {
@@ -6585,7 +6612,7 @@ tbody tr.zeile-markiert td:first-child {
 }
 .abstimmung-locked {
     margin: 10px 0 0;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 .abstimmung-readonly .abstimmung-label {
@@ -6642,7 +6669,7 @@ tbody tr.zeile-markiert td:first-child {
     transform: translateY(0);
 }
 .dl-menu-header {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -6650,7 +6677,7 @@ tbody tr.zeile-markiert td:first-child {
     padding: 4px 8px 8px;
 }
 .dl-group-label {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -6696,13 +6723,13 @@ tbody tr.zeile-markiert td:first-child {
     gap: 1px;
 }
 .dl-item-title {
-    font-size: 0.88rem;
+    font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--t1);
     transition: color var(--ease);
 }
 .dl-item-sub {
-    font-size: 0.78rem;
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 [data-theme="dark"] .dl-icon-word  { background: rgba(37,99,235,0.15);  color: #60a5fa; }
@@ -6741,7 +6768,7 @@ tbody tr.zeile-markiert td:first-child {
     height: 36px;
 }
 .error-brand span {
-    font-size: 1rem;
+    font-size: var(--fs-md);
     font-weight: 600;
     color: var(--brand);
 }
@@ -6792,14 +6819,14 @@ tbody tr.zeile-markiert td:first-child {
 }
 
 .error-title {
-    font-size: 1.4rem;
+    font-size: var(--fs-lg);
     font-weight: 600;
     color: var(--t1);
     margin: 0 0 0.75rem;
 }
 
 .error-message {
-    font-size: 0.95rem;
+    font-size: var(--fs-sm);
     color: var(--t3);
     line-height: 1.7;
     margin: 0 0 2rem;
@@ -6819,7 +6846,7 @@ tbody tr.zeile-markiert td:first-child {
     border: none;
     padding: 0.65rem 1.5rem;
     border-radius: var(--r);
-    font-size: 0.95rem;
+    font-size: var(--fs-sm);
     font-weight: 500;
     text-decoration: none;
     cursor: pointer;
@@ -6838,7 +6865,7 @@ tbody tr.zeile-markiert td:first-child {
     border: 1px solid var(--border-dark);
     padding: 0.65rem 1.5rem;
     border-radius: var(--r);
-    font-size: 0.95rem;
+    font-size: var(--fs-sm);
     font-weight: 500;
     text-decoration: none;
     cursor: pointer;
@@ -6852,7 +6879,7 @@ tbody tr.zeile-markiert td:first-child {
 }
 
 .error-path {
-    font-size: 0.78rem;
+    font-size: var(--fs-xs);
     font-family: var(--mono);
     color: var(--t4);
     margin: 1.5rem 0 0;
@@ -6872,7 +6899,7 @@ tbody tr.zeile-markiert td:first-child {
 [data-theme="dark"] .dl-icon-noten { background: rgba(22,163,74,0.15);  color: #4ade80; }
 
 /* ChangeLog audit view */
-.change-row { margin-bottom: 0.2rem; font-size: 0.875rem; }
+.change-row { margin-bottom: 0.2rem; font-size: var(--fs-sm); }
 .change-field { font-weight: 600; color: var(--text); }
 .change-old { color: var(--text-muted); text-decoration: line-through; }
 .change-new { color: var(--text); }
@@ -6885,7 +6912,7 @@ tbody tr.zeile-markiert td:first-child {
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--fs-sm);
 }
 .table-sentinel.loading::after {
   content: "Lade \2026";
@@ -6959,20 +6986,20 @@ tbody tr.zeile-markiert td:first-child {
     margin-bottom: 2px;
 }
 .notify-header strong {
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .notify-meta {
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .notify-snippet {
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     line-height: 1.3;
     overflow: hidden;
@@ -6981,7 +7008,7 @@ tbody tr.zeile-markiert td:first-child {
     -webkit-box-orient: vertical;
 }
 .notify-who {
-    font-size: 0.7rem;
+    font-size: var(--fs-2xs);
     color: var(--text-muted);
     margin-top: 1px;
 }
@@ -7075,7 +7102,7 @@ td.marker-cell {
     border-radius: var(--r-lg);
     box-shadow: var(--shadow-md);
     z-index: 600;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     overflow: hidden;
     transition: box-shadow 0.2s;
 }
@@ -7092,7 +7119,7 @@ td.marker-cell {
     flex: 1;
     font-weight: 600;
     color: var(--t1);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -7105,7 +7132,7 @@ td.marker-cell {
     padding: 2px 4px;
     border-radius: var(--r-sm);
     line-height: 1;
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     transition: color 0.15s, background 0.15s;
 }
 .upload-card-toggle:hover,
@@ -7147,7 +7174,7 @@ td.marker-cell {
     transition: width 0.2s;
 }
 .uc-status {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     white-space: nowrap;
     color: var(--t3);
     min-width: 80px;
@@ -7206,7 +7233,7 @@ body.join-page {
 }
 .join-header h1 {
     margin: 0 0 8px;
-    font-size: 1.4rem;
+    font-size: var(--fs-lg);
     font-weight: 600;
     color: var(--t1);
 }
@@ -7214,7 +7241,7 @@ body.join-page {
     margin: 0 auto;
     max-width: 48ch;
     color: var(--t3);
-    font-size: 0.95rem;
+    font-size: var(--fs-sm);
     line-height: 1.55;
 }
 .join-email {
@@ -7225,7 +7252,7 @@ body.join-page {
     background: var(--brand-light);
     color: var(--brand);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
 }
 
 /* Form: Karten untereinander statt im 2-Spalten-Raster */
@@ -7234,7 +7261,7 @@ body.join-page {
 }
 .join-hint {
     margin: -4px 0 10px;
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 /* Fehlermeldungen über die volle Rasterbreite, damit sie das
@@ -7248,7 +7275,7 @@ body.join-page {
 }
 .join-required-note {
     margin: 4px 2px 0;
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 
@@ -7275,7 +7302,7 @@ body.join-page {
     gap: 10px;
     margin: 0;
     font-weight: 400;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     line-height: 1.45;
     color: var(--t2);
     cursor: pointer;
@@ -7297,7 +7324,7 @@ body.join-page {
     width: 100%;
     justify-content: center;
     padding: 11px 14px;
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
 }
 
 /* Status-Seiten (Erfolg / ungültig) */
@@ -7324,7 +7351,7 @@ body.join-page {
 }
 .join-message {
     color: var(--t2);
-    font-size: 0.95rem;
+    font-size: var(--fs-sm);
     line-height: 1.6;
     text-align: center;
 }
@@ -7333,7 +7360,7 @@ body.join-page {
 }
 .join-message-muted {
     color: var(--t4);
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
 }
 
 /* === Kalender === */
@@ -7392,7 +7419,7 @@ body.join-page {
     margin: 0;
     min-width: 168px;
     text-align: center;
-    font-size: 1.35rem;
+    font-size: var(--fs-lg);
     font-weight: 700;
     color: var(--t1);
     letter-spacing: -0.01em;
@@ -7408,7 +7435,7 @@ body.join-page {
     border-radius: 999px;
     background: var(--brand);
     color: #fff;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     text-decoration: none;
     transition: background var(--ease);
@@ -7417,7 +7444,7 @@ body.join-page {
 .cal-legend {
     display: flex;
     gap: 16px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 .cal-legend-item { display: inline-flex; align-items: center; gap: 6px; }
@@ -7444,7 +7471,7 @@ body.join-page {
 }
 .cal-weekday {
     padding: 9px 12px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -7492,7 +7519,7 @@ body.join-page {
     align-items: center;
     justify-content: center;
     padding: 0 6px;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--t2);
     border-radius: 999px;
@@ -7514,10 +7541,12 @@ body.join-page {
 .cal-chip {
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 7px;
+    /* Enger als frueher (7/5): mit 13px Text passt "19:30 Chorprobe" in
+       einer Tagesspalte sonst nicht mehr und wird abgeschnitten. */
+    gap: 4px;
+    padding: 3px 5px;
     border-radius: var(--r-sm);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.3;
     text-decoration: none;
     min-width: 0;
@@ -7632,7 +7661,7 @@ body.join-page {
     padding: 16px 20px;
     border-bottom: 1px solid var(--border);
 }
-.cal-panel-date { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--t1); }
+.cal-panel-date { margin: 0; font-size: var(--fs-md); font-weight: 700; color: var(--t1); }
 .cal-panel-close {
     display: inline-flex;
     align-items: center;
@@ -7664,7 +7693,7 @@ body.join-page {
     gap: 9px;
 }
 .cal-panel-body .cal-chip {
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     padding: 11px 14px;
     border-radius: var(--r);
     border-left-width: 4px;
@@ -7697,14 +7726,14 @@ body.join-page {
     .cal-grid { flex: none; grid-auto-rows: auto; }
     .cal-toolbar { margin-bottom: 12px; }
     .cal-legend { width: 100%; order: 3; }
-    .cal-weekday { padding: 7px 4px; text-align: center; font-size: calc(10rem / 14); }
+    .cal-weekday { padding: 7px 4px; text-align: center; font-size: var(--fs-2xs); }
     .cal-day {
         min-height: 58px;
         padding: 5px 3px;
         align-items: center;
         cursor: pointer;
     }
-    .cal-daynum { align-self: center; font-size: calc(12rem / 14); }
+    .cal-daynum { align-self: center; font-size: var(--fs-xs); }
     .cal-dots { display: flex; justify-content: center; }
     .cal-day-detail { display: none; }
 }
@@ -7719,7 +7748,7 @@ body.join-page {
 
 .datei-hinweis {
     margin: 0 0 10px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--text-muted);
 }
 
@@ -7732,7 +7761,7 @@ body.join-page {
 .datei-orte li {
     padding: 6px 0;
     border-bottom: 1px solid var(--border);
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
 }
 
 .datei-orte li:last-child { border-bottom: none; }
@@ -7743,13 +7772,13 @@ body.join-page {
     border-radius: 10px;
     background: var(--border);
     color: var(--text-muted);
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
 }
 
 .datei-version-tabelle {
     width: 100%;
     border-collapse: collapse;
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
 }
 
 .datei-version-tabelle td {
@@ -7780,7 +7809,7 @@ body.join-page {
 
 .btn-klein {
     padding: 3px 10px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
 }
 
 @media (max-width: 640px) {
@@ -7807,12 +7836,12 @@ body.join-page {
 
 .verwendung-dialog h3 {
     margin: 0 0 8px;
-    font-size: calc(17rem / 14);
+    font-size: var(--fs-md);
 }
 
 .verwendung-hinweis {
     margin: 0 0 14px;
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     color: var(--text-muted);
 }
 
@@ -7820,7 +7849,7 @@ body.join-page {
     margin-bottom: 12px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border);
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
 }
 
 .verwendung-block:last-of-type {
@@ -7850,7 +7879,7 @@ body.join-page {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--text-muted);
     cursor: pointer;
 }
@@ -7876,7 +7905,7 @@ body.join-page {
 }
 
 .chip-ms-legend {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -7897,7 +7926,7 @@ body.join-page {
     content: attr(data-leer);
     display: block;
     padding: 6px 5px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
 }
 
@@ -7930,7 +7959,7 @@ body.join-page {
 .chip-ms-pool > .chip-ms-item {
     padding: 7px 9px;
     border-radius: var(--r-sm);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t1);
 }
 
@@ -7944,7 +7973,7 @@ body.join-page {
     background: var(--brand-light);
     color: var(--brand);
     border: 1px solid transparent;
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.4;
 }
 
@@ -7967,7 +7996,7 @@ body.join-page {
     border: 0;
     background: transparent;
     color: inherit;
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1;
     opacity: 0.55;
     cursor: pointer;
@@ -7983,7 +8012,7 @@ body.join-page {
     box-sizing: border-box;
     padding: 0 10px;
     font-family: var(--font);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     color: var(--t1);
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -8047,7 +8076,7 @@ body.join-page {
     border-radius: var(--r-sm);
     background: transparent;
     color: var(--t1);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     text-align: left;
     cursor: pointer;
 }
@@ -8107,7 +8136,7 @@ body.join-page {
     padding: 0.25rem 0;
     cursor: pointer;
     color: var(--t2);
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
 }
 
 .detail-card .gruppen-auswahl {
@@ -8136,13 +8165,13 @@ body.join-page {
     border-radius: 99px;
     background: var(--bg-row-hover);
     color: var(--t2);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     white-space: nowrap;
 }
 
 .detail-hint {
     margin-top: 0.75rem;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 
@@ -8187,7 +8216,7 @@ body.join-page {
     border-radius: 8px;
     background: var(--bg-card);
     color: var(--t2);
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.45;
     box-shadow: var(--shadow-md);
     pointer-events: none;
@@ -8258,17 +8287,17 @@ body.join-page {
     flex: 1 1 260px;
 }
 .kf-mangel-titel {
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 700;
     color: var(--warn-strong);
 }
 .kf-mangel-detail {
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.45;
 }
 .kf-mangel-detail code {
     font-family: var(--mono);
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     color: var(--warn-strong);
 }
 /* Neutrale Tonlage: ein abgeschalteter Dienst ist kein Fehler, sondern eine
@@ -8316,7 +8345,7 @@ body.join-page {
 .kf-gruppe[open] > summary::before { transform: rotate(90deg); }
 .kf-gruppe > summary:hover .kf-gruppen-titel { color: var(--brand); }
 .kf-gruppen-titel {
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -8324,7 +8353,7 @@ body.join-page {
     transition: color var(--ease);
 }
 .kf-gruppen-count {
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     color: var(--t3);
     background: var(--bg-thead);
@@ -8337,7 +8366,7 @@ body.join-page {
     flex-shrink: 0;
 }
 .kf-gruppen-hinweis {
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
     font-weight: 400;
     text-transform: none;
@@ -8364,7 +8393,7 @@ body.join-page {
 
 .kf-key code {
     font-family: var(--mono);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--t3);
     overflow-wrap: anywhere;
@@ -8380,7 +8409,7 @@ body.join-page {
     border-radius: 5px;
     background: var(--bg-card);
     color: var(--t1);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     font-family: var(--font);
     resize: none;
     min-height: 32px;
@@ -8442,7 +8471,7 @@ body.join-page {
 .kf-bool input:checked { background: var(--brand); }
 .kf-bool input:checked::after { transform: translateX(18px); }
 .kf-bool input:focus-visible { outline: 2px solid var(--brand-ring); outline-offset: 2px; }
-.kf-bool-state { font-size: calc(12rem / 14); color: var(--t3); }
+.kf-bool-state { font-size: var(--fs-xs); color: var(--t3); }
 .kf-bool input:not(:checked) ~ .kf-bool-state::before { content: "Aus"; }
 .kf-bool input:checked ~ .kf-bool-state::before { content: "An"; color: var(--brand); }
 
@@ -8480,7 +8509,7 @@ body.join-page {
 .kf-desc { display: flex; align-items: flex-start; gap: 6px; }
 .kf-desc-text {
     flex: 1;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
     line-height: 1.4;
     cursor: pointer;
@@ -8509,7 +8538,7 @@ body.join-page {
    wirken, display:grid/flex gewinnt sonst dagegen. */
 .kf-desc-input { width: 100%; box-sizing: border-box; }
 
-.kf-leer { text-align: center; color: var(--t4); padding: 32px 0; font-size: calc(14rem / 14); }
+.kf-leer { text-align: center; color: var(--t4); padding: 32px 0; font-size: var(--fs-sm); }
 
 /* Fokus-Freiraum statt gestrichelter Scroll-Nachführung. */
 .kf-eintrag textarea,
@@ -8540,13 +8569,13 @@ body.join-page {
     padding-bottom: calc(10px + env(safe-area-inset-bottom));
     background: var(--bg-card);
     border-top: 1px solid var(--border);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
 }
 .konfig-mailhelp.visible { display: flex; }
 .konfig-mailhelp code {
     font-family: var(--mono);
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     background: var(--bg-thead);
     border: 1px solid var(--border);
     border-radius: 3px;
@@ -8558,7 +8587,7 @@ body.join-page {
     color: var(--brand);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
 }
 
 /* Apply-Bar — IDs bleiben, damit das übernommene JS unverändert greift. */
@@ -8581,7 +8610,7 @@ body.join-page {
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
 }
 .konfig-apply-bar.visible { transform: translateY(0); }
-.konfig-change-summary { font-size: calc(13rem / 14); color: var(--t3); }
+.konfig-change-summary { font-size: var(--fs-sm); color: var(--t3); }
 
 [data-theme="dark"] .kf-eintrag .inline-input {
     background: var(--bg-app);
@@ -8635,7 +8664,7 @@ body.join-page {
 .auslieferungen-leer {
     margin: 0;
     color: var(--t3);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 
 .auslieferungen-intro { margin-bottom: 18px; }
@@ -8695,17 +8724,17 @@ body.join-page {
 }
 
 /* Aus demselben Grund mit .auslieferung davor: ``.content h2`` setzt jedem h2
-   im Rollbereich font-size: 1.2rem und schlägt eine einzelne Klasse. */
+   im Rollbereich font-size: var(--fs-lg) und schlägt eine einzelne Klasse. */
 .auslieferung .auslieferung-version {
     margin: 0;
     min-width: 0;
-    font-size: calc(15rem / 14);
+    font-size: var(--fs-sm);
     font-weight: 700;
     color: var(--t1);
 }
 
 .auslieferung-datum {
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t3);
     font-variant-numeric: tabular-nums;
 }
@@ -8736,7 +8765,7 @@ body.join-page {
    Kopfes; dort fehlt nichts, was abgesetzt werden müsste. */
 .auslieferung-gruppe {
     margin: 18px 0 8px;
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -8751,7 +8780,7 @@ body.join-page {
 .auslieferung-liste {
     margin: 0;
     padding-left: 20px;
-    font-size: calc(14rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.65;
     color: var(--t2);
 }
@@ -8767,7 +8796,7 @@ body.join-page {
    erben ihre Schrift vom Fließtext, nur der Code tritt heraus. */
 .auslieferung-liste code {
     font-family: var(--mono);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     background: var(--code-bg);
     color: var(--code-color);
     border-radius: var(--r-sm);
@@ -8786,13 +8815,13 @@ body.join-page {
 .perm-hilfe h3 { padding-right: 24px; }
 .perm-hilfe-kurz {
     margin: -6px 0 16px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.5;
     color: var(--t2);
 }
 .perm-hilfe h4 {
     margin: 18px 0 8px;
-    font-size: calc(11rem / 14);
+    font-size: var(--fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -8801,7 +8830,7 @@ body.join-page {
 .perm-hilfe-stellen {
     margin: 0;
     padding-left: 18px;
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
     line-height: 1.5;
 }
 .perm-hilfe-stellen li { margin-bottom: 8px; }
@@ -8810,18 +8839,18 @@ body.join-page {
 .perm-hilfe-mit {
     display: block;
     margin-top: 2px;
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     color: var(--brand-text);
 }
 .perm-hilfe-quelle { margin-bottom: 10px; }
 .perm-hilfe-quelle-name {
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--t2);
     margin-bottom: 3px;
 }
 .perm-hilfe-leer {
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     color: var(--t4);
 }
 .perm-hilfe .member-chips {
@@ -8835,7 +8864,7 @@ body.join-page {
     color: var(--t1);
     border-radius: 99px;
     padding: 1px 8px;
-    font-size: calc(11.5rem / 14);
+    font-size: var(--fs-xs);
     white-space: nowrap;
 }
 
@@ -8865,20 +8894,20 @@ button.tag:focus-visible {
     border: 1px solid var(--warn-border);
     border-radius: var(--r-lg);
     color: var(--warn-text);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 
 .sicherung-text {
     margin: 10px 0 0;
     color: var(--t3);
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
     line-height: 1.5;
 }
 
 .sicherung code,
 .sicherung-befehl {
     font-family: var(--mono);
-    font-size: calc(12rem / 14);
+    font-size: var(--fs-xs);
     overflow-wrap: anywhere;
 }
 
@@ -8908,7 +8937,7 @@ button.tag:focus-visible {
     align-items: center;
     gap: 8px;
     color: var(--t1);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 .sicherung-geraet-kopf code { color: var(--t3); }
 .sicherung-entfernen { margin-left: auto; }
@@ -8916,7 +8945,7 @@ button.tag:focus-visible {
 .sicherung-geraet-zeile {
     margin-top: 4px;
     color: var(--t3);
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
 }
 
 .sicherung-annehmen {
@@ -8929,20 +8958,20 @@ button.tag:focus-visible {
     display: grid;
     gap: 4px;
     color: var(--t2);
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
 }
-.sicherung-feld small { color: var(--t3); font-size: calc(12rem / 14); }
+.sicherung-feld small { color: var(--t3); font-size: var(--fs-xs); }
 
 .sicherung-modus {
     margin: 0;
     padding: 0;
     border: none;
 }
-.sicherung-modus .radio-label { font-size: calc(13rem / 14); }
+.sicherung-modus .radio-label { font-size: var(--fs-sm); }
 .sicherung-modus legend {
     padding: 0;
     color: var(--t2);
-    font-size: calc(12.5rem / 14);
+    font-size: var(--fs-xs);
 }
 
 /* Das Passwort nur bei „verschlüsselt“ — ohne JavaScript. */
@@ -8960,7 +8989,7 @@ button.tag:focus-visible {
 .sicherung-manuell summary {
     cursor: pointer;
     color: var(--brand-text);
-    font-size: calc(13rem / 14);
+    font-size: var(--fs-sm);
 }
 
 /* Wiederherstellen (/einrichtung/wiederherstellen/) */
