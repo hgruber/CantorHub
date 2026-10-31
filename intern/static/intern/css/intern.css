@@ -2652,8 +2652,9 @@ div.avatar { cursor: pointer; }
    Der Ring um das Portraet ist die Stelle, an der die Stimme zuerst auffaellt,
    und die einzige ganz ohne Text — er traegt deshalb auch im dunklen Thema den
    Vollton, wie der Pillenbuchstabe in der Topbar. Das Portraet sitzt im
-   .detail-icon der Detailseiten (56 px, border-radius var(--r)); die 3-px-Kante
-   wirkt auf dieser kleineren Flaeche kraeftiger als auf dem alten 110-px-Bild.
+   .detail-icon der Detailseiten (border-radius var(--r)), hier aber mit 160 px
+   statt 56 px: das Original ist gross genug, und auf der Profilseite ist es
+   der Blickfang.
    Sein Fallback bleibt --border: ein Fotorahmen ist auch ohne Ton unauffaellig.
 
    max-width ohne margin:auto: der Deckel haelt die Zeilenlaenge im Lesbaren
@@ -2673,7 +2674,13 @@ div.avatar { cursor: pointer; }
 [data-theme="dark"] .detail-page.member-voice {
     border-left-color: color-mix(in srgb, var(--stimme-farbe, transparent) 55%, transparent);
 }
+/* Name und Gruppen stehen an der Unterkante des grossen Bildes. */
+.member-voice .detail-header {
+    align-items: flex-end;
+}
 .member-voice .detail-icon {
+    width: 160px;
+    height: 160px;
     overflow: hidden;
     border: calc(3rem / 14) solid var(--stimme-farbe, var(--border));
 }
