@@ -20,7 +20,7 @@ Links siehst Du die '''Seitenleiste''' mit allen Bereichen. Auf dem Smartphone i
 
 Ein '''Punkt''' neben einem Bereich bedeutet: hier gibt es etwas Neues für Dich, zum Beispiel eine ungelesene Nachricht oder einen Termin, zu dem Du noch nichts gesagt hast.
 
-Oben rechts auf jeder Seite stehen kleine Symbole für das, was Du auf dieser Seite tun kannst, etwa ⊕ für „neu anlegen“ oder ein Stift für „bearbeiten“. Wenn Du mit der Maus kurz darauf zeigst, erscheint eine Erklärung.
+Oben rechts auf jeder Seite stehen kleine Symbole für das, was Du auf dieser Seite tun kannst, etwa {symbol:neu} für „neu anlegen“ oder {symbol:bearbeiten} für „bearbeiten“. Wenn Du mit der Maus kurz darauf zeigst, erscheint eine Erklärung.
 
 === Der nächste Termin immer im Blick ===
 Ganz oben auf jeder Seite steht der nächste Termin. Dort kannst Du mit einem Tipp '''Zusagen''', '''Eventuell''' sagen oder '''Absagen'''. Mit dem × blendest Du den Hinweis aus.

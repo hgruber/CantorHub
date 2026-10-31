@@ -25,15 +25,15 @@ Wenn Du unsicher bist, zeige mit der Maus auf das Zeichen oder halte den Finger 
 * Unten am Bildschirm erscheint dann ein kleiner '''Player'''. Mit ihm hältst Du an, spulst und springst zum nächsten Lied. Er spielt weiter, während Du im Portal andere Seiten öffnest.
 
 === Alle Lieder am Stück hören ===
-Sobald es Aufnahmen gibt, steht oben rechts das Symbol '''Wiedergabe'''. Dort wählst Du zum Beispiel '''Alle Originale''', '''Originale zufällig''' oder alle unsere eigenen Aufnahmen. Es werden genau die Lieder gespielt, die gerade in der Liste stehen — mit einem Filter also zum Beispiel nur die Weihnachtslieder.
+Sobald es Aufnahmen gibt, steht oben rechts das Symbol {symbol:wiedergabe} (Wiedergabe). Dort wählst Du zum Beispiel '''Alle Originale''', '''Originale zufällig''' oder alle unsere eigenen Aufnahmen. Es werden genau die Lieder gespielt, die gerade in der Liste stehen — mit einem Filter also zum Beispiel nur die Weihnachtslieder.
 
 === Lieder für ein Konzert ===
-Auf der Seite eines Konzerts (unter [[Hilfe:Termine|Termine]]) tippst Du auf die Überschrift '''Lieder'''. Dann zeigt das Repertoire genau die Lieder dieses Konzerts in der richtigen Reihenfolge. Über das Symbol '''Downloads''' bekommst Du das Konzertprogramm als Word-Datei und alle Noten auf einmal als PDF oder Archiv.
+Auf der Seite eines Konzerts (unter [[Hilfe:Termine|Termine]]) tippst Du auf die Überschrift '''Lieder'''. Dann zeigt das Repertoire genau die Lieder dieses Konzerts in der richtigen Reihenfolge. Über das Symbol {symbol:herunterladen} (Downloads) bekommst Du das Konzertprogramm als Word-Datei und alle Noten auf einmal als PDF oder Archiv.
 
 === Suchen und sortieren ===
-* Mit dem '''Trichter-Symbol''' (Filtern) oben rechts suchst Du nach Titel, Komponist, Tonart und vielem mehr.
+* Mit {symbol:trichter} (Filtern) oben rechts suchst Du nach Titel, Komponist, Tonart und vielem mehr.
 * Tippe auf eine Spaltenüberschrift, um danach zu sortieren.
-* Mit dem '''Spalten-Symbol''' blendest Du weitere Spalten ein, zum Beispiel '''Audio''' oder '''Komponist'''.
+* Mit {symbol:spalten} (Spalten) blendest Du weitere Spalten ein, zum Beispiel '''Audio''' oder '''Komponist'''.
 
 === Noch mehr zu einer Zeile ===
 Am Computer klickst Du mit der '''rechten''' Maustaste auf eine Zeile, auf dem Smartphone hältst Du den Finger etwas länger darauf. Es öffnet sich ein Menü zum Abspielen und Herunterladen.

@@ -17,14 +17,14 @@ Du findest die Seite in der Seitenleiste unter '''Admin → Gruppen'''. Sehen ka
 Die Änderung gilt sofort für alle Personen der Gruppe.
 
 === Eine Gruppe anlegen oder löschen ===
-* '''Anlegen:''' Klicke oben rechts auf das '''Plus'''. Eine neue Zeile erscheint; gib den Namen ein, setze die gewünschten Haken und klicke auf '''Änderungen anwenden'''.
-* '''Löschen:''' Klicke auf den '''Papierkorb''' neben dem Namen. Das geht nur bei einer Gruppe, zu der niemand mehr gehört — nimm die Personen vorher auf der Seite '''Aufgaben''' heraus.
+* '''Anlegen:''' Klicke oben rechts auf {symbol:neu}. Eine neue Zeile erscheint; gib den Namen ein, setze die gewünschten Haken und klicke auf '''Änderungen anwenden'''.
+* '''Löschen:''' Klicke auf den Papierkorb {symbol:löschen} neben dem Namen. Das geht nur bei einer Gruppe, zu der niemand mehr gehört — nimm die Personen vorher auf der Seite '''Aufgaben''' heraus.
 
 === Gut zu wissen ===
 * Die Gruppe '''Mitglied''' tragen alle Vereinsmitglieder. Ein Recht, das jedes Mitglied haben soll, gibst Du dieser Gruppe.
 * Das Recht '''Mitglieder › Berechtigungen''' ist das mächtigste: Wer es hat, kann sich über diese Seite jedes andere Recht selbst geben. Gib es nur Menschen, denen Du das zutraust.
 * '''Administratoren''' dürfen ohnehin alles; für sie spielt die Tabelle keine Rolle.
-* Manche Dinge regelt diese Seite nicht: Wer einen bestimmten Ordner, einen Artikel oder ein Forum sehen darf, stellst Du dort selbst ein, über das '''Schloss-Symbol''' oben rechts.
+* Manche Dinge regelt diese Seite nicht: Wer einen bestimmten Ordner, einen Artikel oder ein Forum sehen darf, stellst Du dort selbst ein, über das Schloss {symbol:schloss} oben rechts.
 * Welche Rechte Du selbst hast und woher sie kommen, zeigt die Karte '''Meine Rechte''' auf Deinem Profil.
 
 @ '''Jede Änderung wird festgehalten''' — im [[Hilfe:Änderungsprotokoll|Änderungsprotokoll]], Bereich ''Gruppe''.

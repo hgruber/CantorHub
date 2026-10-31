@@ -27,11 +27,11 @@ Unter jeder Nachricht steht ein kleines '''+'''. Tippe darauf und wähle ein Zei
 
 === Ein Foto oder eine Datei mitschicken ===
 # Öffne das Forum.
-# Tippe oben rechts auf das Symbol mit dem '''Pfeil nach oben''' (Hochladen) und wähle die Datei aus. Am Computer kannst Du die Datei auch einfach auf die Seite ziehen.
+# Tippe oben rechts auf {symbol:hochladen} (Hochladen) und wähle die Datei aus. Am Computer kannst Du die Datei auch einfach auf die Seite ziehen.
 # Ein Link zur Datei erscheint im Nachrichtenfeld. Schreib noch etwas dazu und schicke die Nachricht ab.
 
 === Etwas wiederfinden ===
-In der Forenliste steht oben rechts ein Suchfeld. Gib ein Wort ein, und Du bekommst alle Nachrichten, in denen es vorkommt.
+In der Forenliste steht oben rechts ein Suchfeld {symbol:suche}. Gib ein Wort ein, und Du bekommst alle Nachrichten, in denen es vorkommt.
 
 === Das Forum als Chat auf dem Smartphone ===
 Jedes Forum ist auch ein Gruppenchat. Mit einer Chat-App bekommst Du neue Nachrichten sofort aufs Telefon, und was Du dort schreibst, steht auch hier im Forum. Wie Du das einrichtest, steht unter [[Hilfe:Chat auf dem Telefon|Chat auf dem Telefon]].

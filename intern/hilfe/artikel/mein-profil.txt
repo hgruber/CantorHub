@@ -3,7 +3,7 @@ In Deinem Profil steht, wie die anderen Dich erreichen: Telefonnummer, E-Mail, A
 
 === Profil öffnen ===
 # Tippe in der Seitenleiste auf '''Einstellungen'''. Darunter klappen drei Zeilen auf.
-# Tippe neben '''Mein Profil''' auf den kleinen '''Stift'''. Jetzt kannst Du alles ändern.
+# Tippe neben '''Mein Profil''' auf den kleinen Stift {symbol:stift}. Jetzt kannst Du alles ändern.
 # Wenn Du fertig bist, tippe ganz unten auf '''Speichern'''.
 
 Tippst Du auf '''Mein Profil''' selbst (nicht auf den Stift), siehst Du Dein Profil so, wie die anderen es sehen.

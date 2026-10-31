@@ -4,7 +4,7 @@ Auf der Seite '''Konfiguration''' stehen alle Einstellungen des Portals: der Nam
 Du findest die Seite in der Seitenleiste unter '''Admin → Konfiguration'''. Sie ist nur für '''Administratoren''' da.
 
 === Sich zurechtfinden ===
-* Die Einstellungen sind in '''Gruppen''' sortiert, etwa ''Verein & Portal'', ''E-Mail-Versand'' oder ''E-Mail-Texte''. Ein Klick auf eine Gruppe klappt sie auf; der '''Doppelpfeil''' oben rechts klappt alle auf einmal auf oder zu.
+* Die Einstellungen sind in '''Gruppen''' sortiert, etwa ''Verein & Portal'', ''E-Mail-Versand'' oder ''E-Mail-Texte''. Ein Klick auf eine Gruppe klappt sie auf; der Doppelpfeil {symbol:aufklappen} oben rechts klappt alle auf einmal auf oder zu.
 * Mit dem '''Suchfeld''' oben findest Du eine Einstellung schnell, zum Beispiel ''Farbe'' oder ''Mail''.
 * Jede Zeile hat links den Namen der Einstellung, in der Mitte den Wert und rechts eine kurze Erklärung.
 * Ein '''Sternchen''' am Namen heißt: Diese Einstellung sollte ausgefüllt sein.
@@ -24,8 +24,8 @@ Fehlt etwas Wichtiges, steht ganz oben ein '''Hinweiskasten'''.
 * '''Nicht konfiguriert und deshalb abgeschaltet''' — ein Dienst wie der E-Mail-Versand oder der Chat ist noch nicht eingerichtet. Das ist kein Fehler, wenn Ihr ihn nicht braucht.
 
 === Beschreibungen und eigene Einstellungen ===
-* Mit dem '''Stift''' neben einer Erklärung kannst Du sie umschreiben, etwa um Dir eine Notiz für Euren Verein zu hinterlassen.
-* Mit dem '''Plus''' oben rechts legst Du eine eigene Einstellung an. Sie landet in der Gruppe ''Zusätzliche Parameter'' und lässt sich dort mit dem '''Papierkorb''' wieder löschen. Die Einstellungen, die das Portal mitbringt, kannst Du nicht löschen.
+* Mit dem Stift {symbol:stift} neben einer Erklärung kannst Du sie umschreiben, etwa um Dir eine Notiz für Euren Verein zu hinterlassen.
+* Mit {symbol:neu} oben rechts legst Du eine eigene Einstellung an. Sie landet in der Gruppe ''Zusätzliche Parameter'' und lässt sich dort mit dem Papierkorb {symbol:löschen} wieder löschen. Die Einstellungen, die das Portal mitbringt, kannst Du nicht löschen.
 
 === Gut zu wissen ===
 * Jede Änderung steht im [[Hilfe:Änderungsprotokoll|Änderungsprotokoll]], Bereich ''Konfiguration''. Passwörter erscheinen dort nur als Sternchen.

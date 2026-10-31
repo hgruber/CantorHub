@@ -12,7 +12,7 @@ Der neueste Eintrag steht oben; weiter unten lädt die Liste beim Scrollen von s
 * '''Felder''' — bei einer Änderung der alte und der neue Wert. Passwörter erscheinen nie im Klartext.
 
 === Etwas Bestimmtes finden ===
-Tippe oben rechts auf das '''Trichter-Symbol''' (Filtern). Du kannst eingrenzen nach:
+Tippe oben rechts auf {symbol:trichter} (Filtern). Du kannst eingrenzen nach:
 * '''Bereich''' — Termine, Anwesenheit, Ablauf, Lieder, Mitglieder, Foren, Orte, Gruppen, Gruppenzuordnung, E-Mails oder Konfiguration;
 * '''Aktion''' — etwa nur Gelöschtes;
 * '''Benutzer''' — was eine bestimmte Person geändert hat;
@@ -21,7 +21,7 @@ Tippe oben rechts auf das '''Trichter-Symbol''' (Filtern). Du kannst eingrenzen 
 Klicke auf '''Filtern'''. Die gesetzten Filter stehen oben als kleine Kästchen; mit '''Zurücksetzen''' siehst Du wieder alles.
 
 === Die Geschichte eines einzelnen Eintrags ===
-Wer einen Termin, ein Mitglied, ein Lied, einen Ort oder ein Forum bearbeiten darf, findet dort oben rechts das '''Uhr-Symbol'''. Es zeigt nur die Änderungen an genau diesem Eintrag — auch ohne Zugang zum ganzen Protokoll.
+Wer einen Termin, ein Mitglied, ein Lied, einen Ort oder ein Forum bearbeiten darf, findet dort oben rechts das Symbol {symbol:verlauf}. Es zeigt nur die Änderungen an genau diesem Eintrag — auch ohne Zugang zum ganzen Protokoll.
 
 === Wie lange Einträge bleiben ===
 Einträge werden nach drei Jahren gelöscht, so wie es die Datenschutzerklärung unter „Speicherdauer“ sagt. Die Frist steht in der [[Hilfe:Konfiguration|Konfiguration]] unter ''Aufbewahrung & Bereinigung'' (AENDERUNGSPROTOKOLL_AUFBEWAHRUNG_TAGE). Ändere sie nur zusammen mit der Datenschutzerklärung.

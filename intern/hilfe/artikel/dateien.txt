@@ -5,13 +5,13 @@ Unter '''Dateien''' liegen Noten, Aufnahmen, Fotos und Dokumente des Vereins —
 * Tippe auf einen '''Ordner''', um ihn zu öffnen.
 * Über der Liste steht, in welchem Ordner Du gerade bist. Mit dem Pfeil oben rechts (Zurück) oder dem Zurück-Knopf Deines Browsers gehst Du eine Ebene höher.
 * Tippe auf eine '''Datei''', um sie zu öffnen oder herunterzuladen.
-* Mit dem '''Suchfeld''' oben rechts findest Du eine Datei, auch wenn Du nicht weißt, in welchem Ordner sie liegt.
+* Mit dem '''Suchfeld''' {symbol:suche} oben rechts findest Du eine Datei, auch wenn Du nicht weißt, in welchem Ordner sie liegt.
 
 Manche Ordner sieht nur, wer sie braucht — zum Beispiel ist der Ordner des Vorstands für alle anderen unsichtbar.
 
 === Eine Datei hochladen ===
 # Öffne den Ordner, in den die Datei gehört.
-# Tippe oben rechts auf das Symbol mit dem '''Pfeil nach oben''' (Hochladen) und wähle die Datei aus. Am Computer kannst Du Dateien auch einfach mit der Maus auf die Liste ziehen.
+# Tippe oben rechts auf {symbol:hochladen} (Hochladen) und wähle die Datei aus. Am Computer kannst Du Dateien auch einfach mit der Maus auf die Liste ziehen.
 # Warte, bis der Balken durchgelaufen ist.
 
 Gibt es im Ordner schon eine Datei mit demselben Namen, fragt das Portal nach: Die neue Datei wird dann eine '''neue Fassung''' der alten. Die alte Fassung geht nicht verloren.
@@ -30,4 +30,4 @@ Was Du in einem Ordner darfst, legt der Webmaster fest. Fehlt ein Menüpunkt, ha
 Setze links die Häkchen vor die Dateien. Dann erscheinen Knöpfe, um alle zusammen zu verschieben, herunterzuladen oder zu löschen.
 
 === Einen neuen Ordner anlegen ===
-Tippe oben rechts auf das '''Ordner-Symbol mit dem Plus''' und gib einen Namen ein.
+Tippe oben rechts auf {symbol:ordner-neu} (Neuer Ordner) und gib einen Namen ein.

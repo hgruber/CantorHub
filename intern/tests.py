@@ -8437,6 +8437,12 @@ class SymboleTest(SimpleTestCase):
         for name in symbole.SYMBOLE:
             self.assertIn(f"| {{symbol:{name}}} | {name} |", text)
 
+    def test_hilfe_artikel_nennen_nur_bekannte_symbole(self):
+        from intern import hilfe
+        for name in hilfe.ARTIKEL:
+            for symbol in re.findall(r"\{symbol:([^{}\s]+)\}", hilfe.text(name)):
+                self.assertIn(symbol.lower(), symbole.SYMBOLE, f"{name}: {symbol}")
+
     def test_vorlagen_kopieren_kein_symbol(self):
         """Ein Symbol der Liste steht in keiner Vorlage mehr als eigenes <svg> —
         außer in JavaScript, wo das Tag nicht hingehört."""

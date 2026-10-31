@@ -11,7 +11,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Hinzugefügt
 
-- Artikel: `{symbol:trichter}` zeigt ein Symbol der Oberfläche mitten im Text, etwa Trichter, Spalten, Papierflieger oder Neuer Ordner. „Hilfe:Wiki“ listet alle Namen, der Spickzettel im Editor fügt die Markierung ein.
+- Artikel: `{symbol:trichter}` zeigt ein Symbol der Oberfläche mitten im Text, etwa Trichter, Spalten, Papierflieger oder Neuer Ordner. „Hilfe:Wiki“ listet alle Namen, der Spickzettel im Editor fügt die Markierung ein. Die mitgelieferten Hilfe-Artikel zeigen die Symbole, die sie beschreiben, jetzt selbst.
 
 ### Geändert
 

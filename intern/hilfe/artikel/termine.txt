@@ -20,7 +20,7 @@ Ein '''Punkt''' neben '''Termine''' in der Seitenleiste bedeutet: Es gibt einen 
 * Eine '''Zahl''' neben dem Mikrofon sagt, wie viele Lieder schon für diesen Auftritt geplant sind.
 * '''Aufstellung''' zeigt mit farbigen Punkten, wer aus welcher Stimme kommt: grün kommt, gelb vielleicht, rot nicht, grau hat noch nichts gesagt. Dein eigener Punkt blinkt, solange Du noch nicht fest zugesagt oder abgesagt hast.
 
-Vergangene Termine findest Du oben rechts über das '''Kalender-Symbol mit Pfeil''' (Vergangene Termine).
+Vergangene Termine findest Du oben rechts über {symbol:vergangene-termine} (Vergangene Termine).
 
 === Die Terminseite ===
 Tippst Du auf einen Termin, siehst Du:
@@ -34,7 +34,7 @@ Tippst Du auf einen Termin, siehst Du:
 Unter '''Kalender''' siehst Du alle Termine eines Monats auf einen Blick, dazu die Geburtstage. Mit den Pfeilen blätterst Du zum vorigen oder nächsten Monat. Tippe auf einen Termin, um ihn zu öffnen.
 
 === Für Organisatoren ===
-Wer Termine anlegen darf, sieht oben rechts ein ⊕. Wer die Anwesenheit pflegt, findet auf der Terminseite bei '''Anwesenheit''' einen Stift: danach lassen sich die Namen in eine andere Spalte ziehen. Auf dem Smartphone den Namen kurz gedrückt halten und dann ziehen — oder einfach antippen und die neue Spalte auswählen. Zum Schluss auf '''Übernehmen''' tippen.
+Wer Termine anlegen darf, sieht oben rechts {symbol:neu}. Wer die Anwesenheit pflegt, findet auf der Terminseite bei '''Anwesenheit''' den Stift {symbol:bearbeiten}: danach lassen sich die Namen in eine andere Spalte ziehen. Auf dem Smartphone den Namen kurz gedrückt halten und dann ziehen — oder einfach antippen und die neue Spalte auswählen. Zum Schluss auf '''Übernehmen''' tippen.
 
 === Termine im Kalender Deines Telefons ===
 Alle Termine können automatisch im Kalender Deines Smartphones erscheinen. Wie das geht, steht unter [[Hilfe:Termine aufs Telefon|Termine aufs Telefon]].
