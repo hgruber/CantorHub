@@ -386,7 +386,9 @@ class OrdnerTabelle(tables.Table):
 
 
 class TerminTabelle(Spaltenwahl):
-    datum = DatumZeitSpalte()
+    # Datum und Aufstellung stehen so breit wie ihr Inhalt da; der freie Platz
+    # gehoert dem Terminnamen, statt sich zwischen Datum und Namen zu verteilen.
+    datum = DatumZeitSpalte(attrs={"th": {"class": "schmal"}, "td": {"class": "schmal"}})
     # Zwei ganz schmale Markerspalten zwischen Datum und Terminnamen — getrennt,
     # damit Mikrofon und Pille über die Zeilen hinweg in derselben Flucht stehen.
     # Das Mikrofon markiert einen öffentlich angekündigten Auftritt, die Pille
@@ -423,6 +425,7 @@ class TerminTabelle(Spaltenwahl):
         verbose_name="Aufstellung",
         orderable=False,
         empty_values=(),
+        attrs={"th": {"class": "schmal"}, "td": {"class": "schmal"}},
     )
 
     def render_auftritt(self, record):
@@ -805,9 +808,17 @@ class MitgliederTabelle(Spaltenwahl):
     # Jede Überschrift ausdrücklich: die Liste bekommt eine Seite (list), kein
     # Queryset, und ohne Queryset fiele django_tables2 auf den Feldnamen zurück
     # („First name“) statt auf verbose_name. MitgliederSpaltenTest prüft das.
-    first_name = tables.Column(verbose_name="Vorname")
+    # Vorname und Stimme stehen so breit wie ihr Inhalt da; der freie Platz
+    # gehoert dem Nachnamen. Vorher lagen zwischen „Anna" und „Becker" rund
+    # 300 px Luft, weil sich die Breite auf drei kurze Spalten verteilte.
+    first_name = tables.Column(
+        verbose_name="Vorname", attrs={"th": {"class": "schmal"}, "td": {"class": "schmal"}},
+    )
     last_name = tables.Column(verbose_name="Nachname")
-    stimme = tables.Column(order_by=("_stimme_pos", "last_name", "first_name"))
+    stimme = tables.Column(
+        order_by=("_stimme_pos", "last_name", "first_name"),
+        attrs={"th": {"class": "schmal"}, "td": {"class": "schmal"}},
+    )
     email = tables.EmailColumn(verbose_name="E-Mail")
     xmpp = tables.EmailColumn(verbose_name="XMPP")
     geburtstag = DatumSpalte()

@@ -1353,14 +1353,25 @@ th.orderable a {
     gap: 4px;
 }
 
+/* Ein Trennmittel, nicht drei: die Zeile traegt den Zebrastreifen, die
+   frueher zusaetzliche 1-px-Linie in --bg-row-hover war ohnehin unsichtbar
+   und konkurrierte mit ihm. Tabellen mit eigenem Raster (.wiki-table, .diff,
+   .perm-matrix) setzen ihre Linien selbst. */
 td {
     padding: 9px 12px;
-    border-bottom: 1px solid var(--bg-row-hover);
     color: var(--t2);
     vertical-align: middle;
 }
 
-tr:last-child td { border-bottom: none; }
+/* Spalte so breit wie ihr Inhalt — dieselbe Konvention wie .zahl und
+   .kategorie. Damit ruecken Datum und Terminname zusammen, statt dass die
+   Datumsspalte 400 px fuer „Di, 03.11. 19:30" belegt und der Rest der Zeile
+   auseinanderfaellt. */
+th.schmal, td.schmal {
+    width: 1%;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
 
 tr[data-href] { cursor: pointer; }
 
@@ -2769,9 +2780,6 @@ table.mitglied-table tbody td:first-child {
     display: block;
 }
 
-table.mitglied-table tbody td {
-    border-bottom: 1px solid var(--border);
-}
 
 table.mitglied-table tr.stimme-group-start td {
     border-top: 2px solid var(--border);
