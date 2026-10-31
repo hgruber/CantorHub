@@ -4077,6 +4077,12 @@ table.mitglied-table tr.stimme-group-start td {
     white-space: nowrap;
 }
 
+/* Linien, Rahmen und Hintergründe enden vor einer gefloateten .wiki-figure,
+   statt unter ihr durchzulaufen — wie der Text, der sie umfließt. */
+.wiki-page .wiki :is(h1, h2, h3, h4, h5, .citation, .boxed, .indent) {
+    display: flow-root;
+}
+
 .wiki-page .wiki .wiki-figure a {
     border-bottom: none;
 }

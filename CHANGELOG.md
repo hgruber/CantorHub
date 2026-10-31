@@ -7,6 +7,12 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Behoben
+
+- Artikel: Linien unter Überschriften und hervorgehobene Kästen enden vor einem Bild am rechten Rand, statt darunter durchzulaufen.
+
 ## v1.2.3 — 2026-10-31
 
 ### Hinzugefügt
