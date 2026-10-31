@@ -1,7 +1,20 @@
 from django import template
 from django.apps import apps
+from django.utils.safestring import mark_safe
+
+from intern import symbole
 
 register = template.Library()
+
+
+@register.simple_tag
+def symbol(name, **attribute):
+    """Ein Symbol aus ``intern/symbole.py``: ``{% symbol "trichter" class="toolicon" %}``.
+
+    Weitere Attribute wie ``width=14`` oder ``stroke_width="2.5"`` gehen ans
+    ``<svg>``. Ein falscher Name soll laut scheitern, deshalb kein try/except.
+    """
+    return mark_safe(symbole.svg(name, **attribute))
 
 
 @register.inclusion_tag("_hilfe_icon.html")

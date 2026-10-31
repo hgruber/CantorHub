@@ -8,16 +8,12 @@
 {% block topbar_actions_extra %}
 {% if gallery_url %}
 <a href="{{ gallery_url }}" title="Als Galerie anzeigen">
-  <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-  </svg>
+  {% symbol "galerie" class="toolicon" %}
 </a>
 {% endif %}
 {% if notify_url %}
 <a href="{{ notify_url }}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" title="Mitglieder per E-Mail benachrichtigen">
-  <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-  </svg>
+  {% symbol "papierflieger" class="toolicon" %}
 </a>
 {% endif %}
 {% if show_email_copy %}
@@ -31,9 +27,7 @@
     });
   return false;
 })(this); return false;">
-  <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-  </svg>
+  {% symbol "umschlag" class="toolicon" %}
 </a>
 {% endif %}
 {% endblock %}
@@ -51,7 +45,7 @@
             {% csrf_token %}
         </form>
         <button class="btn btn-secondary action-btn" onclick="fileAction('zip')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Als ZIP herunterladen
+            {% symbol "herunterladen" width="14" height="14" %}Als ZIP herunterladen
         </button>
 
         {% if can_write_here or can_delete_here %}
@@ -93,7 +87,7 @@
             {% for f in all_folders_flat %}
             <label class="folder-picker-item">
                 <input type="radio" name="folder-target" value="{{ f.id }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                {% symbol "ordner" width="13" height="13" stroke_linecap=None stroke_linejoin=None %}
                 {{ f.path }}
             </label>
             {% endfor %}

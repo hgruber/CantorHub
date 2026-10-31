@@ -4029,6 +4029,15 @@ table.mitglied-table tr.stimme-group-start td {
 
 .wiki strong { font-weight: 600; }
 
+/* {symbol:…} — ein Symbol der Oberfläche im Fließtext, so groß wie die Schrift. */
+.wiki-symbol {
+    display: inline-block;
+    width: 1.15em;
+    height: 1.15em;
+    vertical-align: -0.2em;
+    color: var(--t1);
+}
+
 .datei-preview {
     max-width: 200px;
     max-height: 200px;

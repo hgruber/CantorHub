@@ -96,3 +96,11 @@ Bei sehr vielen Vorschlägen sortiert eine Auswertung sie nach Stimmen. Anzugebe
 === Platzhalter ===
 Diese Wörter in geschweiften Klammern ersetzt das Portal beim Anzeigen durch den passenden Wert — für jeden Leser seinen eigenen. Die Hilfe-Artikel nutzen sie, damit dort immer die richtige Adresse steht.
 <<PLATZHALTER>>
+
+=== Symbole ===
+Eine Anleitung kann die Symbole des Portals mitten im Text zeigen — genau so, wie man sie auf der Seite sucht:
+ Tippe oben rechts auf {symbol:trichter}, um die Liste zu filtern.
+Tippe oben rechts auf {symbol:trichter}, um die Liste zu filtern.
+
+Statt ''trichter'' setzt Du einen dieser Namen ein:
+<<SYMBOLE>>

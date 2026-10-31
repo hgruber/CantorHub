@@ -122,6 +122,22 @@ braces — `{abstimmung:…}`, unknown names — stays as written. Details:
   known name; a blank value renders as `(noch nicht eingerichtet)`.
 - External links also accept `webcal://` (`[{WEBCAL_URL} Abonnieren]`).
 
+### Symbols
+
+`{symbol:trichter}` puts a symbol of the portal's own interface into the running text, so a
+guide shows exactly the icon the reader looks for. The names and the SVG content come from
+`intern/symbole.py` — the same source the templates draw from through
+`{% symbol "trichter" class="toolicon" %}` (see „Symbols" in `frontend.md`), so a changed icon
+changes in the help texts too. Details:
+
+- The rule runs last in `REPLACEMENTS`, so no other rule sees the inserted `<svg>`; it works in
+  headings, lists, tables and the `%`/`:`/`@` blocks, and in forum messages (an XMPP client sees
+  the braces). A code line shows it raw, as everywhere.
+- The name is case-insensitive; an unknown one renders as a `not_found` warning, like a missing
+  file. The `<svg>` carries `role="img"` and the meaning from `SYMBOLE` as `aria-label`.
+- „Hilfe:Wiki" lists every symbol through the marker `<<SYMBOLE>>` (`hilfe.symbol_tabelle()`),
+  so a new entry in `SYMBOLE` reaches the help page without an edit there.
+
 ### Help articles
 
 `intern/hilfe/` ships the help pages every installation starts with: the overview `Hilfe` and

@@ -24,7 +24,7 @@ from django.test import SimpleTestCase
 from django.utils.html import escape
 from django.utils.timesince import timeuntil
 
-from intern import app_settings
+from intern import app_settings, symbole
 from intern.anfragespeicher import anlegen as anfrage_anlegen
 from intern.anfragespeicher import gemerkt
 from intern.anfragespeicher import leeren as anfrage_leeren
@@ -8399,6 +8399,59 @@ class WikiListenTest(SimpleTestCase):
     def test_stern_im_text_aendert_die_ebene_nicht(self):
         out = self._rendern("* Note 5* gibt es nicht\n* zweiter")
         self.assertEqual(out.count("<ul>"), 1)
+
+
+class SymboleTest(SimpleTestCase):
+    """Die Symbole aus ``intern/symbole.py`` — in Vorlagen und im Wiki dieselben."""
+
+    def _rendern(self, text):
+        from intern import replacements
+        with mock.patch.object(replacements, "get_vereinsname_kurz", return_value="Chor"):
+            return replacements.apply_replacements(text)
+
+    def test_tag_setzt_attribute(self):
+        out = Template('{% load ui_tags %}{% symbol "trichter" class="toolicon" stroke_width="2.5" %}').render(Context())
+        self.assertIn('class="toolicon"', out)
+        self.assertIn('stroke-width="2.5"', out)
+        self.assertIn(symbole.SYMBOLE["trichter"][1], out)
+
+    def test_tag_unbekannter_name_scheitert_laut(self):
+        with self.assertRaises(KeyError):
+            Template('{% load ui_tags %}{% symbol "gibtsnicht" %}').render(Context())
+
+    def test_wiki_symbol_im_text_und_im_kasten(self):
+        out = self._rendern("Tippe auf {symbol:Trichter}.\n@ Dann auf {symbol:spalten}")
+        self.assertIn('class="wiki-symbol" role="img" aria-label="Filtern"', out)
+        self.assertIn(symbole.SYMBOLE["spalten"][1], out)
+        self.assertTrue(out.startswith("<p>Tippe auf <svg"))
+
+    def test_wiki_unbekanntes_symbol_sichtbar(self):
+        out = self._rendern("{symbol:gibtsnicht}")
+        self.assertIn('class="not_found"', out)
+        self.assertIn("Symbol: gibtsnicht", out)
+
+    def test_hilfe_wiki_listet_alle_symbole(self):
+        from intern import hilfe
+        text = hilfe.text("Hilfe:Wiki")
+        self.assertNotIn(hilfe.SYMBOLE_MARKE, text)
+        for name in symbole.SYMBOLE:
+            self.assertIn(f"| {{symbol:{name}}} | {name} |", text)
+
+    def test_vorlagen_kopieren_kein_symbol(self):
+        """Ein Symbol der Liste steht in keiner Vorlage mehr als eigenes <svg> —
+        außer in JavaScript, wo das Tag nicht hingehört."""
+        def norm(s):
+            return re.sub(r"\s+", " ", s).strip().replace("> <", "><").replace(" />", "/>")
+
+        inhalte = {norm(inhalt): name for name, (_, inhalt) in symbole.SYMBOLE.items()}
+        funde = []
+        for pfad in (Path(__file__).parent / "templates").rglob("*.html"):
+            s = pfad.read_text(encoding="utf-8")
+            s = re.sub(r"<script\b.*?</script>", "", s, flags=re.S)
+            for m in re.finditer(r"<svg\b[^>]*>(.*?)</svg>", s, re.S):
+                if norm(m.group(1)) in inhalte:
+                    funde.append(f"{pfad.name}: {inhalte[norm(m.group(1))]}")
+        self.assertEqual(funde, [], "statt <svg> {% symbol \"…\" %} verwenden")
 
 
 class BotPasswortTest(SimpleTestCase):

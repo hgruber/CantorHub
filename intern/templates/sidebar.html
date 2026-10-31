@@ -1,3 +1,4 @@
+{% load ui_tags %}
 {% load static startseite_tags %}
 
 <!-- Brand -->
@@ -43,10 +44,7 @@
     </a>
 
     <a href="/intern/titel/" class="nav-item" data-path="/intern/titel/">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18V5l12-2v13"/>
-            <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-        </svg>
+        {% symbol "note" class="nav-icon" %}
         <span>Repertoire</span>
     </a>
 
@@ -77,9 +75,7 @@
     </a>
 
     <a href="/intern/ordner/0/" class="nav-item" data-path="/intern/ordner/">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
+        {% symbol "ordner" class="nav-icon" %}
         <span>Dateien</span>
     </a>
 
@@ -128,19 +124,13 @@
                 <span>Mein Profil</span>
             </a>
             <a href="{% url 'mitglied_edit' request.user.pk %}" class="nav-profil-bearbeiten" title="Profil bearbeiten" aria-label="Profil bearbeiten">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
-                </svg>
+                {% symbol "stift" class="nav-icon" %}
             </a>
         </div>
     </div>
 
     <a href="{% url 'article_view' 'Hilfe' %}" class="nav-item" data-path="/intern/artikel/Hilfe">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
+        {% symbol "hilfe" class="nav-icon" %}
         <span>Hilfe</span>
     </a>
 
@@ -173,10 +163,7 @@
             <span>Gruppen</span>
         </a>
         <a href="{% url 'aenderungsprotokoll_list' %}" class="nav-subitem" data-path="/intern/aenderungsprotokoll/">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-            </svg>
+            {% symbol "verlauf" class="nav-icon" %}
             <span>Änderungsprotokoll</span>
         </a>
         {% if request.user.is_superuser %}

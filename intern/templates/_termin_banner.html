@@ -1,3 +1,4 @@
+{% load ui_tags %}
 {% load termin_tags %}
 <div id="termin-banner" class="termin-banner" hidden data-termin-id="{{ banner_termin.id }}" data-login="{{ banner_login }}">
   <a class="termin-banner-main" href="{% url 'termin_view' id=banner_termin.id %}">
@@ -7,7 +8,7 @@
     <span class="termin-banner-text">
       <span class="termin-banner-line1">
         <span class="termin-banner-countdown">
-          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          {% symbol "verlauf" width="13" height="13" stroke_width="2.2" %}
           {{ banner_termin|countdown }}</span>
         <span class="termin-banner-titel">{{ banner_termin.kurz }}</span>
         {% if banner_termin.repertoire %}<span class="termin-banner-tag">Konzert</span>{% endif %}
@@ -27,7 +28,7 @@
       Zeile aufzuziehen. title/aria-label tragen die Bedeutung dann allein.
       {% endcomment %}
       <span class="zusage-state-badge zusage-state-yes" title="Zugesagt" aria-label="Zugesagt">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        {% symbol "haken" width="13" height="13" stroke_width="2.5" aria_hidden="true" %}
         <span class="zusage-state-text">Zugesagt</span>
       </span>
     {% else %}
@@ -39,7 +40,7 @@
           <input type="hidden" name="source" value="banner">
           <input type="hidden" name="option" value="1">
           <button type="submit" class="zusage-btn zusage-btn-yes">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {% symbol "haken" width="12" height="12" stroke_width="2.5" %}
             Zusagen
           </button>
         </form>
@@ -66,7 +67,7 @@
           <input type="hidden" name="source" value="banner">
           <input type="hidden" name="option" value="2">
           <button type="submit" class="zusage-btn zusage-btn-no">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            {% symbol "schließen" width="12" height="12" stroke_width="2.5" %}
             Absagen
           </button>
         </form>
@@ -77,7 +78,7 @@
   {% endif %}
 
   <button type="button" class="termin-banner-dismiss" title="Ausblenden" aria-label="Ausblenden">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    {% symbol "schließen" width="16" height="16" %}
   </button>
 
   <script>

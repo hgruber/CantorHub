@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>{% endblock %}
+{% load ui_tags %}
+{% block topbar_icon %}{% symbol "papierflieger" class="topbar-icon" %}{% endblock %}
 {% block content %}
 <div class="detail-page">
 
@@ -93,11 +94,7 @@
         <div style="position:relative;display:inline-block;">
           <button type="button" id="attach-btn" class="btn btn-secondary"
                   aria-expanded="false" aria-controls="attach-picker">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="toolicon"
-                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-            </svg>
+            {% symbol "anhang" width="16" height="16" class="toolicon" %}
             Anhang hinzufügen
           </button>
 
@@ -118,11 +115,7 @@
     <div class="form-actions">
       {% if mail_konfiguriert %}
       <button type="submit" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="toolicon"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-        </svg>
+        {% symbol "papierflieger" width="16" height="16" class="toolicon" %}
         Senden
       </button>
       {% else %}
@@ -135,11 +128,7 @@
       <span style="cursor: not-allowed;"
             title="E-Mail-Versand ist nicht eingerichtet — in der Konfiguration fehlt der SMTP-Server (EMAIL_HOST).">
         <button type="submit" class="btn btn-primary btn-gesperrt" disabled aria-disabled="true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="toolicon"
-               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
+          {% symbol "papierflieger" width="16" height="16" class="toolicon" %}
           Senden
         </button>
       </span>

@@ -137,7 +137,9 @@ without Django, used by `TelefonNormalisierungMixin` in `forms.py` and by
 `telefonnummern_normalisieren`; see „How phone numbers are stored" in `docs/members.md`),
 `mail.py` / `mail_markup.py`, `mailingliste.py`, `replacements.py` (wiki markup),
 `wiki_platzhalter.py` (the `{VEREINS_URL}`-style placeholders of articles — a whitelist, see
-`docs/articles.md`), `pdf.py`,
+`docs/articles.md`), `symbole.py` (the interface icons a help text may show — one source for
+`{% symbol %}` in templates and `{symbol:…}` in articles, see „Symbols" in `docs/frontend.md`),
+`pdf.py`,
 `ejabberd.py`, `bot_passwort.py` (whether saving a new bot password on the settings page sets
 it in ejabberd first — see „Credentials and restarts“ in `docs/xmpp.md`), `smtp_zugang.py` (its
 counterpart for the SMTP access: log in with the new values before saving — see „SMTP access“ in
@@ -370,7 +372,9 @@ reasoning where it matters.
 - **Reuse the shared UI components** rather than hand-rolling: `{% form_field %}` for form rows,
   `ChipMultiSelect` / `_chip_multiselect.html` for every multi-select,
   `_confirm_delete_dialog.html` for delete confirmations, `{% hilfe %}` for explanation tooltips
-  (the text lives as the model field's `help_text`), `_leaflet_map.html` for detail-page maps.
+  (the text lives as the model field's `help_text`), `_leaflet_map.html` for detail-page maps,
+  `{% symbol "name" %}` for an icon listed in `intern/symbole.py` (`SymboleTest` rejects a copied
+  `<svg>` of one).
 - **One hasher per algorithm in `PASSWORD_HASHERS`.** `intern.hashers.PortalPBKDF2Hasher` writes
   new passwords and keeps the `pbkdf2_sha256` algorithm name, so Django's built-in
   `PBKDF2PasswordHasher` must *not* be listed next to it: `get_hashers_by_algorithm()` keys by

@@ -22,7 +22,7 @@ Oben die reinen Entscheidungen (``SimpleTestCase``), darunter der DB-Teil.
 import logging
 from pathlib import Path
 
-from .. import wiki_platzhalter
+from .. import symbole, wiki_platzhalter
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,20 @@ def platzhalter_liste():
     )
 
 
+# Die Stelle in wiki.txt, an der die Tabelle der Symbole entsteht.
+SYMBOLE_MARKE = "<<SYMBOLE>>"
+
+
+def symbol_tabelle():
+    """Die Symbole als Wiki-Tabelle: das Symbol, sein Name, seine Bedeutung."""
+    zeilen = ["! Symbol ! Name ! Bedeutung"]
+    zeilen += [
+        f"| {{symbol:{name}}} | {name} | {bedeutung}"
+        for name, (bedeutung, _) in symbole.SYMBOLE.items()
+    ]
+    return "\n".join(zeilen)
+
+
 def _verweis(name):
     return f"[[{name}|{name.removeprefix('Hilfe:')}]]"
 
@@ -91,6 +105,7 @@ def text(name):
     """Der Text eines Hilfe-Artikels, fertig zum Speichern."""
     roh = (VERZEICHNIS / "artikel" / ARTIKEL[name]).read_text(encoding="utf-8")
     roh = roh.replace(PLATZHALTER_MARKE, platzhalter_liste())
+    roh = roh.replace(SYMBOLE_MARKE, symbol_tabelle())
     if not name.startswith("Hilfe:"):
         return roh
     zeile = navigation(name)

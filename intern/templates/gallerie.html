@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui_tags %}
 {% load static %}
 
 {% block extra_js %}
@@ -8,9 +9,7 @@
 
 {% block topbar_actions_extra %}
 <a href="{% url 'folder_view' folder.pk %}" title="Ordneransicht">
-  <svg xmlns="http://www.w3.org/2000/svg" class="toolicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-  </svg>
+  {% symbol "ordner" class="toolicon" %}
 </a>
 {% endblock %}
 
@@ -75,9 +74,7 @@
 <!-- Lightbox -->
 <div class="lb-backdrop" id="lb-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Bildvorschau">
   <button class="lb-close" id="lb-close" aria-label="Schließen">
-    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-    </svg>
+    {% symbol "schließen" width="22" height="22" stroke_width="2.5" %}
   </button>
   <button class="lb-arrow lb-prev" id="lb-prev" aria-label="Vorheriges Bild">
     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

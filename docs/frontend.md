@@ -446,6 +446,23 @@ because `gruppen.html` still carries its own page-local tooltip on the latter �
 this component is an open cleanup (its bubble also references `--border-strong`, a token only
 defined on `.perm-matrix-wrap`, so it renders without a border).
 
+## Symbols
+
+The icons of the interface are inline SVGs on a 24-unit grid with a `currentColor` stroke.
+The ones a help text may point at — the topbar tools, the folder and list actions, the Zusage
+marks, 29 in all — live once in `intern/symbole.py` and reach a template through
+`{% symbol "trichter" class="toolicon" %}` (`intern/templatetags/ui_tags.py`). Every other
+attribute goes onto the `<svg>` as given (`width="14"`, `stroke_width="2.5"`, `aria_hidden="true"`
+— an `_` becomes `-`, `None` drops a default), and an unknown name raises. Articles use the same
+list through `{symbol:…}` (`docs/articles.md`).
+
+`SymboleTest.test_vorlagen_kopieren_kein_symbol` fails when a template carries one of these
+symbols as its own `<svg>` again. JavaScript strings are the exception: a script that builds an
+icon (the Zusage check in `aufgaben.html` and `gruppen.html`, the edit pencil in `karte.html`)
+keeps its markup, because the tag's output does not belong inside a JS literal. The remaining
+icons — page headers, most of the sidebar navigation, menu entries, error pages — are still
+written inline; a new icon that a help text should be able to show goes into `SYMBOLE` instead.
+
 ## Theme boot
 
 The inline `<script>` that sets `data-theme` before paint lives in exactly one place:

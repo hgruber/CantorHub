@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 from typing import Union
 
 from intern.app_settings import get_vereinsname_kurz
-from intern import wiki_platzhalter
+from intern import symbole, wiki_platzhalter
 from intern.medientypen import medientyp
 from intern.templatetags.startseite_tags import startseite_datei
 
@@ -618,6 +618,19 @@ def internal_links(match, request):
         return f'<a href="/intern/artikel/{prefix}{name}/">{display}</a>'
 
 
+def _wiki_symbol(match):
+    """``{symbol:trichter}`` — das Symbol der Oberfläche mitten im Text."""
+    name = match.group(1).lower()
+    if name not in symbole.SYMBOLE:
+        return (
+            f'<span title="Symbol nicht gefunden" class="not_found">'
+            f"⚠️ Symbol: {match.group(1)}</span>"
+        )
+    return symbole.svg(
+        name, **{"class": "wiki-symbol", "role": "img", "aria_label": symbole.SYMBOLE[name][0]}
+    )
+
+
 def apply_replacements(text, request=None):
     """Wendet alle Ersetzungen auf den Text an"""
 
@@ -662,6 +675,7 @@ def apply_replacements(text, request=None):
         (r"(?:&quot;){2}(.+?)(?:&quot;){2}", lambda m: f"&quot;{m.group(1)}&quot;"),
         (r"\$([\s\S]*)\$", r"\1"),  # no format (content pre-escaped)
         (r"(^|\s)(@\w+)", r'<span class="mention">\2</span>'),  # Erwähnungen
+        (r"\{symbol:([^{}\s]+)\}", _wiki_symbol),  # zuletzt: das <svg> soll keine Regel mehr sehen
     ]
 
     # Innerhalb einer Zeile — für die Blöcke (% : @), deren Text nicht durch

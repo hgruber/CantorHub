@@ -38,9 +38,7 @@
                 <div class="form-group">
                     <label for="{{ form.ort.id_for_label }}">Ort</label>
                     <div class="search-select-wrap">
-                        <svg class="search-select-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        </svg>
+                        {% symbol "suche" class="search-select-icon" %}
                         <input type="search" class="search-select-input" placeholder="Ort suchen…" autocomplete="off" data-target="id_ort">
                         {{ form.ort }}
                         <a href="{% url 'ort_add' %}" class="search-select-add" title="Neuen Ort anlegen">+</a>

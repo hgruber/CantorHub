@@ -9,6 +9,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Artikel: `{symbol:trichter}` zeigt ein Symbol der Oberfläche mitten im Text, etwa Trichter, Spalten, Papierflieger oder Neuer Ordner. „Hilfe:Wiki“ listet alle Namen, der Spickzettel im Editor fügt die Markierung ein.
+
 ### Geändert
 
 - Artikel: Eingebettete Bilder sind als Voransicht immer gleich breit; sehr hohe Bilder werden ab 320 px Höhe unten abgeschnitten. Der Text umfließt sie bis hinunter zu 480 px Bildschirmbreite, erst darunter stehen sie für sich.
