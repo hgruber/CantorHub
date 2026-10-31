@@ -14,9 +14,8 @@ from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
-from django_tables2 import RequestConfig
 from ._decorators import tabellenzustand
-from ._pagination import ist_nachladen, nachlade_antwort, paginate_ordered, parse_offset
+from ._tabelle import tabellenseite
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -28,6 +27,7 @@ from intern.folder_access import visible_folder_ids
 from intern.terminzeit import ist_ganztaegig
 
 from ..aufstellung import aufstellung
+from ..filterbau_termine import TERMINE
 from ..forms import TerminForm
 from ..models import Konzert, Lied, Ort, Termin, User, Zusage
 from ..tables import TerminTabelle
@@ -133,6 +133,14 @@ def _aufstellungen_anhaengen(termine, ich):
         t.aufstellung = aufstellung(mitglieder, zusagen[t.pk], ich.pk)
 
 
+def _chip_namen(bedingungen):
+    """Kennung -> Name der Orte, die die Kette nennt -- sonst stuenden dort Zahlen."""
+    ids = {w for b in bedingungen if b.feld == "ort" for w in b.werte}
+    if not ids:
+        return {}
+    return {"ort": {str(o.pk): o.name for o in Ort.objects.filter(pk__in=ids)}}
+
+
 @login_required
 @tabellenzustand
 def termin_list(request):
@@ -156,35 +164,27 @@ def termin_list(request):
         qs = Termin.objects.filter(datum__lte=timezone_now()).order_by("-datum")
     else:
         qs = Termin.objects.filter(datum__gt=timezone_now()).order_by("datum")
-    termin_queryset = qs.annotate(**annotations)
-
-    _PAGE_SIZE = 50
-    offset = parse_offset(request)
-
-    probe = TerminTabelle(termin_queryset)
-    rows, has_more = paginate_ordered(request, probe, offset, _PAGE_SIZE)
-    _aufstellungen_anhaengen(rows, request.user)
-    table = TerminTabelle(rows)
-    RequestConfig(request, paginate=False).configure(table)
-
-    if ist_nachladen(request):
-        return nachlade_antwort("table_rows.html", {"table": table},
-                                has_more, offset + _PAGE_SIZE)
+    seite = tabellenseite(
+        request, TerminTabelle, qs.annotate(**annotations),
+        baukasten=TERMINE,
+        namen=_chip_namen,
+        seite=lambda zeilen: _aufstellungen_anhaengen(zeilen, request.user),
+    )
+    if seite.antwort:
+        return seite.antwort
 
     add = "termin_add" if request.user.has_perm("intern.add_termin") else None
     return render(
         request,
         "table.html",
         {
-            "table": table,
+            **seite.kontext,
             "seitentitel": "Vergangene Termine" if past else "Termine",
             "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
             "add": add,
             "add_form": TerminForm() if request.user.has_perm("intern.add_termin") else None,
             "add_label": "Neuer Termin",
             "past": past,
-            "has_more": has_more,
-            "next_offset": offset + _PAGE_SIZE,
         },
     )
 

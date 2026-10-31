@@ -10,7 +10,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
-from django_tables2 import RequestConfig
 from filer.models import File
 
 from intern import folders
@@ -24,10 +23,12 @@ from intern.replacements import (
     dateien_voranstellen,
 )
 
+from ..filterbau_artikel import ARTIKEL, autoren
 from ..models import Artikel, ArtikelPermission
 from ..tables import ArtikelTabelle
 from ._auswahl import chip_eintraege
 from ._decorators import tabellenzustand
+from ._tabelle import tabellenseite
 from ._pagination import ist_nachladen, nachlade_antwort, parse_offset
 
 __all__ = [
@@ -66,6 +67,11 @@ def _artikel_access(user, artikel_name):
     return can_read, can_edit
 
 
+def _chip_namen(bedingungen):
+    """Die Autoren fuer die Chips -- nur, wenn die Kette einen nennt."""
+    return {"autor": autoren()} if any(b.feld == "autor" for b in bedingungen) else {}
+
+
 @login_required
 @tabellenzustand
 def article_list(request):
@@ -97,16 +103,20 @@ def article_list(request):
     unreadable = restricted_names - readable_restricted
     artikel = artikel.exclude(name__in=unreadable)
 
-    table = ArtikelTabelle(artikel)
-    RequestConfig(request, paginate=False).configure(table)
+    # Erst nach dem Lesefilter: eine Suche darf keinen gesperrten Artikel verraten.
+    seite = tabellenseite(
+        request, ArtikelTabelle, artikel, baukasten=ARTIKEL,
+        namen=_chip_namen,
+        seitengroesse=None,
+    )
     context = {
+        **seite.kontext,
         "seitentitel": "Alle Artikel",
         "topbar_icon": '<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
         # "+" in der Topbar: nur no-arg-Fallback fürs {% url add %}; das JS im
         # Panel toggelt #AddPanel und fängt den Klick ab (return false).
         "add": "article_list",
         "add_panel_include": "artikel_add_panel.html",
-        "table": table,
     }
     return render(request, "table.html", context)
 

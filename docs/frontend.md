@@ -752,8 +752,15 @@ values and used to appear only once.
   `auswahl_feld()`, `schalter_feld()` (a fixed switch) with `bool_q()`; a field only one list
   needs is still written as a `Feld`. The fields live in one registry per list,
   `filterbau_<liste>.py`, each a `Baukasten` instance: `MITGLIEDER` (`filterbau_mitglieder.py`),
-  `TITEL` (`filterbau_titel.py`) and `ORTE` (`filterbau_orte.py`, text fields plus the fixed
-  switch „Karte“ — has coordinates or not). The hooks where the pages
+  `TITEL` (`filterbau_titel.py`), `ORTE` (`filterbau_orte.py`, text fields plus the fixed
+  switch „Karte“ — has coordinates or not), `TERMINE` (`filterbau_termine.py`: search, date,
+  location; fixed switches for a public announcement — the same `OHNE_ANKUENDIGUNG` set the
+  homepage lists —, „Konzert“, a running order and attendance; `past` stays a fixed parameter
+  that `traeger` carries), `ARTIKEL` (`filterbau_artikel.py`: name, text, last author, date — the
+  read restriction is applied **before** the chain, or a text search would betray a hidden
+  article) and `FOREN` (`filterbau_foren.py`: category as text, so no choice list names the
+  categories of unreadable forums, topic, last post, the fixed switch „Ungelesen“; the message
+  search `?q=` keeps its own page). The hooks where the pages
   differ are optional: `vorgabe` (the manager's access default), `alt_parameter` (the
   pre-builder parameters), `marker` (extra parameters when a condition goes away) and `traeger`
   (extra hidden form fields). Only names for foreign keys need the database; the view passes

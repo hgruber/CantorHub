@@ -6176,6 +6176,52 @@ class FilterbauSchalterTest(SimpleTestCase):
         self.assertFalse(any(f["marker"] for f in TITEL.feste_kontext([])))
 
 
+class FilterRegisterTest(SimpleTestCase):
+    """Jedes Register ist in sich stimmig, und die neuen Listen halten ihre Eigenheiten."""
+
+    REGISTER = (
+        "filterbau_mitglieder", "filterbau_titel", "filterbau_orte",
+        "filterbau_termine", "filterbau_artikel", "filterbau_foren",
+    )
+
+    def test_reihenfolge_nennt_jedes_feld_genau_einmal(self):
+        import importlib
+
+        for name in self.REGISTER:
+            modul = importlib.import_module("intern." + name)
+            with self.subTest(register=name):
+                self.assertEqual(sorted(modul.FELD_REIHENFOLGE), sorted(modul.FELDER))
+                for key, feld in modul.FELDER.items():
+                    self.assertEqual(feld.key, key)
+
+    def test_termine_tragen_past_weiter(self):
+        from django.http import QueryDict
+
+        from intern.filterbau_termine import TERMINE
+
+        self.assertEqual(TERMINE.traeger_felder(QueryDict("past=1")), [("past", "1")])
+        self.assertEqual(TERMINE.traeger_felder(QueryDict("")), [])
+
+    def test_ankuendigung_ist_die_menge_der_startseite(self):
+        from intern.filterbau_termine import FELDER
+        from intern.models import OHNE_ANKUENDIGUNG
+
+        q = FELDER["angekuendigt"].q
+        self.assertEqual(q("nein", ()), OHNE_ANKUENDIGUNG)
+        self.assertEqual(q("ja", ()), ~OHNE_ANKUENDIGUNG)
+
+    def test_feste_schalter_der_neuen_listen(self):
+        from intern.filterbau import ist_fest
+        from intern.filterbau_foren import FELDER as FOREN
+        from intern.filterbau_orte import FELDER as ORTE
+        from intern.filterbau_termine import FELDER as TERMINE
+
+        self.assertEqual({k for k, f in TERMINE.items() if ist_fest(f)},
+                         {"angekuendigt", "repertoire", "ablauf", "anwesenheit"})
+        self.assertEqual({k for k, f in FOREN.items() if ist_fest(f)}, {"ungelesen"})
+        self.assertEqual({k for k, f in ORTE.items() if ist_fest(f)}, {"karte"})
+
+
 class FilterbauFestTest(SimpleTestCase):
     """Die festen Bedingungen gelten fuer die ganze Kette: ``fest und (Kette)``."""
 
