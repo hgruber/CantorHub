@@ -4128,8 +4128,9 @@ table.mitglied-table tr.stimme-group-start td {
 }
 .wiki-page .wiki .wiki-audio .wp-download:hover { color: var(--t1); }
 
-/* Mobile: floaten aufheben, damit der Text lesbar bleibt */
-@media (max-width: 768px) {
+/* Schmale Telefone: floaten aufheben, damit der Text lesbar bleibt — darüber
+   bleibt neben der 214px-Abbildung genug Platz zum Umfließen. */
+@media (max-width: 480px) {
     .wiki-page .wiki .wiki-figure {
         float: none;
         clear: none;
