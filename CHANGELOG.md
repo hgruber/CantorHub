@@ -18,6 +18,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Geändert
 
+- Handy: Navigationszeilen, Knöpfe und Tabellenzeilen sind auf Touchgeräten größer (44 statt 33 px), und die drei Antwortknöpfe stehen gleich breit in einer Zeile statt umzubrechen.
 - Seiten: Alle Seiten beginnen an derselben linken Kante; Listen und Forum sind auf 1400 px gedeckelt, Detailseiten auf 1100 px, statt auf großen Bildschirmen über die volle Breite zu laufen.
 - Symbole: Die Navigation der Sidebar und alle kopierten Seitensymbole kommen jetzt aus einer Liste und zeichnen mit einer Strichstärke; das fehlerhafte Dokument-Symbol der Artikelköpfe ist dabei ersetzt.
 - Oberfläche: Abstände folgen einem 4-px-Raster (2, 4, 8, 12, 16 …), ungerade Werte wie 7 oder 11 px gibt es nicht mehr; Radien kommen aus vier Stufen statt aus dreizehn Einzelwerten.

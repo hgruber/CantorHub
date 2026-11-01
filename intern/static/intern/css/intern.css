@@ -3788,8 +3788,12 @@ table.mitglied-table tr.stimme-group-start td {
 
 .zusage-locked-note { font-size: var(--fs-xs); color: var(--t4); font-style: italic; }
 
-.zusage-actions      { display: flex; gap: 8px; flex-wrap: wrap; }
-.zusage-actions form { margin: 0; padding: 0; }
+.zusage-actions      { display: flex; gap: 8px; flex-wrap: wrap; max-width: 420px; }
+/* Drei gleich breite Knoepfe statt drei verschieden breiter: die Entscheidung
+   ist eine Gruppe, und auf dem Handy brach die dritte Option sonst allein in
+   die naechste Zeile. */
+.zusage-actions form { margin: 0; padding: 0; flex: 1 1 0; }
+.zusage-actions .zusage-btn { width: 100%; justify-content: center; }
 
 .zusage-btn {
     display: inline-flex;
@@ -3938,6 +3942,26 @@ table.mitglied-table tr.stimme-group-start td {
     /* Before it gets tight the pill drops its label and shows the check alone. */
     .termin-banner .zusage-state-text { display: none; }
     .termin-banner .zusage-state-badge { gap: 0; padding: 4px; border-radius: 999px; }
+}
+
+/* Touchgeraete: groessere Ziele. 30–35 px hohe Zeilen sind mit dem Daumen
+   nicht sicher zu treffen (WCAG 2.5.8 verlangt 24 px, empfohlen sind 44). */
+@media (pointer: coarse) {
+    .nav-item,
+    .nav-subitem { min-height: 44px; }
+    .zusage-btn { min-height: 40px; }
+    .top-bar a,
+    .topbar-actions button,
+    .dl-trigger-btn,
+    .reaction-add { min-width: 38px; min-height: 38px; }
+    .termin-banner-dismiss { min-width: 38px; min-height: 38px; }
+}
+
+@media (max-width: 768px) {
+    /* Auf dem Handy traegt der Daumen die Zeile: mehr Hoehe als am Schreibtisch. */
+    td, th { padding-block: 12px; }
+    /* Der Seitentitel behaelt den Platz, den die Aktionen nicht brauchen. */
+    .top-bar .title { flex: 1 1 auto; }
 }
 
 /* Invite list */

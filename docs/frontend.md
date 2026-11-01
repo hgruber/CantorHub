@@ -328,6 +328,12 @@ at `--content-max` (1400 px), detail pages at 1100 px, article prose at 800 px. 
 centred, so the left edge does not move when a list opens a detail page; on a 1920 px screen the
 cap is what keeps a table from drifting apart across the full width.
 
+**Touch devices get larger targets.** `@media (pointer: coarse)` raises nav rows to 44 px,
+Zusage buttons to 40 px and the topbar icons to 38 px; below 768 px the table rows grow to
+`padding-block: 12px`. WCAG 2.5.8 asks for 24 px, 44 px is the comfortable size — the old 30–35 px
+rows were below both. The three Zusage buttons share the row as equal columns (`flex: 1 1 0`,
+capped at 420 px), so the third option no longer drops into a line of its own on a phone.
+
 The accent colour is the one exception worth calling out explicitly: never hardcode the default `#2b6cb0`
 (or the old `#c14468`) in component styles — always reference `var(--brand)`, one of its
 derived tokens (`--brand-dark`, `--brand-light`, `--brand-ring`, `--brand-text`), or a fresh
