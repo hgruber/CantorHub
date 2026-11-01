@@ -29,6 +29,7 @@
         <script src="{% static 'intern/vendor/dropzone.min.js' %}" defer></script>
         <script src="{% static 'intern/vendor/Sortable.min.js' %}" defer></script>
         <script src="{% static 'intern/js/intern.js' %}" defer></script>
+    <script src="{% static 'intern/js/topbar-menue.js' %}" defer></script>
         <script src="{% static 'intern/js/chip-multiselect.js' %}" defer></script>
         {% comment %}
            Verhalten der Listenseiten; stand frueher als <script> in table.html und
@@ -102,21 +103,21 @@
 
                 <div class="topbar-actions">
                 {% if up %}
-                    <a href="{% url up %}" title="Zurück zur Übersicht">
+                    <a href="{% url up %}" title="Zurück zur Übersicht" aria-label="Zurück zur Übersicht" data-topbar-bleibt>
                         {% symbol "haus" class="toolicon" %}
                     </a>
                 {% elif up_url %}
-                    <a href="{{ up_url }}" title="Zurück zur Übersicht">
+                    <a href="{{ up_url }}" title="Zurück zur Übersicht" aria-label="Zurück zur Übersicht" data-topbar-bleibt>
                         {% symbol "haus" class="toolicon" %}
                     </a>
                 {% endif %}
                 {% if view %}
-                    <a href="{% url view id %}" title="Ansehen">
+                    <a href="{% url view id %}" title="Ansehen" aria-label="Ansehen" data-topbar-bleibt>
                         {% symbol "ansehen" class="toolicon" %}
                     </a>
                 {% endif %}
                 {% if edit %}
-                    <a href="{% url edit id %}" title="Bearbeiten">
+                    <a href="{% url edit id %}" title="Bearbeiten" aria-label="Bearbeiten" data-topbar-bleibt>
                         {% symbol "bearbeiten" class="toolicon" %}
                     </a>
                 {% endif %}
@@ -211,7 +212,7 @@
                 </div>
                 {% endif %}
                 {% if konzert_back_url %}
-                    <a href="{{ konzert_back_url }}" title="Zurück zur Übersicht">
+                    <a href="{{ konzert_back_url }}" title="Zurück zur Übersicht" aria-label="Zurück zur Übersicht" data-topbar-bleibt>
                         {% symbol "zurück" class="toolicon" %}
                     </a>
                 {% endif %}
@@ -283,42 +284,45 @@
                 {% endif %}
                 {% if past is not None %}
                     {% if past %}
-                    <a href="{% url 'termin_list' %}" title="Kommende Termine">
+                    <a href="{% url 'termin_list' %}" title="Kommende Termine" aria-label="Kommende Termine">
                         {% symbol "kommende-termine" class="toolicon" %}
                     </a>
                     {% else %}
-                    <a href="{% url 'termin_list' %}?past=1" title="Vergangene Termine">
+                    <a href="{% url 'termin_list' %}?past=1" title="Vergangene Termine" aria-label="Vergangene Termine">
                         {% symbol "vergangene-termine" class="toolicon" %}
                     </a>
                     {% endif %}
                 {% endif %}
                 {% if add %}
-                    <a href="{% url add %}" onclick="if(document.getElementById('AddPanel')){toggle('AddPanel');return false;}" title="Neu anlegen">
+                    <a href="{% url add %}" onclick="if(document.getElementById('AddPanel')){toggle('AddPanel');return false;}" title="Neu anlegen" aria-label="Neu anlegen">
                         {% symbol "neu" class="toolicon" %}
                     </a>
                 {% endif %}
                 {% if konzert_order_url %}
-                    <a href="{{ konzert_order_url }}" title="Ablauf bearbeiten">
+                    <a href="{{ konzert_order_url }}" title="Ablauf bearbeiten" aria-label="Ablauf bearbeiten">
                         {% symbol "ablauf" class="toolicon" %}
                     </a>
                 {% endif %}
                 {% if showfilter %}
-                    <a href="#" onclick="toggle('Filter'); return false;" title="Filtern">
+                    <a href="#" onclick="toggle('Filter'); return false;" title="Filtern" aria-label="Filtern">
                         {% symbol "trichter" class="toolicon" %}
                     </a>
                 {% endif %}
                 {% if column_choices %}
-                    <a href="#" onclick="toggle('ColumnSelector'); return false;" title="Spalten">
+                    <a href="#" onclick="toggle('ColumnSelector'); return false;" title="Spalten" aria-label="Spalten">
                         {% symbol "spalten" class="toolicon" %}
                     </a>
                 {% endif %}
+                {% if delete or show_file_actions and can_write_here or upload_content %}
+                <span class="topbar-sep" aria-hidden="true"></span>
+                {% endif %}
                 {% if delete %}
-                    <a href="{% url delete id %}" title="Löschen">
+                    <a href="{% url delete id %}" class="toolicon-danger" title="Löschen" aria-label="Löschen">
                         {% symbol "löschen" class="toolicon" %}
                     </a>
                 {% endif %}
                 {% if show_file_actions and can_write_here %}
-                    <a href="#" onclick="typeof showNewFolderRow === 'function' && showNewFolderRow(); return false;" title="Neuer Ordner">
+                    <a href="#" onclick="typeof showNewFolderRow === 'function' && showNewFolderRow(); return false;" title="Neuer Ordner" aria-label="Neuer Ordner">
                         {% symbol "ordner-neu" class="toolicon" %}
                     </a>
                 {% endif %}
@@ -336,13 +340,16 @@
                     </button>
                     <input type="file" id="uploadInput" multiple hidden>
                 {% endif %}
+                {% if history or permissions_url or hilfe_seite %}
+                <span class="topbar-sep" aria-hidden="true"></span>
+                {% endif %}
                 {% if history %}
-                    <a href="{% url history id %}" title="Bearbeitungs-Historie">
+                    <a href="{% url history id %}" title="Bearbeitungs-Historie" aria-label="Bearbeitungs-Historie">
                         {% symbol "verlauf" class="toolicon" %}
                     </a>
                 {% endif %}
                 {% if permissions_url %}
-                    <a href="{{ permissions_url }}" title="Zugriffskontrolle">
+                    <a href="{{ permissions_url }}" title="Zugriffskontrolle" aria-label="Zugriffskontrolle">
                         {% symbol "schloss" class="toolicon" %}
                     </a>
                 {% endif %}

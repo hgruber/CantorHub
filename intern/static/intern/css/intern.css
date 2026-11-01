@@ -886,6 +886,26 @@ button.filter-chip:hover { opacity: 1; border-color: var(--brand); color: var(--
     flex-shrink: 0;
 }
 
+/* Trennlinien zwischen den Gruppen der Kopfleiste: Navigation | Werkzeuge |
+   Dateiaktionen | Verwaltung. Ohne sie standen bis zu neun Aktionen mit
+   demselben Gewicht nebeneinander, „Loeschen" eingeschlossen. */
+.topbar-sep {
+    width: 1px;
+    height: 18px;
+    margin: 0 5px;
+    background: var(--border-dark);
+    flex-shrink: 0;
+}
+
+/* Loeschen bleibt ein Icon wie die anderen, faerbt sich beim Ueberfahren aber
+   im Gefaehrenton statt im Akzent — bei einem roten Akzent war das sonst
+   nicht zu unterscheiden. */
+.top-bar a.toolicon-danger:hover .toolicon { color: var(--status-danger-text); }
+
+/* Die in das Ueberlaufmenue gewanderten Originale muessen versteckt bleiben;
+   ``.top-bar a { display: flex }`` schluege sonst das `hidden`-Attribut. */
+.topbar-actions [hidden] { display: none !important; }
+
 /* ─── Top Bar Search ─────────────────────────────── */
 .topbar-search {
     position: relative;

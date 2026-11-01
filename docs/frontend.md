@@ -676,6 +676,21 @@ be renamed in place and deleted after a confirmation — rows whose file lies ou
 never reloaded. A rename onto a name already taken is refused (409); merging into the other file
 stays with the folder browser and its dialog.
 
+## The top bar
+
+`base.html` renders a page's actions into `.topbar-actions`: one grey icon each, no label.
+`.topbar-sep` divides them into four groups — navigation (home, view, edit, back) | tools
+(search, play, download, add, filter, columns) | file actions (delete, new folder, upload) |
+administration (history, permissions, help). „Löschen" carries `.toolicon-danger` and turns red
+only on hover, so it no longer weighs as much as „Filtern". Every icon link repeats its `title`
+as `aria-label`, because a `title` alone is not a reliable accessible name.
+
+Below 768 px `js/topbar-menue.js` moves every action without `data-topbar-bleibt` into a „…"
+menu built from the `.dl-trigger`/`.dl-menu` components. The menu shows icon **and** label — a
+touch device has no tooltip, so a bare icon there is a guess. The original anchors stay in the
+DOM and are only hidden, so their `onclick` handlers and URLs keep working; resizing back to a
+wide window restores them. Only navigation and „Bearbeiten" carry `data-topbar-bleibt`.
+
 ## The list pages' script
 
 `intern/static/intern/js/tabelle.js` carries what every list page needs: the infinite scroll,

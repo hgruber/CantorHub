@@ -18,6 +18,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Geändert
 
+- Kopfleiste: Die Aktionen stehen in vier Gruppen (Navigation, Werkzeuge, Dateien, Verwaltung), und Löschen hebt sich beim Überfahren in der Warnfarbe ab. Auf dem Handy wandern die Nebenaktionen in ein „…“-Menü mit Beschriftung, sodass der Seitentitel Platz behält.
 - Listen: Die Tabellen trennen ihre Zeilen nur noch mit dem Zebrastreifen; die zusätzliche, kaum sichtbare Zeilenlinie entfällt. Datum, Vorname, Stimme und Aufstellung stehen so breit wie ihr Inhalt, sodass zusammengehörige Angaben zusammenrücken.
 - Termin-Banner: Der Hinweis auf den nächsten Termin ist jetzt eine ruhige Zeile mit neutraler Fläche statt einer akzentfarben getönten Leiste über jeder Seite. Der Terminname steht vorn, der Vorlauf am Ende der Datumszeile; auf schmalen Bildschirmen entfällt er.
 - Karten: Kartenüberschriften sind jetzt kleine graue Beschriftungen über einer feinen Trennlinie statt Versalien in Markenfarbe über einem 2-px-Balken; Panel-, Abstimmungs- und Artikeltitel führen ebenfalls keine Markenlinie mehr.
