@@ -15,6 +15,7 @@ build/
 *.log
 *.sql
 *.sqlite3
+*.sqlite3.alt
 db.sqlite3
 db.sqlite3-journal
 instance/
