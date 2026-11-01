@@ -324,7 +324,8 @@ Radii come from four tokens: `--r-xs` 2, `--r-sm` 4, `--r` 8, `--r-lg` 12; `999p
 pill and circle forms. A new value is a decision, not a local measurement.
 
 **Page geometry** is one left axis — the sidebar edge — with capped widths: lists and the forum
-at `--content-max` (1400 px), detail pages at 1100 px, article prose at 800 px. Nothing is
+at `--content-max` (1400 px), detail pages at 1100 px, article pages at 824 px (720 px of text
+plus its padding). Nothing is
 centred, so the left edge does not move when a list opens a detail page; on a 1920 px screen the
 cap is what keeps a table from drifting apart across the full width.
 
@@ -471,8 +472,10 @@ defined on `.perm-matrix-wrap`, so it renders without a border).
 
 ## Symbols
 
-The icons of the interface are inline SVGs on a 24-unit grid with a `currentColor` stroke and
-one stroke width (2). They live once in `intern/symbole.py` — 47 in all, the whole navigation
+The icons of the interface are inline SVGs on a 24-unit grid with a `currentColor` stroke. The
+width is chosen per optical size — 2 at 16 px, 2.5 on the 12–14 px marks inside buttons, 1.7 on
+the 18 px file-type icons, 3 on the oversized error-page icon — so that the drawn line looks the
+same at every size. What is wrong is a *missing* stroke width, not a different number. They live once in `intern/symbole.py` — 47 in all, the whole navigation
 included — and reach a template through
 `{% symbol "trichter" class="toolicon" %}` (`intern/templatetags/ui_tags.py`). Every other
 attribute goes onto the `<svg>` as given (`width="14"`, `stroke_width="2.5"`, `aria_hidden="true"`

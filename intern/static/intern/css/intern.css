@@ -1208,7 +1208,7 @@ textarea {
     background: var(--bg-card);
     border: 1px solid var(--border-dark);
     border-radius: var(--r-sm);
-    padding: 8px 8px;
+    padding: 8px;
     transition: border-color var(--ease), box-shadow var(--ease);
     outline: none;
     width: 100%;
@@ -1775,7 +1775,7 @@ time {
 .artikel-add-label { display: block; font-size: var(--fs-sm); font-weight: 600; margin-bottom: 6px; color: var(--t2); }
 .artikel-add-input {
     width: 100%;
-    padding: 12px 12px;
+    padding: 12px;
     font-size: var(--fs-md);
     font-family: var(--font);
     border: 1px solid var(--border-dark);
@@ -1952,7 +1952,7 @@ time {
 
 .app-dialog input[type="text"] {
     width: 100%;
-    padding: 8px 8px;
+    padding: 8px;
     border: 1px solid var(--border-dark);
     border-radius: var(--r-sm);
     font-size: var(--fs-sm);
@@ -2070,7 +2070,7 @@ time {
 .filter-body input[type="search"],
 .filter-body select {
     width: 100%;
-    padding: 8px 8px;
+    padding: 8px;
     font-size: var(--fs-sm);
     font-family: inherit;
     color: var(--t1);
@@ -2103,7 +2103,7 @@ time {
 .filter-body > div:has(.tri-toggle-wrap) label,
 .filter-body > div:has(.filter-inline) label { margin-bottom: 0; }
 
-.filter-body .filter-inline { width: auto; padding: 4px 4px; font-size: var(--fs-2xs); border-radius: 999px; }
+.filter-body .filter-inline { width: auto; padding: 4px; font-size: var(--fs-2xs); border-radius: 999px; }
 
 /* ── Filter-Baukasten (Zeilen-Editor) ──
    Steht als erstes Kind in .filter-body, ueber den festen Feldern. Das Panel ist nur
@@ -3500,7 +3500,7 @@ table.mitglied-table tr.stimme-group-start td {
     color: var(--t3);
 }
 .attendance-table td {
-    padding: 8px 8px;
+    padding: 8px;
     border-bottom: 1px solid var(--bg-row-hover);
     vertical-align: top;
 }
@@ -4571,7 +4571,7 @@ span.not_found {
     background: var(--bg-card);
     color: var(--t1);
     line-height: 1.7;
-    padding: 16px 16px;
+    padding: 16px;
     border-radius: var(--r);
     box-shadow: var(--shadow-sm);
     transition: border-color var(--ease), box-shadow var(--ease);
@@ -4642,7 +4642,7 @@ span.not_found {
 
 @media (max-width: 768px) {
     .ae-bar { padding: 8px 12px; }
-    .ae-body { padding: 12px 12px; }
+    .ae-body { padding: 12px; }
     .ae-help > summary,
     .ae-cheats { padding-left: 14px; padding-right: 14px; }
 }
@@ -5757,7 +5757,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
 
 .history-table th,
 .history-table td {
-    padding: 8px 8px;
+    padding: 8px;
     border-bottom: 1px solid var(--border);
     text-align: left;
     vertical-align: top;
@@ -5969,7 +5969,7 @@ tbody tr.drop-row.drop-row-active td { opacity: 0.7; }
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 8px 8px;
+    padding: 8px;
     background: transparent;
     color: var(--t1);
     border: none;
@@ -6122,7 +6122,7 @@ tbody tr.zeile-markiert td:first-child {
     border: 1px solid var(--border);
     border-radius: var(--r);
     box-shadow: 0 4px 16px rgba(0,0,0,.14);
-    padding: 12px 12px;
+    padding: 12px;
     min-width: 190px;
     font-size: var(--fs-sm);
     color: var(--t1);
@@ -6436,7 +6436,7 @@ tbody tr.zeile-markiert td:first-child {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 8px;
+    padding: 8px;
     border-radius: var(--r-sm);
     cursor: pointer;
     font-size: var(--fs-sm);
@@ -6500,7 +6500,7 @@ tbody tr.zeile-markiert td:first-child {
 }
 .dialog-field input {
     width: 100%;
-    padding: 8px 8px;
+    padding: 8px;
     border: 1px solid var(--border-dark);
     border-radius: var(--r-sm);
     font-size: var(--fs-sm);
@@ -6794,7 +6794,7 @@ tbody tr.zeile-markiert td:first-child {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 8px 8px;
+    padding: 8px;
     border-radius: var(--r-sm);
     text-decoration: none;
     color: var(--t1);
@@ -7183,7 +7183,7 @@ td.marker-cell {
        stehen nebeneinander, und ihr doppeltes Polster schob Mikrofon und Pille
        unnötig auseinander. 4px je Seite lässt 8px zwischen ihnen und hält
        trotzdem Abstand zu Datum und Terminnamen. */
-    padding: 4px 4px;
+    padding: 4px;
 }
 .marker-icon {
     display: inline-flex;
@@ -7424,7 +7424,7 @@ body.join-page {
 .join-actions .btn {
     width: 100%;
     justify-content: center;
-    padding: 12px 12px;
+    padding: 12px;
     font-size: var(--fs-sm);
 }
 
@@ -7645,7 +7645,7 @@ body.join-page {
     /* Enger als frueher (7/5): mit 13px Text passt "19:30 Chorprobe" in
        einer Tagesspalte sonst nicht mehr und wird abgeschnitten. */
     gap: 4px;
-    padding: 4px 4px;
+    padding: 4px;
     border-radius: var(--r-sm);
     font-size: var(--fs-xs);
     line-height: 1.3;
@@ -7720,7 +7720,7 @@ body.join-page {
 }
 
 /* Punkte (nur mobil sichtbar) */
-.cal-dots { display: none; gap: 4px; flex-wrap: wrap; padding: 2px 2px; }
+.cal-dots { display: none; gap: 4px; flex-wrap: wrap; padding: 2px; }
 .cal-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
 .cal-dot--termin { background: var(--brand); }
 .cal-dot--geb { background: var(--cal-geb); }
@@ -7795,7 +7795,7 @@ body.join-page {
 }
 .cal-panel-body .cal-chip {
     font-size: var(--fs-sm);
-    padding: 12px 12px;
+    padding: 12px;
     border-radius: var(--r);
     border-left-width: 4px;
     gap: 8px;
@@ -7830,7 +7830,7 @@ body.join-page {
     .cal-weekday { padding: 8px 4px; text-align: center; font-size: var(--fs-2xs); }
     .cal-day {
         min-height: 58px;
-        padding: 4px 4px;
+        padding: 4px;
         align-items: center;
         cursor: pointer;
     }
@@ -7923,7 +7923,7 @@ body.join-page {
 .verwendung-dialog {
     max-width: 520px;
     width: calc(100% - 32px);
-    padding: 20px 20px;
+    padding: 20px;
     border: 1px solid var(--border-dark);
     border-radius: var(--r);
     background: var(--bg-card);
@@ -8026,7 +8026,7 @@ body.join-page {
 .chip-ms-list:empty::before {
     content: attr(data-leer);
     display: block;
-    padding: 4px 4px;
+    padding: 4px;
     font-size: var(--fs-xs);
     color: var(--t4);
 }
@@ -8058,7 +8058,7 @@ body.join-page {
 }
 
 .chip-ms-pool > .chip-ms-item {
-    padding: 8px 8px;
+    padding: 8px;
     border-radius: var(--r-sm);
     font-size: var(--fs-sm);
     color: var(--t1);
@@ -8172,7 +8172,7 @@ body.join-page {
 }
 
 .chip-ms-pick {
-    padding: 8px 8px;
+    padding: 8px;
     border: 0;
     border-radius: var(--r-sm);
     background: transparent;
