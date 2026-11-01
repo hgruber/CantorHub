@@ -4648,14 +4648,16 @@ span.not_found {
 }
 
 /* === Wiki Tables === */
+/* Schrift aus der Leiter statt 0,9em (13,5 px), Schluesselzellen in
+   Normalschrift statt in 11-px-Versalien, und nur noch das Raster als
+   Trennmittel — Zebra und Schatten entfallen. */
 .wiki-table {
     border-collapse: collapse;
     margin: 1.2em 0;
     width: 100%;
-    font-size: 0.9em;
+    font-size: var(--fs-xs);
     border-radius: var(--r);
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
 }
 
 .wiki-table th,
@@ -4664,6 +4666,9 @@ span.not_found {
     border: 1px solid var(--border);
     vertical-align: top;
     text-align: left;
+    font-size: inherit;
+    text-transform: none;
+    letter-spacing: 0;
     /* Eine lange Adresse bricht um, statt die Tabelle auf dem Telefon zu sprengen. */
     overflow-wrap: anywhere;
 }
@@ -4686,15 +4691,10 @@ span.not_found {
 .wiki-table tbody th:last-child     { border-right: none; }
 
 .wiki-table tbody th {
-    background: var(--brand-light);
-    color: var(--brand-text);
-    font-weight: 600;
-    border-color: color-mix(in srgb, var(--brand) 18%, transparent);
-    white-space: nowrap;
-}
-
-.wiki-table tbody tr:nth-child(even) td {
     background: var(--bg-app);
+    color: var(--t2);
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .wiki-table tbody tr:hover td,
@@ -4712,23 +4712,17 @@ span.not_found {
     border-color: var(--brand-dark);
 }
 
-[data-theme="dark"] .wiki-table tbody th {
-    background: color-mix(in srgb, var(--brand) 14%, transparent);
-    color: var(--brand-text);
-    border-color: color-mix(in srgb, var(--brand) 20%, transparent);
-}
-
-[data-theme="dark"] .wiki-table tbody tr:nth-child(even) td {
-    background: rgba(255, 255, 255, 0.025);
-}
-
 /* =================================================== */
 /* Wiki Page — document card layout                    */
 /* =================================================== */
+/* Das Dokument ist eine Seite, kein Schirm: dieselbe Breite wie der Text
+   plus sein Polster, sonst steht neben dem Satzspiegel eine leere weisse
+   Flaeche bis zum Fensterrand. */
 .wiki-page {
     background: var(--bg-card);
     min-height: 100%;
     padding: 28px 0 48px;
+    max-width: 824px;   /* 720 px Text + 2 × 52 px Polster */
 }
 
 .wiki-page .version-banner {
@@ -4739,7 +4733,11 @@ span.not_found {
     height: auto;
     padding: 0 52px;
     font-size: var(--fs-sm);
-    line-height: 1.85;
+    line-height: 1.7;
+    /* Lesebreite: 720 px inklusive Polster ergeben knapp 620 px Text, also
+       rund 75 Zeichen. Vorher lief der Text ueber die volle Breite
+       (~140 Zeichen) — auf 1920 noch weiter. */
+    max-width: 720px;
 }
 
 /* ── Headings ─────────────────────────────────────── */
@@ -4754,9 +4752,15 @@ span.not_found {
     line-height: 1.3;
 }
 
+/* Ueberschriften: der Titel (h1) traegt die Marke als Balken, alles darunter
+   ist neutral und unterscheidet sich in Groesse und Gewicht. Vorher war jede
+   Abschnittsueberschrift markenfarben — auf einer Hilfeseite mit acht
+   Abschnitten war das die halbe Seite in Rosa. Die Groessen sind relativ zum
+   Artikeltext (em), weil sie mit ihm wachsen sollen. */
 .wiki-page .wiki h2 {
     font-size: 1.2em;
-    color: var(--brand-text);
+    font-weight: 700;
+    color: var(--t1);
     border-bottom: 1px solid var(--border-dark);
     padding-bottom: 0.25em;
     margin: 2em 0 0.75em;
@@ -4764,26 +4768,32 @@ span.not_found {
 
 .wiki-page .wiki h3 {
     font-size: 1.05em;
+    font-weight: 700;
     color: var(--t1);
-    border-left: 3px solid color-mix(in srgb, var(--brand) 35%, transparent);
+    border-left: 3px solid var(--border-dark);
     padding-left: 10px;
     margin: 1.6em 0 0.5em;
 }
 
 .wiki-page .wiki h4 {
-    font-size: 0.88em;
-    color: var(--t3);
+    font-size: 1em;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
+    color: var(--t2);
     margin: 1.4em 0 0.4em;
 }
 
 .wiki-page .wiki h5 {
-    font-size: 0.88em;
-    color: var(--t4);
+    font-size: 0.95em;
     font-weight: 600;
+    color: var(--t3);
     margin: 1.1em 0 0.3em;
+}
+
+.wiki-page .wiki h6 {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--t4);
+    margin: 1em 0 0.3em;
 }
 
 /* ── Links ────────────────────────────────────────── */
@@ -4813,7 +4823,7 @@ span.not_found {
     content: '›';
     position: absolute;
     left: -0.4em;
-    color: var(--brand);
+    color: var(--t3);
     font-weight: 700;
     font-size: 1.15em;
     line-height: 1.6;
@@ -4826,20 +4836,21 @@ span.not_found {
     margin-bottom: 0.2em;
 }
 .wiki-page .wiki ol > li::marker {
-    color: var(--brand);
+    color: var(--t3);
     font-weight: 600;
 }
 
 /* ── Block elements ───────────────────────────────── */
+/* Notiz im Fliesstext: neutrale Flaeche, graue Kante, keine Kursivschrift.
+   Vorher trug sie Marken-Tint, Markenkante und Kursiv — die dritte laute
+   Markenflaeche einer Hilfeseite neben Titel und Tabellen. */
 .wiki-page .wiki .citation {
-    border-left: 4px solid var(--brand);
-    background: var(--brand-light);
+    border-left: 3px solid var(--border-dark);
+    background: var(--bg-app);
     padding: 8px 16px;
     margin: 1.4em 0;
     border-radius: 0 var(--r) var(--r) 0;
     color: var(--t2);
-    font-style: italic;
-    font-size: 0.97em;
 }
 
 .wiki-page .wiki .indent {
@@ -4937,9 +4948,6 @@ span.not_found {
 }
 
 /* ── Dark mode ────────────────────────────────────── */
-[data-theme="dark"] .wiki-page .wiki .citation {
-    background: color-mix(in srgb, var(--brand) 12%, transparent);
-}
 [data-theme="dark"] .wiki-page .wiki .boxed {
     background: color-mix(in srgb, var(--brand) 7%, transparent);
     border-color: color-mix(in srgb, var(--brand) 18%, transparent);

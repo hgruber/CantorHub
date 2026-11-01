@@ -85,6 +85,12 @@ only**, same rights as `folder_delete`, and removes the reference in a new versi
 
 ## Wiki markup
 
+**Headings start at `h2`.** `== Section ==` renders as `<h2>`, `===` as `<h3>`, and so on down to
+`h6`; the first heading of an article is promoted to `<h1>` because the title lives in the article
+text itself, not in the template (`apply_replacements(..., titel_heben=True)` — forum messages
+call it without the flag). Until November 2026 `==` was an `h1`, so every section stood on the
+same level as the title.
+
 `intern/replacements.py` renders the article body: headings, `'''bold'''` / `''italic''`, lists,
 code blocks, indentation, notes, external links, and `[[Datei:name.pdf]]` file links resolved
 against filer by **name**. `internal_links` must use `filter().first()`, not `get()` — a file

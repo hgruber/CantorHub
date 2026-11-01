@@ -341,10 +341,12 @@ def insert_file_object(f, label=None, spieler=False):
             )
         except Exception:
             pass
+    # Ohne Vorschau nennt der Link den Dateinamen; eine Bildunterschrift mit
+    # demselben Text stand vorher doppelt unter der Figur.
     return (
         f'<figure class="wiki-figure">'
         f'<a href="{url}">Datei: {filename}</a>'
-        f'{caption}</figure>'
+        f'</figure>'
     )
 
 
@@ -631,8 +633,14 @@ def _wiki_symbol(match):
     )
 
 
-def apply_replacements(text, request=None):
-    """Wendet alle Ersetzungen auf den Text an"""
+def apply_replacements(text, request=None, titel_heben=False):
+    """Wendet alle Ersetzungen auf den Text an.
+
+    ``titel_heben`` macht die **erste** ``==``-Zeile zum ``<h1>``: der
+    Artikeltitel steht im Text selbst, nicht in der Vorlage. Ohne das haette
+    eine Artikelseite gar keine h1, denn Abschnitte beginnen jetzt bei h2.
+    Forumnachrichten rufen ohne das Flag auf — dort gibt es keinen Titel.
+    """
 
     list_processor = ListProcessor()
     code_processor = CodeBlockProcessor()
@@ -640,11 +648,15 @@ def apply_replacements(text, request=None):
 
     # Definiere deine regulären Ausdrücke und Ersetzungen
     REPLACEMENTS = [
-        (r"^======(.*)======$", lambda m: f"<h5>{m.group(1)}</h5>"),
-        (r"^=====(.*)=====$", lambda m: f"<h4>{m.group(1)}</h4>"),
-        (r"^====(.*)====$", lambda m: f"<h3>{m.group(1)}</h3>"),
-        (r"^===(.*)===$", lambda m: f"<h2>{m.group(1)}</h2>"),
-        (r"^==(.*)==$", lambda m: f"<h1>{m.group(1)}</h1>"),
+        # Ueberschriften beginnen bei h2: die h1 einer Seite ist der
+        # Artikeltitel, den die erste Ueberschrift traegt (siehe
+        # ``titel_heben``). Frueher war schon ``==`` ein h1 — jeder Abschnitt
+        # stand damit auf derselben Ebene wie der Titel.
+        (r"^======(.*)======$", lambda m: f"<h6>{m.group(1)}</h6>"),
+        (r"^=====(.*)=====$", lambda m: f"<h5>{m.group(1)}</h5>"),
+        (r"^====(.*)====$", lambda m: f"<h4>{m.group(1)}</h4>"),
+        (r"^===(.*)===$", lambda m: f"<h3>{m.group(1)}</h3>"),
+        (r"^==(.*)==$", lambda m: f"<h2>{m.group(1)}</h2>"),
         (
             r"(\[\[(([^\]]*?)\:)?\s*([^\[\]]*?)(\|([^\[\]]+?))?\]\]([a-z]+)?)",
             lambda match: internal_links(match, request),
@@ -775,6 +787,9 @@ def apply_replacements(text, request=None):
     output = "\n".join(result)
     for key, value in placeholders.items():
         output = output.replace(key, value)
+    if titel_heben:
+        # Nur die erste Ueberschrift ist der Titel; alle weiteren bleiben h2.
+        output = re.sub(r"<h2>(.*?)</h2>", r"<h1>\1</h1>", output, count=1, flags=re.S)
     return output
 
 

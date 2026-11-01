@@ -25,9 +25,12 @@ Bilder erscheinen als kleines Vorschaubild am rechten Rand, Musik und Videos mit
 Jede Anweisung gilt für eine ganze Zeile oder steht innerhalb einer Zeile. Links steht jeweils, was Du schreibst, darunter, wie es aussieht.
 
 === Überschriften ===
- == Große Überschrift ==
- === Mittlere Überschrift ===
- ==== Kleine Überschrift ====
+ '''Ein Artikel beginnt mit seiner Überschrift.''' Die erste Zeile mit doppelten Gleichheitszeichen ist der Titel und wird groß gesetzt; alle weiteren sind Abschnitte und Unterabschnitte:
+ == Termine aufs Telefon ==
+ === Abschnitt ===
+ ==== Unterabschnitt ====
+
+Das erste doppelte Gleichheitszeichen ist immer der Titel. Jede weitere Zeile mit ``==`` ist ein Abschnitt, mit ``===`` eine Ebene tiefer.
 
 === Hervorheben ===
  ''kursiv'' und '''fett''' und ''''beides''''

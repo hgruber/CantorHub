@@ -198,7 +198,7 @@ def article_preview(request, name):
         _can_read, can_edit = _artikel_access(request.user, name)
         if not can_edit:
             raise PermissionDenied
-    return HttpResponse(apply_replacements(request.POST.get("text", ""), request))
+    return HttpResponse(apply_replacements(request.POST.get("text", ""), request, titel_heben=True))
 
 
 @login_required
@@ -243,7 +243,7 @@ def article_view(request, name):
 
     context = {
         "artikel": artikel,
-        "text": apply_replacements(artikel.text, request),
+        "text": apply_replacements(artikel.text, request, titel_heben=True),
         "seitentitel": f"{artikel.name} (vom {artikel.datum.strftime('%-d.%-m.%Y')})"
         if is_outdated
         else artikel.name,

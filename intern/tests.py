@@ -3524,7 +3524,35 @@ class MitteilungFormatiertTest(SimpleTestCase):
     def test_text_wird_weiterhin_ersetzt(self):
         from intern.models import Mitteilung
 
-        self.assertIn("<h4>Titel</h4>", Mitteilung(mitteilung="=====Titel=====").formatiert())
+        self.assertIn("<h5>Titel</h5>", Mitteilung(mitteilung="=====Titel=====").formatiert())
+
+
+class UeberschriftenEbenenTest(SimpleTestCase):
+    """Die Ebenen des Wiki-Markups (``intern/replacements.py``).
+
+    ``==`` ist ein Abschnitt (h2), nicht der Titel: die h1 einer Artikelseite
+    traegt die **erste** Ueberschrift, die ``views/artikel.py`` mit
+    ``titel_heben=True`` hervorhebt. Beides wird hier gepinnt, weil eine
+    stille Verschiebung sonst jede Hilfeseite flach macht.
+    """
+
+    def _rendern(self, text, **kwargs):
+        from intern import replacements
+
+        return replacements.apply_replacements(text, **kwargs)
+
+    def test_abschnitt_ist_h2(self):
+        self.assertIn("<h2>Abschnitt</h2>", self._rendern("==Abschnitt=="))
+        self.assertIn("<h3>Unter</h3>", self._rendern("===Unter==="))
+
+    def test_titel_hebt_nur_die_erste_ueberschrift(self):
+        html = self._rendern("==Titel==\nText\n==Abschnitt==", titel_heben=True)
+        self.assertEqual(html.count("<h1>"), 1)
+        self.assertIn("<h1>Titel</h1>", html)
+        self.assertIn("<h2>Abschnitt</h2>", html)
+
+    def test_forum_bleibt_ohne_h1(self):
+        self.assertNotIn("<h1>", self._rendern("==Abschnitt=="))
 
 
 class ForumTabelleTest(SimpleTestCase):
