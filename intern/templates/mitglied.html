@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load ui_tags %}
 {% load static %}
 {% block topbar_after %}{% comment %}
    Der Buchstabe der Stimme als Pille neben dem Namen (siehe .stimme-pille in
@@ -6,7 +7,7 @@
    auch bei einem unbekannten Code dasteht und fuer Screenreader lesbar bleibt.
    „keine Stimme" (N) wird per CSS ausgeblendet — kein Ton, kein Marker.
 {% endcomment %}<span class="stimme-pille stimme-{{ user.stimme|lower|default:'n' }}" title="Stimme: {{ user.get_stimme_display }}">{{ user.stimme|default:"N" }}</span>{% endblock %}
-{% block topbar_icon %}<svg class="topbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{% endblock %}
+{% block topbar_icon %}{% symbol "profil" class="topbar-icon" %}{% endblock %}
 {% block extra_js %}{% include "_leaflet_assets.html" %}{% endblock %}
 {% block content %}
 {% comment %}
@@ -31,7 +32,7 @@
     <div class="detail-page member-voice stimme-{{ user.stimme|lower|default:'n' }}">
         <div class="detail-header">
             <div class="detail-icon">
-                {% if user.avatar %}<img src="{{ user.avatar.url }}" alt="" />{% else %}<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{% endif %}
+                {% if user.avatar %}<img src="{{ user.avatar.url }}" alt="" />{% else %}{% symbol "profil" width="32" height="32" aria_hidden="true" %}{% endif %}
             </div>
             <div class="detail-info">
                 <h1>{{ user.first_name }} {{ user.last_name }}</h1>
