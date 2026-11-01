@@ -2338,9 +2338,9 @@ time {
 }
 
 .forum-entry form {
+    position: relative;
     display: flex;
     flex: 1;
-    gap: 8px;
     width: 100%;
     align-items: flex-end;
 }
@@ -2350,17 +2350,20 @@ time {
     min-height: 68px;
     resize: vertical;
     font-size: var(--fs-sm);
-    padding: 8px 10px;
+    /* Rechts Platz fuer Emoji-Knopf und Senden: sie liegen jetzt im Feld. */
+    padding: 8px 96px 8px 10px;
     line-height: 1.5;
 }
 
 .forum-entry button[type="submit"] {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
     width: 34px;
     height: 34px;
     padding: 0;
     border-radius: 50%;
     background: var(--brand);
-    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2368,13 +2371,15 @@ time {
 }
 
 .forum-entry .emoji-knopf {
+    position: absolute;
+    right: 50px;
+    bottom: 8px;
     width: 34px;
     height: 34px;
     padding: 0;
     border-radius: 50%;
     border: 1px solid var(--border);
-    background: transparent;
-    flex-shrink: 0;
+    background: var(--bg-card);
     justify-content: center;
     font-size: var(--fs-md);
     line-height: 1;
@@ -2405,7 +2410,9 @@ time {
     background: var(--forum-bg);
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    /* Mehr Luft als frueher (2 px): mit der neuen Kopfzeile ueber jeder Blase
+       trennt der Abstand die Beitraege, nicht mehr der Zeitstempel im Rand. */
+    gap: 10px;
 }
 
 /* Unread markers (intern/forum_gelesen.py) */
@@ -2434,26 +2441,57 @@ td.zahl .gesamtzahl { color: var(--text-muted); font-weight: 400; }
     border-top: 1px solid color-mix(in srgb, var(--brand) 45%, transparent);
 }
 
+/* Alle Beitraege stehen auf derselben linken Achse. Frueher liefen eigene
+   Nachrichten spiegelverkehrt von rechts — die Chat-Metapher zickzackte durch
+   einen Thread, in dem man von oben nach unten liest. Die eigene Nachricht
+   bleibt an der getoenten Blase erkennbar. */
 .message,
 .message_me {
     display: flex;
     align-items: flex-start;
+    gap: 10px;
     font-size: var(--fs-sm);
     line-height: 1.55;
 }
 
-.message_me { flex-direction: row-reverse; }
-
-.message .avatar {
+.message .avatar,
+.message_me .avatar {
     width: 42px;
-    margin-right: 10px;
     text-align: center;
     flex-shrink: 0;
 }
 
-.message_me .avatar { width: 0; }
+/* Autor und Zeit als Kopfzeile ueber der Blase — vorher stand der Name unter
+   dem Bild und der Zeitstempel in der Blase selbst (dort in --t4, 2,5:1). */
+.message-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
 
-.message .avatar img {
+.message-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: var(--fs-xs);
+    line-height: 1.3;
+}
+
+.message-autor {
+    font-weight: 600;
+    color: var(--t2);
+}
+
+.message-meta time {
+    color: var(--t3);
+    font-size: var(--fs-xs);
+}
+
+.message .avatar img,
+.message_me .avatar img {
     width: 38px;
     height: 38px;
     border-radius: 50%;
@@ -2463,20 +2501,13 @@ td.zahl .gesamtzahl { color: var(--text-muted); font-weight: 400; }
     display: block;
 }
 
-.message .avatar div {
-    margin-top: 3px;
-    /* Der Autorname ist Inhalt, nicht Beiwerk — deshalb xs, nicht 2xs. */
-    font-size: var(--fs-xs);
-    color: var(--t3);
-}
-
 div.avatar { cursor: pointer; }
 
 .message .content {
     background: var(--msg-bg);
-    border-radius: 2px 12px 12px 12px;
+    border-radius: 4px 12px 12px 12px;
     padding: 8px 12px;
-    max-width: 78%;
+    max-width: min(78%, 68em);
     width: max-content;
     flex: 0 1 auto;
     overflow-y: visible;
@@ -2486,9 +2517,9 @@ div.avatar { cursor: pointer; }
 
 .message_me .content_me {
     background: var(--msg-me-bg);
-    border-radius: 12px 2px 12px 12px;
+    border-radius: 4px 12px 12px 12px;
     padding: 8px 12px;
-    max-width: 78%;
+    max-width: min(78%, 68em);
     width: max-content;
     box-shadow: var(--shadow-xs);
     border: 1px solid var(--msg-me-border);
@@ -2497,21 +2528,18 @@ div.avatar { cursor: pointer; }
 .message .content p,
 .message_me .content_me p { margin: 0; }
 
-.message .content time,
-.message_me .content_me time {
-    display: block;
-    font-size: var(--fs-xs);
-    color: var(--t4);
-    margin-top: 3px;
-    text-align: right;
+/* ── Reaktionen (XEP-0444) ───────────────────────────────── */
+.message-fuss {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
 }
 
-/* ── Reaktionen (XEP-0444) ───────────────────────────────── */
 .reactions {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    margin-top: 5px;
 }
 .reactions:empty { display: none; }
 
@@ -2539,7 +2567,7 @@ div.avatar { cursor: pointer; }
 /* Dezenter "+"-Auslöser, erscheint beim Hover über der Nachricht. */
 .reaction-add {
     align-self: center;
-    margin: 0 6px;
+    margin: 0;
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -2555,6 +2583,9 @@ div.avatar { cursor: pointer; }
 .message:hover .reaction-add,
 .message_me:hover .reaction-add,
 .reaction-add:focus-visible { opacity: 1; }
+/* Ohne Zeiger gibt es kein Ueberfahren — auf dem Touchgeraet waere die
+   Reaktion sonst unerreichbar. */
+@media (hover: none) { .reaction-add { opacity: 1; } }
 .reaction-add:hover { border-color: var(--brand); color: var(--brand); }
 
 .reaction-picker {

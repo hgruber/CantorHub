@@ -30,6 +30,14 @@ Mitglieder" when open), so it shows up in `forum_aenderungen` next to the regula
 edits. The forum's audited fields are `thema`, `aktiv`, `bild_id`, `xmpp_muc_jid`
 (`_AUDIT_FIELDS` in `signals.py`).
 
+## Layout of a message
+
+`_message.html` puts every message on the same left axis: avatar, then a header line with author
+and time (`.message-meta`), then the bubble. Own messages are tinted (`.content_me`) rather than
+mirrored — the earlier chat-style `row-reverse` made a thread zigzag between two axes although it
+is read top to bottom. The bubble is content-wide, capped at `min(78%, 68em)`. The composer keeps
+its 🙂 and send buttons inside the field's bottom-right corner instead of beside it.
+
 ## Reactions
 
 Members can react to individual forum messages with emoji (XEP-0444), synced both ways with the
