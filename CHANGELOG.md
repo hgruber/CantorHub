@@ -18,6 +18,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Geändert
 
+- Oberfläche: Abstände folgen einem 4-px-Raster (2, 4, 8, 12, 16 …), ungerade Werte wie 7 oder 11 px gibt es nicht mehr; Radien kommen aus vier Stufen statt aus dreizehn Einzelwerten.
 - Forum: Alle Beiträge stehen auf einer linken Achse, Autor und Uhrzeit in einer Kopfzeile über der Blase statt in ihrem Rand. Emoji- und Senden-Knopf liegen jetzt im Eingabefeld, und der Reaktions-Knopf ist auf Touchgeräten dauerhaft sichtbar.
 - Kopfleiste: Die Aktionen stehen in vier Gruppen (Navigation, Werkzeuge, Dateien, Verwaltung), und Löschen hebt sich beim Überfahren in der Warnfarbe ab. Auf dem Handy wandern die Nebenaktionen in ein „…“-Menü mit Beschriftung, sodass der Seitentitel Platz behält.
 - Listen: Die Tabellen trennen ihre Zeilen nur noch mit dem Zebrastreifen; die zusätzliche, kaum sichtbare Zeilenlinie entfällt. Datum, Vorname, Stimme und Aufstellung stehen so breit wie ihr Inhalt, sodass zusammengehörige Angaben zusammenrücken.

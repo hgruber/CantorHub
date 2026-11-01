@@ -318,6 +318,11 @@ use CSS variables and add dark-mode values; avoid hardcoded hex values in compon
 `intern/startseite/statisch/startseite.css`, the public homepage, is the one stylesheet outside this
 rule — it has its own token block and follows `prefers-color-scheme`; see „Public homepage" below.
 
+**Spacing and shape are on a grid.** `gap` and `padding` use a 4 px grid — 2, 4, 8, 12, 16,
+20, 24 … — with 2 px only for optical half-steps; odd values (1, 3, 5, 7 … px) do not appear.
+Radii come from four tokens: `--r-xs` 2, `--r-sm` 4, `--r` 8, `--r-lg` 12; `999px`/`50%` are the
+pill and circle forms. A new value is a decision, not a local measurement.
+
 The accent colour is the one exception worth calling out explicitly: never hardcode the default `#2b6cb0`
 (or the old `#c14468`) in component styles — always reference `var(--brand)`, one of its
 derived tokens (`--brand-dark`, `--brand-light`, `--brand-ring`, `--brand-text`), or a fresh
