@@ -9,9 +9,8 @@ Gruppe „Mitglied"
     Die Vereinsmitgliedschaft. „Mitgliedschaft beenden" (``beende()``) nimmt Tag und
     Zugang zusammen weg, „wieder aufnehmen" bringt beides über ``nimm_auf()`` zurück.
     Tag ohne Zugang trägt das Fördermitglied. Umgekehrt gibt es Konten mit Zugang
-    **ohne** Mitgliedschaft — das
-    Chorleiter-Konto aus dem Altportal ist der Anlassfall (siehe ``migration.md``,
-    „What ``0003_import.py`` does“).
+    **ohne** Mitgliedschaft — das Chorleiter-Konto aus dem Altportal ist der
+    Anlassfall.
 
 Die Gruppe „Gründer" hat damit keine Funktion mehr; sie ist nur noch ein Etikett und
 darf später verschwinden.

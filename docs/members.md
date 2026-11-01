@@ -11,7 +11,7 @@
 | group „Mitglied" | club membership. Ending it („Mitgliedschaft beenden") removes the tag and the access together. |
 
 The two combine freely. The conductor's account from the
-legacy portal is „access, no tag" (`legacy_id=232`, see `migration.md`); „Fördermitglied"
+legacy portal is „access, no tag" (`legacy_id=232`); „Fördermitglied"
 (supporting member) is a member who does not take part, so tag without access.
 
 The tag also carries the permissions every member has — initially „Mitglieder: benachrichtigen"
@@ -127,9 +127,9 @@ address — and then no `date_joined` is stamped either, since the whole branch 
 An application marked `foerdermitglied` is approved by the same action: the account gets the tag
 „Mitglied" beside „Fördermitglied" and stays inactive, so no mail and no Eintrittsdatum.
 
-Applicants are not the only source of that `None`: the legacy import brings **every** member in
-without an Eintrittsdatum, gives the tag „Mitglied" to the founding members alone and
-deactivates everyone outside „Gründer" (`migration.md`, „What `0003_import.py` does"). The
+Applicants are not the only source of that `None`: the legacy import brought **every** member in
+without an Eintrittsdatum, gave the tag „Mitglied" to the founding members alone and
+deactivated everyone outside „Gründer". The
 accounts admitted later therefore take exactly this path — „Mitgliedschaft genehmigen" gives
 them tag and access, they receive the welcome mail, and the day of their admission becomes their
 Eintrittsdatum. Until then „Mitglied seit" is empty on their card (`mitglied.html`) and the

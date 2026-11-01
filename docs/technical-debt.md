@@ -165,8 +165,8 @@ mechanism:
 
 Deliberately **not** done, so the next audit does not raise it again:
 
-- **The two dead `Termin` columns stay** (`wiederholung`, `ctag`). They are written only by
-  `0003_import.py` and read nowhere — but they **carry data**: 179 rows with `ctag <> 0`, 9 with
+- **The two dead `Termin` columns stay** (`wiederholung`, `ctag`). Nothing writes them any more
+  and nothing reads them — but they **carry data**: 179 rows with `ctag <> 0`, 9 with
   `wiederholung ≠ 'e'`. Dropping them would be a deliberate, unrecoverable data loss for no gain.
   `wiederholung` is also declared `CharField(max_length=1)` while the CalDAV serialisation ignores
   it on purpose.
@@ -239,7 +239,7 @@ but the measured effect on this data set does not justify touching the code:
 
 ## Medium risk (15-30%) — need testing after fixing
 
-- **No DB-backed tests yet.** Any `TestCase` used to replay the data migration `0003_import` against the legacy MySQL server, so everything worth testing was written free of DB access (see `intern/tests.py`). Since October 2026 `0003_import` is empty and a test database builds without that environment; the `SimpleTestCase`-only rule in `CLAUDE.md` stands until it is lifted deliberately.
+- **No DB-backed tests yet.** Everything worth testing is written free of DB access (see `intern/tests.py`); the `SimpleTestCase`-only rule in `CLAUDE.md` stands until it is lifted deliberately.
 - `intern.js` (about 2,400 lines) puts most JS in one file with global namespace pollution (`appMainDz`, `toggle()`, `fileAction()`, `saveOrder()`). Should be split into modules.
 - Dropzone and Sortable are loaded unconditionally in `base.html` on every page (Leaflet and `osm-map.js` already load only where a map is shown, `_leaflet_assets.html`). Should be page-specific `<script>` loads.
 - Inline `<script>` blocks in 6 templates (`karte.html`, `termin.html`, `termin_edit.html`, `mitglied.html`, `artikel_history.html`, `ort_detail.html`) should be extracted to separate JS files. The shared OSM tile-referer patch has already been pulled out into `osm-map.js`; the map-init scripts themselves remain inline.

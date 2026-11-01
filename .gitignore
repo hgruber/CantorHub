@@ -35,6 +35,7 @@ Avatare/
 # Editor/IDE-specific files
 .idea/
 .vscode/
+.claude/settings.local.json
 .claw
 .clawd-todos.json
 *.sublime-project

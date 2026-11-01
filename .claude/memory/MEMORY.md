@@ -1,4 +1,0 @@
-- [Migration numbering constraint](feedback_migrations.md) — Never create migrations 0004+; all model changes go into models.py and are captured by the regenerated 0002
-- [Dark and Light Mode](project_dark_light_mode.md) — Dark/light mode is live: CSS token block, sidebar toggle, localStorage, prefers-color-scheme fallback
-- [Permission Structure](permission_structure.md) — Vollständige Referenz: Gruppen, PERMISSION_DEFS, View-Enforcement, Lücken und Korrekturregeln
-- [Media Access Architecture](project_media_access.md) — nginx auth_request gates /media/; HMAC capability URLs for XMPP clients; no expiry for MAM history

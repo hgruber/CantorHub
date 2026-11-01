@@ -452,7 +452,7 @@ goes. `aktuell` is the path of the *live* revision, so grouping by it is groupin
 (≈100 years), which switches the age rule off entirely: in production only the count rule
 bites, i.e. each file keeps its newest 25 revisions forever. That is deliberate — the avatar
 history imported from the legacy system would otherwise vanish on the next server start, since
-those `DateiVersion` rows carry the original file mtime as `datum` (see `../migration.md`).
+the imported avatar versions carry the original file mtime as `datum`.
 Consequence to keep in mind: **there is currently no time-based deletion of superseded file
 revisions in production.** A revision only disappears when 25 newer ones exist, when the last
 `filer.File` occurrence is deleted (`dateiablage.datei_loeschen` → `versionen_loeschen`), or on an

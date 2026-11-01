@@ -4,7 +4,7 @@ Guidance for Claude Code (claude.ai/code) when working in this repository. It is
 **developer** entry point: a map of the code, the rules that are not visible from any single
 file, and pointers to the topic documents. `README.md` is the public front page for choirs
 considering CantorHub (screenshots in `docs/screenshots/`); running and configuring a
-deployment is `INSTALL.md`; the one-time migration off the legacy PHP portal, which has run, is recorded in `migration.md`.
+deployment is `INSTALL.md`.
 
 **Language:** this file must be written strictly in English. Do not add German prose; code
 identifiers and string literals may remain in their original form. Note that the domain
@@ -225,19 +225,13 @@ reasoning where it matters.
   `python manage.py makemigrations intern --name <name>`, committed with the change.
   `start.sh` runs `migrate` on every container start, so a delivery brings its schema along;
   neither the `Dockerfile` nor `start.sh` calls `makemigrations` any more.
-  `MigrationenVollstaendigTest` fails while `models.py` and the migrations disagree. The first
-  three are history: `0001_initial`, `0002_add_filer` (frozen in October 2026 from the models
-  of v1.0.4, the state production was imported with — until then it was regenerated on every
-  build and never committed), `0003_import` (the one-time legacy import — it has run on the one
-  installation that needed it and **is never needed again**; since October 2026 it is an empty
-  placeholder that stays only because the chain hangs off it. Do not revive or fill it). New
-  migrations follow from `0004` on. **Every installation runs the same chain** — no branch, no
-  installation switch: a new one reaches the schema through `migrate` and its base data (groups,
-  standard folders, first administrator, first settings) through the first-run setup
-  (`intern/einrichtung.py`, `/einrichtung/`), so a migration from `0005` on must be correct on the
-  production data and on a freshly set-up database alike. Migrations run against a live MariaDB
-  with data: a nullable → non-nullable change needs a default or a data step in the migration
-  itself.
+  `MigrationenVollstaendigTest` fails while `models.py` and the migrations disagree.
+  **Every installation runs the same chain** — no branch, no installation switch: a new one
+  reaches the schema through `migrate` and its base data (groups, standard folders, first
+  administrator, first settings) through the first-run setup (`intern/einrichtung.py`,
+  `/einrichtung/`), so every new migration must be correct on the production data and on a
+  freshly set-up database alike. Migrations run against a live MariaDB with data: a
+  nullable → non-nullable change needs a default or a data step in the migration itself.
 - **A version tag needs its `CHANGELOG.md` section.** The tag is the release: the GitHub
   workflow `.github/workflows/abbild.yml` builds the multi-arch image (amd64 + arm64), runs the
   tests inside it, publishes it to `ghcr.io/hgruber/cantorhub` and creates the GitHub release
@@ -253,10 +247,9 @@ reasoning where it matters.
   would reach the portal as a card without a date. `ChangelogTest` guards the format the check
   parses, `AuslieferungenDateiTest` the group structure and the sentence rule, the release
   steps and the escape hatch are in `INSTALL.md`.
-- **All tests are `SimpleTestCase`.** A `TestCase` used to build a test database through the data
-  migration `0003_import`, which needed the legacy MySQL server; that file is empty now, but the
-  rule stands until it is lifted deliberately (`docs/technical-debt.md`). Keep logic free of DB
-  access and isolate the DB half in a thin wrapper so it stays testable (`lese_abmelde_token()`
+- **All tests are `SimpleTestCase`.** The rule keeps the suite free of a test database; it stands
+  until it is lifted deliberately (`docs/technical-debt.md`). Keep logic free of DB access and
+  isolate the DB half in a thin wrapper so it stays testable (`lese_abmelde_token()`
   vs. `read_abmelde_token()` is the pattern).
 - **The production database compares strings with `PAD SPACE`.** MariaDB's
   `utf8mb4_general_ci` treats `' ' = ''` as true; SQLite does not. A filter that has to tell a

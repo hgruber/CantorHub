@@ -249,11 +249,10 @@ diff redacted to `***` rather than logged in plaintext. The `post_migrate` env-v
 `_seed_config` runs with `_migrating.active` set, so it never shows up as a spurious "System"
 change on every restart.
 
-Choir-specific initial values (`VEREINSNAME`, `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`,
-`HOMEPAGE_AUFNAHME`, …) live in `seed_konfiguration` in `intern/migrations/0003_import.py` —
-those keys carry an empty-string default in `apps.py` and get their real content only via the
-data migration, so the codebase stays deployable for other organisations without pre-filled
-choir text.
+Choir-specific values (`VEREINSNAME`, `VEREINSNAME_KURZ`, `HOMEPAGE_UEBER_UNS`,
+`HOMEPAGE_AUFNAHME`, …) carry an empty-string default in `apps.py` and get their content from
+the `Konfiguration` table (first-run setup, settings page), so the codebase stays deployable
+for other organisations without pre-filled choir text.
 
 `VEREINSNAME` is exposed via `get_vereinsname()` in `app_settings.py`, injected into every
 template context by `config/context_processors.py` (`{{ vereinsname }}`), and into every email
@@ -296,7 +295,7 @@ The full key catalog and the mail-placeholder reference live in `configuration.m
   a deliberately reduced iteration count, because Django 6's default of 1,200,000 costs half a
   second of CPU per login. The module docstring carries the reasoning and the constraint.
 - `php_pbkdf2_hasher.py` — legacy password hasher for users migrated from the prior PHP
-  system; listed in `PASSWORD_HASHERS`. See `../migration.md`.
+  system; listed in `PASSWORD_HASHERS`.
 - `context_processors.py` — global template context (`VERSION`, `upload_max_mb`, notify
   poll/dismiss intervals, `vereinsname`, the next-event banner). **Computed once per
   request** and remembered on the request object: the processor costs about eleven

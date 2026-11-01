@@ -62,8 +62,8 @@ substitutes before parsing, so the announcement text is flattened by
 `mailingliste._ankuendigung_als_text()` to a single directive-free paragraph (tags to gaps,
 `{}`/`[]` removed) before it is substituted; a `{button:…:URL}` or `[URL Name]` in `Termin.extern`
 therefore cannot reach the mail as a real link. `Termin.lang` keeps no placeholder at all, for the
-same reason. The text of the reminder itself is choir-specific and is seeded by
-`seed_konfiguration` (`migrations/0003_import.py`) — `_CONFIG_DEFAULTS` carries `""` for it.
+same reason. The text of the reminder itself is choir-specific; `_CONFIG_DEFAULTS` carries `""`
+for it, the installation writes its own.
 
 Without `VEREINS_URL` or `EMAIL_HOST` the daemon **warns and writes no marker** rather than
 sending — a mail with a relative, i.e. dead, unsubscribe link is not defensible. Both are re-read

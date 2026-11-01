@@ -1,8 +1,7 @@
 # Installing and running CantorHub
 
 This file is for the people who **run** a CantorHub instance. What CantorHub is and what it
-offers is in `README.md`; developers start at `CLAUDE.md`; the one-time import from the legacy
-PHP portal is described in `migration.md` (history only — it has run).
+offers is in `README.md`; developers start at `CLAUDE.md`.
 
 ## Running it
 
