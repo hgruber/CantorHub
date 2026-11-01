@@ -323,6 +323,11 @@ rule — it has its own token block and follows `prefers-color-scheme`; see „P
 Radii come from four tokens: `--r-xs` 2, `--r-sm` 4, `--r` 8, `--r-lg` 12; `999px`/`50%` are the
 pill and circle forms. A new value is a decision, not a local measurement.
 
+**Page geometry** is one left axis — the sidebar edge — with capped widths: lists and the forum
+at `--content-max` (1400 px), detail pages at 1100 px, article prose at 800 px. Nothing is
+centred, so the left edge does not move when a list opens a detail page; on a 1920 px screen the
+cap is what keeps a table from drifting apart across the full width.
+
 The accent colour is the one exception worth calling out explicitly: never hardcode the default `#2b6cb0`
 (or the old `#c14468`) in component styles — always reference `var(--brand)`, one of its
 derived tokens (`--brand-dark`, `--brand-light`, `--brand-ring`, `--brand-text`), or a fresh

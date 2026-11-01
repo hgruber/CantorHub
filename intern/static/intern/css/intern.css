@@ -116,6 +116,10 @@
     --border:          #e5e7eb;
     --border-dark:     #d1d5db;
 
+    /* Inhaltsbreite: Listen duerfen breiter sein als Detailseiten, aber
+       keine volle Schirmbreite. Beide sind zentriert. */
+    --content-max: 1400px;
+
     /* Radius — vier Stufen, mehr gibt es nicht. 2 px nur fuer
        Kleinstflaechen (Aufstellungs-Kaestchen, Punktmarker). */
     --r-xs: 2px;
@@ -1313,6 +1317,11 @@ ul.errorlist {
     flex-direction: column;
     height: 100%;
     overflow: hidden;
+    /* Gedeckelt, nicht zentriert: alle Seiten beginnen an derselben Achse
+       (der Sidebar-Kante). Auf einem 1920er Schirm lief die Tabelle vorher
+       ueber die ganze Breite und die Spalten drifteten auseinander. */
+    width: 100%;
+    max-width: var(--content-max);
 }
 
 /* =================================================== */
@@ -2318,6 +2327,8 @@ time {
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    width: 100%;
+    max-width: var(--content-max);
 }
 
 .forum-entry {
@@ -2757,7 +2768,6 @@ div.avatar { cursor: pointer; }
    Seite ohne Stimme („N") und bei unbekanntem Code (stimme-x) genau wie heute:
    gleiche Geometrie, nur ohne Ton. */
 .detail-page.member-voice {
-    max-width: 1100px;
     border-left: calc(4rem / 14) solid var(--stimme-farbe, transparent);
     padding-left: 20px;
 }
@@ -2873,6 +2883,10 @@ table.mitglied-table tr.stimme-group-start td {
 /* =================================================== */
 .detail-page {
     padding: 20px 24px;
+    /* Dieselbe Achse wie die Listen (linke Kante), aber Lesebreite statt
+       Tabellenbreite: die Dokumentation nennt hier seit jeher 1100 px, nur
+       die Mitgliederseite hielt sich daran. */
+    max-width: 1100px;
 }
 
 .detail-header {
