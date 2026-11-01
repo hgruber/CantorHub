@@ -17,6 +17,15 @@ compliance items are tracked separately in `datenschutz.md`.
   `HOSTING_ANBIETER_NAME`), English for purely technical admin values
   (`EJABBERD_API_TIMEOUT`, `OSM_TILE_URL`).
 
+## Articles without a leading heading have no `h1`
+
+The article title is the first `==` line of the text, not a template element —
+`apply_replacements(..., titel_heben=True)` promotes it. An article that starts with a paragraph
+therefore renders without any `h1`; the page's only title is then the topbar label. A fallback
+would render `artikel.name` as the `h1` when the text carries no heading, but it needs a way to
+tell the two apart in the template, so it is deferred. Measured November 2026: every shipped
+help article starts with `==`, so the case has not occurred yet.
+
 ## Configuration structure (low risk) — measured September 2026
 
 The `Konfiguration` catalog itself is in good shape: 91 keys, 11 groups plus the rest group,

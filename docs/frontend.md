@@ -10,11 +10,15 @@ All list views use django-tables2 with clickable rows (`data-href` on `<tr>`). E
 navigates to a detail page. Detail pages have an edit button in the top bar (via `edit`/`id`
 context variables rendered in `base.html`).
 
-Every table is zebra-striped (`--bg-row-alt` on even `tbody` rows) except those that colour
-their rows themselves: the member list (voice colours), wiki tables (own stripes), the
-permission matrix and the article diff. They are listed in the `:not()` of the stripe rule in
-`intern.css`; a new table with its own row colouring belongs there too. The rule is wrapped in
-`:where()` so hover, drag-over and the live-refresh flash still win over it.
+Every table is zebra-striped (`--bg-row-alt` on even `tbody` rows) and relies on **that stripe
+alone** — the per-row 1 px border was dropped in November 2026; it sat in `--bg-row-hover`,
+where it was invisible, and competed with the stripe. Tables that draw their own grid or colour
+their rows themselves are excluded: wiki tables (own grid), the permission matrix and the
+article diff. They are listed in the `:not()` of the stripe rule in `intern.css`; a new table
+with its own row colouring belongs there too. The rule is wrapped in `:where()` so hover,
+drag-over and the live-refresh flash still win over it. The member list *is* striped; its voice
+bar is an inset box-shadow on `td:first-child`, and a 2 px top border marks the start of a voice
+group when the list is sorted by voice.
 
 | URL pattern | View | Template |
 |---|---|---|
