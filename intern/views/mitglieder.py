@@ -628,6 +628,11 @@ def mitglied_benachrichtigen(request):
 
     notify_groups = _notify_groups(request.user)
     notify_groups_data = _notify_groups_data(notify_groups)
+    # Standardmäßig unterschreibt nur der Gruppenname; die Namen ihrer Mitglieder
+    # erscheinen in Signatur und Vorschau nur, wenn die Konfiguration es vorsieht.
+    if not get_config_bool("MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN"):
+        for gd in notify_groups_data:
+            gd["members"] = []
     valid_group_ids = {g.pk for g in notify_groups}
 
     # Ohne SMTP-Server schreibt intern/email_backend.py die Nachricht nur ins Log.

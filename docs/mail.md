@@ -25,7 +25,7 @@ There are four, and there is no per-mail template:
 |---|---|
 | `emails/base.html` | the frame — card, logo header with `{vereinsname}`, footer text from `MAIL_FOOTER` |
 | `emails/generic.html` | renders `body_html`; the default for everything |
-| `emails/mitglied_benachrichtigung.html` | round mail; adds the signature block via the `after_body` block — group and its members, then „Gesendet von" with the sender's name |
+| `emails/mitglied_benachrichtigung.html` | round mail; adds the signature block via the `after_body` block — the group's name (its member names only with `MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN`), then „Gesendet von" with the sender's name |
 | `emails/mailingliste.html` | gig reminders; renders the unsubscribe link structurally |
 
 ## The mails
@@ -44,8 +44,10 @@ There are four, and there is no per-mail template:
 | Gig list: opt-in, welcome, already subscribed, reminder | `MAIL_MAILINGLISTE_OPTIN` / `_WILLKOMMEN` / `_BEREITS_ANGEMELDET` / `_ERINNERUNG` | the subscriber | see `mailinglist.md` |
 
 Two switches worth knowing: **`MAIL_BEI_AKTIVIERUNG`** (`1`/`0`) governs the activation *and*
-reactivation mail together — useful while testing — and an empty `MAIL_*` key produces a mail
-with an empty body, not an error.
+reactivation mail together — useful while testing — and **`MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN`**
+(`1`/`0`, default `0`) decides whether the round mail's group signature lists the group's member
+names below the group name; the composer's signature preview follows the same switch. An empty
+`MAIL_*` key produces a mail with an empty body, not an error.
 
 The admin notification composes conditional add-on texts through `extra_keys`:
 `MAIL_ANTRAG_ADMIN_MINDERJAEHRIG` when the applicant is a minor at submission time and

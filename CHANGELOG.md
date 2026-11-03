@@ -7,6 +7,12 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Rundmail: Die Mitgliedernamen unter der Gruppensignatur lassen sich in der Konfiguration abschalten (`MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN`, standardmäßig aus). Ohne sie unterschreibt nur der Gruppenname, in der gesendeten Mail wie in der Vorschau im Formular.
+
 ## v1.2.4 — 2026-11-01
 
 ### Hinzugefügt

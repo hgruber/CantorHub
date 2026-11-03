@@ -5,7 +5,7 @@
     const deleteIds = new Set();
     let tempIdCounter = 0;
 
-    const MAIL_NON_TEXT_KEYS = ["MAIL_BEI_AKTIVIERUNG"];
+    const MAIL_NON_TEXT_KEYS = ["MAIL_BEI_AKTIVIERUNG", "MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN"];
     const STORAGE_KEY = "konfig-gruppen-offen";
     // Wie SCHLUESSEL in intern/smtp_zugang.py.
     const SMTP_SCHLUESSEL = ["EMAIL_HOST", "EMAIL_PORT", "EMAIL_HOST_USER",

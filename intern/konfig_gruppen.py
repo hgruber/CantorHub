@@ -31,6 +31,7 @@ FELDTYPEN: dict[str, str] = {
     "CALDAV_AKTIV": "bool",
     "CALDAV_GEBURTSTAGE": "bool",
     "MAIL_BEI_AKTIVIERUNG": "bool",
+    "MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN": "bool",
     "TERMIN_BANNER_AKTIV": "bool",
     # int (gelesen via get_config_int — SATZUNG_FILE_ID / BEITRAGSORDNUNG_FILE_ID /
     # MAP_CENTER_ID sind PKs für FilerFile.objects.get / Ort.objects.get)
@@ -201,6 +202,7 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     # E-Mail-Versand — SMTP-Verbindung, dann Absender, dann Global-Schalter
     "EMAIL_HOST", "EMAIL_PORT", "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD",
     "EMAIL_USE_TLS", "EMAIL_USE_SSL", "DEFAULT_FROM_EMAIL", "MAIL_BEI_AKTIVIERUNG",
+    "MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN",
     # E-Mail-Texte — Mitglied-Lebenszyklus
     "MAIL_EINLADUNG", "MAIL_ANTRAG", "MAIL_ANTRAG_ADMIN",
     "MAIL_ANTRAG_ADMIN_MINDERJAEHRIG", "MAIL_ANTRAG_ADMIN_FOERDER",
@@ -405,6 +407,8 @@ GRUPPEN: tuple[Gruppe, ...] = (
             # Schalter (1/0), der MAIL_WILLKOMMEN/MAIL_REAKTIVIERT unterdrückt —
             # kein Text, deshalb auch heute schon in MAIL_NON_TEXT_KEYS des JS.
             "MAIL_BEI_AKTIVIERUNG",
+            # Schalter (1/0) für die Mitgliedernamen unter der Rundmail-Signatur.
+            "MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN",
         ),
         praefixe=("EMAIL_",),
     ),

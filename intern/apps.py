@@ -224,6 +224,12 @@ _CONFIG_DEFAULTS = [
         "Aktivierungsmails versenden (0 = deaktiviert, z.B. während Tests)",
     ),
     (
+        "MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN",
+        "0",
+        "Namen der Gruppenmitglieder unter der Signatur der Rundmail anzeigen "
+        "(1/0). Aus → nur der Gruppenname unterschreibt.",
+    ),
+    (
         "MAIL_BESTAETIGUNG",
         "Liebe/r {vorname},\n\n"
         "wir bitten Dich, Deine im Mitgliederportal gespeicherten Daten zu prüfen "
