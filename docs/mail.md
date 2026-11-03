@@ -62,6 +62,8 @@ real mail frame — the same template and context as the send path through
 `mail.render_branded_mail()` — under a mail-client header with sender, recipient and subject.
 Placeholders are filled with sample values from the registry at the top of
 `intern/mailvorschau.py`; the logo is embedded as a data URI instead of the `cid:logo` attachment.
+Sample links (buttons, `{link}`, the unsubscribe link) target `#`, so a click never leaves for a
+made-up host — the preview shows the look, not a working flow.
 A mail text without a registry entry gets no link — add one there when adding a mail.
 `MailvorschauTest` checks that every registered key is a text config key and renders.
 

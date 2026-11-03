@@ -9200,6 +9200,9 @@ class MailvorschauTest(SimpleTestCase):
             # Das Logo steht als Data-URI im Rahmen, nicht mehr als cid:-Verweis.
             self.assertIn("data:image/png;base64,", daten["html"], msg=key)
             self.assertNotIn("cid:logo", daten["html"], msg=key)
+            # Beispiel-Links bleiben auf der Seite; ein erfundener Host endet
+            # im Browser als „Server nicht gefunden“.
+            self.assertNotIn("portal.example.org", daten["html"], msg=key)
 
     def test_platzhalter_werden_gefuellt(self):
         from unittest.mock import patch

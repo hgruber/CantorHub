@@ -20,10 +20,10 @@ from .app_settings import (
 )
 from .mail import logo_pfad, render_branded_mail, render_config_mail
 
-# Beispielwerte für Links und Empfänger. Kein Link führt irgendwohin, was beim
-# Aufruf etwas auslösen könnte.
-PORTAL = "https://portal.example.org"
-ABMELDE = f"{PORTAL}/auftritte/abmelden/beispiel/"
+# Alle Beispiel-Links zeigen auf "#". Ein erfundener Host wie
+# portal.example.org endet im Browser als „Server nicht gefunden“; die
+# Vorschau soll das Aussehen zeigen, nicht navigieren.
+ZIEL = "#"
 
 
 class BeispielMitglied:
@@ -66,7 +66,7 @@ class Vorschau:
 
 def _mailingliste(betreff="", **platzhalter):
     gemeinsam = {
-        "abmelden": ABMELDE,
+        "abmelden": ZIEL,
         "name": "Anna Beispiel",
         "name_anrede": " Anna",
         "email": "anna.beispiel@example.org",
@@ -76,59 +76,59 @@ def _mailingliste(betreff="", **platzhalter):
         template="emails/mailingliste.html",
         betreff=betreff,
         empfaenger="anna.beispiel@example.org",
-        link=gemeinsam.pop("link", ABMELDE),
+        link=gemeinsam.pop("link", ZIEL),
         mit_benutzer=False,
         platzhalter=gemeinsam,
-        kontext={"abmelde_url": ABMELDE},
+        kontext={"abmelde_url": ZIEL},
     )
 
 
 VORSCHAU: dict[str, Vorschau] = {
     "MAIL_EINLADUNG": Vorschau(
         betreff="Einladung zu {vereinsname_lang}",
-        link=f"{PORTAL}/intern/beitritt/beispiel/",
+        link=ZIEL,
         mit_benutzer=False,
     ),
     "MAIL_ANTRAG": Vorschau(betreff="Dein Mitgliedsantrag bei {vereinsname}"),
     "MAIL_ANTRAG_ADMIN": Vorschau(
         betreff="Neuer Mitgliedsantrag",
         empfaenger="vorstand@example.org",
-        link=f"{PORTAL}/intern/mitglied/1/",
+        link=ZIEL,
     ),
     "MAIL_ANTRAG_ADMIN_MINDERJAEHRIG": Vorschau(
         betreff="Neuer Mitgliedsantrag",
         empfaenger="vorstand@example.org",
-        link=f"{PORTAL}/intern/mitglied/1/",
+        link=ZIEL,
         text_key="MAIL_ANTRAG_ADMIN",
         extra_keys=("MAIL_ANTRAG_ADMIN_MINDERJAEHRIG",),
     ),
     "MAIL_ANTRAG_ADMIN_FOERDER": Vorschau(
         betreff="Neuer Mitgliedsantrag",
         empfaenger="vorstand@example.org",
-        link=f"{PORTAL}/intern/mitglied/1/",
+        link=ZIEL,
         text_key="MAIL_ANTRAG_ADMIN",
         extra_keys=("MAIL_ANTRAG_ADMIN_FOERDER",),
     ),
     "MAIL_WILLKOMMEN": Vorschau(
         betreff="Willkommen bei {vereinsname}",
-        link=f"{PORTAL}/intern/login/",
+        link=ZIEL,
         kontext={"mail_title": "Willkommen bei {vereinsname}"},
     ),
     "MAIL_REAKTIVIERT": Vorschau(
         betreff="Dein Konto bei {vereinsname} wurde wieder aktiviert",
-        link=f"{PORTAL}/intern/login/",
+        link=ZIEL,
         kontext={"mail_title": "Dein Konto bei {vereinsname} wurde wieder aktiviert"},
     ),
     "MAIL_BESTAETIGUNG": Vorschau(
         betreff="Bitte bestätige Deine Mitgliedsdaten",
-        link=f"{PORTAL}/intern/bestaetigung/beispiel/",
+        link=ZIEL,
     ),
     "MAIL_BESTAETIGUNG_BESTAETIGT": Vorschau(
         betreff="Deine Datenbestätigung – {vereinsname}",
     ),
     "MAIL_NEUES_PASSWORT": Vorschau(
         betreff="Passwort zurücksetzen",
-        link=f"{PORTAL}/intern/reset/beispiel/",
+        link=ZIEL,
         kontext={"mail_title": "Passwort zurücksetzen"},
     ),
     "MAIL_RUNDMAIL": Vorschau(
@@ -142,7 +142,7 @@ VORSCHAU: dict[str, Vorschau] = {
     ),
     "MAIL_MAILINGLISTE_OPTIN": _mailingliste(
         betreff="Bitte bestätige Deine Anmeldung",
-        link=f"{PORTAL}/auftritte/bestaetigen/beispiel/",
+        link=ZIEL,
     ),
     "MAIL_MAILINGLISTE_WILLKOMMEN": _mailingliste(
         betreff="Willkommen auf unserer Auftritts-Liste",
