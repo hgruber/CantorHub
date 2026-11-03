@@ -12,6 +12,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 ### Hinzugefügt
 
 - Rundmail: Die Mitgliedernamen unter der Gruppensignatur lassen sich in der Konfiguration abschalten (`MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN`, standardmäßig aus). Ohne sie unterschreibt nur der Gruppenname, in der gesendeten Mail wie in der Vorschau im Formular.
+- Konfiguration: Jeder E-Mail-Text hat in seiner Beschreibung einen Link „Vorschau“, der die gespeicherte Fassung im Mail-Rahmen mit Absender, Empfänger, Betreff und Beispielwerten für die Platzhalter zeigt. Die Seite nutzt dieselben Vorlagen wie der Versand.
 
 ## v1.2.4 — 2026-11-01
 

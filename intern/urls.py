@@ -43,6 +43,11 @@ urlpatterns = [
     path("notify/", views.site_notify, name="site_notify"),
     # Konfiguration URLs
     path("konfiguration/", views.konfiguration, name="konfiguration"),
+    path(
+        "konfiguration/vorschau/<str:key>/",
+        views.mailvorschau,
+        name="mailvorschau",
+    ),
     path("sicherung/", views.sicherung, name="sicherung"),
     path("sicherung/entfernen/<str:geraet_id>/", views.sicherung_entfernen,
          name="sicherung_entfernen"),

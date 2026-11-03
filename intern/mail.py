@@ -45,6 +45,39 @@ _MAIL_FARBE = {
 _SMTP_POLICY = _email_policy.compat32.clone(linesep="\r\n")
 
 
+def render_branded_mail(template, context, text_body=None):
+    """Render ``template`` with the shared mail context, without sending.
+
+    Returns the ``(html, plain)`` pair. Used by ``send_branded_mail`` and by the
+    configuration preview (``intern/mailvorschau.py``), so both see the same
+    frame, brand colours and footer.
+    """
+    footer = render_config_mail("MAIL_FOOTER")[1].strip()
+    html_message = render_to_string(template, {
+        "vereinsname":      get_vereinsname(),
+        "vereinsname_lang": get_vereinsname_lang(),
+        "vereinsname_kurz": get_vereinsname_kurz(),
+        "brand_farbe":      get_brand_farbe(),
+        **_MAIL_FARBE,
+        "text_body":        text_body,
+        "mail_footer":      footer,
+        **context,
+    })
+    plain = text_body or (
+        "Bitte öffne diese Nachricht in einem HTML-fähigen E-Mail-Programm."
+    )
+    if footer:
+        plain = f"{plain.rstrip()}\n\n-- \n{footer}"
+    return html_message, plain
+
+
+def logo_pfad():
+    """The mail logo file, or ``None`` when no installation provides one."""
+    from intern.templatetags.startseite_tags import finde_statisch
+
+    return finde_statisch(_LOGO)
+
+
 def send_branded_mail(subject, to, template, context, text_body=None, attachments=None,
                       headers=None, connection=None):
     """Render ``template`` to HTML and send it as a branded email.
@@ -63,28 +96,11 @@ def send_branded_mail(subject, to, template, context, text_body=None, attachment
     if not recipients:
         return False
 
-    footer = render_config_mail("MAIL_FOOTER")[1].strip()
-    html_message = render_to_string(template, {
-        "vereinsname":      get_vereinsname(),
-        "vereinsname_lang": get_vereinsname_lang(),
-        "vereinsname_kurz": get_vereinsname_kurz(),
-        "brand_farbe":      get_brand_farbe(),
-        **_MAIL_FARBE,
-        "text_body":        text_body,
-        "mail_footer":      footer,
-        **context,
-    })
-    plain = text_body or (
-        "Bitte öffne diese Nachricht in einem HTML-fähigen E-Mail-Programm."
-    )
-    if footer:
-        plain = f"{plain.rstrip()}\n\n-- \n{footer}"
+    html_message, plain = render_branded_mail(template, context, text_body)
 
     related = MIMEMultipart("related")
     related.attach(MIMEText(html_message, "html", "utf-8"))
-    from intern.templatetags.startseite_tags import finde_statisch
-
-    logo_path = finde_statisch(_LOGO)
+    logo_path = logo_pfad()
     if logo_path:
         with open(logo_path, "rb") as f:
             logo_img = MIMEImage(f.read())

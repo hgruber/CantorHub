@@ -9171,3 +9171,48 @@ class WiederherstellungTest(SimpleTestCase):
         # Ohne Klon bleibt die Adresse leer — VEREINS_URL kommt dann aus der Sicherung.
         _, geschrieben = self._seite(anfrage, {**zustand, "klon": False})
         self.assertEqual(geschrieben[-1]["klon_url"], "")
+
+
+class MailvorschauTest(SimpleTestCase):
+    """Die Vorschau der Mailtexte — Registrierung und Rendern ohne DB."""
+
+    def test_jeder_vorschau_schluessel_ist_ein_mailtext(self):
+        from intern.apps import _CONFIG_DEFAULTS
+        from intern.konfig_gruppen import FELDTYPEN
+        from intern.mailvorschau import VORSCHAU
+        defaults = {key for key, _value, _desc in _CONFIG_DEFAULTS}
+        for key in VORSCHAU:
+            self.assertIn(key, defaults, msg=f"{key!r} fehlt in _CONFIG_DEFAULTS")
+            self.assertEqual(FELDTYPEN.get(key), "text", msg=f"{key!r} ist kein Mailtext")
+
+    def test_unbekannter_schluessel_hat_keine_vorschau(self):
+        from intern.mailvorschau import hat_vorschau, vorschau
+        self.assertFalse(hat_vorschau("VEREINSNAME"))
+        self.assertIsNone(vorschau("VEREINSNAME"))
+
+    def test_jede_vorschau_rendert_den_mailrahmen(self):
+        from intern.mailvorschau import VORSCHAU, vorschau
+        for key in VORSCHAU:
+            daten = vorschau(key)
+            self.assertIsNotNone(daten, msg=key)
+            self.assertTrue(daten["betreff"], msg=f"{key}: kein Betreff")
+            self.assertIn("<html", daten["html"], msg=key)
+            # Das Logo steht als Data-URI im Rahmen, nicht mehr als cid:-Verweis.
+            self.assertIn("data:image/png;base64,", daten["html"], msg=key)
+            self.assertNotIn("cid:logo", daten["html"], msg=key)
+
+    def test_platzhalter_werden_gefuellt(self):
+        from unittest.mock import patch
+        from intern.mailvorschau import vorschau
+        texte = {
+            "MAIL_WILLKOMMEN": "Hallo {vorname}, Dein Konto '''{user}''' ist bereit.",
+            "MAIL_FOOTER": "",
+        }
+        with patch(
+            "intern.mail.get_config",
+            side_effect=lambda key, default=None: texte.get(key, default),
+        ):
+            html = vorschau("MAIL_WILLKOMMEN")["html"]
+        self.assertIn("Hallo Anna", html)
+        self.assertIn("anna.beispiel", html)
+        self.assertNotIn("{vorname}", html)

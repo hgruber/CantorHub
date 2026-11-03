@@ -1,19 +1,21 @@
 import json
 
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
 from ..bot_passwort import EJABBERD, SCHLUESSEL, bot_passwort_weg, lokalteil
 from ..konfig_gruppen import (
     abgeschaltete_dienste, fehlende_schluessel, gruppiere, zaehle_unvollstaendig,
 )
+from ..mailvorschau import hat_vorschau, vorschau
 from ..models import Konfiguration
 from ..smtp_zugang import (
     FEHLER_TLS_SSL, PRUEFEN, TEXT_TLS_SSL, anmeldung_pruefen, smtp_pruefung, zusammengefuehrt,
 )
 
-__all__ = ["konfiguration"]
+__all__ = ["konfiguration", "mailvorschau"]
 
 
 @login_required
@@ -116,14 +118,39 @@ def konfiguration(request):
     leer = zaehle_unvollstaendig(rows)
     fehlend = fehlende_schluessel(row["key"] for row in rows)
     dienste = abgeschaltete_dienste(rows)
+    gruppen = gruppiere(rows)
+    for gruppe in gruppen:
+        for eintrag in gruppe["eintraege"]:
+            if hat_vorschau(eintrag["key"]):
+                eintrag["vorschau_url"] = reverse(
+                    "mailvorschau", args=[eintrag["key"]]
+                )
     return render(request, "konfiguration.html", {
         "seitentitel": "Konfiguration",
         "hilfe_seite": "Hilfe:Konfiguration",
-        "gruppen": gruppiere(rows),
+        "gruppen": gruppen,
         "mangel_leer": leer,
         "mangel_fehlend": fehlend,
         "dienste_aus": dienste,
         "banner_warnung": leer > 0 or bool(fehlend),
         "banner_zeigen": leer > 0 or bool(fehlend) or bool(dienste),
         "show_search": True,
+    })
+
+
+@login_required
+def mailvorschau(request, key):
+    """Die gespeicherte Fassung eines Mailtextes im Mail-Rahmen zeigen.
+
+    Dieselbe Schwelle wie die Konfiguration selbst: nur Superuser. Der Hinweis
+    auf der Seite nennt bei Bedarf, dass hier der gespeicherte Stand steht.
+    """
+    if not request.user.is_superuser:
+        return redirect("article_view", name="Aktuell")
+    daten = vorschau(key)
+    if daten is None:
+        raise Http404
+    return render(request, "mailvorschau.html", {
+        "seitentitel": f"Vorschau: {key}",
+        **daten,
     })

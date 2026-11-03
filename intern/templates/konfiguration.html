@@ -102,6 +102,13 @@
                     <button type="button" class="kf-desc-edit" title="Beschreibung bearbeiten" aria-label="Beschreibung bearbeiten">
                         {% symbol "stift" width="12" height="12" %}
                     </button>
+                    {% if eintrag.vorschau_url %}
+                    <a class="kf-desc-vorschau" href="{{ eintrag.vorschau_url }}"
+                       target="_blank" rel="noopener"
+                       title="Vorschau dieser E-Mail im Mail-Rahmen">
+                        {% symbol "umschlag" width="12" height="12" %}Vorschau
+                    </a>
+                    {% endif %}
                     <input type="text" class="inline-input kf-desc-input" maxlength="256" value="{{ eintrag.description }}" hidden>
                 </div>
             </div>

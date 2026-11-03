@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load ui_tags %}
+{% block topbar_icon %}{% symbol "umschlag" class="topbar-icon" %}{% endblock %}
+{% block content %}
+<div class="mv-page">
+  <p class="mv-hinweis">
+    Vorschau des gespeicherten Textes <code>{{ key }}</code> mit Beispielwerten für die
+    Platzhalter. Ungespeicherte Änderungen erscheinen erst nach „Änderungen anwenden“
+    und erneutem Laden.
+  </p>
+
+  <div class="mv-kopf">
+    <div class="mv-zeile"><span class="mv-label">Von</span><span class="mv-wert">{{ von }}</span></div>
+    <div class="mv-zeile"><span class="mv-label">An</span><span class="mv-wert">{{ an }}</span></div>
+    <div class="mv-zeile"><span class="mv-label">Betreff</span><span class="mv-wert mv-betreff">{{ betreff }}</span></div>
+  </div>
+
+  <iframe class="mv-rahmen" title="Vorschau der E-Mail" srcdoc="{{ html }}"></iframe>
+</div>
+{% endblock %}

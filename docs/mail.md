@@ -54,6 +54,17 @@ The admin notification composes conditional add-on texts through `extra_keys`:
 `MAIL_ANTRAG_ADMIN_FOERDER` for a supporting membership. They are rendered at the `{hinweise}`
 placeholder of the main text.
 
+## Preview
+
+Every `MAIL_*` text in `/intern/konfiguration/` carries a „Vorschau" link to
+`/intern/konfiguration/vorschau/<key>/` (superuser only). The page shows the saved text inside the
+real mail frame — the same template and context as the send path through
+`mail.render_branded_mail()` — under a mail-client header with sender, recipient and subject.
+Placeholders are filled with sample values from the registry at the top of
+`intern/mailvorschau.py`; the logo is embedded as a data URI instead of the `cid:logo` attachment.
+A mail text without a registry entry gets no link — add one there when adding a mail.
+`MailvorschauTest` checks that every registered key is a text config key and renders.
+
 ## Markup
 
 `intern/mail_markup.py` renders one config text into **both** MIME parts (HTML with inline

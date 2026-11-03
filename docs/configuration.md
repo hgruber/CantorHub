@@ -118,6 +118,9 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `MAIL_ANTRAG_ADMIN_MINDERJAEHRIG` / `MAIL_ANTRAG_ADMIN_FOERDER` (conditional notes appended to the admin mail; rendered at `{hinweise}`)
 - `MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing; a switch, not a text)
 - `MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN` (`1`/`0`, default `0` — show the group's member names below the group name in the round mail's signature and its composer preview; off means only the group name signs)
+
+Every mail text links to a preview page (`/intern/konfiguration/vorschau/<key>/`) from its
+description; see „Preview" in `docs/mail.md`.
 - `MAIL_BESTAETIGUNG` (re-confirmation invitation email)
 - `MAIL_BESTAETIGUNG_BESTAETIGT` (quittance mail after member confirms data)
 - `MAIL_EINLADUNG` (invite email sent to an email address before registration; no user object → only `{link}` and the `{vereinsname*}` placeholders)
