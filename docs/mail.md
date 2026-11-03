@@ -64,6 +64,11 @@ Placeholders are filled with sample values from the registry at the top of
 `intern/mailvorschau.py`; the logo is embedded as a data URI instead of the `cid:logo` attachment.
 Sample links (buttons, `{link}`, the unsubscribe link) target `#`, so a click never leaves for a
 made-up host — the preview shows the look, not a working flow.
+
+The frame itself is loaded from its own address (`…/vorschau/<key>/mail/`,
+`mailvorschau_rahmen`), not from `srcdoc`: the portal sends `X-Frame-Options: DENY`, and Firefox
+applies that to a `srcdoc` iframe as well, showing „Firefox darf diese eingebettete Seite nicht
+öffnen“. That view is `@xframe_options_exempt` and keeps the same superuser check.
 A mail text without a registry entry gets no link — add one there when adding a mail.
 `MailvorschauTest` checks that every registered key is a text config key and renders.
 

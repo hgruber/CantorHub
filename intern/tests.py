@@ -9186,9 +9186,19 @@ class MailvorschauTest(SimpleTestCase):
             self.assertEqual(FELDTYPEN.get(key), "text", msg=f"{key!r} ist kein Mailtext")
 
     def test_unbekannter_schluessel_hat_keine_vorschau(self):
-        from intern.mailvorschau import hat_vorschau, vorschau
+        from intern.mailvorschau import hat_vorschau, vorschau, vorschau_kopf
         self.assertFalse(hat_vorschau("VEREINSNAME"))
         self.assertIsNone(vorschau("VEREINSNAME"))
+        self.assertIsNone(vorschau_kopf("VEREINSNAME"))
+
+    def test_kopf_ohne_rahmen(self):
+        # Die Vorschauseite braucht nur die Kopfzeilen; der Rahmen lädt aus
+        # einer eigenen Adresse (X-Frame-Options, siehe docs/mail.md).
+        from intern.mailvorschau import vorschau_kopf
+        kopf = vorschau_kopf("MAIL_WILLKOMMEN")
+        self.assertEqual(kopf["key"], "MAIL_WILLKOMMEN")
+        self.assertTrue(kopf["betreff"])
+        self.assertNotIn("html", kopf)
 
     def test_jede_vorschau_rendert_den_mailrahmen(self):
         from intern.mailvorschau import VORSCHAU, vorschau

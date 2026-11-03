@@ -48,6 +48,11 @@ urlpatterns = [
         views.mailvorschau,
         name="mailvorschau",
     ),
+    path(
+        "konfiguration/vorschau/<str:key>/mail/",
+        views.mailvorschau_rahmen,
+        name="mailvorschau_rahmen",
+    ),
     path("sicherung/", views.sicherung, name="sicherung"),
     path("sicherung/entfernen/<str:geraet_id>/", views.sicherung_entfernen,
          name="sicherung_entfernen"),

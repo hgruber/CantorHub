@@ -15,6 +15,7 @@
     <div class="mv-zeile"><span class="mv-label">Betreff</span><span class="mv-wert mv-betreff">{{ betreff }}</span></div>
   </div>
 
-  <iframe class="mv-rahmen" title="Vorschau der E-Mail" srcdoc="{{ html }}"></iframe>
+  <iframe class="mv-rahmen" title="Vorschau der E-Mail"
+          src="{% url 'mailvorschau_rahmen' key %}"></iframe>
 </div>
 {% endblock %}

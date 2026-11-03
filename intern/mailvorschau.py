@@ -196,13 +196,32 @@ def _logo_einbetten(html: str) -> str:
     return html.replace('src="cid:logo"', f'src="data:image/png;base64,{daten}"')
 
 
-def vorschau(key: str):
-    """Die fertige Vorschau zu ``key`` oder ``None``, wenn er keine hat."""
+def vorschau_kopf(key: str):
+    """Kopfzeilen der Vorschau (Betreff, Absender, Empfänger) oder ``None``.
+
+    Die Vorschauseite braucht nur sie; der Mail-Rahmen selbst wird über eine
+    eigene Adresse geladen (``mailvorschau_rahmen``), damit Firefox ihn nicht
+    wegen ``X-Frame-Options: DENY`` blockt.
+    """
     spec = VORSCHAU.get(key)
     if spec is None:
         return None
+    return {
+        "key": key,
+        "betreff": _betreff(spec),
+        "von": get_from_email(),
+        "an": spec.empfaenger,
+    }
 
-    betreff = _betreff(spec)
+
+def vorschau(key: str):
+    """Die fertige Vorschau zu ``key`` oder ``None``, wenn er keine hat."""
+    kopf = vorschau_kopf(key)
+    if kopf is None:
+        return None
+    spec = VORSCHAU[key]
+
+    betreff = kopf["betreff"]
     if spec.text_key is None:
         body_html = ""
     else:
@@ -226,10 +245,4 @@ def vorschau(key: str):
         })
     html, _plain_mit_footer = render_branded_mail(spec.template, kontext)
 
-    return {
-        "key": key,
-        "betreff": betreff,
-        "von": get_from_email(),
-        "an": spec.empfaenger,
-        "html": _logo_einbetten(html),
-    }
+    return {**kopf, "html": _logo_einbetten(html)}
