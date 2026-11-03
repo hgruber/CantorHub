@@ -427,3 +427,45 @@
 
     measureBars();
 })();
+/* Mailvorschau als überlagerndes Fenster. Der iframe lädt mailvorschau_rahmen;
+   beim Schließen wird seine Quelle geleert, damit er nicht weiterlebt. */
+(function () {
+    "use strict";
+    const dialog = document.getElementById("kf-vorschau-dialog");
+    if (!dialog) return;
+    const rahmen = document.getElementById("kf-vorschau-rahmen");
+    const datenEl = document.getElementById("kf-vorschau-daten");
+    let daten = {};
+    try {
+        daten = JSON.parse(datenEl.textContent);
+    } catch (_) {}
+
+    function zeige(key) {
+        const d = daten[key];
+        if (!d) return;
+        document.getElementById("kf-vorschau-von").textContent = d.von || "";
+        document.getElementById("kf-vorschau-an").textContent = d.an || "";
+        document.getElementById("kf-vorschau-betreff").textContent = d.betreff || "";
+        rahmen.src = d.rahmen_url;
+        if (!dialog.open) dialog.showModal();
+    }
+
+    document.querySelectorAll(".kf-desc-vorschau").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            zeige(btn.dataset.key);
+        });
+    });
+
+    document.getElementById("kf-vorschau-zu").addEventListener("click", function () {
+        dialog.close();
+    });
+
+    // Klick auf den Hintergrund schließt, so wie Esc es von sich aus tut.
+    dialog.addEventListener("click", function (event) {
+        if (event.target === dialog) dialog.close();
+    });
+
+    dialog.addEventListener("close", function () {
+        rahmen.src = "about:blank";
+    });
+})();

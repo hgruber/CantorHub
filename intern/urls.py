@@ -45,11 +45,6 @@ urlpatterns = [
     path("konfiguration/", views.konfiguration, name="konfiguration"),
     path(
         "konfiguration/vorschau/<str:key>/",
-        views.mailvorschau,
-        name="mailvorschau",
-    ),
-    path(
-        "konfiguration/vorschau/<str:key>/mail/",
         views.mailvorschau_rahmen,
         name="mailvorschau_rahmen",
     ),

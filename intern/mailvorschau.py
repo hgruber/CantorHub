@@ -1,10 +1,11 @@
 """Vorschau der ``MAIL_*``-Texte aus der Konfiguration.
 
-Die Konfigurationsseite verlinkt bei jedem Mailtext hierher. Gezeigt wird die
-gespeicherte Fassung im echten Mail-Rahmen: dasselbe Template und derselbe
-Kontextaufbau wie beim Versand (``mail.render_branded_mail``), nur mit
-Beispielwerten für die Platzhalter und ohne SMTP. Das Logo steht im Rahmen als
-``cid:logo`` und wird für die Vorschau als Data-URI eingebettet.
+Die Konfigurationsseite öffnet bei jedem Mailtext ein überlagerndes Fenster mit
+dieser Vorschau. Gezeigt wird die gespeicherte Fassung im echten Mail-Rahmen:
+dasselbe Template und derselbe Kontextaufbau wie beim Versand
+(``mail.render_branded_mail``), nur mit Beispielwerten für die Platzhalter und
+ohne SMTP. Das Logo steht im Rahmen als ``cid:logo`` und wird für die Vorschau
+als Data-URI eingebettet.
 
 Die Registrierung ist bewusst eine Tabelle: nur ein hier eingetragener Schlüssel
 bekommt den Vorschau-Link, und die Beispielwerte stehen neben dem Text, den sie
@@ -199,7 +200,7 @@ def _logo_einbetten(html: str) -> str:
 def vorschau_kopf(key: str):
     """Kopfzeilen der Vorschau (Betreff, Absender, Empfänger) oder ``None``.
 
-    Die Vorschauseite braucht nur sie; der Mail-Rahmen selbst wird über eine
+    Das Vorschaufenster braucht nur sie; der Mail-Rahmen selbst wird über eine
     eigene Adresse geladen (``mailvorschau_rahmen``), damit Firefox ihn nicht
     wegen ``X-Frame-Options: DENY`` blockt.
     """

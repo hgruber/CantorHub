@@ -16,7 +16,7 @@ from ..smtp_zugang import (
     FEHLER_TLS_SSL, PRUEFEN, TEXT_TLS_SSL, anmeldung_pruefen, smtp_pruefung, zusammengefuehrt,
 )
 
-__all__ = ["konfiguration", "mailvorschau", "mailvorschau_rahmen"]
+__all__ = ["konfiguration", "mailvorschau_rahmen"]
 
 
 @login_required
@@ -120,40 +120,27 @@ def konfiguration(request):
     fehlend = fehlende_schluessel(row["key"] for row in rows)
     dienste = abgeschaltete_dienste(rows)
     gruppen = gruppiere(rows)
+    vorschau_daten = {}
     for gruppe in gruppen:
         for eintrag in gruppe["eintraege"]:
             if hat_vorschau(eintrag["key"]):
-                eintrag["vorschau_url"] = reverse(
-                    "mailvorschau", args=[eintrag["key"]]
+                kopf = vorschau_kopf(eintrag["key"])
+                kopf["rahmen_url"] = reverse(
+                    "mailvorschau_rahmen", args=[eintrag["key"]]
                 )
+                vorschau_daten[eintrag["key"]] = kopf
+                eintrag["vorschau"] = True
     return render(request, "konfiguration.html", {
         "seitentitel": "Konfiguration",
         "hilfe_seite": "Hilfe:Konfiguration",
         "gruppen": gruppen,
+        "vorschau_daten": vorschau_daten,
         "mangel_leer": leer,
         "mangel_fehlend": fehlend,
         "dienste_aus": dienste,
         "banner_warnung": leer > 0 or bool(fehlend),
         "banner_zeigen": leer > 0 or bool(fehlend) or bool(dienste),
         "show_search": True,
-    })
-
-
-@login_required
-def mailvorschau(request, key):
-    """Die gespeicherte Fassung eines Mailtextes im Mail-Rahmen zeigen.
-
-    Dieselbe Schwelle wie die Konfiguration selbst: nur Superuser. Die
-    Kopfzeilen stehen hier, der Rahmen kommt aus ``mailvorschau_rahmen``.
-    """
-    if not request.user.is_superuser:
-        return redirect("article_view", name="Aktuell")
-    kopf = vorschau_kopf(key)
-    if kopf is None:
-        raise Http404
-    return render(request, "mailvorschau.html", {
-        "seitentitel": f"Vorschau: {key}",
-        **kopf,
     })
 
 

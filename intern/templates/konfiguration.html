@@ -102,12 +102,12 @@
                     <button type="button" class="kf-desc-edit" title="Beschreibung bearbeiten" aria-label="Beschreibung bearbeiten">
                         {% symbol "stift" width="12" height="12" %}
                     </button>
-                    {% if eintrag.vorschau_url %}
-                    <a class="kf-desc-vorschau" href="{{ eintrag.vorschau_url }}"
-                       target="_blank" rel="noopener"
-                       title="Vorschau dieser E-Mail im Mail-Rahmen">
+                    {% if eintrag.vorschau %}
+                    <button type="button" class="kf-desc-vorschau"
+                            data-key="{{ eintrag.key }}"
+                            title="Vorschau dieser E-Mail im Mail-Rahmen">
                         {% symbol "umschlag" width="12" height="12" %}Vorschau
-                    </a>
+                    </button>
                     {% endif %}
                     <input type="text" class="inline-input kf-desc-input" maxlength="256" value="{{ eintrag.description }}" hidden>
                 </div>
@@ -173,4 +173,20 @@ Was beim Speichern passiert, steht in intern/smtp_zugang.py.
         <button type="button" class="btn btn-primary" onclick="this.closest('dialog').close()">Verstanden</button>
     </div>
 </dialog>
+{% comment %}
+Mailvorschau als überlagerndes Fenster (konfiguration.js). Der Rahmen lädt aus
+mailvorschau_rahmen — eine eigene Adresse, weil X-Frame-Options: DENY sonst auch
+das iframe blockt; siehe docs/mail.md.
+{% endcomment %}
+<dialog id="kf-vorschau-dialog" class="app-dialog kf-vorschau-dialog">
+    <div class="kf-vorschau-kopf">
+        <button type="button" class="dialog-close" id="kf-vorschau-zu" aria-label="Schließen">×</button>
+        <div class="kf-vorschau-zeile"><span class="kf-vorschau-label">Von</span><span class="kf-vorschau-wert" id="kf-vorschau-von"></span></div>
+        <div class="kf-vorschau-zeile"><span class="kf-vorschau-label">An</span><span class="kf-vorschau-wert" id="kf-vorschau-an"></span></div>
+        <div class="kf-vorschau-zeile"><span class="kf-vorschau-label">Betreff</span><span class="kf-vorschau-wert kf-vorschau-betreff" id="kf-vorschau-betreff"></span></div>
+        <p class="kf-vorschau-hinweis">Gespeicherter Stand; Links führen in der Vorschau nirgendwohin.</p>
+    </div>
+    <iframe id="kf-vorschau-rahmen" class="kf-vorschau-rahmen" title="Vorschau der E-Mail"></iframe>
+</dialog>
+{{ vorschau_daten|json_script:"kf-vorschau-daten" }}
 {% endblock %}

@@ -56,19 +56,20 @@ placeholder of the main text.
 
 ## Preview
 
-Every `MAIL_*` text in `/intern/konfiguration/` carries a „Vorschau" link to
-`/intern/konfiguration/vorschau/<key>/` (superuser only). The page shows the saved text inside the
-real mail frame — the same template and context as the send path through
+Every `MAIL_*` text in `/intern/konfiguration/` carries a „Vorschau" button at the end of its
+description. It opens an overlay dialog on the same page (superuser only) with the saved text in
+the real mail frame — the same template and context as the send path through
 `mail.render_branded_mail()` — under a mail-client header with sender, recipient and subject.
 Placeholders are filled with sample values from the registry at the top of
 `intern/mailvorschau.py`; the logo is embedded as a data URI instead of the `cid:logo` attachment.
 Sample links (buttons, `{link}`, the unsubscribe link) target `#`, so a click never leaves for a
 made-up host — the preview shows the look, not a working flow.
 
-The frame itself is loaded from its own address (`…/vorschau/<key>/mail/`,
+The dialog's iframe is loaded from its own address (`/intern/konfiguration/vorschau/<key>/`,
 `mailvorschau_rahmen`), not from `srcdoc`: the portal sends `X-Frame-Options: DENY`, and Firefox
 applies that to a `srcdoc` iframe as well, showing „Firefox darf diese eingebettete Seite nicht
-öffnen“. That view is `@xframe_options_exempt` and keeps the same superuser check.
+öffnen“. That view is `@xframe_options_exempt` and keeps the same superuser check. Closing the
+dialog clears the iframe's `src`.
 A mail text without a registry entry gets no link — add one there when adding a mail.
 `MailvorschauTest` checks that every registered key is a text config key and renders.
 

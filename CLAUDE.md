@@ -140,8 +140,8 @@ load a `File` row per row), `mitglied_felder.py` (`PRIVACY_FIELDS` / `ADDRESS_TR
 `telefon.py` (the international shape every stored phone number is written in — the rules alone,
 without Django, used by `TelefonNormalisierungMixin` in `forms.py` and by
 `telefonnummern_normalisieren`; see „How phone numbers are stored" in `docs/members.md`),
-`mail.py` / `mail_markup.py`, `mailvorschau.py` (the per-key sample rendering behind the
-configuration page's „Vorschau" links — same template and context as the send path, no SMTP),
+`mail.py` / `mail_markup.py`, `mailvorschau.py` (the per-key sample rendering in the
+configuration page's „Vorschau" overlay — same template and context as the send path, no SMTP),
 `mailingliste.py`, `replacements.py` (wiki markup),
 `wiki_platzhalter.py` (the `{VEREINS_URL}`-style placeholders of articles — a whitelist, see
 `docs/articles.md`), `symbole.py` (the interface icons a help text may show — one source for
