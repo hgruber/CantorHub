@@ -67,6 +67,9 @@
             {% endfor %}
           </div>
         {% else %}
+          <p style="margin:0 0 10px;color:var(--t3);font-size:var(--fs-sm);">
+            An dieser Stelle erscheint der Name der Gruppe, in deren Namen Du die Mail verschickst.
+          </p>
           <div class="form-group" style="margin-bottom:12px;">
             <label for="id_group_id">Gruppe</label>
             <select id="id_group_id" name="group_id" required>

@@ -11,6 +11,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 ### Hinzugefügt
 
+- Rundmail: Wer für mehrere Gruppen verschicken darf, sieht über der Gruppenauswahl einen Hinweis, dass der Name der gewählten Gruppe in der Signatur erscheint.
 - Rundmail: Die Mitgliedernamen unter der Gruppensignatur lassen sich in der Konfiguration abschalten (`MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN`, standardmäßig aus). Ohne sie unterschreibt nur der Gruppenname, in der gesendeten Mail wie in der Vorschau im Formular.
 - Konfiguration: Jeder E-Mail-Text hat in seiner Beschreibung einen Knopf „Vorschau“, der die gespeicherte Fassung in einem überlagernden Fenster mit Absender, Empfänger, Betreff und Beispielwerten für die Platzhalter zeigt. Das Fenster nutzt dieselben Vorlagen wie der Versand, seine Beispiel-Links bleiben ohne Ziel, und der Mail-Rahmen lädt aus einer eigenen, fürs Einbetten freigegebenen Adresse — so blockt auch Firefox ihn nicht.
 
