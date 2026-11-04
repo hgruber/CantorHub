@@ -17,6 +17,7 @@ Deine Chat-Adresse sieht aus wie eine E-Mail-Adresse, ist aber keine. Du hast si
 === Schritt 1: Conversations installieren ===
 * Im [https://play.google.com/store/apps/details?id=eu.siacs.conversations Google Play Store] kostet Conversations einmalig ein paar Euro.
 * Über [https://f-droid.org/packages/eu.siacs.conversations/ F-Droid] ist sie kostenlos, dafür musst Du zuerst F-Droid selbst installieren.
+* [https://f-droid.org/repo/eu.siacs.conversations_4218304.apk Conversations direkt als APK herunterladen] — Android fragt beim Installieren nach der Erlaubnis für „Unbekannte Apps“.
 
 === Schritt 2: „Ich habe bereits ein Konto“ ===
 [[Datei:hilfe-conversations-start.png]]

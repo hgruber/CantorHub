@@ -21,6 +21,7 @@ Android braucht dafür die App '''DAVx⁵'''. Hast Du schon die [[Hilfe:Termine 
 === Schritt 1: DAVx⁵ installieren ===
 * Im [https://play.google.com/store/apps/details?id=at.bitfire.davdroid Google Play Store] kostet DAVx⁵ einmalig ein paar Euro.
 * Über [https://f-droid.org/packages/at.bitfire.davdroid/ F-Droid] ist sie kostenlos, dafür musst Du zuerst F-Droid selbst installieren.
+* [https://f-droid.org/repo/at.bitfire.davdroid_405210002.apk DAVx⁵ direkt als APK herunterladen] — Android fragt beim Installieren nach der Erlaubnis für „Unbekannte Apps“.
 
 Öffne DAVx⁵ und erlaube den Zugriff auf Kontakte und Kalender.
 

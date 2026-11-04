@@ -18,6 +18,7 @@ Android braucht dafür eine kleine App: '''DAVx⁵'''. Sie holt die Termine ab u
 === Schritt 1: DAVx⁵ installieren ===
 * Im [https://play.google.com/store/apps/details?id=at.bitfire.davdroid Google Play Store] kostet DAVx⁵ einmalig ein paar Euro.
 * Über [https://f-droid.org/packages/at.bitfire.davdroid/ F-Droid] ist sie kostenlos. Dafür musst Du zuerst F-Droid selbst installieren — wenn Du das noch nie gemacht hast, nimm lieber den Play Store.
+* [https://f-droid.org/repo/at.bitfire.davdroid_405210002.apk DAVx⁵ direkt als APK herunterladen] — Android fragt beim Installieren nach der Erlaubnis für „Unbekannte Apps“.
 
 Öffne DAVx⁵ nach der Installation. Die App fragt nach Erlaubnissen für Kalender, Kontakte und Benachrichtigungen — tippe jedes Mal auf '''Zulassen'''. Fragt sie nach der '''Akku-Optimierung''', erlaube ihr, im Hintergrund zu laufen; sonst kommen neue Termine nur unregelmäßig an. Die App '''Tasks''' brauchst Du nicht.
 
