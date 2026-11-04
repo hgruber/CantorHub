@@ -7,7 +7,7 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
-## v1.3.0 — 2026-11-04
+## v1.2.5 — 2026-11-04
 
 ### Hinzugefügt
 
