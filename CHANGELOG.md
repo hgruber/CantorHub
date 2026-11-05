@@ -16,6 +16,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 ### Geändert
 
 - Foren: Zwischen Eingabefeld und Nachrichtenliste lässt sich die Höhe des Eingabefelds jetzt an einem Griff mit Doppelpfeil ziehen oder mit den Pfeiltasten ändern; ein Doppelklick stellt die Standardhöhe wieder her, und die gewählte Höhe bleibt beim nächsten Besuch erhalten.
+- Foren: Die Forum-Ansicht ist auf die Lesebreite der Wiki begrenzt (824 px); die Forenliste unter `/intern/forum/` bleibt in der vollen Breite.
 
 ## v1.2.5 — 2026-11-04
 

@@ -2328,7 +2328,9 @@ time {
     min-height: 0;
     overflow: hidden;
     width: 100%;
-    max-width: var(--content-max);
+    /* Wie die Wiki-Seite: 720 px Text + 2 × 52 px Polster. Die Forenliste
+       (/intern/forum/) bleibt bei --content-max, sie nutzt dieses Layout nicht. */
+    max-width: 824px;
 }
 
 .forum-entry {

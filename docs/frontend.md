@@ -328,8 +328,9 @@ Radii come from four tokens: `--r-xs` 2, `--r-sm` 4, `--r` 8, `--r-lg` 12; `999p
 pill and circle forms. A new value is a decision, not a local measurement.
 
 **Page geometry** is one left axis — the sidebar edge — with capped widths: lists and the forum
-at `--content-max` (1400 px), detail pages at 1100 px, article pages at 824 px (720 px of text
-plus its padding). Nothing is
+list at `--content-max` (1400 px), detail pages at 1100 px, article pages at 824 px (720 px of
+text plus its padding); the forum detail page `/intern/forum/<id>/` uses that same 824 px, while
+`/intern/forum/` stays at `--content-max`. Nothing is
 centred, so the left edge does not move when a list opens a detail page; on a 1920 px screen the
 cap is what keeps a table from drifting apart across the full width.
 
