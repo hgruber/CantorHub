@@ -285,6 +285,12 @@ stored `True` survive the service being switched off and on again. It is deliber
 `BooleanField` would turn that into a `False` that silently overwrites the member's wish.
 `mitglied_delete` leaves the flag alone when anonymising, for the same reason.
 
+`User.forum_mail_wichtig` follows the same rule with a different switch: it is the member's opt-out
+from the mail that a „wichtig" forum message triggers (default on). `mitglied_edit` builds the
+field only for the member themselves and only while `FORUM_WICHTIG_MAIL_AKTIV` is on, and because
+it is not in `Meta.fields`, a stored value survives when the control is not rendered. The mail
+itself and its recipients are described in `forum.md`.
+
 ## How phone numbers are stored
 
 The five number fields on `User` — `telefon`, `telefon_mobil`, `telefon_job`,

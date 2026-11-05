@@ -309,6 +309,16 @@ _CONFIG_DEFAULTS = [
         "Rahmen der Rundmail an Mitglieder; {text} ist der im Formular eingegebene Text. "
         + _MARKUP_HINT + " Platzhalter: {vorname}, {text}, {vereinsname}",
     ),
+    (
+        "MAIL_FORUM_WICHTIG",
+        "Du erhältst diese Nachricht, weil {absender} sie im Forum „{forum}“ "
+        "als wichtig markiert hat. Abstellen kannst Du diese E-Mails jederzeit "
+        "in Deinem Profil unter „Benachrichtigungen“.\n\n"
+        "{button:Im Forum antworten}",
+        "Begleittext der E-Mail zu einem als wichtig markierten Forenbeitrag; "
+        "die Nachricht selbst steht darüber in einer Sprechblase. " + _MARKUP_HINT
+        + " Platzhalter: {absender}, {forum}, {link} (Forum), {vereinsname}",
+    ),
     # --- Öffentliche Auftritts-Mailingliste ---------------------------------
     (
         "MAILINGLISTE_WOCHEN",
@@ -456,6 +466,12 @@ _CONFIG_DEFAULTS = [
         FORUM_ANZEIGE_AB_STANDARD,
         "Stichtag der Foren (JJJJ-MM-TT): ältere Beiträge zeigt das Portal nicht an, "
         "gelöscht wird nichts",
+    ),
+    (
+        "FORUM_WICHTIG_MAIL_AKTIV",
+        "1",
+        "Als wichtig markierte Forenbeiträge zusätzlich per E-Mail an alle "
+        "verschicken (1/0)",
     ),
     # --- iCal-Feed / CalDAV ---
     (

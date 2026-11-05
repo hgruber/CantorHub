@@ -19,7 +19,7 @@ backend raises on that combination, so every send would fail.
 
 ## Templates
 
-There are four, and there is no per-mail template:
+There are five; only the important-message mail has its own layout:
 
 | Template | Role |
 |---|---|
@@ -27,6 +27,7 @@ There are four, and there is no per-mail template:
 | `emails/generic.html` | renders `body_html`; the default for everything |
 | `emails/mitglied_benachrichtigung.html` | round mail; adds the signature block via the `after_body` block — the group's name (its member names only with `MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN`), then „Gesendet von" with the sender's name |
 | `emails/mailingliste.html` | gig reminders; renders the unsubscribe link structurally |
+| `emails/forum_wichtig.html` | important forum message; renders the member's message in a messenger bubble (sender line, initials, time), then `body_html` from `MAIL_FORUM_WICHTIG` below it. The one body that is not fixed prose: the message itself is the content, so no `MAIL_*` text could hold it; every *sentence* still comes from `MAIL_FORUM_WICHTIG` |
 
 ## The mails
 
@@ -41,6 +42,7 @@ There are four, and there is no per-mail template:
 | Re-confirmation request | `MAIL_BESTAETIGUNG` | `user.email` | `manage.py send_reconfirmation` |
 | Re-confirmation receipt | `MAIL_BESTAETIGUNG_BESTAETIGT` | `user.email` | POST `/intern/bestaetigung/<token>/`; attaches the confirmation PDF |
 | Round mail to members | `MAIL_RUNDMAIL` | the selected members | POST `/intern/mitglied/benachrichtigen/` (perm `intern.notify_users`); optional filer attachments |
+| Important forum message | `MAIL_FORUM_WICHTIG` (text below the message) | active readers of the forum with an address who left `forum_mail_wichtig` on, minus the author | POST `/intern/forum/<id>/senden/` with the „wichtig" toggle; subject „Mitteilung von <Vorname> <Nachname>"; see `forum.md` |
 | Gig list: opt-in, welcome, already subscribed, reminder | `MAIL_MAILINGLISTE_OPTIN` / `_WILLKOMMEN` / `_BEREITS_ANGEMELDET` / `_ERINNERUNG` | the subscriber | see `mailinglist.md` |
 
 Two switches worth knowing: **`MAIL_BEI_AKTIVIERUNG`** (`1`/`0`) governs the activation *and*
@@ -116,6 +118,12 @@ actually sent and the names under „Nicht zugestellt"; failed addresses are als
 ERROR. `DbEmailBackend.open()` is a no-op without `EMAIL_HOST`, so the pre-opened connection
 works in development too. A worker restart during a send waits up to gunicorn's graceful
 timeout; mails not sent by then are lost (and not logged).
+
+The important-forum mail (`_wichtige_mail_versenden` in `views/forums.py`) follows the same
+pattern for the same reason: the request computes the recipients first, then a thread opens one
+connection, wraps the pass in `konfiguration_gepuffert()` and drives `versende_serie`. It renders
+`MAIL_FORUM_WICHTIG` once — the text is the same for everyone — and passes the message itself as
+`nachricht` into the template. Without `EMAIL_HOST` the thread is not started.
 
 The function builds the MIME message itself and hands it to Django through a `_Msg` subclass
 whose `message()` is overridden. **That override must apply `_SMTP_POLICY`** (compat32 with CRLF

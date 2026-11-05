@@ -53,6 +53,7 @@ FIELD_LABELS = {
     "avatar_id": "Avatar",
     "private_fields": "Privatsphäre",
     "adressbuch_verborgen": "Adressbuch",
+    "forum_mail_wichtig": "E-Mail-Benachrichtigungen",
     "password": "Passwort",
     "notify_enabled": "Benachrichtigungen",
     # Termin

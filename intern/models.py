@@ -110,6 +110,19 @@ class User(AbstractUser):
         ),
     )
     notify_enabled = models.BooleanField(default=True, verbose_name="Benachrichtigungen")
+    # Unabhängig von ``notify_enabled`` (den toten Schalter der Benachrichtigungs-
+    # blasen): hier geht es um die zusätzliche E-Mail zu als wichtig markierten
+    # Forenbeiträgen. Nur im eigenen Profil und nur solange die Funktion
+    # instanzweit an ist (FORUM_WICHTIG_MAIL_AKTIV).
+    forum_mail_wichtig = models.BooleanField(
+        default=True,
+        verbose_name="E-Mail bei wichtigen Forenbeiträgen",
+        help_text=(
+            "Wird ein Forenbeitrag als „wichtig“ markiert, bekommst Du ihn "
+            "zusätzlich per E-Mail — auch wenn Du gerade nicht im Portal bist. "
+            "Abschalten kannst Du das hier jederzeit."
+        ),
+    )
 
     REQUIRED_FIELDS = []
 
@@ -367,6 +380,9 @@ class Mitteilung(models.Model):
     # to non-nullable without a default"); genau dieses `makemigrations` läuft im
     # Dockerfile und in start.sh ohne `--no-input` und bräche den Bau ab.
     mitteilung = models.TextField(blank=True, null=True)
+    # Vom Absender beim Senden gesetzt; löst zusätzlich eine E-Mail an alle
+    # Empfänger aus, die sie im Profil nicht abgeschaltet haben.
+    wichtig = models.BooleanField(default=False)
     # unique legt den Index bereits an; ein zusätzliches db_index wäre wirkungslos.
     xmpp_stanza_id = models.CharField(
         max_length=255, null=True, blank=True, unique=True

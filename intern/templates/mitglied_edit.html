@@ -71,6 +71,16 @@
             </div>
             {% endif %}
 
+            {% if form.forum_mail_wichtig %}
+            <div class="detail-card">
+                <h3>Benachrichtigungen</h3>
+                {# Erscheint nur im eigenen Profil und nur, solange die Funktion instanzweit an ist. #}
+                <div class="form-group checkbox-group">
+                    <label>{{ form.forum_mail_wichtig }} E-Mail bei wichtigen Forenbeiträgen</label>{% hilfe "User.forum_mail_wichtig" %}
+                </div>
+            </div>
+            {% endif %}
+
             <div class="detail-card">
                 <h3>Beschreibung</h3>
                 <div class="form-group">

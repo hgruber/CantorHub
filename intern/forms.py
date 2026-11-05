@@ -847,9 +847,20 @@ class UserEditForm(TelefonNormalisierungMixin, forms.ModelForm):
             "text": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
         }
 
-    def __init__(self, *args, with_privacy=False, mit_adressbuch=False, **kwargs):
+    def __init__(self, *args, with_privacy=False, mit_adressbuch=False,
+                 mit_forum_mail=False, **kwargs):
         super().__init__(*args, **kwargs)
         self._with_privacy = with_privacy
+        if mit_forum_mail:
+            # Wie adressbuch_verborgen bewusst nicht in Meta.fields: Fehlt die
+            # Checkbox im POST, schreibt save() den gespeicherten Wert nicht um.
+            # Die Ansicht baut das Feld nur im eigenen Profil und nur, solange
+            # die Funktion instanzweit an ist (FORUM_WICHTIG_MAIL_AKTIV).
+            self.fields["forum_mail_wichtig"] = forms.BooleanField(
+                required=False,
+                initial=bool(getattr(self.instance, "forum_mail_wichtig", True)),
+                label="E-Mail bei wichtigen Forenbeiträgen",
+            )
         if mit_adressbuch:
             # Bewusst nicht in Meta.fields: eine nicht gerenderte Checkbox fehlt im
             # POST und liefert dann False. Ein Verwaltender, der ein fremdes Profil
@@ -886,6 +897,10 @@ class UserEditForm(TelefonNormalisierungMixin, forms.ModelForm):
         if "adressbuch_verborgen" in self.fields:
             instance.adressbuch_verborgen = bool(
                 self.cleaned_data.get("adressbuch_verborgen")
+            )
+        if "forum_mail_wichtig" in self.fields:
+            instance.forum_mail_wichtig = bool(
+                self.cleaned_data.get("forum_mail_wichtig")
             )
         if commit:
             instance.save()

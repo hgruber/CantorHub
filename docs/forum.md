@@ -38,6 +38,28 @@ mirrored — the earlier chat-style `row-reverse` made a thread zigzag between t
 is read top to bottom. The bubble is content-wide, capped at `min(78%, 68em)`. The composer keeps
 its 🙂 and send buttons inside the field's bottom-right corner instead of beside it.
 
+## Important messages and their mail
+
+The composer offers a toggle next to 🙂 and send while `FORUM_WICHTIG_MAIL_AKTIV` is on; it sets
+`Mitteilung.wichtig`, and `_message.html` shows a small „Wichtig" badge in the message header.
+The mark changes nothing about who sees the message — it only adds an e-mail.
+
+Posting an important message sends that mail in a background thread (`_wichtige_mail_versenden`,
+the round-mail pattern: one shared SMTP connection, `versende_serie`, the request returns at
+once). `_wichtige_mail_empfaenger` mirrors `_forum_access` — active members with an address who
+may read the forum (the groups of a restricted forum, plus holders of
+`manage_forum_permissions` and superusers), minus the author, and only those who left
+`User.forum_mail_wichtig` on. That profile checkbox defaults to on and is offered only in one's
+own profile and only while the function is on; a stored value survives without being overwritten
+when the field is not rendered. Without `EMAIL_HOST` the thread is not started at all.
+
+The subject is „Mitteilung von <Vorname> <Nachname>". The body is `emails/forum_wichtig.html`
+(the message in a messenger bubble) plus the configured `MAIL_FORUM_WICHTIG` text below it,
+which carries the button into the forum — see „Templates" in `mail.md`. The message goes out as
+typed, with line breaks only (`linebreaksbr`) and **not** through the wiki renderer — a messenger
+bubble shows what was written, and a `[[Datei:…]]` reference would otherwise turn into an image
+link.
+
 ## Reactions
 
 Members can react to individual forum messages with emoji (XEP-0444), synced both ways with the

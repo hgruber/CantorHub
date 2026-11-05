@@ -137,6 +137,20 @@ VORSCHAU: dict[str, Vorschau] = {
         betreff="Probentermin am Samstag",
         platzhalter={"text": BEISPIEL_RUNDMAIL_TEXT},
     ),
+    "MAIL_FORUM_WICHTIG": Vorschau(
+        template="emails/forum_wichtig.html",
+        betreff="Mitteilung von Anna Beispiel",
+        link=ZIEL,
+        mit_benutzer=False,
+        platzhalter={"absender": "Anna Beispiel", "forum": "Vorstand"},
+        kontext={
+            "nachricht": "Könnt Ihr am Samstag schon um 17 Uhr da sein? "
+                         "Die Bühne wird früher aufgebaut.",
+            "absender_name": "Anna Beispiel",
+            "forum_thema": "Vorstand",
+            "datum": "05.11.2026 18:42",
+        },
+    ),
     "MAIL_FOOTER": Vorschau(
         betreff="Vorschau der Fußzeile",
         text_key=None,

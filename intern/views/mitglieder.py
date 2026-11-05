@@ -193,6 +193,9 @@ def mitglied_edit(request, id):
     # Solange der Dienst aus ist, gaebe es nichts zu widersprechen — dann wird das
     # Feld gar nicht erst gebaut, und ein gespeichertes True ueberlebt unangetastet.
     carddav_aktiv = get_config_bool("CARDDAV_AKTIV", False)
+    # Dasselbe für die E-Mail bei wichtigen Forenbeiträgen: ausgeschaltet bietet
+    # das Profil den Schalter nicht an, und ein gespeicherter Wert bleibt stehen.
+    forum_mail_aktiv = get_config_bool("FORUM_WICHTIG_MAIL_AKTIV", False)
 
     if request.method == "POST":
         # Die Mitgliedschaft: Tag „Mitglied" und Portalzugang gehen zusammen. Die
@@ -243,6 +246,7 @@ def mitglied_edit(request, id):
             request.POST, request.FILES, instance=user,
             with_privacy=ist_selbst,
             mit_adressbuch=ist_selbst and carddav_aktiv,
+            mit_forum_mail=ist_selbst and forum_mail_aktiv,
         )
         if form.is_valid():
             # Move dropzone-uploaded avatar to the Profilbilder folder and rename.
@@ -280,6 +284,7 @@ def mitglied_edit(request, id):
             instance=user,
             with_privacy=ist_selbst,
             mit_adressbuch=ist_selbst and carddav_aktiv,
+            mit_forum_mail=ist_selbst and forum_mail_aktiv,
         )
 
     context = {
@@ -292,6 +297,7 @@ def mitglied_edit(request, id):
         "can_manage": request.user.has_perm("intern.change_user"),
         "can_set_privacy": ist_selbst,
         "carddav_aktiv": carddav_aktiv,
+        "forum_mail_aktiv": forum_mail_aktiv,
         "privacy_fields": PRIVACY_FIELDS,
         "member_groups": list(user.groups.order_by("name")),
         "ist_mitglied": ist_mitglied(user),

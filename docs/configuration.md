@@ -118,6 +118,7 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
 - `MAIL_ANTRAG_ADMIN_MINDERJAEHRIG` / `MAIL_ANTRAG_ADMIN_FOERDER` (conditional notes appended to the admin mail; rendered at `{hinweise}`)
 - `MAIL_BEI_AKTIVIERUNG` (`1`/`0` — set to `0` to suppress welcome/reactivation mails during testing; a switch, not a text)
 - `MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN` (`1`/`0`, default `0` — show the group's member names below the group name in the round mail's signature and its composer preview; off means only the group name signs)
+- `FORUM_WICHTIG_MAIL_AKTIV` (`1`/`0`, default `1`) — offer „wichtig" in the forum composer and send the additional mail to every reader who wants it; while off the toggle disappears and a forged POST is ignored
 
 Every mail text links to a preview page (`/intern/konfiguration/vorschau/<key>/`) from its
 description; see „Preview" in `docs/mail.md`.
@@ -125,6 +126,7 @@ description; see „Preview" in `docs/mail.md`.
 - `MAIL_BESTAETIGUNG_BESTAETIGT` (quittance mail after member confirms data)
 - `MAIL_EINLADUNG` (invite email sent to an email address before registration; no user object → only `{link}` and the `{vereinsname*}` placeholders)
 - `MAIL_FOOTER` (footer line of **every** email; empty → no footer)
+- `MAIL_FORUM_WICHTIG` (text below the message in the important-message mail; `{absender}`, `{forum}`, `{link}` = the forum URL; see „Templates" in `docs/mail.md`)
 - `MAIL_NEUES_PASSWORT` (password reset email)
 - `MAIL_REAKTIVIERT` (email on reactivation of a previously active member; `{link}` = login URL, empty if `VEREINS_URL` not set → the button is dropped)
 - `MAIL_RUNDMAIL` (frame around the member round mail; `{text}` = the text entered in the form)

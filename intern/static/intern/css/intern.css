@@ -2401,6 +2401,64 @@ time {
 
 .forum-entry .emoji-knopf:hover { background: var(--msg-border); box-shadow: none; }
 
+/* „Wichtig"-Umschalter im Nachrichtenfeld: ein echtes Kontrollkästchen, das
+   den runden Knopf vollflächig bedeckt und unsichtbar bleibt. Der sichtbare
+   Zustand hängt an :has(), weil das Feld selbst keine Kinder sind. */
+.forum-entry .wichtig-knopf {
+    position: absolute;
+    right: 92px;
+    bottom: 8px;
+    width: 34px;
+    height: 34px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--t3);
+    cursor: pointer;
+    transition: color .12s, background .12s, border-color .12s;
+}
+
+.forum-entry .wichtig-knopf svg {
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+/* Das Feld liegt unsichtbar über dem Kreis; Klick und Tastatur landen darauf. */
+.forum-entry .wichtig-knopf input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.forum-entry .wichtig-knopf:hover { background: var(--msg-border); }
+
+.forum-entry .wichtig-knopf:has(input:checked) {
+    background: color-mix(in srgb, var(--brand) 12%, var(--bg-card));
+    border-color: var(--brand);
+    color: var(--brand-text);
+}
+
+.forum-entry .wichtig-knopf:has(input:checked):hover {
+    background: color-mix(in srgb, var(--brand) 20%, var(--bg-card));
+}
+
+.forum-entry .wichtig-knopf:has(input:focus-visible) {
+    outline: 2px solid var(--brand-dark);
+    outline-offset: 2px;
+}
+
+/* Platz für den dritten Knopf: Emoji (50), Wichtig (92), Senden (8). */
+.forum-entry form.send-form--wichtig textarea { padding-right: 140px; }
+
 .forum-entry button[type="submit"]:hover {
     background: var(--brand-dark);
     box-shadow: 0 2px 8px color-mix(in srgb, var(--brand) 28%, transparent);
@@ -2501,6 +2559,30 @@ td.zahl .gesamtzahl { color: var(--text-muted); font-weight: 400; }
 .message-meta time {
     color: var(--t3);
     font-size: var(--fs-xs);
+}
+
+/* Wichtig-Badge in der Kopfzeile: gedeckt genug, um die Nachricht nicht zu
+   übertönen, aber als einzige Pille der Zeile sofort erkennbar. */
+.message-meta .wichtig-badge {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px 1px 5px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--brand) 12%, var(--bg-card));
+    border: 1px solid color-mix(in srgb, var(--brand) 35%, transparent);
+    color: var(--brand-text);
+    font-size: var(--fs-2xs);
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.message-meta .wichtig-badge svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
 }
 
 .message .avatar img,

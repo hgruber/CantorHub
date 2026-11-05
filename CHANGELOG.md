@@ -7,6 +7,12 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Foren: Ein Beitrag lässt sich im Eingabefeld als „wichtig“ markieren; er erscheint dann mit einem Hinweis in der Kopfzeile und geht zusätzlich als E-Mail an alle, die das Forum lesen dürfen. Die Zusatzmail lässt sich im Profil unter „Benachrichtigungen“ abschalten (voreingestellt an) und in der Konfiguration instanzweit ausschalten (`FORUM_WICHTIG_MAIL_AKTIV`).
+
 ## v1.2.5 — 2026-11-04
 
 ### Hinzugefügt

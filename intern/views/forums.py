@@ -1,10 +1,12 @@
 import logging
+import threading
 from django.utils.timezone import now as timezone_now
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import PermissionDenied
-from django.core.mail import send_mail
+from django.core.mail import get_connection
+from django.db import connections
 from django.db.models import Count, F, Q
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -15,7 +17,15 @@ from django.views.decorators.http import require_POST
 from filer.models import File
 
 from intern import dateiablage, ejabberd, folders
-from intern.app_settings import get_config, get_from_email, is_ejabberd_configured
+from intern.app_settings import (
+    get_base_url,
+    get_config,
+    get_config_bool,
+    get_from_email,
+    is_ejabberd_configured,
+    is_email_configured,
+    konfiguration_gepuffert,
+)
 from intern.forum_gelesen import (
     hat_aeltere_ungelesene,
     lese_bis_id,
@@ -23,6 +33,7 @@ from intern.forum_gelesen import (
     sichere_ausgangspunkt,
     trenner_id,
 )
+from intern.mail import neu_verbinden, render_config_mail, send_branded_mail, versende_serie
 
 from ..avatare import avatar_vorschau_url
 from ..forms import ForumEditForm
@@ -343,6 +354,8 @@ def forum_view(request, forum):
         "forum.html",
         {
             "seitentitel": f"Forum: {forum_obj.thema}",
+            # Nur dann bietet der Composer die Markierung „wichtig" an.
+            "forum_wichtig_aktiv": get_config_bool("FORUM_WICHTIG_MAIL_AKTIV", False),
             # Das Forenbild ersetzt in der Topbar das allgemeine Symbol.
             "bild_url": avatar_vorschau_url(forum_obj.bild),
             "forum": forum,
@@ -438,6 +451,137 @@ def forum_more(request, forum):
     )
 
 
+def _wichtige_mail_empfaenger(forum_obj, sender):
+    """Aktive Mitglieder, die das Forum lesen dürfen, eine E-Mail-Adresse haben
+    und die Zusatzmail nicht im Profil abgeschaltet haben — ohne den Absender.
+
+    Die Leser-Menge spiegelt ``_forum_access``: ein eingeschränktes Forum erreicht
+    nur seine Gruppen, dazu die Inhaber von ``manage_forum_permissions`` und
+    Superuser; ein offenes Forum erreicht alle.
+    """
+    qs = (
+        User.objects.filter(is_active=True, forum_mail_wichtig=True)
+        .exclude(email__isnull=True)
+        .exclude(email="")
+        .exclude(pk=sender.pk)
+    )
+    if ForumPermission.objects.filter(forum=forum_obj).exists():
+        gruppen = ForumPermission.objects.filter(forum=forum_obj).values("group_id")
+        qs = qs.filter(
+            Q(groups__id__in=gruppen)
+            | Q(is_superuser=True)
+            | Q(
+                user_permissions__codename="manage_forum_permissions",
+                user_permissions__content_type__app_label="intern",
+            )
+            | Q(
+                groups__permissions__codename="manage_forum_permissions",
+                groups__permissions__content_type__app_label="intern",
+            )
+        ).distinct()
+    return [
+        {"name": f"{u.first_name} {u.last_name}".strip() or u.username, "email": u.email}
+        for u in qs.order_by("last_name", "first_name")
+    ]
+
+
+def _wichtige_mail_versenden(empfaenger, betreff, nachricht, absender_name, forum_thema,
+                             datum_text, link):
+    """Verschickt die Zusatzmail zu einer wichtigen Nachricht — im eigenen Thread.
+
+    Wie die Rundmail (``_rundmail_versenden``) teilen sich alle Empfänger eine
+    SMTP-Verbindung; der Request antwortet sofort. Der Begleittext kommt aus
+    ``MAIL_FORUM_WICHTIG``, die Nachricht selbst steht in der Sprechblase.
+    """
+    try:
+        with konfiguration_gepuffert():
+            hinweis_html, hinweis_plain = render_config_mail(
+                "MAIL_FORUM_WICHTIG", link=link,
+                absender=absender_name, forum=forum_thema,
+            )
+            plain = "\n\n".join(
+                teil for teil in (
+                    f"{absender_name} im Forum „{forum_thema}“:",
+                    nachricht.strip(),
+                    hinweis_plain.strip(),
+                ) if teil
+            )
+            connection = get_connection()
+            try:
+                connection.open()
+            except Exception:
+                logger.warning(
+                    "Wichtige Forennachricht: SMTP-Verbindung konnte nicht geoeffnet werden.",
+                    exc_info=True,
+                )
+
+            def senden(r):
+                return send_branded_mail(
+                    betreff, r["email"], "emails/forum_wichtig.html",
+                    {
+                        "nachricht": nachricht,
+                        "absender_name": absender_name,
+                        "forum_thema": forum_thema,
+                        "datum": datum_text,
+                        "body_html": hinweis_html,
+                    },
+                    text_body=plain,
+                    connection=connection,
+                )
+
+            try:
+                gesendet, fehlgeschlagen = versende_serie(
+                    empfaenger, senden, lambda: neu_verbinden(connection)
+                )
+            finally:
+                try:
+                    connection.close()
+                except Exception:
+                    pass
+
+        if fehlgeschlagen:
+            logger.error(
+                "Wichtige Forennachricht '%s': %d von %d nicht zugestellt: %s",
+                betreff, len(fehlgeschlagen), len(empfaenger),
+                ", ".join(r["email"] for r in fehlgeschlagen),
+            )
+        logger.info("Wichtige Forennachricht '%s': %d von %d verschickt.",
+                    betreff, len(gesendet), len(empfaenger))
+    except Exception:
+        logger.exception("Wichtige Forennachricht '%s': Versand abgebrochen.", betreff)
+    finally:
+        # Der Thread hat eine eigene DB-Verbindung; ohne Request schliesst sie niemand.
+        connections.close_all()
+
+
+def _wichtige_mail_starten(nachricht):
+    """Bereitet den Versand im Request vor (Empfänger, Link) und startet den Thread."""
+    forum_obj = nachricht.forum
+    sender = nachricht.sender
+    if sender is None:
+        return
+    empfaenger = _wichtige_mail_empfaenger(forum_obj, sender)
+    if not empfaenger:
+        return
+    absender_name = f"{sender.first_name} {sender.last_name}".strip() or sender.username
+    basis = get_base_url()
+    link = f"{basis}{reverse('forum_view', args=[forum_obj.pk])}" if basis else ""
+    threading.Thread(
+        target=_wichtige_mail_versenden,
+        args=(
+            empfaenger,
+            f"Mitteilung von {absender_name}",
+            nachricht.mitteilung or "",
+            absender_name,
+            forum_obj.thema,
+            # Dasselbe Format wie die Kopfzeile der Blase im Portal.
+            nachricht.datum.strftime("%d.%m.%Y %H:%M"),
+            link,
+        ),
+        name="forum-wichtig",
+    ).start()
+
+
 @login_required
 @require_POST
 def forum_send(request, forum):
@@ -445,13 +589,22 @@ def forum_send(request, forum):
         raise PermissionDenied
     mitteilung = request.POST.get("mitteilung", "").strip()
     last_id = request.POST.get("last_id", 0)
+    # Ist die Funktion instanzweit aus, bleibt die Markierung aus — auch wenn ein
+    # manipulierter POST sie mitschickt.
+    wichtig = (
+        bool(request.POST.get("wichtig"))
+        and get_config_bool("FORUM_WICHTIG_MAIL_AKTIV", False)
+    )
     if mitteilung:
-        Mitteilung.objects.create(
+        nachricht = Mitteilung.objects.create(
             sender_id=request.user.id,
             forum_id=forum,
             mitteilung=mitteilung,
+            wichtig=wichtig,
             datum=timezone_now(),
         )
+        if wichtig and is_email_configured():
+            _wichtige_mail_starten(nachricht)
         # The persistent ejabberd_bot picks this up and relays it to the MUC room
         # over its live session (see CantorBot._relay_messages).
     return forum_get(request, forum, last_id)

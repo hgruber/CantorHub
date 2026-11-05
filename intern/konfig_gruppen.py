@@ -32,6 +32,7 @@ FELDTYPEN: dict[str, str] = {
     "CALDAV_GEBURTSTAGE": "bool",
     "MAIL_BEI_AKTIVIERUNG": "bool",
     "MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN": "bool",
+    "FORUM_WICHTIG_MAIL_AKTIV": "bool",
     "TERMIN_BANNER_AKTIV": "bool",
     # int (gelesen via get_config_int — SATZUNG_FILE_ID / BEITRAGSORDNUNG_FILE_ID /
     # MAP_CENTER_ID sind PKs für FilerFile.objects.get / Ort.objects.get)
@@ -112,6 +113,7 @@ FELDTYPEN: dict[str, str] = {
     "MAIL_WILLKOMMEN": "text",
     "MAIL_REAKTIVIERT": "text",
     "MAIL_RUNDMAIL": "text",
+    "MAIL_FORUM_WICHTIG": "text",
     "MAIL_FOOTER": "text",
     "MAILINGLISTE_TEXT": "text",
     "MAILINGLISTE_EINWILLIGUNG": "text",
@@ -208,7 +210,9 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     "MAIL_ANTRAG_ADMIN_MINDERJAEHRIG", "MAIL_ANTRAG_ADMIN_FOERDER",
     "MAIL_WILLKOMMEN", "MAIL_REAKTIVIERT",
     "MAIL_BESTAETIGUNG", "MAIL_BESTAETIGUNG_BESTAETIGT",
-    "MAIL_NEUES_PASSWORT", "MAIL_RUNDMAIL", "MAIL_FOOTER",
+    "MAIL_NEUES_PASSWORT", "MAIL_RUNDMAIL", "MAIL_FORUM_WICHTIG", "MAIL_FOOTER",
+    # Forum — zusätzliche E-Mail bei als wichtig markierten Beiträgen
+    "FORUM_WICHTIG_MAIL_AKTIV",
     # Auftritts-Mailingliste — Timing-Parameter, dann Formular-Texte, dann Mailtexte
     "MAILINGLISTE_WOCHEN", "MAILINGLISTE_VERSANDZEIT", "MAILINGLISTE_INTERVALL_MIN",
     "MAILINGLISTE_OPTIN_TAGE", "MAILINGLISTE_TEXT", "MAILINGLISTE_EINWILLIGUNG",
@@ -451,6 +455,13 @@ GRUPPEN: tuple[Gruppe, ...] = (
         hinweis="Anbindung der Foren an ejabberd",
         keys=(),
         praefixe=("EJABBERD_",),
+    ),
+    Gruppe(
+        id="forum",
+        titel="Forum & E-Mail",
+        hinweis="Zusätzliche E-Mail an alle bei als wichtig markierten Beiträgen",
+        keys=("FORUM_WICHTIG_MAIL_AKTIV",),
+        praefixe=(),
     ),
     Gruppe(
         id="portal",
