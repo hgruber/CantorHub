@@ -36,7 +36,11 @@ edits. The forum's audited fields are `thema`, `aktiv`, `bild_id`, `xmpp_muc_jid
 and time (`.message-meta`), then the bubble. Own messages are tinted (`.content_me`) rather than
 mirrored — the earlier chat-style `row-reverse` made a thread zigzag between two axes although it
 is read top to bottom. The bubble is content-wide, capped at `min(78%, 68em)`. The composer keeps
-its 🙂 and send buttons inside the field's bottom-right corner instead of beside it.
+its 🙂 and send buttons inside the field's bottom-right corner instead of beside it. The separator
+between composer and list is a drag handle (`.forum-resizer`, `role="separator"`): a pointer drag
+or the arrow keys resize the textarea between its 68 px minimum and 70 % of the window height, a
+double-click restores the default, and the chosen height survives a reload in `localStorage`
+(`forum-composer-hoehe`) — the list keeps `flex:1` and scrolls as before.
 
 ## Important messages and their mail
 

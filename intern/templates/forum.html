@@ -46,6 +46,20 @@
             </form>
         </div>
     </div>
+    {# Zieh-Griff zwischen Eingabefeld und Liste: Pointer oder Pfeiltasten, Doppelklick = Standard. #}
+    <div class="forum-resizer"
+         role="separator"
+         aria-orientation="horizontal"
+         aria-label="Höhe des Nachrichtenfelds ändern"
+         tabindex="0"
+         title="Ziehen oder Pfeiltasten: Höhe des Nachrichtenfelds ändern · Doppelklick: Standardhöhe">
+        <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 9l4-4 4 4"/>
+            <path d="M16 15l-4 4-4-4"/>
+        </svg>
+    </div>
     <div id="messages"
          class="messages"
          hx-get="{% url 'forum_get' forum=forum %}"

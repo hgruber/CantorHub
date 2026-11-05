@@ -2334,6 +2334,9 @@ time {
 .forum-entry {
     position: sticky;
     top: 0;
+    /* Der Zieh-Griff gibt die Höhe vor; ohne feste Basis würde Flexbox das
+       Feld wieder zusammendrücken, statt die Liste zu verkleinern. */
+    flex: 0 0 auto;
     background: var(--bg-card);
     z-index: 10;
     display: flex;
@@ -2471,6 +2474,57 @@ time {
     display: inline-block;
     padding: 4px;
     transform: translate(-2px, -1px) rotate(-45deg);
+}
+
+/* Zieh-Griff zwischen Composer und Liste: Er liegt auf der Trennlinie und
+   nimmt keinen eigenen Platz ein — das Div ist 0 hoch, nur die Trefferfläche
+   und das Symbol ragen in den vorhandenen Trennraum hinein. */
+.forum-resizer {
+    position: relative;
+    z-index: 11;
+    height: 0;
+    color: var(--t4);
+    touch-action: none;
+    user-select: none;
+}
+
+/* Die eigentliche Trefferfläche: 18 px um die Trennlinie, ohne Layout-Höhe. */
+.forum-resizer::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -9px;
+    height: 18px;
+    cursor: row-resize;
+}
+
+.forum-resizer svg {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    background: var(--bg-card);
+    border-radius: 3px;
+    pointer-events: none;
+    transition: color .12s;
+}
+
+.forum-resizer:hover svg,
+.forum-resizer.ist-ziehen svg {
+    color: var(--brand-text);
+}
+
+.forum-resizer:focus-visible {
+    outline: none;
+}
+
+.forum-resizer:focus-visible svg {
+    color: var(--brand-text);
+    outline: 2px solid var(--brand-dark);
+    outline-offset: 2px;
 }
 
 .messages {

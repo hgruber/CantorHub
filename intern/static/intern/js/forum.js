@@ -51,6 +51,107 @@
         }
     });
 
+    // ── Höhe des Eingabefelds ─────────────────────────────────
+    // Der Griff zwischen Composer und Liste zieht die Textarea auf. Untergrenze
+    // ist ihr min-height, Obergrenze 70 % des Fensters; die Liste bleibt flex:1
+    // und scrollt weiter. Die Höhe liegt in localStorage (eigener Schlüssel).
+    (function () {
+        var griff = document.querySelector(".forum-resizer");
+        var feld = document.getElementById("mitteilung-textarea");
+        if (!griff || !feld) return;
+
+        var KEY = "forum-composer-hoehe";
+        var MIN = 68;       // == min-height der Textarea
+        var SCHRITT = 24;   // Pfeiltasten
+        var zieht = false;
+        var startY = 0;
+        var startH = 0;
+
+        function maxH() {
+            return Math.max(MIN, Math.round(window.innerHeight * 0.7));
+        }
+
+        function begrenzen(h) {
+            return Math.min(maxH(), Math.max(MIN, Math.round(h)));
+        }
+
+        function merken(h) {
+            try {
+                if (h <= MIN) localStorage.removeItem(KEY);
+                else localStorage.setItem(KEY, String(h));
+            } catch (_) {}
+        }
+
+        function setzen(h, speichern) {
+            var wert = begrenzen(h);
+            if (wert <= MIN) feld.style.removeProperty("height");
+            else feld.style.height = wert + "px";
+            griff.setAttribute("aria-valuemin", String(MIN));
+            griff.setAttribute("aria-valuemax", String(maxH()));
+            griff.setAttribute("aria-valuenow", String(wert));
+            if (speichern) merken(wert);
+            return wert;
+        }
+
+        function hoehe() {
+            return Math.round(feld.getBoundingClientRect().height);
+        }
+
+        var gespeichert = 0;
+        try { gespeichert = parseInt(localStorage.getItem(KEY), 10) || 0; } catch (_) {}
+        setzen(gespeichert || MIN, false);
+
+        griff.addEventListener("pointerdown", function (e) {
+            if (e.button !== 0) return;
+            zieht = true;
+            startY = e.clientY;
+            startH = hoehe();
+            griff.setPointerCapture(e.pointerId);
+            griff.classList.add("ist-ziehen");
+            // preventDefault nimmt dem Klick den Fokus — für die Pfeiltasten
+            // danach holen wir ihn ausdrücklich.
+            griff.focus({ preventScroll: true });
+            e.preventDefault();
+        });
+
+        griff.addEventListener("pointermove", function (e) {
+            if (!zieht) return;
+            // Der Griff liegt zwischen Feld und Liste: Nach unten ziehen
+            // vergrößert das Feld, nach oben verkleinert es.
+            setzen(startH + (e.clientY - startY), false);
+        });
+
+        function ende(e) {
+            if (!zieht) return;
+            zieht = false;
+            griff.classList.remove("ist-ziehen");
+            if (griff.hasPointerCapture(e.pointerId)) {
+                griff.releasePointerCapture(e.pointerId);
+            }
+            merken(hoehe());
+        }
+
+        griff.addEventListener("pointerup", ende);
+        griff.addEventListener("pointercancel", ende);
+
+        griff.addEventListener("keydown", function (e) {
+            // Gleiche Richtung wie das Ziehen: Pfeil runter vergrößert.
+            if (e.key === "ArrowDown") setzen(hoehe() + SCHRITT, true);
+            else if (e.key === "ArrowUp") setzen(hoehe() - SCHRITT, true);
+            else return;
+            e.preventDefault();
+        });
+
+        griff.addEventListener("dblclick", function () {
+            setzen(MIN, true);
+        });
+
+        // Nach einem Fensterwechsel die Höhe wieder in die Grenzen holen.
+        window.addEventListener("resize", function () {
+            setzen(hoehe(), false);
+        });
+    })();
+
     var layout = document.querySelector(".forum-layout");
     if (!layout || !layout.dataset.reactUrl) return;
     var reactUrl = layout.dataset.reactUrl;

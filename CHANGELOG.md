@@ -13,6 +13,10 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 
 - Foren: Ein Beitrag lässt sich im Eingabefeld als „wichtig“ markieren; er erscheint dann mit einem Hinweis in der Kopfzeile und geht zusätzlich als E-Mail an alle, die das Forum lesen dürfen. Die Zusatzmail lässt sich im Profil unter „Benachrichtigungen“ abschalten (voreingestellt an) und in der Konfiguration instanzweit ausschalten (`FORUM_WICHTIG_MAIL_AKTIV`).
 
+### Geändert
+
+- Foren: Zwischen Eingabefeld und Nachrichtenliste lässt sich die Höhe des Eingabefelds jetzt an einem Griff mit Doppelpfeil ziehen oder mit den Pfeiltasten ändern; ein Doppelklick stellt die Standardhöhe wieder her, und die gewählte Höhe bleibt beim nächsten Besuch erhalten.
+
 ## v1.2.5 — 2026-11-04
 
 ### Hinzugefügt
