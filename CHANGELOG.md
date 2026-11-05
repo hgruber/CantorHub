@@ -7,6 +7,16 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Forum-Chat: Der Nickname des Forum-Bots in den XMPP-Räumen und im Portal ist in der Konfiguration einstellbar (`EJABBERD_BOT_NICK`, Standard „Bot“; leer fällt darauf zurück). Ein Wechsel löst einen sauberen Bot-Neustart aus, und die Echos der MUC-History werden über ihre origin-id erkannt, sodass keine Beiträge doppelt entstehen.
+
+### Behoben
+
+- Sicherung: Die Datenmigration 0006 las ihre Zeilen aus der Standarddatenbank statt aus der entstehenden Sicherungskopie, sodass jede Sicherung auf MariaDB mit „Unknown column original_id“ abbrach. Sie arbeitet jetzt auf der Zieldatenbank; bestehende Sicherungen sind nicht betroffen.
+
 ## v1.2.6 — 2026-11-05
 
 ### Hinzugefügt

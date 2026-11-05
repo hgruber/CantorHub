@@ -13,6 +13,9 @@ Defaults are seeded on `post_migrate` from `_CONFIG_DEFAULTS` in `intern/apps.py
   `EJABBERD_BOT_PASSWORD`, `EJABBERD_BOT_PORT` — a changed bot password is set in ejabberd on
   saving, and the bot restarts with changed credentials by itself within about 90 s (see
   „Credentials and restarts“ in `docs/xmpp.md`)
+- `EJABBERD_BOT_NICK` (nickname of the bot in the MUC rooms and in the portal; default `Bot`,
+  empty → `Bot`). A change counts as changed credentials: the bot restarts and re-joins with the
+  new nick; the relay's `origin-id` keeps history echoes from becoming duplicate posts
 - `EJABBERD_API_TIMEOUT` (timeout of ejabberd REST API calls in seconds, default `10`)
 - `EJABBERD_BOT_RESCAN_SECONDS` (interval at which the bot rescans for new forums, default `60`)
 - `EJABBERD_BOT_RELAY_SECONDS` (interval at which the bot relays forum→MUC and reactions, default `3`)

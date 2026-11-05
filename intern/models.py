@@ -25,7 +25,7 @@ from .avatare import avatar_vorschau_url, fallback_avatar_datei
 from .replacements import apply_replacements, format_datetime
 
 # MUC-Nickname des XMPP-Brücken-Bots (muss mit ejabberd_bot.join_muc übereinstimmen).
-BOT_NICK = "CantorBot"
+BOT_NICK = "Bot"
 
 
 class User(AbstractUser):
@@ -427,7 +427,11 @@ class Mitteilung(models.Model):
     def sender_name(self):
         """Anzeigename des Absenders, robust gegen fehlende Senderdaten."""
         if self.is_from_bot():
-            return BOT_NICK
+            from .app_settings import get_config
+
+            # Derselbe Name wie im XMPP-Raum; ein leerer Wert fällt auf den
+            # Standard zurück, damit die Anzeige nie namenlos wird.
+            return get_config("EJABBERD_BOT_NICK", BOT_NICK) or BOT_NICK
         if self.sender:
             return self.sender.first_name or self.sender.get_username()
         return "Unbekannt"

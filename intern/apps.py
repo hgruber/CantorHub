@@ -21,6 +21,8 @@ _CONFIG_DEFAULTS = [
     ("EJABBERD_MUC_SERVICE", "", "ejabberd MUC-Service-Domain"),
     ("EJABBERD_BOT_JID", "", "JID des Forum-Bots"),
     ("EJABBERD_BOT_PASSWORD", "", "Passwort des Forum-Bots"),
+    ("EJABBERD_BOT_NICK", "Bot",
+     "Nickname des Forum-Bots in den XMPP-Räumen (leer = Bot)"),
     ("EJABBERD_BOT_PORT", "5222", "XMPP-Port des Forum-Bots"),
     ("ICAL_SECRET", "", "Geheimes Token für iCal-Feed-URL"),
     ("EMAIL_HOST", "", "SMTP-Server (leer = kein E-Mail-Versand)"),

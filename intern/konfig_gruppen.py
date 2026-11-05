@@ -73,6 +73,7 @@ FELDTYPEN: dict[str, str] = {
     "EJABBERD_MUC_SERVICE": "string",
     "EJABBERD_BOT_JID": "string",
     "EJABBERD_BOT_PASSWORD": "string",
+    "EJABBERD_BOT_NICK": "string",
     "ICAL_SECRET": "string",
     "EMAIL_HOST": "string",
     "EMAIL_HOST_USER": "string",
@@ -228,7 +229,8 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     # Forum-Chat (XMPP) — Server, dann Bot
     "EJABBERD_HOST", "EJABBERD_MUC_SERVICE", "EJABBERD_API_URL",
     "EJABBERD_API_TIMEOUT",
-    "EJABBERD_BOT_JID", "EJABBERD_BOT_PASSWORD", "EJABBERD_BOT_PORT",
+    "EJABBERD_BOT_JID", "EJABBERD_BOT_PASSWORD", "EJABBERD_BOT_NICK",
+    "EJABBERD_BOT_PORT",
     "EJABBERD_BOT_RESCAN_SECONDS", "EJABBERD_BOT_RELAY_SECONDS",
     # Portal, Karte & Benachrichtigungen — Sprache, Zeitzone, Limits, Karte, OSM-Server, Benachrichtigungen
     "SPRACHE", "ZEITZONE", "TELEFON_LANDESVORWAHL",
@@ -275,6 +277,7 @@ OPTIONAL_LEER: frozenset[str] = frozenset({
     "EJABBERD_MUC_SERVICE",
     "EJABBERD_BOT_JID",
     "EJABBERD_BOT_PASSWORD",
+    "EJABBERD_BOT_NICK",     # leer = „Bot"
     # SMTP ohne Anmeldung ist ein normaler Fall
     "EMAIL_HOST_USER",
     "EMAIL_HOST_PASSWORD",

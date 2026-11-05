@@ -8161,6 +8161,7 @@ class XmppReaktionEingangTest(SimpleTestCase):
         from intern.management.commands.ejabberd_bot import CantorBot
 
         bot = CantorBot.__new__(CantorBot)
+        bot._nick = "Bot"
         bot._handle_reaction = AsyncMock()
         return bot
 
@@ -8181,7 +8182,7 @@ class XmppReaktionEingangTest(SimpleTestCase):
         import asyncio
 
         bot = self._bot()
-        asyncio.run(bot._on_reactions(self._nachricht("forum-1@muc.example/CantorBot")))
+        asyncio.run(bot._on_reactions(self._nachricht("forum-1@muc.example/Bot")))
         asyncio.run(bot._on_reactions(self._nachricht("anna@example/handy", typ="chat")))
         bot._handle_reaction.assert_not_awaited()
 
@@ -8218,6 +8219,31 @@ class XmppEchoIdTest(SimpleTestCase):
 
     def test_fremdes_echo_nicht(self):
         self._erfasse("raum-sid", "msg-id", origin_id="abc").assert_not_called()
+
+
+class XmppEchoNachNickwechselTest(SimpleTestCase):
+    """Nach einem Nick-Wechsel bringt die MUC-History die zuletzt relayten
+    Nachrichten mit dem alten Nick zurück. Die origin-id erkennt sie als eigenes
+    Echo; sonst würden sie als neue Forenbeiträge gespeichert."""
+
+    def _echo(self, nick, eigener, origin_id="", is_history=False):
+        from intern.management.commands.ejabberd_bot import _ist_eigenes_echo
+        return _ist_eigenes_echo(nick, eigener, origin_id, is_history)
+
+    def test_gleicher_nick_ist_echo(self):
+        self.assertTrue(self._echo("Bot", "Bot"))
+        self.assertTrue(self._echo("Bot", "Bot", is_history=True))
+
+    def test_alte_history_nachricht_ist_echo(self):
+        self.assertTrue(self._echo("CantorBot", "Bot", "cantorhub-42", True))
+
+    def test_fremde_history_nachricht_bleibt_fremd(self):
+        self.assertFalse(self._echo("Anna", "Bot", "", True))
+        self.assertFalse(self._echo("Anna", "Bot", "abc", True))
+
+    def test_live_nachricht_mit_origin_id_bleibt_fremd(self):
+        # Nur die History zählt die origin-id; live könnte sie gefälscht sein.
+        self.assertFalse(self._echo("Anna", "Bot", "cantorhub-42", False))
 
 
 class StartseiteUeberlagerungTest(SimpleTestCase):
@@ -8744,7 +8770,7 @@ class BotZugangTest(SimpleTestCase):
         from intern.management.commands import ejabberd_bot as modul
 
         bot = object.__new__(modul.CantorBot)
-        bot._zugang = ("chat.example.org", 5222, "bot@chat.example.org", "alt")
+        bot._zugang = ("chat.example.org", 5222, "bot@chat.example.org", "alt", "Bot")
         bot._neustart = False
 
         async def lauf():
@@ -8760,7 +8786,17 @@ class BotZugangTest(SimpleTestCase):
 
     def test_geaendertes_passwort_stoppt_fuer_neustart(self):
         bot, gestoppt, neu_geplant = self._pruefen(
-            ("chat.example.org", 5222, "bot@chat.example.org", "neu")
+            ("chat.example.org", 5222, "bot@chat.example.org", "neu", "Bot")
+        )
+        self.assertTrue(bot._neustart)
+        self.assertTrue(gestoppt)
+        self.assertFalse(neu_geplant)
+
+    def test_geaenderter_nick_stoppt_fuer_neustart(self):
+        # Der Nick steht im selben Tupel; ein Wechsel muss denselben sauberen
+        # Neustart auslösen wie neue Zugangsdaten — kein Nickwechsel im Betrieb.
+        bot, gestoppt, neu_geplant = self._pruefen(
+            ("chat.example.org", 5222, "bot@chat.example.org", "alt", "Portal")
         )
         self.assertTrue(bot._neustart)
         self.assertTrue(gestoppt)
@@ -8768,7 +8804,7 @@ class BotZugangTest(SimpleTestCase):
 
     def test_gleiche_zugangsdaten_pruefen_weiter(self):
         bot, gestoppt, neu_geplant = self._pruefen(
-            ("chat.example.org", 5222, "bot@chat.example.org", "alt")
+            ("chat.example.org", 5222, "bot@chat.example.org", "alt", "Bot")
         )
         self.assertFalse(bot._neustart)
         self.assertFalse(gestoppt)

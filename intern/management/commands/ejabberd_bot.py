@@ -55,6 +55,7 @@ def _lese_zugang():
     from django.db import close_old_connections
 
     from intern.app_settings import konfiguration_gepuffert
+    from intern.models import BOT_NICK
 
     close_old_connections()
     with konfiguration_gepuffert():
@@ -63,7 +64,23 @@ def _lese_zugang():
             get_config_int("EJABBERD_BOT_PORT", 5222),
             get_config("EJABBERD_BOT_JID", ""),
             get_config("EJABBERD_BOT_PASSWORD", ""),
+            get_config("EJABBERD_BOT_NICK", BOT_NICK) or BOT_NICK,
         )
+
+
+def _ist_eigenes_echo(sender_nickname, eigener_nick, origin_id, is_history):
+    """Gehört diese MUC-Nachricht zum eigenen Relay?
+
+    Der Nick allein genügt beim Nick-Wechsel nicht: Die MUC-History bringt die
+    zuletzt relayten Nachrichten mit dem alten Nick zurück, und sie würden als
+    neue Forenbeiträge gespeichert. Jede eigene Nachricht trägt aber die
+    ``origin-id`` ``cantorhub-<Mitteilung>``; bei History-Nachrichten reicht sie
+    als Beweis. Für Live-Nachrichten bleibt der Nick maßgeblich, damit niemand
+    eine fremde Nachricht durch eine gefälschte origin-id unterdrückt.
+    """
+    if sender_nickname == eigener_nick:
+        return True
+    return is_history and origin_id.startswith("cantorhub-")
 
 
 def _warte_bis(bedingung):
@@ -285,7 +302,7 @@ def _db_invite_missing_users(room_jid):
 @_frische_verbindung
 def _db_capture_stanza_id(mitteilung_id, stanza_id):
     """Backfill the MUC-assigned stanza-id on a forum-originated Mitteilung once
-    its CantorBot echo arrives, so reactions can target it. Only sets it when
+    its bot echo arrives, so reactions can target it. Only sets it when
     still NULL (never overwrites an inbound id)."""
     from intern.models import Mitteilung
 
@@ -387,6 +404,9 @@ class CantorBot:
         # nutzt es bei jedem Wiederverbinden; _zugang_pruefen vergleicht deshalb mit
         # der Konfiguration und laesst den Prozess neu starten, wenn sie abweicht.
         self._zugang = _lese_zugang()
+        # Der Nick dieses Laufs. Er steht in _zugang, damit eine Änderung in der
+        # Konfiguration denselben Neustart auslöst wie neue Zugangsdaten.
+        self._nick = self._zugang[4]
         self._neustart = False
 
         self._client = slixmpp.ClientXMPP(
@@ -479,7 +499,7 @@ class CantorBot:
 
     def run(self):
         """Laeuft, bis sich die Zugangsdaten aendern, und gibt dann NEUSTART zurueck."""
-        host, port, jid, _ = self._zugang
+        host, port, jid, _, _ = self._zugang
         logger.info("ejabberd_bot: connecting to %s:%s as %s", host, port, jid)
         self._client.connect((host, port))
         loop = asyncio.get_event_loop()
@@ -566,7 +586,7 @@ class CantorBot:
     async def _relay_messages(self):
         """Send new Forum-originated messages to their MUC room via the bot's
         own joined session. The relayed message echoes back under nick
-        'CantorBot' and is skipped by echo prevention, so it is not re-stored."""
+        configured nick and is skipped by echo prevention, so it is not re-stored."""
         if self._relay_cursor is None:
             # Resume from the persisted cursor so posts written while the bot was
             # down still reach MUC. Without one (first start) take the newest id
@@ -593,7 +613,7 @@ class CantorBot:
             if muc_jid not in self._joined_rooms:
                 # Not joined yet — stop so the message isn't skipped; retry later.
                 break
-            # Tag with an origin-id so the CantorBot echo can be correlated back to
+            # Tag with an origin-id so the bot echo can be correlated back to
             # this Mitteilung and its MUC stanza-id captured (for reaction targeting).
             outgoing = self._client.make_message(
                 mto=muc_jid, mbody=body, mtype="groupchat"
@@ -633,7 +653,7 @@ class CantorBot:
         to_join, aktive = await asyncio.to_thread(_db_ensure_rooms, self._joined_rooms)
 
         for muc_jid in self._joined_rooms - aktive:
-            self._client.plugin["xep_0045"].leave_muc(muc_jid, "CantorBot")
+            self._client.plugin["xep_0045"].leave_muc(muc_jid, self._nick)
             self._joined_rooms.discard(muc_jid)
             self._invitation_done.discard(muc_jid)
             self._nick_jid_cache.pop(muc_jid, None)
@@ -645,7 +665,7 @@ class CantorBot:
                 continue
             try:
                 self._client.plugin["xep_0045"].join_muc(
-                    muc_jid, "CantorBot", maxhistory="20"
+                    muc_jid, self._nick, maxhistory="20"
                 )
                 self._joined_rooms.add(muc_jid)
                 new_count += 1
@@ -709,6 +729,7 @@ class CantorBot:
         # Echo prevention: in MUC, from = room@service/nickname,
         # so check the resource (nickname) not the bare JID.
         sender_nickname = msg["from"].resource
+        origin_id = msg["origin_id"]["id"] or ""
 
         # Reactions (XEP-0444) are handled by _on_reactions. slixmpp only fires
         # groupchat_message for stanzas with a <body>, so one arrives here only
@@ -718,7 +739,7 @@ class CantorBot:
 
         body = (msg["body"] or "").strip()
 
-        if sender_nickname == "CantorBot":
+        if _ist_eigenes_echo(sender_nickname, self._nick, origin_id, is_history):
             if not is_history:
                 # Backfill the room stanza-id onto the forum-originated Mitteilung
                 # this echo belongs to, then trigger invitations.
@@ -765,7 +786,7 @@ class CantorBot:
         if msg["type"] != "groupchat":
             return
         sender_nickname = msg["from"].resource
-        if sender_nickname == "CantorBot":
+        if sender_nickname == self._nick:
             return  # our own relayed reaction echo — never re-import
         await self._handle_reaction(msg, str(msg["from"].bare), sender_nickname)
 
@@ -783,7 +804,7 @@ class CantorBot:
         await asyncio.to_thread(_db_store_xmpp_reaction, to_id, reactor_jid, emojis)
 
     async def _capture_forum_stanza_id(self, msg):
-        """For a CantorBot echo of a relayed forum message, map its origin-id back
+        """For a bot echo of a relayed forum message, map its origin-id back
         to the Mitteilung and store the room-assigned stanza-id (for reactions).
         A room without MAM assigns none; clients then react to the message's id
         attribute, which ejabberd reflects unchanged — the same fallback as for
@@ -809,7 +830,7 @@ class CantorBot:
 
     def _reconnect(self):
         """Attempt to reconnect — with this run's credentials (see _zugang)."""
-        host, port, _, _ = self._zugang
+        host, port = self._zugang[0], self._zugang[1]
         self._client.connect((host, port))
 
 
