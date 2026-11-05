@@ -204,15 +204,13 @@ SCHLUESSEL_REIHENFOLGE: tuple[str, ...] = (
     # E-Mail-Versand — SMTP-Verbindung, dann Absender, dann Global-Schalter
     "EMAIL_HOST", "EMAIL_PORT", "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD",
     "EMAIL_USE_TLS", "EMAIL_USE_SSL", "DEFAULT_FROM_EMAIL", "MAIL_BEI_AKTIVIERUNG",
-    "MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN",
+    "MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN", "FORUM_WICHTIG_MAIL_AKTIV",
     # E-Mail-Texte — Mitglied-Lebenszyklus
     "MAIL_EINLADUNG", "MAIL_ANTRAG", "MAIL_ANTRAG_ADMIN",
     "MAIL_ANTRAG_ADMIN_MINDERJAEHRIG", "MAIL_ANTRAG_ADMIN_FOERDER",
     "MAIL_WILLKOMMEN", "MAIL_REAKTIVIERT",
     "MAIL_BESTAETIGUNG", "MAIL_BESTAETIGUNG_BESTAETIGT",
     "MAIL_NEUES_PASSWORT", "MAIL_RUNDMAIL", "MAIL_FORUM_WICHTIG", "MAIL_FOOTER",
-    # Forum — zusätzliche E-Mail bei als wichtig markierten Beiträgen
-    "FORUM_WICHTIG_MAIL_AKTIV",
     # Auftritts-Mailingliste — Timing-Parameter, dann Formular-Texte, dann Mailtexte
     "MAILINGLISTE_WOCHEN", "MAILINGLISTE_VERSANDZEIT", "MAILINGLISTE_INTERVALL_MIN",
     "MAILINGLISTE_OPTIN_TAGE", "MAILINGLISTE_TEXT", "MAILINGLISTE_EINWILLIGUNG",
@@ -405,7 +403,7 @@ GRUPPEN: tuple[Gruppe, ...] = (
     Gruppe(
         id="mailversand",
         titel="E-Mail-Versand",
-        hinweis="SMTP-Zugang und Absenderadresse",
+        hinweis="SMTP-Zugang, Absenderadresse und Zusatzmails",
         keys=(
             "DEFAULT_FROM_EMAIL",
             # Schalter (1/0), der MAIL_WILLKOMMEN/MAIL_REAKTIVIERT unterdrückt —
@@ -413,6 +411,8 @@ GRUPPEN: tuple[Gruppe, ...] = (
             "MAIL_BEI_AKTIVIERUNG",
             # Schalter (1/0) für die Mitgliedernamen unter der Rundmail-Signatur.
             "MAIL_SIGNATUR_MITGLIEDER_ANZEIGEN",
+            # Schalter (1/0) für die Zusatzmail bei wichtigen Forenbeiträgen.
+            "FORUM_WICHTIG_MAIL_AKTIV",
         ),
         praefixe=("EMAIL_",),
     ),
@@ -455,13 +455,6 @@ GRUPPEN: tuple[Gruppe, ...] = (
         hinweis="Anbindung der Foren an ejabberd",
         keys=(),
         praefixe=("EJABBERD_",),
-    ),
-    Gruppe(
-        id="forum",
-        titel="Forum & E-Mail",
-        hinweis="Zusätzliche E-Mail an alle bei als wichtig markierten Beiträgen",
-        keys=("FORUM_WICHTIG_MAIL_AKTIV",),
-        praefixe=(),
     ),
     Gruppe(
         id="portal",
