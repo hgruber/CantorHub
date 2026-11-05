@@ -19,27 +19,35 @@ FELDER = (
 
 
 def rollenzeilen_nachtragen(apps, schema_editor):
+    # ``using`` ist Pflicht, nicht Stil: Diese Migration läuft auch auf der
+    # Sicherungsdatenbank (``migrate --database=sicherung``). Ohne den Alias
+    # liest das historische Modell die Standarddatenbank, in der die Spalten
+    # längst entfernt sind — die Sicherung bräche mit „Unknown column".
+    alias = schema_editor.connection.alias
     Lied = apps.get_model("intern", "Lied")
     LiedDatei = apps.get_model("intern", "LiedDatei")
     for feld, rolle in FELDER:
         zeilen = (
-            Lied.objects.exclude(**{f"{feld}_id": None})
+            Lied.objects.using(alias).exclude(**{f"{feld}_id": None})
             .values_list("pk", f"{feld}_id")
         )
         for lied_id, datei_id in zeilen:
-            LiedDatei.objects.get_or_create(
+            LiedDatei.objects.using(alias).get_or_create(
                 lied_id=lied_id, rolle=rolle, defaults={"datei_id": datei_id}
             )
 
 
 def felder_zurueckschreiben(apps, schema_editor):
+    alias = schema_editor.connection.alias
     Lied = apps.get_model("intern", "Lied")
     LiedDatei = apps.get_model("intern", "LiedDatei")
     for feld, rolle in FELDER:
-        for lied_id, datei_id in LiedDatei.objects.filter(rolle=rolle).values_list(
-            "lied_id", "datei_id"
-        ):
-            Lied.objects.filter(pk=lied_id).update(**{f"{feld}_id": datei_id})
+        for lied_id, datei_id in LiedDatei.objects.using(alias).filter(
+            rolle=rolle
+        ).values_list("lied_id", "datei_id"):
+            Lied.objects.using(alias).filter(pk=lied_id).update(
+                **{f"{feld}_id": datei_id}
+            )
 
 
 class Migration(migrations.Migration):
