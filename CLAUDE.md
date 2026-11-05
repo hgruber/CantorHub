@@ -434,6 +434,11 @@ help-dialog coverage is tested (`RechteHilfeTest`); nothing ties the rest togeth
   `views/auth.py`.
 - Partial updates use htmx with a dedicated partial template; everything else is a full render.
   JavaScript is vanilla, one file per concern, loaded in `base.html`.
+- **Every frontend change is checked at phone width as well.** Desktop is not enough: look at the
+  page at 320 px (and in dark mode where colours are involved) — no horizontal page scroll, every
+  control reachable, touch targets at the sizes `docs/frontend.md` prescribes under „Touch devices
+  get larger targets", and drag or hover behaviour replaced by something a touch device can use.
+  A layout that only works with a mouse is not done.
 - Logging: `logging.getLogger(__name__)`; everything under `intern.*` is at INFO and goes to
   stdout.
 - References to the privacy policy — in code comments, `Konfiguration` help texts, `docs/` —
