@@ -1,5 +1,5 @@
 # Stage 1: Base build stage
-FROM python:3.14-slim AS builder
+FROM python:3.15-slim AS builder
 
 # Install build dependencies for mysqlclient
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -30,7 +30,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Production stage
-FROM python:3.14-slim
+FROM python:3.15-slim
 
 RUN useradd -m -r appuser && \
     mkdir /app && \
