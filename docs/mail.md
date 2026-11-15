@@ -82,7 +82,12 @@ styles, plain text) using the wiki syntax of the article editor — `'''fett'''`
 `== Titel ==`, `*`/`#` lists, `% grauer Hinweis`, `@ Hinweisbox`, `: Einrückung`,
 `[https://… Name]`, `$roh$` — plus the mail-only directive `{button:Label}` (links to `{link}`)
 / `{button:Label:URL}`. A button without a URL renders nothing. Placeholder values are
-HTML-escaped; unknown `{placeholders}` stay verbatim. `/intern/konfiguration/` shows a syntax
+HTML-escaped; unknown `{placeholders}` stay verbatim. Placeholders are substituted *before*
+the markup is parsed, so a value is inert: its `[ ] { } ' $` are swapped for Private Use Area
+characters while rendering and swapped back afterwards — a name or topic typed into a form can
+produce no named link, button or bold. A bare `https://` URL in a value is still linked, with the
+URL as its text. Only `{hinweise}` and `{text}` (the Rundmail body) keep their markup
+(`_MIT_MARKUP` in `mail_markup.py`). `/intern/konfiguration/` shows a syntax
 legend while a `MAIL_*` field is focused.
 
 `render_mail_markup(raw, placeholders, link)` returns the `(html, plain)` pair.

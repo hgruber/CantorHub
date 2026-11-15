@@ -12,6 +12,7 @@ freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INST
 ### Sicherheit
 
 - Auftritts-Mailingliste: Eine Anmeldung, deren Name nach Link, Adresse oder Mail-Markup aussieht, wird stillschweigend verworfen — keine Zeile, keine Bestätigungsmail, nur ein Logeintrag mit IP und Zieldomain. Bisher ließ sich über das Namensfeld Spam per Bestätigungsmail an fremde Adressen verschicken.
+- E-Mails: Eingesetzte Platzhalterwerte wie Namen oder Forenthemen erzeugen kein Mail-Markup mehr — kein benannter Link, kein Button, kein Fettdruck. So ließ sich etwa über den Vornamen im Beitrittsformular ein getarnter Link in die Hinweismail an die Mitgliederverwalter schleusen; nur die Hinweistexte und der Rundmail-Text behalten ihr Markup.
 
 ## v1.2.7 — 2026-11-06
 

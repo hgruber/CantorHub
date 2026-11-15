@@ -51,6 +51,18 @@ _BUTTON_RE = re.compile(r"^\{button:([^}]*)\}$")
 _BUTTON_PARTS_RE = re.compile(r"^(?P<label>[^:]*)(?::(?P<url>.*))?$")
 _STASH_RE = re.compile("\x00(\\d+)\x00")
 
+# Platzhalter, deren Wert absichtlich Markup trägt: die Hinweistexte aus der
+# Konfiguration und der Rundmail-Text des Verwalters. Jeder andere Wert ist
+# Text — ein Name, Thema oder eine Adresse aus einem Formular darf keinen
+# benannten Link, Button oder Fettdruck erzeugen, der Parser läuft aber erst
+# nach dem Einsetzen. Seine Auslöser tauschen deshalb für die Dauer des
+# Renderns gegen Zeichen der Private Use Area und kehren danach zurück.
+_MIT_MARKUP = frozenset({"hinweise", "text"})
+_MARKUPZEICHEN = "[]{}'$"
+_TARNZEICHEN = "".join(chr(0xE000 + i) for i in range(len(_MARKUPZEICHEN)))
+_TARNEN = str.maketrans(_MARKUPZEICHEN, _TARNZEICHEN)
+_ENTTARNEN = str.maketrans(_TARNZEICHEN, _MARKUPZEICHEN)
+
 
 def render_mail_markup(raw, placeholders=None, link=None):
     """Rendert einen Konfigurationstext zu ``(html, plain)``.
@@ -69,12 +81,18 @@ def render_mail_markup(raw, placeholders=None, link=None):
 
 
 def _substitute(raw, values, html_mode):
-    """Setzt {platzhalter} ein; im HTML-Modus werden die Werte escaped."""
+    """Setzt {platzhalter} ein; im HTML-Modus werden die Werte escaped.
+
+    Außer in ``_MIT_MARKUP`` werden die Markup-Zeichen eines Werts getarnt —
+    ``_render`` enttarnt sie nach dem Parsen.
+    """
     def repl(match):
         key = match.group(1)
         if key not in values:
             return match.group(0)
         value = "" if values[key] is None else str(values[key])
+        if key not in _MIT_MARKUP:
+            value = value.translate(_TARNEN)
         return _escape(value) if html_mode else value
 
     return _PLACEHOLDER_RE.sub(repl, raw)
@@ -151,8 +169,8 @@ def _render(raw, values, link, html_mode):
     flush_list()
 
     if html_mode:
-        return "\n".join(part for part in out if part)
-    return "\n\n".join(part for part in out if part).strip() + "\n"
+        return "\n".join(part for part in out if part).translate(_ENTTARNEN)
+    return ("\n\n".join(part for part in out if part).strip() + "\n").translate(_ENTTARNEN)
 
 
 def _block(lines, kind, html_mode):

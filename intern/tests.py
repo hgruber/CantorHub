@@ -239,6 +239,52 @@ class AnkuendigungAlsTextTest(SimpleTestCase):
         )
 
 
+class PlatzhalterOhneMarkupTest(SimpleTestCase):
+    """Ein eingesetzter Wert erzeugt kein Markup — außer ``{hinweise}`` und ``{text}``.
+
+    Platzhalter laufen vor dem Parser; ohne die Tarnung machte ein Vorname
+    wie ``[https://… Antrag prüfen]`` aus der Verwaltermail einen Phishing-Link.
+    """
+
+    def _mail(self, raw, **werte):
+        from intern.mail_markup import render_mail_markup
+        with mock.patch("intern.mail_markup.get_brand_farbe", return_value="#123456"):
+            return render_mail_markup(raw, werte, link="https://portal.example/x")
+
+    def test_benannter_link_im_namen(self):
+        html, plain = self._mail("Antrag von {vorname}", vorname="[https://evil.example Prüfen]")
+        self.assertNotIn(">Prüfen</a>", html)
+        self.assertIn(">https://evil.example</a>", html)      # das Ziel bleibt sichtbar
+        self.assertIn("[https://evil.example Prüfen]", plain)
+
+    def test_button_und_fett_im_namen(self):
+        html, _ = self._mail("{vorname}", vorname="'''x'''\n{button:Klick:https://evil.example}")
+        self.assertNotIn("<strong>", html)
+        self.assertNotIn("<table", html)
+        self.assertIn("'''x'''", html)
+        self.assertIn("{button:Klick:", html)
+
+    def test_keine_tarnzeichen_im_ergebnis(self):
+        from intern.mail_markup import _TARNZEICHEN
+        html, plain = self._mail("'''{vorname}''' $a$", vorname="O'Neill {x} $y$ [z]")
+        for zeichen in _TARNZEICHEN:
+            self.assertNotIn(zeichen, html + plain)
+        self.assertIn("<strong>O'Neill {x} $y$ [z]</strong>", html)
+
+    def test_platzhalter_in_markup_der_vorlage(self):
+        html, _ = self._mail("[{link} Hier]", link="https://portal.example/a")
+        self.assertIn('href="https://portal.example/a"', html)
+        self.assertIn(">Hier</a>", html)
+        html, _ = self._mail("{button:Los:{link}}", link="https://portal.example/a")
+        self.assertIn('<a href="https://portal.example/a"', html)
+
+    def test_hinweise_und_text_behalten_markup(self):
+        for key in ("hinweise", "text"):
+            html, _ = self._mail("{%s}" % key, **{key: "'''fett''' [https://x.example Name]"})
+            self.assertIn("<strong>fett</strong>", html, key)
+            self.assertIn(">Name</a>", html, key)
+
+
 class NameWirktWieLinkTest(SimpleTestCase):
     """Der Name der Anmeldung darf keinen Link in die Opt-in-Mail tragen.
 
