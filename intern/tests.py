@@ -239,6 +239,27 @@ class AnkuendigungAlsTextTest(SimpleTestCase):
         )
 
 
+class NameWirktWieLinkTest(SimpleTestCase):
+    """Der Name der Anmeldung darf keinen Link in die Opt-in-Mail tragen.
+
+    Die Mail geht an eine frei eingegebene, fremde Adresse; ein Link im Namen
+    machte das Formular zur Spam-Schleuder.
+    """
+
+    def test_echte_namen(self):
+        from intern.mailingliste import name_wirkt_wie_link
+        for name in ("", "Anna", "Dr. Müller", "J. R. Ewing", "Anne-Marie O'Neill",
+                     "Jörg Weiß", "Familie Schmidt & Co."):
+            self.assertFalse(name_wirkt_wie_link(name), name)
+
+    def test_links_und_markup(self):
+        from intern.mailingliste import name_wirkt_wie_link
+        for name in ("https://x.example", "www.gewinn", "gewinn.com", "bit.ly/abc",
+                     "Hallo GEWINN.DE jetzt", "a@b.c", "[https://x Gewinn]",
+                     "{button:Klick:x}", "<a href=x>", "hxxp:\\\\x"):
+            self.assertTrue(name_wirkt_wie_link(name), name)
+
+
 class BestaetigtPropertyTest(SimpleTestCase):
     def test_leitet_sich_aus_dem_zeitstempel_ab(self):
         from intern.models import Auftrittsabo

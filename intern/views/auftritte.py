@@ -16,6 +16,7 @@ from intern.app_settings import get_config, is_email_configured
 from intern.forms import AuftrittsaboForm
 from intern.mailingliste import (
     OPTIN_COOLDOWN_MIN,
+    name_wirkt_wie_link,
     optin_url,
     read_abmelde_token,
     read_optin_token,
@@ -74,6 +75,15 @@ def auftritte_anmeldung(request):
                       {"form": form, "text": text})
 
     cache.set(throttle_key, versuche + 1, 3600)
+    if name_wirkt_wie_link(form.cleaned_data.get("name", "")):
+        # Spam über die Opt-in-Mail an fremde Adressen: wie der Honeypot die
+        # Erfolgsseite, aber keine Zeile und keine Mail. Geloggt wird nur die
+        # Domain der Zieladresse — die Adresse gehört einem Unbeteiligten.
+        logger.warning(
+            "Mailingliste: Anmeldung mit Link im Namen verworfen (IP %s, Ziel @%s)",
+            _client_ip(request), form.cleaned_data["email"].rpartition("@")[2],
+        )
+        return _erfolgsseite(request)
     _anmeldung_verarbeiten(request, form)
     return _erfolgsseite(request)
 

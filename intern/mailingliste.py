@@ -35,6 +35,23 @@ logger = logging.getLogger(__name__)
 KULANZ_STUNDEN = 24      # nach einem Serverausfall keine sinnlos verspäteten Mails
 OPTIN_COOLDOWN_MIN = 10  # Bremse gegen Mail-Bombing auf eine fremde Adresse
 
+# Ein Name, der nach Link, Adresse oder Markup aussieht. Der Name steht als
+# {name}/{name_anrede} in der Opt-in-Mail an eine frei eingegebene Adresse;
+# Mailprogramme verlinken eine Domain auch als blanken Text, und Platzhalter
+# laufen vor dem Markup-Parser — "[URL Text]" oder "{button:…}" würden echt.
+_LINKARTIG = re.compile(
+    r"[<>\[\]{}@/\\:]"              # Markup, Adresse, Schema, Pfad
+    r"|www\."
+    r"|[a-z0-9-]\.[a-z]{2,}",      # beispiel.com, bit.ly
+    re.IGNORECASE,
+)
+
+
+def name_wirkt_wie_link(name):
+    """True, wenn der Name einen Link oder Mail-Markup tragen könnte."""
+    return bool(_LINKARTIG.search(name or ""))
+
+
 _optin_signer = TimestampSigner(salt="intern.mailingliste_optin")
 _abmelde_signer = Signer(salt="intern.mailingliste_abmelden")
 

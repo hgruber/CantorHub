@@ -7,6 +7,12 @@ folgen [semantischer Versionierung](https://semver.org/lang/de/). Ein Eintrag sa
 drei Sätzen, *was* sich ändert — wie es dazu kam, steht im Commit. Wie eine Auslieferung
 freigegeben wird (Sammelabschnitt umbenennen, committen, taggen), steht in `INSTALL.md`.
 
+## Unveröffentlicht
+
+### Sicherheit
+
+- Auftritts-Mailingliste: Eine Anmeldung, deren Name nach Link, Adresse oder Mail-Markup aussieht, wird stillschweigend verworfen — keine Zeile, keine Bestätigungsmail, nur ein Logeintrag mit IP und Zieldomain. Bisher ließ sich über das Namensfeld Spam per Bestätigungsmail an fremde Adressen verschicken.
+
 ## v1.2.7 — 2026-11-06
 
 ### Hinzugefügt

@@ -21,7 +21,10 @@ would be an address oracle (same reasoning as `register()`). Only the mail diffe
 an IP throttle via `cache` and the DB-backed cooldown on `optin_gesendet_am`
 (`OPTIN_COOLDOWN_MIN`), which is the one that actually stops mail-bombing a foreign address. A
 honeypot field `webseite` (off-screen via `.hp-feld`, **not** `type="hidden"`) short-circuits to
-the success page.
+the success page. So does a name that `name_wirkt_wie_link()` flags (link, domain, address or
+mail markup): the name lands in the opt-in mail to an address anyone can type, and placeholders
+are substituted before the markup parser, so it would otherwise carry spam links. That case
+creates no row, sends nothing and logs the IP and the target's domain.
 
 **Confirmation and unsubscribe are POST-only** — GET renders a page with a button. Outlook
 SafeLinks and virus scanners fetch links ahead of the human and would otherwise document a
